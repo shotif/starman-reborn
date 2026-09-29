@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#04060b" />
+    <meta name="color-scheme" content="dark" />
+    <title>Starman Reborn: star map harness (dev only)</title>
+  </head>
+  <body>
+    <!-- Dev harness for GalaxyMapView and the encyclopedia. Served by `npm run dev` at /dev/map.html;
+         not part of the production build. Query parameters are documented in src/dev/mapHarness.ts. -->
+    <div id="app">
+      <canvas id="scene" aria-label="Star map view" tabindex="-1"></canvas>
+      <div id="ui"></div>
+    </div>
+    <script type="module" src="/src/dev/mapHarness.ts"></script>
+  </body>
+</html>

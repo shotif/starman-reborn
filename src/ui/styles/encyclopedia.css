@@ -1,0 +1,420 @@
+/* "About the science" encyclopedia, plus the science blocks it shares with the map info card. */
+
+.enc-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  padding: calc(var(--safe-top) + 0.75rem) calc(var(--safe-right) + 0.75rem) calc(var(--safe-bottom) + 0.75rem)
+    calc(var(--safe-left) + 0.75rem);
+  background: rgba(2, 4, 10, 0.74);
+  pointer-events: auto;
+}
+
+.enc {
+  display: flex;
+  flex-direction: column;
+  width: min(66rem, 100%);
+  min-height: 0;
+  overflow: hidden;
+  background: rgba(8, 13, 25, 0.97);
+}
+
+.enc-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.6rem 0.55rem 1.1rem;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.enc-titles {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.enc-titles .eyebrow {
+  margin: 0;
+}
+
+.enc-head h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  outline: none;
+}
+
+.enc-main {
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-columns: minmax(10rem, 14rem) minmax(0, 1fr);
+  min-height: 0;
+}
+
+.enc-nav {
+  overflow-y: auto;
+  padding: 0.6rem;
+  border-right: 1px solid var(--panel-border);
+}
+
+.enc-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.enc-nav-btn {
+  appearance: none;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.enc-nav-btn:hover {
+  color: var(--text);
+  background: rgba(120, 160, 230, 0.1);
+}
+
+.enc-nav-btn[aria-current='true'] {
+  color: var(--text);
+  background: rgba(92, 200, 255, 0.14);
+  border-color: rgba(92, 200, 255, 0.45);
+}
+
+.enc-body {
+  position: relative;
+  min-height: 0;
+  padding: 0 1.4rem 2.5rem;
+  outline: none;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.enc-section {
+  max-width: 48rem;
+  padding: 1.1rem 0 1.5rem;
+  border-bottom: 1px solid var(--panel-border);
+  line-height: 1.55;
+}
+
+.enc-section:last-child {
+  border-bottom: 0;
+}
+
+.enc-section h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  outline: none;
+}
+
+.enc-section h4 {
+  margin: 1.2rem 0 0.45rem;
+  font-size: 1rem;
+}
+
+.enc-section p {
+  margin: 0.4rem 0;
+}
+
+.enc-summary {
+  color: var(--text-muted);
+  font-size: 1.02rem;
+}
+
+.enc-classes {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0.6rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.enc-classes li {
+  display: grid;
+  grid-template-columns: 11rem minmax(0, 1fr);
+  align-items: start;
+  gap: 0.75rem;
+}
+
+.enc-classes .badge {
+  justify-self: start;
+  margin-top: 0.25rem;
+}
+
+.enc-classes p {
+  margin: 0;
+}
+
+.enc-legend {
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--accent);
+  background: rgba(92, 200, 255, 0.07);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.enc-callout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.5rem 0.75rem;
+  margin: 0.6rem 0;
+  padding: 0.6rem 0.8rem;
+  border: 1px dashed rgba(255, 209, 102, 0.6);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 209, 102, 0.07);
+}
+
+.enc-callout p {
+  flex: 1 1 18rem;
+  margin: 0;
+}
+
+.enc-steps,
+.enc-notes {
+  margin: 0.4rem 0;
+  padding-left: 1.3rem;
+}
+
+.enc-steps li,
+.enc-notes li {
+  margin: 0.3rem 0;
+}
+
+.enc-tech {
+  margin: 0.6rem 0;
+}
+
+.enc-tech summary {
+  display: list-item;
+  min-height: 44px;
+  padding: 0.6rem 0;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.enc-sources {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.4rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (max-width: 759px) {
+  .enc-backdrop {
+    padding: 0;
+  }
+
+  .enc {
+    width: 100%;
+    border-radius: 0;
+    border: 0;
+    padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+  }
+
+  .enc-main {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .enc-nav {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.35rem 0.5rem;
+    border-right: 0;
+    border-bottom: 1px solid var(--panel-border);
+    scrollbar-width: none;
+    touch-action: pan-x;
+  }
+
+  .enc-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .enc-nav-list {
+    flex-direction: row;
+    width: max-content;
+  }
+
+  .enc-nav-btn {
+    width: auto;
+    white-space: nowrap;
+  }
+
+  .enc-body {
+    padding: 0 1rem 2rem;
+  }
+
+  .enc-classes li {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.25rem;
+  }
+}
+
+/* ---------- Science blocks (shared with the map info card) ---------- */
+
+.sci-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.sci-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sci-item {
+  padding: 0.55rem 0.7rem;
+  border: 1px solid rgba(126, 170, 255, 0.12);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.sci-item-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.45rem;
+}
+
+.sci-item-text {
+  margin: 0.25rem 0 0;
+  font-size: 0.88rem;
+}
+
+.sci-item-src {
+  margin: 0.25rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.sci-chip {
+  padding: 0.05rem 0.45rem;
+  border-radius: 6px;
+  background: rgba(126, 170, 255, 0.14);
+  color: var(--text-muted);
+  font-size: 0.74rem;
+}
+
+.sci-kv {
+  margin-top: 0.4rem;
+  font-size: 0.86rem;
+}
+
+.sci-kv dd {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.sci-kv-compact {
+  font-size: 0.82rem;
+}
+
+.sci-note {
+  margin: 0.4rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.sci-unknown {
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.sci-retrieved {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.sci-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  padding: 0.1em 0.5em;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.sci-tag .icon {
+  width: 1em;
+  height: 1em;
+}
+
+.sci-tag-discovered {
+  color: var(--success);
+}
+
+.sci-tag-disputed {
+  color: var(--warning);
+}
+
+.sci-tag-open {
+  color: var(--success);
+}
+
+.sci-tag-planned {
+  border-style: dashed;
+  color: var(--text-muted);
+}
+
+.sci-facts {
+  gap: 0.6rem;
+}
+
+.sci-fact {
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.sci-solar-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 0.3rem 0.8rem;
+  margin: 0;
+  padding-left: 1.4rem;
+}
+
+.sci-solar-list li {
+  font-size: 0.88rem;
+}
+
+.sci-solar-list .sci-chip {
+  margin-left: 0.4rem;
+}
+
+.sci-planets .sci-note .badge {
+  margin-right: 0.2rem;
+}
+
+.enc .source-link,
+.gmap-card .source-link {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
