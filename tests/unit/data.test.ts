@@ -1,0 +1,137 @@
+import { describe, expect, it } from 'vitest';
+import {
+  equatorialToCartesian,
+  parallaxToLightYears,
+  propagatePosition,
+} from '../../src/data/coords.ts';
+import { ASTROMETRY, EXOPLANETS, SYSTEMS, getSystem } from '../../src/data/systems.ts';
+import { reachableSystems, validateDataset } from '../../src/data/validate.ts';
+import { findRoute, jumpFee } from '../../src/galaxy/routing.ts';
+import type { StarSystemRecord } from '../../src/data/types.ts';
+
+describe('coordinate conversion', () => {
+  it('maps RA/Dec/distance onto the documented equatorial axes', () => {
+    const [x, y, z] = equatorialToCartesian(0, 0, 1);
+    expect(x).toBeCloseTo(1, 12);
+    expect(y).toBeCloseTo(0, 12);
+    expect(z).toBeCloseTo(0, 12);
+    const north = equatorialToCartesian(123, 90, 2);
+    expect(north[2]).toBeCloseTo(2, 12);
+    const ra90 = equatorialToCartesian(90, 0, 3);
+    expect(ra90[1]).toBeCloseTo(3, 12);
+  });
+
+  it('converts parallax to light-years', () => {
+    // 1000 mas = 1 parsec = 3.26156 ly
+    expect(parallaxToLightYears(1000)).toBeCloseTo(3.261564, 5);
+    expect(() => parallaxToLightYears(0)).toThrow();
+  });
+
+  it('propagates proper motion linearly', () => {
+    const moved = propagatePosition(10, 0, 0, 3_600_000, 2000, 2001);
+    expect(moved.decDeg).toBeCloseTo(1, 9);
+    expect(moved.raDeg).toBeCloseTo(10, 9);
+  });
+});
+
+describe('bundled dataset', () => {
+  it('passes validation with no errors', () => {
+    const issues = validateDataset({ systems: SYSTEMS, astrometry: ASTROMETRY, exoplanets: EXOPLANETS });
+    expect(issues.filter((i) => i.level === 'error')).toEqual([]);
+  });
+
+  it('contains exactly the five prototype systems, all reachable from Sol', () => {
+    expect(SYSTEMS.map((s) => s.id).sort()).toEqual(
+      ['alpha-centauri', 'barnard', 'epsilon-eridani', 'sirius', 'sol'].sort(),
+    );
+    expect(reachableSystems(SYSTEMS, 'sol').size).toBe(5);
+  });
+
+  it('keeps distances within the familiar published approximations', () => {
+    expect(getSystem('alpha-centauri').distanceLightYears).toBeGreaterThan(4.2);
+    expect(getSystem('alpha-centauri').distanceLightYears).toBeLessThan(4.45);
+    expect(getSystem('barnard').distanceLightYears).toBeCloseTo(6, 0);
+    expect(getSystem('sirius').distanceLightYears).toBeCloseTo(8.6, 1);
+    expect(getSystem('epsilon-eridani').distanceLightYears).toBeCloseTo(10.5, 1);
+  });
+
+  it('keeps Proxima distinct from the Alpha Centauri A/B pair', () => {
+    const a = ASTROMETRY.stars.find((s) => s.id === 'alpha-centauri-a')!;
+    const proxima = ASTROMETRY.stars.find((s) => s.id === 'proxima-centauri')!;
+    const sep = Math.hypot(
+      a.positionLy[0] - proxima.positionLy[0],
+      a.positionLy[1] - proxima.positionLy[1],
+      a.positionLy[2] - proxima.positionLy[2],
+    );
+    // Proxima lies roughly 0.2 ly (about 13,000 AU) from A/B.
+    expect(sep).toBeGreaterThan(0.1);
+    expect(sep).toBeLessThan(0.3);
+    expect(proxima.parentId).toBe('alpha-centauri-a');
+  });
+
+  it('bundles only confirmed planets, including Proxima b', () => {
+    expect(EXOPLANETS.planets.every((p) => p.status === 'confirmed')).toBe(true);
+    expect(EXOPLANETS.planets.some((p) => p.archiveName === 'Proxima Cen b')).toBe(true);
+    const alphaCen = getSystem('alpha-centauri');
+    expect(alphaCen.confirmedBodies.every((p) => p.hostId === 'proxima-centauri')).toBe(true);
+    expect(getSystem('sirius').confirmedBodies).toEqual([]);
+  });
+
+  it('flags every game location as fiction and has a functional dock in every system', () => {
+    for (const s of SYSTEMS) {
+      expect(s.fictionalLocations.every((l) => l.fictional === true)).toBe(true);
+      expect(s.fictionalLocations.some((l) => l.status === 'functional' && l.services.length > 0)).toBe(true);
+    }
+  });
+});
+
+describe('validation catches broken data', () => {
+  const clone = <T>(v: T): T => structuredClone(v) as T;
+
+  it('detects an unreachable system and an asymmetric link', () => {
+    const systems = clone(SYSTEMS) as StarSystemRecord[];
+    const eps = systems.find((s) => s.id === 'epsilon-eridani')!;
+    const sirius = systems.find((s) => s.id === 'sirius')!;
+    sirius.jumpLinks = sirius.jumpLinks.filter((l) => l !== 'epsilon-eridani');
+    const codes = validateDataset({ systems, astrometry: ASTROMETRY, exoplanets: EXOPLANETS }).map((i) => i.code);
+    expect(codes).toContain('jump-asymmetric');
+    eps.jumpLinks = [];
+    const codes2 = validateDataset({ systems, astrometry: ASTROMETRY, exoplanets: EXOPLANETS }).map((i) => i.code);
+    expect(codes2).toContain('unreachable');
+  });
+
+  it('detects bad ranges, missing parents, duplicate ids and candidate planets', () => {
+    const astrometry = clone(ASTROMETRY);
+    astrometry.stars[0]!.decDegrees = 123;
+    astrometry.stars[2]!.parentId = 'nope';
+    astrometry.stars.push({ ...astrometry.stars[1]! });
+    const exoplanets = clone(EXOPLANETS);
+    (exoplanets.planets[0] as { status: string }).status = 'candidate';
+    exoplanets.planets[1]!.sourceUrl = 'http://insecure.example';
+    const codes = validateDataset({ systems: SYSTEMS, astrometry, exoplanets }).map((i) => i.code);
+    expect(codes).toEqual(
+      expect.arrayContaining(['dec-range', 'companion-parent', 'duplicate-id', 'planet-status', 'source-url']),
+    );
+  });
+});
+
+describe('jump routing', () => {
+  it('finds the direct link to Alpha Centauri with distance-based fee', () => {
+    const route = findRoute(SYSTEMS, 'sol', 'alpha-centauri')!;
+    expect(route.path).toEqual(['sol', 'alpha-centauri']);
+    expect(route.totalDistanceLy).toBeCloseTo(getSystem('alpha-centauri').distanceLightYears, 9);
+    expect(route.totalFee).toBe(jumpFee(route.totalDistanceLy));
+  });
+
+  it('routes to Epsilon Eridani through Sirius', () => {
+    const route = findRoute(SYSTEMS, 'sol', 'epsilon-eridani')!;
+    expect(route.path).toEqual(['sol', 'sirius', 'epsilon-eridani']);
+    expect(route.hops).toHaveLength(2);
+    expect(route.totalFee).toBe(route.hops[0]!.fee + route.hops[1]!.fee);
+  });
+
+  it('returns a zero-hop route to the current system and fees grow with distance', () => {
+    expect(findRoute(SYSTEMS, 'barnard', 'barnard')!.hops).toHaveLength(0);
+    expect(jumpFee(8)).toBeGreaterThan(jumpFee(4));
+  });
+});

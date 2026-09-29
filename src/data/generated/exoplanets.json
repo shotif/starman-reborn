@@ -1,0 +1,160 @@
+{
+  "generatedBy": "scripts/build-dataset.ts",
+  "input": "data/provisional/exoplanets-input.json",
+  "verification": "provisional",
+  "asOfDate": "pending snapshot",
+  "description": "Stopgap planet list naming only planets widely reported as confirmed in the NASA Exoplanet Archive. Numeric parameters are deliberately omitted until `npm run data:snapshot` captures the archive's own values and status.",
+  "source": {
+    "label": "NASA Exoplanet Archive",
+    "url": "https://exoplanetarchive.ipac.caltech.edu/"
+  },
+  "planets": [
+    {
+      "id": "proxima-cen-b",
+      "archiveName": "Proxima Cen b",
+      "displayName": "Proxima Centauri b",
+      "hostId": "proxima-centauri",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/Proxima%20Cen%20b",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2016,
+      "discoveryMethod": "Radial Velocity",
+      "unknowns": [
+        "mass",
+        "radius",
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "proxima-cen-d",
+      "archiveName": "Proxima Cen d",
+      "displayName": "Proxima Centauri d",
+      "hostId": "proxima-centauri",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/Proxima%20Cen%20d",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2022,
+      "discoveryMethod": "Radial Velocity",
+      "unknowns": [
+        "mass",
+        "radius",
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "barnard-b",
+      "archiveName": "Barnard b",
+      "displayName": "Barnard's Star b",
+      "hostId": "barnards-star",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/Barnard%20b",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2024,
+      "discoveryMethod": "Radial Velocity",
+      "unknowns": [
+        "mass",
+        "radius",
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "barnard-c",
+      "archiveName": "Barnard c",
+      "displayName": "Barnard's Star c",
+      "hostId": "barnards-star",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/Barnard%20c",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2025,
+      "discoveryMethod": "Radial Velocity",
+      "unknowns": [
+        "mass",
+        "radius",
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "barnard-d",
+      "archiveName": "Barnard d",
+      "displayName": "Barnard's Star d",
+      "hostId": "barnards-star",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/Barnard%20d",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2025,
+      "discoveryMethod": "Radial Velocity",
+      "unknowns": [
+        "mass",
+        "radius",
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "barnard-e",
+      "archiveName": "Barnard e",
+      "displayName": "Barnard's Star e",
+      "hostId": "barnards-star",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/Barnard%20e",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2025,
+      "discoveryMethod": "Radial Velocity",
+      "unknowns": [
+        "mass",
+        "radius",
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "eps-eri-b",
+      "archiveName": "eps Eri b",
+      "displayName": "Epsilon Eridani b",
+      "hostId": "epsilon-eridani",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/eps%20Eri%20b",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2000,
+      "discoveryMethod": "Radial Velocity",
+      "unknowns": [
+        "mass",
+        "radius",
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    }
+  ]
+}

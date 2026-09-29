@@ -1,0 +1,15 @@
+{
+  "kind": "provisional",
+  "retrieved": null,
+  "description": "Stopgap planet list naming only planets widely reported as confirmed in the NASA Exoplanet Archive. Numeric parameters are deliberately omitted until `npm run data:snapshot` captures the archive's own values and status.",
+  "source": { "label": "NASA Exoplanet Archive", "url": "https://exoplanetarchive.ipac.caltech.edu/" },
+  "planets": [
+    { "archiveName": "Proxima Cen b", "hostId": "proxima-centauri", "discoveryYear": 2016, "discoveryMethod": "Radial Velocity", "controversial": false },
+    { "archiveName": "Proxima Cen d", "hostId": "proxima-centauri", "discoveryYear": 2022, "discoveryMethod": "Radial Velocity", "controversial": false },
+    { "archiveName": "Barnard b", "hostId": "barnards-star", "discoveryYear": 2024, "discoveryMethod": "Radial Velocity", "controversial": false },
+    { "archiveName": "Barnard c", "hostId": "barnards-star", "discoveryYear": 2025, "discoveryMethod": "Radial Velocity", "controversial": false },
+    { "archiveName": "Barnard d", "hostId": "barnards-star", "discoveryYear": 2025, "discoveryMethod": "Radial Velocity", "controversial": false },
+    { "archiveName": "Barnard e", "hostId": "barnards-star", "discoveryYear": 2025, "discoveryMethod": "Radial Velocity", "controversial": false },
+    { "archiveName": "eps Eri b", "hostId": "epsilon-eridani", "discoveryYear": 2000, "discoveryMethod": "Radial Velocity", "controversial": false }
+  ]
+}

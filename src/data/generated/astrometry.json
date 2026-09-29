@@ -1,0 +1,334 @@
+{
+  "generatedBy": "scripts/build-dataset.ts",
+  "input": "data/provisional/astrometry-input.json",
+  "verification": "provisional",
+  "retrieved": null,
+  "description": "Stopgap values transcribed from the cited catalogs without machine verification, used only until `npm run data:snapshot` captures a dated archive snapshot. Positions are ICRS J2000.0 as listed by SIMBAD (Gaia DR3 stars: the Gaia DR3 J2016.0 values) and are propagated to the target epoch by scripts/build-dataset.ts.",
+  "frame": "ICRS",
+  "referenceEpoch": 2016,
+  "stars": [
+    {
+      "id": "alpha-centauri-a",
+      "name": "Alpha Centauri A",
+      "systemId": "alpha-centauri",
+      "role": "primary",
+      "catalogIds": {
+        "hip": "HIP 71683",
+        "simbad": "alf Cen A"
+      },
+      "spectralType": "G2V",
+      "spectralTypeSource": {
+        "label": "SIMBAD",
+        "url": "https://simbad.cds.unistra.fr/simbad/sim-id?Ident=alf+Cen+A"
+      },
+      "raDegrees": 219.86850518742222,
+      "decDegrees": -60.8318878,
+      "properMotion": {
+        "raMasYr": -3679.25,
+        "decMasYr": 473.67
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 750.81,
+      "parallaxErrorMas": 0.38,
+      "distanceLightYears": 4.344060117962511,
+      "distanceErrorLightYears": 0.002198615954536773,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "SIMBAD",
+        "url": "https://simbad.cds.unistra.fr/simbad/sim-id?Ident=alf+Cen+A",
+        "recordId": "alf Cen A"
+      },
+      "parallaxSource": {
+        "label": "Akeson et al. 2021",
+        "url": "https://ui.adsabs.harvard.edu/abs/2021AJ....162...14A",
+        "bibcode": "2021AJ....162...14A"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        -1.6249736881425083,
+        -1.3571718968778823,
+        -3.7932048802617935
+      ],
+      "colorHex": "#fff3e2"
+    },
+    {
+      "id": "alpha-centauri-b",
+      "name": "Alpha Centauri B",
+      "systemId": "alpha-centauri",
+      "role": "companion",
+      "parentId": "alpha-centauri-a",
+      "catalogIds": {
+        "hip": "HIP 71681",
+        "simbad": "alf Cen B"
+      },
+      "spectralType": "K1V",
+      "spectralTypeSource": {
+        "label": "SIMBAD",
+        "url": "https://simbad.cds.unistra.fr/simbad/sim-id?Ident=alf+Cen+B"
+      },
+      "raDegrees": 219.86313178662897,
+      "decDegrees": -60.8339592,
+      "properMotion": {
+        "raMasYr": -3614.39,
+        "decMasYr": 802.98
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 750.81,
+      "parallaxErrorMas": 0.38,
+      "distanceLightYears": 4.344060117962511,
+      "distanceErrorLightYears": 0.002198615954536773,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "SIMBAD",
+        "url": "https://simbad.cds.unistra.fr/simbad/sim-id?Ident=alf+Cen+B",
+        "recordId": "alf Cen B"
+      },
+      "parallaxSource": {
+        "label": "Akeson et al. 2021",
+        "url": "https://ui.adsabs.harvard.edu/abs/2021AJ....162...14A",
+        "bibcode": "2021AJ....162...14A"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        -1.6249956987016294,
+        -1.3569315969000173,
+        -3.7932814196956217
+      ],
+      "colorHex": "#ffd6a8"
+    },
+    {
+      "id": "proxima-centauri",
+      "name": "Proxima Centauri",
+      "systemId": "alpha-centauri",
+      "role": "companion",
+      "parentId": "alpha-centauri-a",
+      "catalogIds": {
+        "gaiaDr3": "Gaia DR3 5853498713190525696",
+        "hip": "HIP 70890",
+        "simbad": "Proxima Centauri"
+      },
+      "spectralType": "M5.5Ve",
+      "spectralTypeSource": {
+        "label": "SIMBAD",
+        "url": "https://simbad.cds.unistra.fr/simbad/sim-id?Ident=Proxima+Centauri"
+      },
+      "raDegrees": 217.39232149999998,
+      "decDegrees": -62.6760751,
+      "properMotion": {
+        "raMasYr": -3781.74,
+        "decMasYr": 769.47
+      },
+      "catalogEpoch": 2016,
+      "parallaxMas": 768.0665,
+      "parallaxErrorMas": 0.0499,
+      "distanceLightYears": 4.246460140062655,
+      "distanceErrorLightYears": 0.00027588543568704847,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "Gaia DR3",
+        "url": "https://gea.esac.esa.int/archive/",
+        "recordId": "Gaia DR3 5853498713190525696"
+      },
+      "parallaxSource": {
+        "label": "Gaia DR3",
+        "url": "https://gea.esac.esa.int/archive/",
+        "recordId": "Gaia DR3 5853498713190525696"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        -1.5486416082388972,
+        -1.1836970883940556,
+        -3.7726640578375936
+      ],
+      "colorHex": "#ff8f66"
+    },
+    {
+      "id": "barnards-star",
+      "name": "Barnard's Star",
+      "systemId": "barnard",
+      "role": "primary",
+      "catalogIds": {
+        "gaiaDr3": "Gaia DR3 4472832130942575872",
+        "hip": "HIP 87937",
+        "simbad": "Barnard's star"
+      },
+      "spectralType": "M4V",
+      "spectralTypeSource": {
+        "label": "SIMBAD",
+        "url": "https://simbad.cds.unistra.fr/simbad/sim-id?Ident=Barnard%27s+star"
+      },
+      "raDegrees": 269.4485025,
+      "decDegrees": 4.7394201,
+      "properMotion": {
+        "raMasYr": -801.55,
+        "decMasYr": 10362.39
+      },
+      "catalogEpoch": 2016,
+      "parallaxMas": 546.9759,
+      "parallaxErrorMas": 0.0401,
+      "distanceLightYears": 5.962902162905957,
+      "distanceErrorLightYears": 0.0004371534042588145,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "Gaia DR3",
+        "url": "https://gea.esac.esa.int/archive/",
+        "recordId": "Gaia DR3 4472832130942575872"
+      },
+      "parallaxSource": {
+        "label": "Gaia DR3",
+        "url": "https://gea.esac.esa.int/archive/",
+        "recordId": "Gaia DR3 4472832130942575872"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        -0.05719846824463583,
+        -5.942238384454527,
+        0.49267993863590165
+      ],
+      "colorHex": "#ff9a6b"
+    },
+    {
+      "id": "sirius-a",
+      "name": "Sirius A",
+      "systemId": "sirius",
+      "role": "primary",
+      "catalogIds": {
+        "hip": "HIP 32349",
+        "simbad": "alf CMa A"
+      },
+      "spectralType": "A1V",
+      "spectralTypeSource": {
+        "label": "SIMBAD",
+        "url": "https://simbad.cds.unistra.fr/simbad/sim-id?Ident=alf+CMa+A"
+      },
+      "raDegrees": 101.28462117917343,
+      "decDegrees": -16.721551866666665,
+      "properMotion": {
+        "raMasYr": -546.01,
+        "decMasYr": -1223.07
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 379.21,
+      "parallaxErrorMas": 1.58,
+      "distanceLightYears": 8.600943480307569,
+      "distanceErrorLightYears": 0.03583631945066311,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "SIMBAD",
+        "url": "https://simbad.cds.unistra.fr/simbad/sim-id?Ident=alf+CMa+A",
+        "recordId": "alf CMa A"
+      },
+      "parallaxSource": {
+        "label": "Hipparcos, new reduction (van Leeuwen 2007)",
+        "url": "https://vizier.cds.unistra.fr/viz-bin/VizieR-5?-source=I/311/hip2&HIP=32349",
+        "recordId": "HIP 32349",
+        "bibcode": "2007A&A...474..653V"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        -1.611888598499991,
+        8.077997971731255,
+        -2.4746702136197296
+      ],
+      "colorHex": "#d4e0ff"
+    },
+    {
+      "id": "sirius-b",
+      "name": "Sirius B",
+      "systemId": "sirius",
+      "role": "companion",
+      "parentId": "sirius-a",
+      "catalogIds": {
+        "simbad": "alf CMa B"
+      },
+      "spectralType": "DA2",
+      "spectralTypeSource": {
+        "label": "SIMBAD",
+        "url": "https://simbad.cds.unistra.fr/simbad/sim-id?Ident=alf+CMa+B"
+      },
+      "raDegrees": 101.28462117917343,
+      "decDegrees": -16.721551866666665,
+      "properMotion": {
+        "raMasYr": -546.01,
+        "decMasYr": -1223.07
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 379.21,
+      "parallaxErrorMas": 1.58,
+      "distanceLightYears": 8.600943480307569,
+      "distanceErrorLightYears": 0.03583631945066311,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "SIMBAD",
+        "url": "https://simbad.cds.unistra.fr/simbad/sim-id?Ident=alf+CMa+A",
+        "recordId": "alf CMa A"
+      },
+      "parallaxSource": {
+        "label": "Hipparcos, new reduction (van Leeuwen 2007)",
+        "url": "https://vizier.cds.unistra.fr/viz-bin/VizieR-5?-source=I/311/hip2&HIP=32349",
+        "recordId": "HIP 32349",
+        "bibcode": "2007A&A...474..653V"
+      },
+      "positionNote": "Sirius B is about 10 arcseconds from Sirius A; at map scale it is plotted at the Sirius A position and parallax.",
+      "verification": "provisional",
+      "positionLy": [
+        -1.611888598499991,
+        8.077997971731255,
+        -2.4746702136197296
+      ],
+      "colorHex": "#eef2ff"
+    },
+    {
+      "id": "epsilon-eridani",
+      "name": "Epsilon Eridani",
+      "systemId": "epsilon-eridani",
+      "role": "primary",
+      "catalogIds": {
+        "gaiaDr3": "Gaia DR3 5164707970261890560",
+        "hip": "HIP 16537",
+        "simbad": "eps Eri"
+      },
+      "spectralType": "K2V",
+      "spectralTypeSource": {
+        "label": "SIMBAD",
+        "url": "https://simbad.cds.unistra.fr/simbad/sim-id?Ident=eps+Eri"
+      },
+      "raDegrees": 53.2282687,
+      "decDegrees": -9.4581646,
+      "properMotion": {
+        "raMasYr": -974.76,
+        "decMasYr": 20.88
+      },
+      "catalogEpoch": 2016,
+      "parallaxMas": 310.5773,
+      "parallaxErrorMas": 0.1355,
+      "distanceLightYears": 10.50161675424261,
+      "distanceErrorLightYears": 0.004581690516982,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "Gaia DR3",
+        "url": "https://gea.esac.esa.int/archive/",
+        "recordId": "Gaia DR3 5164707970261890560"
+      },
+      "parallaxSource": {
+        "label": "Gaia DR3",
+        "url": "https://gea.esac.esa.int/archive/",
+        "recordId": "Gaia DR3 5164707970261890560"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        6.20110613150503,
+        8.297721656117236,
+        -1.725703484496353
+      ],
+      "colorHex": "#ffcb94"
+    }
+  ]
+}

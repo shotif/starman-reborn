@@ -1,0 +1,40 @@
+{
+  "name": "starman-reborn",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Browser space trading and combat prototype set among real nearby stars.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "dev:host": "vite --host",
+    "dev:https": "vite --host --mode https",
+    "build": "vite build",
+    "preview": "vite preview --host",
+    "preview:https": "vite preview --host --mode https",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "data:snapshot": "node scripts/fetch-astro-snapshot.ts",
+    "data:build": "node scripts/build-dataset.ts",
+    "data:validate": "node scripts/validate-data.ts",
+    "screenshots": "playwright test --project=screenshots",
+    "check": "npm run typecheck && npm run data:validate && npm test && npm run build"
+  },
+  "dependencies": {
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "@types/node": "22.20.4",
+    "@types/three": "0.186.0",
+    "@vitejs/plugin-basic-ssl": "2.3.0",
+    "fake-indexeddb": "6.2.5",
+    "typescript": "7.0.2",
+    "vite": "8.3.1",
+    "vitest": "5.0.2"
+  }
+}
