@@ -4,6 +4,7 @@ import { applyDamage, regenerate, type Durability } from '../../src/combat/damag
 import { clampToCone, interceptTime, leadPoint } from '../../src/combat/lead.ts';
 import { Gun, GUN_ARC, ProjectileSystem, segmentHitsSphere } from '../../src/combat/weapons.ts';
 import { flyTo } from '../../src/flight/autopilot.ts';
+import { ChaseCamera } from '../../src/flight/ChaseCamera.ts';
 import { TouchControlsModel, VirtualStick } from '../../src/flight/input/touchModel.ts';
 import { shapeAxis } from '../../src/flight/input/types.ts';
 import { neutralControls, PLAYER_SHIP, ShipBody, stepBounded } from '../../src/flight/ShipBody.ts';
@@ -124,6 +125,21 @@ describe('flight model', () => {
     }
     ship.lookAlong(new THREE.Vector3(0, 0, 1));
     expect(ship.up().y).toBeGreaterThan(0.99);
+  });
+
+  it('chase camera widens the vertical FOV on portrait screens only', () => {
+    const cam = new THREE.PerspectiveCamera(50, 16 / 10, 0.1, 1000);
+    const chase = new ChaseCamera(cam);
+    chase.snap(new ShipBody(PLAYER_SHIP));
+    expect(cam.fov).toBeCloseTo(chase.baseFov, 6);
+    for (const aspect of [390 / 844, 360 / 640, 768 / 1024]) {
+      cam.aspect = aspect;
+      chase.snap(new ShipBody(PLAYER_SHIP));
+      expect(cam.fov).toBeGreaterThan(chase.baseFov);
+      expect(cam.fov).toBeLessThanOrEqual(chase.maxFov);
+      const horizontal = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(cam.fov) / 2) * aspect));
+      expect(horizontal).toBeGreaterThan(chase.minHorizontalFov - 20);
+    }
   });
 
   it('bounded stepping splits a long frame into small steps', () => {

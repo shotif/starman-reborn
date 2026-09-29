@@ -168,13 +168,12 @@
 .tlabel {
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.02em;
   line-height: 1;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  padding: 0 4px;
+  padding: 0 2px;
 }
 
 .tbtn.pressed {
@@ -420,6 +419,18 @@
 
   .tbtn.drift {
     display: none;
+  }
+
+  /* The right column is full here, so the chip sits above the Cruise/Go To pair. */
+  .assist-chip {
+    right: auto;
+    left: calc(var(--safe-left) + 66px);
+    bottom: calc(var(--cluster-bottom) + var(--btn) + 12px);
+  }
+
+  .touch-controls.swapped .assist-chip {
+    left: auto;
+    right: calc(var(--safe-right) + 66px);
   }
 }
 

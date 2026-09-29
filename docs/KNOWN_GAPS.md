@@ -31,9 +31,10 @@ This is an honest list of what the prototype does not do yet, or what has not be
   or home bar.
 - **WebGL context loss** is handled (overlay with reload, automatic resume on restore) but was not
   forced in automated tests.
-- **Transferred size on mobile networks.** Measured from the production build: about 210 KB
-  gzipped for the first scene (JavaScript + CSS + HTML). The High preset lazily fetches another
-  ~5 KB for bloom. Real-network timings were not measured.
+- **Transferred size on mobile networks.** Measured from the production build: about 288 KB
+  gzipped for the first scene (three.js 149 KB, game code 124 KB, addons 7 KB, CSS 7 KB, HTML).
+  Loaded on demand: the star map (~19 KB) on first open, the science notes (~11 KB), and bloom
+  (~4 KB) on the High preset only. Real-network timings were not measured.
 
 ## Deliberate prototype limits
 

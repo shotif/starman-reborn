@@ -11,11 +11,11 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | --- | --- | --- |
 | TypeScript typecheck (app + scripts/tests) | `npm run typecheck` | Pass |
 | Astronomy data validation | `npm run data:validate` | Pass (2 warnings: data is provisional) |
-| Unit tests | `npm test` | RESULT_UNIT |
+| Unit tests | `npm test` | Pass: 137 tests in 7 files |
 | Production build | `npm run build` | Pass |
-| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | RESULT_DESKTOP |
-| Browser tests, touch 844×390 | `npx playwright test --project=touch` | RESULT_TOUCH |
-| Layout screenshots + audits, 7 sizes | `npm run screenshots` | RESULT_SCREENS |
+| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 7 passed (3 touch-only tests skipped) |
+| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 9 passed (1 desktop-only test skipped) |
+| Layout screenshots + audits, 7 sizes | `npm run screenshots` | Pass: 35 screenshots, no audit findings |
 
 ### Unit tests (Vitest)
 
@@ -33,8 +33,9 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   load, reset keeps settings, settings sanitising.
 - `flight.test.ts`: **pointer ownership for the two touch sticks** (third finger, wrong-pointer
   moves, cancel, hold button), frame-rate independence (30 Hz vs 120 Hz), drift, boost/cruise,
-  bounded sub-steps, autopilot arrival, intercept maths, a lead shot hitting an off-axis crossing
-  target, gun-arc clamping, shield/hull damage and regeneration.
+  bounded sub-steps, ship orientation, autopilot arrival, the portrait camera field of view,
+  intercept maths, a lead shot hitting an off-axis crossing target, gun-arc clamping, shield/hull
+  damage and regeneration.
 - `galaxy-map.test.ts`: camera-relative transforms, orbit controller, projection and label layout,
   jump-button rules.
 - `audio.test.ts`: music theory, deterministic seeded patterns, mood definitions, voice limits,
@@ -70,15 +71,17 @@ touch input is real Chromium touch events sent over the DevTools protocol.
     following the visible cursor.
 - `screenshots.spec.ts`: title, contract board, buy dialog, flight HUD and star map at 360×640,
   640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900 (saved in `docs/screenshots/`).
-  Each is audited for page scroll overflow, clipped controls, text under 10 px, touch targets
-  under 40 px and overlapping HUD panels.
+  Each is audited for page scroll overflow, clipped controls (controls inside a scrolling panel
+  count only if the panel itself is off-screen), text under 10 px, touch targets under 40 px, and
+  overlaps between HUD panels, touch clusters and toasts.
 
 ## Performance notes (not representative)
 
 SwiftShader renders on the CPU, so frame rates here say nothing about real devices. Observed:
 about 8–20 fps depending on viewport, with dynamic resolution lowering the pixel ratio as
-designed. Production build transfer size for the first scene: about 210 KB gzipped (JS + CSS +
-HTML). The bloom chain (~5 KB) loads only on the High preset.
+designed. Production build transfer size for the first scene: about 288 KB gzipped (JS + CSS +
+HTML). The star map (~19 KB) and science notes (~11 KB) load on first use; the bloom chain
+(~4 KB) loads only on the High preset.
 
 ## Real-device checklist (pending — please run)
 

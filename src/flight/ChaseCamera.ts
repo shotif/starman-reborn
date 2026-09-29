@@ -10,7 +10,12 @@ export class ChaseCamera {
   readonly camera: THREE.PerspectiveCamera;
   /** Offset from the ship in camera-orientation space (behind and slightly above). */
   offset = new THREE.Vector3(0, 4.6, 25);
+  /** Vertical field of view (degrees) on landscape screens. */
   baseFov = 62;
+  /** Portrait screens widen the vertical FOV to keep at least this much across (degrees)... */
+  minHorizontalFov = 60;
+  /** ...up to this vertical limit, before the speed boost. */
+  maxFov = 88;
   shakeEnabled = true;
   reducedMotion = false;
 
@@ -61,10 +66,17 @@ export class ChaseCamera {
       this.tmpQ.setFromEuler(new THREE.Euler(Math.sin(t * 1.3) * s, Math.cos(t * 1.7) * s, Math.sin(t * 2.1) * s * 0.6));
       cam.quaternion.multiply(this.tmpQ);
     }
-    const fov = this.baseFov + this.fovBoost;
+    const fov = this.fitFov() + this.fovBoost;
     if (Math.abs(cam.fov - fov) > 0.01) {
       cam.fov = fov;
       cam.updateProjectionMatrix();
     }
+  }
+
+  /** Vertical FOV for the current aspect ratio (wider on tall screens, so the ship fits). */
+  fitFov(): number {
+    const halfH = THREE.MathUtils.degToRad(this.minHorizontalFov) / 2;
+    const needed = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(halfH) / Math.max(0.1, this.camera.aspect)));
+    return Math.min(this.maxFov, Math.max(this.baseFov, needed));
   }
 }

@@ -39,12 +39,21 @@ async function audit(page: Page, touch: boolean): Promise<AuditResult> {
     const label = (el: Element) => (el.getAttribute('data-testid') ?? el.getAttribute('aria-label') ?? el.textContent ?? el.tagName).trim().slice(0, 40);
     const topLayer = document.querySelector('.modal-backdrop, .sheet-backdrop');
     const scope = topLayer ?? document;
+    // A control inside a scrolled container only needs its container on screen: it can be
+    // scrolled into view.
+    const scrollParent = (el: Element): Element | null => {
+      for (let p = el.parentElement; p && p !== document.documentElement; p = p.parentElement) {
+        const cs = getComputedStyle(p);
+        const scrollsY = /auto|scroll/.test(cs.overflowY) && p.scrollHeight > p.clientHeight + 1;
+        const scrollsX = /auto|scroll/.test(cs.overflowX) && p.scrollWidth > p.clientWidth + 1;
+        if (scrollsX || scrollsY) return p;
+      }
+      return null;
+    };
     const clipped: string[] = [];
     for (const el of scope.querySelectorAll('button, [role="slider"], a')) {
       if (!visible(el) || el.closest('.marker') || el.closest('.hud-markers')) continue;
-      // Ignore controls inside scrollable containers that are simply scrolled out of view.
-      if (el.closest('.scroll, .table-wrap, .tabs')) continue;
-      const r = el.getBoundingClientRect();
+      const r = (scrollParent(el) ?? el).getBoundingClientRect();
       if (r.left < -1 || r.top < -1 || r.right > vw + 1 || r.bottom > vh + 1) clipped.push(label(el));
     }
     const tinyText: string[] = [];
@@ -64,7 +73,7 @@ async function audit(page: Page, touch: boolean): Promise<AuditResult> {
       }
     }
     const overlaps: string[] = [];
-    const panels = [...document.querySelectorAll('.hud-status, .hud-wallet, .hud-buttons, .hud-objective, .hud-target, .encounter-banner, .tcluster, .assist-chip, .throttle')].filter(visible);
+    const panels = [...document.querySelectorAll('.hud-status, .hud-wallet, .hud-buttons, .hud-objective, .hud-target, .encounter-banner, .tcluster, .assist-chip, .throttle, .toast')].filter(visible);
     for (let i = 0; i < panels.length; i++) {
       for (let j = i + 1; j < panels.length; j++) {
         const a = panels[i]!.getBoundingClientRect();

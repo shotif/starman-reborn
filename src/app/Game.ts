@@ -12,7 +12,7 @@ import { emptyInput, type InputScheme } from '../flight/input/types.ts';
 import type { GalaxyMapView } from '../galaxy/GalaxyMapView.ts';
 import { findRoute, type Route } from '../galaxy/routing.ts';
 import type { MapState } from '../galaxy/types.ts';
-import { button, confirmDialog, dataBadge, setModalRoot, setToastRoot, showModal, sourceLink, toast } from '../ui/components.ts';
+import { button, clearToasts, confirmDialog, dataBadge, setModalRoot, setToastRoot, showModal, sourceLink, toast } from '../ui/components.ts';
 import { formatCredits, h, signed } from '../ui/dom.ts';
 import { Hud } from '../ui/hud/Hud.ts';
 import { DockScreen } from '../ui/screens/DockScreen.ts';
@@ -693,6 +693,7 @@ export class Game {
     }
     this.modeBeforeMap = this.mode;
     this.mode = 'map';
+    clearToasts();
     this.dockScreen?.root.setAttribute('hidden', '');
     this.refreshFlightUi();
     this.map.resize(this.renderer.size.width, this.renderer.size.height);

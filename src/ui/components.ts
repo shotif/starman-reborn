@@ -182,3 +182,8 @@ export function toast(message: string, tone: 'good' | 'bad' | 'info' = 'info', m
   while (toastRoot.children.length > 4) toastRoot.firstElementChild?.remove();
   window.setTimeout(() => el.remove(), ms);
 }
+
+/** Drops any visible toasts (e.g. flight tips when a full-screen view opens). */
+export function clearToasts(): void {
+  toastRoot?.replaceChildren();
+}

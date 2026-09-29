@@ -382,7 +382,7 @@
 }
 
 .gmap-legend .badge {
-  font-size: 0.62rem;
+  font-size: 0.66rem;
 }
 
 .gmap-key > summary {
@@ -796,7 +796,7 @@
   .gmap-legend {
     max-width: 100%;
     padding: 0 0.5rem;
-    font-size: 0.64rem;
+    font-size: 0.66rem;
   }
 
   .gmap-key > summary {
