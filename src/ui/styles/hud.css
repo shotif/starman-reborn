@@ -369,8 +369,13 @@
   color: var(--fiction);
 }
 
-.marker.kind-loot {
+.marker.kind-loot,
+.marker.kind-drone {
   color: var(--warm);
+}
+
+.marker.kind-drone .marker-shape {
+  border-style: dashed;
 }
 
 .marker.kind-loot .marker-shape {

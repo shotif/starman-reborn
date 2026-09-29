@@ -74,6 +74,8 @@ export class DockScreen {
     );
     parent.appendChild(this.root);
     this.render();
+    // Keyboard users land on the station tabs.
+    this.tabBar.querySelector<HTMLButtonElement>('[aria-selected="true"]')?.focus({ preventScroll: true });
   }
 
   setTab(tab: Tab): void {

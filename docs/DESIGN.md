@@ -1,0 +1,146 @@
+# Design notes
+
+## Direction
+
+Starman Reborn takes the approachable feel of Microsoft/Digital Anvil's 2003 game *Freelancer*:
+mouse flight, trade lanes, dockable bases, a readable dogfight, factions and simple trading. It
+moves that feel into our **real** solar neighbourhood. Nothing from the original game is used:
+no dialogue, story, maps, models, logos, recordings, music or data. The title, ships, stations,
+factions, text, music and sound are original. If the project is ever distributed, Microsoft's
+[content usage guidance](https://www.microsoft.com/en-us/legal/intellectualproperty/copyright/permissions)
+is the relevant reference.
+
+The prototype is a small, complete loop (10–20 minutes). One job chain teaches every system:
+trade → fight or bypass → dock and upgrade → interstellar jump → discovery → delivery → free
+exploration.
+
+## Two scales
+
+| Scale | Units | Owner |
+| --- | --- | --- |
+| Neighbourhood map | light-years, double precision, Sol at origin, ICRS J2016.0 | `src/galaxy/` |
+| Local system scenes | game units (~1 m at ship scale), compressed and schematic | `src/world/` |
+
+Light-years never map into the flight scene. Local layouts compress real proportions so travel
+takes minutes: in Sol, Earth to Mars is about 26 km of game space, and Alpha Centauri A/B to
+Proxima is about 235 km. Every scene shows a small scale note.
+
+The map renders camera-relative: all positions stay in double precision, and each frame every
+object is placed at `worldPos − cameraPos` with the camera at the origin. Three.js already builds
+model-view matrices in double precision on the CPU, so local scenes up to ~250,000 units keep
+sub-centimetre vertex precision. The depth range is near 0.5 to far 2,000,000, and art avoids
+thin coplanar shells (atmospheres are a rim shader) to prevent z-fighting.
+
+## Flight model (`src/flight/ShipBody.ts`)
+
+- Damped arcade motion: velocity eases toward `forward × throttle speed + strafe`, with a response
+  rate of 1.6/s (0.8/s in cruise). Engines-off drift keeps the current velocity.
+- Every smoothing term is `1 − exp(−rate × dt)`, so it is frame-rate independent (unit-tested).
+  Frames are clamped to 100 ms and split into ≤1/60 s sub-steps; after a tab resume the loop
+  restarts with a zero delta, so nothing teleports.
+- Mouse flight: the cursor offset from the screen centre (with a 7% dead zone and a gentle curve)
+  sets the yaw/pitch rate. Roll levels to the scene's up axis, and the ship's visual banking is
+  cosmetic.
+- Speeds: 110 m/s at full throttle, +95 boost, 620 cruise (1.8 s spin-up), lanes 2,600–9,500 m/s.
+- Autopilot: Go To plans a route and uses a trade lane when it saves ≥20% time. Docking is an
+  approach followed by a short scripted final glide, and undocking is scripted.
+
+## Aiming and combat (`src/combat/`)
+
+- Guns fire at the **3D point under the reticle**, i.e. along the camera ray through the visible
+  cursor (desktop) or the aim-stick reticle (touch). Bolts are clamped to a 32° swivel arc around
+  the nose and inherit the ship's velocity. The reticle turns dashed outside the arc.
+- The lead marker solves the intercept `|r + v t| = s t` using the relative velocity.
+- Aim assist, touch only by default and set to Low: when the reticle is within a small radius of
+  the selected target's lead marker it is pulled part of the way toward it. The reticle shows a
+  glow when this happens. Assist never selects a target.
+- Player: Mk I shield 60 (6/s regen after 3 s), hull 100 (no regeneration), weapon energy shared
+  with boost. The pulse cannon does 9 damage per bolt at 5.5 bolts/s from alternating muzzles.
+  Missiles lock on after 0.8 s inside a 40° cone and 1.7 km.
+- The Hollow Wake raider flies attack runs with lead aiming and burst fire, breaks off to avoid
+  ramming, jinks when its shield collapses and flees below 22% hull. Difficulty scales its damage,
+  accuracy and health. The encounter lasts roughly one to two minutes and ends in one of three ways:
+  destroyed (220 cr bounty and salvage pod), escaped (80 cr), or bypassed with the one-click
+  "Avoid combat" route.
+- Losing the ship triggers a rescue to the last dock for at most 150 cr, with cargo kept.
+
+## Economy (`src/economy/`)
+
+Three commodities with different cargo sizes (medical 1, fabricator parts 2, deuterium 3) and
+fixed per-dock prices. Friendly or trusted standing improves prices by 7–12% and repairs by
+25–40%. The trade computer only uses prices the player has **seen at a visited dock** or been
+**told in a contract briefing**.
+
+Reference route with a 20-unit hold and 800 cr start. Medical supplies cost 38 at Earth, sell for
+54 at Mars and 96 at Meridian (Proxima). A full hold sold at Meridian earns +58 per unit, the jump
+fee is covered by the delivery contract, and repairs cost 2 cr per hull point. The first delivery
+also pays a 1,000 cr reward and the optional bounty adds 220 cr. Each voyage report shows its net
+profit.
+
+Upgrades: Aegis Mk II shield (60 → 110 capacity, 450 cr) and Kestrel Mk II cannon (9 → 13
+damage, 420 cr) at Deimos Depot. Missiles and repair kits are sold at most docks.
+
+## Factions and reputation
+
+- **Sol Transit Authority.** Runs Sol and the Barnard relay. +15 for destroying the raider.
+- **Frontier Cooperative.** Runs Proxima, Sirius and Epsilon Eridani stations. +20 for the first
+  delivery.
+- **Hollow Wake.** Raiders, always hostile.
+
+Standing changes dock welcome text, prices, repair discounts and contract availability. For
+example, the Sirius survey contract needs Friendly Frontier standing.
+
+## Jobs (`src/economy/jobs.ts`)
+
+Objectives are evaluated from state, so detours never break a job. Leaving for another system,
+selling the cargo, or scanning Proxima b early are all handled: the objective text adapts (e.g.
+"Jump to Alpha Centauri, then …" or "Acquire 2 more medical supplies"). The first delivery chain
+is: buy 6 medical supplies → dock at Deimos Depot (grants interstellar clearance) → scan Proxima b
+→ deliver at Meridian Outpost. The raider ambush near Mars is part of that leg. Follow-up
+contracts exist at Barnard, Meridian and Sirius.
+
+## Saves (`src/app/save/`)
+
+- The whole solo state is one versioned record (`GameState`, format v2), stored in IndexedDB. Each
+  write is a single transaction that also rotates the previous save into a backup slot.
+  localStorage is the fallback, then memory.
+- The game saves after docking, trades, rewards, jumps, discoveries and encounter outcomes, every
+  20 s in flight, and on tab hide or page hide.
+- Loading migrates older formats (v1 → v2 is covered by tests), validates the result, and falls
+  back to the backup when the main save is damaged.
+- Settings are stored separately and survive **New game** and **Reset save**.
+
+## Rendering and performance
+
+- One WebGL 2 `WebGLRenderer` is shared by flight, docked backdrops and the map. ACES tone mapping
+  and sRGB output.
+- Quality presets: Low (DPR ≤ 1, 30 fps budget), Medium (DPR ≤ 1.5) and High (DPR ≤ 2 plus bloom,
+  loaded lazily). `Auto` picks Low on touch devices and Medium on desktop. Dynamic resolution
+  lowers the pixel ratio (down to ×0.55) when frames run over budget and restores it with
+  headroom.
+- The loop stops while the tab is hidden and renders at roughly half rate on docked and menu
+  screens.
+- WebGL context loss shows a recoverable overlay with a reload path.
+- Without WebGL 2, a friendly compatibility screen still shows the 2D star map and the science
+  encyclopedia.
+
+## UI and accessibility
+
+- HTML/CSS for all text and controls; the canvas draws only the 3D scene. Sizes use rem, so the
+  Text size setting (100–150%) scales every menu and the HUD.
+- States always pair colour with a shape and a word: hostile ◆ diamonds with "Hostile" text,
+  station squares, dotted planet circles, and Observed / Illustrated / Fiction / Pending
+  verification badges with icons.
+- Menus work by keyboard (visible focus rings, focus trapping in dialogs, Esc to close) and by
+  touch (≥44 px targets).
+- Reduced motion calms effects and removes the speed FOV. Camera shake and bloom each have a
+  toggle.
+- Touch-action `none` applies only to the flight canvas, stick zones, buttons and slider; menus
+  scroll normally. Every edge-anchored control respects safe-area insets.
+
+## Audio (`src/audio/`)
+
+Everything is synthesized at runtime with Web Audio. There are generative music moods per system,
+plus docked, map and title moods, and a combat layer. The 32 sound effects and a continuous engine
+hum are also synthesized. The AudioContext is created inside a user gesture (iOS-safe unlock),
+suspends while the page is hidden, and a limiter keeps peaks below 0 dBFS.

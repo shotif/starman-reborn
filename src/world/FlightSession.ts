@@ -71,6 +71,19 @@ interface NpcShip {
   encounter: EncounterDef;
 }
 
+interface Drone {
+  id: string;
+  art: ArtObject<THREE.Group>;
+  center: THREE.Vector3;
+  phase: number;
+  radius: number;
+  position: THREE.Vector3;
+  velocity: THREE.Vector3;
+  hull: number;
+  respawnIn: number;
+  target: Target;
+}
+
 interface LootPod {
   art: ArtObject<THREE.Group>;
   position: THREE.Vector3;
@@ -138,9 +151,12 @@ export class FlightSession {
   private readonly npcs: NpcShip[] = [];
   private readonly missiles: Missile[] = [];
   private readonly loot: LootPod[] = [];
+  private readonly drones: Drone[] = [];
   private readonly effects: TransientEffect[] = [];
   private readonly controls = neutralControls();
   private autopilot: Autopilot = { mode: 'none' };
+  private launchedFrom: string | null = null;
+  private launchTime = 0;
   private throttle = 0;
   private drift = false;
   private selectedId: string | null = null;
@@ -226,6 +242,8 @@ export class FlightSession {
       p.lookAlong(site.approach);
       const to = site.dockPoint.clone().addScaledVector(site.approach, 260);
       this.autopilot = { mode: 'undock', site, t: 0, from: site.dockPoint.clone(), to };
+      this.launchedFrom = spawn.locationId;
+      this.launchTime = this.time;
       this.throttle = 0.35;
       this.sfx('undock');
     } else if (spawn.kind === 'arrival') {
@@ -240,6 +258,7 @@ export class FlightSession {
       p.quaternion.copy(spawn.quaternion);
       this.throttle = 0;
     }
+    this.spawnPracticeDrones();
     this.syncPlayerArt(0);
     this.chase.snap(p);
     // Encounters already resolved in this save never retrigger.
@@ -261,7 +280,19 @@ export class FlightSession {
   }
 
   setObjective(locationId: string | null, bodyId: string | null): void {
+    const prevId = this.objectiveTargetId();
     this.objective = { locationId, bodyId };
+    const nextId = this.objectiveTargetId();
+    // Keep guiding: if the player had the old objective selected, select the new one.
+    if (prevId !== nextId && (this.selectedId === null || this.selectedId === prevId) && nextId && this.findTarget(nextId)) {
+      this.selectedId = nextId;
+    }
+  }
+
+  private objectiveTargetId(): string | null {
+    if (this.objective.locationId) return `station:${this.objective.locationId}`;
+    if (this.objective.bodyId) return `planet:${this.objective.bodyId}`;
+    return null;
   }
 
   // ---------------------------------------------------------------- queries
@@ -301,12 +332,105 @@ export class FlightSession {
     for (const t of this.system.targets) if (t.alive) list.push(t);
     for (const n of this.npcs) if (n.target.alive) list.push(n.target);
     for (const l of this.loot) if (l.target.alive) list.push(l.target);
+    for (const d of this.drones) if (d.target.alive) list.push(d.target);
     return list;
   }
 
+  // ---------------------------------------------------------------- practice drones
+
+  private spawnPracticeDrones(): void {
+    const range = this.system.def.practice;
+    if (!range || this.drones.length) return;
+    for (let i = 0; i < range.count; i++) {
+      const art = createCargoPod(this.ctx);
+      art.object.scale.setScalar(2.2);
+      this.system.scene.add(art.object);
+      const position = new THREE.Vector3();
+      const velocity = new THREE.Vector3();
+      const center = range.center.clone().add(new THREE.Vector3((i - 1) * 420, (i % 2) * 120, (i - 1) * -180));
+      const drone: Drone = {
+        id: `drone-${i}`,
+        art,
+        center,
+        phase: (i * Math.PI * 2) / range.count,
+        radius: range.radius,
+        position,
+        velocity,
+        hull: 27,
+        respawnIn: 0,
+        target: {
+          id: `drone:${i}`,
+          name: `Practice drone ${i + 1}`,
+          kind: 'drone',
+          position,
+          velocity,
+          radius: 7,
+          subtitle: 'Training target · aim practice, no reward',
+          dataClass: 'fictional',
+          hostile: false,
+          alive: true,
+          cycle: true,
+        },
+      };
+      this.placeDrone(drone, 0);
+      this.drones.push(drone);
+    }
+  }
+
+  private placeDrone(d: Drone, dt: number): void {
+    d.phase += dt * 0.35;
+    const prev = this.tmp2.copy(d.position);
+    d.position.set(
+      d.center.x + Math.cos(d.phase) * d.radius,
+      d.center.y + Math.sin(d.phase * 1.7) * d.radius * 0.35,
+      d.center.z + Math.sin(d.phase) * d.radius,
+    );
+    if (dt > 0) d.velocity.copy(d.position).sub(prev).divideScalar(dt);
+    d.art.object.position.copy(d.position);
+  }
+
+  private updateDrones(dt: number): void {
+    for (const d of this.drones) {
+      if (!d.target.alive) {
+        d.respawnIn -= dt;
+        if (d.respawnIn <= 0) {
+          d.hull = 27;
+          d.target.alive = true;
+          d.art.object.visible = true;
+        }
+        continue;
+      }
+      this.placeDrone(d, dt);
+      d.art.update?.(dt, this.time, this.camera);
+    }
+  }
+
+  private hitDrone(d: Drone, damage: number, at: THREE.Vector3): void {
+    d.hull -= damage;
+    this.spawnEffect(createImpactSpark(at.clone(), '#ffb070', this.ctx));
+    this.sfx('hit-hull', 0.4);
+    this.dronesHit++;
+    if (d.hull <= 0) {
+      d.target.alive = false;
+      d.art.object.visible = false;
+      d.respawnIn = 12;
+      if (this.selectedId === d.target.id) this.selectedId = null;
+      this.spawnEffect(createExplosion(d.position.clone(), 4, this.ctx));
+      this.sfx('explosion-small', 0.6);
+      this.callbacks.onMessage('Practice drone down. It will respawn shortly.', 'good');
+    }
+  }
+
+  /** Number of practice-drone hits (for tests and the tutorial). */
+  dronesHit = 0;
+
   findTarget(id: string | null): Target | null {
     if (!id) return null;
-    return this.allTargets().find((t) => t.id === id) ?? null;
+    for (const t of this.system.targets) if (t.id === id && t.alive) return t;
+    for (const n of this.npcs) if (n.target.id === id && n.target.alive) return n.target;
+    for (const l of this.loot) if (l.target.id === id && l.target.alive) return l.target;
+    for (const d of this.drones) if (d.target.id === id && d.target.alive) return d.target;
+    return null;
   }
 
   selectTarget(id: string | null): void {
@@ -434,12 +558,26 @@ export class FlightSession {
     return best;
   }
 
+  /** The dock the context action would use: the selected station if in range, else the nearest. */
+  private dockCandidate(): DockSite | null {
+    const sel = this.selectedTarget;
+    if (sel?.kind === 'station' && sel.locationId) {
+      const site = this.system.dock(sel.locationId);
+      if (site && site.def.position.distanceTo(this.player.position) < DOCK_RANGE) return site;
+      return null;
+    }
+    const dock = this.nearestDock();
+    if (!dock || dock.distance >= DOCK_RANGE) return null;
+    // Don't offer to re-dock where the player just launched from.
+    if (dock.site.def.locationId === this.launchedFrom && this.time - this.launchTime < 25) return null;
+    return dock.site;
+  }
+
   /** The context-sensitive action offered by the E key / touch action button. */
   contextAction(): HudContextAction | null {
     if (!this.alive || this.busy) return null;
-    const dock = this.nearestDock();
     const sel = this.selectedTarget;
-    if (dock && dock.distance < DOCK_RANGE && !this.hostilesNearby(2_200)) {
+    if (this.dockCandidate() && !this.hostilesNearby(2_200)) {
       return { label: 'Dock', action: 'interact', icon: 'dock' };
     }
     const lane = this.nearestLaneEntrance();
@@ -448,17 +586,30 @@ export class FlightSession {
       return { label: 'Scan', action: 'scan', icon: 'scan' };
     }
     const goal = sel ?? this.objectiveTarget();
-    if (goal && goal.position.distanceTo(this.player.position) > 1_500 && this.autopilot.mode !== 'goto') {
+    const headingTo = this.autopilotTargetId();
+    if (goal && goal.position.distanceTo(this.player.position) > 1_500 && goal.id !== headingTo) {
       return { label: sel ? 'Go to' : 'Go to goal', action: 'goto', icon: 'goto' };
     }
     if (this.autopilot.mode === 'goto') return { label: 'Stop', action: 'cancel-autopilot', icon: 'close' };
     return null;
   }
 
+  /** Final destination of the running Go To, if any. */
+  private autopilotTargetId(): string | null {
+    const ap = this.autopilot;
+    if (ap.mode === 'lane' && ap.next?.mode === 'goto') {
+      const last = ap.next.legs[ap.next.legs.length - 1];
+      return last?.kind === 'point' ? last.targetId : null;
+    }
+    if (ap.mode !== 'goto') return null;
+    const last = ap.legs[ap.legs.length - 1];
+    return last?.kind === 'point' ? last.targetId : null;
+  }
+
   private interact(): void {
-    const dock = this.nearestDock();
-    if (dock && dock.distance < DOCK_RANGE) {
-      this.beginDock(dock.site);
+    const site = this.dockCandidate();
+    if (site) {
+      this.beginDock(site);
       return;
     }
     const lane = this.nearestLaneEntrance();
@@ -629,6 +780,7 @@ export class FlightSession {
     this.updateProjectiles(dt);
     this.updateMissiles(dt);
     this.updateLoot(dt);
+    this.updateDrones(dt);
     if (this.alive) this.collide(this.player, this.playerDurability, true);
     for (const n of this.npcs) this.collide(n.body, n.durability, false);
     regenerate(this.playerDurability, dt);
@@ -882,7 +1034,7 @@ export class FlightSession {
     this.aimAssisted = false;
     const assist = this.assistStrength(this.settings.aimAssist);
     const t = this.selectedTarget;
-    if (assist > 0 && t && t.hostile && t.velocity) {
+    if (assist > 0 && t && (t.hostile || t.kind === 'drone') && t.velocity) {
       leadPoint(this.player.position, this.player.velocity, t.position, t.velocity, this.gun.profile.projectileSpeed, this.tmp);
       this.tmp.project(this.camera);
       if (this.tmp.z < 1) {
@@ -964,6 +1116,12 @@ export class FlightSession {
           if (n.durability.hull <= 0) continue;
           if (segmentHitsSphere(from, to, n.body.position, n.art.radius)) {
             this.damageNpc(n, p.damage, to);
+            return true;
+          }
+        }
+        for (const d of this.drones) {
+          if (d.target.alive && segmentHitsSphere(from, to, d.position, d.target.radius)) {
+            this.hitDrone(d, p.damage, to);
             return true;
           }
         }
@@ -1378,7 +1536,7 @@ export class FlightSession {
     if (sel) {
       const npc = this.npcs.find((n) => n.target.id === sel.id);
       let lead: { x: number; y: number } | null = null;
-      if (sel.velocity && sel.hostile) {
+      if (sel.velocity && (sel.hostile || sel.kind === 'drone')) {
         leadPoint(p.position, p.velocity, sel.position, sel.velocity, this.gun.profile.projectileSpeed, this.tmp2);
         const pr = this.project(this.tmp2);
         if (pr.onScreen) lead = { x: pr.x, y: pr.y };
@@ -1416,6 +1574,7 @@ export class FlightSession {
       if (!important) {
         if (t.kind === 'lane' && dist > 25_000) continue;
         if (t.kind === 'loot' && dist > 3_000) continue;
+        if (t.kind === 'drone' && dist > 4_000) continue;
         if (t.kind === 'beacon' && dist > 20_000) continue;
       }
       const pr = this.project(t.position);
@@ -1499,6 +1658,11 @@ export class FlightSession {
     }
     this.missiles.length = 0;
     while (this.loot.length) this.removeLoot(this.loot.length - 1);
+    for (const d of this.drones) {
+      this.system.scene.remove(d.art.object);
+      d.art.dispose();
+    }
+    this.drones.length = 0;
     for (const e of this.effects) {
       this.system.scene.remove(e.object);
       e.dispose();

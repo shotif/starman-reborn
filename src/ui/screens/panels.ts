@@ -108,6 +108,7 @@ export function controlsContent(steering: SteeringMode, scheme: 'desktop' | 'tou
         h('li', null, h('strong', null, 'Buttons: '), 'Boost (hold), Cruise, Target (hold for nearest hostile), Missile, Repair, and the green action button for Dock, Enter lane, Scan or Go to.'),
         h('li', null, h('strong', null, 'Aim assist: '), 'the chip above the right buttons shows and changes its strength (Off / Low / Medium). It only nudges your reticle toward the selected target’s lead marker; it never picks targets for you.'),
         h('li', null, 'A mouse or keyboard plugged into a tablet switches to the desktop controls automatically.'),
+        h('li', null, h('strong', null, 'Practice: '), 'three training drones circle just outside Halcyon Ring. Select one and shoot it to try aiming — no reward, no risk.'),
       ),
     ),
   );

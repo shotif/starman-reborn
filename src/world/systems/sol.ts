@@ -110,6 +110,7 @@ export const SOL_SCENE: SystemSceneDef = {
   beacons: [{ id: 'sol-jump', name: 'Sol jump beacon', position: arrival.clone().add(v(0, 0, 300)), kind: 'jump' }],
   scanZones: [],
   encounters: [{ id: 'mars-raider', center: marsDepot, radius: 7_500, spawnAhead: 1_300, bounty: 220 }],
+  practice: { center: earthPort.clone().addScaledVector(earthToMars, 1_100).add(v(-500, 350, 300)), count: 3, radius: 160 },
   arrival: { position: arrival, lookAt: marsDepot },
   orbitLines: true,
   scaleNote: 'Planet sizes, spacing and positions are schematic, not today’s sky.',

@@ -1,7 +1,7 @@
 import type * as THREE from 'three';
 import type { DataClass, FactionId } from '../data/types.ts';
 
-export type TargetKind = 'station' | 'planet' | 'star' | 'lane' | 'beacon' | 'ship' | 'loot';
+export type TargetKind = 'station' | 'planet' | 'star' | 'lane' | 'beacon' | 'ship' | 'loot' | 'drone';
 
 /** Anything the player can select, bracket, fly to or dock with. */
 export interface Target {

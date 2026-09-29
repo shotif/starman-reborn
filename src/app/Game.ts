@@ -1094,6 +1094,7 @@ export class Game {
       goTo: (id: string) => this.flight?.beginGoTo(id, id.startsWith('station:')),
       avoidCombat: () => this.flight?.avoidCombat(),
       npcs: () => this.flight?.debugNpcs() ?? [],
+      dronesHit: () => this.flight?.dronesHit ?? 0,
       touchState: () => ({
         visible: this.touch.visible,
         steer: this.touch.model.steer.active,

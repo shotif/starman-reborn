@@ -205,3 +205,49 @@ test.describe('touch controls', () => {
     }
   });
 });
+
+test.describe('desktop aiming', () => {
+  test.skip(({ isMobile }) => !!isMobile, 'desktop-only');
+
+  test('bolts follow the visible cursor: hits a target away from screen centre during a turn', async ({ page }) => {
+    await openFresh(page);
+    await newGameAndLaunch(page, 6);
+    await api(page, 'selectTarget', 'drone:0');
+    const vp = page.viewportSize()!;
+    const cx = vp.width / 2;
+    const cy = vp.height / 2;
+    let offCentreTurningHits = 0;
+    let lastHits = 0;
+    let lastQ: number[] | null = null;
+    let down = false;
+    await page.keyboard.down('KeyW');
+    const start = Date.now();
+    while (Date.now() - start < 90_000 && offCentreTurningHits === 0) {
+      const hud = await api<{ target: { id: string; lead: { x: number; y: number } | null; distance: number } | null; markers: { id: string; x: number; y: number; onScreen: boolean; edgeAngle: number }[] } | null>(page, 'hud');
+      const player = (await api<PlayerInfo & { quaternion: number[] }>(page, 'player'))!;
+      const t = hud?.target;
+      if (!t) {
+        await api(page, 'selectTarget', 'drone:1');
+        continue;
+      }
+      if (t.distance < 450) await page.keyboard.up('KeyW');
+      const m = hud!.markers.find((x) => x.id === t.id);
+      const aim = t.lead ?? (m && m.onScreen ? { x: m.x, y: m.y } : { x: cx + Math.cos(m?.edgeAngle ?? 0) * 300, y: cy + Math.sin(m?.edgeAngle ?? 0) * 200 });
+      await page.mouse.move(aim.x, aim.y);
+      if (!down && t.lead && t.distance < 900) {
+        await page.mouse.down({ button: 'right' });
+        down = true;
+      }
+      await page.waitForTimeout(100);
+      const hits = await api<number>(page, 'dronesHit');
+      const turning = lastQ ? lastQ.some((v, i) => Math.abs(v - player.quaternion[i]!) > 0.002) : false;
+      const offCentre = Math.hypot(aim.x - cx, aim.y - cy) > 80;
+      if (hits > lastHits && turning && offCentre) offCentreTurningHits += hits - lastHits;
+      lastHits = hits;
+      lastQ = player.quaternion;
+    }
+    if (down) await page.mouse.up({ button: 'right' });
+    await page.keyboard.up('KeyW');
+    expect(offCentreTurningHits).toBeGreaterThan(0);
+  });
+});

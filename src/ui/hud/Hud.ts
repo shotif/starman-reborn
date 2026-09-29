@@ -294,7 +294,10 @@ export class Hud {
       const el = this.markerPool[i]!;
       const m = markers[i];
       if (!m) {
-        if (!el.hidden) el.hidden = true;
+        if (!el.hidden) {
+          el.hidden = true;
+          delete el.dataset.id;
+        }
         continue;
       }
       el.hidden = false;

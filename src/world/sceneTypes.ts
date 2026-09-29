@@ -117,6 +117,14 @@ export interface EncounterDef {
   bounty: number;
 }
 
+/** Harmless target drones for aiming practice (no reward). */
+export interface PracticeRangeDef {
+  center: THREE.Vector3;
+  count: number;
+  /** Radius of the slow circles the drones fly. */
+  radius: number;
+}
+
 export interface SystemSceneDef {
   systemId: SystemId;
   skybox: SkyboxOptions;
@@ -130,6 +138,7 @@ export interface SystemSceneDef {
   beacons: SceneBeaconDef[];
   scanZones: SceneScanZone[];
   encounters: EncounterDef[];
+  practice?: PracticeRangeDef;
   /** Where ships appear after a jump, and what they face. */
   arrival: { position: THREE.Vector3; lookAt: THREE.Vector3 };
   /** Draw faint schematic orbit lines around the host star. */
