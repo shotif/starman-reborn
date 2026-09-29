@@ -1,0 +1,1134 @@
+/* Neighborhood star map overlay (GalaxyMapView) and the 2D SVG map.
+   Layouts: desktop/tablet landscape (default), phones and portrait (bottom sheet),
+   short landscape phones. Sizes in rem so --text-scale applies. */
+
+.gmap {
+  --gmap-list-w: min(15rem, 21vw);
+  --gmap-card-w: min(24rem, 34vw);
+  --gmap-pad: 0.6rem;
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: minmax(0, var(--gmap-list-w)) minmax(0, 1fr) minmax(0, var(--gmap-card-w));
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas:
+    'top top top'
+    'list stage card';
+  gap: var(--gmap-pad);
+  padding: calc(var(--safe-top) + var(--gmap-pad)) calc(var(--safe-right) + var(--gmap-pad))
+    calc(var(--safe-bottom) + var(--gmap-pad)) calc(var(--safe-left) + var(--gmap-pad));
+  color: var(--text);
+  /* The layer passes gestures through to the canvas; panels opt back in. */
+  pointer-events: none;
+}
+
+.gmap[hidden] {
+  display: none;
+}
+
+.gmap > .gmap-top,
+.gmap > .gmap-list,
+.gmap > .gmap-stage,
+.gmap > .gmap-card {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.gmap-top,
+.gmap-list,
+.gmap-card,
+.gmap-zoom,
+.gmap-legend,
+.gmap-2d {
+  pointer-events: auto;
+}
+
+/* 2D mode: an opaque backdrop hides the (idle) 3D canvas. */
+.gmap-backdrop2d {
+  position: absolute;
+  inset: 0;
+  display: none;
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(40, 70, 130, 0.18), transparent 60%),
+    #050912;
+}
+
+.gmap[data-mode='2d'] .gmap-backdrop2d {
+  display: block;
+  pointer-events: auto;
+}
+
+/* ---------- Labels projected from the 3D scene ---------- */
+
+.gmap-labels {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.gmap-labels[hidden] {
+  display: none;
+}
+
+.gmap-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 6px;
+  background: rgba(4, 8, 18, 0.62);
+  color: var(--text);
+  font-size: 0.8rem;
+  line-height: 1.25;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px #000;
+  visibility: hidden;
+  will-change: transform;
+}
+
+.gmap-label.is-visible {
+  visibility: visible;
+}
+
+.gmap-label.is-secondary {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.gmap-label-dist {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.gmap-label.is-selected {
+  background: rgba(12, 22, 44, 0.9);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.55);
+}
+
+.gmap-label.is-current .gmap-label-name {
+  color: var(--accent-strong);
+}
+
+.gmap-label.on-route:not(.is-selected) {
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+.gmap-label-marks {
+  display: inline-flex;
+  gap: 0.15rem;
+}
+
+.gmap-label-marks .icon {
+  width: 0.95em;
+  height: 0.95em;
+}
+
+.gmap-label-marks .icon:nth-child(1) {
+  color: var(--accent);
+}
+
+.gmap-label.is-objective .gmap-label-marks {
+  color: var(--warm);
+}
+
+.gmap-ring-label {
+  padding: 0 0.2rem;
+  background: none;
+  color: var(--text-dim);
+  font-size: 0.66rem;
+  text-shadow: none;
+}
+
+/* ---------- Top bar ---------- */
+
+.gmap-top {
+  grid-area: top;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.3rem 0.35rem 0.3rem 0.85rem;
+  container: gmap-top / inline-size;
+}
+
+.gmap-titles {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.gmap-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  font-size: 1.1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gmap-title .icon {
+  color: var(--accent);
+}
+
+.gmap-subtitle {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gmap-credits {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  color: var(--warm);
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.gmap-actions {
+  display: flex;
+  flex: none;
+  gap: 0.35rem;
+}
+
+.gmap-action {
+  padding: 0.45rem 0.8rem;
+}
+
+.gmap-action[aria-pressed='true'] {
+  background: rgba(92, 200, 255, 0.22);
+  border-color: var(--accent);
+}
+
+/* ---------- System list ---------- */
+
+.gmap-list {
+  grid-area: list;
+  align-self: start;
+  max-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.55rem;
+}
+
+.gmap-list-title {
+  margin: 0.1rem 0 0.4rem 0.35rem;
+}
+
+.gmap-list-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gmap-sys {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  min-height: 48px;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.gmap-sys:hover {
+  background: rgba(120, 160, 230, 0.12);
+}
+
+.gmap-sys[aria-pressed='true'] {
+  background: rgba(92, 200, 255, 0.16);
+  border-color: rgba(92, 200, 255, 0.55);
+}
+
+.gmap-sys-dot {
+  flex: none;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  background: var(--star);
+  box-shadow: 0 0 8px var(--star);
+}
+
+.gmap-sys-text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.gmap-sys-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.gmap-sys-dist {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.gmap-sys-marks {
+  display: flex;
+  flex: none;
+  gap: 0.2rem;
+}
+
+.gmap-sys-marks:empty {
+  display: none;
+}
+
+.gmap-mark {
+  display: inline-flex;
+}
+
+.gmap-mark-current {
+  color: var(--accent);
+}
+
+.gmap-mark-objective {
+  color: var(--warm);
+}
+
+.gmap-mark-visited {
+  color: var(--success);
+}
+
+/* ---------- Stage (visible map area) ---------- */
+
+.gmap-stage {
+  grid-area: stage;
+  overflow: hidden;
+  pointer-events: none;
+  container: gmap-stage / size;
+}
+
+
+.gmap-viewport {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+  outline: none;
+}
+
+.gmap-viewport:focus-visible {
+  outline: 3px solid var(--accent-strong);
+  outline-offset: -3px;
+}
+
+.gmap-2d {
+  position: absolute;
+  inset: 0;
+}
+
+.gmap-2d[hidden],
+.gmap-viewport[hidden],
+.gmap-zoom[hidden],
+.gmap-legend[hidden] {
+  display: none;
+}
+
+.gmap-zoom {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.gmap-zoom-btn {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  background: var(--panel);
+}
+
+.gmap-legend {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  max-width: min(27rem, calc(100% - 3.8rem));
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 0 0.6rem;
+  border-radius: var(--radius-sm);
+  background: rgba(4, 8, 18, 0.72);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.gmap-legend .badge {
+  font-size: 0.62rem;
+}
+
+.gmap-key > summary {
+  display: list-item;
+  min-height: 44px;
+  padding: 0.4rem 0;
+  cursor: pointer;
+}
+
+.gmap-key > summary::marker {
+  color: var(--text);
+}
+
+.gmap-key-hint {
+  display: inline-block;
+  padding: 0 0.45em;
+  border: 1px solid var(--panel-border-strong);
+  border-radius: 999px;
+  color: var(--text);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.gmap-key-list {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0 0 0.4rem;
+  padding: 0;
+  list-style: none;
+}
+
+.gmap-key-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+.gmap-key-list li > span {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.gmap-swatch {
+  flex: none;
+  width: 1.75rem;
+  height: 1rem;
+  fill: none;
+  stroke-width: 2;
+}
+
+.gmap-swatch-link {
+  stroke: var(--fiction);
+  stroke-dasharray: 5 3;
+}
+
+.gmap-swatch-route {
+  stroke: var(--accent);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.gmap-swatch-current {
+  stroke: var(--accent);
+}
+
+.gmap-swatch-objective {
+  stroke: var(--warm);
+}
+
+.gmap-swatch-visited {
+  stroke: var(--success);
+  stroke-dasharray: 3 2;
+}
+
+.gmap-swatch-drop {
+  stroke: var(--text-muted);
+  fill: var(--text-muted);
+}
+
+/* ---------- Info card ---------- */
+
+.gmap-card {
+  grid-area: card;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+
+.gmap-grabber,
+.gmap-sheet-toggle {
+  display: none;
+}
+
+.gmap-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.35rem 0.6rem;
+  padding: 0.8rem 1rem 0.6rem;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.gmap-card-titles {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.gmap-card-title {
+  margin: 0;
+  font-size: 1.3rem;
+  line-height: 1.2;
+}
+
+.gmap-card-sub {
+  margin: 0.1rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.gmap-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  width: 100%;
+}
+
+.gmap-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  padding: 0.1em 0.55em;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.gmap-tag-current {
+  color: var(--accent);
+}
+
+.gmap-tag-objective {
+  color: var(--warm);
+}
+
+.gmap-tag-visited {
+  color: var(--success);
+}
+
+.gmap-card-body {
+  flex: 1 0 auto;
+  padding: 0.2rem 1rem 1rem;
+  outline: none;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.gmap-sec {
+  padding: 0.7rem 0 0.4rem;
+}
+
+.gmap-sec + .gmap-sec {
+  border-top: 1px solid rgba(126, 170, 255, 0.14);
+}
+
+.gmap-sec h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+}
+
+.gmap-sec h4 {
+  margin: 0.8rem 0 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.gmap-summary {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+}
+
+.gmap-hops {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gmap-hops li {
+  display: flex;
+  flex-direction: column;
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.gmap-hop-path {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.gmap-hop-meta,
+.gmap-hop-total {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.gmap-hop-total {
+  margin: 0.45rem 0 0;
+}
+
+.gmap-coverage {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin: 0.5rem 0 0;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid rgba(98, 227, 160, 0.45);
+  border-radius: var(--radius-sm);
+  color: var(--success);
+  font-size: 0.85rem;
+}
+
+.gmap-card-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding-top: 0.8rem;
+}
+
+.gmap-card-links .btn {
+  min-height: 44px;
+}
+
+.gmap-card-foot {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem 0.75rem;
+  padding: 0.55rem 1rem 0.7rem;
+  border-top: 1px solid var(--panel-border);
+  background: var(--panel-solid);
+  box-shadow: 0 -6px 14px rgba(0, 0, 0, 0.35);
+}
+
+/* Route summary and blocking reasons; scrolls on its own if long so Jump never leaves view. */
+.gmap-foot-info {
+  display: flex;
+  flex: 1 1 6.5rem;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+  max-height: 30vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.gmap-route-line {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.gmap-route-path {
+  font-weight: 600;
+}
+
+.gmap-route-meta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--text-muted);
+}
+
+.gmap-route-meta strong {
+  color: var(--text);
+}
+
+.gmap-jump-reasons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--warning);
+  font-size: 0.8rem;
+  line-height: 1.3;
+}
+
+.gmap-jump-reasons li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+.gmap-jump-reasons .icon {
+  margin-top: 0.15em;
+}
+
+.gmap-jump {
+  flex: none;
+  min-width: 5.5rem;
+}
+
+.gmap .source-link {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Compact chrome: phones, portrait tablets, short landscape ---------- */
+
+@media (max-width: 699px), (max-height: 540px) {
+  .gmap-btn-text {
+    display: none;
+  }
+
+  .gmap-action {
+    padding: 0;
+    width: 48px;
+  }
+}
+
+@media (max-width: 420px) {
+  .gmap-titles {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  .gmap-credits {
+    margin-right: auto;
+  }
+}
+
+@media (max-width: 599px), (orientation: portrait), (max-height: 540px) {
+  .gmap {
+    --gmap-pad: 0.45rem;
+  }
+
+  /* System list becomes a row of horizontally scrolling chips. */
+  .gmap-list {
+    align-self: stretch;
+    max-height: none;
+    padding: 0.3rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    touch-action: pan-x;
+  }
+
+  .gmap-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .gmap-list-title {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  .gmap-list-items {
+    flex-direction: row;
+    gap: 0.3rem;
+    width: max-content;
+  }
+
+  .gmap-sys {
+    width: auto;
+    min-height: 44px;
+    padding: 0.25rem 0.75rem 0.25rem 0.6rem;
+    border-color: rgba(126, 170, 255, 0.2);
+    border-radius: 999px;
+  }
+
+  .gmap-sys-text {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 0.4rem;
+  }
+
+  .gmap-sys-name {
+    white-space: nowrap;
+  }
+
+  /* Zoom buttons move to the top-right so the legend can use the full width. */
+  .gmap-zoom {
+    top: 0;
+    bottom: auto;
+  }
+
+  .gmap-legend {
+    max-width: 100%;
+    padding: 0 0.5rem;
+    font-size: 0.64rem;
+  }
+
+  .gmap-key > summary {
+    padding: 0.25rem 0;
+  }
+
+  .gmap-top {
+    padding-left: 0.7rem;
+  }
+
+  .gmap-title {
+    font-size: 1rem;
+  }
+}
+
+/* ---------- Portrait and narrow: info card as a bottom sheet ---------- */
+
+@media (max-width: 599px), (orientation: portrait) {
+  .gmap {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 0;
+  }
+
+  .gmap > .gmap-top,
+  .gmap > .gmap-list {
+    flex: none;
+  }
+
+  .gmap > .gmap-stage {
+    flex: 1 1 auto;
+    min-height: min(6rem, 20vh);
+  }
+
+  .gmap > .gmap-card {
+    flex: 0 1 auto;
+    max-height: min(72vh, 72dvh);
+    margin: 0 calc(-1 * var(--gmap-pad));
+    border-bottom: 0;
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+
+  /* Grab handle: a 4 px bar inside a taller, non-scrolling swipe target. */
+  .gmap-grabber {
+    display: block;
+    flex: none;
+    align-self: center;
+    width: 5rem;
+    height: 1.1rem;
+    background: linear-gradient(var(--panel-border-strong), var(--panel-border-strong)) center / 2.6rem 0.28rem
+      no-repeat;
+    border-radius: 999px;
+    touch-action: none;
+    cursor: grab;
+  }
+
+  .gmap-sheet-toggle {
+    appearance: none;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 0.3rem;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0.3rem 0.75rem;
+    border: 1px solid var(--panel-border-strong);
+    border-radius: 999px;
+    background: var(--panel-raised);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .gmap-card-head {
+    align-items: center;
+    padding: 0.35rem 0.9rem 0.45rem;
+  }
+
+  .gmap-card-title {
+    font-size: 1.15rem;
+  }
+
+  .gmap-card[data-expanded='false'] .gmap-card-body {
+    display: none;
+  }
+
+  .gmap-card[data-expanded='false'] .gmap-card-head {
+    border-bottom: 0;
+  }
+
+  .gmap-card-body {
+    padding: 0.1rem 0.9rem 0.8rem;
+  }
+
+  .gmap-card-foot {
+    padding: 0.5rem 0.9rem calc(var(--safe-bottom) + 0.6rem);
+  }
+}
+
+/* ---------- Short landscape phones: chips + actions on top, card on the right ---------- */
+
+@media (orientation: landscape) and (max-height: 540px) and (min-width: 600px) {
+  .gmap {
+    --gmap-card-w: min(21rem, 43vw);
+    grid-template-columns: minmax(0, 1fr) minmax(0, var(--gmap-card-w));
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+      'list top'
+      'stage card';
+  }
+
+  .gmap-top {
+    justify-content: flex-end;
+    padding: 0.2rem 0.3rem 0.2rem 0.6rem;
+  }
+
+  .gmap-titles {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  .gmap-credits {
+    margin-right: auto;
+  }
+
+  .gmap-card-head {
+    padding: 0.55rem 0.85rem 0.45rem;
+  }
+
+  .gmap-card-title {
+    font-size: 1.1rem;
+  }
+
+  .gmap-card-body {
+    padding: 0.1rem 0.85rem 0.8rem;
+  }
+
+  .gmap-card-foot {
+    padding: 0.45rem 0.85rem 0.55rem;
+  }
+}
+
+/* ---------- 2D SVG map ---------- */
+
+.map2d-host {
+  overflow: hidden;
+}
+
+.map2d {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+.map2d-svg {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.map2d .gmap-legend {
+  pointer-events: auto;
+}
+
+.map2d-ring {
+  fill: none;
+  stroke: rgba(126, 170, 255, 0.2);
+  stroke-width: 1;
+}
+
+.map2d-ring-label {
+  fill: var(--text-dim);
+  font-size: 0.66rem;
+}
+
+.map2d-link {
+  stroke: var(--fiction);
+  stroke-opacity: 0.8;
+  stroke-width: 1.6;
+  stroke-dasharray: 6 4;
+}
+
+.map2d-route-glow {
+  fill: none;
+  stroke: var(--accent);
+  stroke-opacity: 0.22;
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.map2d-route {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.map2d-sys {
+  cursor: pointer;
+  outline: none;
+}
+
+.map2d-hit {
+  fill: transparent;
+  pointer-events: all;
+}
+
+.map2d-focus {
+  fill: none;
+  stroke: var(--accent-strong);
+  stroke-width: 3;
+  opacity: 0;
+}
+
+.map2d-sys:focus-visible .map2d-focus {
+  opacity: 1;
+}
+
+.map2d-selected {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2;
+}
+
+.map2d-current {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2.5;
+}
+
+.map2d-visited {
+  fill: none;
+  stroke: var(--success);
+  stroke-width: 1.6;
+  stroke-dasharray: 3 2.5;
+}
+
+.map2d-objective {
+  fill: none;
+  stroke: var(--warm);
+  stroke-width: 2;
+}
+
+.map2d-star-glow {
+  opacity: 0.2;
+}
+
+.map2d-label {
+  fill: var(--text);
+  paint-order: stroke;
+  stroke: rgba(3, 6, 14, 0.85);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+.map2d-label-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.map2d-label-meta {
+  fill: var(--text-muted);
+  font-size: 0.68rem;
+}
+
+.map2d-label.is-secondary .map2d-label-name {
+  font-size: 0.72rem;
+  fill: var(--text-muted);
+}
+
+.map2d-sys.is-selected .map2d-label-name {
+  fill: #fff;
+}
+
+.map2d-sys.is-current .map2d-label-name {
+  fill: var(--accent-strong);
+}
+
+.map2d-leader {
+  stroke: var(--text-dim);
+  stroke-width: 1;
+}
+
+.map2d .gmap-legend {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+}
+
+/* ---------- Stage size (container queries; after the base rules they override) ---------- */
+
+/* Short stages: zoom buttons in a row at the top; tiny stages drop them (pinch, wheel and keys
+   still zoom) so they never collide with the required legend. */
+@container gmap-stage (max-height: 330px) {
+  .gmap-zoom {
+    top: 0;
+    bottom: auto;
+    flex-direction: row;
+  }
+
+  .gmap-legend {
+    max-width: 100%;
+  }
+}
+
+@container gmap-stage (max-height: 190px) {
+  .gmap-zoom {
+    display: none;
+  }
+}
+
+/* Top bar: icon-only actions when the labelled buttons would not fit (rem tracks --text-scale). */
+@container gmap-top (max-width: 44rem) {
+  .gmap-btn-text {
+    display: none;
+  }
+
+  .gmap-action {
+    width: 48px;
+    padding: 0;
+  }
+}
