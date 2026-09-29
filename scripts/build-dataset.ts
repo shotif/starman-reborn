@@ -179,9 +179,10 @@ function buildExoplanets() {
     const semiMajorAxisAu = measured(p.semiMajorAxisAu, 'AU');
     const massEarth = measured(p.massEarth, 'Earth masses');
     const radiusEarth = measured(p.radiusEarth, 'Earth radii');
+    // Only a snapshot can say a value is unmeasured; provisional records simply lack the value.
     const unknowns = ['surface', 'atmosphere', 'habitability'];
-    if (!radiusEarth) unknowns.unshift('radius');
-    if (!massEarth) unknowns.unshift('mass');
+    if (kind === 'snapshot' && !radiusEarth) unknowns.unshift('radius');
+    if (kind === 'snapshot' && !massEarth) unknowns.unshift('mass');
     return {
       id: slug(p.archiveName),
       archiveName: p.archiveName,

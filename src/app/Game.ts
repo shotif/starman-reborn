@@ -1076,13 +1076,28 @@ export class Game {
         const f = this.flight;
         if (!f) return null;
         const p = f.player.position;
-        return { position: [p.x, p.y, p.z], speed: f.player.speed, alive: f.alive, autopilot: f.autopilotMode };
+        const q = f.player.quaternion;
+        return {
+          position: [p.x, p.y, p.z],
+          quaternion: [q.x, q.y, q.z, q.w],
+          speed: f.player.speed,
+          energy: f.player.energy,
+          alive: f.alive,
+          autopilot: f.autopilotMode,
+        };
       },
       selectTarget: (id: string) => this.flight?.selectTarget(id),
       targets: () => this.flight?.allTargets().map((t) => ({ id: t.id, name: t.name, kind: t.kind, hostile: !!t.hostile })) ?? [],
       goTo: (id: string) => this.flight?.beginGoTo(id, id.startsWith('station:')),
       avoidCombat: () => this.flight?.avoidCombat(),
       npcs: () => this.flight?.debugNpcs() ?? [],
+      touchState: () => ({
+        visible: this.touch.visible,
+        steer: this.touch.model.steer.active,
+        aim: this.touch.model.aim.active,
+        steerVector: this.touch.model.steer.vector,
+        aimVector: this.touch.model.aim.vector,
+      }),
       renderInfo: () => ({ quality: this.renderer.quality, pixelRatio: this.renderer.pixelRatio, fps: this.renderer.fps }),
       flush: () => this.saves.flush(),
     };

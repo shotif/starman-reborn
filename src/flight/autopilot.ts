@@ -55,10 +55,11 @@ export function flyTo(ship: ShipBody, point: THREE.Vector3, opts: GoToOptions, o
   out.engineKill = false;
   const maxThrottle = opts.maxThrottle ?? 1;
   const alignFactor = angle < 0.35 ? 1 : angle < 1.2 ? 0.45 : 0.2;
-  out.throttle = clamp((distance / 600) * alignFactor, 0, maxThrottle);
+  // Proportional approach with a small creep so the ship actually reaches the point.
+  out.throttle = clamp((distance / 500) * alignFactor, distance > 5 ? 0.08 : 0, maxThrottle);
   // Cruise decelerates with rate ~0.8/s, so leave cruise ~1.2 cruise-seconds before arrival.
   const cruiseExit = ship.params.cruiseSpeed * 1.25 + 400;
   const wantsCruise = opts.allowCruise && distance > cruiseExit && angle < 0.12;
   const keepCruise = opts.allowCruise && ship.cruise !== 'off' && distance > cruiseExit && angle < 0.5;
-  return { distance, arrived: distance <= 0 && ship.speed < 40, wantsCruise: wantsCruise || keepCruise };
+  return { distance, arrived: distance <= 30 && ship.speed < 40, wantsCruise: wantsCruise || keepCruise };
 }

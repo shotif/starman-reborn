@@ -23,8 +23,6 @@
       "discoveryYear": 2016,
       "discoveryMethod": "Radial Velocity",
       "unknowns": [
-        "mass",
-        "radius",
         "surface",
         "atmosphere",
         "habitability"
@@ -44,8 +42,6 @@
       "discoveryYear": 2022,
       "discoveryMethod": "Radial Velocity",
       "unknowns": [
-        "mass",
-        "radius",
         "surface",
         "atmosphere",
         "habitability"
@@ -65,8 +61,6 @@
       "discoveryYear": 2024,
       "discoveryMethod": "Radial Velocity",
       "unknowns": [
-        "mass",
-        "radius",
         "surface",
         "atmosphere",
         "habitability"
@@ -86,8 +80,6 @@
       "discoveryYear": 2025,
       "discoveryMethod": "Radial Velocity",
       "unknowns": [
-        "mass",
-        "radius",
         "surface",
         "atmosphere",
         "habitability"
@@ -107,8 +99,6 @@
       "discoveryYear": 2025,
       "discoveryMethod": "Radial Velocity",
       "unknowns": [
-        "mass",
-        "radius",
         "surface",
         "atmosphere",
         "habitability"
@@ -128,8 +118,6 @@
       "discoveryYear": 2025,
       "discoveryMethod": "Radial Velocity",
       "unknowns": [
-        "mass",
-        "radius",
         "surface",
         "atmosphere",
         "habitability"
@@ -149,8 +137,6 @@
       "discoveryYear": 2000,
       "discoveryMethod": "Radial Velocity",
       "unknowns": [
-        "mass",
-        "radius",
         "surface",
         "atmosphere",
         "habitability"

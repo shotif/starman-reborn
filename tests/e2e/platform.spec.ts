@@ -1,0 +1,207 @@
+import { expect, test, type Page } from '@playwright/test';
+import { api, isTouch, newGameAndLaunch, openFresh, press, waitUntil, type PlayerInfo } from './helpers.ts';
+
+interface TouchInfo {
+  visible: boolean;
+  steer: boolean;
+  aim: boolean;
+  steerVector: { x: number; y: number };
+  aimVector: { x: number; y: number };
+}
+
+async function zoneCenter(page: Page, testId: string): Promise<{ x: number; y: number }> {
+  const box = (await page.getByTestId(testId).boundingBox())!;
+  return { x: box.x + box.width * 0.5, y: box.y + box.height * 0.6 };
+}
+
+test.describe('platform behaviour', () => {
+  test('falls back to the 2D star map and science notes without WebGL 2', async ({ page }) => {
+    await page.goto('/?nowebgl=1');
+    await expect(page.getByTestId('compat-screen')).toBeVisible();
+    await expect(page.getByText('did not provide WebGL 2')).toBeVisible();
+    await expect(page.getByTestId('compat-map')).toBeVisible();
+    await expect(page.getByTestId('compat-map').getByText(/Alpha Centauri/).first()).toBeVisible();
+    await press(page, 'compat-about');
+    await expect(page.getByText(/About the science/i).first()).toBeVisible();
+  });
+
+  test('starts audio only after a user gesture', async ({ page }) => {
+    await openFresh(page);
+    expect(await api(page, 'audioState')).toBe('locked');
+    await press(page, 'title-controls');
+    await waitUntil(page, 'audio running', async () => (await api(page, 'audioState')) !== 'locked', 10_000);
+    expect(['running', 'unavailable']).toContain(await api(page, 'audioState'));
+  });
+
+  test('reload resumes a mid-flight save at the same place', async ({ page }) => {
+    await openFresh(page);
+    await newGameAndLaunch(page, 6);
+    await api(page, 'setTimeScale', 4);
+    await page.waitForTimeout(3000);
+    await page.evaluate(() => {
+      Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await api(page, 'flush');
+    const before = (await api<PlayerInfo>(page, 'player'))!;
+    await page.reload();
+    await press(page, 'title-continue');
+    await waitUntil(page, 'flying again', async () => (await api(page, 'mode')) === 'flight');
+    const after = (await api<PlayerInfo>(page, 'player'))!;
+    const moved = Math.hypot(...after.position.map((v, i) => v - before.position[i]!));
+    expect(moved).toBeLessThan(400);
+    const state = await api<{ ship: { cargo: Record<string, number> }; jobs: Record<string, unknown> }>(page, 'state');
+    expect(state.ship.cargo.medical).toBe(6);
+    expect(state.jobs.lifeline).toBeTruthy();
+  });
+
+  test('pauses simulation while hidden and does not teleport on resume', async ({ page }) => {
+    await openFresh(page);
+    await newGameAndLaunch(page, 6);
+    // Fly forward at full throttle.
+    if (await isTouch(page)) {
+      const track = (await page.getByTestId('touch-throttle').boundingBox())!;
+      await page.touchscreen.tap(track.x + track.width / 2, track.y + 4);
+    } else {
+      await page.keyboard.down('KeyW');
+      await page.waitForTimeout(1500);
+      await page.keyboard.up('KeyW');
+    }
+    await page.waitForTimeout(1500);
+    const hide = (hidden: boolean) =>
+      page.evaluate((h) => {
+        Object.defineProperty(document, 'visibilityState', { value: h ? 'hidden' : 'visible', configurable: true });
+        document.dispatchEvent(new Event('visibilitychange'));
+      }, hidden);
+    await hide(true);
+    const atHide = (await api<PlayerInfo>(page, 'player'))!;
+    await page.waitForTimeout(3000);
+    const whileHidden = (await api<PlayerInfo>(page, 'player'))!;
+    expect(whileHidden.position).toEqual(atHide.position);
+    await hide(false);
+    await page.waitForTimeout(300);
+    const resumed = (await api<PlayerInfo>(page, 'player'))!;
+    const jump = Math.hypot(...resumed.position.map((v, i) => v - atHide.position[i]!));
+    // At ~110 m/s a few frames of motion is fine; 3 s of catch-up (~330 m) would fail.
+    expect(jump).toBeLessThan(120);
+  });
+
+  test('safe-area insets keep HUD and controls clear of notches and home bars', async ({ page }) => {
+    await openFresh(page);
+    await page.addStyleTag({ content: ':root{--safe-top:44px!important;--safe-bottom:34px!important;--safe-left:30px!important;--safe-right:30px!important}' });
+    await newGameAndLaunch(page, 6);
+    const vp = page.viewportSize()!;
+    const status = (await page.getByTestId('hud-status').boundingBox())!;
+    expect(status.y).toBeGreaterThanOrEqual(44);
+    expect(status.x).toBeGreaterThanOrEqual(30);
+    const pause = (await page.getByTestId('hud-pause').boundingBox())!;
+    expect(pause.x + pause.width).toBeLessThanOrEqual(vp.width - 30);
+    if (await isTouch(page)) {
+      for (const id of ['touch-throttle', 'touch-boost', 'touch-cruise', 'touch-context']) {
+        const b = (await page.getByTestId(id).boundingBox())!;
+        expect(b.y + b.height, id).toBeLessThanOrEqual(vp.height - 34);
+        expect(b.x, id).toBeGreaterThanOrEqual(0);
+      }
+    }
+  });
+});
+
+test.describe('touch controls', () => {
+  test.skip(({ isMobile }) => !isMobile, 'touch-only');
+
+  test('two thumbs steer and aim/fire independently (multi-touch)', async ({ page }) => {
+    await openFresh(page);
+    await newGameAndLaunch(page, 6);
+    const client = await page.context().newCDPSession(page);
+    const steer = await zoneCenter(page, 'touch-steer');
+    const aim = await zoneCenter(page, 'touch-aim');
+    const before = (await api<PlayerInfo & { quaternion: number[]; energy: number }>(page, 'player'))!;
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [
+        { x: steer.x, y: steer.y, id: 1 },
+        { x: aim.x, y: aim.y, id: 2 },
+      ],
+    });
+    for (let i = 1; i <= 6; i++) {
+      await client.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [
+          { x: steer.x + i * 10, y: steer.y - i * 6, id: 1 },
+          { x: aim.x - i * 8, y: aim.y - i * 9, id: 2 },
+        ],
+      });
+      await page.waitForTimeout(60);
+    }
+    const t = await api<TouchInfo>(page, 'touchState');
+    expect(t.steer).toBe(true);
+    expect(t.aim).toBe(true);
+    expect(t.steerVector.x).toBeGreaterThan(0.3);
+    expect(t.aimVector.x).toBeLessThan(-0.2);
+    await page.waitForTimeout(1500);
+    const during = (await api<PlayerInfo & { quaternion: number[]; energy: number }>(page, 'player'))!;
+    const turned = during.quaternion.some((v, i) => Math.abs(v - before.quaternion[i]!) > 0.02);
+    expect(turned).toBe(true);
+    // Holding the aim pad fires, which spends weapon energy.
+    expect(during.energy).toBeLessThan(before.energy - 5);
+    // Lifting only the steering thumb leaves the aim thumb in control. (Chromium's CDP lifts
+    // exactly the fingers listed in a touchEnd event.)
+    await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [{ x: steer.x + 60, y: steer.y - 36, id: 1 }] });
+    const afterLift = await api<TouchInfo>(page, 'touchState');
+    expect(afterLift.steer).toBe(false);
+    expect(afterLift.aim).toBe(true);
+    await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    const released = await api<TouchInfo>(page, 'touchState');
+    expect(released.aim).toBe(false);
+  });
+
+  test('pointercancel releases both sticks', async ({ page }) => {
+    await openFresh(page);
+    await newGameAndLaunch(page, 6);
+    const client = await page.context().newCDPSession(page);
+    const steer = await zoneCenter(page, 'touch-steer');
+    const aim = await zoneCenter(page, 'touch-aim');
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [
+        { x: steer.x, y: steer.y, id: 1 },
+        { x: aim.x, y: aim.y, id: 2 },
+      ],
+    });
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [
+        { x: steer.x + 40, y: steer.y, id: 1 },
+        { x: aim.x, y: aim.y - 40, id: 2 },
+      ],
+    });
+    expect((await api<TouchInfo>(page, 'touchState')).steer).toBe(true);
+    await client.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
+    await page.waitForTimeout(100);
+    const t = await api<TouchInfo>(page, 'touchState');
+    expect(t.steer).toBe(false);
+    expect(t.aim).toBe(false);
+    expect(t.steerVector).toEqual({ x: 0, y: 0 });
+  });
+
+  test('rotating mid-flight keeps the ship and re-lays out the controls', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await openFresh(page);
+    await newGameAndLaunch(page, 6);
+    const before = (await api<PlayerInfo>(page, 'player'))!;
+    await page.setViewportSize({ width: 844, height: 390 });
+    await page.waitForTimeout(800);
+    expect(await api(page, 'mode')).toBe('flight');
+    const after = (await api<PlayerInfo>(page, 'player'))!;
+    const moved = Math.hypot(...after.position.map((v, i) => v - before.position[i]!));
+    expect(moved).toBeLessThan(300);
+    const vp = page.viewportSize()!;
+    for (const id of ['touch-steer', 'touch-aim', 'touch-boost', 'touch-cruise', 'touch-context', 'touch-throttle', 'hud-pause']) {
+      const b = (await page.getByTestId(id).boundingBox())!;
+      expect(b.x, id).toBeGreaterThanOrEqual(0);
+      expect(b.y, id).toBeGreaterThanOrEqual(0);
+      expect(b.x + b.width, id).toBeLessThanOrEqual(vp.width + 1);
+      expect(b.y + b.height, id).toBeLessThanOrEqual(vp.height + 1);
+    }
+  });
+});

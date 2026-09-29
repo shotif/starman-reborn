@@ -207,8 +207,9 @@ export function settingsContent(settings: Settings, cb: SettingsCallbacks): HTML
 
 // ---------------------------------------------------------------- science cards
 
-function measured(label: string, m: ConfirmedBody['orbitalPeriodDays'], digits = 3): Child {
-  if (!m) return [h('dt', null, label), h('dd', { class: 'muted' }, 'Not in snapshot')];
+function measured(label: string, m: ConfirmedBody['orbitalPeriodDays'], unknown: boolean, digits = 3): Child {
+  if (unknown) return null;
+  if (!m) return [h('dt', null, label), h('dd', { class: 'muted' }, 'Pending archive snapshot')];
   const err = m.error !== undefined ? ` ± ${m.error.toPrecision(2)}` : '';
   return [h('dt', null, label), h('dd', { class: 'num' }, `${Number(m.value.toPrecision(digits))}${err} ${m.unit}${m.qualifier ? ` (${m.qualifier})` : ''}`)];
 }
@@ -233,14 +234,20 @@ export function planetCard(body: ConfirmedBody, discovered: boolean): HTMLElemen
       h('dt', null, 'Archive name'),
       h('dd', null, body.archiveName),
       h('dt', null, 'Status'),
-      h('dd', null, `Confirmed (as of ${body.asOfDate})`),
+      h(
+        'dd',
+        null,
+        body.verification === 'snapshot'
+          ? `Confirmed in the archive as of ${body.asOfDate}`
+          : 'Confirmed per NASA Exoplanet Archive (dated snapshot pending)',
+      ),
       h('dt', null, 'Host star'),
       h('dd', null, host ? `${host.name} (${host.spectralType})` : body.hostId),
       body.discoveryYear ? [h('dt', null, 'Discovered'), h('dd', null, `${body.discoveryYear}${body.discoveryMethod ? ` · ${body.discoveryMethod}` : ''}`)] : null,
-      measured('Orbital period', body.orbitalPeriodDays),
-      measured('Orbit size', body.semiMajorAxisAu),
-      measured('Mass', body.massEarth),
-      measured('Radius', body.radiusEarth),
+      measured('Orbital period', body.orbitalPeriodDays, body.unknowns.includes('orbital period')),
+      measured('Orbit size', body.semiMajorAxisAu, body.unknowns.includes('orbit size')),
+      measured('Mass', body.massEarth, body.unknowns.includes('mass')),
+      measured('Radius', body.radiusEarth, body.unknowns.includes('radius')),
       body.unknowns.flatMap((u) => [h('dt', null, u[0]!.toUpperCase() + u.slice(1)), h('dd', null, 'Unknown')]),
     ),
     h('p', { class: 'row wrap' }, sourceLink({ label: 'NASA Exoplanet Archive', url: body.sourceUrl, recordId: body.archiveName, ...(body.verification === 'snapshot' ? { retrieved: body.asOfDate } : {}) })),
