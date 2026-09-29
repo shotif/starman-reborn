@@ -504,6 +504,8 @@ export class Game {
     if (!state.flags.flightSchool) {
       state.flags.flightSchool = true;
       this.openControls('Flight school');
+      const aim = this.scheme === 'touch' ? 'hold the right thumb on the aim pad' : 'hold the right mouse button';
+      toast(`Tip: practice drones circle just outside Halcyon Ring. Target one and ${aim} to try your aim.`, 'info', 7000);
     }
   }
 

@@ -1597,6 +1597,8 @@ export class FlightSession {
     }
     hud.markers = markers;
     hud.context = this.contextAction();
+    const near = this.nearestDock();
+    hud.nearestDock = near ? { name: near.site.name, distance: Math.max(0, near.distance - near.site.radius) } : null;
 
     const warnings: string[] = [];
     if (d.hull / d.hullMax < 0.3 && this.alive) warnings.push('Hull critical');

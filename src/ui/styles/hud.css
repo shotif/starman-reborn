@@ -182,6 +182,8 @@
 .hud-system {
   font-size: 0.72rem;
   color: var(--text-muted);
+  max-width: 11rem;
+  margin-left: auto;
 }
 
 .hud-bottom {
@@ -543,13 +545,8 @@
   display: none;
 }
 
-.hud.touch-mode .hud-bottom {
-  bottom: auto;
-  top: calc(var(--safe-top) + 7.2rem);
-  width: min(20rem, 60vw);
-}
-
 .hud.touch-mode .hud-target {
+  width: min(20rem, 100%);
   padding: 0.3rem 0.5rem;
 }
 
@@ -613,8 +610,4 @@
     grid-area: center;
   }
 
-  .hud.touch-mode .hud-bottom {
-    top: calc(var(--safe-top) + 10.8rem);
-    width: min(18rem, calc(100vw - 16px));
-  }
 }

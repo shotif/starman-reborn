@@ -68,6 +68,8 @@ export interface HudModel {
   missiles: number;
   repairKits: number;
   encounterActive: boolean;
+  /** Closest dock in this system (name and distance), for the HUD. */
+  nearestDock: { name: string; distance: number } | null;
 }
 
 export function emptyHudModel(): HudModel {
@@ -94,5 +96,6 @@ export function emptyHudModel(): HudModel {
     missiles: 0,
     repairKits: 0,
     encounterActive: false,
+    nearestDock: null,
   };
 }

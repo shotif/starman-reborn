@@ -69,6 +69,7 @@ const DESKTOP_ROWS: [string, readonly string[] | string][] = [
   ['Engines off (drift)', KEY_BINDINGS.engineKill],
   ['Star map', KEY_BINDINGS.map],
   ['Pause', KEY_BINDINGS.pause],
+  ['Aim practice', 'Practice drones circle just outside Halcyon Ring (Sol) — no reward, no risk'],
 ];
 
 function keys(v: readonly string[] | string): Child {

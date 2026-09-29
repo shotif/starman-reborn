@@ -60,6 +60,8 @@ export class Hud {
   private readonly targetPanel: HTMLElement;
   private readonly contextHint: HTMLButtonElement;
   private readonly encounterBanner: HTMLElement;
+  private readonly centerColumn: HTMLElement;
+  private readonly bottomArea: HTMLElement;
   private readonly systemText: HTMLElement;
   private readonly scaleText: HTMLElement;
   private readonly lockText: HTMLElement;
@@ -137,6 +139,8 @@ export class Hud {
     );
     this.scaleText = h('div', { class: 'hud-scale' });
 
+    this.centerColumn = h('div', { class: 'hud-center' }, this.objectivePanel, this.autopilotText, this.warningText, this.encounterBanner);
+    this.bottomArea = h('div', { class: 'hud-bottom' }, this.targetPanel, this.contextHint);
     this.root = h(
       'div',
       { class: 'hud', 'data-testid': 'hud' },
@@ -144,8 +148,8 @@ export class Hud {
       this.lead,
       this.reticle,
       this.lockText,
-      h('div', { class: 'hud-top' }, status, h('div', { class: 'hud-center' }, this.objectivePanel, this.autopilotText, this.warningText, this.encounterBanner), h('div', { class: 'hud-right' }, buttons, topRight)),
-      h('div', { class: 'hud-bottom' }, this.targetPanel, this.contextHint),
+      h('div', { class: 'hud-top' }, status, this.centerColumn, h('div', { class: 'hud-right' }, buttons, topRight)),
+      this.bottomArea,
       this.scaleText,
     );
     parent.appendChild(this.root);
@@ -160,6 +164,10 @@ export class Hud {
   setDesktopCursor(on: boolean): void {
     this.desktopCursor = on;
     this.root.classList.toggle('touch-mode', !on);
+    // Touch: the bottom of the screen belongs to the thumbs, so the target panel stacks in the
+    // centre column under the objective and any alert (never on top of them).
+    if (on) this.bottomArea.prepend(this.targetPanel);
+    else this.centerColumn.append(this.targetPanel);
   }
 
   /** Immediate reticle move on mouse motion (avoids a frame of latency). */
@@ -194,7 +202,10 @@ export class Hud {
     this.root.dataset.cruise = model.cruise;
     setText(this.creditsText, formatCredits(status.credits));
     setText(this.cargoText, `${status.cargoUsed}/${status.cargoCapacity} cargo`);
-    setText(this.systemText, status.systemName);
+    setText(
+      this.systemText,
+      model.nearestDock ? `${status.systemName} · dock ${model.nearestDock.name} ${formatRange(model.nearestDock.distance)}` : status.systemName,
+    );
     setText(this.scaleText, status.scaleNote);
     this.objectivePanel.hidden = !status.objective;
     if (status.objective) setText(this.objectiveText, status.objective);
