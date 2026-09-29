@@ -1,0 +1,392 @@
+/* Two-thumb touch controls. Only the stick zones, buttons and slider set touch-action: none. */
+
+.touch-controls {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  --zone-h: 64vh;
+  --zone-w: 44vw;
+  --btn: 60px;
+  --cluster-bottom: calc(var(--safe-bottom) + 150px);
+}
+
+.touch-controls[hidden] {
+  display: none;
+}
+
+.touch-controls > * {
+  pointer-events: auto;
+}
+
+.touch-zone {
+  position: absolute;
+  bottom: 0;
+  height: var(--zone-h);
+  width: var(--zone-w);
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.touch-zone.steer {
+  left: calc(var(--safe-left) + 58px);
+}
+
+.touch-zone.aim {
+  right: 0;
+}
+
+.touch-controls.swapped .touch-zone.steer {
+  left: auto;
+  right: calc(var(--safe-right) + 58px);
+}
+
+.touch-controls.swapped .touch-zone.aim {
+  right: auto;
+  left: 0;
+}
+
+.zone-hint {
+  position: absolute;
+  bottom: calc(var(--safe-bottom) + 22px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 1px dashed rgba(170, 200, 255, 0.35);
+  color: rgba(220, 232, 250, 0.6);
+  font-size: 0.78rem;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.touch-zone:has(.stick-base.active) .zone-hint {
+  opacity: 0;
+}
+
+.stick-base,
+.stick-knob {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.stick-base {
+  width: 136px;
+  height: 136px;
+  margin: -68px 0 0 -68px;
+  border: 2px solid rgba(160, 200, 255, 0.45);
+  background: radial-gradient(circle, rgba(92, 200, 255, 0.12), rgba(10, 20, 40, 0.25) 70%);
+}
+
+.stick-base.aim {
+  width: 152px;
+  height: 152px;
+  margin: -76px 0 0 -76px;
+  border-color: rgba(255, 170, 120, 0.55);
+  background: radial-gradient(circle, rgba(255, 140, 90, 0.14), rgba(40, 14, 10, 0.25) 70%);
+}
+
+.stick-knob {
+  width: 58px;
+  height: 58px;
+  margin: -29px 0 0 -29px;
+  background: rgba(200, 228, 255, 0.55);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+}
+
+.stick-knob.aim {
+  background: rgba(255, 180, 140, 0.6);
+}
+
+.stick-base.active,
+.stick-knob.active {
+  opacity: 1;
+}
+
+.tcluster {
+  position: absolute;
+  display: grid;
+  gap: 8px;
+  bottom: var(--cluster-bottom);
+}
+
+.tcluster.left {
+  left: calc(var(--safe-left) + 66px);
+  grid-template-columns: repeat(2, var(--btn));
+}
+
+.tcluster.right {
+  right: calc(var(--safe-right) + 12px);
+  grid-template-columns: repeat(2, var(--btn));
+}
+
+.touch-controls.swapped .tcluster.left {
+  left: auto;
+  right: calc(var(--safe-right) + 66px);
+}
+
+.touch-controls.swapped .tcluster.right {
+  right: auto;
+  left: calc(var(--safe-left) + 12px);
+}
+
+.tbtn {
+  position: relative;
+  width: var(--btn);
+  height: var(--btn);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  border-radius: 50%;
+  border: 2px solid rgba(160, 200, 255, 0.45);
+  background: rgba(8, 16, 32, 0.55);
+  color: #e8eef8;
+  font: inherit;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.tbtn .icon {
+  width: 22px;
+  height: 22px;
+}
+
+.tlabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 4px;
+}
+
+.tbtn.pressed {
+  background: rgba(92, 200, 255, 0.45);
+  border-color: #9be0ff;
+}
+
+.tbtn.boost {
+  border-color: rgba(185, 243, 107, 0.6);
+}
+
+.tbtn.boost.pressed {
+  background: rgba(185, 243, 107, 0.45);
+}
+
+.tbtn.cruise[data-state='charging'] {
+  border-color: var(--warning);
+  animation: cruise-charge 0.6s ease-in-out infinite alternate;
+}
+
+.tbtn.cruise[data-state='on'] {
+  background: rgba(92, 200, 255, 0.4);
+  border-color: #9be0ff;
+}
+
+@keyframes cruise-charge {
+  from {
+    box-shadow: 0 0 0 0 rgba(255, 209, 102, 0.5);
+  }
+  to {
+    box-shadow: 0 0 0 8px rgba(255, 209, 102, 0);
+  }
+}
+
+.tbtn.context {
+  border-color: rgba(98, 227, 160, 0.4);
+}
+
+.tbtn.context.ready {
+  background: rgba(20, 70, 46, 0.7);
+  border-color: var(--success);
+  box-shadow: 0 0 14px rgba(98, 227, 160, 0.35);
+}
+
+.tbtn[disabled] {
+  opacity: 0.4;
+}
+
+.tbtn.small {
+  --btn: 50px;
+  width: 50px;
+  height: 50px;
+  justify-self: center;
+  align-self: center;
+}
+
+.tbtn.drift.on {
+  background: rgba(255, 209, 102, 0.35);
+  border-color: var(--warning);
+}
+
+.tcount {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #1b2a44;
+  border: 1px solid rgba(160, 200, 255, 0.6);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+}
+
+.throttle {
+  position: absolute;
+  left: calc(var(--safe-left) + 8px);
+  bottom: calc(var(--safe-bottom) + 12px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.touch-controls.swapped .throttle {
+  left: auto;
+  right: calc(var(--safe-right) + 8px);
+}
+
+.throttle-value {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.throttle-track {
+  position: relative;
+  width: 44px;
+  height: min(40vh, 190px);
+  border-radius: 12px;
+  border: 2px solid rgba(160, 200, 255, 0.45);
+  background: rgba(8, 16, 32, 0.55);
+  overflow: hidden;
+  touch-action: none;
+}
+
+.throttle-fill {
+  position: absolute;
+  inset: 0;
+  transform-origin: bottom center;
+  transform: scaleY(0.2);
+  background: linear-gradient(0deg, rgba(92, 200, 255, 0.25), rgba(92, 200, 255, 0.6));
+}
+
+.throttle-fill.reverse {
+  background: linear-gradient(0deg, rgba(255, 180, 92, 0.6), rgba(255, 180, 92, 0.25));
+}
+
+.throttle-zero {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 20%;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.6);
+  z-index: 1;
+}
+
+.assist-chip {
+  position: absolute;
+  right: calc(var(--safe-right) + 12px);
+  bottom: calc(var(--cluster-bottom) + 2 * var(--btn) + 22px);
+  min-height: 36px;
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(160, 200, 255, 0.45);
+  background: rgba(8, 16, 32, 0.6);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  touch-action: manipulation;
+}
+
+.touch-controls.swapped .assist-chip {
+  right: auto;
+  left: calc(var(--safe-left) + 12px);
+}
+
+.assist-chip[data-level='off'] {
+  color: var(--text-muted);
+}
+
+/* Portrait phones: sticks along the bottom, clusters above them. */
+@media (orientation: portrait) {
+  .touch-controls {
+    --zone-h: 34vh;
+    --zone-w: 50vw;
+    --btn: 54px;
+    --cluster-bottom: calc(34vh + 10px);
+  }
+
+  .touch-zone.steer {
+    left: 0;
+  }
+
+  .touch-controls.swapped .touch-zone.steer {
+    right: 0;
+  }
+
+  .throttle {
+    bottom: calc(34vh + 10px);
+  }
+
+  .throttle-track {
+    height: min(20vh, 150px);
+  }
+
+  .tcluster.left {
+    left: calc(var(--safe-left) + 62px);
+    bottom: calc(34vh + 10px);
+  }
+}
+
+/* Very short landscape phones (e.g. 640x360). */
+@media (orientation: landscape) and (max-height: 420px) {
+  .touch-controls {
+    --btn: 54px;
+    --cluster-bottom: calc(var(--safe-bottom) + 118px);
+  }
+
+  .throttle-track {
+    height: 120px;
+  }
+
+  .tbtn.drift {
+    display: none;
+  }
+}
+
+/* Tablets get larger targets. */
+@media (min-width: 740px) and (min-height: 740px) {
+  .touch-controls {
+    --btn: 68px;
+  }
+
+  .tbtn .icon {
+    width: 26px;
+    height: 26px;
+  }
+
+  .tlabel {
+    font-size: 11px;
+  }
+}

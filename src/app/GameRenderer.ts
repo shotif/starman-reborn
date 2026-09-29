@@ -1,0 +1,196 @@
+import * as THREE from 'three';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import type { QualityLevel } from '../world/art/types.ts';
+import type { QualitySetting } from './settings.ts';
+
+interface Preset {
+  dprCap: number;
+  frameBudgetMs: number;
+  bloom: boolean;
+}
+
+const PRESETS: Record<QualityLevel, Preset> = {
+  low: { dprCap: 1, frameBudgetMs: 1000 / 30, bloom: false },
+  medium: { dprCap: 1.5, frameBudgetMs: 1000 / 60, bloom: false },
+  high: { dprCap: 2, frameBudgetMs: 1000 / 60, bloom: true },
+};
+
+export function isTouchDevice(): boolean {
+  return typeof window !== 'undefined' && (window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0);
+}
+
+/** 'auto' picks the low preset on phones/tablets and medium on desktops. */
+export function resolveQuality(setting: QualitySetting): QualityLevel {
+  if (setting !== 'auto') return setting;
+  return isTouchDevice() ? 'low' : 'medium';
+}
+
+/**
+ * Owns the single WebGLRenderer (WebGL 2). Handles resizing to the canvas' CSS size, a device
+ * pixel ratio cap per quality preset, dynamic resolution from measured frame time, optional bloom
+ * on the high preset, and WebGL context loss.
+ */
+export class GameRenderer {
+  readonly renderer: THREE.WebGLRenderer;
+  readonly canvas: HTMLCanvasElement;
+  quality: QualityLevel;
+  /** Multiplier applied on top of the capped DPR (0.55..1), driven by frame time. */
+  dynamicScale = 1;
+  onContextLost: (() => void) | null = null;
+  onContextRestored: (() => void) | null = null;
+  contextLost = false;
+
+  private bloomAllowed = true;
+  private composer: EffectComposer | null = null;
+  private renderPass: RenderPass | null = null;
+  private bloomPass: UnrealBloomPass | null = null;
+  private frameTimes: number[] = [];
+  private slowFor = 0;
+  private fastFor = 0;
+  private width = 0;
+  private height = 0;
+  private dpr = 1;
+  fps = 0;
+
+  constructor(canvas: HTMLCanvasElement, quality: QualityLevel) {
+    this.canvas = canvas;
+    this.quality = quality;
+    this.renderer = new THREE.WebGLRenderer({
+      canvas,
+      antialias: !isTouchDevice(),
+      powerPreference: 'high-performance',
+      alpha: false,
+      stencil: false,
+    });
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.0;
+    this.renderer.setClearColor(0x020308, 1);
+    canvas.addEventListener('webglcontextlost', (e) => {
+      e.preventDefault();
+      this.contextLost = true;
+      this.onContextLost?.();
+    });
+    canvas.addEventListener('webglcontextrestored', () => {
+      this.contextLost = false;
+      this.onContextRestored?.();
+    });
+    this.resize(true);
+  }
+
+  get preset(): Preset {
+    return PRESETS[this.quality];
+  }
+
+  get pixelRatio(): number {
+    return this.dpr;
+  }
+
+  setQuality(quality: QualityLevel, bloomAllowed: boolean): void {
+    this.quality = quality;
+    this.bloomAllowed = bloomAllowed;
+    this.dynamicScale = 1;
+    this.frameTimes = [];
+    if (!this.useBloom) this.disposeComposer();
+    this.resize(true);
+  }
+
+  private get useBloom(): boolean {
+    return this.preset.bloom && this.bloomAllowed;
+  }
+
+  /** Matches the drawing buffer to the canvas CSS size × capped DPR × dynamic scale. */
+  resize(force = false): void {
+    const w = Math.max(1, Math.floor(this.canvas.clientWidth || window.innerWidth));
+    const h = Math.max(1, Math.floor(this.canvas.clientHeight || window.innerHeight));
+    const dpr = Math.max(0.5, Math.min(window.devicePixelRatio || 1, this.preset.dprCap) * this.dynamicScale);
+    if (!force && w === this.width && h === this.height && Math.abs(dpr - this.dpr) < 0.01) return;
+    this.width = w;
+    this.height = h;
+    this.dpr = dpr;
+    this.renderer.setPixelRatio(dpr);
+    this.renderer.setSize(w, h, false);
+    if (this.composer) {
+      this.composer.setPixelRatio(dpr);
+      this.composer.setSize(w, h);
+    }
+  }
+
+  get size(): { width: number; height: number } {
+    return { width: this.width, height: this.height };
+  }
+
+  render(scene: THREE.Scene, camera: THREE.Camera): void {
+    if (this.contextLost) return;
+    if (this.useBloom) {
+      if (!this.composer) this.createComposer(scene, camera);
+      this.renderPass!.scene = scene;
+      this.renderPass!.camera = camera;
+      this.composer!.render();
+    } else {
+      this.renderer.render(scene, camera);
+    }
+  }
+
+  private createComposer(scene: THREE.Scene, camera: THREE.Camera): void {
+    const composer = new EffectComposer(this.renderer);
+    composer.setPixelRatio(this.dpr);
+    composer.setSize(this.width, this.height);
+    this.renderPass = new RenderPass(scene, camera);
+    this.bloomPass = new UnrealBloomPass(new THREE.Vector2(this.width, this.height), 0.55, 0.5, 0.86);
+    composer.addPass(this.renderPass);
+    composer.addPass(this.bloomPass);
+    composer.addPass(new OutputPass());
+    this.composer = composer;
+  }
+
+  private disposeComposer(): void {
+    this.composer?.dispose();
+    this.bloomPass?.dispose();
+    this.composer = null;
+    this.renderPass = null;
+    this.bloomPass = null;
+  }
+
+  /**
+   * Feed the measured frame interval. Lowers the resolution scale when frames run over budget
+   * and slowly restores it when there is headroom.
+   */
+  recordFrame(dtSeconds: number): void {
+    const ms = dtSeconds * 1000;
+    this.frameTimes.push(ms);
+    if (this.frameTimes.length > 30) this.frameTimes.shift();
+    const avg = this.frameTimes.reduce((a, b) => a + b, 0) / this.frameTimes.length;
+    this.fps = avg > 0 ? 1000 / avg : 0;
+    if (this.frameTimes.length < 20) return;
+    const budget = this.preset.frameBudgetMs;
+    if (avg > budget * 1.2) {
+      this.slowFor += dtSeconds;
+      this.fastFor = 0;
+    } else if (avg < budget * 0.75) {
+      this.fastFor += dtSeconds;
+      this.slowFor = 0;
+    } else {
+      this.slowFor = 0;
+      this.fastFor = 0;
+    }
+    if (this.slowFor > 1.5 && this.dynamicScale > 0.55) {
+      this.dynamicScale = Math.max(0.55, this.dynamicScale - 0.1);
+      this.slowFor = 0;
+      this.frameTimes = [];
+      this.resize(true);
+    } else if (this.fastFor > 4 && this.dynamicScale < 1) {
+      this.dynamicScale = Math.min(1, this.dynamicScale + 0.05);
+      this.fastFor = 0;
+      this.resize(true);
+    }
+  }
+
+  dispose(): void {
+    this.disposeComposer();
+    this.renderer.dispose();
+  }
+}

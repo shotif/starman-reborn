@@ -1,0 +1,300 @@
+.dock-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--safe-top) + 12px) calc(var(--safe-right) + 12px) calc(var(--safe-bottom) + 12px)
+    calc(var(--safe-left) + 12px);
+  background: linear-gradient(90deg, rgba(2, 4, 10, 0.1), rgba(2, 4, 10, 0.55));
+  z-index: 6;
+}
+
+.dock-panel {
+  width: min(60rem, 100%);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dock-header {
+  padding: 0.9rem 1.1rem 0.4rem;
+}
+
+.dock-title {
+  margin: 0.1rem 0 0;
+  font-size: 1.35rem;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.dock-wallet {
+  display: grid;
+  gap: 2px;
+  text-align: right;
+  font-size: 0.9rem;
+}
+
+.dock-wallet .row {
+  justify-content: flex-end;
+}
+
+.welcome {
+  margin: 0.5rem 0 0.2rem;
+  padding: 0.5rem 0.7rem;
+  border-left: 3px solid var(--panel-border-strong);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 0 8px 8px 0;
+  font-size: 0.92rem;
+}
+
+.welcome.improved {
+  border-left-color: var(--success);
+}
+
+.welcome .standing {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.dock-panel .tabs {
+  padding: 0.3rem 1.1rem 0.5rem;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.tab-dot {
+  color: var(--warm);
+}
+
+.dock-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0.9rem 1.1rem;
+}
+
+.dock-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.7rem 1.1rem calc(0.8rem);
+  border-top: 1px solid var(--panel-border);
+  background: rgba(4, 8, 16, 0.5);
+}
+
+.dock-footer .btn-primary {
+  flex: 0 1 16rem;
+}
+
+.overview-card {
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.overview-card h3 {
+  margin: 0 0 0.45rem;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.overview-card .kv {
+  margin-bottom: 0.5rem;
+}
+
+.small {
+  font-size: 0.8rem;
+}
+
+.pos {
+  color: var(--success);
+}
+
+.neg {
+  color: #ff9d9d;
+}
+
+.callout {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--panel-border);
+  font-size: 0.9rem;
+}
+
+.callout.good {
+  border-color: rgba(98, 227, 160, 0.5);
+  background: rgba(20, 70, 46, 0.35);
+}
+
+.callout.warn {
+  border-color: rgba(255, 209, 102, 0.5);
+  background: rgba(80, 60, 10, 0.35);
+}
+
+.table-wrap {
+  overflow-x: auto;
+  touch-action: pan-x pan-y;
+}
+
+.table.market td.actions {
+  white-space: nowrap;
+}
+
+.table.market td.actions .btn + .btn {
+  margin-left: 0.35rem;
+}
+
+.best-known {
+  min-width: 9rem;
+}
+
+.route-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.qty-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.qty {
+  min-width: 3ch;
+  text-align: center;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.shop-list,
+.job-list,
+.plain {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.shop-item {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-sm);
+}
+
+.shop-item .price {
+  font-weight: 700;
+}
+
+.blocked {
+  color: var(--warning);
+  font-size: 0.82rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.shop-item .blocked {
+  flex-basis: 100%;
+}
+
+.job {
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.job.available {
+  border-color: rgba(255, 180, 92, 0.55);
+}
+
+.job h3 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.job .reward {
+  font-weight: 700;
+  color: var(--warm);
+}
+
+.job p {
+  margin: 0.4rem 0;
+}
+
+.job .kv {
+  margin-bottom: 0.6rem;
+}
+
+.objectives {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+@media (max-width: 640px), (max-height: 480px) {
+  .dock-screen {
+    padding: calc(var(--safe-top) + 4px) calc(var(--safe-right) + 4px) calc(var(--safe-bottom) + 4px)
+      calc(var(--safe-left) + 4px);
+  }
+
+  .dock-panel {
+    height: 100%;
+    width: 100%;
+  }
+
+  .dock-header {
+    padding: 0.6rem 0.8rem 0.2rem;
+  }
+
+  .dock-title {
+    font-size: 1.1rem;
+  }
+
+  .welcome {
+    font-size: 0.82rem;
+  }
+
+  .dock-body {
+    padding: 0.7rem 0.8rem;
+  }
+
+  .dock-footer {
+    padding: 0.5rem 0.8rem;
+  }
+
+  .table.market th:nth-child(5),
+  .table.market td:nth-child(5) {
+    display: none;
+  }
+}
+
+@media (max-height: 480px) and (orientation: landscape) {
+  .welcome {
+    margin: 0.3rem 0 0;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.76rem;
+  }
+}

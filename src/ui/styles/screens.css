@@ -1,0 +1,258 @@
+/* Title, sheets (settings/controls/science), jump overlay and compatibility screen. */
+
+.title-screen {
+  z-index: 8;
+  background:
+    radial-gradient(ellipse at 20% 30%, rgba(4, 8, 18, 0.0), rgba(2, 4, 10, 0.35) 60%),
+    linear-gradient(90deg, rgba(2, 4, 10, 0.72), rgba(2, 4, 10, 0.1) 70%);
+  justify-content: flex-start;
+}
+
+.title-card {
+  width: min(30rem, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin-left: max(0px, 4vw);
+}
+
+.game-title {
+  margin: 0;
+  font-size: clamp(2.3rem, 7vw, 4rem);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  font-weight: 800;
+  text-shadow: 0 4px 30px rgba(92, 200, 255, 0.35);
+}
+
+.game-title span {
+  color: var(--accent-strong);
+}
+
+.title-tagline {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 1.02rem;
+}
+
+.title-actions {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.4rem;
+}
+
+.title-actions .btn {
+  justify-content: flex-start;
+}
+
+.stack-tight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.2;
+}
+
+.stack-tight small {
+  font-weight: 500;
+  font-size: 0.78rem;
+  opacity: 0.85;
+}
+
+.title-note {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.2rem 0 0;
+}
+
+.title-foot {
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  .title-card {
+    gap: 0.4rem;
+  }
+
+  .title-actions {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .title-tagline {
+    display: none;
+  }
+}
+
+/* ---------- Sheets ---------- */
+
+.sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--safe-top) + 10px) calc(var(--safe-right) + 10px) calc(var(--safe-bottom) + 10px)
+    calc(var(--safe-left) + 10px);
+  background: rgba(2, 4, 10, 0.6);
+}
+
+.sheet {
+  width: min(44rem, 100%);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.7rem 0.9rem 0.6rem 1.1rem;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.sheet-head h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.sheet-body {
+  padding: 0.9rem 1.1rem 1.1rem;
+  min-height: 0;
+}
+
+.settings h3 {
+  margin: 0.8rem 0 0;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.controls-help .table td:first-child {
+  color: var(--text-muted);
+  width: 45%;
+}
+
+.touch-help li {
+  line-height: 1.4;
+}
+
+.science-card .kv {
+  font-size: 0.92rem;
+}
+
+/* ---------- Pause ---------- */
+
+.pause-menu {
+  z-index: 25;
+  background: rgba(2, 4, 10, 0.55);
+}
+
+.pause-card {
+  width: min(22rem, 100%);
+  display: grid;
+  gap: 0.55rem;
+  padding: 1.1rem;
+}
+
+.pause-card h2 {
+  margin: 0 0 0.3rem;
+}
+
+/* ---------- Jump overlay ---------- */
+
+.jump-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(40, 20, 80, 0.0) 30%, rgba(4, 2, 12, 0.55));
+}
+
+.jump-card {
+  text-align: center;
+  padding: 1rem 1.4rem;
+  width: min(28rem, calc(100% - 2rem));
+}
+
+.jump-card h2 {
+  margin: 0.2rem 0 0.4rem;
+  font-size: 1.6rem;
+}
+
+.jump-card .kv {
+  text-align: left;
+  margin: 0.6rem auto 0.4rem;
+  width: max-content;
+  max-width: 100%;
+}
+
+.jump-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  margin-top: 0.6rem;
+}
+
+.jump-progress span {
+  display: block;
+  height: 100%;
+  width: 100%;
+  transform-origin: left center;
+  transform: scaleX(0);
+  background: linear-gradient(90deg, #8f7bff, #5cc8ff);
+}
+
+/* ---------- FPS meter ---------- */
+
+.fps-meter {
+  position: absolute;
+  right: calc(var(--safe-right) + 8px);
+  bottom: calc(var(--safe-bottom) + 6px);
+  z-index: 40;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+/* ---------- Compatibility / context loss ---------- */
+
+.compat-screen {
+  z-index: 9;
+  overflow-y: auto;
+  align-items: flex-start;
+  background: radial-gradient(ellipse at top, #0b1430, #03050b 70%);
+}
+
+.compat-card {
+  width: min(56rem, 100%);
+  margin: auto;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.compat-map {
+  min-height: 320px;
+}
+
+.context-lost {
+  z-index: 60;
+  background: rgba(2, 4, 10, 0.85);
+}
+
+/* ---------- Discovery ---------- */
+
+.discovery-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}

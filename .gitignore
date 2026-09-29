@@ -22,3 +22,6 @@ coverage/
 
 # Local HTTPS certificates for device testing
 certs/
+
+# Local scratch scripts
+.scratch/

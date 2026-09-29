@@ -675,3 +675,14 @@ input[type='checkbox'] {
     transition-duration: 0.001ms !important;
   }
 }
+
+.screen-layer,
+.modal-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.screen-layer > *,
+.modal-layer > * {
+  pointer-events: auto;
+}

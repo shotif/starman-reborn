@@ -1,0 +1,606 @@
+/* Flight HUD. Only panels and buttons take pointer events; the rest passes through to the canvas. */
+
+.hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+  font-size: 0.9rem;
+}
+
+.hud[hidden] {
+  display: none;
+}
+
+.hud button,
+.hud .hud-panel {
+  pointer-events: auto;
+}
+
+.hud-top {
+  position: absolute;
+  top: calc(var(--safe-top) + 8px);
+  left: calc(var(--safe-left) + 8px);
+  right: calc(var(--safe-right) + 8px);
+  display: grid;
+  grid-template-columns: minmax(0, 15rem) minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: start;
+}
+
+.hud-panel {
+  background: rgba(6, 12, 24, 0.62);
+  border: 1px solid rgba(126, 170, 255, 0.22);
+  border-radius: 10px;
+  padding: 0.45rem 0.6rem;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.hud-status {
+  display: grid;
+  gap: 4px;
+  pointer-events: none !important;
+}
+
+.hud-bar {
+  display: grid;
+  grid-template-columns: 3.6rem 1fr 2rem;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+}
+
+.hud-bar-label {
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.hud-bar .num {
+  text-align: right;
+  font-size: 0.72rem;
+}
+
+.hud-speed {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.hud-speed .speed {
+  font-size: 1.05rem;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.hud-speed .unit {
+  margin-left: 2px;
+}
+
+.hud-speed .mode {
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+
+.hud[data-cruise='on'] .hud-speed .speed {
+  color: var(--accent-strong);
+}
+
+.hud-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.hud-objective {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  max-width: 34rem;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.86rem;
+  text-align: left;
+  cursor: pointer;
+  border-color: rgba(255, 180, 92, 0.45);
+}
+
+.hud-objective .icon {
+  color: var(--warm);
+  margin-top: 2px;
+}
+
+.hud-objective.collapsed .objective-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.hud-autopilot {
+  font-size: 0.8rem;
+  color: var(--accent-strong);
+  text-shadow: 0 1px 3px #000;
+}
+
+.hud-warning {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--danger);
+  text-shadow: 0 1px 3px #000;
+}
+
+.hud-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.hud-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.hud-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 0.7rem;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid rgba(126, 170, 255, 0.35);
+  background: rgba(6, 12, 24, 0.66);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.hud-btn:hover {
+  border-color: var(--accent);
+}
+
+.hud-wallet {
+  display: grid;
+  gap: 2px;
+  font-size: 0.8rem;
+  pointer-events: none !important;
+  text-align: right;
+}
+
+.hud-wallet .row {
+  justify-content: flex-end;
+}
+
+.hud-system {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.hud-bottom {
+  position: absolute;
+  bottom: calc(var(--safe-bottom) + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: min(26rem, calc(100% - 2rem));
+}
+
+.hud-target {
+  width: 100%;
+  display: grid;
+  gap: 3px;
+}
+
+.hud-target[hidden] {
+  display: none;
+}
+
+.target-name {
+  font-size: 0.95rem;
+}
+
+.target-sub {
+  font-size: 0.75rem;
+}
+
+.target-dist {
+  font-size: 0.8rem;
+}
+
+.target-bars {
+  display: grid;
+  gap: 3px;
+}
+
+.hud-context {
+  min-height: 44px;
+  padding: 0.35rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--success);
+  background: rgba(10, 50, 34, 0.75);
+  color: #d9ffec;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.hud-context[hidden] {
+  display: none;
+}
+
+.hud-scale {
+  position: absolute;
+  left: calc(var(--safe-left) + 10px);
+  bottom: calc(var(--safe-bottom) + 6px);
+  font-size: 0.66rem;
+  color: rgba(200, 214, 236, 0.55);
+  max-width: 40%;
+  pointer-events: none;
+}
+
+.encounter-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem 0.5rem;
+  max-width: 24rem;
+  padding: 0.3rem 0.4rem 0.3rem 0.7rem;
+  border-radius: 10px;
+  background: rgba(60, 10, 14, 0.82);
+  border: 1px solid var(--hostile);
+  text-align: center;
+  pointer-events: auto;
+  font-size: 0.84rem;
+}
+
+.encounter-banner[hidden] {
+  display: none;
+}
+
+/* ---------- Markers ---------- */
+
+.hud-markers {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.marker {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--neutral);
+  font: inherit;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.marker[hidden] {
+  display: none;
+}
+
+.marker-shape {
+  position: absolute;
+  left: -13px;
+  top: -13px;
+  width: 26px;
+  height: 26px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  opacity: 0.8;
+}
+
+.marker-label {
+  position: absolute;
+  left: 18px;
+  top: -10px;
+  display: flex;
+  flex-direction: column;
+  white-space: nowrap;
+  font-size: 0.7rem;
+  line-height: 1.15;
+  text-shadow:
+    0 1px 2px #000,
+    0 0 4px #000;
+  pointer-events: none;
+}
+
+.marker-dist {
+  color: var(--text-muted);
+  font-size: 0.66rem;
+}
+
+.marker.kind-station {
+  color: var(--friendly);
+}
+
+.marker.kind-station.faction-frontier {
+  color: var(--accent);
+}
+
+.marker.kind-station .marker-shape {
+  border-radius: 3px;
+}
+
+.marker.kind-lane .marker-shape {
+  border-radius: 3px;
+  transform: rotate(45deg);
+  width: 18px;
+  height: 18px;
+  left: -9px;
+  top: -9px;
+  color: var(--accent-strong);
+}
+
+.marker.kind-planet,
+.marker.kind-star {
+  color: #dfe6f3;
+}
+
+.marker.kind-planet .marker-shape,
+.marker.kind-star .marker-shape {
+  border-style: dotted;
+}
+
+.marker.kind-beacon .marker-shape {
+  border-radius: 2px;
+  width: 14px;
+  height: 14px;
+  left: -7px;
+  top: -7px;
+  color: var(--fiction);
+}
+
+.marker.kind-loot {
+  color: var(--warm);
+}
+
+.marker.kind-loot .marker-shape {
+  border-radius: 2px;
+  width: 16px;
+  height: 16px;
+  left: -8px;
+  top: -8px;
+}
+
+/* Hostile: red diamond (shape + "◆" text prefix, never colour alone). */
+.marker.hostile {
+  color: var(--hostile);
+}
+
+.marker.hostile .marker-shape {
+  border-radius: 0;
+  transform: rotate(45deg);
+  width: 24px;
+  height: 24px;
+  left: -12px;
+  top: -12px;
+  border-width: 2.5px;
+}
+
+.marker.objective {
+  color: var(--warm);
+}
+
+.marker.selected .marker-shape {
+  border-width: 3px;
+  opacity: 1;
+  box-shadow: 0 0 10px currentColor;
+}
+
+.marker.selected .marker-name {
+  font-weight: 700;
+}
+
+/* Off-screen: edge arrow pointing toward the target. */
+.marker.offscreen .marker-shape {
+  border: 0;
+  border-radius: 0;
+  width: 0;
+  height: 0;
+  left: -9px;
+  top: -9px;
+  border-left: 18px solid currentColor;
+  border-top: 9px solid transparent;
+  border-bottom: 9px solid transparent;
+  box-shadow: none;
+  transform-origin: 9px 9px;
+}
+
+.marker.offscreen .marker-label {
+  left: -40px;
+  top: 14px;
+  align-items: center;
+  width: 80px;
+  white-space: normal;
+  text-align: center;
+}
+
+/* ---------- Reticle and lead ---------- */
+
+.reticle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.reticle-ring {
+  position: absolute;
+  left: -20px;
+  top: -20px;
+  width: 40px;
+  height: 40px;
+  border: 2px solid rgba(155, 224, 255, 0.9);
+  border-radius: 50%;
+}
+
+.reticle-dot {
+  position: absolute;
+  left: -2.5px;
+  top: -2.5px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #e8f8ff;
+}
+
+.reticle.out-of-arc .reticle-ring {
+  border-style: dashed;
+  border-color: rgba(255, 209, 102, 0.8);
+}
+
+.reticle.assisted .reticle-ring {
+  box-shadow: 0 0 12px rgba(155, 224, 255, 0.8);
+  border-width: 3px;
+}
+
+.lead-marker {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.lead-marker::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: -8px;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--hostile);
+  transform: rotate(45deg);
+}
+
+.lead-marker::after {
+  content: '';
+  position: absolute;
+  left: -2px;
+  top: -2px;
+  width: 4px;
+  height: 4px;
+  background: var(--hostile);
+}
+
+.lead-marker[hidden] {
+  display: none;
+}
+
+.lock-text {
+  position: absolute;
+  left: 0;
+  top: 0;
+  margin: 26px 0 0 -60px;
+  width: 120px;
+  text-align: center;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--warning);
+  text-shadow: 0 1px 2px #000;
+  pointer-events: none;
+}
+
+.lock-text.locked {
+  color: var(--hostile);
+}
+
+.lock-text[hidden] {
+  display: none;
+}
+
+/* ---------- Touch layout adjustments ---------- */
+
+.hud.touch-mode .hud-context {
+  display: none;
+}
+
+.hud.touch-mode .hud-bottom {
+  bottom: auto;
+  top: calc(var(--safe-top) + 7.2rem);
+  width: min(20rem, 60vw);
+}
+
+.hud.touch-mode .hud-target {
+  padding: 0.3rem 0.5rem;
+}
+
+.hud.touch-mode .hud-scale {
+  display: none;
+}
+
+@media (max-width: 760px), (max-height: 460px) {
+  .hud {
+    font-size: 0.82rem;
+  }
+
+  .hud-top {
+    grid-template-columns: minmax(0, 11rem) minmax(0, 1fr) auto;
+  }
+
+  .hud-bar {
+    grid-template-columns: 2.9rem 1fr 1.7rem;
+    font-size: 0.64rem;
+  }
+
+  .hud-objective {
+    font-size: 0.76rem;
+  }
+
+  .hud-btn span {
+    display: none;
+  }
+
+  .hud-wallet {
+    font-size: 0.72rem;
+  }
+}
+
+@media (orientation: portrait) and (max-width: 600px) {
+  .hud-top {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'status right'
+      'center center';
+  }
+
+  .hud-status {
+    grid-area: status;
+  }
+
+  .hud-right {
+    grid-area: right;
+  }
+
+  .hud-center {
+    grid-area: center;
+  }
+
+  .hud.touch-mode .hud-bottom {
+    top: calc(var(--safe-top) + 12.5rem);
+    width: min(18rem, 80vw);
+  }
+}
