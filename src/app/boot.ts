@@ -1,9 +1,7 @@
 import { SYSTEMS } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
-import { renderStarMap2D } from '../galaxy/GalaxyMapView.ts';
 import { button, setModalRoot, setToastRoot } from '../ui/components.ts';
 import { h } from '../ui/dom.ts';
-import { openEncyclopedia } from '../ui/encyclopedia.ts';
 import '../ui/styles/screens.css';
 import { applyDocumentSettings, Game } from './Game.ts';
 import { detectBackend } from './save/backend.ts';
@@ -12,7 +10,11 @@ import { sanitizeSettings } from './settings.ts';
 import { detectWebGL2 } from './webgl.ts';
 
 /** Friendly fallback when WebGL 2 is missing: the 2D star map and the science notes still work. */
-function renderCompat(ui: HTMLElement, reason: string | undefined): void {
+async function renderCompat(ui: HTMLElement, reason: string | undefined): Promise<void> {
+  const [{ renderStarMap2D }, { openEncyclopedia }] = await Promise.all([
+    import('../galaxy/GalaxyMapView.ts'),
+    import('../ui/encyclopedia.ts'),
+  ]);
   const mapBox = h('div', { class: 'panel panel-pad compat-map', 'data-testid': 'compat-map' });
   const layer = h('div', { class: 'modal-layer' });
   const state = {
@@ -68,7 +70,7 @@ export async function boot(): Promise<void> {
     ui.appendChild(toasts);
     setToastRoot(toasts);
     setModalRoot(ui);
-    renderCompat(ui, support.reason);
+    await renderCompat(ui, support.reason);
     return;
   }
   const game = new Game(canvas, ui, saves, settings);

@@ -325,6 +325,10 @@
   pointer-events: none;
 }
 
+.marker.label-hidden .marker-label {
+  visibility: hidden;
+}
+
 .marker-dist {
   color: var(--text-muted);
   font-size: 0.66rem;

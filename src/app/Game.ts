@@ -9,12 +9,11 @@ import { acceptJob, advanceJobs, deliverJob, getJob, LIFELINE_ID, primaryObjecti
 import { welcomeText } from '../economy/dockText.ts';
 import { DesktopInput } from '../flight/input/DesktopInput.ts';
 import { emptyInput, type InputScheme } from '../flight/input/types.ts';
-import { GalaxyMapView } from '../galaxy/GalaxyMapView.ts';
+import type { GalaxyMapView } from '../galaxy/GalaxyMapView.ts';
 import { findRoute, type Route } from '../galaxy/routing.ts';
 import type { MapState } from '../galaxy/types.ts';
 import { button, confirmDialog, dataBadge, setModalRoot, setToastRoot, showModal, sourceLink, toast } from '../ui/components.ts';
 import { formatCredits, h, signed } from '../ui/dom.ts';
-import { openEncyclopedia } from '../ui/encyclopedia.ts';
 import { Hud } from '../ui/hud/Hud.ts';
 import { DockScreen } from '../ui/screens/DockScreen.ts';
 import { bodyCard, controlsContent, planetCard, settingsContent, sheet } from '../ui/screens/panels.ts';
@@ -81,7 +80,8 @@ export class Game {
   private readonly hud: Hud;
   private readonly touch: TouchControls;
   private readonly desktop: DesktopInput;
-  private readonly map: GalaxyMapView;
+  private map: GalaxyMapView | null = null;
+  private mapLoading: Promise<GalaxyMapView> | null = null;
   private readonly screenLayer: HTMLElement;
   private readonly fpsEl: HTMLElement;
   private system: SystemScene | null = null;
@@ -137,12 +137,6 @@ export class Game {
     this.desktop.onPointerMove = (x, y) => {
       if (this.scheme === 'desktop') this.hud.moveReticle(x, y);
     };
-    this.map = new GalaxyMapView({
-      root: this.screenLayer,
-      renderer: this.renderer.renderer,
-      callbacks: { onJump: (route, fee) => this.startJump(route, fee), onClose: () => this.closeMap() },
-      reducedMotion: settings.reducedMotion,
-    });
     ui.append(this.screenLayer, modalLayer, toastLayer, this.fpsEl);
     setModalRoot(modalLayer);
     setToastRoot(toastLayer);
@@ -192,9 +186,10 @@ export class Game {
     this.touch.setSwapSides(next.swapTouchSides);
     this.touch.setAimAssist(next.aimAssist);
     this.flight?.updateSettings(next);
-    this.map.setReducedMotion(next.reducedMotion);
+    this.map?.setReducedMotion(next.reducedMotion);
     if (this.dockedView) this.dockedView.reducedMotion = next.reducedMotion;
     this.fpsEl.hidden = !next.showFps;
+    this.hud.textScale = next.textScale;
     if (persist) void this.saves.saveSettings(next);
   }
 
@@ -326,7 +321,7 @@ export class Game {
   private enterDocked(locationId: string, opts: { intro?: boolean; tab?: 'overview' | 'market' | 'outfitter' | 'contracts' }): void {
     const state = this.state!;
     this.clearScreens();
-    if (this.map.isOpen) this.map.close();
+    if (this.map?.isOpen) this.map.close();
     this.loadSystem(state.location.systemId);
     this.disposeFlight();
     const site = this.system!.dock(locationId) ?? null;
@@ -676,8 +671,26 @@ export class Game {
     return null;
   }
 
+  /** The star map is a separate chunk, fetched the first time it opens. */
+  private loadMap(): Promise<GalaxyMapView> {
+    this.mapLoading ??= import('../galaxy/GalaxyMapView.ts').then(({ GalaxyMapView }) => {
+      this.map = new GalaxyMapView({
+        root: this.screenLayer,
+        renderer: this.renderer.renderer,
+        callbacks: { onJump: (route, fee) => this.startJump(route, fee), onClose: () => this.closeMap() },
+        reducedMotion: this.settings.reducedMotion,
+      });
+      return this.map;
+    });
+    return this.mapLoading;
+  }
+
   openMap(): void {
-    if (this.map.isOpen || this.mode === 'jump' || this.mode === 'title' || !this.state) return;
+    if (this.map?.isOpen || this.mode === 'jump' || this.mode === 'title' || this.mode === 'map' || !this.state) return;
+    if (!this.map) {
+      void this.loadMap().then(() => this.openMap());
+      return;
+    }
     this.modeBeforeMap = this.mode;
     this.mode = 'map';
     this.dockScreen?.root.setAttribute('hidden', '');
@@ -690,7 +703,7 @@ export class Game {
   }
 
   private closeMap(): void {
-    if (!this.map.isOpen) return;
+    if (!this.map?.isOpen) return;
     this.map.close();
     this.mode = this.modeBeforeMap;
     this.dockScreen?.root.removeAttribute('hidden');
@@ -706,7 +719,7 @@ export class Game {
       toast(readiness.reason ?? 'Cannot jump right now.', 'bad');
       return;
     }
-    this.map.close();
+    this.map?.close();
     this.mode = 'jump';
     this.refreshFlightUi();
     const dest = getSystem(route.to);
@@ -865,14 +878,14 @@ export class Game {
     const wasPaused = this.paused;
     if (this.mode === 'flight' && !wasPaused) this.setPaused(true, false);
     this.sheetsOpen++;
-    openEncyclopedia(this.screenLayer, {
+    void import('../ui/encyclopedia.ts').then(({ openEncyclopedia }) => openEncyclopedia(this.screenLayer, {
       discoveredBodies: new Set(this.state?.discoveredBodies ?? []),
       ...(systemId ? { initialSystemId: systemId } : {}),
       onClose: () => {
         this.sheetsOpen--;
         if (this.mode === 'flight' && !wasPaused) this.setPaused(false);
       },
-    });
+    }));
   }
 
   private async resetSave(): Promise<void> {
@@ -921,7 +934,7 @@ export class Game {
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     this.flight?.setViewport(width, height);
-    this.map.resize(width, height);
+    this.map?.resize(width, height);
   }
 
   private onGlobalKey(e: KeyboardEvent): void {
@@ -957,7 +970,7 @@ export class Game {
         if (this.system) this.renderer.render(this.system.scene, this.camera);
         break;
       case 'map':
-        this.map.render(rawDt);
+        this.map?.render(rawDt);
         break;
       case 'jump':
         this.updateJump(rawDt);
@@ -1104,6 +1117,14 @@ export class Game {
         steerVector: this.touch.model.steer.vector,
         aimVector: this.touch.model.aim.vector,
       }),
+      /** Test-only: jump straight to a system's arrival point (screenshots, visual checks). */
+      warp: (systemId: SystemId) => {
+        if (!this.state) this.state = createNewGame(7);
+        this.state.location = { ...this.state.location, systemId, dockedAt: null, flight: null };
+        if (!this.state.visitedSystems.includes(systemId)) this.state.visitedSystems.push(systemId);
+        this.state.flags.flightSchool = true;
+        this.enterFlight({ kind: 'arrival' });
+      },
       renderInfo: () => ({ quality: this.renderer.quality, pixelRatio: this.renderer.pixelRatio, fps: this.renderer.fps }),
       flush: () => this.saves.flush(),
     };

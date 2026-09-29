@@ -66,6 +66,8 @@ export class Hud {
   private readonly scaleText: HTMLElement;
   private readonly lockText: HTMLElement;
   private lastTargetKey = '';
+  /** Mirrors the Text size setting (label decluttering estimates label sizes from it). */
+  textScale = 1;
   private desktopCursor = true;
 
   constructor(parent: HTMLElement, callbacks: HudCallbacks) {
@@ -284,7 +286,22 @@ export class Hud {
     }
   }
 
+  private readonly placedLabels: { x: number; y: number; w: number; h: number }[] = [];
+
+  /** Higher first: selected, objective, hostile, then stations/lanes, then the rest; nearer first. */
+  private static priority(m: HudMarker): number {
+    if (m.selected) return 0;
+    if (m.objective) return 1;
+    if (m.hostile) return 2;
+    if (m.kind === 'station' || m.kind === 'loot' || m.kind === 'drone') return 3;
+    if (m.kind === 'lane') return 4;
+    return 5;
+  }
+
   private updateMarkers(markers: HudMarker[]): void {
+    markers.sort((a, b) => Hud.priority(a) - Hud.priority(b) || a.distance - b.distance);
+    const scale = this.textScale;
+    this.placedLabels.length = 0;
     while (this.markerPool.length < markers.length) {
       const el = h(
         'button',
@@ -322,6 +339,13 @@ export class Hud {
       const name = el.querySelector<HTMLElement>('.marker-name')!;
       const prefix = m.hostile ? '◆ ' : m.objective ? '⚑ ' : '';
       setText(name, `${prefix}${m.name}`);
+      // Declutter: hide a label that would overlap a more important one (the shape stays).
+      const w = (Math.max(m.name.length + prefix.length, 8) * 6.4 + 8) * scale;
+      const hgt = 26 * scale;
+      const box = m.onScreen ? { x: m.x + 18, y: m.y - 10, w, h: hgt } : { x: m.x - 40, y: m.y + 14, w: 80 * scale, h: hgt };
+      const clash = this.placedLabels.some((b) => box.x < b.x + b.w && b.x < box.x + box.w && box.y < b.y + b.h && b.y < box.y + box.h);
+      el.classList.toggle('label-hidden', clash && !m.selected);
+      if (!clash || m.selected) this.placedLabels.push(box);
       setText(el.querySelector<HTMLElement>('.marker-dist')!, formatRange(m.distance));
       el.setAttribute('aria-label', `${m.hostile ? 'Hostile ' : ''}${m.name}, ${formatRange(m.distance)}`);
     }

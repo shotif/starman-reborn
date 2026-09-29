@@ -4,7 +4,9 @@ import { dirTo, v } from './helpers.ts';
 const A = v(0, 0, 0);
 const B = v(70_000, -4_000, -30_000);
 const platform = B.clone().add(v(-9_000, 1_200, 7_500));
-const arrival = platform.clone().add(v(5_000, 1_500, 8_000));
+// The platform's radiation shield faces the white dwarf; ships dock on the far side.
+const awayFromB = dirTo(B, platform);
+const arrival = platform.clone().addScaledVector(awayFromB, 9_500).add(v(0, 1_500, 0));
 
 export const SIRIUS_SCENE: SystemSceneDef = {
   systemId: 'sirius',
@@ -22,7 +24,7 @@ export const SIRIUS_SCENE: SystemSceneDef = {
     { id: 'sirius-b', name: 'Sirius B', position: B, radius: 160, color: '#eef2ff', kind: 'white-dwarf', glowScale: 3, intensity: 1.6, light: 0.8, lightRange: 14_000 },
   ],
   planets: [],
-  stations: [{ locationId: 'sirius-platform', kind: 'sirius-platform', position: platform, approach: dirTo(platform, arrival) }],
+  stations: [{ locationId: 'sirius-platform', kind: 'sirius-platform', position: platform, approach: awayFromB }],
   lanes: [],
   belts: [],
   dust: [],

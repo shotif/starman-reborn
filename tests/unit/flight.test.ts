@@ -116,6 +116,16 @@ describe('flight model', () => {
     expect(ship.speed).toBeGreaterThan(PLAYER_SHIP.cruiseSpeed * 0.95);
   });
 
+  it('lookAlong points the nose (-Z) along the requested direction', () => {
+    const ship = new ShipBody(PLAYER_SHIP);
+    for (const d of [new THREE.Vector3(1, 0, 0), new THREE.Vector3(-0.3, 0.2, 0.9).normalize(), new THREE.Vector3(0, 1, 0)]) {
+      ship.lookAlong(d);
+      expect(ship.forward().distanceTo(d)).toBeLessThan(1e-6);
+    }
+    ship.lookAlong(new THREE.Vector3(0, 0, 1));
+    expect(ship.up().y).toBeGreaterThan(0.99);
+  });
+
   it('bounded stepping splits a long frame into small steps', () => {
     const steps: number[] = [];
     stepBounded(0.1, 1 / 60, (h) => steps.push(h));

@@ -16,7 +16,7 @@ import { GUNS, HULL_MAX, MISSILE, REPAIR_KIT, SHIELDS } from '../economy/equipme
 import { aimErrors, flyTo, steerToward } from '../flight/autopilot.ts';
 import { ChaseCamera } from '../flight/ChaseCamera.ts';
 import type { FlightAction, FlightInput } from '../flight/input/types.ts';
-import { neutralControls, PLAYER_SHIP, RAIDER_SHIP, ShipBody, stepBounded, type ShipControls } from '../flight/ShipBody.ts';
+import { lookRotation, neutralControls, PLAYER_SHIP, RAIDER_SHIP, ShipBody, stepBounded, type ShipControls } from '../flight/ShipBody.ts';
 import { emptyHudModel, type HudContextAction, type HudMarker, type HudModel } from '../ui/hud/hudModel.ts';
 import type { AsteroidHit } from './art/asteroids.ts';
 import {
@@ -959,10 +959,8 @@ export class FlightSession {
     ap.t += h;
     const k = Math.min(1, ap.t / 3.2);
     p.position.lerpVectors(ap.from, ap.site.dockPoint, easeInOut(k));
-    const face = this.tmp.copy(ap.site.approach).negate();
-    const targetQ = this.tmpQ.setFromRotationMatrix(
-      new THREE.Matrix4().lookAt(new THREE.Vector3(), face.clone().negate(), new THREE.Vector3(0, 1, 0)),
-    );
+    // Nose into the bay: facing against the approach vector.
+    const targetQ = lookRotation(this.tmp.copy(ap.site.approach).negate(), this.tmpQ);
     p.quaternion.slerpQuaternions(ap.fromQ, targetQ, easeInOut(Math.min(1, k * 1.4)));
     p.velocity.set(0, 0, 0);
     if (k >= 1) {

@@ -156,10 +156,9 @@ export class ShipBody {
     }
   }
 
-  /** Aligns the ship to look along `direction` with the scene up as reference. */
+  /** Aligns the ship's nose (-Z) with `direction`, using the scene up as reference. */
   lookAlong(direction: THREE.Vector3): void {
-    const m = new THREE.Matrix4().lookAt(new THREE.Vector3(), direction.clone().negate(), UP);
-    this.quaternion.setFromRotationMatrix(m);
+    lookRotation(direction, this.quaternion);
   }
 
   step(c: ShipControls, dt: number): void {
@@ -226,6 +225,19 @@ export class ShipBody {
     }
     this.position.addScaledVector(this.velocity, dt);
   }
+}
+
+const ORIGIN = new THREE.Vector3();
+const lookMatrix = new THREE.Matrix4();
+
+/**
+ * Orientation whose -Z axis points along `direction` (three.js Matrix4.lookAt points -Z from eye
+ * toward target), with +Y as close to the scene up as possible.
+ */
+export function lookRotation(direction: THREE.Vector3, out = new THREE.Quaternion()): THREE.Quaternion {
+  const up = Math.abs(direction.clone().normalize().y) > 0.999 ? RIGHT : UP;
+  lookMatrix.lookAt(ORIGIN, direction, up);
+  return out.setFromRotationMatrix(lookMatrix);
 }
 
 /** Runs `step` in bounded sub-steps so large frame deltas stay stable. */

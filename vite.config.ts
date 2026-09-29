@@ -16,6 +16,7 @@ export default defineConfig(({ mode }) => ({
       output: {
         // three.js changes rarely: keep it in its own long-cached chunk.
         manualChunks(id: string) {
+          if (id.includes('node_modules/three/examples/jsm/postprocessing')) return 'three-post';
           if (id.includes('node_modules/three/examples')) return 'three-addons';
           if (id.includes('node_modules/three')) return 'three';
           return undefined;
