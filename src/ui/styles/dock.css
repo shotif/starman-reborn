@@ -281,6 +281,16 @@
     padding: 0.7rem 0.8rem;
   }
 
+  .dock-panel .tabs {
+    padding: 0.25rem 0.5rem 0.4rem;
+    gap: 0.1rem;
+  }
+
+  .dock-panel .tab {
+    padding: 0.35rem 0.55rem;
+    font-size: 0.86rem;
+  }
+
   .dock-footer {
     padding: 0.5rem 0.8rem;
   }

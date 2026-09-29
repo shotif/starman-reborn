@@ -580,6 +580,15 @@
 }
 
 @media (orientation: portrait) and (max-width: 600px) {
+  .hud.touch-mode .target-sub,
+  .hud.touch-mode .hud-scale {
+    display: none;
+  }
+
+  .hud.touch-mode .hud-target {
+    gap: 2px;
+  }
+
   .hud-top {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
@@ -600,7 +609,7 @@
   }
 
   .hud.touch-mode .hud-bottom {
-    top: calc(var(--safe-top) + 12.5rem);
-    width: min(18rem, 80vw);
+    top: calc(var(--safe-top) + 10.8rem);
+    width: min(18rem, calc(100vw - 16px));
   }
 }

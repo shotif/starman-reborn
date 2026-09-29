@@ -328,34 +328,82 @@
   color: var(--text-muted);
 }
 
-/* Portrait phones: sticks along the bottom, clusters above them. */
+/* Portrait: sticks share the bottom third, one row of buttons sits just above them and the
+   throttle is a strip along the left edge. */
 @media (orientation: portrait) {
   .touch-controls {
-    --zone-h: 34vh;
-    --zone-w: 50vw;
-    --btn: 54px;
-    --cluster-bottom: calc(34vh + 10px);
+    --zone-h: calc(33vh + var(--safe-bottom));
+    --zone-w: calc(50vw - 30px);
+    --btn: 52px;
+    --cluster-bottom: calc(33vh + var(--safe-bottom) + 8px);
   }
 
   .touch-zone.steer {
-    left: 0;
+    left: calc(var(--safe-left) + 56px);
   }
 
   .touch-controls.swapped .touch-zone.steer {
-    right: 0;
+    left: auto;
+    right: calc(var(--safe-right) + 56px);
   }
 
   .throttle {
-    bottom: calc(34vh + 10px);
+    bottom: calc(var(--safe-bottom) + 10px);
   }
 
   .throttle-track {
-    height: min(20vh, 150px);
+    height: min(24vh, 170px);
   }
 
   .tcluster.left {
-    left: calc(var(--safe-left) + 62px);
-    bottom: calc(34vh + 10px);
+    left: calc(var(--safe-left) + 8px);
+    grid-template-columns: repeat(2, var(--btn));
+  }
+
+  .tcluster.right {
+    grid-template-columns: repeat(4, var(--btn));
+    gap: 6px;
+  }
+
+  .touch-controls.swapped .tcluster.left {
+    right: calc(var(--safe-right) + 8px);
+  }
+
+  .tbtn.small {
+    --btn: 52px;
+    width: 52px;
+    height: 52px;
+  }
+
+  .tbtn.drift {
+    display: none;
+  }
+
+  .assist-chip {
+    bottom: calc(33vh + var(--safe-bottom) - 44px);
+    right: calc(var(--safe-right) + 8px);
+  }
+}
+
+/* Narrow portrait phones: slightly smaller buttons so both clusters fit on one row. */
+@media (orientation: portrait) and (max-width: 400px) {
+  .touch-controls {
+    --btn: 48px;
+  }
+
+  .tbtn.small {
+    --btn: 48px;
+    width: 48px;
+    height: 48px;
+  }
+
+  .tbtn .icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .tlabel {
+    font-size: 10px;
   }
 }
 

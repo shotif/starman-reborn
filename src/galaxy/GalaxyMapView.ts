@@ -236,6 +236,7 @@ export class GalaxyMapView {
               class: 'gmap-sys',
               'aria-pressed': 'false',
               'data-system-id': s.id,
+              'data-testid': `map-system-${s.id}`,
               onClick: () => {
                 this.select(s.id, { announce: true });
                 this.panTo(s.id);

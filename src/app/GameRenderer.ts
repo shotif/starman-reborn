@@ -1,9 +1,6 @@
 import * as THREE from 'three';
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import type { QualityLevel } from '../world/art/types.ts';
+import type { BloomChain } from './bloom.ts';
 import type { QualitySetting } from './settings.ts';
 
 interface Preset {
@@ -44,9 +41,8 @@ export class GameRenderer {
   contextLost = false;
 
   private bloomAllowed = true;
-  private composer: EffectComposer | null = null;
-  private renderPass: RenderPass | null = null;
-  private bloomPass: UnrealBloomPass | null = null;
+  private bloom: BloomChain | null = null;
+  private bloomLoading = false;
   private frameTimes: number[] = [];
   private slowFor = 0;
   private fastFor = 0;
@@ -113,9 +109,9 @@ export class GameRenderer {
     this.dpr = dpr;
     this.renderer.setPixelRatio(dpr);
     this.renderer.setSize(w, h, false);
-    if (this.composer) {
-      this.composer.setPixelRatio(dpr);
-      this.composer.setSize(w, h);
+    if (this.bloom) {
+      this.bloom.composer.setPixelRatio(dpr);
+      this.bloom.composer.setSize(w, h);
     }
   }
 
@@ -125,34 +121,35 @@ export class GameRenderer {
 
   render(scene: THREE.Scene, camera: THREE.Camera): void {
     if (this.contextLost) return;
-    if (this.useBloom) {
-      if (!this.composer) this.createComposer(scene, camera);
-      this.renderPass!.scene = scene;
-      this.renderPass!.camera = camera;
-      this.composer!.render();
-    } else {
-      this.renderer.render(scene, camera);
+    if (this.useBloom && this.bloom) {
+      this.bloom.renderPass.scene = scene;
+      this.bloom.renderPass.camera = camera;
+      this.bloom.composer.render();
+      return;
     }
+    if (this.useBloom && !this.bloomLoading) this.loadBloom(scene, camera);
+    this.renderer.render(scene, camera);
   }
 
-  private createComposer(scene: THREE.Scene, camera: THREE.Camera): void {
-    const composer = new EffectComposer(this.renderer);
-    composer.setPixelRatio(this.dpr);
-    composer.setSize(this.width, this.height);
-    this.renderPass = new RenderPass(scene, camera);
-    this.bloomPass = new UnrealBloomPass(new THREE.Vector2(this.width, this.height), 0.55, 0.5, 0.86);
-    composer.addPass(this.renderPass);
-    composer.addPass(this.bloomPass);
-    composer.addPass(new OutputPass());
-    this.composer = composer;
+  /** The bloom chain is a separate chunk, fetched only when the High preset first needs it. */
+  private loadBloom(scene: THREE.Scene, camera: THREE.Camera): void {
+    this.bloomLoading = true;
+    void import('./bloom.ts')
+      .then(({ createBloomChain }) => {
+        if (!this.useBloom) return;
+        this.bloom = createBloomChain(this.renderer, scene, camera, this.width, this.height, this.dpr);
+      })
+      .catch(() => {
+        this.bloomAllowed = false;
+      })
+      .finally(() => {
+        this.bloomLoading = false;
+      });
   }
 
   private disposeComposer(): void {
-    this.composer?.dispose();
-    this.bloomPass?.dispose();
-    this.composer = null;
-    this.renderPass = null;
-    this.bloomPass = null;
+    this.bloom?.dispose();
+    this.bloom = null;
   }
 
   /**

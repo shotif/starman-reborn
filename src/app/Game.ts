@@ -923,13 +923,16 @@ export class Game {
   }
 
   private onGlobalKey(e: KeyboardEvent): void {
-    if (e.key === 'Escape' && this.mode === 'flight' && this.paused && this.pauseEl && !this.sheetsOpen && !document.querySelector('.modal-backdrop')) {
+    if (e.defaultPrevented) return;
+    const modalOpen = !!document.querySelector('.modal-backdrop, .sheet-backdrop');
+    if (e.key === 'Escape' && this.mode === 'flight' && this.paused && this.pauseEl && !this.sheetsOpen && !modalOpen) {
       e.preventDefault();
       this.setPaused(false);
-    } else if (e.key === 'Escape' && this.mode === 'map') {
+    } else if (e.key === 'Escape' && this.mode === 'map' && !modalOpen) {
       e.preventDefault();
       this.closeMap();
-    } else if ((e.code === 'Tab' || e.code === 'KeyM') && this.mode === 'map' && !document.querySelector('.modal-backdrop')) {
+    } else if (e.code === 'KeyM' && this.mode === 'map' && !modalOpen && !(e.target instanceof HTMLInputElement)) {
+      // Tab stays free for keyboard focus navigation inside the map.
       e.preventDefault();
       this.closeMap();
     }

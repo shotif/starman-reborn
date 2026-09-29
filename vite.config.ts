@@ -12,6 +12,16 @@ export default defineConfig(({ mode }) => ({
     target: 'es2022',
     sourcemap: true,
     chunkSizeWarningLimit: 800,
+    rollupOptions: {
+      output: {
+        // three.js changes rarely: keep it in its own long-cached chunk.
+        manualChunks(id: string) {
+          if (id.includes('node_modules/three/examples')) return 'three-addons';
+          if (id.includes('node_modules/three')) return 'three';
+          return undefined;
+        },
+      },
+    },
   },
   server: { port: 5173 },
   preview: { port: 4173 },
