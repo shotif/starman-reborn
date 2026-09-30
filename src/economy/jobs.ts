@@ -491,8 +491,9 @@ function payOut(state: GameState, job: JobDef): Payout {
   const front = job.contract?.front ? getFront(job.contract.front) : undefined;
   if (front) {
     const wake = job.contract!.side === 'wake';
-    pushFront(state, front.id, wake ? -BORDER.deeds.warContract : BORDER.deeds.warContract);
-    note += `; ${front.name} shifts ${wake ? 'the Wake’s way' : `the ${FACTIONS[front.faction].shortName}’s way`}`;
+    if (pushFront(state, front.id, wake ? -BORDER.deeds.warContract : BORDER.deeds.warContract)) {
+      note += `; ${front.name} shifts ${wake ? 'the Wake’s way' : `the ${FACTIONS[front.faction].shortName}’s way`}`;
+    }
   }
   const settles = job.story?.settles;
   if (settles) endFront(state, settles.front, settles.ending);

@@ -154,12 +154,13 @@ export function recordDeed(state: GameState, systemId: SystemId, amount: number)
   return fronts;
 }
 
-/** War work done for one front: its weight counts there alone. */
-export function pushFront(state: GameState, frontId: string, amount: number): void {
+/** War work done for one front: its weight counts there alone. False when the front is settled and nothing moves. */
+export function pushFront(state: GameState, frontId: string, amount: number): boolean {
   const entry = (state.world.border[frontId] ??= { deeds: [] });
-  if (entry.ending) return;
+  if (entry.ending) return false;
   entry.deeds.push([state.clock, amount]);
   if (entry.deeds.length > BORDER.keep) entry.deeds.splice(0, entry.deeds.length - BORDER.keep);
+  return true;
 }
 
 /** The Long Border's ending holds its front for good. */
