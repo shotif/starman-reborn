@@ -161,11 +161,6 @@ export function storageAt(state: GameState, locationId: string): Cargo | undefin
   return state.fleet.storage[locationId];
 }
 
-/** Units free in a leased hold. */
-export function storageFree(cargo: Cargo): number {
-  return Math.max(0, FLEET.storage.capacity - cargoUsed(cargo));
-}
-
 export function leaseStorage(state: GameState, locationId: string): Result {
   const block = dockBlock(state, locationId);
   if (block) return { ok: false, message: block };
