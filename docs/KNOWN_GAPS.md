@@ -39,12 +39,12 @@ snapshot branch only when the archives changed.
   or home bar.
 - **WebGL context loss** is handled (overlay with reload, automatic resume on restore) but was not
   forced in automated tests.
-- **Transferred size on mobile networks.** Measured from the production build: about 610 KB
+- **Transferred size on mobile networks.** Measured from the production build: about 620 KB
   gzipped for the first scene (three.js 147 KB, game code and the bundled sky and world data
-  434 KB, addons 7 KB, CSS 14 KB, HTML). It has grown with the verified sky (207 systems) and
+  449 KB, addons 7 KB, CSS 16 KB, HTML). It has grown with the verified sky (207 systems) and
   the game's systems; splitting the world data out of the first load is the obvious next step
   when phones are tuned. Loaded on demand: the star map (~20 KB) on first open, the science notes
-  (~11 KB), and bloom (~4 KB) on the High preset only. Real-network timings were not measured.
+  (~4 KB), and bloom (~4 KB) on the High preset only. Real-network timings were not measured.
 
 ## Deliberate prototype limits
 

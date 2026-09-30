@@ -10,19 +10,20 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | Check | Command | Result |
 | --- | --- | --- |
 | TypeScript typecheck (app + scripts/tests) | `npm run typecheck` | Pass |
-| Astronomy data validation | `npm run data:validate` | Pass (2 warnings: data is provisional) |
-| Unit tests | `npm test` | Pass: 408 tests in 25 files |
+| Astronomy data validation | `npm run data:validate` | Pass (22 warnings: the contested planets this edition keeps) |
+| Unit tests | `npm test` | Pass: 578 tests in 38 files |
 | Production build | `npm run build` | Pass |
-| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 12 passed (3 touch-only tests skipped) |
-| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 14 passed (1 desktop-only test skipped) |
+| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 17 passed (3 touch-only tests skipped) |
+| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 19 passed (1 desktop-only test skipped) |
 | Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 72 screenshots, no audit findings |
 
 ### Unit tests (Vitest)
 
 - `data.test.ts`: coordinate conversion, parallax → light-years, proper-motion propagation,
-  dataset validation (and that broken data is caught), the five hand-authored systems plus the
-  catalogue systems all reachable from Sol, catalogue values from HYG and the Open Exoplanet
-  Catalogue, familiar distance bands, Proxima separate from A/B, confirmed-only planets, jump
+  dataset validation (and that broken data is caught), the five hand-authored systems first and
+  every system reachable from Sol, every star and planet checked against the archives with the map
+  grown by the systems they add, familiar distance bands, Proxima separate from A/B, every planet
+  kept (contested ones marked, Proxima b confirmed), a functional dock in every system, jump
   routing and fees.
 - `world.test.ts`: the world generator passes every guardrail for the real catalogue and twelve
   other seeds, is deterministic, keeps the hand-authored core, grows lawless toward the edge,
