@@ -341,7 +341,7 @@ export class Hud {
     const ctx = model.context;
     this.contextHint.hidden = !ctx;
     if (ctx) {
-      const label = this.desktopCursor ? `${ctx.label}  [${ctx.action === 'goto' ? 'G' : ctx.action === 'scan' ? 'X' : ctx.action === 'cancel-autopilot' ? 'steer' : 'E'}]` : ctx.label;
+      const label = this.desktopCursor ? `${ctx.label}  [${ctx.action === 'goto' ? 'G' : ctx.action === 'scan' ? 'X' : 'E'}]` : ctx.label;
       setText(this.contextHint, label);
     }
 

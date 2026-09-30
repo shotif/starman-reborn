@@ -504,10 +504,7 @@ export class FlightSession {
         this.callbacks.onMessage(this.drift ? 'Engines off: drifting' : 'Engines on', 'info');
         break;
       case 'cancel-autopilot':
-        if (this.autopilot.mode === 'goto') {
-          this.autopilot = { mode: 'none' };
-          this.callbacks.onMessage('Autopilot off', 'info');
-        }
+        this.cancelAutopilot('Autopilot off: free flight');
         break;
       default:
         break;
@@ -575,7 +572,11 @@ export class FlightSession {
 
   /** The context-sensitive action offered by the E key / touch action button. */
   contextAction(): HudContextAction | null {
-    if (!this.alive || this.busy) return null;
+    if (!this.alive) return null;
+    const mode = this.autopilot.mode;
+    // Docking or riding a lane: the action button offers to stop and fly yourself.
+    if (mode === 'dock' || mode === 'lane') return { label: 'Stop', action: 'cancel-autopilot', icon: 'close' };
+    if (this.busy) return null;
     const sel = this.selectedTarget;
     if (this.dockCandidate() && !this.hostilesNearby(2_200)) {
       return { label: 'Dock', action: 'interact', icon: 'dock' };
@@ -843,12 +844,39 @@ export class FlightSession {
     };
   }
 
+  /**
+   * Hands control back to the pilot from any autopilot: go to, docking (approach or final glide),
+   * trade lane (aligning or travelling) or the launch sequence.
+   */
+  private cancelAutopilot(message: string): void {
+    const ap = this.autopilot;
+    const p = this.player;
+    if (ap.mode === 'none') return;
+    if (ap.mode === 'undock') {
+      // Still in the bay: finish clearing the station, then hand over at the exit point.
+      p.position.copy(ap.to);
+      p.velocity.copy(ap.site.approach).multiplyScalar(45);
+    } else if (ap.mode === 'dock') {
+      p.requestCruise(false);
+      if (ap.phase === 'final') {
+        // The glide was scripted: keep the pose, stop, and back off the berth under your control.
+        p.velocity.set(0, 0, 0);
+        p.angularVelocity.set(0, 0, 0);
+      }
+    } else if (ap.mode === 'lane' && ap.phase === 'travel') {
+      this.system.setLaneActive(ap.lane.def.id, false);
+      this.sfx('lane-exit');
+      // Drop out of lane speed to cruise speed; the flight model settles from there.
+      p.velocity.clampLength(0, p.params.cruiseSpeed);
+    }
+    this.autopilot = { mode: 'none' };
+    this.callbacks.onMessage(message, 'info');
+  }
+
   private updatePlayerControls(dt: number, input: FlightInput): void {
     const c = this.controls;
-    if (input.manualOverride && this.autopilot.mode === 'goto') {
-      this.autopilot = { mode: 'none' };
-      this.callbacks.onMessage('Autopilot off: manual control', 'info');
-    }
+    // Taking over the controls always wins over any autopilot.
+    if (input.manualOverride && this.autopilot.mode !== 'none') this.cancelAutopilot('Autopilot off: manual control');
     if (input.throttleTarget !== null) this.throttle = input.throttleTarget;
     this.throttle = Math.max(-1, Math.min(1, this.throttle + input.throttleDelta));
     if (this.autopilot.mode === 'none') {

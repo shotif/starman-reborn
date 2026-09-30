@@ -25,6 +25,41 @@ test.describe('platform behaviour', () => {
     await expect(page.getByText(/About the science/i).first()).toBeVisible();
   });
 
+  test('taking over the controls cancels docking (and the free flight command does too)', async ({ page }) => {
+    await openFresh(page);
+    await newGameAndLaunch(page, 6);
+    const autopilot = async () => (await api<PlayerInfo | null>(page, 'player'))?.autopilot;
+    const startDocking = async () => {
+      await api(page, 'selectTarget', 'station:earth-port');
+      await waitUntil(page, 'dock offered', async () => (await api<{ context: { label: string } | null }>(page, 'hud'))?.context?.label === 'Dock', 10_000);
+      if (await isTouch(page)) await press(page, 'touch-context');
+      else await page.keyboard.press('KeyE');
+      await waitUntil(page, 'docking autopilot running', async () => (await autopilot()) === 'dock', 10_000);
+    };
+
+    await startDocking();
+    if (await isTouch(page)) {
+      // Push the steering stick: that is taking over the controls.
+      const c = await zoneCenter(page, 'touch-steer');
+      const cdp = await page.context().newCDPSession(page);
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: c.x, y: c.y, id: 7 }] });
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: c.x + 60, y: c.y - 30, id: 7 }] });
+      await waitUntil(page, 'autopilot off after steering', async () => (await autopilot()) === 'none', 5_000);
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    } else {
+      await page.keyboard.down('KeyW');
+      await waitUntil(page, 'autopilot off after throttle', async () => (await autopilot()) === 'none', 5_000);
+      await page.keyboard.up('KeyW');
+      // The Free flight command on the rail cancels a second docking attempt.
+      await startDocking();
+      await press(page, 'hud-cmd-cancel-autopilot');
+      await waitUntil(page, 'autopilot off after free flight', async () => (await autopilot()) === 'none', 5_000);
+    }
+    await page.waitForTimeout(4000);
+    expect(await api(page, 'mode')).toBe('flight');
+    expect(await autopilot()).toBe('none');
+  });
+
   test('starts audio only after a user gesture', async ({ page }) => {
     await openFresh(page);
     expect(await api(page, 'audioState')).toBe('locked');
