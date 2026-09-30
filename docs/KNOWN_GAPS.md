@@ -4,19 +4,27 @@ This is an honest list of what the prototype does not do yet, or what has not be
 
 ## Needs your action
 
-1. **Astronomy snapshot not captured.** The build environment could not reach the ESA Gaia archive,
-   SIMBAD, VizieR or the NASA Exoplanet Archive (blocked by its network policy). The bundled star
-   and planet data are therefore **provisional transcriptions**, and every place in the game that
-   shows them displays a *Pending verification* badge. The 27 catalogue systems added later come
-   from the HYG database and the Open Exoplanet Catalogue (reachable through GitHub) and are
-   provisional too. On a machine with internet access, run
-   `npm run data:snapshot && npm run data:build && npm run data:validate`, then commit the result.
-   The badges disappear automatically and the dated archive values replace the stopgaps. See
-   [ASTRONOMY_SOURCES.md](ASTRONOMY_SOURCES.md).
-2. **Real-device testing is pending.** Everything was tested in headless Chromium with emulated
-   phone and tablet viewports, touch events and multi-touch (see [TEST_RECORD.md](TEST_RECORD.md)).
-   Nothing ran on a physical iPhone, iPad or Android device. Please run the hands-on checklist in
-   the test record over HTTPS, at <https://shotif.github.io/starman-reborn/>.
+1. **Real-device testing is pending.** Everything was tested in headless Chromium with emulated
+   phone and tablet viewports, touch events, multi-touch and a gamepad (see
+   [TEST_RECORD.md](TEST_RECORD.md)). Nothing ran on a physical iPhone, iPad or Android device, or
+   with a physical controller. Please run the hands-on checklist in the test record over HTTPS, at
+   <https://shotif.github.io/starman-reborn/>.
+
+## The sky, as verified
+
+The star and planet data were checked against the archives on 30 September 2026 by the sky
+snapshot workflow on GitHub's runners (SIMBAD, Gaia DR3, Hipparcos, the NASA Exoplanet Archive and
+the Extrasolar Planets Encyclopaedia; see [ASTRONOMY_SOURCES.md](ASTRONOMY_SOURCES.md)): 252 stars
+in 207 systems, 99 planets and 9 debris belts. Two choices of this edition are deliberate:
+
+- **Contested planets are kept.** 22 planets that an archive flags as controversial, or that no
+  archive confirms any more, stay in the game; each says so in its science card and survey
+  briefings, with what each archive says. Nothing the archives dispute was removed.
+- **Names** are the archives' own. A few systems show a variable-star or survey name (FL
+  Virginis for Wolf 424, WISE 0722−0540) rather than the better-known one.
+
+The workflow can be run again at any time from the repository's Actions tab; it commits a new
+snapshot branch only when the archives changed.
 
 ## Not verified here
 
@@ -31,31 +39,36 @@ This is an honest list of what the prototype does not do yet, or what has not be
   or home bar.
 - **WebGL context loss** is handled (overlay with reload, automatic resume on restore) but was not
   forced in automated tests.
-- **Transferred size on mobile networks.** Measured from the production build: about 288 KB
-  gzipped for the first scene (three.js 149 KB, game code 124 KB, addons 7 KB, CSS 7 KB, HTML).
-  Loaded on demand: the star map (~19 KB) on first open, the science notes (~11 KB), and bloom
-  (~4 KB) on the High preset only. Real-network timings were not measured.
+- **Transferred size on mobile networks.** Measured from the production build: about 610 KB
+  gzipped for the first scene (three.js 147 KB, game code and the bundled sky and world data
+  434 KB, addons 7 KB, CSS 14 KB, HTML). It has grown with the verified sky (207 systems) and
+  the game's systems; splitting the world data out of the first load is the obvious next step
+  when phones are tuned. Loaded on demand: the star map (~20 KB) on first open, the science notes
+  (~11 KB), and bloom (~4 KB) on the High preset only. Real-network timings were not measured.
 
 ## Deliberate prototype limits
 
-- The written story is the opening chain, three short optional jobs and three faction arcs of five
-  missions each; everything else on the job boards is generated. The arcs do not know about each
-  other beyond standing (finishing the Transit Authority's arc does not change the Wake's), the
-  characters are not in the bars as people you can walk up to, and a knocked-out den is the only
-  lasting mark an arc leaves on the world.
-- World events are a pure function of the clock: they do not react to what the player does (a
-  shortage does not end sooner because you filled it; destroying raiders does not end a raid).
-  Outside the player's system, stock only recovers toward normal; traders move goods only in the
-  system the player is in.
-- Traffic and raider packs exist only around the player: nothing persists after you jump or dock,
-  except the packs and wrecks of the player's own contracts, which are waiting when they come back.
+- The written story is the opening chain, three short optional jobs, three faction arcs of five
+  missions each and The Long Border (five steps, branching three ways at its choice); everything
+  else on the job boards is generated. The faction arcs know about each other only through
+  standing and through Kettering, whose briefings follow the choices made in them. The lasting
+  marks an arc leaves on the world are a dark den (for six hours) and the Ross 154 – Wolf 1061
+  front, settled for good by The Long Border.
+- The border war is a tide on the clock plus the player's deeds, not a simulation of fleets. It
+  runs only on the five lanes where a den's system touches lawful space, and only The Long Border
+  settles a front; the other four swing for ever.
+- Goods move between stations out of sight as a spill along the lanes, not as individual ships;
+  only the player's own system has traders flying.
+- Traffic and raider packs exist only around the player. Packs that saw the player and cargo pods
+  left adrift wait for 30 minutes of game clock (in the last six systems), as do the packs and
+  wrecks of the player's own contracts; everything else is generated again on arrival.
 - Escorts run between two stations of one system; there are no escorts across jumps.
-- The law is simple: a crime is seen by everyone at once (no witnesses, no reports that travel),
-  fines never lapse, and a patrol scans at most once a flight. Selling contraband at a station is
-  not a crime; only having it in the hold at a scan is.
-- Wingmen fly and fight but do not talk back beyond a few lines, cannot be given orders, and
-  their kills earn no bounty. Seekers (from heavy raiders, aces and bounty hunters) are the only
-  missiles fired at the player, and decoy flares the only countermeasure.
+- The law is simple: a crime is known where it was seen and spreads a jump every ten minutes;
+  fines lapse after three hours without a new crime; a patrol scans at most once a flight.
+  Selling contraband at a station is not a crime; only having it in the hold at a scan is.
+- Wingmen take two orders (attack my target, form up) and talk in a few lines. Seekers (from heavy
+  raiders, aces and bounty hunters) are the only missiles fired at the player, and decoy flares
+  the only countermeasure.
 - Ratings change nothing in the world except the combat rank that ace hunts and den assaults ask
   for; milestones are a record, with one grant (the whole codex). The what-next hint looks only at
   fines, the hold, stories waiting, the codex, known prices and job boards, not at ships, equipment
@@ -66,7 +79,9 @@ This is an honest list of what the prototype does not do yet, or what has not be
   hall rock walls are dark away from the floodlights.
 - Damage to systems is modelled for the player only (other ships just lose shield and hull); no
   fleet battles, multiplayer, cloud saves or cross-device sync (out of scope per the spec).
-- Solar System planet positions are schematic and do not follow an ephemeris.
+- Solar System planets sit at their real heliocentric longitudes for the game date (JPL's
+  approximate elements, valid 1800–2050; outside those years the layout is schematic), with
+  distances compressed so the system can be flown; Mars is kept within 140° of Earth.
 - Stations and ships do not collide with each other in detail (spheres only).
 - The offline cache (service worker) is a stretch-goal implementation: it registers only in
   production builds over HTTPS or on localhost, and was not tested offline on a phone.
