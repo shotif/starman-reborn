@@ -30,11 +30,14 @@ export const FLEET = {
     recheck: 900,
     /**
      * A wait is reported once: a wait for credits at the first look, a wait for prices to recover
-     * once it has lasted this many looks (a route worked hard often needs one or two to recover).
+     * after this many more looks (an hour; a route worked hard often needs a look or two to recover).
      */
     reportAfter: 4,
-    /** At most this many runs a hauler are worked out at once; past that the captain rests until the next settle. */
-    maxRunsPerSettle: 200,
+    /**
+     * At most this many looks at the route a hauler (every run begins with one; a waiting captain
+     * looks every `recheck`) are worked out at once; past that the captain rests until the clock.
+     */
+    maxLooksPerSettle: 300,
   },
   risk: {
     /** Chance a run meets raiders, by the route's worst security (a raid under way on the route: one level worse). */

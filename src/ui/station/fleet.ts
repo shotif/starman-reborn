@@ -34,13 +34,12 @@ import {
   type StakeOffer,
 } from '../../economy/fleet.ts';
 import { cargoCapacity, hullMax } from '../../economy/loadout.ts';
-import type { RouteRisk } from '../../economy/tradeComputer.ts';
 import { button, confirmDialog, showModal, toast } from '../components.ts';
 import { formatCredits, h, replaceChildren } from '../dom.ts';
 import { glyph } from '../glyphs.ts';
 import { icon } from '../icons.ts';
 import '../styles/fleet.css';
-import { ago } from './computer.ts';
+import { ago, RISK_WORD } from './computer.ts';
 import type { Refresh, StationContext } from './context.ts';
 import { shipKind } from './gearText.ts';
 import { COMMODITY_GLYPH } from './trader.ts';
@@ -49,8 +48,6 @@ import { COMMODITY_GLYPH } from './trader.ts';
  * The Fleet window (docs/PROCGEN.md §18): ships parked here (switch, hire a captain, sell), the
  * haulers and ships elsewhere, storage here, stakes in station trade, and the latest reports.
  */
-
-const RISK_WORD: Record<RouteRisk, string> = { patrolled: 'Patrolled', thin: 'Thin patrols', lawless: 'Lawless' };
 
 const pct = (x: number) => `${Math.round(x * 1000) / 10}%`;
 const minutes = (s: number) => `${Math.max(1, Math.round(s / 60))} min`;

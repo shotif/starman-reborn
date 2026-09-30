@@ -4,7 +4,7 @@ import { FLEET } from '../content/fleet/rules.ts';
 import { FIRST_NAMES, LAST_NAMES } from '../content/people/lines.ts';
 import { rng } from '../content/random.ts';
 import type { ShipModel } from '../content/types.ts';
-import { ALL_LOCATIONS, getLocation, SYSTEMS, WORLD } from '../data/systems.ts';
+import { ALL_LOCATIONS, getLocation, SYSTEMS } from '../data/systems.ts';
 import type { FactionId, SystemId } from '../data/types.ts';
 import { findRoute } from '../galaxy/routing.ts';
 import { addCargo, cargoCount, cargoUsed, itemsThatFit, removeCargo } from './cargo.ts';
@@ -17,7 +17,7 @@ import { cargoCapacity, clampShip, newShipState, performanceOf, shieldCapacity }
 import { hasMarket, moveStock, orderTotal, quote, stockAvailable, type MarketContext } from './markets.ts';
 import { barKind } from './people.ts';
 import { knownAt, marketContext } from './trade.ts';
-import { riskOf, type RouteRisk } from './tradeComputer.ts';
+import { riskOf, security, type RouteRisk } from './tradeComputer.ts';
 
 /**
  * A fleet of your own (docs/PROCGEN.md §18): ships parked at stations, captains flying them on the
@@ -63,10 +63,11 @@ export function parkedAt(state: GameState, locationId: string): OwnedShip[] {
   return state.fleet.ships.filter((o) => o.locationId === locationId && !o.hauler);
 }
 
+/** A new ship's id: never one a kept report still names (a lost or sold ship's). */
 function nextShipId(state: GameState): string {
   let n = 0;
-  for (const o of state.fleet.ships) {
-    const m = /^ship-(\d+)$/.exec(o.id);
+  for (const id of [...state.fleet.ships.map((o) => o.id), ...state.fleet.reports.map((r) => r.shipId)]) {
+    const m = id ? /^ship-(\d+)$/.exec(id) : null;
     if (m) n = Math.max(n, Number(m[1]));
   }
   return `ship-${n + 1}`;
@@ -247,6 +248,8 @@ export function buyStake(state: GameState, locationId: string, percent: number):
   if (cost > state.credits) return { ok: false, message: 'Not enough credits.' };
   const k = stakeAt(state, locationId);
   if (k) {
+    // The hour under way pays for the stake as it was; the larger stake counts from now.
+    payPartHour(state, k);
     k.percent += percent;
     k.paid += cost;
   } else {
@@ -260,6 +263,7 @@ export function sellStake(state: GameState, locationId: string): Result {
   const i = state.fleet.stakes.findIndex((k) => k.locationId === locationId);
   const k = state.fleet.stakes[i];
   if (!k) return { ok: false, message: 'You hold no stake there.' };
+  payPartHour(state, k);
   const value = Math.round(stakeValue(k) * FLEET.stakes.sellBack);
   state.fleet.stakes.splice(i, 1);
   applyCredits(state, value, 'fleet', `Sold ${k.percent}% of ${place(locationId)}’s trade`);
@@ -283,6 +287,18 @@ export function dividendPerHour(locationId: string, percent: number, clock: numb
   return Math.round(FLEET.stakes.dividendPerHour * stakeValue({ locationId, percent }) * dividendFactor(locationId, clock).factor);
 }
 
+/**
+ * Pays the part of the hour under way (the whole hours are settled on docking) before a stake
+ * changes hands, and starts its hours again from now.
+ */
+function payPartHour(state: GameState, k: Stake): void {
+  const part = Math.min(HOUR, Math.max(0, state.clock - k.since));
+  const pay = Math.round((dividendPerHour(k.locationId, k.percent, k.since + part / 2) * part) / HOUR);
+  k.since = state.clock;
+  k.earned += pay;
+  credit(state, pay);
+}
+
 // ---------------------------------------------------------------- haulers: routes
 
 /** Captains carry lawful cargo only: no contraband, no small arms. */
@@ -294,7 +310,6 @@ function haulDock(locationId: string): boolean {
   return hasMarket(locationId) && loc.dockable !== false && loc.stationType !== 'pirate-den';
 }
 
-const security = (id: SystemId) => WORLD.profiles.get(id)?.security ?? 1;
 const pathCache = new Map<string, SystemId[]>();
 
 /** Systems a run passes through, both ends included (the shortest route). */
@@ -527,6 +542,8 @@ export interface FleetSettlement {
   /** What those runs made the player, all told (negative: lost). */
   hauled: number;
   dividends: number;
+  /** Steps worked out (loads, arrivals, homecomings, looks, hours of dividends): 0 when nothing was due. */
+  steps: number;
 }
 
 /** When a hauler's next step is due: setting out (at home), arriving (out), or getting home (back). */
@@ -581,6 +598,7 @@ function park(state: GameState, o: OwnedShip, h: Hauler, t: number, out: FleetSe
 
 /** At home: load and set out, or wait (the route does not pay, or the player cannot pay for a load). */
 function setOut(state: GameState, o: OwnedShip, h: Hauler, t: number, out: FleetSettlement): void {
+  // (Recalling a captain at home parks at once; a save may still hold one recalled here.)
   if (h.recalled) return park(state, o, h, t, out);
   const { from, to, commodity: c } = h.route;
   const plan = planAt(state, o, h, t);
@@ -590,7 +608,7 @@ function setOut(state: GameState, o: OwnedShip, h: Hauler, t: number, out: Fleet
     h.waiting = why;
     h.since = t + FLEET.haulers.recheck;
     // A route worked hard often needs a look or two to recover; a longer wait is worth a report, once.
-    if (h.waits === (why === 'credits' ? 1 : FLEET.haulers.reportAfter)) {
+    if (h.waits === (why === 'credits' ? 1 : 1 + FLEET.haulers.reportAfter)) {
       const text =
         why === 'unprofitable'
           ? `${h.captain} waits at ${place(from)}: ${goodName(c)} to ${place(to)} does not pay ${FLEET.haulers.minProfit} cr a run for now.`
@@ -675,7 +693,7 @@ function payDividend(state: GameState, k: Stake, out: FleetSettlement): void {
  * clock gives the same result however often it is called, on every device.
  */
 export function settleFleet(state: GameState): FleetSettlement {
-  const out: FleetSettlement = { reports: [], runs: 0, hauled: 0, dividends: 0 };
+  const out: FleetSettlement = { reports: [], runs: 0, hauled: 0, dividends: 0, steps: 0 };
   const fleet = state.fleet;
   if (!fleet.stakes.length && !fleet.ships.some((o) => o.hauler)) return out;
   const now = state.clock;
@@ -687,9 +705,10 @@ export function settleFleet(state: GameState): FleetSettlement {
     k.since += old * HOUR;
     k.earned += pay;
     out.dividends += pay;
+    out.steps += old;
     credit(state, pay);
   }
-  const runs = new Map<string, number>();
+  const looks = new Map<OwnedShip, number>();
   const resting = new Set<OwnedShip>();
   for (;;) {
     let next: { t: number; ship?: OwnedShip; stake?: Stake } | null = null;
@@ -703,6 +722,7 @@ export function settleFleet(state: GameState): FleetSettlement {
       if (t <= now && (!next || t < next.t)) next = { t, stake: k };
     }
     if (!next) break;
+    out.steps += 1;
     if (next.stake) {
       payDividend(state, next.stake, out);
       continue;
@@ -710,15 +730,16 @@ export function settleFleet(state: GameState): FleetSettlement {
     const o = next.ship!;
     const h = o.hauler!;
     if (h.leg === 'home') {
-      if ((runs.get(o.id) ?? 0) >= FLEET.haulers.maxRunsPerSettle) {
-        // Too long to work out every run: the captain rests until now.
+      const n = (looks.get(o) ?? 0) + 1;
+      if (n > FLEET.haulers.maxLooksPerSettle) {
+        // Too long to work out every look and run: the captain rests until now.
         h.since = now;
         resting.add(o);
         continue;
       }
+      looks.set(o, n);
       setOut(state, o, h, next.t, out);
     } else if (h.leg === 'out') {
-      runs.set(o.id, (runs.get(o.id) ?? 0) + 1);
       arrive(state, o, h, next.t, out);
     } else {
       comeHome(state, o, h, next.t, out);

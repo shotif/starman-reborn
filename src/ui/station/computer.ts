@@ -21,7 +21,7 @@ export function ago(clock: number, t: number): string {
   return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : `${Math.round(m / 60)} h ago`;
 }
 
-const RISK_WORD = { patrolled: 'Patrolled', thin: 'Thin patrols', lawless: 'Lawless' } as const;
+export const RISK_WORD = { patrolled: 'Patrolled', thin: 'Thin patrols', lawless: 'Lawless' } as const;
 
 /**
  * The trade computer (docs/PROCGEN.md §16): the best routes between prices the player has had,

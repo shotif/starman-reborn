@@ -441,7 +441,7 @@ export class Game {
     // The fleet catches up with the clock the save was made at (docs/PROCGEN.md §18).
     useWorldLog(this.state.world);
     const fleet = settleFleet(this.state);
-    if (this.state.fleet.stakes.length || this.state.fleet.ships.some((o) => o.hauler)) this.persist();
+    if (fleet.steps) this.persist();
     const loc = this.state.location;
     if (loc.dockedAt) this.enterDocked(loc.dockedAt, { titleCard: true });
     else if (loc.flight) {
@@ -1256,10 +1256,11 @@ export class Game {
         const events = performJump(state, j.route, j.fee);
         this.announceJobEvents(events);
         for (const n of settleLaw(state)) toast(n, 'good', 6000);
-        this.announceFleet(settleFleet(state));
         const wing = payCrew(state, j.route.hops.length);
         if (wing.paid) toast(`Wing fees: ${formatCredits(wing.paid)}`, 'info', 3000);
         for (const note of wing.notes) toast(note, 'bad', 5000);
+        // The wing is paid first: a hauler loading out of sight never leaves it unpaid.
+        this.announceFleet(settleFleet(state));
         void this.saves.save(state);
         // Build the tunnel scene, then load the destination while the tunnel plays.
         j.tunnelScene = new THREE.Scene();

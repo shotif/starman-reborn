@@ -37,10 +37,11 @@ export function dockAt(state: GameState, locationId: string): DockOutcome {
   state.location.flight = null;
   state.location.lastDockId = locationId;
   markVisited(state, loc.systemId, locationId);
+  // The fleet first: the prices seen here and the watched ones include what its haulers moved.
+  const fleet = settleFleet(state);
   recordMarketVisit(state, locationId);
   const watchNotes = watchOnDock(state, locationId);
   const lawNotes = settleLaw(state);
-  const fleet = settleFleet(state);
   tidyWorldLog(state);
   rechargeShield(state);
   let clearanceGranted = false;

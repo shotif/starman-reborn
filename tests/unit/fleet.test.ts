@@ -36,7 +36,7 @@ import {
 } from '../../src/economy/fleet.ts';
 import { cargoCapacity, newShipState, shieldCapacity } from '../../src/economy/loadout.ts';
 import { hasMarket, moveStock } from '../../src/economy/markets.ts';
-import { recordMarketVisit } from '../../src/economy/trade.ts';
+import { liveQuote, recordMarketVisit } from '../../src/economy/trade.ts';
 import { tradeRoutes } from '../../src/economy/tradeComputer.ts';
 
 /** A fleet of your own (docs/PROCGEN.md §18): the hangar, haulers, storage and stakes. */
@@ -152,6 +152,13 @@ describe('the hangar', () => {
     expect(s.ship.model).toBe(FREIGHTER);
   });
 
+  it('a new ship never takes the id of a lost or sold one that a report still names', () => {
+    const s = pilotAt('earth-port', 100_000);
+    s.fleet.reports.push({ at: 0, kind: 'lost', text: 'Raiders destroyed your Petrel.', amount: -500, shipId: 'ship-3' });
+    buyAndKeep(s, 'earth-port', FREIGHTER);
+    expect(s.fleet.ships[0]!.id).toBe('ship-4');
+  });
+
   it('parked ships sell at a shipyard for the trade-in the yard pays, with an empty hold', () => {
     const s = pilotAt('earth-port', 20_000);
     buyAndKeep(s, 'earth-port', FREIGHTER);
@@ -243,7 +250,8 @@ describe('stakes', () => {
     expect(s.fleet.stakes[0]).toMatchObject({ earned: 10 * hourly, since: 10 * 3_600 });
     const value = Math.round(10 * FLEET.stakes.pricePerPercent['trade-port'] * FLEET.stakes.sellBack);
     expect(sellStake(s, 'earth-port').message).toContain(`${value} cr`);
-    expect(s.credits).toBe(before + 10 * hourly + value);
+    // Selling pays the part of the hour under way too.
+    expect(s.credits).toBe(before + 10 * hourly + Math.round((hourly * 1_799) / 3_600) + value);
     expect(s.fleet.stakes).toEqual([]);
     // A boom helps; a strike hurts.
     for (const [kind, factor] of [['boom', FLEET.stakes.events.boom], ['strike', FLEET.stakes.events.strike]] as const) {
@@ -255,6 +263,30 @@ describe('stakes', () => {
       expect(f.factor).toBeCloseTo(factor * (f.events.length > 1 ? FLEET.stakes.events[f.events[1]!.kind] : 1), 6);
       expect(dividendPerHour(e!.locationId!, 10, mid)).toBe(Math.round(FLEET.stakes.dividendPerHour * 10 * stakePrice(e!.locationId!) * f.factor));
     }
+  });
+});
+
+describe('stakes change hands fairly', () => {
+  it('a stake bought up or sold mid-hour pays that part of the hour first, at the stake it was', () => {
+    const s = pilotAt('earth-port', 100_000);
+    const per = FLEET.stakes.pricePerPercent['trade-port'];
+    buyStake(s, 'earth-port', 1);
+    s.clock = 3_000;
+    const before = s.credits;
+    expect(buyStake(s, 'earth-port', 9).ok).toBe(true);
+    const part = Math.round((Math.round(FLEET.stakes.dividendPerHour * per) * 3_000) / 3_600);
+    expect(s.credits).toBe(before + part - 9 * per);
+    expect(s.fleet.stakes[0]).toMatchObject({ percent: 10, since: 3_000, earned: part });
+    // The first full hour of the larger stake is due an hour after the top-up, not at 3,600.
+    s.clock = 3_600;
+    expect(settleFleet(s).dividends).toBe(0);
+    s.clock = 6_600;
+    expect(settleFleet(s).dividends).toBe(Math.round(FLEET.stakes.dividendPerHour * 10 * per));
+    s.clock = 8_400;
+    const held = s.credits;
+    sellStake(s, 'earth-port');
+    const half = Math.round(FLEET.stakes.dividendPerHour * 10 * per / 2);
+    expect(s.credits).toBe(held + half + Math.round(10 * per * FLEET.stakes.sellBack));
   });
 });
 
@@ -362,7 +394,7 @@ describe('haulers', () => {
     expect(p.hauler).toBeUndefined();
   });
 
-  it('works out a very long absence quickly, at most FLEET.haulers.maxRunsPerSettle runs a hauler', () => {
+  it('works out a very long absence quickly: at most FLEET.haulers.maxLooksPerSettle looks a hauler, running or waiting', () => {
     const { s, o } = withParked('meridian-outpost', 'earth-port', 10_000_000);
     hireHauler(s, o.id, 'earth-port', 'data-cores', true);
     buyStake(s, 'meridian-outpost', 5);
@@ -370,10 +402,19 @@ describe('haulers', () => {
     const start = performance.now();
     const r = settleFleet(s);
     expect(performance.now() - start).toBeLessThan(5_000);
-    expect(r.runs).toBeLessThanOrEqual(FLEET.haulers.maxRunsPerSettle);
+    expect(r.runs).toBeLessThanOrEqual(FLEET.haulers.maxLooksPerSettle);
     if (o.hauler) expect(haulerNext(o.hauler)).toBeGreaterThanOrEqual(s.clock);
     expect(s.fleet.stakes[0]!.since).toBeGreaterThan(s.clock - 3_600);
     expect(() => assertValidState(s)).not.toThrow();
+    // A captain who only waits (nobody can pay for a load) is capped too.
+    const { s: t, o: p } = withParked('meridian-outpost', 'earth-port');
+    hireHauler(t, p.id, 'earth-port', 'data-cores', false);
+    t.credits = 0;
+    t.clock = 1e8;
+    const w = settleFleet(t);
+    expect(w.steps).toBeLessThan(3 * FLEET.haulers.maxLooksPerSettle + 10);
+    expect(p.hauler!.since).toBeGreaterThanOrEqual(t.clock);
+    expect(settleFleet(t).steps).toBeLessThanOrEqual(1);
   });
 });
 
@@ -488,22 +529,24 @@ describe('guardrails', () => {
 describe('what the player is told', () => {
   it('a lost ship always, a few reports as they are, many as one summary, and dividends', () => {
     const run = (amount: number) => ({ at: 1, kind: 'run' as const, text: `Sold: ${amount}`, amount });
-    const one = fleetNews({ reports: [run(100)], runs: 1, hauled: 100, dividends: 0 });
+    const one = fleetNews({ reports: [run(100)], runs: 1, hauled: 100, dividends: 0, steps: 3 });
     expect(one).toEqual([{ text: 'Sold: 100', tone: 'good' }]);
-    const many = fleetNews({ reports: [run(100), run(50), { at: 2, kind: 'lost', text: 'Lost it', amount: -900 }, run(20), { at: 3, kind: 'raid', text: 'Raided', amount: -300 }], runs: 4, hauled: -1030, dividends: 42 });
+    const many = fleetNews({ reports: [run(100), run(50), { at: 2, kind: 'lost', text: 'Lost it', amount: -900 }, run(20), { at: 3, kind: 'raid', text: 'Raided', amount: -300 }], runs: 4, hauled: -1030, dividends: 42, steps: 20 });
     expect(many).toHaveLength(3);
     expect(many[0]).toEqual({ text: 'Lost it', tone: 'bad' });
     expect(many[1]!.text).toMatch(/4 runs, 1 raid \(-130 cr\)/);
     expect(many[2]).toEqual({ text: 'Dividends from your stakes: +42 cr.', tone: 'good' });
   });
 
-  it('docking settles the fleet and brings its news', () => {
+  it('docking settles the fleet and brings its news, and the prices seen there include its trades', () => {
     const { s, o } = withParked('meridian-outpost', 'earth-port');
     hireHauler(s, o.id, 'earth-port', 'data-cores', false);
-    s.clock = haulTimes('meridian-outpost', 'earth-port').run - 1;
+    // Out of sight until the second run loads at home.
+    s.clock = haulTimes('meridian-outpost', 'earth-port').run + 1;
     const out = dockAt(s, 'meridian-outpost');
     expect(out.fleet.runs).toBe(1);
     expect(out.fleet.reports[0]!.kind).toBe('run');
+    expect(s.knownMarkets['meridian-outpost']!.prices['data-cores']).toEqual(liveQuote(s, 'meridian-outpost', 'data-cores'));
   });
 });
 

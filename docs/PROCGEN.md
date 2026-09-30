@@ -969,7 +969,8 @@ device.
   time, whole hours from the purchase, each hour moved by the station's fortunes at its middle: a
   boom × 1.5, a glut × 0.9, a shortage × 0.7, a strike × 0.4, and a raid in its system × 0.6 (a
   sweep × 1). 10% of a trade port (9,000 cr) pays 108 cr an hour in quiet times. The station buys a
-  stake back at 85% of its price, from any dock. Stakes and leases go in the ledger (`fleet`), and
+  stake back at 85% of its price, from any dock. Buying more of a stake, or selling it, first pays
+  the part of the hour under way at the stake as it was, and its hours start again from then. Stakes and leases go in the ledger (`fleet`), and
   the voyage report shows them.
 
 ### 18.4 Settling from the clock
@@ -978,9 +979,11 @@ device.
 (set out, arrive, get home) and every hour of dividends, merged in time order, so a dividend can pay
 for the next load and one hauler's purchase can raise the next one's price. Each step depends only
 on the save and its own time, so settling once, twice or every few minutes comes out the same
-(tested), and so does every device. A save left very long works out at most 200 runs a hauler at
-once (after that the captain rests until the clock) and pays stakes' hours older than 30 days at the
-plain rate in one sum, so a settle never loops for long.
+(tested), and so does every device. Docking settles the fleet before the prices seen there are
+recorded, so they include what its haulers bought and sold. A save left very long works out at most
+300 looks at the route a hauler at once (every run begins with one, and a waiting captain looks every
+15 minutes; after that the captain rests until the clock) and pays stakes' hours older than 30 days
+at the plain rate in one sum, so a settle never loops for long.
 
 ### 18.5 Fleet guardrails
 
