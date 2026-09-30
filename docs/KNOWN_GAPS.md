@@ -51,11 +51,11 @@ This is an honest list of what the prototype does not do yet, or what has not be
   except the packs and wrecks of the player's own contracts, which are waiting when they come back.
 - Escorts run between two stations of one system; there are no escorts across jumps.
 - The law is simple: a crime is seen by everyone at once (no witnesses, no reports that travel),
-  fines never lapse, a patrol scans at most once a flight, and the raider dens cannot be attacked.
-  Selling contraband at a station is not a crime; only having it in the hold at a scan is.
+  fines never lapse, and a patrol scans at most once a flight. Selling contraband at a station is
+  not a crime; only having it in the hold at a scan is.
 - Wingmen fly and fight but do not talk back beyond a few lines, cannot be given orders, and
-  their kills earn no bounty; the player's decoys and the raiders' seekers are the only missiles
-  aimed at the player.
+  their kills earn no bounty. Seekers (from heavy raiders, aces and bounty hunters) are the only
+  missiles fired at the player, and decoy flares the only countermeasure.
 - Ratings change nothing in the world except the combat rank that ace hunts and den assaults ask
   for; milestones are a record, with one grant (the whole codex). The what-next hint looks only at
   fines, the hold, stories waiting, the codex, known prices and job boards, not at ships, equipment
@@ -65,8 +65,7 @@ This is an honest list of what the prototype does not do yet, or what has not be
   on the phone deck view, some white crates on factory conveyors bloom under the lamps, and mining
   hall rock walls are dark away from the floodlights.
 - Damage to systems is modelled for the player only (other ships just lose shield and hull); no
-  fleet battles, multiplayer, cloud saves or cross-device sync (out of scope
-  per the spec).
+  fleet battles, multiplayer, cloud saves or cross-device sync (out of scope per the spec).
 - Solar System planet positions are schematic and do not follow an ephemeris.
 - Stations and ships do not collide with each other in detail (spheres only).
 - The offline cache (service worker) is a stretch-goal implementation: it registers only in
