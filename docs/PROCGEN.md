@@ -1533,8 +1533,8 @@ front is a function of the seed and the game clock, plus a short log of what the
 - Done, a war contract pushes its front 18 its way (the pay message says so). A front that The
   Long Border has settled posts no war work.
 - A station that can fall is never the destination of a delivery (generated parcels, hauls and
-  supply runs go elsewhere, and such stations post no supply runs), so a contract never waits on a
-  station the Wake might hold. A wreck's find may still be brought back to one: that is a visit,
+  supply runs go elsewhere, and such stations post no supply runs or mining claims, whose loads
+  come back to them), so a contract never waits on a station the Wake might hold. A wreck's find may still be brought back to one: that is a visit,
   and docking is enough.
 
 ### 20.5 The Long Border
