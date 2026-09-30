@@ -1,5 +1,8 @@
+import type { StationLook, StationType } from '../content/world/types.ts';
+
 /**
- * Data model for the curated five-system region.
+ * Data model for the star systems: the curated five-system core plus the systems extracted from
+ * public catalogues (scripts/extract-catalogs.ts).
  *
  * Every value in this model is one of three classes, and the UI must label it:
  * - observed:  catalog or reference data with a source record (astrometry, planet status)
@@ -7,15 +10,8 @@
  * - fictional: game content (stations, lanes, factions, jump links, prices)
  */
 
-export type SystemId = 'sol' | 'alpha-centauri' | 'barnard' | 'sirius' | 'epsilon-eridani';
-
-export const SYSTEM_IDS: readonly SystemId[] = [
-  'sol',
-  'alpha-centauri',
-  'barnard',
-  'sirius',
-  'epsilon-eridani',
-];
+/** Star system id ('sol', 'alpha-centauri', 'wolf-359', ...). The list is SYSTEM_IDS in systems.ts. */
+export type SystemId = string;
 
 export type DataClass = 'observed' | 'estimated' | 'fictional';
 
@@ -54,6 +50,7 @@ export interface StellarComponent {
     gaiaDr3?: string;
     hip?: string;
     simbad?: string;
+    gliese?: string;
   };
   /** Spectral type as given by the cited source. */
   spectralType: string;
@@ -67,10 +64,11 @@ export interface StellarComponent {
   /** Julian year of the catalog position before propagation. */
   catalogEpoch: number;
   parallaxMas: number;
-  parallaxErrorMas: number;
+  /** Absent when the source gives no uncertainty. */
+  parallaxErrorMas?: number;
   distanceLightYears: number;
-  /** One-sigma distance uncertainty propagated from the parallax error. */
-  distanceErrorLightYears: number;
+  /** One-sigma distance uncertainty propagated from the parallax error (absent when unknown). */
+  distanceErrorLightYears?: number;
   /** Julian year of the position (all bundled positions are propagated to one epoch). */
   referenceEpoch: number;
   frame: 'ICRS';
@@ -108,6 +106,8 @@ export interface ConfirmedBody {
   /** NASA Exoplanet Archive controversy flag (pl_controv_flag). */
   controversial: boolean;
   sourceUrl: string;
+  /** Source name when it is not the NASA Exoplanet Archive (e.g. "Open Exoplanet Catalogue"). */
+  sourceLabel?: string;
   asOfDate: string;
   verification: Verification;
   discoveryYear?: number;
@@ -144,6 +144,11 @@ export interface FictionalLocation {
   services: LocationService[];
   /** Real body this location orbits or sits near, when any. */
   nearBodyId?: string;
+  /** Generated stations: their type and the look the art is built from (curated stations have hand-built art). */
+  stationType?: StationType;
+  look?: StationLook;
+  /** False for places lawful pilots cannot dock at (raider dens). Default true. */
+  dockable?: boolean;
 }
 
 export interface ScienceFact {

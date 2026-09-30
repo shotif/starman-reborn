@@ -271,7 +271,7 @@ export function bodyCard(bodyId: string, name: string): HTMLElement {
         h('dt', null, 'Spectral type'),
         h('dd', null, comp.spectralType),
         h('dt', null, 'Distance from Sol'),
-        h('dd', { class: 'num' }, `${comp.distanceLightYears.toFixed(3)} ± ${comp.distanceErrorLightYears.toFixed(3)} ly`),
+        h('dd', { class: 'num' }, comp.distanceErrorLightYears !== undefined ? `${comp.distanceLightYears.toFixed(3)} ± ${comp.distanceErrorLightYears.toFixed(3)} ly` : `${comp.distanceLightYears.toFixed(2)} ly`),
         h('dt', null, 'Position (ICRS)'),
         h('dd', { class: 'num' }, `${formatRa(comp.raDegrees)} ${formatDec(comp.decDegrees)} · J${comp.referenceEpoch.toFixed(1)}`),
         h('dt', null, 'Catalog'),

@@ -1,0 +1,735 @@
+{
+  "kind": "provisional",
+  "retrieved": null,
+  "description": "Planets on the Open Exoplanet Catalogue's \"Confirmed planets\" list (MIT licence). Extracted by scripts/extract-catalogs.ts; provisional until the archive snapshot verifies it.",
+  "source": {
+    "label": "Open Exoplanet Catalogue",
+    "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue"
+  },
+  "planets": [
+    {
+      "archiveName": "GJ 411 b",
+      "displayName": "Lalande 21185 b",
+      "hostId": "lalande-21185",
+      "controversial": false,
+      "discoveryYear": 2019,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 12.946,
+        "error": 0.005
+      },
+      "semiMajorAxisAu": {
+        "value": 0.0789,
+        "error": 0.000725
+      },
+      "massEarth": {
+        "value": 2.689,
+        "error": 0.251
+      },
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/GJ%20411.xml"
+      }
+    },
+    {
+      "archiveName": "GJ 411 c",
+      "displayName": "Lalande 21185 c",
+      "hostId": "lalande-21185",
+      "controversial": false,
+      "discoveryYear": 2021,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 3190,
+        "error": 185
+      },
+      "semiMajorAxisAu": {
+        "value": 3.1,
+        "error": 0.12
+      },
+      "massEarth": {
+        "value": 18.05,
+        "error": 2.77
+      },
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/GJ%20411.xml"
+      }
+    },
+    {
+      "archiveName": "GJ 887 b",
+      "displayName": "Lacaille 9352 b",
+      "hostId": "lacaille-9352",
+      "controversial": false,
+      "discoveryYear": 2020,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 9.262,
+        "error": 0.001
+      },
+      "semiMajorAxisAu": {
+        "value": 0.068,
+        "error": 0.002
+      },
+      "massEarth": {
+        "value": 4.199,
+        "error": 0.601
+      },
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/GJ%20887.xml"
+      }
+    },
+    {
+      "archiveName": "GJ 887 c",
+      "displayName": "Lacaille 9352 c",
+      "hostId": "lacaille-9352",
+      "controversial": false,
+      "discoveryYear": 2020,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 21.789,
+        "error": 0.0045000000000000005
+      },
+      "semiMajorAxisAu": {
+        "value": 0.12,
+        "error": 0.004
+      },
+      "massEarth": {
+        "value": 7.599,
+        "error": 1.2
+      },
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/GJ%20887.xml"
+      }
+    },
+    {
+      "archiveName": "Ross 128 b",
+      "displayName": "Ross 128 b",
+      "hostId": "ross-128",
+      "controversial": false,
+      "discoveryYear": 2017,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 9.8658,
+        "error": 0.007
+      },
+      "semiMajorAxisAu": {
+        "value": 0.0496,
+        "error": 0.0017
+      },
+      "massEarth": {
+        "value": 1.4,
+        "error": 0.21,
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/Ross%20128.xml"
+      }
+    },
+    {
+      "archiveName": "GJ 15 A b",
+      "displayName": "Groombridge 34 A b",
+      "hostId": "groombridge-34-a",
+      "controversial": false,
+      "discoveryYear": 2014,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 11.4407,
+        "error": 0.00165
+      },
+      "semiMajorAxisAu": {
+        "value": 0.072,
+        "error": 0.0035
+      },
+      "massEarth": {
+        "value": 3.029,
+        "error": 0.45
+      },
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/Gliese%2015.xml"
+      }
+    },
+    {
+      "archiveName": "GJ 15 A c",
+      "displayName": "Groombridge 34 A c",
+      "hostId": "groombridge-34-a",
+      "controversial": false,
+      "discoveryYear": 2018,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 7600,
+        "error": 1950
+      },
+      "semiMajorAxisAu": {
+        "value": 5.4,
+        "error": 0.95
+      },
+      "massEarth": {
+        "value": 36,
+        "error": 21.5
+      },
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/Gliese%2015.xml"
+      }
+    },
+    {
+      "archiveName": "Epsilon Indi A b",
+      "displayName": "Epsilon Indi A b",
+      "hostId": "epsilon-indi",
+      "controversial": false,
+      "discoveryYear": 2018,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 19205.51,
+        "error": 5806.8
+      },
+      "semiMajorAxisAu": {
+        "value": 12.82,
+        "error": 2.445
+      },
+      "massEarth": {
+        "value": 861.3,
+        "error": 418,
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/Epsilon%20Indi.xml"
+      }
+    },
+    {
+      "archiveName": "tau Ceti e",
+      "displayName": "Tau Ceti e",
+      "hostId": "tau-ceti",
+      "controversial": false,
+      "discoveryYear": 2012,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 162.87,
+        "error": 0.77
+      },
+      "semiMajorAxisAu": {
+        "value": 0.538,
+        "error": 0.006
+      },
+      "massEarth": {
+        "value": 3.941,
+        "error": 0.731,
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/tau%20Ceti.xml"
+      }
+    },
+    {
+      "archiveName": "tau Ceti f",
+      "displayName": "Tau Ceti f",
+      "hostId": "tau-ceti",
+      "controversial": false,
+      "discoveryYear": 2012,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 636.13,
+        "error": 29.695
+      },
+      "semiMajorAxisAu": {
+        "value": 1.334,
+        "error": 0.0305
+      },
+      "massEarth": {
+        "value": 3.941,
+        "error": 1.21,
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/tau%20Ceti.xml"
+      }
+    },
+    {
+      "archiveName": "tau Ceti g",
+      "displayName": "Tau Ceti g",
+      "hostId": "tau-ceti",
+      "controversial": false,
+      "discoveryYear": 2017,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 20,
+        "error": 0.015
+      },
+      "massEarth": {
+        "value": 1.751,
+        "error": 0.326,
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/tau%20Ceti.xml"
+      }
+    },
+    {
+      "archiveName": "tau Ceti h",
+      "displayName": "Tau Ceti h",
+      "hostId": "tau-ceti",
+      "controversial": false,
+      "discoveryYear": 2017,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 49.41,
+        "error": 0.09
+      },
+      "semiMajorAxisAu": {
+        "value": 0.243,
+        "error": 0.003
+      },
+      "massEarth": {
+        "value": 1.831,
+        "error": 0.469,
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/tau%20Ceti.xml"
+      }
+    },
+    {
+      "archiveName": "YZ Cet b",
+      "displayName": "YZ Ceti b",
+      "hostId": "yz-ceti",
+      "controversial": false,
+      "discoveryYear": 2017,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 1.96876,
+        "error": 0.00021
+      },
+      "semiMajorAxisAu": {
+        "value": 0.01557,
+        "error": 0.00052
+      },
+      "massEarth": {
+        "value": 0.7501,
+        "error": 0.13
+      },
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/YZ%20Cet.xml"
+      }
+    },
+    {
+      "archiveName": "YZ Cet c",
+      "displayName": "YZ Ceti c",
+      "hostId": "yz-ceti",
+      "controversial": false,
+      "discoveryYear": 2017,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 3.06008,
+        "error": 0.00022
+      },
+      "semiMajorAxisAu": {
+        "value": 0.0209,
+        "error": 0.0007
+      },
+      "massEarth": {
+        "value": 0.9789,
+        "error": 0.14
+      },
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/YZ%20Cet.xml"
+      }
+    },
+    {
+      "archiveName": "YZ Cet d",
+      "displayName": "YZ Ceti d",
+      "hostId": "yz-ceti",
+      "controversial": false,
+      "discoveryYear": 2017,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 4.65627,
+        "error": 0.00042
+      },
+      "semiMajorAxisAu": {
+        "value": 0.02764,
+        "error": 0.00093
+      },
+      "massEarth": {
+        "value": 1.141,
+        "error": 0.168
+      },
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/YZ%20Cet.xml"
+      }
+    },
+    {
+      "archiveName": "GJ 273 b",
+      "displayName": "Luyten's Star b",
+      "hostId": "luytens-star",
+      "controversial": false,
+      "discoveryYear": 2017,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 18.6498,
+        "error": 0.005549999999999999
+      },
+      "semiMajorAxisAu": {
+        "value": 0.091101,
+        "error": 0.000018
+      },
+      "massEarth": {
+        "value": 2.889,
+        "error": 0.265
+      },
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/GJ%20273.xml"
+      }
+    },
+    {
+      "archiveName": "GJ 273 c",
+      "displayName": "Luyten's Star c",
+      "hostId": "luytens-star",
+      "controversial": false,
+      "discoveryYear": 2017,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 4.7234,
+        "error": 0.0004
+      },
+      "semiMajorAxisAu": {
+        "value": 0.036467,
+        "error": 0.000002
+      },
+      "massEarth": {
+        "value": 1.179,
+        "error": 0.159
+      },
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/GJ%20273.xml"
+      }
+    },
+    {
+      "archiveName": "Kapteyn b",
+      "displayName": "Kapteyn's Star b",
+      "hostId": "kapteyns-star",
+      "controversial": false,
+      "discoveryYear": 2014,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 48.616,
+        "error": 0.034
+      },
+      "semiMajorAxisAu": {
+        "value": 0.168,
+        "error": 0.007
+      },
+      "massEarth": {
+        "value": 4.799,
+        "error": 0.95,
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/Kapteyn.xml"
+      }
+    },
+    {
+      "archiveName": "Kapteyn c",
+      "displayName": "Kapteyn's Star c",
+      "hostId": "kapteyns-star",
+      "controversial": false,
+      "discoveryYear": 2014,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 121.54,
+        "error": 0.25
+      },
+      "semiMajorAxisAu": {
+        "value": 0.311,
+        "error": 0.026
+      },
+      "massEarth": {
+        "value": 6.999,
+        "error": 1.1,
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/Kapteyn.xml"
+      }
+    },
+    {
+      "archiveName": "Wolf 1061 b",
+      "displayName": "Wolf 1061 b",
+      "hostId": "wolf-1061",
+      "controversial": false,
+      "discoveryYear": 2015,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 4.8876,
+        "error": 0.0014
+      },
+      "semiMajorAxisAu": {
+        "value": 0.035509,
+        "error": 0.000007
+      },
+      "massEarth": {
+        "value": 1.36,
+        "error": 0.229,
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/Wolf%201061.xml"
+      }
+    },
+    {
+      "archiveName": "Wolf 1061 c",
+      "displayName": "Wolf 1061 c",
+      "hostId": "wolf-1061",
+      "controversial": false,
+      "discoveryYear": 2015,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 17.867,
+        "error": 0.011
+      },
+      "semiMajorAxisAu": {
+        "value": 0.08427,
+        "error": 0.00004
+      },
+      "massEarth": {
+        "value": 4.259,
+        "error": 0.381,
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/Wolf%201061.xml"
+      }
+    },
+    {
+      "archiveName": "Wolf 1061 d",
+      "displayName": "Wolf 1061 d",
+      "hostId": "wolf-1061",
+      "controversial": false,
+      "discoveryYear": 2015,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 67.27,
+        "error": 0.12
+      },
+      "semiMajorAxisAu": {
+        "value": 0.2039,
+        "error": 0.0002
+      },
+      "massEarth": {
+        "value": 5.212,
+        "error": 0.667,
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/Wolf%201061.xml"
+      }
+    },
+    {
+      "archiveName": "GJ 1061 b",
+      "displayName": "GJ 1061 b",
+      "hostId": "gj-1061",
+      "controversial": false,
+      "discoveryYear": 2020,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 3.204,
+        "error": 0.001
+      },
+      "semiMajorAxisAu": {
+        "value": 0.021,
+        "error": 0.001
+      },
+      "massEarth": {
+        "value": 1.37,
+        "error": 0.154
+      },
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/GJ%201061.xml"
+      }
+    },
+    {
+      "archiveName": "GJ 1061 c",
+      "displayName": "GJ 1061 c",
+      "hostId": "gj-1061",
+      "controversial": false,
+      "discoveryYear": 2020,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 6.689,
+        "error": 0.005
+      },
+      "semiMajorAxisAu": {
+        "value": 0.035,
+        "error": 0.001
+      },
+      "massEarth": {
+        "value": 1.739,
+        "error": 0.229
+      },
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/GJ%201061.xml"
+      }
+    },
+    {
+      "archiveName": "GJ 1061 d",
+      "displayName": "GJ 1061 d",
+      "hostId": "gj-1061",
+      "controversial": false,
+      "discoveryYear": 2020,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 13.031,
+        "error": 0.0285
+      },
+      "semiMajorAxisAu": {
+        "value": 0.054,
+        "error": 0.001
+      },
+      "massEarth": {
+        "value": 1.64,
+        "error": 0.235
+      },
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/GJ%201061.xml"
+      }
+    },
+    {
+      "archiveName": "Gliese 876 b",
+      "displayName": "Gliese 876 b",
+      "hostId": "gliese-876",
+      "controversial": false,
+      "discoveryYear": 2000,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 61.087,
+        "error": 0.0115
+      },
+      "semiMajorAxisAu": {
+        "value": 0.218589,
+        "error": 0.000028
+      },
+      "massEarth": {
+        "value": 848.5,
+        "error": 16.7
+      },
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/Gliese%20876.xml"
+      }
+    },
+    {
+      "archiveName": "Gliese 876 c",
+      "displayName": "Gliese 876 c",
+      "hostId": "gliese-876",
+      "controversial": false,
+      "discoveryYear": 2000,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 30.0766,
+        "error": 0.0069
+      },
+      "semiMajorAxisAu": {
+        "value": 0.135985,
+        "error": 0.0000205
+      },
+      "massEarth": {
+        "value": 267.9,
+        "error": 6.01
+      },
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/Gliese%20876.xml"
+      }
+    },
+    {
+      "archiveName": "Gliese 876 d",
+      "displayName": "Gliese 876 d",
+      "hostId": "gliese-876",
+      "controversial": false,
+      "discoveryYear": 2005,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 1.93787,
+        "error": 0.0000265
+      },
+      "semiMajorAxisAu": {
+        "value": 0.0218393,
+        "error": 2.1e-7
+      },
+      "massEarth": {
+        "value": 6.897,
+        "error": 2.11
+      },
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/Gliese%20876.xml"
+      }
+    },
+    {
+      "archiveName": "Gliese 876 e",
+      "displayName": "Gliese 876 e",
+      "hostId": "gliese-876",
+      "controversial": false,
+      "discoveryYear": 2010,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 124.72,
+        "error": 1.335
+      },
+      "semiMajorAxisAu": {
+        "value": 0.3343,
+        "error": 0.0024999999999999996
+      },
+      "massEarth": {
+        "value": 17.16,
+        "error": 2.07
+      },
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/Gliese%20876.xml"
+      }
+    },
+    {
+      "archiveName": "HD 26965 b",
+      "displayName": "40 Eridani A b",
+      "hostId": "40-eridani-a",
+      "controversial": false,
+      "discoveryYear": 2018,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 42.378,
+        "error": 0.01
+      },
+      "massEarth": {
+        "value": 8.47,
+        "error": 0.47,
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/HD%2026965.xml"
+      }
+    }
+  ]
+}

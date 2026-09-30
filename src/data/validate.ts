@@ -95,7 +95,7 @@ export function validateDataset({ systems, astrometry, exoplanets }: ValidationI
     if (!(c.raDegrees >= 0 && c.raDegrees < 360)) error('ra-range', `${where}: RA ${c.raDegrees} out of [0, 360)`);
     if (!(c.decDegrees >= -90 && c.decDegrees <= 90)) error('dec-range', `${where}: Dec ${c.decDegrees} out of [-90, 90]`);
     if (!(c.parallaxMas > 0)) error('parallax', `${where}: parallax must be positive`);
-    if (!(c.parallaxErrorMas >= 0)) error('parallax-error', `${where}: parallax error must be non-negative`);
+    if (c.parallaxErrorMas !== undefined && !(c.parallaxErrorMas >= 0)) error('parallax-error', `${where}: parallax error must be non-negative`);
     if (!(c.distanceLightYears > 0)) error('distance', `${where}: distance must be positive`);
     else if (c.parallaxMas > 0) {
       const expected = parallaxToLightYears(c.parallaxMas);
@@ -110,7 +110,7 @@ export function validateDataset({ systems, astrometry, exoplanets }: ValidationI
     if (band && (c.distanceLightYears < band[0] || c.distanceLightYears > band[1])) {
       warn('distance-band', `${where}: ${c.distanceLightYears.toFixed(3)} ly is outside the familiar ${band[0]}–${band[1]} ly band`);
     }
-    if (!c.catalogIds.gaiaDr3 && !c.catalogIds.hip && !c.catalogIds.simbad) {
+    if (!c.catalogIds.gaiaDr3 && !c.catalogIds.hip && !c.catalogIds.simbad && !c.catalogIds.gliese) {
       error('catalog-id', `${where}: no catalog identifier`);
     }
     checkSource(c.astrometrySource, `${where} astrometry`);

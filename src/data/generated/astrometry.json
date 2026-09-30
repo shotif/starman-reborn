@@ -1,9 +1,9 @@
 {
   "generatedBy": "scripts/build-dataset.ts",
-  "input": "data/provisional/astrometry-input.json",
+  "input": "data/provisional/astrometry-input.json + data/provisional/catalog-astrometry-input.json",
   "verification": "provisional",
   "retrieved": null,
-  "description": "Stopgap values transcribed from the cited catalogs without machine verification, used only until `npm run data:snapshot` captures a dated archive snapshot. Positions are ICRS J2000.0 as listed by SIMBAD (Gaia DR3 stars: the Gaia DR3 J2016.0 values) and are propagated to the target epoch by scripts/build-dataset.ts.",
+  "description": "Stopgap values transcribed from the cited catalogs without machine verification, used only until `npm run data:snapshot` captures a dated archive snapshot. Positions are ICRS J2000.0 as listed by SIMBAD (Gaia DR3 stars: the Gaia DR3 J2016.0 values) and are propagated to the target epoch by scripts/build-dataset.ts. Positions (J2000), proper motions, distances and spectral types from the HYG star database v4.0 (CC BY-SA 4.0). Extracted by scripts/extract-catalogs.ts; provisional until the archive snapshot verifies it.",
   "frame": "ICRS",
   "referenceEpoch": 2016,
   "stars": [
@@ -30,8 +30,8 @@
       "catalogEpoch": 2000,
       "parallaxMas": 750.81,
       "parallaxErrorMas": 0.38,
-      "distanceLightYears": 4.344060117962511,
       "distanceErrorLightYears": 0.002198615954536773,
+      "distanceLightYears": 4.344060117962511,
       "referenceEpoch": 2016,
       "frame": "ICRS",
       "astrometrySource": {
@@ -76,8 +76,8 @@
       "catalogEpoch": 2000,
       "parallaxMas": 750.81,
       "parallaxErrorMas": 0.38,
-      "distanceLightYears": 4.344060117962511,
       "distanceErrorLightYears": 0.002198615954536773,
+      "distanceLightYears": 4.344060117962511,
       "referenceEpoch": 2016,
       "frame": "ICRS",
       "astrometrySource": {
@@ -123,8 +123,8 @@
       "catalogEpoch": 2016,
       "parallaxMas": 768.0665,
       "parallaxErrorMas": 0.0499,
-      "distanceLightYears": 4.246460140062655,
       "distanceErrorLightYears": 0.00027588543568704847,
+      "distanceLightYears": 4.246460140062655,
       "referenceEpoch": 2016,
       "frame": "ICRS",
       "astrometrySource": {
@@ -169,8 +169,8 @@
       "catalogEpoch": 2016,
       "parallaxMas": 546.9759,
       "parallaxErrorMas": 0.0401,
-      "distanceLightYears": 5.962902162905957,
       "distanceErrorLightYears": 0.0004371534042588145,
+      "distanceLightYears": 5.962902162905957,
       "referenceEpoch": 2016,
       "frame": "ICRS",
       "astrometrySource": {
@@ -214,8 +214,8 @@
       "catalogEpoch": 2000,
       "parallaxMas": 379.21,
       "parallaxErrorMas": 1.58,
-      "distanceLightYears": 8.600943480307569,
       "distanceErrorLightYears": 0.03583631945066311,
+      "distanceLightYears": 8.600943480307569,
       "referenceEpoch": 2016,
       "frame": "ICRS",
       "astrometrySource": {
@@ -260,8 +260,8 @@
       "catalogEpoch": 2000,
       "parallaxMas": 379.21,
       "parallaxErrorMas": 1.58,
-      "distanceLightYears": 8.600943480307569,
       "distanceErrorLightYears": 0.03583631945066311,
+      "distanceLightYears": 8.600943480307569,
       "referenceEpoch": 2016,
       "frame": "ICRS",
       "astrometrySource": {
@@ -308,8 +308,8 @@
       "catalogEpoch": 2016,
       "parallaxMas": 310.5773,
       "parallaxErrorMas": 0.1355,
-      "distanceLightYears": 10.50161675424261,
       "distanceErrorLightYears": 0.004581690516982,
+      "distanceLightYears": 10.50161675424261,
       "referenceEpoch": 2016,
       "frame": "ICRS",
       "astrometrySource": {
@@ -329,6 +329,1631 @@
         -1.725703484496353
       ],
       "colorHex": "#ffcb94"
+    },
+    {
+      "id": "wolf-359",
+      "name": "Wolf 359",
+      "systemId": "wolf-359",
+      "role": "primary",
+      "catalogIds": {
+        "gliese": "Gl 406"
+      },
+      "spectralType": "M6",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 118720 (Gl 406)"
+      },
+      "raDegrees": 164.1051411717391,
+      "decDegrees": 7.0032452,
+      "properMotion": {
+        "raMasYr": -3822.95,
+        "decMasYr": -2716.83
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 418.30502802643684,
+      "distanceLightYears": 7.7970943656964655,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 118720 (Gl 406)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 118720 (Gl 406)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        -7.443031357875676,
+        2.119481214839617,
+        0.9506651004412148
+      ],
+      "colorHex": "#ffb27a"
+    },
+    {
+      "id": "lalande-21185",
+      "name": "Lalande 21185",
+      "systemId": "lalande-21185",
+      "role": "primary",
+      "catalogIds": {
+        "hip": "HIP 54035",
+        "gliese": "Gl 411"
+      },
+      "spectralType": "M2V",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 53879 (Gl 411, HIP 54035)"
+      },
+      "raDegrees": 165.83129423674052,
+      "decDegrees": 35.94868993333333,
+      "properMotion": {
+        "raMasYr": -580.2,
+        "decMasYr": -4767.09
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 392.63418273194867,
+      "distanceLightYears": 8.306876784067734,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 53879 (Gl 411, HIP 54035)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 53879 (Gl 411, HIP 54035)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        -6.520201270290036,
+        1.6460758122088748,
+        4.876639388047121
+      ],
+      "colorHex": "#ffb27a"
+    },
+    {
+      "id": "bl-ceti",
+      "name": "BL Ceti",
+      "systemId": "luyten-726-8",
+      "role": "primary",
+      "catalogIds": {
+        "gliese": "Gl 65A"
+      },
+      "spectralType": "dM5.5e",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 118079 (Gl 65A)"
+      },
+      "raDegrees": 24.768462452696212,
+      "decDegrees": -17.9472916,
+      "properMotion": {
+        "raMasYr": 3312.95,
+        "decMasYr": 560.34
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 380.70582860623597,
+      "distanceLightYears": 8.567149573485697,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 118079 (Gl 65A)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 118079 (Gl 65A)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        7.400517082714444,
+        3.4145770147877057,
+        -2.639898205047181
+      ],
+      "colorHex": "#ffb27a"
+    },
+    {
+      "id": "uv-ceti",
+      "name": "UV Ceti",
+      "systemId": "luyten-726-8",
+      "role": "companion",
+      "parentId": "bl-ceti",
+      "catalogIds": {
+        "gliese": "Gl 65B"
+      },
+      "spectralType": "dM5.5e",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 118080 (Gl 65B)"
+      },
+      "raDegrees": 24.768462452696212,
+      "decDegrees": -17.9472916,
+      "properMotion": {
+        "raMasYr": 3312.95,
+        "decMasYr": 560.34
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 380.70582860623597,
+      "distanceLightYears": 8.567149573485697,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 118080 (Gl 65B)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 118080 (Gl 65B)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        7.400517082714444,
+        3.4145770147877057,
+        -2.639898205047181
+      ],
+      "colorHex": "#ffb27a"
+    },
+    {
+      "id": "ross-154",
+      "name": "Ross 154",
+      "systemId": "ross-154",
+      "role": "primary",
+      "catalogIds": {
+        "hip": "HIP 92403",
+        "gliese": "Gl 729"
+      },
+      "spectralType": "M3.5Ve",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 92115 (Gl 729, HIP 92403)"
+      },
+      "raDegrees": 282.4586327933673,
+      "decDegrees": -23.837087422222222,
+      "properMotion": {
+        "raMasYr": 637.55,
+        "decMasYr": -192.47
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 336.7230116506162,
+      "distanceLightYears": 9.686192105431843,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 92115 (Gl 729, HIP 92403)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 92115 (Gl 729, HIP 92403)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        1.9113969668966748,
+        -8.651309330832097,
+        -3.9145531035516483
+      ],
+      "colorHex": "#ffb27a"
+    },
+    {
+      "id": "ross-248",
+      "name": "Ross 248",
+      "systemId": "ross-248",
+      "role": "primary",
+      "catalogIds": {
+        "gliese": "Gl 905"
+      },
+      "spectralType": "dM6  e",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 119585 (Gl 905)"
+      },
+      "raDegrees": 355.47620711102286,
+      "decDegrees": 44.167778266666666,
+      "properMotion": {
+        "raMasYr": 84.26,
+        "decMasYr": -1607.79
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 315.59679353657765,
+      "distanceLightYears": 10.334590984332728,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 119585 (Gl 905)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 119585 (Gl 905)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        7.389934541572157,
+        -0.5846883463430136,
+        7.200748420989354
+      ],
+      "colorHex": "#ffb27a"
+    },
+    {
+      "id": "lacaille-9352",
+      "name": "Lacaille 9352",
+      "systemId": "lacaille-9352",
+      "role": "primary",
+      "catalogIds": {
+        "hip": "HIP 114046",
+        "gliese": "Gl 887"
+      },
+      "spectralType": "M2/M3V",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 113687 (Gl 887, HIP 114046)"
+      },
+      "raDegrees": 346.50007146564667,
+      "decDegrees": -35.847176733333335,
+      "properMotion": {
+        "raMasYr": 6767.26,
+        "decMasYr": 1326.66
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 305.2596233096248,
+      "distanceLightYears": 10.684556777622793,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 113687 (Gl 887, HIP 114046)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 113687 (Gl 887, HIP 114046)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        8.42141475511632,
+        -2.021791694554165,
+        -6.257146745952673
+      ],
+      "colorHex": "#ffb27a"
+    },
+    {
+      "id": "ross-128",
+      "name": "Ross 128",
+      "systemId": "ross-128",
+      "role": "primary",
+      "catalogIds": {
+        "hip": "HIP 57548",
+        "gliese": "Gl 447"
+      },
+      "spectralType": "M4.5V",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 57375 (Gl 447, HIP 57548)"
+      },
+      "raDegrees": 176.93768190805815,
+      "decDegrees": 0.7991442000000001,
+      "properMotion": {
+        "raMasYr": 605.62,
+        "decMasYr": -1219.23
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 298.035943134742,
+      "distanceLightYears": 10.943524941529889,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 57375 (Gl 447, HIP 57548)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 57375 (Gl 447, HIP 57548)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        -10.926834883088599,
+        0.5845691132041083,
+        0.15263202643194562
+      ],
+      "colorHex": "#ffb27a"
+    },
+    {
+      "id": "ez-aquarii",
+      "name": "EZ Aquarii A",
+      "systemId": "ez-aquarii",
+      "role": "primary",
+      "catalogIds": {
+        "gliese": "Gl 866A"
+      },
+      "spectralType": "M5  e",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 119518 (Gl 866A)"
+      },
+      "raDegrees": 339.6493104891307,
+      "decDegrees": -15.292617422222223,
+      "properMotion": {
+        "raMasYr": 2361.37,
+        "decMasYr": 2233.03
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 294.2994202301422,
+      "distanceLightYears": 11.082467558437218,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 119518 (Gl 866A)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 119518 (Gl 866A)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        10.022797373545089,
+        -3.717629119178994,
+        -2.922987123629438
+      ],
+      "colorHex": "#ffb27a"
+    },
+    {
+      "id": "61-cygni-a",
+      "name": "61 Cygni A",
+      "systemId": "61-cygni",
+      "role": "primary",
+      "catalogIds": {
+        "hip": "HIP 104214",
+        "gliese": "Gl 820A"
+      },
+      "spectralType": "K5V",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 103879 (Gl 820A, HIP 104214)"
+      },
+      "raDegrees": 316.7455914987952,
+      "decDegrees": 38.763899,
+      "properMotion": {
+        "raMasYr": 4155.1,
+        "decMasYr": 3258.9
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 286.820593718629,
+      "distanceLightYears": 11.371442109094254,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 103879 (Gl 820A, HIP 104214)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 103879 (Gl 820A, HIP 104214)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        6.45776802157556,
+        -6.075798205733785,
+        7.119803647798172
+      ],
+      "colorHex": "#ffd9a8"
+    },
+    {
+      "id": "61-cygni-b",
+      "name": "61 Cygni B",
+      "systemId": "61-cygni",
+      "role": "companion",
+      "parentId": "61-cygni-a",
+      "catalogIds": {
+        "hip": "HIP 104217",
+        "gliese": "Gl 820B"
+      },
+      "spectralType": "K7V",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 103883 (Gl 820B, HIP 104217)"
+      },
+      "raDegrees": 316.7508521407949,
+      "decDegrees": 38.75602708888889,
+      "properMotion": {
+        "raMasYr": 4107.4,
+        "decMasYr": 3143.72
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 285.8776443682104,
+      "distanceLightYears": 11.408950092531681,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 103883 (Gl 820B, HIP 104217)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 103883 (Gl 820B, HIP 104217)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        6.48034301476113,
+        -6.0959163228909,
+        7.142065584214945
+      ],
+      "colorHex": "#ffd9a8"
+    },
+    {
+      "id": "procyon-a",
+      "name": "Procyon A",
+      "systemId": "procyon",
+      "role": "primary",
+      "catalogIds": {
+        "hip": "HIP 37279",
+        "gliese": "Gl 280A"
+      },
+      "spectralType": "F5IV-V",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 37173 (Gl 280A, HIP 37279)"
+      },
+      "raDegrees": 114.82229696756463,
+      "decDegrees": 5.220394866666667,
+      "properMotion": {
+        "raMasYr": -716.57,
+        "decMasYr": -1034.58
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 284.5597860110409,
+      "distanceLightYears": 11.461787425721793,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 37173 (Gl 280A, HIP 37279)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 37173 (Gl 280A, HIP 37279)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        -4.791760651964984,
+        10.359730391707817,
+        1.042874420934616
+      ],
+      "colorHex": "#fff6e6"
+    },
+    {
+      "id": "procyon-b",
+      "name": "Procyon B",
+      "systemId": "procyon",
+      "role": "companion",
+      "parentId": "procyon-a",
+      "catalogIds": {
+        "gliese": "Gl 280B"
+      },
+      "spectralType": "DA",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 118493 (Gl 280B)"
+      },
+      "raDegrees": 114.82195546636933,
+      "decDegrees": 5.222282133333333,
+      "properMotion": {
+        "raMasYr": -702.34,
+        "decMasYr": -1021.92
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 285.926688397095,
+      "distanceLightYears": 11.406993154265379,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 118493 (Gl 280B)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 118493 (Gl 280B)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        -4.768777333375702,
+        10.31020200835184,
+        1.0382630269430988
+      ],
+      "colorHex": "#e8efff"
+    },
+    {
+      "id": "struve-2398-a",
+      "name": "Struve 2398 A",
+      "systemId": "struve-2398",
+      "role": "primary",
+      "catalogIds": {
+        "hip": "HIP 91768",
+        "gliese": "Gl 725A"
+      },
+      "spectralType": "K5",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 91484 (Gl 725A, HIP 91768)"
+      },
+      "raDegrees": 280.68601920385413,
+      "decDegrees": 59.63840542222222,
+      "properMotion": {
+        "raMasYr": -1326.88,
+        "decMasYr": 1802.12
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 280.1826791067776,
+      "distanceLightYears": 11.640847277088287,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 91484 (Gl 725A, HIP 91768)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 91484 (Gl 725A, HIP 91768)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        1.0910386225471747,
+        -5.7818916614746,
+        10.044336158630626
+      ],
+      "colorHex": "#ffd9a8"
+    },
+    {
+      "id": "struve-2398-b",
+      "name": "Struve 2398 B",
+      "systemId": "struve-2398",
+      "role": "companion",
+      "parentId": "struve-2398-a",
+      "catalogIds": {
+        "hip": "HIP 91772",
+        "gliese": "Gl 725B"
+      },
+      "spectralType": "K5",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 91487 (Gl 725B, HIP 91772)"
+      },
+      "raDegrees": 280.6864873845211,
+      "decDegrees": 59.63505024444444,
+      "properMotion": {
+        "raMasYr": -1393.2,
+        "decMasYr": 1845.73
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 289.47749312490953,
+      "distanceLightYears": 11.267072068224897,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 91487 (Gl 725B, HIP 91772)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 91487 (Gl 725B, HIP 91772)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        1.0561578289289637,
+        -5.596792064725424,
+        9.721489711725885
+      ],
+      "colorHex": "#ffd9a8"
+    },
+    {
+      "id": "groombridge-34-a",
+      "name": "Groombridge 34 A",
+      "systemId": "groombridge-34",
+      "role": "primary",
+      "catalogIds": {
+        "hip": "HIP 1475",
+        "gliese": "Gl 15A"
+      },
+      "spectralType": "M1V",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 1472 (Gl 15A, HIP 1475)"
+      },
+      "raDegrees": 4.610466390599868,
+      "decDegrees": 44.0247788,
+      "properMotion": {
+        "raMasYr": 2888.92,
+        "decMasYr": 410.58
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 278.76118529255984,
+      "distanceLightYears": 11.700207737832732,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 1472 (Gl 15A, HIP 1475)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 1472 (Gl 15A, HIP 1475)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        8.385686940103449,
+        0.67623812874285,
+        8.131286346221843
+      ],
+      "colorHex": "#ffb27a"
+    },
+    {
+      "id": "groombridge-34-b",
+      "name": "Groombridge 34 B",
+      "systemId": "groombridge-34",
+      "role": "companion",
+      "parentId": "groombridge-34-a",
+      "catalogIds": {
+        "gliese": "Gl 15B"
+      },
+      "spectralType": "M6 Ve",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 117979 (Gl 15B)"
+      },
+      "raDegrees": 4.595202968955164,
+      "decDegrees": 44.025346666666664,
+      "properMotion": {
+        "raMasYr": 2880.25,
+        "decMasYr": 415.05
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 280.2690582959641,
+      "distanceLightYears": 11.637259556933403,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 117979 (Gl 15B)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 117979 (Gl 15B)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        8.340670165411082,
+        0.6703715576558055,
+        8.087622219289514
+      ],
+      "colorHex": "#ffb27a"
+    },
+    {
+      "id": "epsilon-indi",
+      "name": "Epsilon Indi A",
+      "systemId": "epsilon-indi",
+      "role": "primary",
+      "catalogIds": {
+        "hip": "HIP 108870",
+        "gliese": "Gl 845"
+      },
+      "spectralType": "K5V",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 108526 (Gl 845, HIP 108870)"
+      },
+      "raDegrees": 330.8644249805129,
+      "decDegrees": -56.79726073333334,
+      "properMotion": {
+        "raMasYr": 3959.97,
+        "decMasYr": -2538.84
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 276.0600706713781,
+      "distanceLightYears": 11.814688626411307,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 108526 (Gl 845, HIP 108870)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 108526 (Gl 845, HIP 108870)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        5.651143261690478,
+        -3.1499833916443736,
+        -9.88580051423594
+      ],
+      "colorHex": "#ffd9a8"
+    },
+    {
+      "id": "tau-ceti",
+      "name": "Tau Ceti",
+      "systemId": "tau-ceti",
+      "role": "primary",
+      "catalogIds": {
+        "hip": "HIP 8102",
+        "gliese": "Gl 71"
+      },
+      "spectralType": "G8V",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 8087 (Gl 71, HIP 8102)"
+      },
+      "raDegrees": 26.00922663455168,
+      "decDegrees": -15.933684133333333,
+      "properMotion": {
+        "raMasYr": -1721.82,
+        "decMasYr": 854.07
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 273.95759136485674,
+      "distanceLightYears": 11.905360099416564,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 8087 (Gl 71, HIP 8102)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 8087 (Gl 71, HIP 8102)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        10.288547450041193,
+        5.0201109882257615,
+        -3.268313958438786
+      ],
+      "colorHex": "#fff1d6"
+    },
+    {
+      "id": "yz-ceti",
+      "name": "YZ Ceti",
+      "systemId": "yz-ceti",
+      "role": "primary",
+      "catalogIds": {
+        "hip": "HIP 5643",
+        "gliese": "Gl 54.1"
+      },
+      "spectralType": "M5.5Ve",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 5632 (Gl 54.1, HIP 5643)"
+      },
+      "raDegrees": 18.13315384203048,
+      "decDegrees": -16.99609166666667,
+      "properMotion": {
+        "raMasYr": 1210.09,
+        "decMasYr": 646.95
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 271.01005447302094,
+      "distanceLightYears": 12.034844181370111,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 5632 (Gl 54.1, HIP 5643)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 5632 (Gl 54.1, HIP 5643)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        10.937622597155643,
+        3.5819725654307195,
+        -3.5178628359488258
+      ],
+      "colorHex": "#ffb27a"
+    },
+    {
+      "id": "luytens-star",
+      "name": "Luyten's Star",
+      "systemId": "luytens-star",
+      "role": "primary",
+      "catalogIds": {
+        "hip": "HIP 36208",
+        "gliese": "Gl 273"
+      },
+      "spectralType": "M5",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 36107 (Gl 273, HIP 36208)"
+      },
+      "raDegrees": 111.854624541676,
+      "decDegrees": 5.209366111111112,
+      "properMotion": {
+        "raMasYr": 571.27,
+        "decMasYr": -3694.25
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 262.977962446747,
+      "distanceLightYears": 12.40242241905688,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 36107 (Gl 273, HIP 36208)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 36107 (Gl 273, HIP 36208)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        -4.597767749914132,
+        11.463531373440038,
+        1.1260826029782003
+      ],
+      "colorHex": "#ffb27a"
+    },
+    {
+      "id": "kapteyns-star",
+      "name": "Kapteyn's Star",
+      "systemId": "kapteyns-star",
+      "role": "primary",
+      "catalogIds": {
+        "hip": "HIP 24186",
+        "gliese": "Gl 191"
+      },
+      "spectralType": "M0V",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 24129 (Gl 191, HIP 24186)"
+      },
+      "raDegrees": 77.95345033803517,
+      "decDegrees": -45.04388984444444,
+      "properMotion": {
+        "raMasYr": 6506.05,
+        "decMasYr": -5731.39
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 255.66293398783046,
+      "distanceLightYears": 12.757280558012697,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 24129 (Gl 191, HIP 24186)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 24129 (Gl 191, HIP 24186)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        1.8812467415703231,
+        8.815347163272445,
+        -9.027667047701984
+      ],
+      "colorHex": "#ffb27a"
+    },
+    {
+      "id": "lacaille-8760",
+      "name": "Lacaille 8760",
+      "systemId": "lacaille-8760",
+      "role": "primary",
+      "catalogIds": {
+        "hip": "HIP 105090",
+        "gliese": "Gl 825"
+      },
+      "spectralType": "M1/M2V",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 104751 (Gl 825, HIP 105090)"
+      },
+      "raDegrees": 319.29727115962055,
+      "decDegrees": -38.872459733333336,
+      "properMotion": {
+        "raMasYr": -3259,
+        "decMasYr": -1146.99
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 253.4083422026253,
+      "distanceLightYears": 12.870782977458123,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 104751 (Gl 825, HIP 105090)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 104751 (Gl 825, HIP 105090)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        7.596560591889572,
+        -6.534702424158527,
+        -8.077560637610393
+      ],
+      "colorHex": "#ffb27a"
+    },
+    {
+      "id": "kruger-60-a",
+      "name": "Kruger 60 A",
+      "systemId": "kruger-60",
+      "role": "primary",
+      "catalogIds": {
+        "hip": "HIP 110893",
+        "gliese": "Gl 860A"
+      },
+      "spectralType": "M2V",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 110547 (Gl 860A, HIP 110893)"
+      },
+      "raDegrees": 336.9923929461527,
+      "decDegrees": 57.69378122222222,
+      "properMotion": {
+        "raMasYr": -870.23,
+        "decMasYr": -471.1
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 249.93751562109472,
+      "distanceLightYears": 13.0495166724469,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 110547 (Gl 860A, HIP 110893)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 110547 (Gl 860A, HIP 110893)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        6.419457201720833,
+        -2.725903838265649,
+        11.029501479408431
+      ],
+      "colorHex": "#ffb27a"
+    },
+    {
+      "id": "kruger-60-b",
+      "name": "Kruger 60 B",
+      "systemId": "kruger-60",
+      "role": "companion",
+      "parentId": "kruger-60-a",
+      "catalogIds": {
+        "gliese": "Gl 860B"
+      },
+      "spectralType": "M6 V",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 119505 (Gl 860B)"
+      },
+      "raDegrees": 337.0018970823544,
+      "decDegrees": 57.69488388888889,
+      "properMotion": {
+        "raMasYr": -854.68,
+        "decMasYr": -391.3
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 249.5196746263443,
+      "distanceLightYears": 13.07136914975392,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 119505 (Gl 860B)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 119505 (Gl 860B)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        6.430464220839718,
+        -2.729318844251017,
+        11.048105719989064
+      ],
+      "colorHex": "#ffb27a"
+    },
+    {
+      "id": "ross-614-a",
+      "name": "Ross 614 A",
+      "systemId": "ross-614",
+      "role": "primary",
+      "catalogIds": {
+        "hip": "HIP 30920",
+        "gliese": "Gl 234A"
+      },
+      "spectralType": "M4.5Ve",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 30847 (Gl 234A, HIP 30920)"
+      },
+      "raDegrees": 97.35058642019885,
+      "decDegrees": -2.816728422222222,
+      "properMotion": {
+        "raMasYr": 694.73,
+        "decMasYr": -618.62
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 242.31850344092274,
+      "distanceLightYears": 13.459821395614563,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 30847 (Gl 234A, HIP 30920)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 30847 (Gl 234A, HIP 30920)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        -1.719973086802632,
+        13.333078762684103,
+        -0.6614342677699349
+      ],
+      "colorHex": "#ffb27a"
+    },
+    {
+      "id": "ross-614-b",
+      "name": "Ross 614 B",
+      "systemId": "ross-614",
+      "role": "companion",
+      "parentId": "ross-614-a",
+      "catalogIds": {
+        "gliese": "Gl 234B"
+      },
+      "spectralType": "unknown",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 118428 (Gl 234B)"
+      },
+      "raDegrees": 97.35221090203908,
+      "decDegrees": -2.8153274,
+      "properMotion": {
+        "raMasYr": 702.48,
+        "decMasYr": -697.59
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 242.8894124505113,
+      "distanceLightYears": 13.428184226976036,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 118428 (Gl 234B)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 118428 (Gl 234B)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        -1.7163095101282246,
+        13.301706843945967,
+        -0.6595516179742312
+      ],
+      "colorHex": "#ffb27a"
+    },
+    {
+      "id": "van-maanens-star",
+      "name": "Van Maanen's Star",
+      "systemId": "van-maanens-star",
+      "role": "primary",
+      "catalogIds": {
+        "hip": "HIP 3829",
+        "gliese": "Gl 35"
+      },
+      "spectralType": "DG",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 3820 (Gl 35, HIP 3829)"
+      },
+      "raDegrees": 12.296744494177858,
+      "decDegrees": 5.376563066666667,
+      "properMotion": {
+        "raMasYr": 1233.05,
+        "decMasYr": -2710.56
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 234.5986017923333,
+      "distanceLightYears": 13.9027417565539,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 3820 (Gl 35, HIP 3829)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 3820 (Gl 35, HIP 3829)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        13.524017045338073,
+        2.947907632955797,
+        1.3027017672489856
+      ],
+      "colorHex": "#e8efff"
+    },
+    {
+      "id": "wolf-1061",
+      "name": "Wolf 1061",
+      "systemId": "wolf-1061",
+      "role": "primary",
+      "catalogIds": {
+        "hip": "HIP 80824",
+        "gliese": "Gl 628"
+      },
+      "spectralType": "M4",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 80579 (Gl 628, HIP 80824)"
+      },
+      "raDegrees": 247.5748285798096,
+      "decDegrees": -12.667860222222222,
+      "properMotion": {
+        "raMasYr": -93.61,
+        "decMasYr": -1184.9
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 232.98075578957176,
+      "distanceLightYears": 13.999284044358056,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 80579 (Gl 628, HIP 80824)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 80579 (Gl 628, HIP 80824)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        -5.21040058142495,
+        -12.62563289274122,
+        -3.0700282724163213
+      ],
+      "colorHex": "#ffb27a"
+    },
+    {
+      "id": "gj-1061",
+      "name": "GJ 1061",
+      "systemId": "gj-1061",
+      "role": "primary",
+      "catalogIds": {
+        "gliese": "GJ 1061"
+      },
+      "spectralType": "M4.5",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 118236 (GJ 1061)"
+      },
+      "raDegrees": 54.00009317188568,
+      "decDegrees": -44.513674155555556,
+      "properMotion": {
+        "raMasYr": 727.33,
+        "decMasYr": -399.86
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 233.00246982618015,
+      "distanceLightYears": 13.997979418847189,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 118236 (GJ 1061)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 118236 (GJ 1061)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        5.867096595676601,
+        8.075393295204456,
+        -9.813695964071663
+      ],
+      "colorHex": "#ffb27a"
+    },
+    {
+      "id": "gliese-876",
+      "name": "Gliese 876",
+      "systemId": "gliese-876",
+      "role": "primary",
+      "catalogIds": {
+        "hip": "HIP 113020",
+        "gliese": "Gl 876"
+      },
+      "spectralType": "M5",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 112660 (Gl 876, HIP 113020)"
+      },
+      "raDegrees": 343.3240589259086,
+      "decDegrees": -14.266703844444443,
+      "properMotion": {
+        "raMasYr": 960.33,
+        "decMasYr": -675.64
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 213.2787339774351,
+      "distanceLightYears": 15.292494082004941,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 112660 (Gl 876, HIP 113020)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 112660 (Gl 876, HIP 113020)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        14.197540099137703,
+        -4.252968724140685,
+        -3.7686187672692895
+      ],
+      "colorHex": "#ffb27a"
+    },
+    {
+      "id": "40-eridani-a",
+      "name": "40 Eridani A",
+      "systemId": "40-eridani",
+      "role": "primary",
+      "catalogIds": {
+        "hip": "HIP 19849",
+        "gliese": "Gl 166A"
+      },
+      "spectralType": "K1V",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 19799 (Gl 166A, HIP 19849)"
+      },
+      "raDegrees": 63.808012799632536,
+      "decDegrees": -7.668070377777778,
+      "properMotion": {
+        "raMasYr": -2239.33,
+        "decMasYr": -3419.86
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 200.62192797672787,
+      "distanceLightYears": 16.25726464729107,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 19799 (Gl 166A, HIP 19849)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 19799 (Gl 166A, HIP 19849)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        7.111470830987141,
+        14.457520611887915,
+        -2.1692704277971364
+      ],
+      "colorHex": "#ffd9a8"
+    },
+    {
+      "id": "40-eridani-b",
+      "name": "40 Eridani B",
+      "systemId": "40-eridani",
+      "role": "companion",
+      "parentId": "40-eridani-a",
+      "catalogIds": {
+        "gliese": "Gl 166B"
+      },
+      "spectralType": "DA4",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 118281 (Gl 166B)"
+      },
+      "raDegrees": 63.83304007852371,
+      "decDegrees": -7.672776933333334,
+      "properMotion": {
+        "raMasYr": -2180.82,
+        "decMasYr": -3436.41
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 198.23963206724287,
+      "distanceLightYears": 16.4526323175434,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 118281 (Gl 166B)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 118281 (Gl 166B)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        7.190459884252848,
+        14.634240682908176,
+        -2.196678507187457
+      ],
+      "colorHex": "#e8efff"
+    },
+    {
+      "id": "40-eridani-c",
+      "name": "40 Eridani C",
+      "systemId": "40-eridani",
+      "role": "companion",
+      "parentId": "40-eridani-a",
+      "catalogIds": {
+        "gliese": "Gl 166C"
+      },
+      "spectralType": "dM4.5e",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 118282 (Gl 166C)"
+      },
+      "raDegrees": 63.83304007852371,
+      "decDegrees": -7.672776933333334,
+      "properMotion": {
+        "raMasYr": -2180.82,
+        "decMasYr": -3436.41
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 198.23963206724287,
+      "distanceLightYears": 16.4526323175434,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 118282 (Gl 166C)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 118282 (Gl 166C)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        7.190459884252848,
+        14.634240682908176,
+        -2.196678507187457
+      ],
+      "colorHex": "#ffb27a"
+    },
+    {
+      "id": "70-ophiuchi-a",
+      "name": "70 Ophiuchi A",
+      "systemId": "70-ophiuchi",
+      "role": "primary",
+      "catalogIds": {
+        "hip": "HIP 88601",
+        "gliese": "Gl 702A"
+      },
+      "spectralType": "K0V SB",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 88327 (Gl 702A, HIP 88601)"
+      },
+      "raDegrees": 271.36424912654536,
+      "decDegrees": 2.4958205111111114,
+      "properMotion": {
+        "raMasYr": 124.56,
+        "decMasYr": -962.66
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 196.71873155761892,
+      "distanceLightYears": 16.57983330485293,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 88327 (Gl 702A, HIP 88601)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 88327 (Gl 702A, HIP 88601)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        0.3943646757323691,
+        -16.559410428547707,
+        0.7219938906599948
+      ],
+      "colorHex": "#ffd9a8"
+    },
+    {
+      "id": "70-ophiuchi-b",
+      "name": "70 Ophiuchi B",
+      "systemId": "70-ophiuchi",
+      "role": "companion",
+      "parentId": "70-ophiuchi-a",
+      "catalogIds": {
+        "gliese": "Gl 702B"
+      },
+      "spectralType": "K5 Ve",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 119198 (Gl 702B)"
+      },
+      "raDegrees": 271.3659722645757,
+      "decDegrees": 2.4933685333333333,
+      "properMotion": {
+        "raMasYr": 252.27,
+        "decMasYr": -1101.48
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 196.61816751867872,
+      "distanceLightYears": 16.588313370673564,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 119198 (Gl 702B)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 119198 (Gl 702B)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        0.39506538689673054,
+        -16.56789906449108,
+        0.7216539423983721
+      ],
+      "colorHex": "#ffd9a8"
+    },
+    {
+      "id": "altair",
+      "name": "Altair",
+      "systemId": "altair",
+      "role": "primary",
+      "catalogIds": {
+        "hip": "HIP 97649",
+        "gliese": "Gl 768"
+      },
+      "spectralType": "A7IV-V",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 97338 (Gl 768, HIP 97649)"
+      },
+      "raDegrees": 297.69823473984,
+      "decDegrees": 8.87003551111111,
+      "properMotion": {
+        "raMasYr": 536.82,
+        "decMasYr": 385.54
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 194.95077492933035,
+      "distanceLightYears": 16.73019139498035,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 97338 (Gl 768, HIP 97649)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos / Gliese distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 97338 (Gl 768, HIP 97649)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        7.683438774772807,
+        -14.635889897894106,
+        2.5796898270361037
+      ],
+      "colorHex": "#eef2ff"
     }
   ]
 }

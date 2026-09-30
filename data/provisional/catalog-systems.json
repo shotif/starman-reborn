@@ -1,0 +1,231 @@
+{
+  "description": "Extracted by scripts/extract-catalogs.ts; provisional until the archive snapshot verifies it.",
+  "systems": [
+    {
+      "id": "wolf-359",
+      "displayName": "Wolf 359",
+      "referenceComponentId": "wolf-359",
+      "componentIds": [
+        "wolf-359"
+      ]
+    },
+    {
+      "id": "lalande-21185",
+      "displayName": "Lalande 21185",
+      "referenceComponentId": "lalande-21185",
+      "componentIds": [
+        "lalande-21185"
+      ]
+    },
+    {
+      "id": "luyten-726-8",
+      "displayName": "Luyten 726-8",
+      "referenceComponentId": "bl-ceti",
+      "componentIds": [
+        "bl-ceti",
+        "uv-ceti"
+      ]
+    },
+    {
+      "id": "ross-154",
+      "displayName": "Ross 154",
+      "referenceComponentId": "ross-154",
+      "componentIds": [
+        "ross-154"
+      ]
+    },
+    {
+      "id": "ross-248",
+      "displayName": "Ross 248",
+      "referenceComponentId": "ross-248",
+      "componentIds": [
+        "ross-248"
+      ]
+    },
+    {
+      "id": "lacaille-9352",
+      "displayName": "Lacaille 9352",
+      "referenceComponentId": "lacaille-9352",
+      "componentIds": [
+        "lacaille-9352"
+      ]
+    },
+    {
+      "id": "ross-128",
+      "displayName": "Ross 128",
+      "referenceComponentId": "ross-128",
+      "componentIds": [
+        "ross-128"
+      ]
+    },
+    {
+      "id": "ez-aquarii",
+      "displayName": "EZ Aquarii",
+      "referenceComponentId": "ez-aquarii",
+      "componentIds": [
+        "ez-aquarii"
+      ]
+    },
+    {
+      "id": "61-cygni",
+      "displayName": "61 Cygni",
+      "referenceComponentId": "61-cygni-a",
+      "componentIds": [
+        "61-cygni-a",
+        "61-cygni-b"
+      ]
+    },
+    {
+      "id": "procyon",
+      "displayName": "Procyon",
+      "referenceComponentId": "procyon-a",
+      "componentIds": [
+        "procyon-a",
+        "procyon-b"
+      ]
+    },
+    {
+      "id": "struve-2398",
+      "displayName": "Struve 2398",
+      "referenceComponentId": "struve-2398-a",
+      "componentIds": [
+        "struve-2398-a",
+        "struve-2398-b"
+      ]
+    },
+    {
+      "id": "groombridge-34",
+      "displayName": "Groombridge 34",
+      "referenceComponentId": "groombridge-34-a",
+      "componentIds": [
+        "groombridge-34-a",
+        "groombridge-34-b"
+      ]
+    },
+    {
+      "id": "epsilon-indi",
+      "displayName": "Epsilon Indi",
+      "referenceComponentId": "epsilon-indi",
+      "componentIds": [
+        "epsilon-indi"
+      ]
+    },
+    {
+      "id": "tau-ceti",
+      "displayName": "Tau Ceti",
+      "referenceComponentId": "tau-ceti",
+      "componentIds": [
+        "tau-ceti"
+      ]
+    },
+    {
+      "id": "yz-ceti",
+      "displayName": "YZ Ceti",
+      "referenceComponentId": "yz-ceti",
+      "componentIds": [
+        "yz-ceti"
+      ]
+    },
+    {
+      "id": "luytens-star",
+      "displayName": "Luyten's Star",
+      "referenceComponentId": "luytens-star",
+      "componentIds": [
+        "luytens-star"
+      ]
+    },
+    {
+      "id": "kapteyns-star",
+      "displayName": "Kapteyn's Star",
+      "referenceComponentId": "kapteyns-star",
+      "componentIds": [
+        "kapteyns-star"
+      ]
+    },
+    {
+      "id": "lacaille-8760",
+      "displayName": "Lacaille 8760",
+      "referenceComponentId": "lacaille-8760",
+      "componentIds": [
+        "lacaille-8760"
+      ]
+    },
+    {
+      "id": "kruger-60",
+      "displayName": "Kruger 60",
+      "referenceComponentId": "kruger-60-a",
+      "componentIds": [
+        "kruger-60-a",
+        "kruger-60-b"
+      ]
+    },
+    {
+      "id": "ross-614",
+      "displayName": "Ross 614",
+      "referenceComponentId": "ross-614-a",
+      "componentIds": [
+        "ross-614-a",
+        "ross-614-b"
+      ]
+    },
+    {
+      "id": "van-maanens-star",
+      "displayName": "Van Maanen's Star",
+      "referenceComponentId": "van-maanens-star",
+      "componentIds": [
+        "van-maanens-star"
+      ]
+    },
+    {
+      "id": "wolf-1061",
+      "displayName": "Wolf 1061",
+      "referenceComponentId": "wolf-1061",
+      "componentIds": [
+        "wolf-1061"
+      ]
+    },
+    {
+      "id": "gj-1061",
+      "displayName": "GJ 1061",
+      "referenceComponentId": "gj-1061",
+      "componentIds": [
+        "gj-1061"
+      ]
+    },
+    {
+      "id": "gliese-876",
+      "displayName": "Gliese 876",
+      "referenceComponentId": "gliese-876",
+      "componentIds": [
+        "gliese-876"
+      ]
+    },
+    {
+      "id": "40-eridani",
+      "displayName": "40 Eridani",
+      "referenceComponentId": "40-eridani-a",
+      "componentIds": [
+        "40-eridani-a",
+        "40-eridani-b",
+        "40-eridani-c"
+      ]
+    },
+    {
+      "id": "70-ophiuchi",
+      "displayName": "70 Ophiuchi",
+      "referenceComponentId": "70-ophiuchi-a",
+      "componentIds": [
+        "70-ophiuchi-a",
+        "70-ophiuchi-b"
+      ]
+    },
+    {
+      "id": "altair",
+      "displayName": "Altair",
+      "referenceComponentId": "altair",
+      "componentIds": [
+        "altair"
+      ]
+    }
+  ]
+}

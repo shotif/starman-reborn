@@ -28,3 +28,4 @@ certs/
 
 # Agent worktrees (local only)
 .claude/worktrees/
+data/raw/

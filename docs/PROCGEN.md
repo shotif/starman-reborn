@@ -137,11 +137,11 @@ Other balance guardrails:
 - Numbers in descriptions must be the item's own stats (the guardrail checks every number). Ship
   descriptions quote no numbers; the UI shows the stats.
 
-### 4.5 World content (for the generators that follow)
+### 4.5 World content
 
 - Stations and points of interest attach only to catalogued bodies, with placement rules per type
-  (mining near belts or airless moons; research near notable bodies; pirate dens only where lawful
-  influence is low).
+  (mining at small confirmed planets; research near notable bodies; pirate dens only where lawful
+  influence is low). The world generator and its guardrails are described in §7.
 - Every generated job is reachable, completable with a ship the player can buy by then, and pays
   within band; jobs never target the player's own faction without warning.
 - News and rumours only report facts that exist in the world state.
@@ -225,3 +225,76 @@ refused until you sell the excess).
   it. Guns and shields automatically join the shared budget curve.
 - **A new ship class**: add it to `rules/shipClasses.ts`; duels, trade-offs and the envelope are
   checked for it automatically.
+
+## 7. The world generator
+
+The second application builds the world around the real stars: `generateWorld(seeds, seed)` in
+`src/content/world/generate.ts`, a pure function of the catalogued systems (`WORLD_SEEDS` in
+`src/data/systems.ts`), the world rules (`src/content/world/rules.ts`) and a fixed seed
+(`WORLD_SEED`), so every player flies the same world. The five hand-authored systems keep their
+stations, owners and lanes; the generator only builds around them.
+
+### 7.1 Jump lanes
+
+1. The hand-authored lanes.
+2. The shortest lanes that connect every system (a minimum spanning tree over real distances).
+3. Extra short lanes so no system is a dead end (at least two lanes wherever a neighbour lies within
+   8.5 ly and has room; at most five lanes per system).
+4. Very short hops (under 3.2 ly) become lanes too, which makes loops.
+
+A system far from everything (Altair, 40 Eridani) stays a dead end: the lane would be longer than
+the rules allow.
+
+### 7.2 Territory and security
+
+Each lawful faction radiates influence from its home systems (`weight / (1 + (d / 5 ly)²)`,
+summed per faction). A system belongs to the strongest faction when its influence passes the claim
+threshold, and its security (0 lawless … 1 patrolled core) grows with that influence. The threshold
+is chosen so that claimed space is never lawless. Below security 0.35, raiders operate openly.
+
+### 7.3 Stations
+
+A system gets one to four stations: one, plus one with two or more confirmed planets, one around an
+F, G or K star, and one in well-patrolled space. Each is drawn by weight from the station types
+allowed at that security (trade ports and customs depots in secure space, free ports only in
+lawless space, mining outposts only where a small confirmed planet exists, research stations
+favour white dwarfs and planets, and so on). Every station orbits a catalogued star or confirmed
+planet; nothing is placed around a body the catalogues do not list. Then:
+
+- **Pirate dens** appear in lawless systems at least two jumps from Sol (75% chance each). They
+  are never dockable for lawful pilots.
+- **Coverage**: every kind of station exists somewhere. A kind the dice missed is added to the
+  system that suits it best.
+- **Names** are a first word from the owner's pool (Transit Authority words are civic and
+  nautical, Frontier words pastoral, independents' flashy, raiders' grim) and a noun of the type
+  ("Sagebrush Yards", "Hazard Bazaar"). Each first word is used once.
+- **Shops**: stations that sell equipment carry one or two of their owner's makers; shipyards
+  always include a maker that builds what they sell; free ports carry salvaged Hollow Wake gear
+  next to one lawful maker. Other stations with repairs sell consumables.
+- **Look**: each station gets a `StationLook` (type, owner, seed, star colour, size, wear) that the
+  exterior and interior art generators build from. Wear grows as security falls.
+
+### 7.4 World guardrails
+
+`validateWorld` (`src/content/world/validate.ts`) checks, and the unit tests run it for the real
+world and for twelve other seeds:
+
+- lanes are two-way, reach every system from Sol, stay under 9.5 ly (hand-authored lanes aside)
+  and leave no avoidable dead end;
+- security stays in range, claimed space is never lawless, hand-authored owners are kept and Sol is
+  Transit Authority core space;
+- every station orbits a catalogued star or confirmed planet of its system, has a sane orbit and
+  look, fits its type's security band and owner, and ids and names are unique;
+- pirate dens only in lawless, unclaimed space two or more jumps from Sol, never dockable;
+- every system has an open station, none has more than four, and every station type exists;
+- names come from the owner's pool (a warning sign that the pool ran out), never repeat a ship,
+  equipment, maker, faction or system name, and pass the denylist;
+- every shipyard has something to sell and every outfitter that sells equipment stocks a maker.
+
+### 7.5 Adding to the world
+
+- **More systems**: add them to the pick list in `scripts/extract-catalogs.ts`, rerun it and
+  `npm run data:build`. If a name pool runs out, the guardrails say so; add words.
+- **A new station type**: add it to `StationType` (`src/content/world/types.ts`) and a rule to
+  `STATION_TYPES` in `rules.ts`; give it a shop entry if it sells equipment. The coverage guardrail
+  makes sure it appears somewhere, and the art generators need a look for it.

@@ -1,3 +1,4 @@
+import { WORLD } from '../data/systems.ts';
 import { buildCatalog } from './gen/catalog.ts';
 import { CATALOG_SEED, RULES } from './rules/index.ts';
 import type { Catalog, GearItem, ManufacturerId, ManufacturerRule, ShipClassRule, ShipModel, ShopRule, Tier } from './types.ts';
@@ -42,8 +43,14 @@ export function shipClass(id: ShipModel['class']): ShipClassRule {
   return RULES.classes.find((c) => c.id === id)!;
 }
 
+let generatedShops: Map<string, ShopRule> | null = null;
+
+/** The outfitter and shipyard at a station: hand-authored (rules/shops.ts) or from the world generator. */
 export function shopRule(locationId: string): ShopRule | undefined {
-  return RULES.shops.find((s) => s.locationId === locationId);
+  const authored = RULES.shops.find((s) => s.locationId === locationId);
+  if (authored) return authored;
+  generatedShops ??= new Map(WORLD.stations.flatMap((st) => (st.shop ? [[st.id, { locationId: st.id, ...st.shop }] as const] : [])));
+  return generatedShops.get(locationId);
 }
 
 /** Equipment the outfitter at a station sells, by slot then family then class. */

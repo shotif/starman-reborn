@@ -12,7 +12,7 @@ import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js';
 import type { SystemId } from '../data/types.ts';
-import { SYSTEM_IDS } from '../data/types.ts';
+import { SYSTEM_IDS } from '../data/systems.ts';
 import { MAP_LABELS, MAP_LINKS, MAP_STARS, RING_RADII_LY, systemAnchor } from './mapData.ts';
 import {
   clamp,

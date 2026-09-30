@@ -34,6 +34,14 @@ export const SOURCES = {
     label: 'NASA Exoplanet Archive',
     url: 'https://exoplanetarchive.ipac.caltech.edu/',
   },
+  hyg: {
+    label: 'HYG star database v4.0 (CC BY-SA 4.0)',
+    url: 'https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT',
+  },
+  openExoplanetCatalogue: {
+    label: 'Open Exoplanet Catalogue',
+    url: 'https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue',
+  },
   gaiaArchive: {
     label: 'ESA Gaia archive',
     url: 'https://gea.esac.esa.int/archive/',

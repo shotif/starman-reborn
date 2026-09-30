@@ -40,11 +40,25 @@ describe('bundled dataset', () => {
     expect(issues.filter((i) => i.level === 'error')).toEqual([]);
   });
 
-  it('contains exactly the five prototype systems, all reachable from Sol', () => {
-    expect(SYSTEMS.map((s) => s.id).sort()).toEqual(
-      ['alpha-centauri', 'barnard', 'epsilon-eridani', 'sirius', 'sol'].sort(),
-    );
-    expect(reachableSystems(SYSTEMS, 'sol').size).toBe(5);
+  it('keeps the five hand-authored systems first and adds the catalogue systems, all reachable from Sol', () => {
+    expect(SYSTEMS.slice(0, 5).map((s) => s.id)).toEqual(['sol', 'alpha-centauri', 'barnard', 'sirius', 'epsilon-eridani']);
+    expect(SYSTEMS.length).toBeGreaterThanOrEqual(30);
+    expect(new Set(SYSTEMS.map((s) => s.id)).size).toBe(SYSTEMS.length);
+    for (const id of ['tau-ceti', '61-cygni', 'procyon', 'wolf-359', 'gliese-876', 'altair']) expect(SYSTEMS.some((s) => s.id === id)).toBe(true);
+    expect(reachableSystems(SYSTEMS, 'sol').size).toBe(SYSTEMS.length);
+  });
+
+  it('takes catalogue systems from HYG and the Open Exoplanet Catalogue, flagged provisional', () => {
+    const tauCeti = getSystem('tau-ceti');
+    expect(tauCeti.distanceLightYears).toBeCloseTo(11.9, 1);
+    expect(tauCeti.confirmedBodies.length).toBeGreaterThanOrEqual(2);
+    expect(tauCeti.confirmedBodies.every((p) => p.status === 'confirmed' && p.sourceUrl.startsWith('https://'))).toBe(true);
+    const gliese876 = getSystem('gliese-876');
+    expect(gliese876.confirmedBodies.map((p) => p.displayName)).toEqual(expect.arrayContaining(['Gliese 876 b', 'Gliese 876 c']));
+    expect(getSystem('altair').confirmedBodies).toEqual([]);
+    const van = ASTROMETRY.stars.find((s) => s.id === 'van-maanens-star')!;
+    expect(van.spectralType).toMatch(/^D/);
+    expect(van.catalogIds.hip ?? van.catalogIds.gliese).toBeTruthy();
   });
 
   it('keeps distances within the familiar published approximations', () => {

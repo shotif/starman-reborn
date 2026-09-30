@@ -1,4 +1,5 @@
-import type { FactionId } from '../../data/types.ts';
+import type { FactionId, LocationService, SystemId, Vec3Tuple } from '../../data/types.ts';
+import type { ShopRule } from '../types.ts';
 
 /**
  * Types for the generated world (docs/PROCGEN.md §4.5): stations and the look the art generators
@@ -63,4 +64,59 @@ export interface StationLook {
   size: number;
   /** 0 = pristine … 1 = run-down (grime, clutter, flickering lights). */
   wear: number;
+}
+
+// ---------------------------------------------------------------- generator inputs and outputs
+
+/** What the world generator knows about a system: observed facts only. */
+export interface SystemSeed {
+  id: SystemId;
+  name: string;
+  positionLy: Vec3Tuple;
+  /** Stars, primary first, with their spectral types as catalogued. */
+  stars: readonly { id: string; name: string; spectralType: string; colorHex: string }[];
+  /** Confirmed planets. */
+  planets: readonly { id: string; name: string; hostId: string; massEarth?: number; semiMajorAxisAu?: number }[];
+  /** Hand-authored systems keep their links, stations and owner; the generator only adds around them. */
+  curated?: { links: readonly SystemId[]; owner: StationOwner | null };
+}
+
+/** A station the generator placed. Fiction, attached to a real star or planet. */
+export interface GeneratedStation {
+  id: string;
+  name: string;
+  systemId: SystemId;
+  type: StationType;
+  owner: StationOwner;
+  /** The star component or confirmed planet it orbits. */
+  anchorId: string;
+  /** Placement around the anchor in the scene's schematic units. */
+  orbit: { distance: number; angle: number; height: number };
+  services: readonly LocationService[];
+  /** False for pirate dens: lawful pilots cannot dock. */
+  dockable: boolean;
+  look: StationLook;
+  description: string;
+  /** What its outfitter and shipyard carry; absent when it has neither. */
+  shop?: StationShop;
+}
+
+/** A generated station's outfitter and shipyard (a ShopRule without the station id). */
+export type StationShop = Omit<ShopRule, 'locationId'>;
+
+export interface SystemProfile {
+  id: SystemId;
+  /** Faction whose patrols keep the peace, or null when nobody claims the system. */
+  owner: FactionId | null;
+  /** 0 = lawless … 1 = patrolled core. Drives patrols, pirates and black markets. */
+  security: number;
+  /** One or two lines of fiction for the star map. */
+  fiction: string;
+}
+
+export interface WorldResult {
+  /** Jump links (curated plus generated), both directions. */
+  links: ReadonlyMap<SystemId, readonly SystemId[]>;
+  stations: readonly GeneratedStation[];
+  profiles: ReadonlyMap<SystemId, SystemProfile>;
 }

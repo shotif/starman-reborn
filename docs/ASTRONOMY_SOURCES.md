@@ -8,8 +8,9 @@ what is uncertain.
 
 | Dataset | File | Status |
 | --- | --- | --- |
-| Star astrometry (7 components) | `src/data/generated/astrometry.json` | **Provisional** until a dated archive snapshot is captured |
-| Confirmed planets | `src/data/generated/exoplanets.json` | **Provisional** until a dated archive snapshot is captured |
+| Star astrometry (44 components in 32 systems) | `src/data/generated/astrometry.json` | **Provisional** until a dated archive snapshot is captured |
+| Confirmed planets (37) | `src/data/generated/exoplanets.json` | **Provisional** until a dated archive snapshot is captured |
+| Catalogue systems (27 beyond the hand-authored five) | `src/data/generated/catalog-systems.json` | **Provisional**, extracted from HYG v4.0 and the Open Exoplanet Catalogue (below) |
 
 The development environment could not reach the archives when the prototype was built: the ESA
 Gaia archive, NASA Exoplanet Archive, SIMBAD and VizieR hosts were blocked by the network policy.
@@ -33,6 +34,53 @@ npm run data:validate   # must pass before committing
 
 `data:build` prefers `data/snapshot/*` when present. After a successful snapshot the badges
 disappear automatically and the as-of dates shown in game become the retrieval date.
+
+## Catalogue systems: HYG and the Open Exoplanet Catalogue
+
+The five hand-authored systems (Sol, Alpha Centauri, Barnard's Star, Sirius, Epsilon Eridani) are
+joined by 27 more systems within about 17 light-years, from Wolf 359 to Altair. The archives above
+were blocked, so `scripts/extract-catalogs.ts` reads two public catalogues that were reachable
+(through raw.githubusercontent.com) instead:
+
+- **HYG star database v4.0** by David Nash (astronexus), which combines the Hipparcos, Yale Bright
+  Star and Gliese catalogues: positions (J2000), proper motions, distances and spectral types.
+  Licence: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Source:
+  <https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT>.
+- **Open Exoplanet Catalogue** by Hanno Rein and contributors: planets on its "Confirmed planets"
+  list only; controversial and retracted entries are skipped. Licence: MIT, Copyright (C) 2012
+  Hanno Rein (notice in [data/provisional/NOTICE.md](../data/provisional/NOTICE.md)). Source:
+  <https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue>.
+
+What this means for the data:
+
+- The systems are picked by name in the script (a fixed list, so the world does not shift when a
+  catalogue is updated). Components are matched by HIP or Gliese number and every record keeps the
+  URL of the catalogue it came from.
+- Distances are HYG's (from Hipparcos parallaxes, or Gliese distances where Hipparcos has none).
+  HYG does not carry parallax errors, so these systems show a distance without an error bar.
+- Planet masses are the catalogue's values; where the catalogue marks a mass as a minimum
+  (M sin i) the record says so. Values the catalogue does not give stay blank.
+- Everything from these catalogues is flagged **provisional** and shows the *Pending verification*
+  badge, exactly like the stopgap values, until an archive snapshot verifies it against Gaia DR3,
+  SIMBAD and the NASA Exoplanet Archive.
+- **Licences of the derived files.** The positions, distances and spectral types derived from HYG
+  in `data/provisional/catalog-astrometry-input.json` and `src/data/generated/astrometry.json` are
+  shared under CC BY-SA 4.0 (the rest of the project keeps its own licence). The planet values
+  derived from the Open Exoplanet Catalogue keep its MIT notice.
+
+To regenerate (the raw files are not committed):
+
+```bash
+mkdir -p data/raw
+curl -L -o data/raw/hygdata_v40.csv.gz https://raw.githubusercontent.com/astronexus/HYG-Database/main/hyg/CURRENT/hygdata_v40.csv.gz
+curl -L -o data/raw/oec-systems.xml.gz https://raw.githubusercontent.com/OpenExoplanetCatalogue/oec_gzip/master/systems.xml.gz
+gunzip data/raw/*.gz
+node scripts/extract-catalogs.ts && npm run data:build && npm run data:validate
+```
+
+Stations, owners, security levels and jump lanes in these systems are **fiction** made by the world
+generator ([PROCGEN.md §7](PROCGEN.md#7-the-world-generator)); they attach only to the catalogued
+stars and confirmed planets and never add a body that is not in the catalogues.
 
 ## Pipeline
 

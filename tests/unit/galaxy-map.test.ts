@@ -439,7 +439,9 @@ describe('plotted neighborhood', () => {
   });
 
   it('draws each fictional jump link once with its real length', () => {
-    expect(MAP_LINKS).toHaveLength(5);
+    const pairs = new Set(SYSTEMS.flatMap((s) => s.jumpLinks.map((t) => [s.id, t].sort().join('|'))));
+    expect(MAP_LINKS).toHaveLength(pairs.size);
+    expect(MAP_LINKS.length).toBeGreaterThan(SYSTEMS.length - 1);
     const solSirius = MAP_LINKS.find((l) => l.a === 'sirius' && l.b === 'sol')!;
     expect(solSirius.distanceLy).toBeCloseTo(getSystem('sirius').distanceLightYears, 9);
   });

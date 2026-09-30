@@ -7,7 +7,9 @@ This is an honest list of what the prototype does not do yet, or what has not be
 1. **Astronomy snapshot not captured.** The build environment could not reach the ESA Gaia archive,
    SIMBAD, VizieR or the NASA Exoplanet Archive (blocked by its network policy). The bundled star
    and planet data are therefore **provisional transcriptions**, and every place in the game that
-   shows them displays a *Pending verification* badge. On a machine with internet access, run
+   shows them displays a *Pending verification* badge. The 27 catalogue systems added later come
+   from the HYG database and the Open Exoplanet Catalogue (reachable through GitHub) and are
+   provisional too. On a machine with internet access, run
    `npm run data:snapshot && npm run data:build && npm run data:validate`, then commit the result.
    The badges disappear automatically and the dated archive values replace the stopgaps. See
    [ASTRONOMY_SOURCES.md](ASTRONOMY_SOURCES.md).

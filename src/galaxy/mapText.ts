@@ -59,13 +59,15 @@ export function digitsForError(error: number): number {
 }
 
 /** "4.344 ± 0.002 ly" */
-export function formatDistanceWithError(distanceLy: number, errorLy: number): string {
+export function formatDistanceWithError(distanceLy: number, errorLy: number | undefined): string {
+  if (errorLy === undefined) return `${distanceLy.toFixed(2)} ly`;
   const d = digitsForError(errorLy);
   return `${distanceLy.toFixed(d)} ± ${errorLy.toFixed(d)} ly`;
 }
 
 /** "750.81 ± 0.38 mas" */
 export function formatParallax(c: StellarComponent): string {
+  if (c.parallaxErrorMas === undefined) return `${c.parallaxMas.toFixed(2)} mas`;
   const d = c.parallaxErrorMas < 0.1 ? 4 : 2;
   return `${c.parallaxMas.toFixed(d)} ± ${c.parallaxErrorMas.toFixed(d)} mas`;
 }

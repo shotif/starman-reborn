@@ -13,7 +13,8 @@
 import '../ui/styles/base.css';
 import * as THREE from 'three';
 import { detectWebGL2 } from '../app/webgl.ts';
-import { SYSTEM_IDS, type SystemId } from '../data/types.ts';
+import { SYSTEM_IDS } from '../data/systems.ts';
+import type { SystemId } from '../data/types.ts';
 import { GalaxyMapView } from '../galaxy/GalaxyMapView.ts';
 import type { MapState } from '../galaxy/types.ts';
 import { button, setModalRoot, setToastRoot, toast } from '../ui/components.ts';

@@ -1,9 +1,9 @@
 {
   "generatedBy": "scripts/build-dataset.ts",
-  "input": "data/provisional/exoplanets-input.json",
+  "input": "data/provisional/exoplanets-input.json + data/provisional/catalog-exoplanets-input.json",
   "verification": "provisional",
   "asOfDate": "pending snapshot",
-  "description": "Stopgap planet list naming only planets widely reported as confirmed in the NASA Exoplanet Archive. Numeric parameters are deliberately omitted until `npm run data:snapshot` captures the archive's own values and status.",
+  "description": "Stopgap planet list naming only planets widely reported as confirmed in the NASA Exoplanet Archive. Numeric parameters are deliberately omitted until `npm run data:snapshot` captures the archive's own values and status. Planets on the Open Exoplanet Catalogue's \"Confirmed planets\" list (MIT licence). Extracted by scripts/extract-catalogs.ts; provisional until the archive snapshot verifies it.",
   "source": {
     "label": "NASA Exoplanet Archive",
     "url": "https://exoplanetarchive.ipac.caltech.edu/"
@@ -136,6 +136,1058 @@
       "verification": "provisional",
       "discoveryYear": 2000,
       "discoveryMethod": "Radial Velocity",
+      "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "gj-411-b",
+      "archiveName": "GJ 411 b",
+      "displayName": "Lalande 21185 b",
+      "hostId": "lalande-21185",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/GJ%20411.xml",
+      "sourceLabel": "Open Exoplanet Catalogue",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2019,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 12.946,
+        "unit": "days",
+        "error": 0.005
+      },
+      "semiMajorAxisAu": {
+        "value": 0.0789,
+        "unit": "AU",
+        "error": 0.000725
+      },
+      "massEarth": {
+        "value": 2.689,
+        "unit": "Earth masses",
+        "error": 0.251
+      },
+      "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "gj-411-c",
+      "archiveName": "GJ 411 c",
+      "displayName": "Lalande 21185 c",
+      "hostId": "lalande-21185",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/GJ%20411.xml",
+      "sourceLabel": "Open Exoplanet Catalogue",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2021,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 3190,
+        "unit": "days",
+        "error": 185
+      },
+      "semiMajorAxisAu": {
+        "value": 3.1,
+        "unit": "AU",
+        "error": 0.12
+      },
+      "massEarth": {
+        "value": 18.05,
+        "unit": "Earth masses",
+        "error": 2.77
+      },
+      "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "gj-887-b",
+      "archiveName": "GJ 887 b",
+      "displayName": "Lacaille 9352 b",
+      "hostId": "lacaille-9352",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/GJ%20887.xml",
+      "sourceLabel": "Open Exoplanet Catalogue",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2020,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 9.262,
+        "unit": "days",
+        "error": 0.001
+      },
+      "semiMajorAxisAu": {
+        "value": 0.068,
+        "unit": "AU",
+        "error": 0.002
+      },
+      "massEarth": {
+        "value": 4.199,
+        "unit": "Earth masses",
+        "error": 0.601
+      },
+      "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "gj-887-c",
+      "archiveName": "GJ 887 c",
+      "displayName": "Lacaille 9352 c",
+      "hostId": "lacaille-9352",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/GJ%20887.xml",
+      "sourceLabel": "Open Exoplanet Catalogue",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2020,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 21.789,
+        "unit": "days",
+        "error": 0.0045000000000000005
+      },
+      "semiMajorAxisAu": {
+        "value": 0.12,
+        "unit": "AU",
+        "error": 0.004
+      },
+      "massEarth": {
+        "value": 7.599,
+        "unit": "Earth masses",
+        "error": 1.2
+      },
+      "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "ross-128-b",
+      "archiveName": "Ross 128 b",
+      "displayName": "Ross 128 b",
+      "hostId": "ross-128",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/Ross%20128.xml",
+      "sourceLabel": "Open Exoplanet Catalogue",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2017,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 9.8658,
+        "unit": "days",
+        "error": 0.007
+      },
+      "semiMajorAxisAu": {
+        "value": 0.0496,
+        "unit": "AU",
+        "error": 0.0017
+      },
+      "massEarth": {
+        "value": 1.4,
+        "unit": "Earth masses",
+        "error": 0.21,
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "gj-15-a-b",
+      "archiveName": "GJ 15 A b",
+      "displayName": "Groombridge 34 A b",
+      "hostId": "groombridge-34-a",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/Gliese%2015.xml",
+      "sourceLabel": "Open Exoplanet Catalogue",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2014,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 11.4407,
+        "unit": "days",
+        "error": 0.00165
+      },
+      "semiMajorAxisAu": {
+        "value": 0.072,
+        "unit": "AU",
+        "error": 0.0035
+      },
+      "massEarth": {
+        "value": 3.029,
+        "unit": "Earth masses",
+        "error": 0.45
+      },
+      "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "gj-15-a-c",
+      "archiveName": "GJ 15 A c",
+      "displayName": "Groombridge 34 A c",
+      "hostId": "groombridge-34-a",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/Gliese%2015.xml",
+      "sourceLabel": "Open Exoplanet Catalogue",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2018,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 7600,
+        "unit": "days",
+        "error": 1950
+      },
+      "semiMajorAxisAu": {
+        "value": 5.4,
+        "unit": "AU",
+        "error": 0.95
+      },
+      "massEarth": {
+        "value": 36,
+        "unit": "Earth masses",
+        "error": 21.5
+      },
+      "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "epsilon-indi-a-b",
+      "archiveName": "Epsilon Indi A b",
+      "displayName": "Epsilon Indi A b",
+      "hostId": "epsilon-indi",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/Epsilon%20Indi.xml",
+      "sourceLabel": "Open Exoplanet Catalogue",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2018,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 19205.51,
+        "unit": "days",
+        "error": 5806.8
+      },
+      "semiMajorAxisAu": {
+        "value": 12.82,
+        "unit": "AU",
+        "error": 2.445
+      },
+      "massEarth": {
+        "value": 861.3,
+        "unit": "Earth masses",
+        "error": 418,
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "tau-ceti-e",
+      "archiveName": "tau Ceti e",
+      "displayName": "Tau Ceti e",
+      "hostId": "tau-ceti",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/tau%20Ceti.xml",
+      "sourceLabel": "Open Exoplanet Catalogue",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2012,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 162.87,
+        "unit": "days",
+        "error": 0.77
+      },
+      "semiMajorAxisAu": {
+        "value": 0.538,
+        "unit": "AU",
+        "error": 0.006
+      },
+      "massEarth": {
+        "value": 3.941,
+        "unit": "Earth masses",
+        "error": 0.731,
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "tau-ceti-f",
+      "archiveName": "tau Ceti f",
+      "displayName": "Tau Ceti f",
+      "hostId": "tau-ceti",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/tau%20Ceti.xml",
+      "sourceLabel": "Open Exoplanet Catalogue",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2012,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 636.13,
+        "unit": "days",
+        "error": 29.695
+      },
+      "semiMajorAxisAu": {
+        "value": 1.334,
+        "unit": "AU",
+        "error": 0.0305
+      },
+      "massEarth": {
+        "value": 3.941,
+        "unit": "Earth masses",
+        "error": 1.21,
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "tau-ceti-g",
+      "archiveName": "tau Ceti g",
+      "displayName": "Tau Ceti g",
+      "hostId": "tau-ceti",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/tau%20Ceti.xml",
+      "sourceLabel": "Open Exoplanet Catalogue",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2017,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 20,
+        "unit": "days",
+        "error": 0.015
+      },
+      "massEarth": {
+        "value": 1.751,
+        "unit": "Earth masses",
+        "error": 0.326,
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "tau-ceti-h",
+      "archiveName": "tau Ceti h",
+      "displayName": "Tau Ceti h",
+      "hostId": "tau-ceti",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/tau%20Ceti.xml",
+      "sourceLabel": "Open Exoplanet Catalogue",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2017,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 49.41,
+        "unit": "days",
+        "error": 0.09
+      },
+      "semiMajorAxisAu": {
+        "value": 0.243,
+        "unit": "AU",
+        "error": 0.003
+      },
+      "massEarth": {
+        "value": 1.831,
+        "unit": "Earth masses",
+        "error": 0.469,
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "yz-cet-b",
+      "archiveName": "YZ Cet b",
+      "displayName": "YZ Ceti b",
+      "hostId": "yz-ceti",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/YZ%20Cet.xml",
+      "sourceLabel": "Open Exoplanet Catalogue",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2017,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 1.96876,
+        "unit": "days",
+        "error": 0.00021
+      },
+      "semiMajorAxisAu": {
+        "value": 0.01557,
+        "unit": "AU",
+        "error": 0.00052
+      },
+      "massEarth": {
+        "value": 0.7501,
+        "unit": "Earth masses",
+        "error": 0.13
+      },
+      "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "yz-cet-c",
+      "archiveName": "YZ Cet c",
+      "displayName": "YZ Ceti c",
+      "hostId": "yz-ceti",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/YZ%20Cet.xml",
+      "sourceLabel": "Open Exoplanet Catalogue",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2017,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 3.06008,
+        "unit": "days",
+        "error": 0.00022
+      },
+      "semiMajorAxisAu": {
+        "value": 0.0209,
+        "unit": "AU",
+        "error": 0.0007
+      },
+      "massEarth": {
+        "value": 0.9789,
+        "unit": "Earth masses",
+        "error": 0.14
+      },
+      "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "yz-cet-d",
+      "archiveName": "YZ Cet d",
+      "displayName": "YZ Ceti d",
+      "hostId": "yz-ceti",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/YZ%20Cet.xml",
+      "sourceLabel": "Open Exoplanet Catalogue",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2017,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 4.65627,
+        "unit": "days",
+        "error": 0.00042
+      },
+      "semiMajorAxisAu": {
+        "value": 0.02764,
+        "unit": "AU",
+        "error": 0.00093
+      },
+      "massEarth": {
+        "value": 1.141,
+        "unit": "Earth masses",
+        "error": 0.168
+      },
+      "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "gj-273-b",
+      "archiveName": "GJ 273 b",
+      "displayName": "Luyten's Star b",
+      "hostId": "luytens-star",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/GJ%20273.xml",
+      "sourceLabel": "Open Exoplanet Catalogue",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2017,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 18.6498,
+        "unit": "days",
+        "error": 0.005549999999999999
+      },
+      "semiMajorAxisAu": {
+        "value": 0.091101,
+        "unit": "AU",
+        "error": 0.000018
+      },
+      "massEarth": {
+        "value": 2.889,
+        "unit": "Earth masses",
+        "error": 0.265
+      },
+      "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "gj-273-c",
+      "archiveName": "GJ 273 c",
+      "displayName": "Luyten's Star c",
+      "hostId": "luytens-star",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/GJ%20273.xml",
+      "sourceLabel": "Open Exoplanet Catalogue",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2017,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 4.7234,
+        "unit": "days",
+        "error": 0.0004
+      },
+      "semiMajorAxisAu": {
+        "value": 0.036467,
+        "unit": "AU",
+        "error": 0.000002
+      },
+      "massEarth": {
+        "value": 1.179,
+        "unit": "Earth masses",
+        "error": 0.159
+      },
+      "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "kapteyn-b",
+      "archiveName": "Kapteyn b",
+      "displayName": "Kapteyn's Star b",
+      "hostId": "kapteyns-star",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/Kapteyn.xml",
+      "sourceLabel": "Open Exoplanet Catalogue",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2014,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 48.616,
+        "unit": "days",
+        "error": 0.034
+      },
+      "semiMajorAxisAu": {
+        "value": 0.168,
+        "unit": "AU",
+        "error": 0.007
+      },
+      "massEarth": {
+        "value": 4.799,
+        "unit": "Earth masses",
+        "error": 0.95,
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "kapteyn-c",
+      "archiveName": "Kapteyn c",
+      "displayName": "Kapteyn's Star c",
+      "hostId": "kapteyns-star",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/Kapteyn.xml",
+      "sourceLabel": "Open Exoplanet Catalogue",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2014,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 121.54,
+        "unit": "days",
+        "error": 0.25
+      },
+      "semiMajorAxisAu": {
+        "value": 0.311,
+        "unit": "AU",
+        "error": 0.026
+      },
+      "massEarth": {
+        "value": 6.999,
+        "unit": "Earth masses",
+        "error": 1.1,
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "wolf-1061-b",
+      "archiveName": "Wolf 1061 b",
+      "displayName": "Wolf 1061 b",
+      "hostId": "wolf-1061",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/Wolf%201061.xml",
+      "sourceLabel": "Open Exoplanet Catalogue",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2015,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 4.8876,
+        "unit": "days",
+        "error": 0.0014
+      },
+      "semiMajorAxisAu": {
+        "value": 0.035509,
+        "unit": "AU",
+        "error": 0.000007
+      },
+      "massEarth": {
+        "value": 1.36,
+        "unit": "Earth masses",
+        "error": 0.229,
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "wolf-1061-c",
+      "archiveName": "Wolf 1061 c",
+      "displayName": "Wolf 1061 c",
+      "hostId": "wolf-1061",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/Wolf%201061.xml",
+      "sourceLabel": "Open Exoplanet Catalogue",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2015,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 17.867,
+        "unit": "days",
+        "error": 0.011
+      },
+      "semiMajorAxisAu": {
+        "value": 0.08427,
+        "unit": "AU",
+        "error": 0.00004
+      },
+      "massEarth": {
+        "value": 4.259,
+        "unit": "Earth masses",
+        "error": 0.381,
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "wolf-1061-d",
+      "archiveName": "Wolf 1061 d",
+      "displayName": "Wolf 1061 d",
+      "hostId": "wolf-1061",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/Wolf%201061.xml",
+      "sourceLabel": "Open Exoplanet Catalogue",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2015,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 67.27,
+        "unit": "days",
+        "error": 0.12
+      },
+      "semiMajorAxisAu": {
+        "value": 0.2039,
+        "unit": "AU",
+        "error": 0.0002
+      },
+      "massEarth": {
+        "value": 5.212,
+        "unit": "Earth masses",
+        "error": 0.667,
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "gj-1061-b",
+      "archiveName": "GJ 1061 b",
+      "displayName": "GJ 1061 b",
+      "hostId": "gj-1061",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/GJ%201061.xml",
+      "sourceLabel": "Open Exoplanet Catalogue",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2020,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 3.204,
+        "unit": "days",
+        "error": 0.001
+      },
+      "semiMajorAxisAu": {
+        "value": 0.021,
+        "unit": "AU",
+        "error": 0.001
+      },
+      "massEarth": {
+        "value": 1.37,
+        "unit": "Earth masses",
+        "error": 0.154
+      },
+      "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "gj-1061-c",
+      "archiveName": "GJ 1061 c",
+      "displayName": "GJ 1061 c",
+      "hostId": "gj-1061",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/GJ%201061.xml",
+      "sourceLabel": "Open Exoplanet Catalogue",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2020,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 6.689,
+        "unit": "days",
+        "error": 0.005
+      },
+      "semiMajorAxisAu": {
+        "value": 0.035,
+        "unit": "AU",
+        "error": 0.001
+      },
+      "massEarth": {
+        "value": 1.739,
+        "unit": "Earth masses",
+        "error": 0.229
+      },
+      "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "gj-1061-d",
+      "archiveName": "GJ 1061 d",
+      "displayName": "GJ 1061 d",
+      "hostId": "gj-1061",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/GJ%201061.xml",
+      "sourceLabel": "Open Exoplanet Catalogue",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2020,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 13.031,
+        "unit": "days",
+        "error": 0.0285
+      },
+      "semiMajorAxisAu": {
+        "value": 0.054,
+        "unit": "AU",
+        "error": 0.001
+      },
+      "massEarth": {
+        "value": 1.64,
+        "unit": "Earth masses",
+        "error": 0.235
+      },
+      "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "gliese-876-b",
+      "archiveName": "Gliese 876 b",
+      "displayName": "Gliese 876 b",
+      "hostId": "gliese-876",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/Gliese%20876.xml",
+      "sourceLabel": "Open Exoplanet Catalogue",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2000,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 61.087,
+        "unit": "days",
+        "error": 0.0115
+      },
+      "semiMajorAxisAu": {
+        "value": 0.218589,
+        "unit": "AU",
+        "error": 0.000028
+      },
+      "massEarth": {
+        "value": 848.5,
+        "unit": "Earth masses",
+        "error": 16.7
+      },
+      "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "gliese-876-c",
+      "archiveName": "Gliese 876 c",
+      "displayName": "Gliese 876 c",
+      "hostId": "gliese-876",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/Gliese%20876.xml",
+      "sourceLabel": "Open Exoplanet Catalogue",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2000,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 30.0766,
+        "unit": "days",
+        "error": 0.0069
+      },
+      "semiMajorAxisAu": {
+        "value": 0.135985,
+        "unit": "AU",
+        "error": 0.0000205
+      },
+      "massEarth": {
+        "value": 267.9,
+        "unit": "Earth masses",
+        "error": 6.01
+      },
+      "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "gliese-876-d",
+      "archiveName": "Gliese 876 d",
+      "displayName": "Gliese 876 d",
+      "hostId": "gliese-876",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/Gliese%20876.xml",
+      "sourceLabel": "Open Exoplanet Catalogue",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2005,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 1.93787,
+        "unit": "days",
+        "error": 0.0000265
+      },
+      "semiMajorAxisAu": {
+        "value": 0.0218393,
+        "unit": "AU",
+        "error": 2.1e-7
+      },
+      "massEarth": {
+        "value": 6.897,
+        "unit": "Earth masses",
+        "error": 2.11
+      },
+      "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "gliese-876-e",
+      "archiveName": "Gliese 876 e",
+      "displayName": "Gliese 876 e",
+      "hostId": "gliese-876",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/Gliese%20876.xml",
+      "sourceLabel": "Open Exoplanet Catalogue",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2010,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 124.72,
+        "unit": "days",
+        "error": 1.335
+      },
+      "semiMajorAxisAu": {
+        "value": 0.3343,
+        "unit": "AU",
+        "error": 0.0024999999999999996
+      },
+      "massEarth": {
+        "value": 17.16,
+        "unit": "Earth masses",
+        "error": 2.07
+      },
+      "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "hd-26965-b",
+      "archiveName": "HD 26965 b",
+      "displayName": "40 Eridani A b",
+      "hostId": "40-eridani-a",
+      "kind": "planet",
+      "status": "confirmed",
+      "controversial": false,
+      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/HD%2026965.xml",
+      "sourceLabel": "Open Exoplanet Catalogue",
+      "asOfDate": "pending snapshot",
+      "verification": "provisional",
+      "discoveryYear": 2018,
+      "discoveryMethod": "RV",
+      "orbitalPeriodDays": {
+        "value": 42.378,
+        "unit": "days",
+        "error": 0.01
+      },
+      "massEarth": {
+        "value": 8.47,
+        "unit": "Earth masses",
+        "error": 0.47,
+        "qualifier": "minimum mass (M sin i)"
+      },
       "unknowns": [
         "surface",
         "atmosphere",

@@ -1,7 +1,8 @@
 import { findGear, findShip } from '../../content/catalog.ts';
 import { STARTER_SHIP_ID } from '../../content/rules/index.ts';
 import { ALL_LOCATIONS } from '../../data/systems.ts';
-import { SYSTEM_IDS, type SystemId } from '../../data/types.ts';
+import { SYSTEM_IDS } from '../../data/systems.ts';
+import type { SystemId } from '../../data/types.ts';
 import { clampShip, newShipState } from '../../economy/loadout.ts';
 import { createNewGame, SAVE_VERSION, type CommodityId, type GameState } from '../state.ts';
 
