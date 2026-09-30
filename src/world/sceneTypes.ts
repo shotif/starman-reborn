@@ -1,4 +1,5 @@
 import type * as THREE from 'three';
+import type { StationLook } from '../content/world/types.ts';
 import type { DataClass, SystemId } from '../data/types.ts';
 import type { PlanetStyle } from './art/planets.ts';
 import type { SkyboxOptions } from './art/skybox.ts';
@@ -49,10 +50,15 @@ export interface ScenePlanetDef {
 
 export interface SceneStationDef {
   locationId: string;
+  /** Hand-made model (generated stations borrow the closest one until their own look is built). */
   kind: StationKind;
+  /** Generated stations: what the station generator builds the exterior and interior from. */
+  look?: StationLook;
   position: THREE.Vector3;
   /** World direction ships approach the docking bay from. */
   approach: THREE.Vector3;
+  /** Raider den: shown and solid, but lawful pilots cannot dock. */
+  hostile?: boolean;
 }
 
 export interface SceneLaneDef {

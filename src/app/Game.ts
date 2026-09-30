@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { AudioEngine } from '../audio/AudioEngine.ts';
 import type { MusicMood, SfxId } from '../audio/types.ts';
-import { getLocation, getPlanet, getSystem, SYSTEMS } from '../data/systems.ts';
+import { getComponent, getLocation, getPlanet, getSystem, SYSTEMS } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { cargoUsed } from '../economy/cargo.ts';
 import { shipModel } from '../content/catalog.ts';
@@ -30,7 +30,8 @@ import { DockedView } from '../world/DockedView.ts';
 import { FlightSession, type EncounterOutcome } from '../world/FlightSession.ts';
 import { createStationInterior, type RoomView, type StationInterior } from '../world/rooms/index.ts';
 import type { EncounterDef } from '../world/sceneTypes.ts';
-import { SCENE_DEFS } from '../world/systems/index.ts';
+import { spectralClass } from '../content/world/generate.ts';
+import { sceneDefFor } from '../world/systems/index.ts';
 import { SystemScene } from '../world/SystemScene.ts';
 import type { Target } from '../world/targets.ts';
 import { GameRenderer, isTouchDevice, resolveQuality } from './GameRenderer.ts';
@@ -54,13 +55,22 @@ interface JumpSequence {
   arrivalReady: boolean;
 }
 
-const MOOD: Record<SystemId, MusicMood> = {
+const MOOD: Record<string, MusicMood> = {
   sol: 'sol',
   'alpha-centauri': 'alpha-centauri',
   barnard: 'barnard',
   sirius: 'sirius',
   'epsilon-eridani': 'epsilon-eridani',
 };
+
+/** Music for a system: its own theme, or the theme of the hand-made system with the most similar star. */
+function moodFor(systemId: SystemId): MusicMood {
+  const own = MOOD[systemId];
+  if (own) return own;
+  const primary = getComponent(getSystem(systemId).componentIds[0] ?? '');
+  const cls = primary ? spectralClass(primary.spectralType) : 'M';
+  return cls === 'M' ? 'barnard' : cls === 'D' || cls === 'A' || cls === 'B' ? 'sirius' : cls === 'K' ? 'epsilon-eridani' : 'alpha-centauri';
+}
 
 export function applyDocumentSettings(settings: Settings): void {
   const root = document.documentElement;
@@ -219,7 +229,7 @@ export class Game {
     if (this.mode === 'title' || this.mode === 'loading') return 'title';
     if (this.mode === 'docked') return 'docked';
     if (this.mode === 'map') return 'map';
-    return MOOD[this.state?.location.systemId ?? 'sol'];
+    return moodFor(this.state?.location.systemId ?? 'sol');
   }
 
   private sfx(id: SfxId, volume = 1): void {
@@ -292,7 +302,7 @@ export class Game {
   }
 
   private buildInterior(locationId: string): StationInterior | null {
-    const def = SCENE_DEFS[getLocation(locationId).systemId];
+    const def = sceneDefFor(getLocation(locationId).systemId);
     const station = def.stations.find((s) => s.locationId === locationId);
     if (!station) return null;
     // The light through the bay comes from the nearest star (Meridian orbits Proxima, not A or B).
@@ -370,7 +380,7 @@ export class Game {
     this.disposeFlight();
     this.dockedView = null;
     this.system?.dispose();
-    this.system = new SystemScene(SCENE_DEFS[systemId], this.artCtx);
+    this.system = new SystemScene(sceneDefFor(systemId), this.artCtx);
     this.system.scene.add(this.camera);
   }
 
@@ -624,7 +634,7 @@ export class Game {
     this.loop.lowPower = false;
     this.objectiveTimer = 0;
     this.refreshFlightUi();
-    this.audio.setMusic(MOOD[state.location.systemId]);
+    this.audio.setMusic(moodFor(state.location.systemId));
   }
 
   private onDocked(locationId: string): void {

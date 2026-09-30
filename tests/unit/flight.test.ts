@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { applyDamage, regenerate, type Durability } from '../../src/combat/damage.ts';
 import { clampToCone, interceptTime, leadPoint } from '../../src/combat/lead.ts';
 import { Gun, GUN_ARC, ProjectileSystem, segmentHitsSphere } from '../../src/combat/weapons.ts';
-import { flyTo } from '../../src/flight/autopilot.ts';
+import { avoidObstacles, flyTo } from '../../src/flight/autopilot.ts';
 import { ChaseCamera } from '../../src/flight/ChaseCamera.ts';
 import { TouchControlsModel, VirtualStick } from '../../src/flight/input/touchModel.ts';
 import { shapeAxis } from '../../src/flight/input/types.ts';
@@ -251,5 +251,38 @@ describe('aiming, projectiles and damage', () => {
     expect(shapeAxis(1, 0.07)).toBe(1);
     expect(shapeAxis(-1, 0.07)).toBe(-1);
     expect(shapeAxis(0.5, 0.07)).toBeGreaterThan(0);
+  });
+});
+
+describe('autopilot obstacle avoidance', () => {
+  const out = new THREE.Vector3();
+  const from = new THREE.Vector3(0, 0, 0);
+  const goal = new THREE.Vector3(10_000, 0, 0);
+
+  it('heads straight for the goal when the way is clear', () => {
+    const way = avoidObstacles(from, goal, [{ id: 'p', center: new THREE.Vector3(5_000, 3_000, 0), radius: 500 }], 700, out);
+    expect(way.detour).toBe(false);
+    expect(way.point.equals(goal)).toBe(true);
+  });
+
+  it('steers beside the nearest sphere in the way, on the side the path passes', () => {
+    const obstacles = [
+      { id: 'far', center: new THREE.Vector3(8_000, 0, 0), radius: 600 },
+      { id: 'near', center: new THREE.Vector3(4_000, -300, 0), radius: 800 },
+    ];
+    const way = avoidObstacles(from, goal, obstacles, 700, out);
+    expect(way.detour).toBe(true);
+    // Around "near" (the first on the path), on its upper side where the path already runs.
+    expect(way.point.x).toBeCloseTo(4_000, 0);
+    expect(way.point.y).toBeGreaterThan(-300 + 1_500);
+    // Flying from the detour point, the way past "near" is clear.
+    const next = avoidObstacles(way.point.clone(), goal, obstacles.slice(1, 2), 700, new THREE.Vector3());
+    expect(next.detour).toBe(false);
+  });
+
+  it('ignores spheres behind the ship or beyond the goal', () => {
+    const behind = { id: 'b', center: new THREE.Vector3(-2_000, 0, 0), radius: 900 };
+    const beyond = { id: 'c', center: new THREE.Vector3(12_500, 0, 0), radius: 900 };
+    expect(avoidObstacles(from, goal, [behind, beyond], 700, out).detour).toBe(false);
   });
 });

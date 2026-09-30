@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type { Obstacle } from '../flight/autopilot.ts';
 import { getLocation } from '../data/systems.ts';
 import { createAsteroidField, createDustRing, type AsteroidFieldArt, type AsteroidHit } from './art/asteroids.ts';
 import { createPlanet, type PlanetArt } from './art/planets.ts';
@@ -30,6 +31,8 @@ export interface DockSite {
   /** World-space unit vector pointing out of the bay. */
   approach: THREE.Vector3;
   radius: number;
+  /** False for raider dens: solid, targetable, never a place to dock. */
+  dockable: boolean;
 }
 
 export interface LaneRuntime {
@@ -154,6 +157,7 @@ export class SystemScene {
         dockPoint: art.object.localToWorld(art.dockPoint.clone()),
         approach: s.approach.clone().normalize(),
         radius: art.radius,
+        dockable: !s.hostile && loc.dockable !== false,
       };
       this.docks.push(dock);
       this.targets.push({
@@ -162,10 +166,10 @@ export class SystemScene {
         kind: 'station',
         position: s.position,
         radius: art.radius,
-        subtitle: `${loc.kind[0]!.toUpperCase()}${loc.kind.slice(1)} · fictional location`,
+        subtitle: s.hostile ? 'Raider hideout · fictional location' : `${loc.kind[0]!.toUpperCase()}${loc.kind.slice(1)} · fictional location`,
         dataClass: 'fictional',
         ...(loc.factionId ? { faction: loc.factionId } : {}),
-        hostile: false,
+        hostile: !!s.hostile,
         locationId: s.locationId,
         alive: true,
         cycle: true,
@@ -329,6 +333,15 @@ export class SystemScene {
     if (!lane) return;
     for (const r of lane.rings) r.setActive(active);
     (lane.beam.material as THREE.LineBasicMaterial).opacity = active ? 0.35 : 0.12;
+  }
+
+  /** Spheres the autopilot steers around, leaving out the one it is flying to. */
+  obstacles(exceptId: string | null): Obstacle[] {
+    const list: Obstacle[] = [];
+    for (const s of this.stars) list.push({ id: `star:${s.def.id}`, center: s.def.position, radius: s.def.radius * 1.3 });
+    for (const p of this.planets) if (`planet:${p.def.id}` !== exceptId) list.push({ id: `planet:${p.def.id}`, center: p.def.position, radius: p.def.radius });
+    for (const d of this.docks) if (`station:${d.def.locationId}` !== exceptId) list.push({ id: `station:${d.def.locationId}`, center: d.def.position, radius: d.radius });
+    return list;
   }
 
   dispose(): void {

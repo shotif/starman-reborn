@@ -35,29 +35,60 @@ function describe(body: ConfirmedBody): string {
   return parts.join(' · ');
 }
 
+/** Rough luminosity (Suns) by spectral class, only to pick an illustration style. */
+const LUMINOSITY: Record<string, number> = { O: 1e4, B: 500, A: 12, F: 3, G: 1, K: 0.3, M: 0.01, D: 0.002 };
+
+/**
+ * Default schematic placement and illustration for a planet without a hand-tuned one: orbit from
+ * its catalogued semi-major axis, look from how much light it gets (scorched, temperate, cold) and
+ * its catalogued mass. An artist's impression, never a claim about the real surface.
+ */
+export function defaultPlacement(body: ConfirmedBody, index: number, hostClass = 'M'): PlanetPlacement {
+  const sma = body.semiMajorAxisAu?.value;
+  const mass = body.massEarth?.value;
+  const light = sma ? Math.sqrt(LUMINOSITY[hostClass] ?? 0.01) / sma : 0;
+  const giant = (mass ?? 1) > 50;
+  const style: PlanetStyle = giant ? 'exo-gas-giant' : light > 2.2 ? 'exo-scorched' : light > 0.55 ? 'exo-rocky-warm' : 'exo-rocky-cold';
+  return {
+    orbit: sma ? 3000 + Math.sqrt(sma) * 14000 : 6000 + index * 2500,
+    angle: 40 + index * 67,
+    radius: giant ? 3200 : (mass ?? 1) > 10 ? 900 : 380,
+    style,
+  };
+}
+
 /**
  * Builds planet defs for every confirmed planet in the bundled snapshot for this system. Known
- * planets use hand-tuned schematic placements; any planet a newer snapshot adds is placed by its
- * catalogued orbit (if present) so the scene never invents or drops real bodies.
+ * planets use hand-tuned schematic placements; any other planet is placed by its catalogued orbit
+ * (if present) so the scene never invents or drops real bodies.
  */
 export function confirmedPlanets(
   systemId: SystemId,
   hosts: Record<string, THREE.Vector3>,
   placements: Record<string, PlanetPlacement>,
+  hostInfo: { spectralClass?: Record<string, string>; radius?: Record<string, number> } = {},
 ): ScenePlanetDef[] {
   const bodies = getSystem(systemId).confirmedBodies;
+  const places = bodies.map((body, i) => placements[body.archiveName] ?? defaultPlacement(body, i, hostInfo.spectralClass?.[body.hostId]));
+  // Compressed orbits keep their order but never let one planet's orbit cut through its neighbour.
+  const byHost = new Map<string, number[]>();
+  bodies.forEach((b, i) => {
+    if (!placements[b.archiveName]) byHost.set(b.hostId, [...(byHost.get(b.hostId) ?? []), i]);
+  });
+  for (const [hostId, idx] of byHost) {
+    idx.sort((a, b) => places[a]!.orbit - places[b]!.orbit);
+    let inner = (hostInfo.radius?.[hostId] ?? 1_000) * 1.6 + 1_500;
+    let prevRadius = 0;
+    for (const i of idx) {
+      const p = places[i]!;
+      p.orbit = Math.max(p.orbit, inner + prevRadius + p.radius);
+      inner = p.orbit + 1_200;
+      prevRadius = p.radius;
+    }
+  }
   return bodies.map((body, i) => {
     const host = hosts[body.hostId] ?? Object.values(hosts)[0]!;
-    const known = placements[body.archiveName];
-    const sma = body.semiMajorAxisAu?.value;
-    const place: PlanetPlacement =
-      known ??
-      ({
-        orbit: sma ? 3000 + Math.sqrt(sma) * 14000 : 6000 + i * 2500,
-        angle: 40 + i * 67,
-        radius: (body.massEarth?.value ?? 1) > 50 ? 3200 : 380,
-        style: (body.massEarth?.value ?? 1) > 50 ? 'exo-gas-giant' : 'exo-rocky-cold',
-      } satisfies PlanetPlacement);
+    const place = places[i]!;
     return {
       id: body.id,
       name: body.displayName,

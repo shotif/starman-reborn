@@ -17,7 +17,7 @@ import { FACTIONS } from '../economy/factions.ts';
 import { REPAIR_KIT } from '../economy/equipment.ts';
 import { shipModel } from '../content/catalog.ts';
 import { activeLauncher, fittedGuns, gunSummary, performanceOf, roundsLabel } from '../economy/loadout.ts';
-import { aimErrors, flyTo, steerToward } from '../flight/autopilot.ts';
+import { aimErrors, avoidObstacles, flyTo, steerToward } from '../flight/autopilot.ts';
 import { ChaseCamera } from '../flight/ChaseCamera.ts';
 import type { FlightAction, FlightInput } from '../flight/input/types.ts';
 import { lookRotation, neutralControls, RAIDER_SHIP, ShipBody, stepBounded, type ShipControls } from '../flight/ShipBody.ts';
@@ -120,6 +120,8 @@ type Autopilot =
 const PLAYER_ID = 'player';
 const DOCK_RANGE = 3_200;
 const LANE_ENTER_RANGE = 450;
+/** Clearance the autopilot keeps from planets, stars and stations it flies around. */
+const AVOID_MARGIN = 700;
 const DEFAULT_SCAN_RANGE = 9_000;
 const HOSTILE_RADIUS = 3_500;
 const CONVERGENCE = 700;
@@ -198,6 +200,7 @@ export class FlightSession {
   private readonly raycaster = new THREE.Raycaster();
   private readonly aimPoint = new THREE.Vector3();
   private readonly tmp = new THREE.Vector3();
+  private readonly wayPoint = new THREE.Vector3();
   private readonly tmp2 = new THREE.Vector3();
   private readonly tmpQ = new THREE.Quaternion();
   private readonly asteroidHits: AsteroidHit[] = [];
@@ -491,9 +494,9 @@ export class FlightSession {
     enc.bypassed = true;
     for (const n of this.npcs) if (n.encounter === enc.def) n.brain.state = 'escaped';
     this.callbacks.onMessage('Transit Authority patrol escort inbound — the raider is breaking off.', 'info');
-    const dock = this.system.docks.reduce((best, d) =>
-      d.def.position.distanceTo(enc.def.center) < best.def.position.distanceTo(enc.def.center) ? d : best,
-    );
+    const dock = this.system.docks
+      .filter((d) => d.dockable)
+      .reduce((best, d) => (d.def.position.distanceTo(enc.def.center) < best.def.position.distanceTo(enc.def.center) ? d : best));
     this.beginGoTo(`station:${dock.def.locationId}`, true);
   }
 
@@ -577,6 +580,7 @@ export class FlightSession {
   private nearestDock(): { site: DockSite; distance: number } | null {
     let best: { site: DockSite; distance: number } | null = null;
     for (const site of this.system.docks) {
+      if (!site.dockable) continue;
       const d = site.def.position.distanceTo(this.player.position);
       if (!best || d < best.distance) best = { site, distance: d };
     }
@@ -600,7 +604,7 @@ export class FlightSession {
     const sel = this.selectedTarget;
     if (sel?.kind === 'station' && sel.locationId) {
       const site = this.system.dock(sel.locationId);
-      if (site && site.def.position.distanceTo(this.player.position) < DOCK_RANGE) return site;
+      if (site?.dockable && site.def.position.distanceTo(this.player.position) < DOCK_RANGE) return site;
       return null;
     }
     const dock = this.nearestDock();
@@ -960,7 +964,8 @@ export class FlightSession {
         return;
       }
       const entry = leg.reverse ? lane.def.to : lane.def.from;
-      const st = flyTo(this.player, entry, { arriveDistance: 60, allowCruise: true }, this.controls);
+      const way = avoidObstacles(this.player.position, entry, this.system.obstacles(null), AVOID_MARGIN, this.wayPoint);
+      const st = flyTo(this.player, way.point, { arriveDistance: way.detour ? 0 : 60, allowCruise: true }, this.controls);
       this.controls.boost = false;
       this.player.requestCruise(st.wantsCruise);
       if (entry.distanceTo(this.player.position) < LANE_ENTER_RANGE * 0.8) {
@@ -976,16 +981,18 @@ export class FlightSession {
       return;
     }
     const standoff = target.kind === 'station' ? target.radius + 450 : target.radius + 600;
-    const st = flyTo(this.player, target.position, { arriveDistance: standoff, allowCruise: true }, this.controls);
+    // Round any planet, star or station in the way; the target itself is where we stop.
+    const way = avoidObstacles(this.player.position, target.position, this.system.obstacles(target.id), AVOID_MARGIN, this.wayPoint);
+    const st = flyTo(this.player, way.point, { arriveDistance: way.detour ? 0 : standoff, allowCruise: true }, this.controls);
     this.player.requestCruise(st.wantsCruise);
     void dt;
-    if (st.arrived || st.distance < 80) {
+    if (!way.detour && (st.arrived || st.distance < 80)) {
       const dockId = ap.dockAtEnd;
       this.autopilot = { mode: 'none' };
       this.throttle = 0;
       if (dockId) {
         const site = this.system.dock(dockId);
-        if (site) this.beginDock(site);
+        if (site?.dockable) this.beginDock(site);
       } else {
         this.callbacks.onMessage(`Arrived: ${target.name}`, 'info');
       }

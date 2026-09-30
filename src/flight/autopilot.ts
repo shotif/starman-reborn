@@ -63,3 +63,53 @@ export function flyTo(ship: ShipBody, point: THREE.Vector3, opts: GoToOptions, o
   const keepCruise = opts.allowCruise && ship.cruise !== 'off' && distance > cruiseExit && angle < 0.5;
   return { distance, arrived: distance <= 30 && ship.speed < 40, wantsCruise: wantsCruise || keepCruise };
 }
+
+/** A sphere the autopilot must not fly through (a planet, a station, a star's photosphere). */
+export interface Obstacle {
+  id: string;
+  center: THREE.Vector3;
+  radius: number;
+}
+
+const tmpDir = new THREE.Vector3();
+const tmpRel = new THREE.Vector3();
+const tmpClosest = new THREE.Vector3();
+
+/**
+ * Where to steer so the straight path does not cross an obstacle: `goal` itself when the way is
+ * clear, otherwise a point beside the nearest blocking sphere (on the side the path already
+ * passes). Re-evaluated every step, so the ship rounds the obstacle and then heads for the goal.
+ */
+export function avoidObstacles(
+  from: THREE.Vector3,
+  goal: THREE.Vector3,
+  obstacles: readonly Obstacle[],
+  margin: number,
+  out: THREE.Vector3,
+): { point: THREE.Vector3; detour: boolean } {
+  tmpDir.copy(goal).sub(from);
+  const length = tmpDir.length();
+  if (length < 1e-6) return { point: out.copy(goal), detour: false };
+  tmpDir.divideScalar(length);
+  let best: Obstacle | null = null;
+  let bestT = Infinity;
+  for (const o of obstacles) {
+    tmpRel.copy(o.center).sub(from);
+    const t = tmpRel.dot(tmpDir);
+    if (t <= 0 || t >= length) continue;
+    const miss = tmpRel.addScaledVector(tmpDir, -t).length();
+    if (miss < o.radius + margin && t < bestT) {
+      best = o;
+      bestT = t;
+    }
+  }
+  if (!best) return { point: out.copy(goal), detour: false };
+  tmpClosest.copy(from).addScaledVector(tmpDir, bestT).sub(best.center);
+  if (tmpClosest.lengthSq() < 1e-6) {
+    // Dead centre: go over the top (or sideways when flying straight up or down).
+    tmpClosest.set(0, 1, 0).addScaledVector(tmpDir, -tmpDir.y);
+    if (tmpClosest.lengthSq() < 1e-6) tmpClosest.set(1, 0, 0);
+  }
+  tmpClosest.normalize();
+  return { point: out.copy(best.center).addScaledVector(tmpClosest, (best.radius + margin) * 1.2), detour: true };
+}
