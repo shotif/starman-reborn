@@ -894,3 +894,119 @@ balance; every name is invented.
   taking fire; only from ships within 4 km of the player, at most one line every seven seconds,
   from small phrase pools.
 
+
+## 19. Mining
+
+A third career, for pilots who would rather not fight (`src/content/mining/rules.ts`, the economy
+side in `src/economy/mining.ts`, in flight `src/world/MiningField.ts`). Belts come only from the
+cited belt records, and where they lie in flight is schematic; the rocks, what they hold and the
+claims are game fiction, and the numbers are game balance.
+
+### 19.1 Belts in the real sky
+
+- The belts are the records of `src/data/generated/belts.json` (the sky snapshot,
+  `scripts/sky-process.ts`): the Solar System's main belt and Kuiper Belt, from NASA's pages with
+  their extents (2.2–3.2 au and 30–50 au), and the debris discs of the stars SIMBAD links papers
+  about their dust to: Epsilon Eridani, Tau Ceti, Vega, Fomalhaut, Fomalhaut C, GJ 581 and Proxima
+  Centauri (in Alpha Centauri). `BELTS` and `beltsOf(systemId)` (`src/data/systems.ts`) keep only
+  belts of systems in the game that cite a source.
+- In flight each belt is a ring of rock placed schematically; every scene ring names its record
+  (`SceneBeltDef.beltId`). Sol's main belt lies between the compressed orbits of Mars and Jupiter
+  and its Kuiper Belt beyond Neptune: the au figures only order them, and as circles round the Sun
+  they suit the real-date layout. Proxima's dust belt lies beyond the compressed orbit of
+  Proxima c, where the lane crosses it in transit. Epsilon Eridani's two drawn rings are its one
+  record. A catalogue system's ring lies beyond its host's planets, stations and arrival point,
+  with dust, since debris discs are seen by their dust.
+- The star map's card and the encyclopedia list each belt: name, kind, note, the extent where the
+  source gives one, its sources, and that it is placed schematically. In flight the belt is a
+  target at its point nearest the player; scanning it opens the same card.
+
+### 19.2 Rocks
+
+- Each ring is cut into stretches of about 8 km. Within 14 km of the band, the stretch the player
+  is over and its nearer neighbour hold four larger rocks each (26–60 m in radius), seeded
+  where they sit, so they are the same rocks every time.
+- What a rock holds, by kind of belt (a weight per good drawn per rock, then scaled to add up to
+  one): main belt 55–85% metal ore, the rest water ice; Kuiper Belt 50–75% water ice, the rest
+  volatile gases; debris discs ore, ice and volatiles mixed. A rock holds 40–110 units of rock.
+- A scan (X, or the action button) reads a rock within 4 km (times the scanner's range): its
+  shares and what is left of it. Mining an unread rock reads it.
+- A rock is spent when its amount is cut, and grows back: each rock's growth turns over every
+  45 minutes of game clock, at its own time, with new contents. What has been cut is kept in memory
+  between flights (never in the save), so docking and launching again does not refill a rock.
+
+### 19.3 The mining laser
+
+- Outfitters sell mining lasers (Eridani's Pickaxe, Ares's Chisel: 6 units of rock a minute at
+  class 1, 8 at class 2, 10 at class 3, summed over the lasers fitted) and prospecting scanners
+  (Eridani's Dowser, Toliman's Assayer: ×1.2 at class 1, ×1.3 at class 2; the best one counts).
+- With a laser fitted and a rock selected within 600 m of its surface, the Mine action starts the
+  beam and the same action stops it: **B** on the keyboard; on touch the action button, which turns
+  amber and reads *Mine* only then (*Stop mining* while it cuts); **A** on a gamepad, as the action
+  button's action, since every standard button already has a job.
+- The beam cuts the lasers' rate of rock; each unit of rock gives the prospector's multiplier in
+  goods, in the rock's shares. Each whole unit goes into the hold when it fits, and otherwise out in
+  a cargo pod beside the rock (a unit a pod, six adrift at most). The tractor leaves a pod alone
+  while the hold cannot take it.
+- The beam stops when its target is lost (another one selected), out of reach or spent, when the
+  hold and the six pods are full, and on docking or entering a lane.
+- The beam runs from the ship's nose to the cut, with sparks where it bites and its own grinding
+  sound; the HUD shows the laser in the loadout and what the beam has cut.
+
+### 19.4 Selling, and what a miner earns
+
+- Ore, ice and volatiles sell through the normal markets like any cargo, so stock moves and prices
+  stay in their bands: refineries want all three, ports, depots and farms want ice or volatiles,
+  and free ports trade ore.
+- `miningEstimates` works out a round: cut a full hold, fly to the buyer (the contracts' trip
+  estimate, plus a minute each way out to the rocks), sell at the market's order price, fly back.
+  The starter courier with a class 1 laser makes about 1,300 cr an hour in Sol's main belt (water
+  ice at Deimos Depot), 2,700 in the Kuiper Belt (volatiles; less in practice, as the belt is
+  further out than a minute's flight) and 3,900 at Tau Ceti (volatiles at Larkspur Stillworks);
+  hauling routes near Sol pay it 900–4,500 an hour in their middle half and 28,000 at best. A
+  class 1 freighter with a laser and a prospector makes 2,700–7,600 an hour in the core belts,
+  where its hauling pays 2,600–14,200 in the middle half and 96,000 at best.
+
+### 19.5 Claims
+
+- Mining outposts, refineries and the Eridani Mining Hub post **claims** on a cited belt within
+  three jumps: mine N units of a good the belt yields there (9–18 hold units, a young pilot's hold
+  carries it), then deliver them to the station. Pay: the route's fees as for every contract, plus
+  160 cr and 200 cr × the belt's danger (both varying a little), plus 2.4 times the goods' base
+  price, more than any market pays for the load.
+- Every unit the laser cuts of that good in that belt counts (the job's `mined`); once the count is
+  met the load is delivered like freight. The star map marks the belt's system, and in flight the
+  belt is the objective, with Go to.
+
+### 19.6 Raiders who hunt miners
+
+- Every 30 seconds of beam a pack may come out of the dark for the miner: a chance of 25% in lawless
+  belts, 8% in thinly patrolled ones and 1% in patrolled ones; one or two raiders of the system's
+  threat (2 in lawless space and 1 elsewhere when the system has no packs of its own). One pack
+  comes at a time, and none for a pilot the Wake trusts.
+
+### 19.7 Mining guardrails
+
+`tests/unit/mining.test.ts` checks:
+
+- no belt without a citation: every belt record is of a system in the game, circles one of its
+  stars and cites a source; every scene ring names a record of its own system, every record is
+  drawn, and a system without one has no ring; extents only from NASA's Solar System pages;
+- Sol's belts lie between the right orbits on any date, and stations and arrival points stay clear
+  of every ring (the Eridani Mining Hub sits in its inner ring by design);
+- rocks are the same on every visit, with shares by kind of belt, and grow back in their own time;
+  the beam cuts at the lasers' rate, the same in one step or many; the prospector multiplies the
+  yield; a rock is spent after its amount; the hold fills, then the pods;
+- mined goods reach a market only from the hold, and thirty loads into one dock keep every price in
+  its band;
+- with a class 1 laser the typical core belt pays within the middle half of the hauling routes near
+  Sol (the trade computer's estimates), and no belt, even with two class 3 lasers, pays more than
+  the best hauling route;
+- claims pass the contract guardrails at every station (a cited belt, a good it yields, reach, the
+  load and pay above what the load would fetch), count only their belt and good, and pay on
+  delivery;
+- in a real `FlightSession` in node: belts and rocks as targets, the beam's rate into the hold, why
+  it stops, the pods, a spent rock growing back, a claim's belt as the objective, and raiders
+  coming for a miner in a lawless belt.
+
+`tests/e2e/mining.spec.ts` scans Sol's main belt and mines one of its rocks in the browser.

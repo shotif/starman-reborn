@@ -19,6 +19,10 @@ three hand-written faction story arcs, with choices and finales (a den assault, 
 and a den under siege), give it a spine. Fights have seekers and decoy flares, mines, damage to a
 ship's systems, loot crates of salvaged equipment, wingmen for hire, and raider dens that defend
 themselves and can be knocked out.
+Pilots who would rather not fight can mine the real belts (the Solar System's main belt and Kuiper
+Belt, and the debris discs astronomers have seen around nearby stars, each with its source): a
+mining laser cuts ore, ice and volatiles from rocks, a prospecting scanner gets more from them,
+refineries buy the load, mines and refineries post claim contracts, and raiders hunt miners.
 Ships, equipment, the world, the economy, events, contracts and the law are generated from rule
 files and checked by automated guardrails ([docs/PROCGEN.md](docs/PROCGEN.md)).
 
@@ -95,6 +99,7 @@ installability behave best over HTTPS. Pick one:
 | Repair kit | **R** | Repair button | D-pad **←** |
 | Decoy flare against seekers | **C** | Decoy button | **LB** |
 | Scan | **X** | Action button ("Scan") | **A** ("Scan") |
+| Mine the selected rock (mining laser, within 600 m) | **B** | Action button, amber ("Mine") | **A** ("Mine") |
 | Engines off (drift) | **Z** | Drift button (landscape) | **L3** |
 | Star map | **Tab** or **M** | Map button | **Back** (View) |
 | Pause | **Esc** or **P** | Pause button | **Start** (Menu) |
@@ -126,7 +131,8 @@ src/content/   rule-driven generators and guardrails (docs/PROCGEN.md): ships an
                (src/content/economy: goods, market profiles), contract rules (src/content/contracts),
                event rules (src/content/events), the law (src/content/law), progress
                (src/content/progress), the story arcs (src/content/story), dens under fire
-               (src/content/dens) and combat depth (src/content/combat)
+               (src/content/dens), combat depth (src/content/combat) and mining
+               (src/content/mining)
 src/economy/   live markets, world events, trade, cargo, outfitter and shipyard, factions, jobs and
                generated contracts, the law, ratings, the codex, milestones and the story
 src/audio/     procedural Web Audio music and sound effects
