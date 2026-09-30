@@ -1,10 +1,11 @@
 import type { CommodityId } from '../../app/state.ts';
+import type { MarketRole } from '../../content/economy/rules.ts';
 import { getLocation, getSystem } from '../../data/systems.ts';
 import { cargoCount, cargoUsed, itemsThatFit } from '../../economy/cargo.ts';
 import { cargoCapacity } from '../../economy/loadout.ts';
 import { COMMODITIES, COMMODITY_IDS } from '../../economy/commodities.ts';
-import { quote } from '../../economy/markets.ts';
-import { bestKnownSale, buyCommodity, maxBuyable, routeOpportunities, sellCommodity } from '../../economy/trade.ts';
+import { marketEntry, stockAvailable } from '../../economy/markets.ts';
+import { bestKnownSale, buyCommodity, liveQuote, marketContext, maxBuyable, orderPrice, routeOpportunities, sellCommodity } from '../../economy/trade.ts';
 import { button, showModal, toast } from '../components.ts';
 import { formatCredits, h, replaceChildren, signed } from '../dom.ts';
 import { glyph, type GlyphName } from '../glyphs.ts';
@@ -12,10 +13,30 @@ import { icon } from '../icons.ts';
 import type { Refresh, StationContext } from './context.ts';
 
 export const COMMODITY_GLYPH: Record<CommodityId, GlyphName> = {
-  medical: 'medical',
-  fabricators: 'fabricators',
+  water: 'water',
+  ore: 'ore',
+  gases: 'gases',
   deuterium: 'deuterium',
+  'helium-3': 'helium',
+  metals: 'metals',
+  polymers: 'polymers',
+  food: 'food',
+  'fine-food': 'finefood',
+  medical: 'medical',
+  machinery: 'machinery',
+  electronics: 'electronics',
+  fabricators: 'fabricators',
+  'consumer-goods': 'consumer',
+  'ship-parts': 'shipparts',
+  'habitat-modules': 'habitat',
+  'research-samples': 'samples',
+  'data-cores': 'datacore',
+  luxuries: 'luxury',
+  weapons: 'weapons',
+  salvage: 'salvage',
 };
+
+const ROLE_TAG: Record<MarketRole, string> = { produce: 'Made here', trade: 'Traded here', consume: 'Wanted here' };
 
 function ago(clock: number, t: number): string {
   const s = Math.max(0, clock - t);
@@ -24,35 +45,50 @@ function ago(clock: number, t: number): string {
   return `${Math.round(s / 3600)} h ago`;
 }
 
-/** The commodity trader: what the dock sells, what your hold carries, and known routes. */
+const units = (n: number) => `${n} unit${n > 1 ? 's' : ''}`;
+
+/** The commodity trader: what the dock makes, trades and wants, your hold, and known routes. */
 export function traderContent(ctx: StationContext, refresh: Refresh): HTMLElement {
   const { state, locationId } = ctx;
-  const forSale: HTMLElement[] = [];
+  const rows: HTMLElement[] = [];
   const hold: HTMLElement[] = [];
-  for (const c of COMMODITY_IDS) {
-    const q = quote(locationId, c, state.reputation);
+  // What the dock makes first, then what it trades, then what it wants.
+  const order: MarketRole[] = ['produce', 'trade', 'consume'];
+  const rank = (c: CommodityId) => {
+    const e = marketEntry(locationId, c);
+    return e ? order.indexOf(e.role) : order.length;
+  };
+  for (const c of [...COMMODITY_IDS].sort((a, b) => rank(a) - rank(b))) {
+    const entry = marketEntry(locationId, c);
     const info = COMMODITIES[c];
     const have = cargoCount(state.ship.cargo, c);
-    const best = bestKnownSale(state, c, locationId);
-    if (q.buy !== null) {
-      const bestText = best ? `Best known: ${best.price} cr at ${getLocation(best.locationId).name}` : 'No other market known yet';
-      forSale.push(
+    const q = liveQuote(state, locationId, c);
+    if (entry) {
+      const best = bestKnownSale(state, c, locationId);
+      const stock = stockAvailable(locationId, c, marketContext(state));
+      const details = [ROLE_TAG[entry.role], units(info.unitSize)];
+      if (entry.role !== 'consume') details.push(`${stock} in stock`);
+      if (q.buy !== null) details.push(best ? `best known ${best.price} cr at ${getLocation(best.locationId).name}` : 'no other buyer known');
+      rows.push(
         h(
           'li',
-          { class: 'trade-row', 'data-testid': `market-row-${c}` },
+          { class: `trade-row market-row role-${entry.role}`, 'data-testid': `market-row-${c}` },
           glyph(COMMODITY_GLYPH[c]),
-          h('span', { class: 'trade-text' }, h('span', { class: 'row-name' }, info.name), h('span', { class: 'row-sub' }, `${info.unitSize} unit${info.unitSize > 1 ? 's' : ''} · ${bestText}`)),
-          h('span', { class: 'row-value num' }, `${q.buy} cr`),
-          button('Buy', {
-            size: 'sm',
-            testId: `buy-${c}`,
-            disabled: maxBuyable(state, locationId, c) === 0,
-            onClick: () => void openBuyDialog(ctx, c, refresh),
-          }),
+          h('span', { class: 'trade-text' }, h('span', { class: 'row-name' }, have ? `${info.name} (×${have})` : info.name), h('span', { class: 'row-sub' }, details.join(' · '))),
+          h('span', { class: 'row-value num price-buy', title: 'You pay' }, q.buy === null ? '—' : `${q.buy} cr`),
+          h('span', { class: 'row-value num price-sell', title: 'You receive' }, q.sell === null ? '—' : `${q.sell} cr`),
+          h(
+            'span',
+            { class: 'row-actions' },
+            q.buy !== null
+              ? button('Buy', { size: 'sm', testId: `buy-${c}`, disabled: maxBuyable(state, locationId, c) === 0, onClick: () => void openBuyDialog(ctx, c, refresh) })
+              : null,
+            have > 0 && q.sell !== null ? button('Sell', { size: 'sm', testId: `sell-${c}`, onClick: () => void openSellDialog(ctx, c, refresh) }) : null,
+          ),
         ),
       );
-    }
-    if (have > 0) {
+    } else if (have > 0) {
+      const best = bestKnownSale(state, c, locationId);
       hold.push(
         h(
           'li',
@@ -62,10 +98,8 @@ export function traderContent(ctx: StationContext, refresh: Refresh): HTMLElemen
             'span',
             { class: 'trade-text' },
             h('span', { class: 'row-name' }, `${info.name} ×${have}`),
-            h('span', { class: 'row-sub' }, q.sell === null ? 'Not bought here' : `This dock pays ${q.sell} cr each`),
+            h('span', { class: 'row-sub' }, best ? `Not bought here · best known ${best.price} cr at ${getLocation(best.locationId).name}` : 'Not bought here'),
           ),
-          h('span', { class: 'row-value num' }, q.sell === null ? '—' : formatCredits(q.sell * have)),
-          q.sell !== null ? button('Sell', { size: 'sm', testId: `sell-${c}`, onClick: () => void openSellDialog(ctx, c, refresh) }) : h('span'),
         ),
       );
     }
@@ -76,21 +110,17 @@ export function traderContent(ctx: StationContext, refresh: Refresh): HTMLElemen
     'div',
     { class: 'trader' },
     h(
-      'div',
-      { class: 'trade-cols' },
-      h(
-        'section',
-        { 'aria-label': 'For sale here' },
-        h('div', { class: 'list-head' }, h('span', null, 'For sale here'), h('span', null, 'Price')),
-        forSale.length ? h('ul', { class: 'list' }, forSale) : h('p', { class: 'list-empty' }, 'This dock sells nothing.'),
-      ),
-      h(
-        'section',
-        { 'aria-label': 'Your hold' },
-        h('div', { class: 'list-head' }, h('span', null, 'Your hold'), h('span', { class: 'num' }, `${used}/${capacity} units`)),
-        h('div', { class: 'segbar hold-bar', style: `--segments: ${Math.min(capacity, 40)}; --fill: ${used / capacity}; --seg-color: var(--amber)` }),
-        hold.length ? h('ul', { class: 'list' }, hold) : h('p', { class: 'list-empty' }, 'Your hold is empty.'),
-      ),
+      'section',
+      { 'aria-label': 'Market' },
+      h('div', { class: 'list-head market-head' }, h('span', null, 'Market'), h('span', { class: 'num' }, 'Buy'), h('span', { class: 'num' }, 'Sell'), h('span')),
+      rows.length ? h('ul', { class: 'list market-list' }, rows) : h('p', { class: 'list-empty' }, 'This dock has no market.'),
+    ),
+    h(
+      'section',
+      { 'aria-label': 'Your hold' },
+      h('div', { class: 'list-head' }, h('span', null, 'Your hold'), h('span', { class: 'num' }, `${used}/${capacity} units`)),
+      h('div', { class: 'segbar hold-bar', style: `--segments: ${Math.min(capacity, 40)}; --fill: ${used / capacity}; --seg-color: var(--amber)` }),
+      hold.length ? h('ul', { class: 'list' }, hold) : h('p', { class: 'list-empty' }, used ? 'Everything you carry is traded here.' : 'Your hold is empty.'),
     ),
     tradeComputer(ctx),
   );
@@ -131,7 +161,7 @@ function tradeComputer(ctx: StationContext): HTMLElement {
 
 async function openBuyDialog(ctx: StationContext, c: CommodityId, refresh: Refresh): Promise<void> {
   const { state, locationId } = ctx;
-  const price = quote(locationId, c, state.reputation).buy!;
+  const price = liveQuote(state, locationId, c).buy!;
   const max = maxBuyable(state, locationId, c);
   if (max <= 0) return;
   let qty = Math.min(max, c === 'medical' && cargoCount(state.ship.cargo, c) < 6 ? 6 : 1);
@@ -140,7 +170,7 @@ async function openBuyDialog(ctx: StationContext, c: CommodityId, refresh: Refre
   const qtyText = h('output', { class: 'num qty', 'aria-live': 'polite', 'data-testid': 'buy-qty' });
   const renderSummary = () => {
     qtyText.textContent = String(qty);
-    const total = qty * price;
+    const total = orderPrice(state, locationId, c, qty, 'buy') ?? qty * price;
     const unitsAfter = cargoUsed(state.ship.cargo) + qty * COMMODITIES[c].unitSize;
     replaceChildren(
       summary,
@@ -148,7 +178,7 @@ async function openBuyDialog(ctx: StationContext, c: CommodityId, refresh: Refre
         'dl',
         { class: 'kv' },
         h('dt', null, 'Unit price'),
-        h('dd', { class: 'num' }, `${price} cr`),
+        h('dd', { class: 'num' }, qty > 1 && Math.round(total / qty) !== price ? `${price} cr, ${Math.round(total / qty)} cr average` : `${price} cr`),
         h('dt', null, 'Total'),
         h('dd', { class: 'num', 'data-testid': 'buy-total' }, formatCredits(total)),
         h('dt', null, 'Credits after'),
@@ -211,7 +241,7 @@ async function openBuyDialog(ctx: StationContext, c: CommodityId, refresh: Refre
 
 async function openSellDialog(ctx: StationContext, c: CommodityId, refresh: Refresh): Promise<void> {
   const { state, locationId } = ctx;
-  const price = quote(locationId, c, state.reputation).sell!;
+  const price = liveQuote(state, locationId, c).sell!;
   const have = cargoCount(state.ship.cargo, c);
   const reserved = c === 'medical' && state.jobs.lifeline?.status === 'active';
   let qty = have;
@@ -219,7 +249,9 @@ async function openSellDialog(ctx: StationContext, c: CommodityId, refresh: Refr
   const total = h('p', { class: 'num' });
   const render = () => {
     out.textContent = String(qty);
-    total.textContent = `Total: ${formatCredits(qty * price)} (${price} cr each)`;
+    const sum = orderPrice(state, locationId, c, qty, 'sell') ?? qty * price;
+    const avg = Math.round(sum / qty);
+    total.textContent = `Total: ${formatCredits(sum)} (${avg === price ? `${price} cr each` : `${price} cr falling to ${avg} cr average as the station fills up`})`;
   };
   const step = (d: number) => () => {
     qty = Math.max(1, Math.min(have, qty + d));

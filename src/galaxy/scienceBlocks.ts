@@ -6,6 +6,8 @@
 import '../ui/styles/encyclopedia.css';
 import { formatDec, formatRa } from '../data/coords.ts';
 import { EXOPLANETS, SOLAR_BODIES, componentsOf, getComponent } from '../data/systems.ts';
+import { COMMODITIES } from '../economy/commodities.ts';
+import { marketTables } from '../economy/markets.ts';
 import type {
   ConfirmedBody,
   FictionalLocation,
@@ -315,8 +317,9 @@ export function locationList(locations: readonly FictionalLocation[], detail: De
         h(
           'p',
           { class: 'sci-item-text' },
-          [LOCATION_KIND_LABELS[l.kind], l.factionId ? FACTION_NAMES[l.factionId] : null].filter(Boolean).join(' · '),
+          [l.dockable === false ? 'Raider hideout, closed to lawful pilots' : LOCATION_KIND_LABELS[l.kind], l.factionId ? FACTION_NAMES[l.factionId] : null].filter(Boolean).join(' · '),
         ),
+        tradeLine(l.id, detail),
         detail === 'full' || l.status === 'planned' ? h('p', { class: 'sci-item-text muted' }, l.description) : null,
         detail === 'full' && l.services.length
           ? h('p', { class: 'sci-item-text muted' }, `Services: ${l.services.map((s) => SERVICE_LABELS[s]).join(', ')}`)
@@ -324,6 +327,20 @@ export function locationList(locations: readonly FictionalLocation[], detail: De
       ),
     ),
   );
+}
+
+/** "Makes metals, deuterium · wants ore, water" from the station's market (public knowledge, no prices). */
+function tradeLine(locationId: string, detail: Detail): HTMLElement | null {
+  const market = marketTables().get(locationId);
+  if (!market) return null;
+  const names = (role: 'produce' | 'consume') => {
+    const list = [...market.entries.values()].filter((e) => e.role === role).map((e) => COMMODITIES[e.commodity].name.toLowerCase());
+    return detail === 'compact' && list.length > 3 ? `${list.slice(0, 3).join(', ')}…` : list.join(', ');
+  };
+  const makes = names('produce');
+  const wants = names('consume');
+  const parts = [makes ? `Makes ${makes}` : null, wants ? `${makes ? 'wants' : 'Wants'} ${wants}` : null].filter(Boolean);
+  return parts.length ? h('p', { class: 'sci-item-text muted' }, parts.join(' · ')) : null;
 }
 
 /**

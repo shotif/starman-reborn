@@ -142,9 +142,13 @@ test('the prototype journey: Earth → Mars → Alpha Centauri → free explorat
   await expect(dialog).toContainText('Meridian Outpost buys at 96');
   for (let i = 6; i < 10; i++) await press(page, 'buy-plus');
   await expect(page.getByTestId('buy-qty')).toHaveText('10');
+  // Each unit is priced at the stock it leaves: 38 cr for the first, a little more as stock drains.
+  const total = Number((await page.getByTestId('buy-total').textContent())!.replace(/[^0-9]/g, ''));
+  expect(total).toBeGreaterThanOrEqual(10 * 38);
+  expect(total).toBeLessThanOrEqual(10 * 39);
   await press(page, 'buy-confirm');
   expect((await state(page)).ship.cargo.medical).toBe(10);
-  expect((await state(page)).credits).toBe(800 - 10 * 38);
+  expect((await state(page)).credits).toBe(800 - total);
 
   // 4. Launch into Sol, steer, target a waypoint, take the trade lane toward Mars.
   await launch(page);

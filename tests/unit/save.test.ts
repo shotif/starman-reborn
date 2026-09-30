@@ -65,6 +65,18 @@ describe('save migration', () => {
     expect(() => migrateSave({ ...v2, ship: 'none' })).toThrow(SaveFormatError);
   });
 
+  it('upgrades a v3 save: markets start untouched and the old goods keep their ids', () => {
+    const { markets: _drop, ...rest } = createNewGame(5);
+    const v3 = { ...structuredClone(rest), version: 3, ship: { ...rest.ship, cargo: { medical: 3, deuterium: 2 } } };
+    const s = migrateSave(v3);
+    expect(s.version).toBe(SAVE_VERSION);
+    expect(s.markets).toEqual({});
+    expect(s.ship.cargo).toEqual({ medical: 3, deuterium: 2 });
+    expect(() => migrateSave({ ...s, markets: { 'earth-port': { t: 0, stock: { unobtainium: 4 } } } })).toThrow(SaveFormatError);
+    expect(() => migrateSave({ ...s, markets: { nowhere: { t: 0, stock: {} } } })).toThrow(SaveFormatError);
+    expect(migrateSave({ ...s, ship: { ...s.ship, cargo: { luxuries: 2 } }, markets: { 'earth-port': { t: 30, stock: { medical: 120 } } } }).markets['earth-port']!.stock.medical).toBe(120);
+  });
+
   it('rejects ships, fittings and rounds that do not exist or do not fit', () => {
     const s = createNewGame(3);
     expect(() => migrateSave({ ...s, ship: { ...s.ship, model: 'ship.yacht.1.nobody' } })).toThrow(SaveFormatError);

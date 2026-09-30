@@ -19,10 +19,12 @@ import {
 } from '../../src/economy/equipment.ts';
 import { cargoCapacity, hullMax, performanceOf, shieldCapacity } from '../../src/economy/loadout.ts';
 import { adjustReputation, standingTier } from '../../src/economy/factions.ts';
-import { baseQuote, quote } from '../../src/economy/markets.ts';
+import { baseQuote, marketEntry, quote } from '../../src/economy/markets.ts';
 import {
   buyCommodity,
+  liveQuote,
   maxBuyable,
+  orderPrice,
   recordMarketVisit,
   routeOpportunities,
   sellCommodity,
@@ -54,18 +56,44 @@ describe('cargo bounds', () => {
 });
 
 describe('trade arithmetic', () => {
-  it('buys and sells with exact credit changes', () => {
+  it('buys and sells with exact credit changes, each unit priced at the stock it leaves', () => {
     const s = createNewGame(1);
     const price = quote('earth-port', 'medical', s.reputation).buy!;
+    const total = orderPrice(s, 'earth-port', 'medical', 10, 'buy')!;
+    expect(total).toBeGreaterThanOrEqual(price * 10);
+    expect(total).toBeLessThan(price * 10 * 1.05);
     const r = buyCommodity(s, 'earth-port', 'medical', 10);
-    expect(r).toEqual({ ok: true, qty: 10, unitPrice: price, total: price * 10 });
-    expect(s.credits).toBe(800 - price * 10);
+    expect(r).toEqual({ ok: true, qty: 10, unitPrice: Math.round(total / 10), total });
+    expect(s.credits).toBe(800 - total);
     expect(s.ship.cargo.medical).toBe(10);
-    const sellPrice = quote('mars-depot', 'medical', s.reputation).sell!;
+    // The station has less stock now, so the next unit is no cheaper; it recovers with time.
+    expect(liveQuote(s, 'earth-port', 'medical').buy!).toBeGreaterThanOrEqual(price);
+    expect(s.markets['earth-port']!.stock.medical).toBeLessThan(marketEntry('earth-port', 'medical')!.target);
+    const sellTotal = orderPrice(s, 'mars-depot', 'medical', 4, 'sell')!;
     const r2 = sellCommodity(s, 'mars-depot', 'medical', 4);
-    expect(r2.ok && r2.total).toBe(sellPrice * 4);
-    expect(s.credits).toBe(800 - price * 10 + sellPrice * 4);
+    expect(r2.ok && r2.total).toBe(sellTotal);
+    expect(s.credits).toBe(800 - total + sellTotal);
     expect(s.ship.cargo.medical).toBe(6);
+  });
+
+  it('lets stock recover and never pays out a round trip at one dock', () => {
+    const s = createNewGame(1);
+    s.credits = 1_000_000;
+    s.ship.cargo = {};
+    const before = s.credits;
+    const bought = buyCommodity(s, 'earth-port', 'medical', 20);
+    expect(bought.ok).toBe(true);
+    const sold = sellCommodity(s, 'earth-port', 'medical', 20);
+    expect(sold.ok).toBe(true);
+    expect(s.credits).toBeLessThan(before);
+    // Dumping cargo lowers the price; an hour later the market has mostly recovered.
+    const fresh = liveQuote(s, 'mars-depot', 'fabricators').sell!;
+    s.ship.cargo = { fabricators: 10 };
+    sellCommodity(s, 'mars-depot', 'fabricators', 10);
+    const dumped = liveQuote(s, 'mars-depot', 'fabricators').sell!;
+    expect(dumped).toBeLessThan(fresh);
+    s.clock += 3_600 * 3;
+    expect(Math.abs(liveQuote(s, 'mars-depot', 'fabricators').sell! - fresh) / fresh).toBeLessThan(0.15);
   });
 
   it('rejects unaffordable, oversized, untraded and invalid orders without changing state', () => {

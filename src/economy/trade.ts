@@ -4,13 +4,14 @@ import type { SystemId } from '../data/types.ts';
 import { addCargo, cargoCount, itemsThatFit, removeCargo } from './cargo.ts';
 import { COMMODITIES, COMMODITY_IDS } from './commodities.ts';
 import { cargoCapacity } from './loadout.ts';
-import { allQuotes, quote } from './markets.ts';
+import { allQuotes, moveStock, orderTotal, quote, stockAvailable, type MarketContext } from './markets.ts';
 
 export type TradeError =
   | 'invalid-quantity'
   | 'not-traded'
   | 'insufficient-credits'
   | 'insufficient-space'
+  | 'insufficient-stock'
   | 'insufficient-cargo';
 
 export type TradeResult =
@@ -21,37 +22,61 @@ function fail(error: TradeError, message: string): TradeResult {
   return { ok: false, error, message };
 }
 
-/** Largest quantity the player can buy right now (credits and hold space both limit it). */
+/** The live market as the player's save sees it. */
+export function marketContext(state: GameState): MarketContext {
+  return { clock: state.clock, markets: state.markets };
+}
+
+/** Quote for the next unit at a dock, as the player sees it now. */
+export function liveQuote(state: GameState, locationId: string, commodity: CommodityId) {
+  return quote(locationId, commodity, state.reputation, marketContext(state));
+}
+
+/** What an order of `qty` would cost (buy) or pay (sell) right now; null when not traded that way. */
+export function orderPrice(state: GameState, locationId: string, commodity: CommodityId, qty: number, side: 'buy' | 'sell'): number | null {
+  return orderTotal(locationId, commodity, qty, side, state.reputation, marketContext(state));
+}
+
+/** Largest quantity the player can buy right now: credits, hold space and the station's stock all limit it. */
 export function maxBuyable(state: GameState, locationId: string, commodity: CommodityId): number {
-  const price = quote(locationId, commodity, state.reputation).buy;
-  if (price === null) return 0;
-  return Math.max(0, Math.min(Math.floor(state.credits / price), itemsThatFit(state.ship.cargo, commodity, cargoCapacity(state.ship))));
+  if (liveQuote(state, locationId, commodity).buy === null) return 0;
+  const limit = Math.min(itemsThatFit(state.ship.cargo, commodity, cargoCapacity(state.ship)), stockAvailable(locationId, commodity, marketContext(state)));
+  // Each unit costs a little more than the last, so search for the largest affordable order.
+  let lo = 0;
+  let hi = Math.max(0, limit);
+  while (lo < hi) {
+    const mid = Math.ceil((lo + hi) / 2);
+    if ((orderPrice(state, locationId, commodity, mid, 'buy') ?? Infinity) <= state.credits) lo = mid;
+    else hi = mid - 1;
+  }
+  return lo;
 }
 
 export function buyCommodity(state: GameState, locationId: string, commodity: CommodityId, qty: number): TradeResult {
   if (!Number.isInteger(qty) || qty <= 0) return fail('invalid-quantity', 'Choose at least one item.');
-  const price = quote(locationId, commodity, state.reputation).buy;
-  if (price === null) return fail('not-traded', `${COMMODITIES[commodity].name} is not sold here.`);
-  const total = price * qty;
-  if (total > state.credits) return fail('insufficient-credits', 'Not enough credits.');
+  if (liveQuote(state, locationId, commodity).buy === null) return fail('not-traded', `${COMMODITIES[commodity].name} is not sold here.`);
   const capacity = cargoCapacity(state.ship);
   if (qty > itemsThatFit(state.ship.cargo, commodity, capacity)) {
     return fail('insufficient-space', 'Not enough cargo space.');
   }
+  if (qty > stockAvailable(locationId, commodity, marketContext(state))) return fail('insufficient-stock', 'The station does not have that many.');
+  const total = orderPrice(state, locationId, commodity, qty, 'buy')!;
+  if (total > state.credits) return fail('insufficient-credits', 'Not enough credits.');
   addCargo(state.ship.cargo, commodity, qty, capacity);
+  moveStock(state.markets, locationId, commodity, -qty, state.clock);
   applyCredits(state, -total, 'buy', `Bought ${qty} ${COMMODITIES[commodity].name}`);
-  return { ok: true, qty, unitPrice: price, total };
+  return { ok: true, qty, unitPrice: Math.round(total / qty), total };
 }
 
 export function sellCommodity(state: GameState, locationId: string, commodity: CommodityId, qty: number): TradeResult {
   if (!Number.isInteger(qty) || qty <= 0) return fail('invalid-quantity', 'Choose at least one item.');
-  const price = quote(locationId, commodity, state.reputation).sell;
-  if (price === null) return fail('not-traded', `This dock does not buy ${COMMODITIES[commodity].name}.`);
+  if (liveQuote(state, locationId, commodity).sell === null) return fail('not-traded', `This dock does not buy ${COMMODITIES[commodity].name}.`);
   if (qty > cargoCount(state.ship.cargo, commodity)) return fail('insufficient-cargo', 'You do not carry that many.');
+  const total = orderPrice(state, locationId, commodity, qty, 'sell')!;
   removeCargo(state.ship.cargo, commodity, qty);
-  const total = price * qty;
+  moveStock(state.markets, locationId, commodity, qty, state.clock);
   applyCredits(state, total, 'sell', `Sold ${qty} ${COMMODITIES[commodity].name}`);
-  return { ok: true, qty, unitPrice: price, total };
+  return { ok: true, qty, unitPrice: Math.round(total / qty), total };
 }
 
 /** Records the prices seen while docked, so the trade computer can use them later. */
@@ -59,7 +84,7 @@ export function recordMarketVisit(state: GameState, locationId: string): void {
   state.knownMarkets[locationId] = {
     source: 'visited',
     observedAt: state.clock,
-    prices: allQuotes(locationId, state.reputation),
+    prices: allQuotes(locationId, state.reputation, marketContext(state)),
   };
 }
 
@@ -92,7 +117,7 @@ export function routeOpportunities(
   const hereSystem = getLocation(hereLocationId).systemId;
   const out: RouteOpportunity[] = [];
   for (const commodity of COMMODITY_IDS) {
-    const buyPrice = quote(hereLocationId, commodity, state.reputation).buy;
+    const buyPrice = liveQuote(state, hereLocationId, commodity).buy;
     if (buyPrice === null) continue;
     for (const [destId, obs] of Object.entries(state.knownMarkets)) {
       if (destId === hereLocationId) continue;

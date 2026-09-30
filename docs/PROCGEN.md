@@ -110,7 +110,7 @@ Other balance guardrails:
 ### 4.2 Economy guardrails
 
 - Commodity prices stay inside per-commodity bands; no station pair gives a buy-low/sell-high loop
-  on the same dock.
+  on the same dock (§8.4 lists the economy guardrails).
 - Dealers pay back 70% of the price for ships and equipment, so buying and selling never makes
   money.
 - Job rewards scale with distance, danger and time within bands; a job's reward is never below its
@@ -298,3 +298,58 @@ world and for twelve other seeds:
 - **A new station type**: add it to `StationType` (`src/content/world/types.ts`) and a rule to
   `STATION_TYPES` in `rules.ts`; give it a shop entry if it sells equipment. The coverage guardrail
   makes sure it appears somewhere, and the art generators need a look for it.
+
+## 8. The economy
+
+Twenty-one goods (`src/content/economy/goods.ts`): raw materials (water ice, metal ore, volatile
+gases), fuels (deuterium, helium-3), refined stock (metals, polymers), food (staple and fine),
+manufactured goods (medical supplies, machinery, electronics, fabricator parts, consumer goods,
+ship components, habitat modules), science (research samples, survey data cores), luxury goods,
+small arms (restricted: military bases and free ports) and salvage.
+
+### 8.1 Who makes and wants what
+
+Each kind of station has a market profile (`STATION_MARKETS` in `src/content/economy/rules.ts`):
+goods it **makes** (sells cheap, buys back for less), goods it **wants** (buys dear, never sells)
+and goods it **trades** both ways near the going rate. Mines dig ore, ice and gases and want food,
+machinery and luxuries; refineries turn ore, ice and salvage into metals, fuel and polymers;
+factories turn metals and polymers into machinery, electronics and consumer goods; farms grow food
+and want water and machinery; research stations sell samples and data and want electronics; free
+ports sell salvage and small arms and pay well for luxuries. The hand-authored stations have their
+own profiles, and the three goods of the opening contracts keep their designed prices.
+
+### 8.2 Prices
+
+- **Equilibrium**: makers sell at about 0.72 × base; stations that want a good pay 1.16 × base
+  plus 6% per jump to the nearest maker (up to five jumps), plus a risk premium in lawless space
+  (up to 25%). Each station and good varies by ±6%.
+- **Stock**: every market has a normal stock (makers hold 140–260, buyers 30–60). Price moves with
+  `(normal stock ÷ stock)^0.35` (clamped to 0.62–1.6): buying drains stock and raises the price,
+  selling fills it and lowers the price. Every unit of an order is priced at the stock it leaves,
+  so bulk orders move the price and no round trip at one dock makes money.
+- **Recovery**: stock returns to normal with a 30-minute time constant (game clock). Only stock the
+  player has moved is saved (`GameState.markets`, save format 4).
+- **Drift**: every price wanders ±6% over 40–120 minutes of play, from zero at the start of a game.
+- **Standing** with the station's faction improves both prices; buy and sell never come closer
+  than 4%, and everything stays inside a band of 0.4–2.2 × base.
+
+### 8.3 What the player sees
+
+The trader lists what the station makes, trades and wants, with what you pay and what you
+receive, the stock on hand and the best price you know elsewhere. The trade computer only uses
+prices you have seen or been briefed on. The star map and the encyclopedia say what each station
+makes and wants (public knowledge, without prices).
+
+### 8.4 Economy guardrails
+
+`validateEconomy` (`src/content/economy/validate.ts`) runs on the equilibrium tables for the real
+world and for other world seeds; the unit tests also check live prices over many market states:
+
+- every good is made somewhere and wanted somewhere;
+- equilibrium prices stay within 0.4–2 × base and spreads within 4–30%;
+- the hand-authored opening prices reproduce exactly;
+- every market sells something that another market within four jumps pays at least 12% more for,
+  and no route pays more than 2.8 times its price;
+- at least three goods are worth hauling within two jumps of the starting station;
+- live prices stay in their bands, buy stays above sell at every standing, a buy-and-sell-back
+  round trip always loses money, stock recovers and drift stays gentle.

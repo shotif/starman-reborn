@@ -1,11 +1,12 @@
+import type { CommodityId } from '../content/economy/goods.ts';
 import { STARTER_SHIP_ID } from '../content/rules/index.ts';
 import type { FactionId, SystemId, Vec3Tuple } from '../data/types.ts';
 import { newShipState } from '../economy/loadout.ts';
 
 /** Current save format version. Older saves are upgraded by src/app/save/migrate.ts. */
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
-export type CommodityId = 'medical' | 'fabricators' | 'deuterium';
+export type { CommodityId };
 
 export type Cargo = Partial<Record<CommodityId, number>>;
 
@@ -40,6 +41,15 @@ export interface PriceQuote {
   /** Price the player receives per item, or null when the station does not buy it. */
   sell: number | null;
 }
+
+/** Stock the player has moved at one station: levels at game clock `t`, recovering toward normal after it. */
+export interface MarketStock {
+  t: number;
+  stock: Partial<Record<CommodityId, number>>;
+}
+
+/** Station id → stock the player has moved there (untouched markets are absent). */
+export type MarketState = Record<string, MarketStock>;
 
 /** Market data the player has actually seen (visited) or been told (contract briefing). */
 export interface MarketObservation {
@@ -83,6 +93,8 @@ export interface GameState {
   visitedSystems: SystemId[];
   visitedLocations: string[];
   knownMarkets: Record<string, MarketObservation>;
+  /** Stock the player's trades have moved (economy/markets.ts). */
+  markets: MarketState;
   /** Confirmed-planet / body ids the player has scanned. */
   discoveredBodies: string[];
   jobs: Record<string, JobProgress>;
@@ -120,6 +132,7 @@ export function createNewGame(seed: number = Math.floor(Math.random() * 2 ** 31)
     visitedSystems: ['sol'],
     visitedLocations: [START_DOCK_ID],
     knownMarkets: {},
+    markets: {},
     discoveredBodies: [],
     jobs: {},
     pirateOutcome: 'none',

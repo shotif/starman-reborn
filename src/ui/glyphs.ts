@@ -146,6 +146,101 @@ const GLYPHS = {
     { d: 'M13.5 3.5h5v4h-5z' },
     { d: 'M9 14.5h14v2H9zM9 20.5h14v2H9z', kind: 'dark' },
   ],
+  /** Water ice: a hexagonal crystal. */
+  water: [
+    { d: 'M16 3l10 5.8v11.6L16 26.2 6 20.4V8.8z' },
+    { d: 'M16 6.5v16.2M9.4 10.6l13.2 7.6M22.6 10.6l-13.2 7.6', kind: 'line' },
+  ],
+  /** Ore: broken rock. */
+  ore: [
+    { d: 'M3.5 21l4.5-8 6.5-2.5 4.5 3 3.5-4.5 6 3.5 0.5 9-5 6H8.5z' },
+    { d: 'M10 17l3 3M18 18l2 4M24.5 16.5l-1 3', kind: 'line' },
+  ],
+  /** Volatile gases: twin pressure bottles. */
+  gases: [
+    { d: 'M7.5 10h6.5v17H7.5zM18 10h6.5v17H18z' },
+    { d: 'M9.5 6h2.5v4H9.5zM20 6h2.5v4H20z' },
+    { d: 'M7.5 15h6.5v1.6H7.5zM18 15h6.5v1.6H18z', kind: 'dark' },
+  ],
+  /** Helium-3: a spherical tank on a cradle. */
+  helium: [
+    { d: ellipse(16, 13.5, 9, 9) },
+    { d: 'M9 23.5h14v4.5H9z' },
+    { d: 'M7 13h18v1.6H7z', kind: 'dark' },
+  ],
+  /** Refined metals: stacked ingots. */
+  metals: [
+    { d: 'M3.5 27l2-6h9l2 6zM15.5 27l2-6h9l2 6zM9.5 19.5l2-6h9l2 6z' },
+    { d: 'M7 23.5h6M19 23.5h6M13 16h6', kind: 'line' },
+  ],
+  /** Polymers: a drum. */
+  polymers: [
+    { d: 'M8 5.5h16v21H8z' },
+    { d: 'M8 10.5h16v1.6H8zM8 20h16v1.6H8z', kind: 'dark' },
+  ],
+  /** Staple food: a crate with a sprout. */
+  food: [
+    { d: 'M5 13h22v14H5z' },
+    { d: 'M16 12.5c-4.5-.2-7-3-6.8-7.5 4.4.3 6.8 3 6.8 7.5zM16 12.5c.2-4.5 2.5-7.2 6.8-7.5.2 4.5-2.3 7.3-6.8 7.5z' },
+    { d: 'M5 17.5h22v1.6H5z', kind: 'dark' },
+  ],
+  /** Fine food: a fruit with a leaf. */
+  finefood: [
+    { d: 'M16 10.5c-3.6-3-10-1.6-10 5.6 0 7 5.2 12.6 10 10.6 4.8 2 10-3.6 10-10.6 0-7.2-6.4-8.6-10-5.6z' },
+    { d: 'M16.5 9.5c.2-3.6 2.4-5.8 6-6-.2 3.6-2.4 5.8-6 6z' },
+  ],
+  /** Machinery: a gear on a base plate. */
+  machinery: [
+    { d: gear(16, 12.5, 8, 9, 6.6, 2.8), evenodd: true },
+    { d: 'M4 23h24v5H4z' },
+  ],
+  /** Electronics: a chip with pins. */
+  electronics: [
+    { d: 'M9 9h14v14H9z' },
+    { d: 'M12 4.5v4.5M16 4.5v4.5M20 4.5v4.5M12 23v4.5M16 23v4.5M20 23v4.5M4.5 12H9M4.5 16H9M4.5 20H9M23 12h4.5M23 16h4.5M23 20h4.5', kind: 'line' },
+    { d: 'M12.5 12.5h7v7h-7z', kind: 'dark' },
+  ],
+  /** Consumer goods: a shopping bag. */
+  consumer: [
+    { d: 'M6 11.5h20l-2 16H8z' },
+    { d: 'M11 11.5V8.5a5 5 0 0 1 10 0v3h-2.2v-3a2.8 2.8 0 0 0-5.6 0v3z' },
+  ],
+  /** Ship components: a swept wing panel. */
+  shipparts: [
+    { d: 'M3 23L14 8h7.5l7.5 15z' },
+    { d: 'M9.5 19h14v1.6h-14zM13.5 13h6.5v1.6h-6.5z', kind: 'dark' },
+  ],
+  /** Habitat modules: a module with windows and airlocks. */
+  habitat: [
+    { d: 'M4 10.5h24v11H4z' },
+    { d: 'M1.5 13h2.5v6H1.5zM28 13h2.5v6H28z' },
+    { d: 'M7.5 14.5h3v3h-3zM14.5 14.5h3v3h-3zM21.5 14.5h3v3h-3z', kind: 'dark' },
+  ],
+  /** Research samples: a flask. */
+  samples: [
+    { d: 'M12.5 3.5h7v2.2h-1.2v7.2l7.2 11.4a2 2 0 0 1-1.7 3.2H8.2a2 2 0 0 1-1.7-3.2l7.2-11.4V5.7h-1.2z' },
+    { d: 'M10.3 21h11.4l2.3 3.8H8z', kind: 'dark' },
+  ],
+  /** Survey data cores: a data cartridge. */
+  datacore: [
+    { d: 'M7 4h14l4 4v20H7z' },
+    { d: 'M11 4h8v7h-8zM10 16h12v8H10z', kind: 'dark' },
+  ],
+  /** Luxury goods: a cut gem. */
+  luxury: [
+    { d: 'M9 6h14l6 7.5L16 28 3 13.5z' },
+    { d: 'M3 13.5h26M13 13.5l3 14.5 3-14.5M9 6l4 7.5L16 6l3 7.5L23 6', kind: 'line' },
+  ],
+  /** Small arms: a crate with a hazard mark. */
+  weapons: [
+    { d: 'M4 9h24v18H4z' },
+    { d: 'M16 12l6.5 11.5h-13z', kind: 'dark' },
+  ],
+  /** Salvage: torn plating. */
+  salvage: [
+    { d: 'M4 8h10l2 4.5 3-3.5 9 2.5-2 16H6z' },
+    { d: 'M9 14l4 4M17.5 17.5l5-2M12 22.5l6 1', kind: 'line' },
+  ],
   /** Guns: a twin-barrel turret. */
   gun: [
     { d: 'M5 20.5h14v6.5H5z' },

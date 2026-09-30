@@ -4,6 +4,7 @@ import { ALL_LOCATIONS } from '../../data/systems.ts';
 import { SYSTEM_IDS } from '../../data/systems.ts';
 import type { SystemId } from '../../data/types.ts';
 import { clampShip, newShipState } from '../../economy/loadout.ts';
+import { COMMODITY_IDS } from '../../content/economy/goods.ts';
 import { createNewGame, SAVE_VERSION, type CommodityId, type GameState } from '../state.ts';
 
 /**
@@ -12,8 +13,10 @@ import { createNewGame, SAVE_VERSION, type CommodityId, type GameState } from '.
  *   cargo, visited, seed, savedAt }. No jobs, reputation or market memory.
  * - v2 (economy milestone): GameState with a fixed courier: ship { hull, shield, shieldGenerator
  *   ('shield-mk1' | 'shield-mk2'), gun ('pulse-mk1' | 'pulse-mk2'), missiles, repairKits, cargo }.
- * - v3 (current): ships and equipment from the catalogue (src/content): ship { model, fittings,
- *   hull, shield, ammo, repairKits, cargo }. See GameState in src/app/state.ts.
+ * - v3: ships and equipment from the catalogue (src/content): ship { model, fittings, hull,
+ *   shield, ammo, repairKits, cargo }.
+ * - v4 (current): 21 goods instead of 3, and `markets` (stock the player's trades have moved at
+ *   each station). See GameState in src/app/state.ts.
  */
 export interface SaveV1 {
   version: 1;
@@ -30,7 +33,6 @@ export interface SaveV1 {
 
 export class SaveFormatError extends Error {}
 
-const COMMODITY_IDS: readonly CommodityId[] = ['medical', 'fabricators', 'deuterium'];
 const LOCATION_IDS = new Set(ALL_LOCATIONS.filter((l) => l.status === 'functional').map((l) => l.id));
 
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -86,7 +88,12 @@ function migrateV2(old: Omit<GameState, 'version' | 'ship'> & { version: 2; ship
   ship.repairKits = Number.isFinite(v2.repairKits) ? Math.max(0, Math.floor(v2.repairKits)) : 0;
   ship.cargo = v2.cargo ?? {};
   clampShip(ship);
-  return { ...old, version: SAVE_VERSION, ship };
+  return migrateV3({ ...old, version: 3, ship });
+}
+
+/** v3 → v4: markets start untouched (the three v3 goods keep their ids). */
+function migrateV3(old: Omit<GameState, 'version' | 'markets'> & { version: 3 }): GameState {
+  return { ...old, version: SAVE_VERSION, markets: {} };
 }
 
 /** Upgrades any known save version to the current GameState. Throws SaveFormatError when unusable. */
@@ -100,7 +107,7 @@ export function migrateSave(raw: unknown): GameState {
   else if (raw.version === 2) {
     if (!isRecord(raw.ship)) throw new SaveFormatError('Save data is damaged: ship');
     data = migrateV2(raw as unknown as Parameters<typeof migrateV2>[0]);
-  }
+  } else if (raw.version === 3) data = migrateV3(raw as unknown as Parameters<typeof migrateV3>[0]);
   const state = data as GameState;
   assertValidState(state);
   return state;
@@ -134,6 +141,11 @@ export function assertValidState(s: GameState): void {
     if (!COMMODITY_IDS.includes(id as CommodityId) || !Number.isInteger(qty) || (qty as number) < 0) fail('cargo entry');
   }
   if (!Array.isArray(s.visitedSystems) || !Array.isArray(s.discoveredBodies)) fail('lists');
+  if (!isRecord(s.markets)) fail('markets');
+  for (const [id, m] of Object.entries(s.markets)) {
+    if (!LOCATION_IDS.has(id) || !isRecord(m) || !Number.isFinite(m.t) || !isRecord(m.stock)) fail(`market ${id}`);
+    for (const [c, qty] of Object.entries(m.stock)) if (!COMMODITY_IDS.includes(c as CommodityId) || !Number.isFinite(qty) || (qty as number) < 0) fail(`market ${id}`);
+  }
   if (!isRecord(s.jobs) || !isRecord(s.reputation) || !isRecord(s.flags)) fail('records');
   if (s.location.flight) {
     const { position, quaternion } = s.location.flight;
