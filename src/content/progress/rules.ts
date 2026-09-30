@@ -73,7 +73,8 @@ export type MilestoneId =
   | 'rank-top'
   | 'story-sta'
   | 'story-frontier'
-  | 'story-wake';
+  | 'story-wake'
+  | 'story-border';
 
 export const MILESTONES: readonly { id: MilestoneId; title: string }[] = [
   { id: 'first-contract', title: 'First contract completed' },
@@ -98,4 +99,5 @@ export const MILESTONES: readonly { id: MilestoneId; title: string }[] = [
   { id: 'story-sta', title: 'Clean Manifests: the Transit Authority’s story finished' },
   { id: 'story-frontier', title: 'The Stonecrop Blight: the Frontier Cooperative’s story finished' },
   { id: 'story-wake', title: 'Salt’s Crew: the Hollow Wake’s story finished' },
+  { id: 'story-border', title: 'The Long Border: the Ross 154 line settled' },
 ];

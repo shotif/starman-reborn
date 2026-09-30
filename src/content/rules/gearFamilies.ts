@@ -233,7 +233,7 @@ export const GEAR_FAMILIES: readonly GearFamilyRule[] = [
     slot: 'utility',
     noun: 'long-range jump drive',
     kind: 'jump-drive',
-    // Reach in light-years: frontier lanes (docs/PROCGEN.md §7.6) need a drive that reaches them.
+    // Reach in light-years: frontier lanes (docs/PROCGEN.md §7.7) need a drive that reaches them.
     base: { amount: 11, penalty: 0 },
     growth: 1.06,
     minTierStep: 0.04,

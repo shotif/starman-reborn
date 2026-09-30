@@ -436,7 +436,7 @@ own profiles, and the three goods of the opening contracts keep their designed p
 
 The trader lists what the station makes, trades and wants, with what you pay and what you
 receive, the stock on hand and the best price you know elsewhere. The trade computer only uses
-prices you have seen or been briefed on. The star map and the encyclopedia say what each station
+prices you know: seen, briefed, heard in a bar or relayed by the price watch (§16). The star map and the encyclopedia say what each station
 makes and wants (public knowledge, without prices).
 
 ### 8.4 Economy guardrails
@@ -558,6 +558,10 @@ hand-made stations join in once the opening delivery is done.
   three jumps. In systems where raiders roam, guards of the system's threat wait by it. Tractor the
   item aboard (a flight recorder, a sealed cargo pod, a survey drone, a data vault or a courier's
   strongbox), then bring it back to the station that posted the job. The HUD steers to the item.
+- **Mining claim** (§19.5): mines, refineries and the Eridani Mining Hub pay for a load mined in a
+  cited belt within three jumps and brought back to them.
+- **War work** (§20.4): only while a border front within two jumps is fighting; the law pays for
+  a raider pack broken on its lanes, the dens for the front faction's haulers hit.
 
 Two variations:
 
@@ -766,13 +770,13 @@ for this game.
 ### 13.1 The codex of the real sky
 
 - The codex lists every real body the game shows: each catalogued star, each confirmed planet,
-  and the Solar System's eight planets and the Moon (91 entries today). It grows only with the
-  dataset: no invented body is ever an entry.
+  and the Solar System's eight planets and the Moon (361 entries today, contested planets
+  included). It grows only with the dataset: no invented body is ever an entry.
 - Scanning a body fills in its entry once. The encyclopedia's system page shows the system's
   entries with a tick for each one scanned, and the journal shows the total.
 - **Survey sales**: once every entry of a system is scanned, a research station (or one of the
   hand-made research outposts) buys the survey, once: 120 cr per entry, at least 240 cr.
-- Cataloguing the whole sky earns the Frontier Cooperative's 10,000 cr grant.
+- Cataloguing the whole sky earns the Frontier Cooperative's 25,000 cr grant.
 
 ### 13.2 Ratings
 
@@ -788,12 +792,13 @@ Ace hunts (§10.2) need a Hardened combat rating.
 
 ### 13.3 Milestones
 
-Twenty milestones, each earned once and toasted when it happens: the first and the 25th
+Twenty-three milestones, each earned once and toasted when it happens: the first and the 25th
 contract, 10,000 and 50,000 credits in hand, flying a Mk II and a Mk III ship, ten and all
-systems visited, ten confirmed planets scanned, half and all of the codex, ten and fifty raiders
-down, Friendly with the Transit Authority and with the Frontier Cooperative, trusted by the Hollow
-Wake, a top rank in any rating, and each of the three story arcs (§14) finished. The journal lists
-those earned.
+systems visited, the first frontier system and 25 of them visited (§7.7), ten confirmed planets
+scanned, half and all of the codex, ten and fifty raiders down, Friendly with the Transit
+Authority and with the Frontier Cooperative, trusted by the Hollow Wake, a top rank in any rating,
+and each of the four story arcs (§14, §20.5) finished, The Long Border whichever way it ends. The
+journal lists those earned.
 
 ### 13.4 What next
 

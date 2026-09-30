@@ -1,37 +1,44 @@
 # Starman Reborn
 
-A browser space trading and combat prototype set among **real nearby stars**: 32 systems within
-about 17 light-years, from Sol, Alpha Centauri and Barnard's Star out to Tau Ceti, 61 Cygni,
-Gliese 876 and Altair, with 44 stars and 37 confirmed planets. You fly a small courier with the
-mouse, two thumbs or a gamepad. You trade medical supplies, fight or dodge a raider near Mars, jump to
-Alpha Centauri, discover the real exoplanet Proxima Centauri b, and make the first delivery to a
-fictional research outpost. After that the neighbourhood is open: 58 generated stations of twelve
-kinds (ports, mines, refineries, farms, research stations, shipyards, free ports, raider dens...),
-23 goods with stock-based prices, world events (shortages, gluts, booms, strikes, raids and
-security sweeps) reported in each station's news, traders and patrols on the lanes, raider packs
-in lawless space, contract boards in every station bar (freight, courier parcels, supply runs,
-bounties, planet surveys, escorts, ace hunts and wreck recoveries, some urgent, some leading to
-follow-ups), and 35 ships in six classes from five makers with over 100 pieces of equipment.
-The law has teeth: fines, cargo scans, contraband, bounty hunters and pardons, and an outlaw path
-of piracy and smuggling that opens the raider dens' black markets. Pilot ratings, a codex of the
-real sky to fill by scanning, milestones and a hint of what to do next give the sandbox goals, and
-three hand-written faction story arcs, with choices and finales (a den assault, a convoy defence
-and a den under siege), give it a spine. Fights have seekers and decoy flares, mines, damage to a
-ship's systems, loot crates of salvaged equipment, wingmen for hire, and raider dens that defend
-themselves and can be knocked out. A fleet of your own comes after the biggest ship: keep ships
-parked at stations, hire captains to haul your routes out of sight (worked out from the game clock,
-for well under what flying them earns, with raids and insurance), lease storage and buy a share of a
-station's trade.
+A browser space trading and combat game set among **real nearby stars**: 207 systems out to 27
+light-years, checked against the astronomical archives (252 stars, 99 planets and 9 debris belts),
+from Sol, Alpha Centauri and Barnard's Star out to Vega and Fomalhaut. You fly a small courier with
+the mouse, two thumbs or a gamepad. You trade medical supplies, fight or dodge a raider near Mars,
+jump to Alpha Centauri, discover the real exoplanet Proxima Centauri b, and make the first delivery
+to a fictional research outpost. After that the neighbourhood is open: 322 generated stations of
+twelve kinds (ports, mines, refineries, farms, research stations, shipyards, free ports, raider
+dens...), 23 goods with stock-based prices, world events reported in each station's news, traders
+and patrols on the lanes, raider packs in lawless space, and contract boards in every station bar
+(freight, courier parcels, supply runs, bounties, planet surveys, escorts, ace hunts, wreck
+recoveries, mining claims and war work, some urgent, some leading to follow-ups). 39 ships in six
+classes carry 139 pieces of equipment, among them a long-range jump drive for the frontier beyond
+17.5 light-years.
+
+The law has teeth: witnesses, fines that lapse, cargo scans, contraband, bounty hunters and
+pardons, and an outlaw path of piracy and smuggling that opens the raider dens' black markets.
+The bars have people who sell true rumours for the price of a round, and a trade computer plans
+routes from the prices you know. The world answers: a shortage you fill ends sooner, raids break,
+and goods spill along the lanes. Where lawful space meets a raider den, a border war swings back
+and forth, and your work tips it. Four hand-written story arcs give the sandbox a spine: three
+faction arcs, and The Long Border, which reads the choices made in the other three and settles a
+front for good, as a lawful pilot, an outlaw or neither. Pilot ratings, a codex of 361 real
+bodies, 23 milestones and a hint of what to do next give it goals. Fights have seekers and decoy
+flares, mines, damage to a ship's systems, loot, wingmen for hire, and raider dens that defend
+themselves and can be knocked out.
 Pilots who would rather not fight can mine the real belts (the Solar System's main belt and Kuiper
 Belt, and the debris discs astronomers have seen around nearby stars, each with its source): a
 mining laser cuts ore, ice and volatiles from rocks, a prospecting scanner gets more from them,
-refineries buy the load, mines and refineries post claim contracts, and raiders hunt miners.
+refineries buy the load, mines and refineries post claim contracts, and raiders hunt miners. A
+fleet of your own comes after the biggest ship: keep ships parked at stations, hire captains to
+haul your routes out of sight (worked out from the game clock, for well under what flying them
+earns, with raids and insurance), lease storage and buy a share of a station's trade.
 Ships, equipment, the world, the economy, events, contracts and the law are generated from rule
 files and checked by automated guardrails ([docs/PROCGEN.md](docs/PROCGEN.md)).
 
-Star positions, distances and confirmed planets come from astronomical catalogs (see
-[docs/ASTRONOMY_SOURCES.md](docs/ASTRONOMY_SOURCES.md)). Stations, factions, jump travel, trade
-lanes and all story text are original fiction and are labelled that way in the game.
+Star positions, distances, planets and debris belts come from the astronomical archives, checked
+by a workflow on GitHub's runners (see [docs/ASTRONOMY_SOURCES.md](docs/ASTRONOMY_SOURCES.md)).
+Planets an archive disputes are kept in this edition and say so. Stations, factions, jump travel,
+trade lanes and all story text are original fiction and are labelled that way in the game.
 
 **Play now: <https://shotif.github.io/starman-reborn/>**
 
@@ -134,14 +141,16 @@ src/content/   rule-driven generators and guardrails (docs/PROCGEN.md): ships an
                (src/content/economy: goods, market profiles), contract rules (src/content/contracts),
                event rules (src/content/events), the law (src/content/law), progress
                (src/content/progress), the story arcs (src/content/story), dens under fire
-               (src/content/dens), combat depth (src/content/combat) and mining
-               (src/content/mining)
-src/economy/   live markets, world events, trade, cargo, outfitter and shipyard, factions, jobs and
-               generated contracts, the law, ratings, the codex, milestones and the story
+               (src/content/dens), combat depth (src/content/combat), people in the bars
+               (src/content/people), the fleet (src/content/fleet), mining (src/content/mining)
+               and the border war (src/content/border)
+src/economy/   live markets, world events and the world's answers, trade, cargo, outfitter and
+               shipyard, factions, jobs and generated contracts, the law, ratings, the codex,
+               milestones, the story, people and rumours, the fleet, mining and the border war
 src/audio/     procedural Web Audio music and sound effects
 src/ui/        HUD, touch controls, station screens, encyclopedia, styles
-scripts/       astronomy snapshot, catalogue extraction (HYG, Open Exoplanet Catalogue), dataset
-               build and validation
+scripts/       the sky snapshot (sky-fetch on GitHub's runners, sky-process here), catalogue
+               extraction (HYG, Open Exoplanet Catalogue), dataset build and validation
 tests/         unit tests (Vitest) and browser journeys (Playwright)
 docs/          sources, design notes, test record, known gaps, screenshots
 ```
@@ -160,12 +169,16 @@ issues are listed in [docs/KNOWN_GAPS.md](docs/KNOWN_GAPS.md).
 
 ## Astronomy data
 
-`npm run data:snapshot` captures a dated snapshot from the ESA Gaia archive, SIMBAD, VizieR and
-the NASA Exoplanet Archive. The 27 catalogue systems come from the HYG star database v4.0 (CC BY-SA
-4.0) and the Open Exoplanet Catalogue (MIT) through `scripts/extract-catalogs.ts`; the derived
-data keep those licences ([data/provisional/NOTICE.md](data/provisional/NOTICE.md)). `npm run data:build` regenerates the bundled dataset, and
-`npm run data:validate` checks it. The game never calls these services at runtime. Details,
-exceptions and uncertainty are in [docs/ASTRONOMY_SOURCES.md](docs/ASTRONOMY_SOURCES.md).
+The **Sky snapshot** workflow (`.github/workflows/sky-snapshot.yml`) runs `npm run data:fetch` on
+GitHub's runners, which can reach SIMBAD, the ESA Gaia archive, VizieR, the NASA Exoplanet Archive
+and the Extrasolar Planets Encyclopaedia, and pushes the raw answers to the `sky-snapshot` branch.
+`npm run data:process` turns them into `data/snapshot/` with a report, `npm run data:build`
+regenerates the bundled dataset, and `npm run data:validate` checks it. It runs by hand from the
+Actions tab and once a month. The first 27 catalogue systems came from the HYG star database v4.0
+(CC BY-SA 4.0) and the Open Exoplanet Catalogue (MIT) through `scripts/extract-catalogs.ts`; the
+derived data keep those licences ([data/provisional/NOTICE.md](data/provisional/NOTICE.md)). The
+game never calls these services at runtime. Details, exceptions and uncertainty are in
+[docs/ASTRONOMY_SOURCES.md](docs/ASTRONOMY_SOURCES.md).
 
 ## Credits and rights
 

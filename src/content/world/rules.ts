@@ -52,7 +52,7 @@ export const NETWORK = {
 // ---------------------------------------------------------------- growth
 
 /**
- * The world grows (docs/PROCGEN.md §7.6): systems the sky snapshot adds are placed after the frozen
+ * The world grows (docs/PROCGEN.md §7.7): systems the sky snapshot adds are placed after the frozen
  * core (content/world/core-seeds.json), which never changes. They get lanes of their own (a lane
  * always touches a new system, so no lane between two core systems is added), territory from the
  * same anchors, and stations named from their own pools.
@@ -324,7 +324,7 @@ export const NAME_WORDS: Record<StationOwner, readonly string[]> = {
 };
 
 /**
- * First words for the stations of systems the world grows into (§7.6): a separate pool, so the
+ * First words for the stations of systems the world grows into (§7.7): a separate pool, so the
  * core's names never shift. Independents get the most (the frontier is theirs): shore birds, sky and
  * weather. When a pool runs out, a station is named after its system ("Luhman 16 Relay").
  */

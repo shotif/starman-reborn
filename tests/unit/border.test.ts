@@ -14,6 +14,7 @@ import { welcomeText } from '../../src/economy/dockText.ts';
 import { useWorldLog } from '../../src/economy/events.ts';
 import { acceptJob, advanceJobs, countPiracy, currentObjective, escortArrived, jobsAt, type JobDef } from '../../src/economy/jobs.ts';
 import { dockAccess } from '../../src/economy/law.ts';
+import { checkMilestones } from '../../src/economy/progress.ts';
 import { arcStatus, briefingFor, makeChoice, optionLock } from '../../src/economy/story.ts';
 import { trafficFor } from '../../src/world/traffic/setup.ts';
 
@@ -267,6 +268,7 @@ describe('The Long Border', () => {
     advanceJobs(s, { dockedAt: null, systemId: 'ross-154' });
     expect(done(s, 'arc.border.5.law')).toBe(true);
     expect(arcStatus(s, 'border').phase).toBe('complete');
+    expect(checkMilestones(s).map((m) => m.id)).toContain('story-border');
     // The tide no longer moves the front: the Authority holds it, and Regent Concourse never falls.
     for (let t = 0; t < BORDER.tide.periodSeconds; t += 3_600) {
       expect(frontState(longBorder, s.clock + t).phase).toBe('pushed-back');

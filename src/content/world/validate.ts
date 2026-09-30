@@ -26,7 +26,7 @@ export interface WorldContext {
   /** Names of systems, factions and anything else a station word must not repeat. */
   reservedNames: readonly string[];
   rules?: ContentRules;
-  /** Systems the world grew into after the core (§7.6): their lanes may reach farther, their names come from the growth pools. */
+  /** Systems the world grew into after the core (§7.7): their lanes may reach farther, their names come from the growth pools. */
   growth?: ReadonlySet<SystemId>;
 }
 

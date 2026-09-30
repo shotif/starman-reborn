@@ -24,7 +24,7 @@ import type { GeneratedStation, StationOwner, StationShop, SystemProfile, System
  * world rules and a seed. Hand-authored systems keep their stations; every other system gets
  * stations attached to its real stars and planets, an owner, a security level and a line of fiction.
  *
- * `growth` are systems added after the core was frozen (§7.6): the core is generated exactly as
+ * `growth` are systems added after the core was frozen (§7.7): the core is generated exactly as
  * before from `seeds`, then the new systems are placed around it without changing it.
  */
 export function generateWorld(seeds: readonly SystemSeed[], seed = WORLD_SEED, growth: readonly SystemSeed[] = []): WorldResult {

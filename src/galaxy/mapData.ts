@@ -56,7 +56,7 @@ export interface MapLink {
   b: SystemId;
   /** Real straight-line distance between the systems' reference positions. */
   distanceLy: number;
-  /** A frontier lane: a long-range jump drive is needed (docs/PROCGEN.md §7.6). */
+  /** A frontier lane: a long-range jump drive is needed (docs/PROCGEN.md §7.7). */
   drive: boolean;
 }
 

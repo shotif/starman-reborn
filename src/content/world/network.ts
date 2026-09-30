@@ -60,7 +60,7 @@ export function generateJumpNetwork(seeds: readonly SystemSeed[]): Map<SystemId,
 }
 
 /**
- * Lanes for systems added around a finished core (docs/PROCGEN.md §7.6). Every new lane touches a
+ * Lanes for systems added around a finished core (docs/PROCGEN.md §7.7). Every new lane touches a
  * new system, so the core's lanes stay exactly as they were. New systems join nearest first
  * (outward from Sol), each linked to its nearest placed system that has room; then the same
  * no-dead-end and short-hop passes as the core, over the new systems only. Deterministic.
