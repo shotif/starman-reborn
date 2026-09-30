@@ -277,7 +277,7 @@ function dataSection(id: string): HTMLElement {
     h(
       'p',
       null,
-      'Star colours and glow sizes on the map are inspired by spectral type. Planet globes, surfaces, orbits and in-flight positions are artist’s impressions or schematic, never photographs or measurements. Solar System positions in flight are schematic and do not match today’s sky.',
+      'Star colours and glow sizes on the map are inspired by spectral type. Planet globes, surfaces, orbits and in-flight positions are artist’s impressions or schematic, never photographs or measurements. In flight, the Solar System’s planets lie in their real directions from the Sun on the game’s date (JPL’s approximate elements, valid 1800–2050), at compressed distances; Mars is kept within 140° of Earth so the lane between them never crosses the Sun.',
     ),
     h('h4', { class: 'sci-heading' }, 'What is fiction ', dataBadge('fictional')),
     h(

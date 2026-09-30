@@ -349,7 +349,7 @@ export function bodyCard(bodyId: string, name: string): HTMLElement {
         solar.order ? [h('dt', null, 'Order from the Sun'), h('dd', null, String(solar.order))] : null,
       ),
       h('p', null, sourceLink(solar.source)),
-      h('p', { class: 'muted small' }, dataBadge('estimated'), ' In flight, sizes, colours and orbital spacing are schematic and positions do not match today’s sky.'),
+      h('p', { class: 'muted small' }, dataBadge('estimated'), ' In flight, the planets lie in their real directions from the Sun on the game’s date (JPL’s elements); sizes, colours and orbital spacing are schematic.'),
     );
   }
   const planet = getPlanet(bodyId);

@@ -286,7 +286,7 @@ export function solarBodyList(): HTMLElement {
       sourceLink(planets[0]!.source),
       moon ? [' ', sourceLink(moon.source)] : null,
     ),
-    h('p', { class: 'sci-note' }, dataBadge('estimated'), ' Positions, sizes and orbital spacing in flight are schematic.'),
+    h('p', { class: 'sci-note' }, dataBadge('estimated'), ' In flight, each planet lies in its real direction from the Sun on the game’s date (JPL’s elements); sizes and orbital spacing are schematic.'),
   );
 }
 
