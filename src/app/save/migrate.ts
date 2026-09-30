@@ -214,7 +214,9 @@ export function assertValidState(s: GameState): void {
   if (!isRecord(s.dens) || !Object.entries(s.dens).every(([id, t]) => LOCATION_IDS.has(id) && Number.isFinite(t))) fail('dens');
   if (!Array.isArray(s.stash) || s.stash.length > COMBAT.loot.stash || !s.stash.every((id) => typeof id === 'string' && !!findGear(id))) fail('stash');
   if (!Array.isArray(s.crew) || s.crew.length > COMBAT.wingmen.max) fail('crew');
-  for (const w of s.crew) if (!isRecord(w) || typeof w.name !== 'string' || !findShip(w.model) || !Number.isFinite(w.fee) || w.fee < 0) fail('crew');
+  for (const w of s.crew) {
+    if (!isRecord(w) || typeof w.id !== 'string' || typeof w.name !== 'string' || !findShip(w.model) || !Number.isFinite(w.fee) || w.fee < 0 || (w.skill !== 'steady' && w.skill !== 'sharp')) fail('crew');
+  }
   if (!Number.isInteger(s.ship.decoys) || s.ship.decoys < 0 || s.ship.decoys > COMBAT.decoys.max) fail('decoys');
   const sys = s.ship.systems;
   if (!isRecord(sys) || !(['engines', 'guns', 'shields'] as const).every((k) => Number.isFinite(sys[k]) && sys[k] >= 0 && sys[k] <= 1)) fail('systems');

@@ -195,5 +195,8 @@ describe('combat saves', () => {
     expect(() => migrateSave({ ...structuredClone(s), stash: ['gear.nothing'] })).toThrow();
     expect(() => migrateSave({ ...structuredClone(s), ship: { ...s.ship, systems: { engines: 2, guns: 0, shields: 0 } } })).toThrow();
     expect(() => migrateSave({ ...structuredClone(s), crew: [{ id: 'x', name: 'X', model: 'ship.nothing', fee: 10, skill: 'steady' }] })).toThrow();
+    const model = s.ship.model;
+    expect(migrateSave({ ...structuredClone(s), crew: [{ id: 'x', name: 'X', model, fee: 10, skill: 'sharp' }] }).crew).toHaveLength(1);
+    expect(() => migrateSave({ ...structuredClone(s), crew: [{ id: 'x', name: 'X', model, fee: 10, skill: 'reckless' }] })).toThrow();
   });
 });

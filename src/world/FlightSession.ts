@@ -1114,6 +1114,9 @@ export class FlightSession {
     this.system.update(dt, this.camera, this.player.position);
     this.audio.setEngine(this.engineSound());
     this.audio.setCombatIntensity(this.activeEncounter || this.packEngaged() ? 1 : 0);
+    // Hit flashes fade in under half a second.
+    this.hullFlash = Math.max(0, this.hullFlash - dt * 2.5);
+    this.shieldFlash = Math.max(0, this.shieldFlash - dt * 3);
     this.buildHud();
   }
 
@@ -3047,9 +3050,6 @@ export class FlightSession {
     hud.decoys = this.state.ship.decoys;
     hud.incoming = this.incomingSeekers;
     hud.systems = { ...this.state.ship.systems };
-    // Hit flashes fade over about half a second.
-    this.hullFlash = Math.max(0, this.hullFlash - 0.05);
-    this.shieldFlash = Math.max(0, this.shieldFlash - 0.06);
     hud.flash = { hull: this.settings.reducedMotion ? Math.min(0.4, this.hullFlash) : this.hullFlash, shield: this.settings.reducedMotion ? Math.min(0.3, this.shieldFlash) : this.shieldFlash };
     hud.inLane = this.autopilot.mode === 'lane' && this.autopilot.phase === 'travel';
     hud.encounterActive = (this.activeEncounter !== null && !this.activeEncounter.bypassed) || this.packEngaged();
@@ -3147,7 +3147,7 @@ export class FlightSession {
     hud.nearestDock = near ? { name: near.site.name, distance: Math.max(0, near.distance - near.site.radius) } : null;
 
     const warnings: string[] = [];
-    if (hud.incoming && this.alive) warnings.push(`Seeker inbound${hud.incoming > 1 ? ` ×${hud.incoming}` : ''}: decoy [C]`);
+    if (hud.incoming && this.alive) warnings.push(`Seeker inbound${hud.incoming > 1 ? ` ×${hud.incoming}` : ''}: drop a decoy`);
     if (d.hull / d.hullMax < 0.3 && this.alive) warnings.push('Hull critical');
     const sys = this.state.ship.systems;
     const hurt = (['engines', 'guns', 'shields'] as const).filter((k) => sys[k] >= 0.05).map((k) => `${k === 'shields' ? 'shield' : k} ${Math.round(sys[k] * 100)}%`);

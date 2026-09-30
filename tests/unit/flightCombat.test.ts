@@ -144,6 +144,16 @@ describe('combat depth in flight', () => {
     expect(f.flight.player.params.maxSpeed).toBeCloseTo(baseSpeed);
   });
 
+  it('a hull hit flashes the screen’s edges, fading in under half a second whatever the frame rate', () => {
+    const f = flightIn('sol', {});
+    f.inner.playerDurability.shield = 0;
+    f.inner.damagePlayer(10, f.flight.player.position.clone());
+    f.run(0.05);
+    expect(f.flight.hud.flash.hull).toBeGreaterThan(0);
+    f.run(0.5);
+    expect(f.flight.hud.flash.hull).toBe(0);
+  });
+
   it('heavy raiders fire seekers at the player; a decoy draws them off', () => {
     const packs = { max: 1, level: 3 as const, size: [2, 2] as const, firstDelay: 1, interval: [999, 999] as const };
     const f = flightIn('altair', { plan: { ...QUIET, packs } });
