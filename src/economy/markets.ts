@@ -5,6 +5,7 @@ import { ECONOMY } from '../content/economy/rules.ts';
 import { WORLD_SEED } from '../content/world/rules.ts';
 import { ALL_LOCATIONS, getLocation, WORLD } from '../data/systems.ts';
 import type { FactionId } from '../data/types.ts';
+import { marketEffect } from './events.ts';
 import { standingPriceModifier } from './factions.ts';
 
 /**
@@ -16,6 +17,8 @@ import { standingPriceModifier } from './factions.ts';
  *   price and no round trip at one dock makes money. Stock recovers toward normal over time.
  * - **drift**: every price wanders slowly (a few per cent over an hour or two of play).
  * - **standing** with the station's faction improves both prices, never below a minimum spread.
+ * - **events** (economy/events.ts): a shortage, glut, boom or strike at the station changes the price
+ *   and the normal stock of the goods concerned while it lasts.
  *
  * Only stock the player has moved is saved (`GameState.markets`); everything else is a pure
  * function of the game clock, so there is no background simulation to run or save.
@@ -61,13 +64,19 @@ export function dockFaction(locationId: string): FactionId | undefined {
   return getLocation(locationId).factionId;
 }
 
-/** Stock now: what the player left it at, recovering toward normal. */
+/** Normal stock right now: the table's, moved by any event at the station. */
+export function normalStock(locationId: string, entry: MarketEntry, clock: number): number {
+  return entry.target * marketEffect(locationId, entry.commodity, clock).stock;
+}
+
+/** Stock now: what the player (or traffic) left it at, recovering toward normal. */
 export function stockNow(locationId: string, entry: MarketEntry, ctx: MarketContext): number {
+  const target = normalStock(locationId, entry, ctx.clock);
   const saved = ctx.markets[locationId];
   const s = saved?.stock[entry.commodity];
-  if (!saved || s === undefined) return entry.target;
+  if (!saved || s === undefined) return target;
   const k = Math.exp(-Math.max(0, ctx.clock - saved.t) / ECONOMY.recoverySeconds);
-  return entry.target + (s - entry.target) * k;
+  return target + (s - target) * k;
 }
 
 function drift(entry: MarketEntry, clock: number): number {
@@ -75,20 +84,20 @@ function drift(entry: MarketEntry, clock: number): number {
   return 1 + ECONOMY.drift.amplitude * (Math.sin((2 * Math.PI * clock) / entry.period + entry.phase) - Math.sin(entry.phase));
 }
 
-/** Price of one unit at a given stock (before spread and standing). */
-function midAt(entry: MarketEntry, stock: number, clock: number): number {
+/** Price of one unit at a given stock (before spread and standing): scarcity against the table's normal stock, drift and events. */
+function midAt(locationId: string, entry: MarketEntry, stock: number, clock: number): number {
   const [lo, hi] = ECONOMY.stockClamp;
   const scarcity = Math.min(hi, Math.max(lo, (entry.target / Math.max(1, stock)) ** ECONOMY.elasticity));
-  return entry.mid * scarcity * drift(entry, clock);
+  return entry.mid * scarcity * drift(entry, clock) * marketEffect(locationId, entry.commodity, clock).price;
 }
 
-function unitQuote(entry: MarketEntry, stock: number, clock: number, reputation: Record<FactionId, number>, faction: FactionId | undefined): PriceQuote {
+function unitQuote(locationId: string, entry: MarketEntry, stock: number, clock: number, reputation: Record<FactionId, number>, faction: FactionId | undefined): PriceQuote {
   const base = COMMODITIES[entry.commodity].basePrice;
   const lo = Math.ceil(base * PRICE_BAND[0]);
   const hi = Math.floor(base * PRICE_BAND[1]);
   const clamp = (x: number, a: number, b: number) => Math.min(b, Math.max(a, x));
   const mod = standingPriceModifier(faction ? (reputation[faction] ?? 0) : 0);
-  const mid = midAt(entry, stock, clock);
+  const mid = midAt(locationId, entry, stock, clock);
   let buy = entry.role === 'consume' ? null : clamp(Math.round(mid * (1 + entry.spread / 2) * mod.buy), lo + 1, hi);
   let sell = clamp(Math.round(mid * (1 - entry.spread / 2) * mod.sell), lo, hi - 1);
   if (buy !== null) {
@@ -103,7 +112,7 @@ function unitQuote(entry: MarketEntry, stock: number, clock: number, reputation:
 export function quote(locationId: string, commodity: CommodityId, reputation: Record<FactionId, number>, ctx: MarketContext = AT_START): PriceQuote {
   const entry = marketEntry(locationId, commodity);
   if (!entry) return { buy: null, sell: null };
-  return unitQuote(entry, stockNow(locationId, entry, ctx), ctx.clock, reputation, dockFaction(locationId));
+  return unitQuote(locationId, entry, stockNow(locationId, entry, ctx), ctx.clock, reputation, dockFaction(locationId));
 }
 
 /** Designed opening quote (no standing, normal stock, start of the game), for tests and documentation. */
@@ -146,7 +155,7 @@ export function orderTotal(
   const start = stockNow(locationId, entry, ctx);
   let total = 0;
   for (let i = 0; i < qty; i++) {
-    const q = unitQuote(entry, side === 'buy' ? start - i : start + i, ctx.clock, reputation, faction);
+    const q = unitQuote(locationId, entry, side === 'buy' ? start - i : start + i, ctx.clock, reputation, faction);
     total += side === 'buy' ? q.buy! : q.sell!;
   }
   return total;
@@ -162,7 +171,7 @@ export function moveStock(markets: MarketState, locationId: string, commodity: C
   const next: Partial<Record<CommodityId, number>> = {};
   for (const [id, e] of table.entries) {
     const now = stockNow(locationId, e, ctx);
-    if (Math.abs(now - e.target) >= 0.5) next[id] = Math.round(now * 100) / 100;
+    if (Math.abs(now - normalStock(locationId, e, clock)) >= 0.5) next[id] = Math.round(now * 100) / 100;
   }
   next[commodity] = Math.max(0, Math.round((stockNow(locationId, entry, ctx) + delta) * 100) / 100);
   markets[locationId] = { t: clock, stock: next };

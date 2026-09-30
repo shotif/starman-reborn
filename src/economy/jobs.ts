@@ -36,8 +36,11 @@ export interface JobDef {
   coversJumpFeesTo?: SystemId;
   /** Prices the giver tells you about (shown as "posted in briefing"). */
   briefingPrices?: { locationId: string; prices: Partial<Record<CommodityId, PriceQuote>> };
-  /** Generated contracts (economy/contracts.ts): their kind, cargo loaded on acceptance and deposit. */
-  contract?: { kind: ContractKind; cargo?: { commodity: CommodityId; qty: number }; deposit?: number };
+  /**
+   * Generated contracts (economy/contracts.ts): their kind, cargo loaded on acceptance, deposit, and
+   * the world event they answer (economy/events.ts), if any.
+   */
+  contract?: { kind: ContractKind; cargo?: { commodity: CommodityId; qty: number }; deposit?: number; event?: string };
 }
 
 export const LIFELINE_ID = 'lifeline';

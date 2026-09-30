@@ -9,6 +9,7 @@ import type { FactionId, FictionalLocation, SystemId } from '../data/types.ts';
 import { findRoute } from '../galaxy/routing.ts';
 import { trafficFor } from '../world/traffic/setup.ts';
 import { itemsThatFit } from './cargo.ts';
+import { priceMultiplier, stationEventAt, systemEventAt, type WorldEvent } from './events.ts';
 import type { JobDef } from './jobs.ts';
 import { cargoCapacity } from './loadout.ts';
 import { marketTables } from './markets.ts';
@@ -17,8 +18,9 @@ import { marketTables } from './markets.ts';
  * Generated contracts (docs/PROCGEN.md §10). Every station with a contracts service posts a board
  * that changes with the game clock: freight hauls, parcels, supply runs, bounties on raider packs
  * and planet surveys, chosen by the kind of station and pointed at real places in the world.
- * A board is a pure function of the station, its time slot and the world; an accepted contract is
- * copied into the save, so it never changes under the player.
+ * A board is a pure function of the station, its time slot and the world (world events included,
+ * as they stand when the board is posted); an accepted contract is copied into the save, so it
+ * never changes under the player.
  */
 
 export const CONTRACT_PREFIX = 'c.';
@@ -86,14 +88,18 @@ export function boardFor(locationId: string, epoch: number): JobDef[] {
   const out: JobDef[] = [];
   if (weights) {
     const r = rng(WORLD_SEED, 'contracts', locationId, epoch);
+    const clock = epoch * CONTRACTS.epochSeconds;
     const b = CONTRACTS.board;
     const size = Math.min(b.max, b.base + ((loc.look?.size ?? 0.8) > b.largeAbove ? 1 : 0) + (loc.stationType && b.busy.includes(loc.stationType) ? 1 : 0));
     const kinds = Object.keys(weights) as ContractKind[];
     for (let attempt = 0; out.length < size && attempt < size * 5; attempt++) {
       const kind = weightedPick(r, kinds, kinds.map((k) => weights[k] ?? 0));
-      const c = makeContract(kind, loc, r, `${CONTRACT_PREFIX}${locationId}.${epoch}.${out.length}`);
+      const c = makeContract(kind, loc, r, `${CONTRACT_PREFIX}${locationId}.${epoch}.${out.length}`, clock);
       if (c && !out.some((o) => o.title === c.title)) out.push(c);
     }
+    // Work answering a world event, from its own stream so the rest of the board does not move.
+    const e = eventContract(loc, rng(WORLD_SEED, 'contracts', 'event', locationId, epoch), `${CONTRACT_PREFIX}${locationId}.${epoch}.${out.length}`, clock);
+    if (e && !out.some((o) => o.title === e.title)) out.push(e);
   }
   if (boardCache.size > 400) boardCache.clear();
   boardCache.set(key, out);
@@ -121,20 +127,44 @@ function weightedPick<T>(r: Rng, items: readonly T[], weights: readonly number[]
 
 // ---------------------------------------------------------------- contract kinds
 
-function makeContract(kind: ContractKind, giver: FictionalLocation, r: Rng, id: string): JobDef | null {
+function makeContract(kind: ContractKind, giver: FictionalLocation, r: Rng, id: string, clock: number): JobDef | null {
   switch (kind) {
     case 'parcel':
       return parcel(giver, r, id);
     case 'freight':
-      return freight(giver, r, id);
+      return freight(giver, r, id, clock);
     case 'supply':
-      return supply(giver, r, id);
+      return supply(giver, r, id, clock);
     case 'bounty':
       return bounty(giver, r, id);
     case 'survey':
       return survey(giver, r, id);
   }
 }
+
+/**
+ * Work that answers a world event: a supply run into the posting station's shortage or boom, a
+ * haul out of its glut, or a bounty on a raid within reach (docs/PROCGEN.md §11).
+ */
+function eventContract(giver: FictionalLocation, r: Rng, id: string, clock: number): JobDef | null {
+  const own = stationEventAt(giver.id, clock);
+  if (own && (own.kind === 'shortage' || own.kind === 'boom')) {
+    const wanted = own.goods.filter((g) => marketTables().get(giver.id)?.entries.get(g)?.role === 'consume');
+    const c = wanted.length ? supply(giver, r, id, clock, { commodity: r.pick(wanted), event: own }) : null;
+    if (c) return c;
+  }
+  if (own?.kind === 'glut') {
+    const c = freight(giver, r, id, clock, { commodity: own.goods[0]!, event: own });
+    if (c) return c;
+  }
+  const raids = SYSTEMS.map((s) => systemEventAt(s.id, clock)).filter(
+    (e): e is WorldEvent => e?.kind === 'raid' && jumpsBetween(giver.systemId, e.systemId) <= CONTRACTS.maxJumps.bounty,
+  );
+  return raids.length ? bounty(giver, r, id, { event: r.pick(raids) }) : null;
+}
+
+/** The varying part of the pay, higher for work that answers an event. */
+const premium = (event: WorldEvent | undefined) => (event ? CONTRACTS.eventPremium : 1);
 
 function common(giver: FictionalLocation, id: string, difficulty: 1 | 2 | 3): Pick<JobDef, 'id' | 'giverLocationId' | 'factionId' | 'difficulty' | 'repReward' | 'requires'> {
   const faction: FactionId | null = giver.factionId ?? null;
@@ -181,13 +211,13 @@ function parcel(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
   };
 }
 
-function freight(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
+function freight(giver: FictionalLocation, r: Rng, id: string, clock: number, opts: { commodity?: CommodityId; event?: WorldEvent } = {}): JobDef | null {
   const markets = marketTables();
   const here = markets.get(giver.id);
   if (!here) return null;
   const made = [...here.entries.values()].filter((e) => e.role === 'produce' && e.commodity !== 'weapons').map((e) => e.commodity);
-  if (!made.length) return null;
-  const commodity = r.pick(made);
+  if (!made.length || (opts.commodity && !made.includes(opts.commodity))) return null;
+  const commodity = opts.commodity ?? r.pick(made);
   const dests = openStations().filter((l) => {
     if (l.id === giver.id || jumpsBetween(giver.systemId, l.systemId) > CONTRACTS.maxJumps.freight) return false;
     const e = markets.get(l.id)?.entries.get(commodity);
@@ -198,31 +228,32 @@ function freight(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
   const destEntry = markets.get(dest.id)!.entries.get(commodity)!;
   const good = COMMODITIES[commodity];
   const qty = Math.max(1, Math.min(Math.round(r.int(CONTRACTS.cargoUnits[0], CONTRACTS.cargoUnits[1]) / good.unitSize), Math.max(2, Math.floor(CONTRACTS.cargoValueCap.freight / good.basePrice))));
-  // The deposit is a little more than the cargo fetches at its destination, so selling it pays less than delivering.
-  const deposit = round5(qty * destEntry.mid * (1 - destEntry.spread / 2) * 1.1);
+  // The deposit is a little more than the cargo fetches at its destination (events included), so selling it pays less than delivering.
+  const deposit = round5(qty * destEntry.mid * (1 - destEntry.spread / 2) * 1.1 * Math.max(1, priceMultiplier(dest.id, commodity, clock)));
   const rw = CONTRACTS.reward.freight;
-  const reward = pay(r, routeFeeBetween(giver.systemId, dest.systemId), rw.base + rw.danger * (1 - security(dest.systemId)) + rw.cargoShare * qty * good.basePrice);
+  const reward = pay(r, routeFeeBetween(giver.systemId, dest.systemId), (rw.base + rw.danger * (1 - security(dest.systemId)) + rw.cargoShare * qty * good.basePrice) * premium(opts.event));
   const difficulty = difficultyFor(giver.systemId, dest.systemId);
   const name = good.name.toLowerCase();
+  const why = opts.event ? `${opts.event.headline}. ` : '';
   return {
     ...common(giver, id, difficulty),
-    title: `Haul ${qty} ${name} to ${dest.name}`,
-    briefing: `${giver.name} has ${qty} ${name} (${qty * good.unitSize} hold units) bound for ${place(dest)}. We load it on acceptance against a deposit of ${deposit} cr, returned with your pay on delivery.`,
+    title: opts.event ? `Surplus haul: ${qty} ${name} to ${dest.name}` : `Haul ${qty} ${name} to ${dest.name}`,
+    briefing: `${why}${giver.name} has ${qty} ${name} (${qty * good.unitSize} hold units) bound for ${place(dest)}. We load it on acceptance against a deposit of ${deposit} cr, returned with your pay on delivery.`,
     objectives: [{ kind: 'deliver', commodity, qty, locationId: dest.id, text: `Deliver ${qty} ${name} to ${place(dest)}` }],
     reward,
     difficultyNote: routeNote(giver.systemId, dest.systemId),
     destinationLocationId: dest.id,
-    contract: { kind: 'freight', cargo: { commodity, qty }, deposit },
+    contract: { kind: 'freight', cargo: { commodity, qty }, deposit, ...(opts.event ? { event: opts.event.id } : {}) },
   };
 }
 
-function supply(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
+function supply(giver: FictionalLocation, r: Rng, id: string, clock: number, opts: { commodity?: CommodityId; event?: WorldEvent } = {}): JobDef | null {
   const markets = marketTables();
   const here = markets.get(giver.id);
   if (!here) return null;
   const wanted = [...here.entries.values()].filter((e) => e.role === 'consume' && e.commodity !== 'weapons').map((e) => e.commodity);
-  if (!wanted.length) return null;
-  const commodity = r.pick(wanted);
+  if (!wanted.length || (opts.commodity && !wanted.includes(opts.commodity))) return null;
+  const commodity = opts.commodity ?? r.pick(wanted);
   // Where to buy it: the nearest station that makes it.
   const sources = openStations()
     .map((l) => ({ l, e: markets.get(l.id)?.entries.get(commodity), j: jumpsBetween(giver.systemId, l.systemId) }))
@@ -231,31 +262,36 @@ function supply(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
   const source = sources[0];
   if (!source) return null;
   const good = COMMODITIES[commodity];
-  const unit = Math.round(source.e!.mid * (1 + source.e!.spread / 2));
+  // What the goods cost at the source right now (an event there moves it).
+  const unit = Math.round(source.e!.mid * (1 + source.e!.spread / 2) * priceMultiplier(source.l.id, commodity, clock));
   const qty = Math.max(1, Math.min(Math.round(r.int(CONTRACTS.cargoUnits[0], Math.round(CONTRACTS.cargoUnits[1] * 0.8)) / good.unitSize), Math.max(2, Math.floor(CONTRACTS.cargoValueCap.supply / unit))));
   const rw = CONTRACTS.reward.supply;
+  const markup = opts.event ? rw.urgentMarkup : rw.goodsMarkup;
   // The goods are paid back in full; the markup varies.
-  const reward = pay(r, routeFeeBetween(giver.systemId, source.l.systemId), rw.base + (rw.goodsMarkup - 1) * qty * unit, qty * unit);
+  const reward = pay(r, routeFeeBetween(giver.systemId, source.l.systemId), (rw.base + (markup - 1) * qty * unit) * premium(opts.event), qty * unit);
   const difficulty = clampDifficulty(1 + (source.j >= 2 ? 1 : 0) + (security(source.l.systemId) < 0.35 ? 1 : 0));
   const name = good.name.toLowerCase();
+  const title = !opts.event ? `Supply run: ${qty} ${name}` : opts.event.kind === 'shortage' ? `Shortage run: ${qty} ${name}` : `Boom supplies: ${qty} ${name}`;
   return {
     ...common(giver, id, difficulty),
-    title: `Supply run: ${qty} ${name}`,
-    briefing: `${giver.name} is short of ${name}. Bring ${qty} (${qty * good.unitSize} hold units). ${place(source.l)} makes them, at about ${unit} cr each.`,
+    title,
+    briefing: `${opts.event ? `${opts.event.headline}. ` : ''}${giver.name} ${opts.event ? 'needs' : 'is short of'} ${name}. Bring ${qty} (${qty * good.unitSize} hold units). ${place(source.l)} makes them, at about ${unit} cr each.`,
     objectives: [{ kind: 'deliver', commodity, qty, locationId: giver.id, text: `Bring ${qty} ${name} to ${giver.name}` }],
     reward,
     difficultyNote: `Buy at ${source.l.name}: ${routeNote(giver.systemId, source.l.systemId).toLowerCase()}`,
     destinationLocationId: giver.id,
     briefingPrices: { locationId: source.l.id, prices: { [commodity]: { buy: unit, sell: null } } as Partial<Record<CommodityId, { buy: number; sell: null }>> },
-    contract: { kind: 'supply' },
+    contract: { kind: 'supply', ...(opts.event ? { event: opts.event.id } : {}) },
   };
 }
 
-function bounty(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
-  const targets = SYSTEMS.filter((s) => jumpsBetween(giver.systemId, s.id) <= CONTRACTS.maxJumps.bounty && trafficFor(s.id, 'high').plan.packs);
+function bounty(giver: FictionalLocation, r: Rng, id: string, opts: { event?: WorldEvent } = {}): JobDef | null {
+  const raid = opts.event;
+  const targets = raid ? [getSystem(raid.systemId)] : SYSTEMS.filter((s) => jumpsBetween(giver.systemId, s.id) <= CONTRACTS.maxJumps.bounty && trafficFor(s.id, 'high').plan.packs);
   if (!targets.length) return null;
   const system = r.pick(targets);
-  const packs = trafficFor(system.id, 'high').plan.packs!;
+  // A raid's packs are nastier than the system's usual ones.
+  const packs = raid?.level ? { level: raid.level } : trafficFor(system.id, 'high').plan.packs!;
   // The pack lurks by the raider den, or preys on the approach to one of the system's stations.
   const here = ALL_LOCATIONS.filter((l) => l.systemId === system.id && l.status === 'functional');
   const den = here.find((l) => l.dockable === false);
@@ -265,18 +301,18 @@ function bounty(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
   const level = packs.level;
   const count = level + 1;
   const rw = CONTRACTS.reward.bounty;
-  const reward = pay(r, routeFeeBetween(giver.systemId, system.id), rw.base + rw.perRaider * count * level);
+  const reward = pay(r, routeFeeBetween(giver.systemId, system.id), (rw.base + rw.perRaider * count * level) * premium(raid));
   const common_ = common(giver, id, level);
   return {
     ...common_,
     repReward: { ...common_.repReward, 'hollow-wake': -3 },
-    title: `Bounty: raiders near ${near.name}`,
-    briefing: `A Hollow Wake pack of ${count} has been preying on ships near ${near.name} in ${system.displayName}. Find them and destroy them all. The contract pays when the last one goes down.`,
+    title: raid ? `Raid response: ${system.displayName}` : `Bounty: raiders near ${near.name}`,
+    briefing: `${raid ? `${raid.headline}. ` : ''}A Hollow Wake pack of ${count} has been preying on ships near ${near.name} in ${system.displayName}. Find them and destroy them all. The contract pays when the last one goes down.`,
     objectives: [{ kind: 'bounty', systemId: system.id, locationId: near.id, count, level, text: `Destroy ${count} raiders near ${place(near)}` }],
     reward,
     difficultyNote: `Threat ${level} of 3; ${routeNote(giver.systemId, system.id).toLowerCase()}`,
     destinationLocationId: near.id,
-    contract: { kind: 'bounty' },
+    contract: { kind: 'bounty', ...(raid ? { event: raid.id } : {}) },
   };
 }
 

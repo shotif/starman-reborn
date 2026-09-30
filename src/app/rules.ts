@@ -1,3 +1,4 @@
+import { EVENTS } from '../content/events/rules.ts';
 import { getLocation, getSystem } from '../data/systems.ts';
 import { rechargeShield } from '../economy/equipment.ts';
 import { activeFeeCoverage, advanceJobs, type JobEvent } from '../economy/jobs.ts';
@@ -70,6 +71,8 @@ export function performJump(state: GameState, route: Route, fee: number): JobEve
     applyCredits(state, -fee, 'fee', `Jump fee ${getSystem(route.from).displayName} → ${getSystem(route.to).displayName}`);
   }
   for (const id of route.path) markVisited(state, id);
+  // Lane transit takes time: the world (prices, events, contract boards) moves on meanwhile.
+  state.clock += route.hops.length * EVENTS.jumpSeconds;
   state.location.systemId = route.to;
   state.location.dockedAt = null;
   state.location.flight = null;

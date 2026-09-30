@@ -5,6 +5,7 @@ import { jumpsFrom } from '../content/world/network.ts';
 import { ALL_LOCATIONS, getLocation, getSystem, WORLD } from '../data/systems.ts';
 import { trafficFor } from '../world/traffic/setup.ts';
 import { boardFor, CONTRACT_PREFIX, routeFeeBetween } from './contracts.ts';
+import { priceMultiplier, stationEventAt, systemEventAt } from './events.ts';
 import type { JobDef } from './jobs.ts';
 import { marketTables } from './markets.ts';
 
@@ -29,6 +30,7 @@ export function validateContracts(epochs = 40): Issue[] {
   const markets = marketTables();
   const givers = ALL_LOCATIONS.filter((l) => l.status === 'functional' && l.dockable !== false && l.services.includes('contracts'));
   const kinds = new Set<ContractKind>();
+  let eventWork = 0;
   for (const giver of givers) {
     let empty = 0;
     const jumps = jumpsFrom(WORLD.links, giver.systemId);
@@ -36,22 +38,27 @@ export function validateContracts(epochs = 40): Issue[] {
       const board = boardFor(giver.id, epoch);
       if (!board.length) empty++;
       const ids = new Set<string>();
+      let answering = 0;
       for (const c of board) {
         const subject = c.id;
         if (ids.has(c.id)) report('ids', subject, 'duplicate id on a board');
         ids.add(c.id);
         if (!c.id.startsWith(`${CONTRACT_PREFIX}${giver.id}.${epoch}.`)) report('ids', subject, 'id does not name its station and time slot');
-        checkContract(c, giver.systemId, jumps, markets, report);
+        checkContract(c, giver.systemId, jumps, markets, report, epoch * CONTRACTS.epochSeconds);
         if (c.contract) kinds.add(c.contract.kind);
+        if (c.contract?.event) answering++;
       }
+      if (answering > 1) report('events', giver.id, `${answering} contracts answer events in time slot ${epoch} (at most one)`);
+      eventWork += answering;
     }
     if (empty > epochs * 0.1) report('boards', giver.id, `empty board in ${empty} of ${epochs} time slots`);
   }
   for (const k of Object.keys(CONTRACTS.maxJumps) as ContractKind[]) if (!kinds.has(k)) report('coverage', k, 'no board ever posts this kind');
+  if (!eventWork) report('coverage', 'events', 'no board ever posts work answering a world event');
   return issues;
 }
 
-function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, number>, markets: ReturnType<typeof marketTables>, report: Report): void {
+function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, number>, markets: ReturnType<typeof marketTables>, report: Report, clock: number): void {
   const kind = c.contract?.kind;
   if (!kind) return report('kind', c.id, 'generated contract without a kind');
   const text = `${c.title} ${c.briefing} ${c.difficultyNote} ${c.objectives.map((o) => o.text).join(' ')}`;
@@ -81,7 +88,7 @@ function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, numbe
         if (markets.get(c.giverLocationId)?.entries.get(o.commodity)?.role !== 'produce') report('freight', c.id, `${c.giverLocationId} does not make ${o.commodity}`);
         const e = markets.get(dest.id)?.entries.get(o.commodity);
         if (!e || e.role === 'produce') report('freight', c.id, `${dest.id} does not want ${o.commodity}`);
-        const value = e ? o.qty * e.mid * (1 - e.spread / 2) : 0;
+        const value = e ? o.qty * e.mid * (1 - e.spread / 2) * Math.max(1, priceMultiplier(dest.id, o.commodity, clock)) : 0;
         const deposit = c.contract!.deposit ?? 0;
         if (deposit < value) report('freight', c.id, `deposit ${deposit} is less than the cargo fetches at its destination (${Math.round(value)})`);
         if (o.qty * COMMODITIES[o.commodity].unitSize > CONTRACTS.cargoUnits[1] + 3) report('freight', c.id, 'more cargo than a contract asks for');
@@ -101,7 +108,8 @@ function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, numbe
     }
     case 'bounty': {
       if (o.kind !== 'bounty') return report('objectives', c.id, `unexpected objective ${o.kind}`);
-      const packs = trafficFor(o.systemId, 'high').plan.packs;
+      // Raid work hunts the raid's packs; other bounties the system's usual ones.
+      const packs = c.contract?.event ? trafficFor(o.systemId, 'high', clock).plan.packs : trafficFor(o.systemId, 'high').plan.packs;
       if (!packs) report('bounty', c.id, `no raiders roam ${o.systemId}`);
       else if (o.level !== packs.level || o.count !== packs.level + 1) report('bounty', c.id, 'pack size or threat does not match the system');
       if (getLocation(o.locationId).systemId !== o.systemId) report('bounty', c.id, 'marked spot is in another system');
@@ -112,6 +120,18 @@ function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, numbe
       if (!getSystem(o.systemId).confirmedBodies.some((p) => p.id === o.bodyId)) report('survey', c.id, `${o.bodyId} is not a confirmed planet of ${o.systemId}`);
       break;
     }
+  }
+  // Work answering an event answers one that is under way where it says.
+  const eventId = c.contract?.event;
+  if (eventId) {
+    const station = stationEventAt(c.giverLocationId, clock);
+    const raid = o.kind === 'bounty' ? systemEventAt(o.systemId, clock) : null;
+    const good = o.kind === 'deliver' ? o.commodity : null;
+    const answers =
+      (kind === 'supply' && station?.id === eventId && (station.kind === 'shortage' || station.kind === 'boom') && !!good && station.goods.includes(good)) ||
+      (kind === 'freight' && station?.id === eventId && station.kind === 'glut' && !!good && station.goods.includes(good)) ||
+      (kind === 'bounty' && raid?.id === eventId && raid.kind === 'raid');
+    if (!answers) report('events', c.id, `does not answer the event ${eventId} under way`);
   }
   // Pay beats the trip there and back and the expected repairs (supply runs on top of the goods).
   const trip = 2 * Math.max(routeFeeBetween(from, target), routeFeeBetween(from, tripFrom));

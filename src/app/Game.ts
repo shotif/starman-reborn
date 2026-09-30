@@ -632,7 +632,7 @@ export class Game {
         onContractKill: (jobId) => this.onContractKill(jobId),
         onMessage: (text, tone) => toast(text, tone, 2600),
       },
-      traffic: { ...trafficFor(state.location.systemId, this.renderer.quality), contractPacks: contractPacksIn(state, state.location.systemId) },
+      traffic: { ...trafficFor(state.location.systemId, this.renderer.quality, state.clock), contractPacks: contractPacksIn(state, state.location.systemId) },
     });
     const { width, height } = this.renderer.size;
     this.flight.setViewport(width, height);

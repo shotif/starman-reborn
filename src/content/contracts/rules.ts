@@ -60,10 +60,16 @@ export const CONTRACTS = {
     perFee: 2.5,
     freight: { base: 150, danger: 220, cargoShare: 0.15 },
     parcel: { base: 150, danger: 200 },
-    supply: { base: 110, goodsMarkup: 1.35 },
+    supply: { base: 110, goodsMarkup: 1.35, urgentMarkup: 1.6 },
     bounty: { base: 200, perRaider: 150 },
     survey: { base: 180, danger: 160 },
   },
+  /**
+   * Work answering a world event (docs/PROCGEN.md §11): a supply run into a shortage or boom at the
+   * posting station, a haul out of its glut, or a bounty on a raid within reach. One per board at
+   * most; its varying pay is this much higher.
+   */
+  eventPremium: 1.3,
   /** Difficulty 3 contracts need Friendly standing with the station's owner. */
   gatedDifficulty: 3,
   gateStanding: 10,
