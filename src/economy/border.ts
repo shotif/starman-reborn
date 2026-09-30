@@ -127,10 +127,10 @@ export function frontsHere(systemId: SystemId, clock: number): FrontState[] {
 /** Stations on a front line that can fall: generated contracts never send a pilot to one. */
 export const EXPOSED: ReadonlySet<string> = new Set(FRONTS.flatMap((f) => (f.exposedId ? [f.exposedId] : [])));
 
-/** Held by the Hollow Wake: a lawful station on a front that has fallen. */
-export function occupied(locationId: string, clock: number): Front | null {
+/** Held by the Hollow Wake: a lawful station on a front that has fallen (by a save's log, or the one the game points at). */
+export function occupied(locationId: string, clock: number, log: Record<string, BorderLog> | null = activeBorderLog()): Front | null {
   if (!EXPOSED.has(locationId)) return null;
-  for (const f of FRONTS) if (f.exposedId === locationId && frontState(f, clock).phase === 'fallen') return f;
+  for (const f of FRONTS) if (f.exposedId === locationId && frontState(f, clock, log).phase === 'fallen') return f;
   return null;
 }
 

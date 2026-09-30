@@ -42,7 +42,7 @@ export function welcomeText(state: GameState, locationId: string): { text: strin
   // The law and the Wake greet you in their own way (docs/PROCGEN.md §12).
   if (loc.stationType === 'pirate-den') return { text: `${loc.name}: the Wake knows your ship. Keep your guns cold in here and your mouth shut out there.`, improved: false };
   // A station the Wake took on a border front (docs/PROCGEN.md §20).
-  if (occupied(locationId, state.clock)) {
+  if (occupied(locationId, state.clock, state.world.border)) {
     return wakeFriendly(state)
       ? { text: `${loc.name}: the Hollow Wake holds this station now. Friends of the Wake come and go as they like.`, improved: false }
       : { text: `${loc.name}, held by the Hollow Wake: an emergency berth and repairs for a lawful pilot, and nothing else.`, improved: false };

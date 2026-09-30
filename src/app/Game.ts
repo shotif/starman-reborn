@@ -999,7 +999,7 @@ export class Game {
     if (dockAccess(state, locationId) === 'emergency') {
       const faction = getLocation(locationId).factionId!;
       toast(
-        occupied(locationId, state.clock)
+        occupied(locationId, state.clock, state.world.border)
           ? `The Hollow Wake holds ${getLocation(locationId).name}: emergency docking and repairs only.`
           : `Emergency docking only: the ${FACTIONS[faction].name} will repair you, and take your fines at the customs desk (News).`,
         'bad',

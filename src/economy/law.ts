@@ -176,7 +176,7 @@ export function dockAccess(state: GameState, locationId: string): 'full' | 'emer
   if (loc.stationType === 'pirate-den') return wakeFriendly(state) ? 'full' : 'refused';
   if (loc.dockable === false) return 'refused';
   // A station the Hollow Wake holds on a broken front (docs/PROCGEN.md §20): its friends dock, others only in an emergency.
-  if (occupied(locationId, state.clock)) return wakeFriendly(state) ? 'full' : 'emergency';
+  if (occupied(locationId, state.clock, state.world.border)) return wakeFriendly(state) ? 'full' : 'emergency';
   return huntedBy(state, loc.factionId, loc.systemId) ? 'emergency' : 'full';
 }
 
