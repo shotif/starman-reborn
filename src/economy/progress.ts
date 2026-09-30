@@ -2,7 +2,7 @@ import { applyCredits, type GameState } from '../app/state.ts';
 import { CODEX_GRANT, MILESTONES, RATINGS, SURVEY_SALE, type MilestoneId, type RatingKind } from '../content/progress/rules.ts';
 import { ARC_JOBS } from '../content/story/arcs.ts';
 import type { ArcId } from '../content/story/types.ts';
-import { getComponent, getLocation, getSystem, SOLAR_BODIES, SYSTEMS } from '../data/systems.ts';
+import { getComponent, getLocation, getSystem, isFrontier, SOLAR_BODIES, SYSTEMS } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { standingTier } from './factions.ts';
 import { wakeFriendly } from './law.ts';
@@ -129,6 +129,10 @@ function earned(state: GameState, id: MilestoneId): boolean {
       return state.visitedSystems.length >= 10;
     case 'systems-all':
       return SYSTEMS.every((s) => state.visitedSystems.includes(s.id));
+    case 'frontier-first':
+      return state.visitedSystems.some(isFrontier);
+    case 'frontier-25':
+      return state.visitedSystems.filter(isFrontier).length >= 25;
     case 'planets-10':
       return codexEntries().filter((e) => e.kind === 'planet' && state.codex.includes(e.id)).length >= 10;
     case 'codex-half':

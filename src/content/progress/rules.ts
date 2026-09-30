@@ -48,8 +48,8 @@ export const ACE_COMBAT_RANK = 3;
 
 /** Research stations buy each completed system survey once: so much per catalogued body, at least `min`. */
 export const SURVEY_SALE = { perBody: 120, min: 240 };
-/** The Frontier Cooperative's grant for cataloguing the whole sky. */
-export const CODEX_GRANT = 10_000;
+/** The Frontier Cooperative's grant for cataloguing the whole sky (it grew with the sky snapshot). */
+export const CODEX_GRANT = 25_000;
 
 export type MilestoneId =
   | 'first-contract'
@@ -60,6 +60,8 @@ export type MilestoneId =
   | 'ship-mk3'
   | 'systems-10'
   | 'systems-all'
+  | 'frontier-first'
+  | 'frontier-25'
   | 'planets-10'
   | 'codex-half'
   | 'codex-all'
@@ -82,6 +84,8 @@ export const MILESTONES: readonly { id: MilestoneId; title: string }[] = [
   { id: 'ship-mk3', title: 'Flying a Mk III ship' },
   { id: 'systems-10', title: 'Ten systems visited' },
   { id: 'systems-all', title: 'Every system in the neighbourhood visited' },
+  { id: 'frontier-first', title: 'Into the frontier' },
+  { id: 'frontier-25', title: 'Twenty-five frontier systems visited' },
   { id: 'planets-10', title: 'Ten confirmed planets scanned' },
   { id: 'codex-half', title: 'Half the sky catalogued' },
   { id: 'codex-all', title: 'The whole sky catalogued' },
