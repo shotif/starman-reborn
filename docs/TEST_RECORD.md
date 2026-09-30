@@ -15,7 +15,7 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | Production build | `npm run build` | Pass |
 | Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 17 passed (3 touch-only tests skipped) |
 | Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 19 passed (1 desktop-only test skipped) |
-| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 72 screenshots, no audit findings |
+| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 81 screenshots, no audit findings |
 
 ### Unit tests (Vitest)
 
@@ -288,8 +288,8 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 - `mining.spec.ts`: a mining laser fitted, Sol's main belt scanned for its source, a rock mined with
   the Mine action (B on the keyboard, the amber action button on touch), ore in the hold, and the
   beam stopped the same way.
-- `screenshots.spec.ts`: title, job board, buy dialog, station deck, shipyard, outfitter, flight
-  HUD and star map at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
+- `screenshots.spec.ts`: title, job board, buy dialog, station deck, shipyard, outfitter, fleet,
+  flight HUD and star map at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
   zoom). Saved in `docs/screenshots/` once any smooth scrolling has come to rest. Each is audited
   for page scroll overflow, clipped controls (controls inside a scrolling panel count only if the
