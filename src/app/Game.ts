@@ -1,3 +1,5 @@
+import { BORDER } from '../content/border/rules.ts';
+import { occupied, recordDeed } from '../economy/border.ts';
 import { gameJulianDate } from '../data/solar.ts';
 import type { Lingering } from './state.ts';
 import { TRAFFIC } from '../world/traffic/plan.ts';
@@ -38,7 +40,7 @@ import {
   wrecksIn,
   type JobEvent,
 } from '../economy/jobs.ts';
-import { briefingFor, choiceHere, denDown, isStoryJob, knockOutDen, makeChoice, markSeen, pendingBeats, speakerName } from '../economy/story.ts';
+import { briefingFor, choiceHere, denDown, isStoryJob, knockOutDen, makeChoice, markSeen, optionLock, pendingBeats, speakerName } from '../economy/story.ts';
 import { DENS } from '../content/dens/rules.ts';
 import { showChoice, showDialogue } from '../ui/story.ts';
 import { denBounty, payCrew, stashGear, wingmanLost } from '../economy/combat.ts';
@@ -766,7 +768,7 @@ export class Game {
     if (!state || !here || this.mode !== 'docked') return;
     const c = choiceHere(state, here);
     if (!c) return;
-    const pick = await showChoice(c.job, c.objective, briefingFor(state, c.job));
+    const pick = await showChoice(c.job, c.objective, briefingFor(state, c.job), (x) => optionLock(state, x));
     if (!pick) return;
     const r = makeChoice(state, c.job.id, pick);
     if (!r.ok) {
@@ -877,6 +879,8 @@ export class Game {
           this.sfx('alert');
           toast(kind === 'attack' ? `You opened fire on the ${name}. ${out.text}` : `The ${name} is destroyed. ${out.text}`, 'bad', 5000);
           if (kind === 'destroy' && role === 'trader') this.announceJobEvents(countPiracy(state, state.location.systemId, faction));
+          // Lawful ships downed on a front help the Wake (docs/PROCGEN.md §20).
+          if (kind === 'destroy' && isLawful(faction)) recordDeed(state, state.location.systemId, role === 'trader' ? BORDER.deeds.piracy : BORDER.deeds.patrolKill);
           this.persist();
         },
         onScan: (result, faction) => {
@@ -994,7 +998,13 @@ export class Game {
     this.persist();
     if (dockAccess(state, locationId) === 'emergency') {
       const faction = getLocation(locationId).factionId!;
-      toast(`Emergency docking only: the ${FACTIONS[faction].name} will repair you, and take your fines at the customs desk (News).`, 'bad', 6000);
+      toast(
+        occupied(locationId, state.clock)
+          ? `The Hollow Wake holds ${getLocation(locationId).name}: emergency docking and repairs only.`
+          : `Emergency docking only: the ${FACTIONS[faction].name} will repair you, and take your fines at the customs desk (News).`,
+        'bad',
+        6000,
+      );
     }
     if (out.clearanceGranted) {
       this.sfx('ui-confirm');
@@ -1059,6 +1069,8 @@ export class Game {
     // Enough raiders down breaks a raid on the system (docs/PROCGEN.md §17).
     const broken = raidKill(state, state.location.systemId);
     if (broken) toast(broken.text, 'good', 6000);
+    // Raiders downed on a front push the Wake back (docs/PROCGEN.md §20).
+    recordDeed(state, state.location.systemId, BORDER.deeds.raiderKill);
     this.persist();
   }
 

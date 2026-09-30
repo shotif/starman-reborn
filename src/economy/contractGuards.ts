@@ -7,6 +7,7 @@ import { trafficFor } from '../world/traffic/setup.ts';
 import { shipModel } from '../content/catalog.ts';
 import { RECOVERY_ITEMS } from '../content/contracts/rules.ts';
 import { FLEETS } from '../world/traffic/plan.ts';
+import { occupied } from './border.ts';
 import { boardFor, CONTRACT_PREFIX, expectedTrip, followUpFor, routeFeeBetween } from './contracts.ts';
 import { LAW } from '../content/law/rules.ts';
 import { baseThreat, priceMultiplier, stationEventAt, systemEventAt } from './events.ts';
@@ -46,7 +47,8 @@ export function validateContracts(epochs = 40): Issue[] {
     const jumps = jumpsFrom(WORLD.links, giver.systemId);
     for (let epoch = 0; epoch < epochs; epoch++) {
       const board = boardFor(giver.id, epoch);
-      if (!board.length) empty++;
+      // A station the Wake holds on a border front posts nothing, by design (docs/PROCGEN.md §20).
+      if (!board.length && !occupied(giver.id, epoch * CONTRACTS.epochSeconds)) empty++;
       const ids = new Set<string>();
       let answering = 0;
       for (const c of board) {

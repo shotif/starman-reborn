@@ -52,8 +52,11 @@ export function optionEffects(option: StoryOption): string {
   return parts.join(' · ');
 }
 
-/** A story choice: the question and each way it can go. Resolves with the option id, or null to decide later. */
-export async function showChoice(job: JobDef, o: Extract<Objective, { kind: 'choice' }>, briefing: string): Promise<string | null> {
+/**
+ * A story choice: the question and each way it can go (a way this pilot cannot take is shown, with
+ * why). Resolves with the option id, or null to decide later.
+ */
+export async function showChoice(job: JobDef, o: Extract<Objective, { kind: 'choice' }>, briefing: string, lockOf: (option: StoryOption) => string | null = () => null): Promise<string | null> {
   const speaker = job.story ? CHARACTERS[job.story.speaker] : null;
   const value = await showModal({
     title: job.title,
@@ -67,14 +70,15 @@ export async function showChoice(job: JobDef, o: Extract<Objective, { kind: 'cho
         h(
           'div',
           { class: 'choice-options', role: 'group', 'aria-label': o.prompt },
-          o.options.map((x) =>
-            h(
+          o.options.map((x) => {
+            const lock = lockOf(x);
+            return h(
               'button',
-              { type: 'button', class: `choice-option${x.ends ? ' ends' : ''}`, 'data-testid': `choice-${x.id}`, onClick: () => close(x.id) },
+              { type: 'button', class: `choice-option${x.ends ? ' ends' : ''}`, 'data-testid': `choice-${x.id}`, disabled: !!lock, onClick: () => close(x.id) },
               h('span', { class: 'choice-label' }, x.label),
-              h('span', { class: 'choice-effects' }, optionEffects(x)),
-            ),
-          ),
+              h('span', { class: 'choice-effects' }, lock ?? optionEffects(x)),
+            );
+          }),
         ),
       ),
     actions: [{ label: 'Decide later', value: '', testId: 'choice-later' }],
@@ -116,7 +120,7 @@ export function storyRecord(state: GameState): HTMLElement {
         return h(
           'li',
           { class: `story-arc ${s.phase}`, 'data-testid': `arc-${s.arc.id}` },
-          h('p', null, icon(s.phase === 'complete' ? 'objective' : 'info'), ' ', h('strong', null, s.arc.title), h('span', { class: 'muted small' }, ` · ${FACTIONS[s.arc.factionId].shortName}`)),
+          h('p', null, icon(s.phase === 'complete' ? 'objective' : 'info'), ' ', h('strong', null, s.arc.title), h('span', { class: 'muted small' }, ` · ${s.arc.factionId ? FACTIONS[s.arc.factionId].shortName : 'Independent'}`)),
           h('p', { class: 'small' }, phaseText(s)),
           s.choices.length ? h('ul', { class: 'plain small story-choices' }, s.choices.map((c) => h('li', null, `${c.prompt} `, h('strong', null, c.option.label), '.'))) : null,
           last && last.who !== 'comm' ? h('p', { class: 'muted small' }, `${CHARACTERS[last.who].name}: “${last.text}”`) : null,

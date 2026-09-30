@@ -171,7 +171,7 @@ function migrateV9(old: Omit<GameState, 'version' | 'world' | 'law' | 'fleet'> &
     ...old,
     version: SAVE_VERSION,
     law: { fines: { ...old.law.fines }, pending: [], lastCrimeAt },
-    world: { relief: {}, raidKills: {}, ended: {}, lingering: {} },
+    world: { relief: {}, raidKills: {}, ended: {}, lingering: {}, border: {} },
     fleet: { ships: [], storage: {}, stakes: [], reports: [] },
   };
 }
@@ -314,7 +314,11 @@ export function assertValidState(s: GameState): void {
   }
   assertValidFleet(s.fleet, fail);
   const w = s.world;
-  if (!isRecord(w) || !isRecord(w.relief) || !isRecord(w.raidKills) || !isRecord(w.ended) || !isRecord(w.lingering)) fail('world');
+  if (!isRecord(w) || !isRecord(w.relief) || !isRecord(w.raidKills) || !isRecord(w.ended) || !isRecord(w.lingering) || !isRecord(w.border)) fail('world');
+  for (const b of Object.values(w.border)) {
+    if (!isRecord(b) || !Array.isArray(b.deeds) || !b.deeds.every((d) => Array.isArray(d) && d.length === 2 && d.every(Number.isFinite))) fail('border');
+    if (b.ending !== undefined && !['law', 'wake', 'truce'].includes(b.ending)) fail('border');
+  }
   for (const [sys, l] of Object.entries(w.lingering)) {
     if (!SYSTEM_IDS.includes(sys) || !isRecord(l) || !Number.isFinite(l.at) || !Array.isArray(l.packs) || !Array.isArray(l.pods)) fail('world');
     const v3 = (p: unknown) => Array.isArray(p) && p.length === 3 && p.every(Number.isFinite);
@@ -335,7 +339,7 @@ export function assertValidState(s: GameState): void {
     if (!isRecord(w) || typeof w.id !== 'string' || typeof w.name !== 'string' || !findShip(w.model) || !Number.isFinite(w.fee) || w.fee < 0 || (w.skill !== 'steady' && w.skill !== 'sharp')) fail('crew');
   }
   if (!Array.isArray(s.priceWatch) || !s.priceWatch.every((w) => isRecord(w) && LOCATION_IDS.has(w.locationId) && COMMODITY_IDS.includes(w.commodity))) fail('price watch');
-  const kinds = ['price', 'event', 'den', 'ace', 'wreck', 'story'];
+  const kinds = ['price', 'event', 'den', 'ace', 'wreck', 'story', 'front'];
   if (!Array.isArray(s.rumours) || !s.rumours.every((r) => isRecord(r) && typeof r.key === 'string' && typeof r.text === 'string' && kinds.includes(r.kind) && Number.isFinite(r.at))) fail('rumours');
   if (!isRecord(s.knownMarkets)) fail('known markets');
   for (const [id, m] of Object.entries(s.knownMarkets)) {

@@ -5,13 +5,13 @@ import { welcomeText } from '../../economy/dockText.ts';
 import { FACTIONS, standingTier, TIER_LABEL } from '../../economy/factions.ts';
 import { canDeliver, describeObjective, jobsAt, type JobDef, type JobOffer } from '../../economy/jobs.ts';
 import { ARCS, CHARACTERS } from '../../content/story/arcs.ts';
-import { arcMissions, briefingFor, choiceHere, objectiveSystem } from '../../economy/story.ts';
+import { arcSteps, briefingFor, choiceHere, objectiveSystem } from '../../economy/story.ts';
 import { jumpsFrom } from '../../content/world/network.ts';
 import { button, dataBadge } from '../components.ts';
 import { formatCredits, h, signed } from '../dom.ts';
 import { glyph, type GlyphName } from '../glyphs.ts';
 import { icon } from '../icons.ts';
-import { denNews, newsList } from '../news.ts';
+import { borderNewsList, denNews, newsList } from '../news.ts';
 import { fineOwed, isLawful, pardonCost, payFines } from '../../economy/law.ts';
 import { buysSurveys, sellSurvey, surveysForSale, surveyValue } from '../../economy/progress.ts';
 import { toast } from '../components.ts';
@@ -53,6 +53,7 @@ const CATEGORY: Record<ContractKind, BoardFilter> = {
   escort: 'combat',
   den: 'combat',
   piracy: 'combat',
+  war: 'combat',
   survey: 'other',
   recovery: 'other',
 };
@@ -161,6 +162,7 @@ const KIND_GLYPH: Record<ContractKind, GlyphName> = {
   smuggle: 'cargopod',
   piracy: 'weapons',
   den: 'missile',
+  war: 'gun',
 };
 const KIND_LABEL: Record<ContractKind, string> = {
   freight: 'Freight',
@@ -174,6 +176,7 @@ const KIND_LABEL: Record<ContractKind, string> = {
   smuggle: 'Smuggling',
   piracy: 'Piracy',
   den: 'Den assault',
+  war: 'Border war',
 };
 
 /** Where a job sends you, for the card's subtitle. */
@@ -218,7 +221,7 @@ function jobCard(ctx: StationContext, o: JobOffer, expanded: boolean, onSelect: 
   const urgent = job.contract?.urgent;
   const chain = job.contract?.chain;
   const tags = [
-    story ? h('span', { class: 'job-tag story' }, `${ARCS[story.arc].title} · ${story.step}/${arcMissions(story.arc).length}`) : null,
+    story ? h('span', { class: 'job-tag story' }, `${ARCS[story.arc].title} · ${story.step}/${arcSteps(story.arc)}`) : null,
     chain ? h('span', { class: 'job-tag chain' }, `Follow-up ${chain.step}/${CONTRACTS.chain.maxSteps}`) : null,
     urgent ? h('span', { class: 'job-tag urgent' }, `Urgent · ${urgent.seconds / 60} min`) : null,
     job.contract?.event ? h('span', { class: 'job-tag event' }, 'In the news') : null,
@@ -298,6 +301,7 @@ export function newsContent(ctx: StationContext): HTMLElement {
     customsDesk(ctx),
     surveyOffice(ctx),
     h('div', { class: 'list-head' }, h('span', null, 'Local news'), h('span', null, 'within two jumps')),
+    borderNewsList(loc.systemId, state.clock),
     denNews(state, loc.systemId),
     newsList(loc.systemId, state.clock),
   );

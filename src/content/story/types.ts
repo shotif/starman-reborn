@@ -2,11 +2,12 @@ import type { FactionId } from '../../data/types.ts';
 import type { CommodityId } from '../economy/goods.ts';
 
 /**
- * Story arcs (docs/PROCGEN.md §14): three hand-written arcs, one per faction, built from contract
- * objectives plus scripted beats. Everything here is fiction.
+ * Story arcs (docs/PROCGEN.md §14): three hand-written arcs, one per faction, and a fourth on the
+ * border where they meet (§20), built from contract objectives plus scripted beats. Everything
+ * here is fiction.
  */
 
-export type ArcId = 'sta' | 'frontier' | 'wake';
+export type ArcId = 'sta' | 'frontier' | 'wake' | 'border';
 
 export type CharacterId = 'castell' | 'kettering' | 'quist' | 'brandt' | 'ansari' | 'salt';
 
@@ -38,6 +39,8 @@ export interface StoryOption {
   pardon?: boolean;
   /** The arc ends here: later missions never come. */
   ends?: boolean;
+  /** Offered only to a pilot with this standing (another option is always open). */
+  requires?: { minRep: { faction: FactionId; value: number } };
 }
 
 /** Story data carried by a mission (a JobDef with `story`). */
@@ -58,12 +61,17 @@ export interface StoryMeta {
   cargo?: { commodity: CommodityId; qty: number };
   /** Words that follow an earlier choice: the briefing and debrief for each of its options. */
   variant?: { choiceId: string; briefing: Readonly<Record<string, string>>; debrief: Readonly<Record<string, readonly Line[]>> };
+  /** Words that follow choices made in other arcs, said after the briefing for each one made. */
+  echoes?: readonly { choiceId: string; said: Readonly<Record<string, string>> }[];
+  /** Done, the mission settles a border front for good (economy/border.ts). */
+  settles?: { front: string; ending: 'law' | 'wake' | 'truce' };
 }
 
 export interface Arc {
   id: ArcId;
   title: string;
-  factionId: FactionId;
+  /** Whose arc it is (null: nobody's; its giver is independent). */
+  factionId: FactionId | null;
   /** Who starts it. */
   giver: CharacterId;
   summary: string;

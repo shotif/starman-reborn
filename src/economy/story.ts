@@ -4,7 +4,7 @@ import { ARC_JOBS, ARC_ORDER, ARCS, CHARACTERS } from '../content/story/arcs.ts'
 import type { Arc, ArcId, Line, StoryOption } from '../content/story/types.ts';
 import { getLocation } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
-import { adjustReputation } from './factions.ts';
+import { adjustReputation, FACTIONS, standingTier, TIER_LABEL } from './factions.ts';
 import { advanceJobs, currentObjective, jobLockReason, storyVisible, type JobDef, type JobEvent, type Objective } from './jobs.ts';
 import { LAWFUL } from './law.ts';
 
@@ -15,6 +15,11 @@ import { LAWFUL } from './law.ts';
 
 export function arcMissions(arcId: ArcId): JobDef[] {
   return ARC_JOBS.filter((j) => j.story!.arc === arcId).sort((a, b) => a.story!.step - b.story!.step);
+}
+
+/** Steps in an arc (an arc that branches after a choice has more missions than steps). */
+export function arcSteps(arcId: ArcId): number {
+  return Math.max(...arcMissions(arcId).map((m) => m.story!.step));
 }
 
 export function isStoryJob(jobId: string): boolean {
@@ -40,7 +45,7 @@ export interface ArcStatus {
 
 export function arcStatus(state: GameState, arcId: ArcId): ArcStatus {
   const missions = arcMissions(arcId);
-  const of = Math.max(...missions.map((m) => m.story!.step));
+  const of = arcSteps(arcId);
   const choices: ArcStatus['choices'] = [];
   let endedBy: StoryOption | null = null;
   for (const m of missions) {
@@ -70,11 +75,26 @@ export function arcStatuses(state: GameState): ArcStatus[] {
   return ARC_ORDER.map((id) => arcStatus(state, id));
 }
 
-/** The briefing, in the words that follow an earlier choice when there are such words. */
+/**
+ * The briefing, in the words that follow an earlier choice when there are such words, then what the
+ * speaker has to say about the choices made in other arcs.
+ */
 export function briefingFor(state: GameState, job: JobDef): string {
   const v = job.story?.variant;
   const pick = v ? state.story.choices[v.choiceId] : undefined;
-  return (pick && v?.briefing[pick]) || job.briefing;
+  const echoes = (job.story?.echoes ?? []).flatMap((e) => {
+    const made = state.story.choices[e.choiceId];
+    const said = made ? e.said[made] : undefined;
+    return said ? [said] : [];
+  });
+  return [(pick && v?.briefing[pick]) || job.briefing, ...echoes].join(' ');
+}
+
+/** Why a story option is not open to this pilot (the standing it asks for), or null. */
+export function optionLock(state: GameState, option: StoryOption): string | null {
+  const need = option.requires?.minRep;
+  if (!need || (state.reputation[need.faction] ?? 0) >= need.value) return null;
+  return `Needs ${TIER_LABEL[standingTier(need.value)]} standing with the ${FACTIONS[need.faction].name}`;
 }
 
 /** What is said when the mission is complete. */
@@ -98,6 +118,8 @@ export function makeChoice(state: GameState, jobId: string, optionId: string): {
   if (state.location.dockedAt !== o.locationId) return { ok: false, message: `Dock at ${getLocation(o.locationId).name} to decide.`, events: [] };
   const option = o.options.find((x) => x.id === optionId);
   if (!option) return { ok: false, message: 'Unknown choice.', events: [] };
+  const lock = optionLock(state, option);
+  if (lock) return { ok: false, message: lock, events: [] };
   state.story.choices[o.choiceId] = option.id;
   if (option.pardon) {
     // A deal with the law: every fine cleared and standing lifted to Wary.

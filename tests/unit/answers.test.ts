@@ -134,7 +134,7 @@ describe('saves', () => {
     const { world: _w, law: _l, ...rest } = createNewGame(6);
     const s = migrateSave({ ...structuredClone(rest), law: { fines: { sta: 300 } }, version: 9 });
     expect(s.law).toEqual({ fines: { sta: 300 }, pending: [], lastCrimeAt: { sta: s.clock } });
-    expect(s.world).toEqual({ relief: {}, raidKills: {}, ended: {}, lingering: {} });
+    expect(s.world).toEqual({ relief: {}, raidKills: {}, ended: {}, lingering: {}, border: {} });
     expect(() => migrateSave({ ...structuredClone(s), world: { ...s.world, lingering: { nowhere: { at: 0, packs: [], pods: [] } } } })).toThrow();
     expect(() => migrateSave({ ...structuredClone(s), law: { ...s.law, pending: [{ faction: 'sta', amount: 10, systemId: 'sol', at: 'yesterday' }] } })).toThrow();
   });

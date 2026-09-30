@@ -93,6 +93,8 @@ export const TELL = {
   ace: ['There is an ace working {system}. {giver} posts {reward} cr for them.', 'An ace has been hitting haulers in {system}. {giver} wants them gone: {reward} cr.'],
   wreck: ['A wreck near {site} still holds its {item}. {giver} pays for it.', 'Nobody has salvaged the wreck by {site} yet. {giver} wants the {item} back.'],
   story: ['Someone at {station} is asking for a pilot who can keep quiet.', 'If you want work that matters, go and see {name} at {station}.'],
+  front: ['Out on {line}, {what}.', 'A patrol pilot told me: on {line}, {what}.', 'Everybody on {line} says the same: {what}.'],
+  frontNext: ['Give it a few hours and {next}.', 'The way it is going, soon {next}.'],
 } as const;
 
 /** Fills a template's {placeholders}. */

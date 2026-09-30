@@ -13,6 +13,7 @@ import { TERRITORY } from '../../src/content/world/rules.ts';
 import { ALL_LOCATIONS, SYSTEMS, WORLD } from '../../src/data/systems.ts';
 import type { SystemId } from '../../src/data/types.ts';
 import { sceneDefFor } from '../../src/world/systems/index.ts';
+import { frontsAt, frontsHere } from '../../src/economy/border.ts';
 
 /** Which music, ambience and radio play where: the pure mood rules, and the soundscape on the real world. */
 
@@ -126,10 +127,11 @@ describe('mood rules', () => {
 
 describe('soundscape of the world', () => {
   const location = (systemId: SystemId, type: string): string => ALL_LOCATIONS.find((l) => l.systemId === systemId && l.stationType === type)!.id;
+  // A den away from the border war (a front brings patrols into a den's system when the law pushes).
   const denSystem = SYSTEMS.map((s) => s.id).find((id) => {
     const def = sceneDefFor(id);
     const den = def.stations.find((s) => s.hostile);
-    return den && den.position.distanceTo(def.arrival.position) > MOOD_RULES.denLeave * 1.5;
+    return den && den.position.distanceTo(def.arrival.position) > MOOD_RULES.denLeave * 1.5 && frontsAt(id).length === 0;
   })!;
 
   it('knows who keeps the peace, where the dens are and how busy the radio is', () => {
@@ -140,10 +142,11 @@ describe('soundscape of the world', () => {
       const p = WORLD.profiles.get(sys.id)!;
       expect(s.lawless).toBe(!p.owner || p.security < TERRITORY.lawlessBelow);
       expect(s.radio >= 0 && s.radio <= 1).toBe(true);
-      // Dens only in lawless space, where the lanes are quiet.
+      // Dens only in lawless space, where the lanes are quiet (unless the law is pushing into it on a border front).
       if (s.dens.length > 0) {
         expect(s.lawless).toBe(true);
-        expect(s.radio).toBeLessThan(RADIO.threshold);
+        const patrolled = frontsHere(sys.id, 0).some((f) => f.front.wakeSystem === sys.id && (f.phase === 'pushed-back' || f.phase === 'skirmish'));
+        if (!patrolled) expect(s.radio).toBeLessThan(RADIO.threshold);
       }
     }
     expect(denSystem).toBeDefined();

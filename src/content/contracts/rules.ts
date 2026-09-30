@@ -6,7 +6,7 @@ import type { StationType } from '../world/types.ts';
  * function of these rules, the world, the market tables and the board's time slot.
  */
 
-export type ContractKind = 'freight' | 'parcel' | 'supply' | 'bounty' | 'survey' | 'escort' | 'ace' | 'recovery' | 'smuggle' | 'piracy' | 'den';
+export type ContractKind = 'freight' | 'parcel' | 'supply' | 'bounty' | 'survey' | 'escort' | 'ace' | 'recovery' | 'smuggle' | 'piracy' | 'den' | 'war';
 
 /** Relative weights of contract kinds on a station's board. */
 export type KindWeights = Partial<Record<ContractKind, number>>;
@@ -31,6 +31,13 @@ export const FRONTIER_SURVEY_WEIGHT = 2;
 /** Raider dens post work for pilots the Hollow Wake trusts (docs/PROCGEN.md §12). */
 export const DEN_BOARD_KINDS: KindWeights = { smuggle: 3, piracy: 2, parcel: 1 };
 
+/**
+ * War work (docs/PROCGEN.md §20) joins a board only while a border front within reach is fighting,
+ * with this weight by the kind of station: the law's military and customs posts most, and the dens.
+ * Every other board is left exactly as it was.
+ */
+export const WAR_BOARD_WEIGHT: Partial<Record<StationType, number>> = { 'military-base': 3, 'customs-depot': 2, 'trade-port': 1, relay: 1, 'pirate-den': 2 };
+
 /** The hand-made stations post generated contracts too, once the opening delivery is done. */
 export const CURATED_BOARD_KINDS: Record<string, KindWeights> = {
   'earth-port': BOARD_KINDS['trade-port'],
@@ -49,7 +56,7 @@ export const CONTRACTS = {
   /** At most this many generated contracts in progress at once. */
   maxActive: 5,
   /** How far contracts send you, in jumps (escorts stay in the posting station's system). */
-  maxJumps: { freight: 3, parcel: 4, supply: 3, bounty: 2, survey: 3, escort: 0, ace: 3, recovery: 3, smuggle: 3, piracy: 2, den: 3 } satisfies Record<ContractKind, number>,
+  maxJumps: { freight: 3, parcel: 4, supply: 3, bounty: 2, survey: 3, escort: 0, ace: 3, recovery: 3, smuggle: 3, piracy: 2, den: 3, war: 2 } satisfies Record<ContractKind, number>,
   /** Hold units a freight or supply contract asks for (before the good's unit size). */
   cargoUnits: [8, 30] as const,
   /** Most the cargo may be worth at base prices (keeps deposits and purchases within a young pilot's reach). */
@@ -77,9 +84,14 @@ export const CONTRACTS = {
     piracy: { base: 350, perShip: 220 },
     /** Knocking out a raider den (docs/PROCGEN.md §15), with a wing of the poster's. */
     den: { base: 2_400 },
+    /**
+     * War work on a border front (docs/PROCGEN.md §20): the law pays per raider of the pack it wants
+     * broken, the Wake per hauler of the front's faction; a fallen station pays more to retake.
+     */
+    war: { base: 450, perRaider: 140, perShip: 240, fallen: 1.25 },
   },
   /** Standing with the Hollow Wake for outlaw work (smuggling, piracy); the law's standing is not touched unless you are caught. */
-  outlawWake: { smuggle: 6, piracy: 10 },
+  outlawWake: { smuggle: 6, piracy: 10, war: 12 },
   /**
    * Work answering a world event (docs/PROCGEN.md §11): a supply run into a shortage or boom at the
    * posting station, a haul out of its glut, or a bounty on a raid within reach. One per board at

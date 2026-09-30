@@ -1,6 +1,7 @@
 import type { EventKind } from '../content/events/rules.ts';
 import { getLocation, getSystem } from '../data/systems.ts';
 import type { GameState } from '../app/state.ts';
+import { borderNews, type FrontPhase } from '../economy/border.ts';
 import { densDownNear } from '../economy/dens.ts';
 import type { SystemId } from '../data/types.ts';
 import { eventEnd, minutes, newsAt, type NewsItem, type WorldEvent } from '../economy/events.ts';
@@ -59,6 +60,33 @@ export function denNews(state: GameState, systemId: SystemId): HTMLElement | nul
         ),
       );
     }),
+  );
+}
+
+const PHASE_GLYPH: Record<FrontPhase, GlyphName> = { 'pushed-back': 'shieldgen', skirmish: 'gun', blockade: 'gun', fallen: 'gun', truce: 'shieldgen' };
+const PHASE_LABEL: Record<FrontPhase, string> = { 'pushed-back': 'Border: the law advances', skirmish: 'Border: skirmishes', blockade: 'Border: blockade', fallen: 'Border: a station fallen', truce: 'Border: truce' };
+
+/** The border war within reach (docs/PROCGEN.md §20): each front as it stands. */
+export function borderNewsList(systemId: SystemId, clock: number): HTMLElement | null {
+  const news = borderNews(systemId, clock);
+  if (!news.length) return null;
+  return h(
+    'ul',
+    { class: 'list news-list', 'data-testid': 'border-news' },
+    news.map((n) =>
+      h(
+        'li',
+        { class: `news-item kind-border phase-${n.state.phase}`, 'data-testid': `border-${n.state.front.id}` },
+        glyph(PHASE_GLYPH[n.state.phase]),
+        h(
+          'span',
+          { class: 'news-text' },
+          h('span', { class: 'row-name' }, n.headline),
+          h('span', { class: 'row-sub' }, `${PHASE_LABEL[n.state.phase]} · ${n.jumps === 0 ? 'this system' : `${n.jumps} jump${n.jumps > 1 ? 's' : ''}`}`),
+          h('span', { class: 'news-detail' }, n.detail),
+        ),
+      ),
+    ),
   );
 }
 

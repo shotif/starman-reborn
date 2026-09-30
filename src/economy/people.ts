@@ -11,8 +11,10 @@ import type { FactionId, SystemId } from '../data/types.ts';
 import { COMMODITIES, COMMODITY_IDS } from './commodities.ts';
 import { pilotsFor } from './combat.ts';
 import { boardEpoch, postedContracts } from './contracts.ts';
+import { borderNews, frontState, type FrontState } from './border.ts';
 import { denDown } from './dens.ts';
 import { eventsStarting } from './events.ts';
+import { FACTIONS } from './factions.ts';
 import { cargoCapacity } from './loadout.ts';
 import { dockAccess } from './law.ts';
 import { baseQuote, hasMarket } from './markets.ts';
@@ -226,6 +228,34 @@ function denFact(state: GameState, locationId: string, r: Rng): RumourFact | nul
   return { kind: 'den', text: fill(r.pick(TELL.denAwake), { den: loc.name, system }) };
 }
 
+/** A front as a regular would put it. */
+function frontSays(s: FrontState): string {
+  const f = s.front;
+  switch (s.phase) {
+    case 'pushed-back':
+      return `the ${FACTIONS[f.faction].shortName} has the Wake on the run`;
+    case 'skirmish':
+      return 'patrols and raiders are trading shots';
+    case 'blockade':
+      return `the Wake has the lanes into ${getSystem(f.lawSystem).displayName} shut`;
+    case 'fallen':
+      return `the Wake holds ${f.exposedId ? getLocation(f.exposedId).name : getSystem(f.lawSystem).displayName}`;
+    case 'truce':
+      return 'the truce is holding';
+  }
+}
+
+/** A border front within reach (docs/PROCGEN.md §20): how it stands, and where its tide takes it next. */
+function frontFact(state: GameState, locationId: string, r: Rng): RumourFact | null {
+  const near = borderNews(getLocation(locationId).systemId, state.clock).find((n) => n.jumps <= PEOPLE.rumour.reach);
+  if (!near) return null;
+  const now = near.state;
+  let text = fill(r.pick(TELL.front), { line: now.front.name, what: frontSays(now) });
+  const ahead = frontState(now.front, state.clock + PEOPLE.rumour.frontAhead);
+  if (!now.ending && ahead.phase !== now.phase) text += ` ${fill(r.pick(TELL.frontNext), { next: frontSays(ahead) })}`;
+  return { kind: 'front', text };
+}
+
 /** A contract of a kind posted within reach: an ace hunt or a wreck to recover. */
 function postedFact(state: GameState, locationId: string, r: Rng, kind: 'ace' | 'wreck'): RumourFact | null {
   for (const d of [{ id: locationId, jumps: 0 }, ...docksNear(locationId, PEOPLE.rumour.reach)]) {
@@ -271,7 +301,9 @@ export function rumourFor(state: GameState, locationId: string, person: Person):
             ? denFact(state, locationId, r)
             : kind === 'ace' || kind === 'wreck'
               ? postedFact(state, locationId, r, kind)
-              : storyFact(state, r);
+              : kind === 'front'
+                ? frontFact(state, locationId, r)
+                : storyFact(state, r);
     if (fact) return fact;
   }
   return null;

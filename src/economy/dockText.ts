@@ -1,7 +1,8 @@
 import type { GameState } from '../app/state.ts';
 import { getLocation } from '../data/systems.ts';
 import { standingTier } from './factions.ts';
-import { dockAccess } from './law.ts';
+import { occupied } from './border.ts';
+import { dockAccess, wakeFriendly } from './law.ts';
 
 /**
  * Dock welcome lines (fiction). They change with the player's standing so reputation has a
@@ -40,6 +41,12 @@ export function welcomeText(state: GameState, locationId: string): { text: strin
   const loc = getLocation(locationId);
   // The law and the Wake greet you in their own way (docs/PROCGEN.md §12).
   if (loc.stationType === 'pirate-den') return { text: `${loc.name}: the Wake knows your ship. Keep your guns cold in here and your mouth shut out there.`, improved: false };
+  // A station the Wake took on a border front (docs/PROCGEN.md §20).
+  if (occupied(locationId, state.clock)) {
+    return wakeFriendly(state)
+      ? { text: `${loc.name}: the Hollow Wake holds this station now. Friends of the Wake come and go as they like.`, improved: false }
+      : { text: `${loc.name}, held by the Hollow Wake: an emergency berth and repairs for a lawful pilot, and nothing else.`, improved: false };
+  }
   if (dockAccess(state, locationId) === 'emergency') {
     return { text: `${loc.name} traffic control: you are flagged. Emergency berth only: repairs, and the customs desk if you mean to settle up.`, improved: false };
   }

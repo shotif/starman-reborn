@@ -13,6 +13,9 @@ import { adjustReputation, FACTIONS, standingTier, TIER_LABEL } from './factions
 import { cargoCapacity } from './loadout.ts';
 import { rating } from './progress.ts';
 import { denDown } from './dens.ts';
+import { dockAccess } from './law.ts';
+import { BORDER } from '../content/border/rules.ts';
+import { endFront, getFront, pushFront } from './border.ts';
 
 export type Objective =
   | { kind: 'have-cargo'; commodity: CommodityId; qty: number; text: string }
@@ -89,6 +92,9 @@ export interface JobDef {
     urgent?: { seconds: number; bonus: number };
     /** Follow-ups: step of the chain, the contract it follows, and when the offer lapses (game clock). */
     chain?: { step: number; parent: string; expires: number };
+    /** War work (economy/border.ts): the front it is for, and whose side it pushes. */
+    front?: string;
+    side?: 'law' | 'wake';
   };
   /** Story arc missions (content/story/arcs.ts): arc, step, speaker and beats. */
   story?: StoryMeta;
@@ -243,18 +249,21 @@ export function storyVisible(state: GameState, job: JobDef): boolean {
   return !!req?.jobComplete && state.jobs[req.jobComplete]?.status === 'complete';
 }
 
-/** Jobs posted at a dock (hand-made and story first, then follow-ups offered to you, then the board), with their availability. */
+/**
+ * Jobs posted at a dock (hand-made and story first, then follow-ups offered to you, then the board),
+ * with their availability. A pilot docked on sufferance (docs/PROCGEN.md §12, §20) is offered only
+ * an independent's story missions: those ask nobody's leave.
+ */
 export function jobsAt(state: GameState, locationId: string): JobOffer[] {
+  const full = dockAccess(state, locationId) === 'full';
+  // Finished story missions live on in the journal, not on the board.
+  const story = ARC_JOBS.filter((j) => j.giverLocationId === locationId && (full || !j.factionId) && storyVisible(state, j) && state.jobs[j.id]?.status !== 'complete');
   const offers = Object.keys(state.contracts)
     .map((id) => offeredContract(state, id))
     .filter((c): c is JobDef => !!c && c.giverLocationId === locationId);
-  const posted = [
-    ...JOBS.filter((j) => j.giverLocationId === locationId),
-    // Finished story missions live on in the journal, not on the board.
-    ...ARC_JOBS.filter((j) => j.giverLocationId === locationId && storyVisible(state, j) && state.jobs[j.id]?.status !== 'complete'),
-    ...offers,
-    ...postedContracts(state, locationId).map((c) => state.contracts[c.id] ?? c),
-  ];
+  const posted = full
+    ? [...JOBS.filter((j) => j.giverLocationId === locationId), ...story, ...offers, ...postedContracts(state, locationId).map((c) => state.contracts[c.id] ?? c)]
+    : story;
   return posted.map((job) => {
     const progress = state.jobs[job.id];
     if (progress) return { job, status: progress.status, lockReason: null };
@@ -474,6 +483,15 @@ function payOut(state: GameState, job: JobDef): Payout {
   }
   state.stats.deliveries += 1;
   state.stats.rewards += paid;
+  // War work pushes its front the poster's way; The Long Border's finale settles its front for good (docs/PROCGEN.md §20).
+  const front = job.contract?.front ? getFront(job.contract.front) : undefined;
+  if (front) {
+    const wake = job.contract!.side === 'wake';
+    pushFront(state, front.id, wake ? -BORDER.deeds.warContract : BORDER.deeds.warContract);
+    note += `; ${front.name} shifts ${wake ? 'the Wake’s way' : `the ${FACTIONS[front.faction].shortName}’s way`}`;
+  }
+  const settles = job.story?.settles;
+  if (settles) endFront(state, settles.front, settles.ending);
   // A parcel or haul may lead to a follow-up at its destination.
   let offer: JobEvent | null = null;
   const next = followUpFor(job, state.clock);

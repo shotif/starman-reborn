@@ -246,10 +246,25 @@ function systemEventIn(systemId: SystemId, index: number): WorldEvent | null {
  * Events stay a pure function of the clock, except that the player can end one early (relieving a
  * shortage, breaking a raid). The game points this at the save's world log; tests may too.
  */
-let worldLog: Pick<WorldLog, 'ended'> | null = null;
+let worldLog: (Pick<WorldLog, 'ended'> & Partial<Pick<WorldLog, 'border'>>) | null = null;
 
-export function useWorldLog(log: Pick<WorldLog, 'ended'> | null): void {
+export function useWorldLog(log: (Pick<WorldLog, 'ended'> & Partial<Pick<WorldLog, 'border'>>) | null): void {
   worldLog = log;
+}
+
+/** The border war's log in the save the game points at (docs/PROCGEN.md §20), or null. */
+export function activeBorderLog(): WorldLog['border'] | null {
+  return worldLog?.border ?? null;
+}
+
+const logKeys = new WeakMap<object, number>();
+let nextLogKey = 1;
+/** Which save's log the game points at, as a number (0: none), for caches of what depends on it. */
+export function worldLogKey(): number {
+  if (!worldLog) return 0;
+  let key = logKeys.get(worldLog);
+  if (!key) logKeys.set(worldLog, (key = nextLogKey++));
+  return key;
 }
 
 /** When an event really ends: its scheduled end, or earlier if the player ended it. */

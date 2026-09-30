@@ -1,11 +1,12 @@
 import type { JobDef } from '../../economy/jobs.ts';
+import { LAW } from '../law/rules.ts';
 import type { Arc, ArcId, Character, CharacterId } from './types.ts';
 
 /**
- * The three faction arcs (docs/PROCGEN.md §14), written by hand. Each mission is a job built from
- * the contract objectives, plus beats: words at the docks, comms in flight, a choice or two with
- * standing consequences, and a finale. The people, stations and events are fiction; the stars
- * they happen around are real.
+ * The three faction arcs (docs/PROCGEN.md §14), written by hand, and The Long Border (§20), where
+ * they meet. Each mission is a job built from the contract objectives, plus beats: words at the
+ * docks, comms in flight, a choice or two with standing consequences, and a finale. The people,
+ * stations and events are fiction; the stars they happen around are real.
  */
 
 /** The opening delivery (economy/jobs.ts LIFELINE_ID): every lawful arc starts after it. */
@@ -45,9 +46,20 @@ export const ARCS: Record<ArcId, Arc> = {
     summary: 'Friends of the Wake are cheap. A berth in a Wake crew is earned, and Salt decides who earns one.',
     hook: 'A Wake captain called Salt wants to see what you are made of.',
   },
+  border: {
+    id: 'border',
+    title: 'The Long Border',
+    factionId: null,
+    giver: 'kettering',
+    summary: 'The Transit Authority and the Hollow Wake are fighting over the lane from Ross 154 to Wolf 1061, and Sabine Kettering’s haulers are caught in between. Someone has to decide how it ends.',
+    hook: 'Sabine Kettering needs a pilot who has flown both sides of the Ross 154 line.',
+  },
 };
 
-export const ARC_ORDER: readonly ArcId[] = ['sta', 'frontier', 'wake'];
+export const ARC_ORDER: readonly ArcId[] = ['sta', 'frontier', 'wake', 'border'];
+
+/** The front The Long Border decides (economy/border.ts): Maw Roost's den against Ross 154. */
+export const LONG_BORDER_FRONT = 'wolf-1061~ross-154';
 
 const DECISION = { reward: 0, repReward: {}, difficulty: 1 as const, difficultyNote: 'A decision, not a flight' };
 
@@ -560,6 +572,319 @@ export const ARC_JOBS: readonly JobDef[] = [
           warn: [{ who: 'salt', text: 'You flew like crew today. Whatever you did for Juno, you did for a reason, and I can live with not knowing it. You have a berth at every Nest.' }],
         },
       },
+    },
+  },
+
+  // ------------------------------------------------------------ The Long Border (docs/PROCGEN.md §20)
+  {
+    id: 'arc.border.1',
+    title: 'Fly the line',
+    giverLocationId: 'waymark-waypoint',
+    factionId: null,
+    briefing:
+      '“I run three haulers out of Ross 154, and every week the Wake takes a bite out of one. Maw Roost at Wolf 1061 sends its packs up the lane to Regent Concourse, and the Authority sends patrols back down it. Fly the line for me: dock at Flotsam Diggings, on the Wake side, and hear what they say there. Then come back and tell me.”',
+    objectives: [
+      { kind: 'visit', locationId: 'flotsam-diggings', text: 'Dock at Flotsam Diggings (Wolf 1061), on the Wake side of the line' },
+      { kind: 'visit', locationId: 'waymark-waypoint', text: 'Report to Sabine Kettering at Waymark Waypoint' },
+    ],
+    reward: 700,
+    repReward: {},
+    difficulty: 1,
+    difficultyNote: 'A lawless system, one jump away',
+    destinationLocationId: 'waymark-waypoint',
+    requires: { jobComplete: OPENING },
+    story: {
+      arc: 'border',
+      step: 1,
+      speaker: 'kettering',
+      echoes: [
+        {
+          choiceId: 'sta.vail',
+          said: {
+            press: '“You’re the pilot who put Vail on every newsfeed. The Authority hasn’t forgiven either of us, but it listens when you talk.”',
+            internal: '“You kept the Vail business inside the Authority. Fine: it owes you, and out here it will want to collect.”',
+            bribe: '“I know you sold my testimony back to Vail. I need a pilot more than I need an apology.”',
+          },
+        },
+        {
+          choiceId: 'frontier.quarantine',
+          said: {
+            seal: '“Stonecrop’s haulers came back after the quarantine, and half their food runs this lane now, when it runs.”',
+            burn: '“Stonecrop never stopped shipping, thanks to you, and half their food runs this lane now, when it runs.”',
+          },
+        },
+        {
+          choiceId: 'wake.fiske',
+          said: {
+            loyal: '“Salt’s crews call you crew. Maw Roost will have heard that.”',
+            warn: '“Word is Juno Fiske flies for Maw Roost now. You’d know how Juno got there.”',
+            betray: '“The Wake wants you dead for the Nest list. At Maw Roost they say it loudest.”',
+          },
+        },
+      ],
+      beats: [
+        {
+          after: 0,
+          lines: [
+            { who: 'comm', text: 'The diggers at Flotsam talk freely over a drink: the Wake pays for ore in cash and asks no questions, and the Authority taxes what it cannot protect.' },
+            { who: 'comm', text: 'Maw Roost’s packs fly the lane to Ross 154 every few hours. The Quartermaster who runs the den wants Regent Concourse, and says so to anyone who asks.' },
+          ],
+        },
+      ],
+      debrief: [
+        { who: 'kettering', text: 'So the Quartermaster wants the Concourse. The Authority wants my haulers carrying its munitions. And everybody on this lane wants the shooting to stop, as long as it stops their way.' },
+      ],
+    },
+  },
+  {
+    id: 'arc.border.2',
+    title: 'Letters under fire',
+    giverLocationId: 'waymark-waypoint',
+    factionId: null,
+    briefing:
+      '“Both sides wrote to me. The Authority’s terms went out on my hauler Tern, and the Wake’s answer came back on her, the day a pack caught Tern near Jackpot Stillworks in Wolf 1061. The crew got clear; the mail pouch didn’t. Bring it to me: I want to read what they offered before anyone else does.”',
+    objectives: [
+      { kind: 'recover', systemId: 'wolf-1061', locationId: 'jackpot-stillworks', item: 'Kettering Line mail pouch', guard: 1, text: 'Recover the mail pouch from the wreck of the Tern near Jackpot Stillworks (Wolf 1061)' },
+      { kind: 'visit', locationId: 'waymark-waypoint', text: 'Bring the mail pouch to Sabine Kettering at Waymark Waypoint' },
+    ],
+    reward: 1_000,
+    repReward: {},
+    difficulty: 2,
+    difficultyNote: 'Raiders at the wreck',
+    destinationLocationId: 'waymark-waypoint',
+    requires: { jobComplete: 'arc.border.1' },
+    story: {
+      arc: 'border',
+      step: 2,
+      speaker: 'kettering',
+      comms: [{ at: 0, lines: [{ who: 'kettering', text: 'The Tern’s beacon is still pinging. Whoever caught her may still be picking over her. Don’t stay to chat.' }] }],
+      debrief: [
+        { who: 'kettering', text: 'The Authority offers a convoy contract and a gun on every hauler, if my ships carry its munitions to the Concourse. The Wake offers safe passage, if my ships stop carrying anything for the Authority at all.' },
+        { who: 'kettering', text: 'And there’s a third letter, unsigned, from somebody at Maw Roost who is as tired of this as I am. I have to answer one of them, and I want you to fly the answer.' },
+      ],
+    },
+  },
+  {
+    id: 'arc.border.3',
+    title: 'Three letters',
+    giverLocationId: 'waymark-waypoint',
+    factionId: null,
+    briefing:
+      '“Three letters, one answer. The Authority pays and protects, but my haulers become its supply line. The Wake leaves us alone, if we leave the Concourse to starve. Or the unsigned one: somebody at Maw Roost wants to talk. You’ve flown both sides of this lane now. Which do I answer?”',
+    objectives: [
+      {
+        kind: 'choice',
+        locationId: 'waymark-waypoint',
+        choiceId: 'border.side',
+        text: 'Decide which letter Sabine Kettering answers',
+        prompt: 'The Authority’s terms, the Wake’s, or the unsigned letter. Which answer do you fly?',
+        options: [
+          {
+            id: 'law',
+            label: 'Fly for the Authority',
+            outcome: 'Kettering signs the Authority’s convoy contract. The garrison at Regent Concourse wants you on the line when the Wake comes, and pays in advance.',
+            rep: { sta: 8, 'hollow-wake': -8 },
+            credits: 800,
+            requires: { minRep: { faction: 'sta', value: 0 } },
+          },
+          {
+            id: 'wake',
+            label: 'Fly for the Wake',
+            outcome: 'Kettering takes the Wake’s safe passage. The Quartermaster at Maw Roost wants the Concourse, and wants you to help take it; the first payment is already in your account.',
+            rep: { 'hollow-wake': 10, sta: -8 },
+            credits: 800,
+            requires: { minRep: { faction: 'hollow-wake', value: LAW.wakeFriendly } },
+          },
+          {
+            id: 'truce',
+            label: 'Answer the unsigned letter',
+            outcome: 'Kettering writes back to whoever at Maw Roost is tired of the war, and copies the letter to the Concourse. If both sides will meet, you will fly the envoys.',
+            rep: { sta: 2, 'hollow-wake': 2 },
+            credits: 400,
+          },
+        ],
+      },
+    ],
+    ...DECISION,
+    destinationLocationId: 'waymark-waypoint',
+    requires: { jobComplete: 'arc.border.2' },
+    story: {
+      arc: 'border',
+      step: 3,
+      speaker: 'kettering',
+      echoes: [
+        {
+          choiceId: 'sta.vail',
+          said: {
+            press: '“The Authority will take your help. It will not thank you for it in public.”',
+            internal: '“The Authority remembers who kept its secrets. So does the Wake.”',
+            bribe: '“Vail’s friends at Maw Roost know your name. Whether that helps depends on what you pick.”',
+          },
+        },
+        {
+          choiceId: 'wake.fiske',
+          said: {
+            loyal: '“The Quartermaster would take you as crew tomorrow. Salt made sure of that.”',
+            warn: '“Juno Fiske wrote the unsigned letter, I’d bet on it. Juno owes you one.”',
+            betray: '“Nobody at Maw Roost will ever deal with you straight. Keep that in mind.”',
+          },
+        },
+      ],
+    },
+  },
+  {
+    id: 'arc.border.4.law',
+    title: 'The forward pack',
+    giverLocationId: 'waymark-waypoint',
+    factionId: null,
+    briefing:
+      '“The Concourse’s commander wants the Wake’s forward pack gone before its next push. It sits off Flotsam Diggings in Wolf 1061, where the Wake fuels up. Break it, and Maw Roost has to come the long way round.”',
+    objectives: [{ kind: 'bounty', systemId: 'wolf-1061', locationId: 'flotsam-diggings', count: 4, level: 2, text: 'Destroy the Wake’s forward pack near Flotsam Diggings (Wolf 1061)' }],
+    reward: 1_600,
+    repReward: { sta: 6, 'hollow-wake': -6 },
+    difficulty: 2,
+    difficultyNote: 'A raider pack of four',
+    destinationLocationId: 'flotsam-diggings',
+    requires: { jobComplete: 'arc.border.3', choice: { id: 'border.side', oneOf: ['law'] } },
+    story: {
+      arc: 'border',
+      step: 4,
+      speaker: 'kettering',
+      debrief: [{ who: 'kettering', text: 'The forward pack is gone, and the Quartermaster knows who did it. The Wake will come for the Concourse with everything Maw Roost has. The commander wants you there when it does.' }],
+    },
+  },
+  {
+    id: 'arc.border.4.wake',
+    title: 'Starve the Concourse',
+    giverLocationId: 'waymark-waypoint',
+    factionId: null,
+    briefing:
+      '“The Quartermaster’s terms: before Maw Roost moves on the Concourse, its supply runs stop. Two Authority haulers in Ross 154, gone. I won’t fly that, and I won’t watch. But I won’t stop you.”',
+    objectives: [{ kind: 'piracy', systemId: 'ross-154', faction: 'sta', count: 2, text: 'Destroy 2 Transit Authority haulers in Ross 154' }],
+    reward: 1_600,
+    repReward: { 'hollow-wake': 8 },
+    difficulty: 2,
+    difficultyNote: 'A crime, and patrols after it',
+    destinationLocationId: 'waymark-waypoint',
+    requires: { jobComplete: 'arc.border.3', choice: { id: 'border.side', oneOf: ['wake'] } },
+    story: {
+      arc: 'border',
+      step: 4,
+      speaker: 'kettering',
+      debrief: [{ who: 'kettering', text: 'The Concourse is eating its reserves. The Authority is sending a sweep at Maw Roost to break the siege, and the Quartermaster wants you flying with the den when it comes.' }],
+    },
+  },
+  {
+    id: 'arc.border.4.truce',
+    title: 'Two envoys',
+    giverLocationId: 'waymark-waypoint',
+    factionId: null,
+    briefing:
+      '“Both sides will talk, but neither will fly to the other. Carry my letter to the garrison at Regent Concourse, then to the Quartermaster’s people at Flotsam Diggings, and bring me their answers.”',
+    objectives: [
+      { kind: 'visit', locationId: 'regent-concourse', text: 'Carry Kettering’s letter to the garrison at Regent Concourse (Ross 154)' },
+      { kind: 'visit', locationId: 'flotsam-diggings', text: 'Carry it on to the Quartermaster’s people at Flotsam Diggings (Wolf 1061)' },
+      { kind: 'visit', locationId: 'waymark-waypoint', text: 'Bring both answers to Sabine Kettering at Waymark Waypoint' },
+    ],
+    reward: 1_200,
+    repReward: { sta: 3, 'hollow-wake': 3 },
+    difficulty: 1,
+    difficultyNote: 'Both sides of the line',
+    destinationLocationId: 'waymark-waypoint',
+    requires: { jobComplete: 'arc.border.3', choice: { id: 'border.side', oneOf: ['truce'] } },
+    story: {
+      arc: 'border',
+      step: 4,
+      speaker: 'kettering',
+      beats: [
+        { after: 0, lines: [{ who: 'comm', text: 'The garrison commander reads the letter twice. “We’ll send an envoy. Not a ship more. If this is a trap, your friend Kettering hangs for it.”' }] },
+        { after: 1, lines: [{ who: 'comm', text: 'A digger slides you a reply sealed with Maw Roost’s mark. “The Quartermaster will send someone. Not everyone at the Roost wants this. Watch the lanes.”' }] },
+      ],
+      debrief: [{ who: 'kettering', text: 'They’ll meet: the garrison’s envoy and the Quartermaster’s, flying with my Kettering Line II to the Concourse. Somebody on each side would rather they never arrived. You know what I’m going to ask.' }],
+    },
+  },
+  {
+    id: 'arc.border.5.law',
+    title: 'Hold the line',
+    giverLocationId: 'waymark-waypoint',
+    factionId: null,
+    briefing:
+      '“Maw Roost is coming for the Concourse with everything it has. The garrison holds the docks; the lane is yours. Break the Wake’s push before it reaches Regent Concourse, and the line is the Authority’s for good.”',
+    objectives: [{ kind: 'bounty', systemId: 'ross-154', locationId: 'regent-concourse', count: 5, level: 3, text: 'Break the Wake’s push on Regent Concourse (Ross 154)' }],
+    reward: 5_000,
+    repReward: { sta: 20, frontier: 4, 'hollow-wake': -20 },
+    difficulty: 3,
+    difficultyNote: 'Five raiders at their worst',
+    destinationLocationId: 'regent-concourse',
+    requires: { jobComplete: 'arc.border.4.law', choice: { id: 'border.side', oneOf: ['law'] } },
+    story: {
+      arc: 'border',
+      step: 5,
+      speaker: 'kettering',
+      finale: true,
+      settles: { front: LONG_BORDER_FRONT, ending: 'law' },
+      comms: [{ at: 0, lines: [{ who: 'comm', text: 'Concourse garrison: every gun we have is on the docks. The Wake is coming in from the Wolf 1061 beacon. Break them on the lane.' }] }],
+      debrief: [{ who: 'kettering', text: 'The Wake’s push broke on the Concourse, and Maw Roost has pulled its packs back to Wolf 1061. The Authority holds the line now, and my haulers run it under its guns. It isn’t peace. It’s ours.' }],
+    },
+  },
+  {
+    id: 'arc.border.5.wake',
+    title: 'The last sweep',
+    giverLocationId: 'waymark-waypoint',
+    factionId: null,
+    briefing:
+      '“The Authority’s sweep is going in at Maw Roost to break the siege: four ships at least. If it breaks instead, the Concourse has nothing left to wait for. The Quartermaster wants you with the den’s crews. Go.”',
+    objectives: [{ kind: 'defend', systemId: 'wolf-1061', locationId: 'maw-roost', count: 4, text: 'Destroy 4 ships of the Authority sweep at Maw Roost (Wolf 1061)' }],
+    reward: 5_000,
+    repReward: { 'hollow-wake': 20, sta: -10 },
+    difficulty: 3,
+    difficultyNote: 'An Authority sweep; every kill is a crime',
+    destinationLocationId: 'maw-roost',
+    requires: { jobComplete: 'arc.border.4.wake', choice: { id: 'border.side', oneOf: ['wake'] } },
+    story: {
+      arc: 'border',
+      step: 5,
+      speaker: 'kettering',
+      finale: true,
+      settles: { front: LONG_BORDER_FRONT, ending: 'wake' },
+      comms: [{ at: 0, lines: [{ who: 'comm', text: 'Maw Roost, all crews: Authority sweep inbound from the Ross 154 beacon. Break it here and the Concourse is ours.' }] }],
+      debrief: [{ who: 'kettering', text: 'The sweep broke at Maw Roost, and the Concourse flew the Wake’s colours by morning. My haulers pass with the Quartermaster’s blessing now. I tell myself that’s what I wanted.' }],
+    },
+  },
+  {
+    id: 'arc.border.5.truce',
+    title: 'The envoys',
+    giverLocationId: 'waymark-waypoint',
+    factionId: null,
+    briefing:
+      '“The envoys fly together: the garrison’s cutter, the Roost’s launch, and my Kettering Line II between them, from here to the Concourse. Wake crews who want no peace will try for them. Keep at least two of the three flying.”',
+    objectives: [
+      {
+        kind: 'escort',
+        systemId: 'ross-154',
+        fromLocationId: 'waymark-waypoint',
+        locationId: 'regent-concourse',
+        model: 'ship.freighter.1.halden',
+        shipName: 'envoy convoy',
+        level: 2,
+        convoy: { names: ['Kettering Line II', 'Garrison cutter', 'Roost launch'], need: 2, waves: 2 },
+        text: 'Escort the envoys to Regent Concourse',
+      },
+    ],
+    reward: 5_000,
+    repReward: { sta: 10, frontier: 4, 'hollow-wake': 10 },
+    difficulty: 3,
+    difficultyNote: 'Two waves of raiders',
+    destinationLocationId: 'regent-concourse',
+    requires: { jobComplete: 'arc.border.4.truce', choice: { id: 'border.side', oneOf: ['truce'] } },
+    story: {
+      arc: 'border',
+      step: 5,
+      speaker: 'kettering',
+      finale: true,
+      settles: { front: LONG_BORDER_FRONT, ending: 'truce' },
+      comms: [{ at: 0, lines: [{ who: 'kettering', text: 'Kettering here, on the open channel, so both sides can hear it: these ships carry envoys. Anybody who fires on them answers to both.' }] }],
+      debrief: [{ who: 'kettering', text: 'Both envoys signed, aboard my ship, at the Concourse. Nobody calls it peace yet. But the packs stay in Wolf 1061, the patrols stay in Ross 154, and my haulers run the lane between them. That will do.' }],
     },
   },
 ];

@@ -198,6 +198,18 @@ export interface WorldLog {
   ended: Record<string, number>;
   /** What is still out there, by system. */
   lingering: Record<SystemId, Lingering>;
+  /**
+   * The border war (docs/PROCGEN.md §20), by front: the player's deeds there ([game clock,
+   * pressure], + for the law, − for the Wake; newest last), and how The Long Border ended there.
+   */
+  border: Record<string, BorderLog>;
+}
+
+export type BorderEnding = 'law' | 'wake' | 'truce';
+
+export interface BorderLog {
+  deeds: [number, number][];
+  ending?: BorderEnding;
 }
 
 /** A price the player asked to watch (docs/PROCGEN.md §16). */
@@ -210,7 +222,7 @@ export interface PriceWatch {
 export interface HeardRumour {
   /** The person and time slot it came from (a person tells one thing a shift). */
   key: string;
-  kind: 'price' | 'event' | 'den' | 'ace' | 'wreck' | 'story';
+  kind: 'price' | 'event' | 'den' | 'ace' | 'wreck' | 'story' | 'front';
   text: string;
   /** Game-clock seconds. */
   at: number;
@@ -344,7 +356,7 @@ export function createNewGame(seed: number = Math.floor(Math.random() * 2 ** 31)
     markets: {},
     contracts: {},
     law: { fines: {}, pending: [], lastCrimeAt: {} },
-    world: { relief: {}, raidKills: {}, ended: {}, lingering: {} },
+    world: { relief: {}, raidKills: {}, ended: {}, lingering: {}, border: {} },
     fleet: { ships: [], storage: {}, stakes: [], reports: [] },
     codex: [],
     surveysSold: [],

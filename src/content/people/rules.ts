@@ -9,7 +9,7 @@ import type { StationType } from '../world/types.ts';
 export type PersonRole = 'trader' | 'pilot' | 'fixer' | 'officer' | 'miner' | 'scientist' | 'colonist';
 
 /** What a rumour is about. Every kind is drawn from the game's own state, never invented. */
-export type RumourKind = 'price' | 'event' | 'den' | 'ace' | 'wreck' | 'story';
+export type RumourKind = 'price' | 'event' | 'den' | 'ace' | 'wreck' | 'story' | 'front';
 
 export const PEOPLE = {
   /** Regulars in a bar by station type (besides the pilots for hire): who is likely to sit there. */
@@ -46,9 +46,9 @@ export const PEOPLE = {
   /** What they talk about first, by role (the first kind with something true to tell wins). */
   talk: {
     trader: ['price', 'event', 'wreck'],
-    pilot: ['den', 'ace', 'event'],
+    pilot: ['den', 'ace', 'event', 'front'],
     fixer: ['ace', 'story', 'wreck', 'price'],
-    officer: ['den', 'event', 'ace'],
+    officer: ['front', 'den', 'event', 'ace'],
     miner: ['event', 'price', 'wreck'],
     scientist: ['event', 'story', 'price'],
     colonist: ['event', 'price', 'story'],
@@ -62,6 +62,8 @@ export const PEOPLE = {
     soon: 2_700,
     /** A price tip is only worth telling when a full hold on it pays at least this many drinks. */
     minTipDrinks: 4,
+    /** Word of a border front (docs/PROCGEN.md §20) says where its tide takes it this far ahead (s). */
+    frontAhead: 14_400,
   },
   /** Rumours kept in the journal. */
   keep: 12,

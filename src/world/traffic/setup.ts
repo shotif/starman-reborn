@@ -1,6 +1,8 @@
+import { BORDER } from '../../content/border/rules.ts';
 import { EVENTS } from '../../content/events/rules.ts';
 import { jumpsFrom } from '../../content/world/network.ts';
 import { ALL_LOCATIONS, WORLD } from '../../data/systems.ts';
+import { frontsHere } from '../../economy/border.ts';
 import { systemEventAt, type WorldEvent } from '../../economy/events.ts';
 import type { QualityLevel } from '../art/types.ts';
 import type { TrafficSetup } from '../FlightSession.ts';
@@ -23,8 +25,44 @@ export function trafficFor(systemId: string, quality: QualityLevel, clock?: numb
   const security = profile?.security ?? 1;
   const owner = profile?.owner ?? null;
   const plan = trafficPlan({ security, owner, openStations, hasDen, jumpsFromSol: jumps.get(systemId) ?? 0 }, qualityScale);
-  const event = clock === undefined ? null : systemEventAt(systemId, clock);
-  return { plan: event ? withEvent(plan, event, security) : plan, owner };
+  if (clock === undefined) return { plan, owner };
+  // The border war sets the lanes; a raid or a sweep under way comes on top of it.
+  const front = withBorder(plan, owner, systemId, clock);
+  const event = systemEventAt(systemId, clock);
+  return event ? { ...front, plan: withEvent(front.plan, event, security) } : front;
+}
+
+/**
+ * The border war in the lanes (docs/PROCGEN.md §20): skirmishes bring patrol wings and raider packs
+ * to both sides; a blockade or a fallen station puts packs on the lawful side and scares traders
+ * off; a pushed-back front sends patrols into the den's system; a truce quiets both.
+ */
+export function withBorder(plan: TrafficPlan, owner: TrafficSetup['owner'], systemId: string, clock: number): TrafficSetup {
+  let out = plan;
+  let who = owner;
+  for (const s of frontsHere(systemId, clock)) {
+    const lawSide = s.front.lawSystem === systemId;
+    const t = BORDER.traffic;
+    const packs = (extra: number, level: 1 | 2 | 3): TrafficPlan['packs'] => ({
+      max: (out.packs?.max ?? 0) + extra,
+      level: Math.max(out.packs?.level ?? 1, level) as 1 | 2 | 3,
+      size: out.packs?.size ?? [2, 3],
+      firstDelay: Math.min(out.packs?.firstDelay ?? 25, 25),
+      interval: out.packs?.interval ?? [TRAFFIC.packInterval[0], TRAFFIC.packInterval[1]],
+    });
+    if (s.phase === 'skirmish') {
+      out = { ...out, patrolWings: Math.min(2, out.patrolWings + t.skirmishWings), packs: packs(t.skirmishPacks, 2) };
+      if (!lawSide) who = s.front.faction;
+    } else if ((s.phase === 'blockade' || s.phase === 'fallen') && lawSide) {
+      out = { ...out, traders: Math.max(1, Math.round(out.traders * 0.5)), packs: packs(t.blockadePacks, s.phase === 'fallen' ? 3 : 2) };
+    } else if (s.phase === 'pushed-back' && !lawSide) {
+      out = { ...out, patrolWings: Math.min(2, out.patrolWings + 1) };
+      who = s.front.faction;
+    } else if (s.phase === 'truce' && lawSide) {
+      out = { ...out, packs: null };
+    }
+  }
+  return { plan: out, owner: who };
 }
 
 /** A raid brings more and nastier packs and scares traders off; a sweep clears the packs out. */

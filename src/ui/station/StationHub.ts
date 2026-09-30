@@ -15,6 +15,7 @@ import '../styles/station.css';
 import '../styles/people.css';
 import { acceptLabel, jobBoardContent, jobsNeedAttention, newsContent, visibleOffers } from './bar.ts';
 import { choiceHere } from '../../economy/story.ts';
+import { jobsAt } from '../../economy/jobs.ts';
 import type { StationContext } from './context.ts';
 import { hasVoyage, journalContent, voyageReport } from './journal.ts';
 import { outfitterContent, shipStatus } from './outfitter.ts';
@@ -255,7 +256,9 @@ export class StationHub {
     if (room === 'deck' && full && hasShipyard(this.ctx.locationId)) items.push(act('shipyard', 'Ships', 'shipyard', 'station-ships'));
     // Your fleet (docs/PROCGEN.md §18): parked ships, captains, storage and stakes, at any dock.
     if (room === 'deck' && full) items.push(act('wing', 'Fleet', 'fleet', 'station-fleet'));
-    if (room === 'bar') items.push(...(full ? [act('jobs', 'Jobs', 'jobs', 'station-jobs')] : []), act('bar', 'People', 'people', 'station-people'), act('news', 'News', 'news', 'station-news'));
+    // On emergency docking the board is shut, unless an independent has story work here (docs/PROCGEN.md §20).
+    const jobs = full || jobsAt(this.ctx.state, this.ctx.locationId).length > 0;
+    if (room === 'bar') items.push(...(jobs ? [act('jobs', 'Jobs', 'jobs', 'station-jobs')] : []), act('bar', 'People', 'people', 'station-people'), act('news', 'News', 'news', 'station-news'));
     if (room === 'trader') items.push(act('trader', 'Trade', 'trader', 'station-trade'));
     if (room === 'outfitter') items.push(act('outfitter', 'Equip', 'outfitter', 'station-equip'));
     items.push(button('Launch', { icon: 'launch', variant: 'primary', onClick: () => this.ctx.launch(), testId: 'dock-launch' }));

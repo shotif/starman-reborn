@@ -1,6 +1,6 @@
 import type { CommodityId, GameState } from '../app/state.ts';
 import { shipModel } from '../content/catalog.ts';
-import { ACE_NAMES, BOARD_KINDS, CONTRACTS, CURATED_BOARD_KINDS, DEN_BOARD_KINDS, FRONTIER_SURVEY_WEIGHT, RECOVERY_ITEMS, type ContractKind, type KindWeights } from '../content/contracts/rules.ts';
+import { ACE_NAMES, BOARD_KINDS, CONTRACTS, CURATED_BOARD_KINDS, DEN_BOARD_KINDS, FRONTIER_SURVEY_WEIGHT, RECOVERY_ITEMS, WAR_BOARD_WEIGHT, type ContractKind, type KindWeights } from '../content/contracts/rules.ts';
 import { LAW } from '../content/law/rules.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
 import { hashString, rng, type Rng } from '../content/random.ts';
@@ -11,8 +11,9 @@ import type { FactionId, FictionalLocation, SystemId } from '../data/types.ts';
 import { findRoute } from '../galaxy/routing.ts';
 import { FLEETS } from '../world/traffic/plan.ts';
 import { trafficFor } from '../world/traffic/setup.ts';
+import { atWar, EXPOSED, FRONTS, frontState, occupied, type FrontState } from './border.ts';
 import { itemsThatFit } from './cargo.ts';
-import { baseThreat, priceMultiplier, stationEventAt, systemEventAt, type WorldEvent } from './events.ts';
+import { baseThreat, priceMultiplier, stationEventAt, systemEventAt, worldLogKey, type WorldEvent } from './events.ts';
 import { FACTIONS } from './factions.ts';
 import { dockAccess, lawIn, scansOnDocking, wakeFriendly } from './law.ts';
 import type { JobDef } from './jobs.ts';
@@ -23,10 +24,10 @@ import { marketTables } from './markets.ts';
  * Generated contracts (docs/PROCGEN.md §10). Every station with a contracts service posts a board
  * that changes with the game clock: freight hauls, parcels, supply runs, bounties on raider packs,
  * planet surveys, escorts, aces and wreck recoveries, chosen by the kind of station and pointed at
- * real places in the world. Some parcels and hauls are urgent, and some lead to a follow-up.
- * A board is a pure function of the station, its time slot and the world (world events included,
- * as they stand when the board is posted); an accepted contract is copied into the save, so it
- * never changes under the player.
+ * real places in the world, and war work while a border front nearby is fighting. Some parcels and
+ * hauls are urgent, and some lead to a follow-up. A board is a pure function of the station, its
+ * time slot and the world (world events and the border war included, as they stand when the board
+ * is posted); an accepted contract is copied into the save, so it never changes under the player.
  */
 
 export const CONTRACT_PREFIX = 'c.';
@@ -68,18 +69,27 @@ export function routeFeeBetween(a: SystemId, b: SystemId): number {
 
 const security = (systemId: SystemId) => WORLD.profiles.get(systemId)?.security ?? 1;
 
-/** Stations a pilot can dock at and do business with. */
+/**
+ * Stations a pilot can dock at and do business with, as contract destinations: never a station on a
+ * border front that can fall to the Wake (docs/PROCGEN.md §20), where a delivery could not be made.
+ */
 let open: FictionalLocation[] | null = null;
 function openStations(): FictionalLocation[] {
-  return (open ??= ALL_LOCATIONS.filter((l) => l.status === 'functional' && l.dockable !== false && l.services.length > 0));
+  return (open ??= ALL_LOCATIONS.filter((l) => l.status === 'functional' && l.dockable !== false && l.services.length > 0 && !EXPOSED.has(l.id)));
 }
 
-function boardKinds(loc: FictionalLocation): KindWeights | null {
-  if (loc.stationType === 'pirate-den' && loc.status === 'functional') return DEN_BOARD_KINDS;
-  if (!loc.services.includes('contracts') || loc.status !== 'functional' || loc.dockable === false) return null;
-  const kinds = CURATED_BOARD_KINDS[loc.id] ?? (loc.stationType && loc.stationType !== 'pirate-den' ? BOARD_KINDS[loc.stationType] : null);
+function boardKinds(loc: FictionalLocation, clock: number): KindWeights | null {
+  let kinds: KindWeights | null;
+  if (loc.stationType === 'pirate-den') kinds = loc.status === 'functional' ? DEN_BOARD_KINDS : null;
+  else if (!loc.services.includes('contracts') || loc.status !== 'functional' || loc.dockable === false) kinds = null;
+  else kinds = CURATED_BOARD_KINDS[loc.id] ?? (loc.stationType ? BOARD_KINDS[loc.stationType] : null);
+  if (!kinds) return null;
   // Out in the frontier every board wants the new systems surveyed.
-  return kinds && isFrontier(loc.systemId) ? { ...kinds, survey: (kinds.survey ?? 0) + FRONTIER_SURVEY_WEIGHT } : kinds;
+  if (isFrontier(loc.systemId) && loc.stationType !== 'pirate-den') kinds = { ...kinds, survey: (kinds.survey ?? 0) + FRONTIER_SURVEY_WEIGHT };
+  // War work joins while a front within reach is fighting; other boards stay exactly as they were.
+  const war = loc.stationType ? WAR_BOARD_WEIGHT[loc.stationType] : undefined;
+  if (war && warFronts(loc, clock).length) kinds = { ...kinds, war };
+  return kinds;
 }
 
 const place = (loc: FictionalLocation) => `${loc.name} (${getSystem(loc.systemId).displayName})`;
@@ -95,20 +105,22 @@ const boardCache = new Map<string, JobDef[]>();
 
 /** The contracts a station posts in a time slot (hand-made jobs are separate, in jobs.ts). */
 export function boardFor(locationId: string, epoch: number): JobDef[] {
-  const key = `${locationId}|${epoch}`;
+  // The border war is the save's own, so boards are kept per save.
+  const key = `${locationId}|${epoch}|${worldLogKey()}`;
   const cached = boardCache.get(key);
   if (cached) return cached;
   const loc = getLocation(locationId);
-  const weights = boardKinds(loc);
+  const clock = epoch * CONTRACTS.epochSeconds;
+  // A station the Wake holds posts nothing (docs/PROCGEN.md §20).
+  const weights = occupied(locationId, clock) ? null : boardKinds(loc, clock);
   const out: JobDef[] = [];
   if (weights) {
     const r = rng(WORLD_SEED, 'contracts', locationId, epoch);
-    const clock = epoch * CONTRACTS.epochSeconds;
     const b = CONTRACTS.board;
     const size = Math.min(b.max, b.base + ((loc.look?.size ?? 0.8) > b.largeAbove ? 1 : 0) + (loc.stationType && b.busy.includes(loc.stationType) ? 1 : 0));
     const kinds = Object.keys(weights) as ContractKind[];
     // No two contracts of a kind sending you to the same place on one board.
-    const placed = new Set<ContractKind>(['parcel', 'freight', 'escort', 'bounty', 'ace', 'smuggle', 'piracy', 'den']);
+    const placed = new Set<ContractKind>(['parcel', 'freight', 'escort', 'bounty', 'ace', 'smuggle', 'piracy', 'den', 'war']);
     const same = (a: JobDef, b: JobDef) =>
       a.title === b.title || (a.contract?.kind === b.contract?.kind && placed.has(a.contract!.kind) && a.destinationLocationId === b.destinationLocationId);
     // A kind that finds nothing to offer here is not tried again on this board (a den far out in
@@ -176,6 +188,8 @@ function makeContract(kind: ContractKind, giver: FictionalLocation, r: Rng, id: 
       return piracy(giver, r, id);
     case 'den':
       return denAssault(giver, r, id);
+    case 'war':
+      return war(giver, r, id, clock);
   }
 }
 
@@ -314,6 +328,8 @@ function freight(giver: FictionalLocation, r: Rng, id: string, clock: number, op
 }
 
 function supply(giver: FictionalLocation, r: Rng, id: string, clock: number, opts: { commodity?: CommodityId; event?: WorldEvent } = {}): JobDef | null {
+  // A station on a front line could fall before the goods arrive, and then take no delivery.
+  if (EXPOSED.has(giver.id)) return null;
   const markets = marketTables();
   const here = markets.get(giver.id);
   if (!here) return null;
@@ -571,6 +587,88 @@ function piracy(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
   };
 }
 
+// ---------------------------------------------------------------- the border war (docs/PROCGEN.md §20)
+
+/** Fronts within reach of a board that are fighting, for its side: the law's own fronts, or any front for a den. */
+function warFronts(giver: FictionalLocation, clock: number): FrontState[] {
+  const wake = giver.stationType === 'pirate-den';
+  if (!wake && giver.factionId !== 'sta' && giver.factionId !== 'frontier') return [];
+  const out: FrontState[] = [];
+  for (const f of FRONTS) {
+    if ((!wake && f.faction !== giver.factionId) || jumpsBetween(giver.systemId, f.lawSystem) > CONTRACTS.maxJumps.war) continue;
+    const s = frontState(f, clock);
+    if (atWar(s, wake ? 'wake' : 'law')) out.push(s);
+  }
+  return out;
+}
+
+/**
+ * War work on a front within reach while it fights. The law pays for the Wake's pack on its lanes
+ * broken (at a fallen station, its guns, to take it back); a den pays for the front faction's
+ * haulers hit. Done, it pushes the front the poster's way (economy/jobs.ts).
+ */
+function war(giver: FictionalLocation, r: Rng, id: string, clock: number): JobDef | null {
+  const fronts = warFronts(giver, clock);
+  if (!fronts.length) return null;
+  const s = r.pick(fronts);
+  const f = s.front;
+  const rw = CONTRACTS.reward.war;
+  const law = getSystem(f.lawSystem).displayName;
+  const side = FACTIONS[f.faction];
+  const fee = routeFeeBetween(giver.systemId, f.lawSystem);
+  const station = f.exposedId ? getLocation(f.exposedId) : null;
+  if (giver.stationType === 'pirate-den') {
+    const count = r.int(2, 3);
+    const words: Record<Exclude<FrontState['phase'], 'truce'>, [string, string]> = {
+      'pushed-back': [`Take back the lanes to ${law}`, `The ${side.shortName} has pushed us back from ${law}. Hit ${count} of its haulers there and the lanes are ours again.`],
+      skirmish: [`Tip the fight at ${law}`, `Patrols and our crews are trading shots on ${f.name}. Hit ${count} ${side.shortName} haulers at ${law} and the fight tips our way.`],
+      blockade: [`Tighten the blockade of ${law}`, `Our packs sit on the lanes into ${law}. Hit ${count} of the ${side.shortName} haulers that slip through, and nothing will.`],
+      fallen: [`Starve ${law}`, `We hold ${station?.name ?? 'the station'}. Keep it: hit ${count} ${side.shortName} haulers at ${law} before they can supply a counterattack.`],
+    };
+    const [title, why] = words[s.phase as Exclude<FrontState['phase'], 'truce'>];
+    return {
+      ...common(giver, id, clampDifficulty(2 + (security(f.lawSystem) >= 0.6 ? 1 : 0))),
+      repReward: { 'hollow-wake': CONTRACTS.outlawWake.war },
+      title,
+      briefing: `${why} Every one is a crime: expect fines and angry patrols. Done, it pushes ${f.name} the Wake’s way.`,
+      objectives: [{ kind: 'piracy', systemId: f.lawSystem, faction: f.faction, count, text: `Destroy ${count} ${side.shortName} haulers in ${law}` }],
+      reward: pay(r, fee, rw.base + rw.perShip * count),
+      difficultyNote: `The border war, for the Wake; ${routeNote(giver.systemId, f.lawSystem).toLowerCase()}`,
+      destinationLocationId: giver.id,
+      contract: { kind: 'war', front: f.id, side: 'wake' },
+    };
+  }
+  const fallen = s.phase === 'fallen' && !!station;
+  const level: 2 | 3 = s.phase === 'skirmish' ? 2 : 3;
+  const count = level + (fallen ? 2 : 1);
+  const here = openStationsIn(f.lawSystem);
+  const near = fallen ? station! : (station ?? (here.length ? r.pick(here) : null));
+  if (!near) return null;
+  const title = fallen ? `Retake ${station!.name}` : s.phase === 'blockade' ? `Break the blockade of ${law}` : `Hold the line at ${law}`;
+  const why = fallen
+    ? `The Hollow Wake holds ${station!.name}. Destroy the ${count} raiders guarding it and the ${side.shortName} can take it back.`
+    : s.phase === 'blockade'
+      ? `Raider packs sit on the lanes into ${law}. Break the pack of ${count} off ${near.name} and the traders can run again.`
+      : `Patrol wings and Wake raiders are fighting over ${law}. A pack of ${count} is pressing on ${near.name}: destroy it.`;
+  const common_ = common(giver, id, level);
+  return {
+    ...common_,
+    repReward: { ...common_.repReward, 'hollow-wake': -4 },
+    title,
+    briefing: `${why} Done, it pushes ${f.name} the ${side.shortName}’s way.`,
+    objectives: [{ kind: 'bounty', systemId: f.lawSystem, locationId: near.id, count, level, text: `Destroy ${count} raiders near ${place(near)}` }],
+    reward: pay(r, fee, (rw.base + rw.perRaider * count * level) * (fallen ? rw.fallen : 1)),
+    difficultyNote: `The border war, threat ${level} of 3; ${routeNote(giver.systemId, f.lawSystem).toLowerCase()}`,
+    destinationLocationId: near.id,
+    contract: { kind: 'war', front: f.id, side: 'law' },
+  };
+}
+
+/** Open stations in a system, the front-line ones included (a bounty is flown near one, not docked at). */
+function openStationsIn(systemId: SystemId): FictionalLocation[] {
+  return ALL_LOCATIONS.filter((l) => l.systemId === systemId && l.status === 'functional' && l.dockable !== false);
+}
+
 /**
  * A follow-up to a delivered parcel or haul, offered at its destination (docs/PROCGEN.md §10.2):
  * deterministic from the contract's id, so it is the same whenever it is asked for.
@@ -583,7 +681,7 @@ export function followUpFor(job: JobDef, clock: number): JobDef | null {
   const r = rng(WORLD_SEED, 'chain', job.id);
   if (r.next() >= CONTRACTS.chain.chance) return null;
   const giver = getLocation(job.destinationLocationId);
-  if (!boardKinds(giver)) return null;
+  if (!boardKinds(giver, clock)) return null;
   const id = `${CONTRACT_PREFIX}${giver.id}.f${hashString(job.id).toString(36)}`;
   const next = (r.next() < 0.5 ? freight(giver, r, id, clock) : null) ?? parcel(giver, r, id);
   if (!next) return null;

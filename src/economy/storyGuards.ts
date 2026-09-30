@@ -5,7 +5,8 @@ import type { Line } from '../content/story/types.ts';
 import type { Issue } from '../content/validate.ts';
 import { jumpsFrom } from '../content/world/network.ts';
 import { ALL_LOCATIONS, getLocation, WORLD } from '../data/systems.ts';
-import { JOBS, LIFELINE_ID, type JobDef } from './jobs.ts';
+import { getFront } from './border.ts';
+import { JOBS, LIFELINE_ID, type JobDef, type Objective } from './jobs.ts';
 import { LAWFUL } from './law.ts';
 import { objectiveSystem } from './story.ts';
 
@@ -15,10 +16,11 @@ const BRIEFING_MAX = 520;
 const LINE_MAX = 300;
 
 /**
- * Story guardrails (docs/PROCGEN.md §14.4): every arc is a chain that can be finished, sends the
- * player only to real, open places within reach, speaks with people who exist, keeps its choices
- * meaningful (every way on leads somewhere, every ending ends), pays sensibly, and never asks a
- * lawful pilot for a crime.
+ * Story guardrails (docs/PROCGEN.md §14.4, §20): every arc is a chain that can be finished (a
+ * choice may branch it, each way to its own finale), sends the player only to real, open places
+ * within reach, speaks with people who exist, keeps its choices meaningful (every way on leads
+ * somewhere, every ending ends, one way on is open to every pilot), pays sensibly, and never asks
+ * a lawful pilot for a crime; an arc of nobody's asks for one only of a pilot who chose the Wake.
  */
 export function validateStory(arcJobs: readonly JobDef[] = ARC_JOBS): Issue[] {
   const issues: Issue[] = [];
@@ -41,21 +43,42 @@ export function validateStory(arcJobs: readonly JobDef[] = ARC_JOBS): Issue[] {
   for (const arcId of ARC_ORDER) {
     const arc = ARCS[arcId];
     const missions = arcJobs.filter((j) => j.story?.arc === arcId).sort((a, b) => a.story!.step - b.story!.step);
-    if (missions.length < 4 || missions.length > 6) report('arc', arcId, `${missions.length} missions (four to six)`);
+    const steps = Math.max(0, ...missions.map((m) => m.story!.step));
+    if (steps < 4 || steps > 6) report('arc', arcId, `${steps} steps (four to six)`);
     if (!CHARACTERS[arc.giver] || missions[0]?.story?.speaker !== arc.giver) report('arc', arcId, 'the arc does not start with its giver');
-    const lawful = LAWFUL.includes(arc.factionId as (typeof LAWFUL)[number]);
-    let prev: JobDef | null = null;
+    const lawful = arc.factionId !== null && LAWFUL.includes(arc.factionId as (typeof LAWFUL)[number]);
+    const outlaw = arc.factionId === 'hollow-wake';
     const finaleReward = Math.max(...missions.map((m) => m.reward));
+    const atStep = (step: number) => missions.filter((m) => m.story!.step === step);
+    const choices = new Map(missions.flatMap((m) => m.objectives.filter((o): o is Extract<Objective, { kind: 'choice' }> => o.kind === 'choice').map((o) => [o.choiceId, o] as const)));
+    for (let step = 1; step <= steps; step++) {
+      const here = atStep(step);
+      if (!here.length) report('chain', arcId, `no mission at step ${step}`);
+      // A branch: missions sharing a step each follow different answers to one choice.
+      if (here.length > 1) {
+        const ways = here.map((m) => m.requires?.choice);
+        const taken = ways.flatMap((w) => w?.oneOf ?? []);
+        if (ways.some((w) => !w || w.id !== ways[0]!.id) || new Set(taken).size !== taken.length) report('chain', arcId, `the missions at step ${step} must follow different answers to one choice`);
+      }
+    }
 
-    missions.forEach((job, i) => {
+    missions.forEach((job) => {
       const story = job.story!;
       const subject = job.id;
       if (ids.has(job.id) || !job.id.startsWith(`arc.${arcId}.`)) report('ids', subject, 'duplicate id, or not named arc.<arc>.<step>');
       ids.add(job.id);
-      if (story.step !== i + 1) report('chain', subject, `step ${story.step} where ${i + 1} was expected`);
-      if (!!story.finale !== (i === missions.length - 1)) report('chain', subject, 'the last mission, and only it, is the finale');
-      if (prev && job.requires?.jobComplete !== prev.id) report('chain', subject, `does not follow ${prev.id}`);
-      if (!prev && arcId !== 'wake' && job.requires?.jobComplete !== LIFELINE_ID) report('chain', subject, 'a lawful arc starts after the opening delivery');
+      if (!!story.finale !== (story.step === steps)) report('chain', subject, 'the missions of the last step, and only they, are finales');
+      if (story.step > 1) {
+        // It follows a mission of the step before, on its own branch.
+        const prev = atStep(story.step - 1).find((m) => m.id === job.requires?.jobComplete);
+        const branch = prev?.requires?.choice;
+        if (!prev) report('chain', subject, `does not follow a mission of step ${story.step - 1}`);
+        else if (branch && (job.requires?.choice?.id !== branch.id || job.requires.choice.oneOf.some((x) => !branch.oneOf.includes(x)))) report('chain', subject, `leaves the branch of ${prev.id}`);
+      } else if (!outlaw && job.requires?.jobComplete !== LIFELINE_ID) report('chain', subject, 'an arc not the Wake’s starts after the opening delivery');
+      if (story.settles) {
+        if (!story.finale) report('chain', subject, 'only a finale settles a front');
+        if (!getFront(story.settles.front)) report('chain', subject, `no border front ${story.settles.front}`);
+      }
 
       // People and places.
       const speaker = CHARACTERS[story.speaker];
@@ -92,11 +115,18 @@ export function validateStory(arcJobs: readonly JobDef[] = ARC_JOBS): Issue[] {
         if (!o.text.trim()) report('text', subject, `objective ${k} has no text`);
       }
 
-      // The law: lawful arcs never ask for a crime; the Wake's arc is for pilots it trusts.
+      // The law: lawful arcs never ask for a crime; the Wake's arc is for pilots it trusts; an arc of
+      // nobody's asks for a crime only on the branch of a choice only the Wake's friends can make.
       const contraband = (c: string) => (LAW.contraband as readonly string[]).includes(c);
       const crime = job.objectives.some((o) => o.kind === 'piracy' || o.kind === 'defend' || (o.kind === 'deliver' && contraband(o.commodity))) || (story.cargo && contraband(story.cargo.commodity));
       if (lawful && crime) report('law', subject, 'a lawful arc asks for a crime');
-      if (!lawful && i === 0 && (job.requires?.minRep?.faction !== 'hollow-wake' || job.requires.minRep.value < LAW.wakeFriendly)) report('law', subject, 'the Wake’s arc is for pilots the Wake trusts');
+      if (crime && !lawful && !outlaw) {
+        const way = job.requires?.choice;
+        const options = way ? choices.get(way.id)?.options.filter((x) => way.oneOf.includes(x.id)) ?? [] : [];
+        const wakeOnly = options.length > 0 && options.every((x) => x.requires?.minRep.faction === 'hollow-wake' && x.requires.minRep.value >= LAW.wakeFriendly);
+        if (!wakeOnly) report('law', subject, 'asks for a crime of a pilot who did not choose the Wake');
+      }
+      if (outlaw && story.step === 1 && (job.requires?.minRep?.faction !== 'hollow-wake' || job.requires.minRep.value < LAW.wakeFriendly)) report('law', subject, 'the Wake’s arc is for pilots the Wake trusts');
 
       // Choices: two or three ways, each with a consequence; every way on leads to the next step.
       for (const o of job.objectives) {
@@ -111,18 +141,34 @@ export function validateStory(arcJobs: readonly JobDef[] = ARC_JOBS): Issue[] {
         }
         const onward = o.options.filter((x) => !x.ends).map((x) => x.id);
         if (!onward.length) report('choice', subject, 'every option ends the arc');
-        const next = missions[i + 1];
-        if (next) {
-          const allowed = next.requires?.choice?.id === o.choiceId ? next.requires.choice.oneOf : [];
+        if (!o.options.some((x) => !x.ends && !x.requires)) report('choice', subject, 'one way on must be open to every pilot');
+        for (const x of o.options) {
+          const need = x.requires?.minRep;
+          if (need && (need.value < -30 || need.value > 40)) report('choice', subject, `${x.id}: asks for standing out of range`);
+        }
+        const next = atStep(story.step + 1);
+        if (next.length) {
+          const allowed = next.flatMap((n) => (n.requires?.choice?.id === o.choiceId ? n.requires.choice.oneOf : []));
           if (onward.some((id) => !allowed.includes(id)) || allowed.some((id) => !onward.includes(id))) report('choice', subject, 'the next step must follow exactly the options that go on');
-          const v = next.story?.variant;
-          if (v?.choiceId === o.choiceId) {
-            for (const id of onward) if (!v.briefing[id] || !v.debrief[id]) report('text', next.id, `no words for the choice ${id}`);
+          for (const n of next) {
+            const v = n.story?.variant;
+            if (v?.choiceId === o.choiceId) {
+              for (const id of onward) if (!v.briefing[id] || !v.debrief[id]) report('text', n.id, `no words for the choice ${id}`);
+            }
           }
         }
       }
-      if (story.variant && !missions.slice(0, i).some((m) => m.objectives.some((o) => o.kind === 'choice' && o.choiceId === story.variant!.choiceId))) {
+      if (story.variant && !missions.some((m) => m.story!.step < story.step && m.objectives.some((o) => o.kind === 'choice' && o.choiceId === story.variant!.choiceId))) {
         report('text', subject, 'its words follow a choice made nowhere before it');
+      }
+      // Echoes: words for choices made in the other arcs, each a real answer to a real question.
+      for (const e of story.echoes ?? []) {
+        const asked = arcJobs.flatMap((m) => m.objectives).find((o): o is Extract<Objective, { kind: 'choice' }> => o.kind === 'choice' && o.choiceId === e.choiceId);
+        if (!asked || choices.has(e.choiceId)) report('text', subject, `echoes ${e.choiceId}, which no other arc asks`);
+        for (const [id, text] of Object.entries(e.said)) {
+          if (asked && !asked.options.some((x) => x.id === id)) report('text', subject, `echoes ${e.choiceId}: no answer ${id}`);
+          if (!text.trim() || text.length > LINE_MAX) report('text', subject, `an echo of ${e.choiceId} is empty or longer than ${LINE_MAX} characters`);
+        }
       }
 
       // Pay: decisions pay through their options; missions pay sensibly and the finale most of all.
@@ -144,7 +190,6 @@ export function validateStory(arcJobs: readonly JobDef[] = ARC_JOBS): Issue[] {
       checkLines(subject, story.debrief ?? []);
       for (const lines of Object.values(story.variant?.debrief ?? {})) checkLines(subject, lines);
       if (!story.finale && !(story.debrief ?? []).length && !decision) report('text', subject, 'a mission with no debrief');
-      prev = job;
     });
   }
   return issues;
