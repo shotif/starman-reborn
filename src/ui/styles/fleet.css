@@ -1,0 +1,138 @@
+/* A fleet of your own (docs/PROCGEN.md §18): the Fleet window and the hire dialog. */
+
+/* Rows: icon and text on the first line, the actions wrapping underneath (any width, any text size). */
+.fleet-row {
+  grid-template-columns: auto minmax(0, 1fr);
+  padding-top: 0.4rem;
+  padding-bottom: 0.4rem;
+}
+
+.fleet-row .row-actions {
+  grid-column: 2 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.fleet-row .row-actions:empty {
+  display: none;
+}
+
+.fleet-row .trade-text .row-sub + .row-sub {
+  margin-top: 0.1rem;
+}
+
+.fleet-status {
+  color: var(--text);
+}
+
+.fleet-last {
+  font-style: italic;
+}
+
+.fleet-subhead {
+  margin-top: 0.7rem;
+}
+
+.fleet-offer {
+  justify-content: space-between;
+}
+
+.fleet-stake-here {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.fleet-stake-here p {
+  margin: 0;
+}
+
+.tag.good-tag {
+  color: var(--success);
+  border-color: rgba(98, 227, 160, 0.5);
+  text-transform: none;
+}
+
+.fleet .tag.news {
+  white-space: normal;
+}
+
+/* Reports, newest first. */
+.fleet-reports {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fleet-reports li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.1rem 0.6rem;
+  padding: 0.35rem 0.5rem;
+  background: rgba(10, 20, 46, 0.5);
+  border-left: 3px solid transparent;
+  font-size: 0.86rem;
+  line-height: 1.3;
+}
+
+.fleet-reports .report-when {
+  grid-column: 1 / -1;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.fleet-reports .report-amount {
+  white-space: nowrap;
+  align-self: start;
+}
+
+.fleet-reports .report-run {
+  border-left-color: rgba(98, 227, 160, 0.55);
+}
+
+.fleet-reports .report-raid,
+.fleet-reports .report-lost {
+  border-left-color: rgba(255, 110, 110, 0.7);
+}
+
+.fleet-reports .report-wait {
+  border-left-color: rgba(255, 209, 102, 0.55);
+}
+
+/* The hire dialog: labels above full-width pickers. */
+.hire-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.hire-field label {
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.hire-field select {
+  width: 100%;
+  min-width: 0;
+}
+
+.hire-summary .kv dd {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.hire-summary .callout {
+  margin: 0.5rem 0 0;
+}
+
+.hire .field input[type='checkbox'] {
+  flex: none;
+}

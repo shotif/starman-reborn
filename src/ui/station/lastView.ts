@@ -7,7 +7,7 @@ import type { StationWindow } from './StationHub.ts';
  */
 
 const KEY = 'starman.lastView';
-const REMEMBERED: readonly (StationWindow | null)[] = ['trader', 'outfitter', 'shipyard', 'jobs', 'people', 'news', 'computer', null];
+const REMEMBERED: readonly (StationWindow | null)[] = ['trader', 'outfitter', 'shipyard', 'fleet', 'jobs', 'people', 'news', 'computer', null];
 
 type Views = Record<string, { room: RoomView; window: StationWindow | null }>;
 

@@ -22,9 +22,10 @@ import { shipyardContent } from './shipyard.ts';
 import { traderContent } from './trader.ts';
 import { peopleContent } from './people.ts';
 import { computerContent } from './computer.ts';
+import { fleetContent } from './fleet.ts';
 import { rememberView } from './lastView.ts';
 
-export type StationWindow = 'trader' | 'outfitter' | 'shipyard' | 'jobs' | 'people' | 'news' | 'computer' | 'journal' | 'arrival' | 'menu';
+export type StationWindow = 'trader' | 'outfitter' | 'shipyard' | 'fleet' | 'jobs' | 'people' | 'news' | 'computer' | 'journal' | 'arrival' | 'menu';
 
 export interface StationOpen {
   room?: RoomView;
@@ -52,6 +53,7 @@ const WINDOW_TITLE: Record<StationWindow, string> = {
   trader: 'Trader',
   outfitter: 'Outfitter',
   shipyard: 'Shipyard',
+  fleet: 'Fleet',
   jobs: 'Job board',
   people: 'People',
   news: 'Station news',
@@ -251,6 +253,8 @@ export class StationHub {
     const items: HTMLElement[] = [];
     const full = this.ctx.access === 'full';
     if (room === 'deck' && full && hasShipyard(this.ctx.locationId)) items.push(act('shipyard', 'Ships', 'shipyard', 'station-ships'));
+    // Your fleet (docs/PROCGEN.md §18): parked ships, captains, storage and stakes, at any dock.
+    if (room === 'deck' && full) items.push(act('wing', 'Fleet', 'fleet', 'station-fleet'));
     if (room === 'bar') items.push(...(full ? [act('jobs', 'Jobs', 'jobs', 'station-jobs')] : []), act('bar', 'People', 'people', 'station-people'), act('news', 'News', 'news', 'station-news'));
     if (room === 'trader') items.push(act('trader', 'Trade', 'trader', 'station-trade'));
     if (room === 'outfitter') items.push(act('outfitter', 'Equip', 'outfitter', 'station-equip'));
@@ -289,7 +293,7 @@ export class StationHub {
 
   private renderDeckPanel(): void {
     const { state, locationId } = this.ctx;
-    const show = this.room === 'deck' && this.win !== 'arrival' && this.win !== 'shipyard';
+    const show = this.room === 'deck' && this.win !== 'arrival' && this.win !== 'shipyard' && this.win !== 'fleet';
     this.deckPanel.hidden = !show;
     if (!show) return;
     const welcome = welcomeText(state, locationId);
@@ -353,6 +357,8 @@ export class StationHub {
         });
       case 'shipyard':
         return shipyardContent(ctx, refresh);
+      case 'fleet':
+        return fleetContent(ctx, refresh);
       case 'jobs':
         return jobBoardContent(
           ctx,

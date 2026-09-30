@@ -41,7 +41,7 @@ const HOUR = 3_600;
 const shipName = (ship: ShipState) => shipModel(ship.model).name;
 const place = (id: string) => getLocation(id).name;
 const goodName = (c: CommodityId) => COMMODITIES[c].name.toLowerCase();
-const signed = (n: number) => (Math.round(n) > 0 ? `+${Math.round(n)}` : `${Math.round(n)}`);
+const signed = (n: number) => `${Math.round(n) > 0 ? '+' : ''}${Math.round(n).toLocaleString('en-US')}`;
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 /** Why the player cannot do fleet business at this dock now (not docked there, or emergency docking only), or null. */
@@ -426,7 +426,6 @@ export interface HaulEstimate {
   profit: number;
   net: number;
   times: { load: number; oneWay: number; run: number };
-  perHour: number;
   risk: HaulRisk;
   /** What insurance pays if the ship is lost. */
   payout: number;
@@ -473,7 +472,6 @@ export function haulEstimate(state: GameState, o: OwnedShip, to: string, c: Comm
     profit,
     net,
     times,
-    perHour: Math.round((net / times.run) * HOUR),
     risk: haulRisk(from, to, state.clock),
     payout: insurancePayout(o.ship),
   };
