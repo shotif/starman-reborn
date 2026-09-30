@@ -36,7 +36,7 @@ rules      src/content/rules/*.ts     makers, ship classes, equipment families, 
    ↓
 generators src/content/gen/*.ts       pure functions of (rules, seed)
    ↓
-content    the catalogue (later: stations, jobs, people, news)
+content    the catalogue, the world, markets, traffic, contracts (later: people, news)
    ↓
 guardrails src/content/validate.ts    §4; tests/unit/content.test.ts runs them
    ↓
@@ -114,7 +114,7 @@ Other balance guardrails:
 - Dealers pay back 70% of the price for ships and equipment, so buying and selling never makes
   money.
 - Job rewards scale with distance, danger and time within bands; a job's reward is never below its
-  fees and expected repairs.
+  fees and expected repairs (§10.4 lists the contract guardrails).
 
 ### 4.3 Availability and progression
 
@@ -143,7 +143,7 @@ Other balance guardrails:
   (mining at small confirmed planets; research near notable bodies; pirate dens only where lawful
   influence is low). The world generator and its guardrails are described in §7.
 - Every generated job is reachable, completable with a ship the player can buy by then, and pays
-  within band; jobs never target the player's own faction without warning.
+  within band; jobs never target the player's own faction without warning (contracts: §10).
 - News and rumours only report facts that exist in the world state.
 
 ### 4.6 Performance
@@ -404,3 +404,104 @@ Every system has traffic that fits it (`src/world/traffic/plan.ts`, flown by `Fl
 - **Warnings**: the star map and encyclopedia show each system's security, owner and raider
   threat; the HUD shows *Hostile contact* while a pack is on you, and jumping needs clear space.
 - Fewer ships on the Medium and Low quality presets (phones).
+
+## 10. Contracts
+
+Every station with a contracts service posts a board of generated contracts next to the hand-made
+story jobs (`src/economy/contracts.ts`; rules in `src/content/contracts/rules.ts`). The six
+hand-made stations join in once the opening delivery is done.
+
+### 10.1 Boards
+
+- A board is a pure function of the station, its time slot and the world
+  (`rng(WORLD_SEED, "contracts", station, slot)`). Boards change every 25 minutes of play (the game
+  clock). Ids are `c.<station>.<slot>.<index>`, so a contract can be found again from its id.
+- Two contracts per board, one more at large stations and one more at trade ports and military
+  bases (at most four).
+- What a station posts depends on its type:
+
+  | Station | Freight | Parcel | Supply | Bounty | Survey |
+  | --- | --- | --- | --- | --- | --- |
+  | Trade port | 3 | 2 | 2 | 1 | |
+  | Customs depot | 1 | 2 | | 3 | |
+  | Shipyard | 1 | 1 | 3 | | |
+  | Mining outpost | 2 | | 2 | 1 | |
+  | Refinery | 2 | 1 | 2 | | |
+  | Factory | 3 | | 2 | | |
+  | Agri station (farm) | 3 | 1 | 1 | | |
+  | Research station | | 2 | 1 | | 3 |
+  | Relay | | 3 | | 1 | |
+  | Military base | | 1 | | 4 | |
+  | Free port | 2 | 2 | 1 | 1 | |
+
+  The hand-made stations have their own mixes (Horizon Platform posts surveys, Deimos Depot
+  bounties, and so on).
+- Accepting copies the contract into the save (`GameState.contracts`, save format 5), so the board
+  moving on or the rules being tuned never changes a contract under the player. At most five
+  generated contracts can be in progress; the 30 most recent finished ones are kept for the
+  journal.
+- A survey of a planet the player has already scanned is not offered.
+
+### 10.2 Kinds
+
+- **Freight**: the station loads goods it makes (8–30 hold units, worth at most 900 cr at base
+  prices; never small arms) for a station within three jumps that wants or trades them. The player
+  pays a deposit of 110% of what the cargo fetches at its destination; it comes back with the pay
+  on delivery, so selling the cargo instead always loses money.
+- **Courier parcel**: a pocket-sized parcel for any open station within four jumps. No cargo
+  space; completes on docking there.
+- **Supply run**: the station is short of a good it wants. The briefing names the nearest station
+  within three jumps that makes it, with its price (the trade computer learns that price). The pay
+  covers the goods at that price plus a 35% markup.
+- **Bounty**: a Hollow Wake pack preying near a marked spot (the system's raider den, or one of its
+  stations) in a system within two jumps where raiders roam. The pack has the system's threat
+  level and one more raider than that level. It appears shortly after the player arrives, a few
+  kilometres off the station's approach (or outside the den), loiters there and never leaves;
+  patrols leave it to the player. Leave and come back and the rest of the pack is still there.
+  The contract pays when the last one goes down (instead of the per-kill bounty) and costs 3
+  standing with the Hollow Wake.
+- **Survey**: fly close enough to a confirmed planet within three jumps for the scanner to log it
+  (real catalogued planets only). Pays as soon as the scan is logged.
+
+### 10.3 Pay, difficulty and standing
+
+- **Pay** = 2.5 × the one-way jump fees (always paid in full) + the goods on a supply run + a part
+  that varies by ±10% from one posting to the next: a base (110–200 cr), a danger part times
+  (1 − the destination's security), and the kind's own part (15% of the freight's base value, the
+  35% markup on supply goods, 150 cr per raider per threat level on bounties). Rounded to 5 cr.
+- **Difficulty** 1–3: one more for a lawless destination (security below 0.35) and one more for
+  three jumps or more; supply runs count the trip to the source; bounties take the pack's threat
+  level. The briefing notes the route and the risk.
+- **Standing** with the station's owner: +2, +4 or +6 by difficulty; difficulty 3 needs Friendly
+  standing (10). Independent stations have no gates and give no standing.
+- **Abandoning** a generated contract (from the journal): any deposit is forfeit, the cargo stays
+  in the hold, standing with the owner drops by 3, and the contract stays on its board as
+  abandoned so it cannot be taken again. The story jobs cannot be abandoned.
+
+### 10.4 Contract guardrails
+
+`validateContracts` (`src/economy/contractGuards.ts`) checks every board at every station over
+forty time slots (`tests/unit/contracts.test.ts`):
+
+- ids name their station and time slot and are unique on a board; text is filled in (no
+  `undefined`, `NaN` or braces);
+- rewards between 0 and 4,500 cr; difficulty 1–3; the standing gate matches the difficulty;
+- every target is within the kind's reach, and destinations are open stations;
+- freight: the giver makes the goods, the destination wants or trades them, the deposit is at
+  least what the cargo fetches there, and the load is a contract-sized one;
+- supply runs: the giver wants the goods and the named source makes them;
+- bounties: raiders roam the system, and the pack's size and threat match the system's;
+- surveys: the planet is a confirmed planet of that system;
+- pay beats 1.2 × the jump fees there and back plus 40 cr of expected repairs per difficulty level
+  (plus the goods on a supply run);
+- no station's board is empty in more than one time slot in ten, and every kind is posted
+  somewhere.
+
+### 10.5 What the player sees
+
+- The job board in the bar: each card shows the kind, who posts it (or *Independent*), where it
+  sends you, the reward and the difficulty; opened, the briefing, the route note, the cargo and
+  the deposit. The accept button shows the reward and the deposit.
+- The HUD objective and the map marker follow the story job first, then the other contracts in the
+  order they were accepted; bounties count kills (*k/N*).
+- The journal lists contracts in progress, with *Abandon* for the generated ones.

@@ -11,7 +11,7 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | --- | --- | --- |
 | TypeScript typecheck (app + scripts/tests) | `npm run typecheck` | Pass |
 | Astronomy data validation | `npm run data:validate` | Pass (2 warnings: data is provisional) |
-| Unit tests | `npm test` | Pass: 315 tests in 15 files |
+| Unit tests | `npm test` | Pass: 327 tests in 16 files |
 | Production build | `npm run build` | Pass |
 | Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 9 passed (3 touch-only tests skipped) |
 | Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 11 passed (1 desktop-only test skipped) |
@@ -52,6 +52,15 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   rules are caught; a balance table snapshot records every ship and item.
 - `jobs.test.ts`: the full delivery chain, detours (other systems, selling and re-buying cargo),
   early scans, reputation-gated contracts, visit-only couriers, rescue after defeat.
+- `contracts.test.ts`: every station's contract board passes the guardrails over forty time
+  slots (reach, pay against fees and repairs, deposits against the cargo's value, bounties only
+  where raiders roam, surveys of confirmed planets) and is deterministic; the hand-made stations
+  post only after the first delivery; each kind played through (freight loads cargo against a
+  deposit and refunds it, parcels complete on docking, supply runs brief the source, bounties
+  count kills, surveys complete on a scan and are not offered twice); refusals without hold space
+  or credits; abandoning (deposit forfeit, cargo kept, standing lost, no second try, story jobs
+  kept); the five-contract limit; accepted contracts survive later boards and the save; v4 → v5
+  migration and damaged contracts rejected.
 - `save.test.ts`: v1, v2 and v3 migrations (the v2 courier and its upgrades become catalogue
   items; v3 saves gain untouched markets),
   unknown ships, fittings and rounds rejected, future/damaged save rejection, IndexedDB round trip with

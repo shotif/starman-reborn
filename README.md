@@ -8,9 +8,10 @@ Alpha Centauri, discover the real exoplanet Proxima Centauri b, and make the fir
 fictional research outpost. After that the neighbourhood is open: 58 generated stations of twelve
 kinds (ports, mines, refineries, farms, research stations, shipyards, free ports, raider dens...),
 21 goods with stock-based prices, traders and patrols on the lanes, raider packs in lawless
-space, and 35 ships in six classes from five makers with over 100 pieces of equipment. Ships,
-equipment, the world and the economy are generated from rule files and checked by automated
-guardrails ([docs/PROCGEN.md](docs/PROCGEN.md)).
+space, contract boards in every station bar (freight, courier parcels, supply runs, bounties on
+raider packs, planet surveys), and 35 ships in six classes from five makers with over 100 pieces
+of equipment. Ships, equipment, the world, the economy and the contracts are generated from rule
+files and checked by automated guardrails ([docs/PROCGEN.md](docs/PROCGEN.md)).
 
 Star positions, distances and confirmed planets come from astronomical catalogs (see
 [docs/ASTRONOMY_SOURCES.md](docs/ASTRONOMY_SOURCES.md)). Stations, factions, jump travel, trade
@@ -97,8 +98,9 @@ src/world/     local system scenes (hand-made and generated), flight session, tr
                packs (src/world/traffic), procedural art (src/world/art)
 src/content/   rule-driven generators and guardrails (docs/PROCGEN.md): ships and equipment,
                the world (src/content/world: lanes, territory, stations) and the economy
-               (src/content/economy: goods, market profiles)
-src/economy/   live markets, trade, cargo, outfitter and shipyard, factions, jobs
+               (src/content/economy: goods, market profiles), contract rules (src/content/contracts)
+src/economy/   live markets, trade, cargo, outfitter and shipyard, factions, jobs and generated
+               contracts
 src/audio/     procedural Web Audio music and sound effects
 src/ui/        HUD, touch controls, station screens, encyclopedia, styles
 scripts/       astronomy snapshot, catalogue extraction (HYG, Open Exoplanet Catalogue), dataset
