@@ -96,7 +96,8 @@ export class StationHub {
       this.globalButton('menu', 'Menu', 'station-menu', () => this.openWindow(this.win === 'menu' ? null : 'menu')),
     );
     this.idPanel = h('div', { class: 'station-id' });
-    this.deckPanel = h('section', { class: 'frame deck-panel', 'aria-label': 'Ship status' });
+    // Scrolls when short screens or large text leave too little room between the rails.
+    this.deckPanel = h('section', { class: 'frame deck-panel scroll', 'aria-label': 'Ship status' });
     this.windowEl = h('section', { class: 'window frame station-window', tabindex: '-1' });
     this.fade = h('div', { class: 'station-fade', 'aria-hidden': 'true' });
     this.toastSlot = h('div', { class: 'toasts station-toasts', 'aria-live': 'polite' });
@@ -280,7 +281,7 @@ export class StationHub {
       this.deckPanel,
       h('p', { class: `comm${welcome.improved ? ' improved' : ''}`, 'data-testid': 'dock-welcome' }, welcome.text),
       clearance ? h('p', { class: 'callout good' }, icon('jump'), 'Jump clearance granted. Open the star map in flight to jump.') : null,
-      shipStatus(this.ctx, () => this.render(), { repair: true }),
+      shipStatus(this.ctx, () => this.render(), { repair: true, compact: true }),
     );
   }
 

@@ -11,11 +11,11 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | --- | --- | --- |
 | TypeScript typecheck (app + scripts/tests) | `npm run typecheck` | Pass |
 | Astronomy data validation | `npm run data:validate` | Pass (2 warnings: data is provisional) |
-| Unit tests | `npm test` | Pass: 137 tests in 7 files |
+| Unit tests | `npm test` | Pass: 165 tests in 8 files |
 | Production build | `npm run build` | Pass |
-| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 7 passed (3 touch-only tests skipped) |
-| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 9 passed (1 desktop-only test skipped) |
-| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 54 screenshots, no audit findings |
+| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 8 passed (3 touch-only tests skipped) |
+| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 10 passed (1 desktop-only test skipped) |
+| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 72 screenshots, no audit findings |
 
 ### Unit tests (Vitest)
 
@@ -24,18 +24,25 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   Proxima separate from A/B, confirmed-only planets, jump routing and fees.
 - `economy.test.ts`: cargo bounds, exact trade arithmetic, rejected orders leave state unchanged,
   max-buy limits, no same-dock arbitrage, the Earth → Mars → Proxima profit, route returns from
-  known markets only, upgrade effect, repair affordability, reputation effects on repairs, prices
-  and welcome text.
+  known markets only, repair affordability, reputation effects on repairs, prices and welcome
+  text; the outfitter (replacing a shield with a 70% buy-back, mount classes and standing gates,
+  selling non-core items only, armour and cargo pods, rounds and repair kits) and the shipyard
+  (trade-in with repairs deducted, cargo carried across, a buy-and-sell round trip never profits).
+- `content.test.ts`: the rule-driven catalogue passes every guardrail, is deterministic, keeps ids
+  and stats when only the seed changes, offers six classes from several makers and over 100 items,
+  builds in under 20 ms; the starting ship flies exactly like the original player ship; broken
+  rules are caught; a balance table snapshot records every ship and item.
 - `jobs.test.ts`: the full delivery chain, detours (other systems, selling and re-buying cargo),
   early scans, reputation-gated contracts, visit-only couriers, rescue after defeat.
-- `save.test.ts`: v1 → v2 migration, future/damaged save rejection, IndexedDB round trip with
+- `save.test.ts`: v1 and v2 migrations (the v2 courier and its upgrades become catalogue items),
+  unknown ships, fittings and rounds rejected, future/damaged save rejection, IndexedDB round trip with
   backup rotation, fallback to the backup, coalesced writes, **save after jump** survives a fresh
   load, reset keeps settings, settings sanitising.
 - `flight.test.ts`: **pointer ownership for the two touch sticks** (third finger, wrong-pointer
   moves, cancel, hold button), frame-rate independence (30 Hz vs 120 Hz), drift, boost/cruise,
   bounded sub-steps, ship orientation, autopilot arrival, the portrait camera field of view,
   intercept maths, a lead shot hitting an off-axis crossing target, gun-arc clamping, shield/hull
-  damage and regeneration.
+  damage and regeneration, damage-type multipliers on shields and hull.
 - `galaxy-map.test.ts`: camera-relative transforms, orbit controller, projection and label layout,
   jump-button rules.
 - `audio.test.ts`: music theory, deterministic seeded patterns, mood definitions, voice limits,
@@ -67,10 +74,12 @@ touch input is real Chromium touch events sent over the DevTools protocol.
     keeps the other in control.
   - **pointercancel** releases both sticks.
   - **Rotation mid-flight** (390×844 → 844×390) keeps the ship and re-lays out the controls.
+  - **Taking over the controls cancels docking**: throttle (desktop) or the steering stick
+    (touch) during a dock approach, and the Free flight command, all end the autopilot.
   - **Desktop: a hit on a target away from the screen centre during a turn**, with bolts
     following the visible cursor.
-- `screenshots.spec.ts`: title, job board, buy dialog, station deck, flight HUD and star
-  map at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
+- `screenshots.spec.ts`: title, job board, buy dialog, station deck, shipyard, outfitter, flight
+  HUD and star map at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
   zoom). Saved in `docs/screenshots/`. Each is audited for page scroll overflow, clipped controls
   (controls inside a scrolling panel count only if the panel itself is off-screen), content cut

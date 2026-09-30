@@ -27,8 +27,11 @@ import { gearGlyph, gearLine, shipKind, slotGlyph, slotLabel } from './gearText.
 const bar = (label: string, value: number, max: number, color: string, text: string) =>
   h('div', { class: 'statbar' }, label, h('div', { class: 'segbar', style: `--fill: ${max > 0 ? Math.max(0, Math.min(1, value / max)) : 0}; --seg-color: ${color}` }), h('span', { class: 'num' }, text));
 
-/** Your ship as fitted: hull, shield, guns, rounds, kits and hold, with a repair action. */
-export function shipStatus(ctx: StationContext, refresh: Refresh, opts: { repair: boolean }): HTMLElement {
+/**
+ * Your ship as fitted: hull, shield, guns, rounds, kits and hold, with a repair action. The compact
+ * form (hangar deck) folds rounds and kits into one line and leaves the hold to the header.
+ */
+export function shipStatus(ctx: StationContext, refresh: Refresh, opts: { repair: boolean; compact?: boolean }): HTMLElement {
   const { state, locationId } = ctx;
   const ship = state.ship;
   const model = shipModel(ship.model);
@@ -42,9 +45,22 @@ export function shipStatus(ctx: StationContext, refresh: Refresh, opts: { repair
     bar('Hull', ship.hull, perf.hullMax, 'var(--hull)', `${Math.round(ship.hull)}/${perf.hullMax}`),
     bar('Shield', perf.shield ? 1 : 0, 1, 'var(--shield)', perf.shield ? `${perf.shield.capacity} ${perf.shield.shieldType}` : 'none'),
     h('div', { class: 'statbar' }, 'Guns', h('span', { class: 'ship-guns' }, gunSummary(ship))),
-    fittedLaunchers(ship).map((l) => bar(roundsLabel(l.stats.kind), l.ammo, l.stats.maxAmmo, 'var(--amber)', `${l.ammo}/${l.stats.maxAmmo}`)),
-    bar('Repair kits', ship.repairKits, REPAIR_KIT.max, 'var(--friendly)', `${ship.repairKits}/${REPAIR_KIT.max}`),
-    bar('Cargo', cargoUsed(ship.cargo), perf.cargo, 'var(--amber)', `${cargoUsed(ship.cargo)}/${perf.cargo}`),
+    opts.compact
+      ? h(
+          'div',
+          { class: 'statbar' },
+          'Racks',
+          h(
+            'span',
+            { class: 'ship-guns' },
+            [...fittedLaunchers(ship).map((l) => `${l.ammo}/${l.stats.maxAmmo} ${roundsLabel(l.stats.kind).toLowerCase()}`), `${ship.repairKits}/${REPAIR_KIT.max} kits`].join(' · '),
+          ),
+        )
+      : [
+          fittedLaunchers(ship).map((l) => bar(roundsLabel(l.stats.kind), l.ammo, l.stats.maxAmmo, 'var(--amber)', `${l.ammo}/${l.stats.maxAmmo}`)),
+          bar('Repair kits', ship.repairKits, REPAIR_KIT.max, 'var(--friendly)', `${ship.repairKits}/${REPAIR_KIT.max}`),
+          bar('Cargo', cargoUsed(ship.cargo), perf.cargo, 'var(--amber)', `${cargoUsed(ship.cargo)}/${perf.cargo}`),
+        ],
     opts.repair && canRepair && repair.points > 0
       ? button(`Repair hull · ${formatCredits(repair.cost)}${repair.discount ? ` (−${Math.round(repair.discount * 100)}%)` : ''}`, {
           icon: 'repair',
