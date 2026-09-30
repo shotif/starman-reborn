@@ -94,56 +94,6 @@
   color: var(--text-muted);
 }
 
-.face {
-  display: inline-grid;
-  place-items: center;
-  flex: none;
-  width: 56px;
-  height: 56px;
-  border-radius: var(--radius);
-  overflow: hidden;
-  border: 1px solid var(--panel-border-strong);
-  background: #0b1630;
-}
-
-.face.lg {
-  width: 96px;
-  height: 96px;
-}
-
-.face > svg,
-.face > .portrait {
-  width: 100%;
-  height: 100%;
-}
-
-.face-initials {
-  font-family: var(--font-ui);
-  font-weight: 700;
-  font-size: 1.3rem;
-  color: var(--accent-strong);
-}
-
-.face-initials.lg {
-  font-size: 2rem;
-}
-
-.face-initials.faction-sta {
-  background: #0e2447;
-}
-
-.face-initials.faction-frontier {
-  background: #15301c;
-}
-
-.face-initials.faction-hollow-wake {
-  background: #34150f;
-}
-
-.face-initials.faction-independent {
-  background: #262036;
-}
-
 .person-head {
   display: flex;
   gap: 0.8rem;
