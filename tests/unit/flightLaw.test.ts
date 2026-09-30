@@ -77,6 +77,7 @@ function flightIn(systemId: SystemId, plan: Partial<TrafficPlan>, owner: Traffic
     onMessage: (text) => log.push(text),
     onCrime: record('crime'),
     onScan: record('scan'),
+    onHunterDown: record('hunterDown'),
   };
   const audio = { play() {}, setCombatIntensity() {}, setEngine() {} } as unknown as AudioEngine;
   const flight = new FlightSession({
@@ -154,13 +155,18 @@ describe('the law in flight', () => {
     expect(flee.calls.scan).toEqual([['evaded', 'sta']]);
   });
 
-  it('bounty hunters come for a pilot owing big fines in secure space', () => {
-    const { run, npcs, log } = flightIn('sol', {}, 'sta', (s) => (s.law.fines.sta = LAW.hunters.fines));
+  it('bounty hunters come for a pilot owing big fines in secure space, and pay nothing when downed', () => {
+    const { flight, run, npcs, log, calls } = flightIn('sol', {}, 'sta', (s) => (s.law.fines.sta = LAW.hunters.fines));
     expect(run(LAW.hunters.delay + 5, () => npcs().some((n) => n.hunter))).toBe(true);
     const hunters = npcs().filter((n) => n.hunter);
     expect(hunters).toHaveLength(LAW.hunters.count);
     expect(hunters.every((h) => h.target.name === 'Bounty hunter' && h.target.hostile)).toBe(true);
     expect(log.some((m) => m.includes('Bounty hunters'))).toBe(true);
+    const hit = (flight as unknown as { damageNpc(n: unknown, a: number, at: THREE.Vector3, t: undefined, byPlayer: boolean): void }).damageNpc.bind(flight);
+    hit(hunters[0]!, 10_000, hunters[0]!.body.position.clone(), undefined, true);
+    expect(calls.hunterDown).toHaveLength(1);
+    expect(calls.bounty).toBeUndefined();
+    expect(calls.crime).toBeUndefined();
   });
 
   it('raiders leave a pilot the Wake trusts alone until provoked', () => {

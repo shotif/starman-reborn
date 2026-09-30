@@ -80,6 +80,8 @@ export interface FlightCallbacks {
   onCrime?(kind: 'attack' | 'destroy', faction: FactionId | 'independent', name: string, role: 'trader' | 'patrol'): void;
   /** A patrol's cargo scan finished (`complete`) or the player flew off before it did (`evaded`). */
   onScan?(result: 'complete' | 'evaded', faction: FactionId): void;
+  /** The player destroyed a bounty hunter (nobody pays for that). */
+  onHunterDown?(): void;
   onMessage(text: string, tone: 'good' | 'bad' | 'info'): void;
 }
 
@@ -1528,7 +1530,9 @@ export class FlightSession {
       this.callbacks.onCrime?.('destroy', n.faction, n.name, n.role === 'patrol' ? 'patrol' : 'trader');
     }
     if (n.contract) this.callbacks.onContractKill(n.contract);
-    else if (n.side === 'raider' && !n.encounter && byPlayer) this.callbacks.onBounty(n.bounty, n.name);
+    else if (n.hunter) {
+      if (byPlayer) this.callbacks.onHunterDown?.();
+    } else if (n.side === 'raider' && !n.encounter && byPlayer) this.callbacks.onBounty(n.bounty, n.name);
     this.removeNpc(n);
     if (this.activeEncounter && this.activeEncounter.npcId === n.id) {
       const def = this.activeEncounter.def;

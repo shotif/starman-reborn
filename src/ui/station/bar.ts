@@ -226,7 +226,7 @@ function customsDesk(ctx: StationContext): HTMLElement | null {
           button(`Pardon · ${formatCredits(cost)}`, {
             variant: 'primary',
             testId: 'pay-fines',
-            disabled: state.credits < owed,
+            disabled: state.credits < cost,
             onClick: () => {
               const r = payFines(state, faction);
               ctx.sfx(r.ok ? 'credits' : 'ui-error');

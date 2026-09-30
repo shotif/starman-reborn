@@ -98,6 +98,11 @@ describe('the law', () => {
     expect(payFines(t, 'frontier').ok).toBe(true);
     expect(huntedBy(t, 'frontier')).toBe(false);
     expect(pardonCost(t, 'frontier')).toBe(0);
+    // Merely Wary, owing nothing: nobody hunts you, so there is nothing to pardon.
+    const u = pilot();
+    u.reputation.sta = -20;
+    expect(pardonCost(u, 'sta')).toBe(0);
+    expect(payFines(u, 'sta').ok).toBe(false);
   });
 
   it('hunted pilots get emergency docking only: repairs at a surcharge, no contracts; dens only open to Wake friends', () => {

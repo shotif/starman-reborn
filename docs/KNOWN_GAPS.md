@@ -48,6 +48,12 @@ This is an honest list of what the prototype does not do yet, or what has not be
 - Traffic and raider packs exist only around the player: nothing persists after you jump or dock,
   except the packs and wrecks of the player's own contracts, which are waiting when they come back.
 - Escorts run between two stations of one system; there are no escorts across jumps.
+- The law is simple: a crime is seen by everyone at once (no witnesses, no reports that travel),
+  fines never lapse, a patrol scans at most once a flight, and the raider dens cannot be attacked.
+  Selling contraband at a station is not a crime; only having it in the hold at a scan is.
+- Ratings change nothing in the world except the combat rank that ace hunts ask for; milestones
+  are a record, with one grant (the whole codex). The what-next hint looks only at fines, the
+  hold, the codex, known prices and job boards, not at ships, equipment or standing.
 - Generated stations have generated exteriors and interiors (twelve kinds in four owner
   palettes). Known rough edges: the half-built hull outside a shipyard bay reads as a flat block
   on the phone deck view, some white crates on factory conveyors bloom under the lamps, and mining

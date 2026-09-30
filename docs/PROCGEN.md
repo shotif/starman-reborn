@@ -631,8 +631,9 @@ Hollow Wake keeps none, but remembers (`src/economy/law.ts`; rules in `src/conte
 - **Hunted**: while a pilot owes a faction fines, or its standing is Hostile (−30 or worse), its
   patrols attack on sight within 6 km and its stations give **emergency docking** only: the deck
   (hull repairs at a 50% surcharge) and the bar's News window, where the **customs desk** takes
-  fines. Paying every fine owed to that faction is a **pardon**: the hunt ends and standing rises
-  to −10 (Wary) if it was lower. A Wary faction offers easy (difficulty 1) contracts only.
+  fines. A **pardon** costs every fine owed to that faction plus 50 cr for each point of standing
+  below −10 (so a Hostile pilot who owes nothing still has a way back): the hunt ends and standing
+  rises to −10 (Wary) if it was lower. A Wary faction offers easy (difficulty 1) contracts only.
 - **Bounty hunters**: two of them come for a pilot owing 1,500 cr or more, 45 seconds after arriving
   in space with security 0.6 or more. They fight only the player, pay no bounty and wait out lanes
   and docking. Patrols leave them alone.
@@ -674,3 +675,54 @@ and that no story job asks for a crime. The contract guardrails (§10.4) check s
 (contraband from its seller to a buyer in claimed space, no customs at the dock, a deposit worth the
 goods, Wake standing only) and piracy jobs (dens only, the system's lawful owner, haulers there).
 `tests/unit/flightLaw.test.ts` flies the law in a real `FlightSession`.
+
+## 13. Goals
+
+Things to aim for beyond the next contract (`src/economy/progress.ts` and
+`src/economy/advisor.ts`; rules in `src/content/progress/rules.ts`). Every name here is invented
+for this game.
+
+### 13.1 The codex of the real sky
+
+- The codex lists every real body the game shows: each catalogued star, each confirmed planet,
+  and the Solar System's eight planets and the Moon (91 entries today). It grows only with the
+  dataset: no invented body is ever an entry.
+- Scanning a body fills in its entry once. The encyclopedia's system page shows the system's
+  entries with a tick for each one scanned, and the journal shows the total.
+- **Survey sales**: once every entry of a system is scanned, a research station (or one of the
+  hand-made research outposts) buys the survey, once: 120 cr per entry, at least 240 cr.
+- Cataloguing the whole sky earns the Frontier Cooperative's 10,000 cr grant.
+
+### 13.2 Ratings
+
+Three ratings follow the career record and show in the journal with the next rank:
+
+| Rating | Score | Ranks |
+| --- | --- | --- |
+| Combat | raiders and bounty hunters destroyed | Green, Blooded (3), Steady (10), Hardened (25), Veteran (50), Ace (100), Legend (200) |
+| Trade | contract and survey pay, plus a quarter of sales | Hauler, Dealer (2,000), Merchant (8,000), Broker (20,000), Magnate (50,000), Tycoon (120,000) |
+| Exploration | 3 per system visited, 1 per codex entry | Stay-at-home, Drifter (10), Wayfarer (30), Pathfinder (60), Surveyor (100), Cartographer (150) |
+
+Ace hunts (§10.2) need a Hardened combat rating.
+
+### 13.3 Milestones
+
+Seventeen milestones, each earned once and toasted when it happens: the first and the 25th
+contract, 10,000 and 50,000 credits in hand, flying a Mk II and a Mk III ship, ten and all
+systems visited, ten confirmed planets scanned, half and all of the codex, ten and fifty raiders
+down, Friendly with the Transit Authority and with the Frontier Cooperative, trusted by the Hollow
+Wake, and a top rank in any rating. The journal lists those earned.
+
+### 13.4 What next
+
+After the opening chain, when no contract is under way, the HUD's objective line suggests one
+concrete thing from what the player already knows, in this order: pay fines owed (and where); sell
+goods in the hold where the best known price is; catalogue a body of this system the codex lacks;
+run a known trade route from the last dock; or dock at a station here with a job board. The hint
+is worked out again after a scan, a launch or a jump.
+
+### 13.5 Progress saves
+
+Save version 7 adds the codex, the surveys sold, the milestones earned, the fines owed and the
+career's sales and contract pay. Older saves start their codex from the bodies already scanned,
+with no fines and no milestones yet (they are awarded at the next save if already earned).

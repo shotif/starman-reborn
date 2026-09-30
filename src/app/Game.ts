@@ -719,6 +719,11 @@ export class Game {
           this.announceJobEvents(advanceJobs(state, { dockedAt: state.location.dockedAt, systemId: state.location.systemId }));
           this.persist();
         },
+        onHunterDown: () => {
+          state.stats.kills += 1;
+          toast('Bounty hunter destroyed. Nobody pays for that one.', 'good', 3500);
+          this.persist();
+        },
         onBounty: (credits, name) => this.onBounty(credits, name),
         onContractKill: (jobId) => this.onContractKill(jobId),
         onTraderArrived: (from, to, shipId) => {

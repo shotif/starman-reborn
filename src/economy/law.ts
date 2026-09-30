@@ -87,8 +87,9 @@ export function customsScan(state: GameState, faction: LawfulFaction): { found: 
   return { found, fine, text: `${FACTIONS[faction].shortName} customs confiscated ${list} and fined you ${fine} cr.` };
 }
 
-/** What a pardon costs: every fine owed, and so much per point of standing below the floor (0: nothing to pardon). */
+/** What a pardon costs a hunted pilot: every fine owed, and so much per point of standing below the floor (0: nothing to pardon). */
 export function pardonCost(state: GameState, faction: LawfulFaction): number {
+  if (!huntedBy(state, faction)) return 0;
   const gap = Math.max(0, LAW.pardonFloor - (state.reputation[faction] ?? 0));
   return fineOwed(state, faction) + gap * LAW.pardonPerStanding;
 }

@@ -77,6 +77,27 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   fewer traders and sweeps clear them; news reaches two jumps, nearest first, and keeps recent
   events for half an hour; boards post a shortage run, a surplus haul and a raid response; traders
   top short stock up without flooding a market or emptying a maker; each jump moves the clock on.
+- `law.test.ts`: the law passes its guardrails (a pardon lifts standing above Hostile, repairs
+  within one jump of every system, contraband sold somewhere with a smuggling route into claimed
+  space past customs, dens with black markets and work, no crime in the story); crimes fine and
+  cost standing, and a kill wins the Wake's regard; Hostile standing alone makes patrols hunt;
+  scans confiscate and fine contraband and pass a clean hold; a pardon costs the fines (and 50 cr a
+  point of standing below Wary), ends the hunt and lifts standing to Wary, a Hostile pilot owing
+  nothing can still buy one, a Wary one has nothing to pardon; hunted pilots dock for repairs only
+  and dens open only to Wake friends; a Wary faction offers easy work only; smuggling runs load
+  contraband against a deposit and pay on delivery; dens post piracy and count the haulers downed;
+  a customs depot scans every ship docking; v6 saves gain a clean record, damaged fines rejected.
+- `flightLaw.test.ts`: a real `FlightSession` in node: the player's bolts hit a lawful ship only
+  when it is the selected target; firing on a patrol is reported once and turns it; patrols hunt a
+  pilot owing fines; a passing patrol scans a hold with contraband (staying finishes the scan,
+  fleeing is evasion); bounty hunters come for big fines in secure space and pay nothing when
+  downed; raiders spare a pilot the Wake trusts until provoked; the dens take that pilot in.
+- `progress.test.ts`: the codex lists exactly the catalogued stars, confirmed planets and the Solar
+  System's bodies, each scannable in its scene; a scan counts once and off-catalogue bodies are
+  ignored; research stations buy a completed survey once; ratings follow the career record;
+  milestones are earned once and the whole sky pays the grant; the what-next hint puts fines
+  first, then the hold, the codex, a route and a job board; v6 saves start the codex from the
+  bodies already scanned.
 - `save.test.ts`: v1, v2 and v3 migrations (the v2 courier and its upgrades become catalogue
   items; v3 saves gain untouched markets),
   unknown ships, fittings and rounds rejected, future/damaged save rejection, IndexedDB round trip with
@@ -137,6 +158,9 @@ touch input is real Chromium touch events sent over the DevTools protocol.
     shows its guns, seekers and hold.
   - **Desktop: a hit on a target away from the screen centre during a turn**, with bolts
     following the visible cursor.
+- `law.spec.ts`: a wanted pilot sees the fines on the HUD, docks at Halcyon Ring for repairs and
+  the customs desk only (no trader, no job board), buys a pardon and has the whole station back;
+  the journal shows the three ratings and the codex.
 - `screenshots.spec.ts`: title, job board, buy dialog, station deck, shipyard, outfitter, flight
   HUD and star map at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page

@@ -7,13 +7,16 @@ mouse or with two thumbs. You trade medical supplies, fight or dodge a raider ne
 Alpha Centauri, discover the real exoplanet Proxima Centauri b, and make the first delivery to a
 fictional research outpost. After that the neighbourhood is open: 58 generated stations of twelve
 kinds (ports, mines, refineries, farms, research stations, shipyards, free ports, raider dens...),
-21 goods with stock-based prices, world events (shortages, gluts, booms, strikes, raids and
+23 goods with stock-based prices, world events (shortages, gluts, booms, strikes, raids and
 security sweeps) reported in each station's news, traders and patrols on the lanes, raider packs
 in lawless space, contract boards in every station bar (freight, courier parcels, supply runs,
 bounties, planet surveys, escorts, ace hunts and wreck recoveries, some urgent, some leading to
 follow-ups), and 35 ships in six classes from five makers with over 100 pieces of equipment.
-Ships, equipment, the world, the economy, events and contracts are generated from rule files and
-checked by automated guardrails ([docs/PROCGEN.md](docs/PROCGEN.md)).
+The law has teeth: fines, cargo scans, contraband, bounty hunters and pardons, and an outlaw path
+of piracy and smuggling that opens the raider dens' black markets. Pilot ratings, a codex of the
+real sky to fill by scanning, milestones and a hint of what to do next give the sandbox goals.
+Ships, equipment, the world, the economy, events, contracts and the law are generated from rule
+files and checked by automated guardrails ([docs/PROCGEN.md](docs/PROCGEN.md)).
 
 Star positions, distances and confirmed planets come from astronomical catalogs (see
 [docs/ASTRONOMY_SOURCES.md](docs/ASTRONOMY_SOURCES.md)). Stations, factions, jump travel, trade
@@ -101,9 +104,10 @@ src/world/     local system scenes (hand-made and generated), flight session, tr
 src/content/   rule-driven generators and guardrails (docs/PROCGEN.md): ships and equipment,
                the world (src/content/world: lanes, territory, stations) and the economy
                (src/content/economy: goods, market profiles), contract rules (src/content/contracts),
-               event rules (src/content/events)
+               event rules (src/content/events), the law (src/content/law) and progress
+               (src/content/progress)
 src/economy/   live markets, world events, trade, cargo, outfitter and shipyard, factions, jobs and
-               generated contracts
+               generated contracts, the law, ratings, the codex and milestones
 src/audio/     procedural Web Audio music and sound effects
 src/ui/        HUD, touch controls, station screens, encyclopedia, styles
 scripts/       astronomy snapshot, catalogue extraction (HYG, Open Exoplanet Catalogue), dataset

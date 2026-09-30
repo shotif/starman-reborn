@@ -6,10 +6,11 @@ when it is done, so the game stays playable throughout. Status: ✅ done · 🔨
 ## Where the game stands
 
 After the scripted opening (10–20 minutes), the neighbourhood is an open sandbox: 32 real
-systems, 58 generated stations of twelve kinds, 21 goods with stock-based prices, traders and
-patrols on the lanes, raider packs in lawless space, 35 ships with over 100 pieces of equipment,
-and generated contracts on every job board (freight, courier parcels, supply runs, bounties,
-planet surveys).
+systems, 58 generated stations of twelve kinds, 23 goods with stock-based prices (two of them
+contraband), traders and patrols on the lanes, raider packs in lawless space, 35 ships with over
+100 pieces of equipment, and generated contracts on every job board. Since this plan was written,
+increments 1–4 below have added world events and news, escorts, deadlines, aces, chains and
+recoveries, the law and the outlaw path, and ratings, a codex and milestones.
 
 What it lacks is mostly **reasons and consequences**: the world only changes when you trade,
 nothing after the opening tells a story, standing barely bites, and there is no long-term goal
@@ -64,7 +65,7 @@ Shipped ([PROCGEN.md §10](PROCGEN.md#10-contracts)): escorts run between two st
 system (the hauler holds position if you fall behind), aces drop credits and a cargo pod, and
 follow-ups are parcels or hauls. Marking every contract on the star map came with it.
 
-### 3. Law and consequences: customs, contraband and the outlaw path ⏳ (M–L)
+### 3. Law and consequences: customs, contraband and the outlaw path ✅
 
 Standing changes prices, welcome text and a few contract gates. It should also change who
 shoots at you and where you can dock. A second way to play doubles the replay value of the same
@@ -84,7 +85,15 @@ world.
 - **Guardrails**: a dock with repairs is always reachable, contraband prices stay in band, and
   the story never requires a crime.
 
-### 4. Goals: ratings, a codex of the real sky, milestones, a hint of what to do next ⏳ (S–M)
+Shipped ([PROCGEN.md §12](PROCGEN.md#12-the-law-and-the-outlaw-path)) with fines instead of a
+bounty on the player: while you owe fines or are Hostile, a faction's patrols attack and its
+stations give emergency docking only (repairs at a surcharge and the customs desk), a pardon
+costs the fines (and more for Hostile standing), and big fines bring bounty hunters. Two
+contraband goods, patrol scans and customs at depots and military bases, piracy (haulers spill
+cargo pods), smuggling runs at free ports and dens, piracy jobs at dens, and raider dens with a
+black market for pilots the Wake trusts. A Wary faction offers easy work only.
+
+### 4. Goals: ratings, a codex of the real sky, milestones, a hint of what to do next ✅
 
 After the opening, the game does not say what to aim for. This is cheap, and it makes every
 other system feel like progress.
@@ -98,6 +107,11 @@ other system feel like progress.
   line in the journal.
 - **What next**: after the opening, the HUD suggests one thing to do: a contract that fits your
   ship, a route you know, or an unscanned planet nearby.
+
+Shipped ([PROCGEN.md §13](PROCGEN.md#13-goals)): three ratings (ace hunts need a Hardened combat
+rating), a codex of 91 real bodies with survey sales to research stations and a grant for the
+whole sky, seventeen milestones, and a hint that puts fines first, then the hold, the codex, a
+known route and a job board nearby.
 
 ### 5. Faction story arcs ⏳ (L)
 
@@ -182,15 +196,15 @@ rails replace tabs, framed glass windows, icons and numbers first, prose on dema
 Guidelines and guardrails: [PROCGEN.md](PROCGEN.md). Generated from rule files and checked by
 guardrails in the unit tests: the ship and equipment catalogue (6 makers, 6 ship classes, 17
 equipment families), the world (jump lanes, territory and security, 58 stations of twelve kinds
-with generated exteriors and interiors, raider dens), the economy (21 goods, market profiles,
-stock-based prices), traffic and raider packs, and the contract boards. The scripted chain stays
-as the tutorial. Still open from the original plan: a world tick (increment 1) and faction
-influence (increment 3).
+with generated exteriors and interiors, raider dens), the economy (23 goods, market profiles,
+stock-based prices), world events, traffic and raider packs, and the contract boards. The
+scripted chain stays as the tutorial.
 
-### Living world 🔨
+### Living world ✅
 
 Done: prices that move with stock and drift, traders and patrols on the lanes, raider packs,
-reputation that changes prices, welcome text and contract access. Next: increments 1 and 3.
+reputation that changes prices, welcome text and contract access, world events with news and
+restocking (increment 1), and the law (increment 3).
 
 ### Ships and combat 🔨
 
