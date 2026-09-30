@@ -1,7 +1,9 @@
 import type { GameState } from '../state.ts';
 import type { SaveBackend } from './backend.ts';
 import { migrateSave, SaveFormatError } from './migrate.ts';
+import { assertSlot, readSlot, SLOT_COUNT, slotGame, slotKey, summarize, type SaveSlot, type SlotRecord } from './slots.ts';
 
+/** The autosave: the running game's own save (it keeps this key from before there were slots). */
 export const SAVE_KEY = 'save:main';
 export const BACKUP_KEY = 'save:backup';
 export const SETTINGS_KEY = 'settings';
@@ -14,7 +16,8 @@ export interface LoadResult {
 
 /**
  * Serialises saves so writes never interleave, keeps the previous save as a backup in the same
- * atomic transaction, and migrates older formats on load.
+ * atomic transaction, and migrates older formats on load. Beside the autosave it keeps the manual
+ * save slots (src/app/save/slots.ts), written through the same queue.
  */
 export class SaveManager {
   readonly backend: SaveBackend;
@@ -80,6 +83,52 @@ export class SaveManager {
     return this.queue;
   }
 
+  /** Runs a storage operation after every write queued before it; its failure reaches the caller only. */
+  private enqueue(op: () => Promise<void>): Promise<void> {
+    const run = this.queue.then(op);
+    this.queue = run.catch(() => undefined);
+    return run;
+  }
+
+  // ---------------------------------------------------------------- manual slots
+
+  /** Lists the manual slots with their stored summaries (the games are not migrated). */
+  async listSlots(): Promise<SaveSlot[]> {
+    await this.flush();
+    const slots: SaveSlot[] = [];
+    for (let slot = 1; slot <= SLOT_COUNT; slot++) {
+      slots.push(readSlot(slot, await this.backend.get(slotKey(slot)).catch(() => undefined)));
+    }
+    return slots;
+  }
+
+  /**
+   * Stores a snapshot of `state` in a slot, replacing what was there. The snapshot is stamped with
+   * the current time unless `keepSavedAt` (an imported game keeps the time it was saved).
+   */
+  saveToSlot(slot: number, state: GameState, opts: { keepSavedAt?: boolean } = {}): Promise<void> {
+    assertSlot(slot);
+    const snapshot = structuredClone(state);
+    if (!opts.keepSavedAt || typeof snapshot.savedAt !== 'string' || Number.isNaN(Date.parse(snapshot.savedAt))) {
+      snapshot.savedAt = new Date().toISOString();
+    }
+    const record: SlotRecord = { summary: summarize(snapshot), state: snapshot };
+    return this.enqueue(() => this.backend.write({ [slotKey(slot)]: record }));
+  }
+
+  /** The game in a slot, migrated to the current format. Throws SaveFormatError when empty or damaged. */
+  async loadSlot(slot: number): Promise<GameState> {
+    assertSlot(slot);
+    await this.flush();
+    return slotGame(readSlot(slot, await this.backend.get(slotKey(slot))));
+  }
+
+  deleteSlot(slot: number): Promise<void> {
+    assertSlot(slot);
+    return this.enqueue(() => this.backend.remove([slotKey(slot)]));
+  }
+
+  /** Deletes the autosave and its backup; the manual slots and settings are kept. */
   async reset(): Promise<void> {
     await this.flush();
     this.pending = null;
