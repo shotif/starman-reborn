@@ -1117,6 +1117,18 @@
   opacity: 0.2;
 }
 
+.map2d-sys.is-far .map2d-star-glow {
+  opacity: 0.35;
+}
+
+.map2d-sys.is-far .map2d-star {
+  opacity: 0.65;
+}
+
+.map2d-sys.is-far .map2d-label-name {
+  fill: var(--text-muted);
+}
+
 .map2d-label {
   fill: var(--text);
   paint-order: stroke;

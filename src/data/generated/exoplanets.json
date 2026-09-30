@@ -12,7 +12,7 @@
     {
       "id": "proxima-cen-b",
       "archiveName": "Proxima Cen b",
-      "displayName": "Proxima Cen b",
+      "displayName": "Proxima Centauri b",
       "hostId": "proxima-centauri",
       "kind": "planet",
       "status": "confirmed",
@@ -51,7 +51,7 @@
     {
       "id": "proxima-cen-d",
       "archiveName": "Proxima Cen d",
-      "displayName": "Proxima Cen d",
+      "displayName": "Proxima Centauri d",
       "hostId": "proxima-centauri",
       "kind": "planet",
       "status": "confirmed",
@@ -90,7 +90,7 @@
     {
       "id": "barnard-b",
       "archiveName": "Barnard b",
-      "displayName": "Barnard b",
+      "displayName": "Barnard's Star b",
       "hostId": "barnards-star",
       "kind": "planet",
       "status": "confirmed",
@@ -129,7 +129,7 @@
     {
       "id": "barnard-c",
       "archiveName": "Barnard c",
-      "displayName": "Barnard c",
+      "displayName": "Barnard's Star c",
       "hostId": "barnards-star",
       "kind": "planet",
       "status": "confirmed",
@@ -168,7 +168,7 @@
     {
       "id": "barnard-d",
       "archiveName": "Barnard d",
-      "displayName": "Barnard d",
+      "displayName": "Barnard's Star d",
       "hostId": "barnards-star",
       "kind": "planet",
       "status": "confirmed",
@@ -207,7 +207,7 @@
     {
       "id": "barnard-e",
       "archiveName": "Barnard e",
-      "displayName": "Barnard e",
+      "displayName": "Barnard's Star e",
       "hostId": "barnards-star",
       "kind": "planet",
       "status": "confirmed",
@@ -246,7 +246,7 @@
     {
       "id": "eps-eri-b",
       "archiveName": "eps Eri b",
-      "displayName": "eps Eri b",
+      "displayName": "Epsilon Eridani b",
       "hostId": "epsilon-eridani",
       "kind": "planet",
       "status": "confirmed",

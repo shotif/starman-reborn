@@ -65,13 +65,13 @@ Moved by more than 0.25 ly: BL Ceti (0.30 ly), GJ 1061 (2.01 ly). The frozen cor
 
 99 planets: 77 confirmed, 22 contested (kept), 0 candidates.
 
-- **Proxima Cen b** (proxima-centauri): confirmed by NASA as Proxima Cen b
-- **Proxima Cen d** (proxima-centauri): confirmed by NASA as Proxima Cen d
-- **Barnard b** (barnards-star): confirmed by NASA as Barnard b
-- **Barnard c** (barnards-star): confirmed by NASA as Barnard c
-- **Barnard d** (barnards-star): confirmed by NASA as Barnard d
-- **Barnard e** (barnards-star): confirmed by NASA as Barnard e
-- **eps Eri b** (epsilon-eridani): confirmed by NASA as eps Eri b
+- **Proxima Centauri b** (proxima-centauri): confirmed by NASA as Proxima Cen b
+- **Proxima Centauri d** (proxima-centauri): confirmed by NASA as Proxima Cen d
+- **Barnard's Star b** (barnards-star): confirmed by NASA as Barnard b
+- **Barnard's Star c** (barnards-star): confirmed by NASA as Barnard c
+- **Barnard's Star d** (barnards-star): confirmed by NASA as Barnard d
+- **Barnard's Star e** (barnards-star): confirmed by NASA as Barnard e
+- **Epsilon Eridani b** (epsilon-eridani): confirmed by NASA as eps Eri b
 - **Lalande 21185 b** (lalande-21185): confirmed by NASA as GJ 411 b
 - **Lalande 21185 c** (lalande-21185): confirmed by NASA as HD 95735 c
 - **Lacaille 9352 b** (lacaille-9352): confirmed by NASA as GJ 887 b

@@ -999,7 +999,8 @@ for (const p of gamePlanets) {
   const nasa = nasaPlanets.find((n) => !usedNasa.has(n) && samePlanet(p.hostId, letter, period, n.hostStarId, n.letter, n.period));
   const eu = euPlanets.find((e) => !usedEu.has(e) && samePlanet(p.hostId, letter, period, e.hostStarId, letterOfPlanet(e.name), e.period));
   if (eu) usedEu.add(eu);
-  const displayName = p.displayName ?? p.archiveName;
+  // The game says "Proxima Centauri b", not the archive's "Proxima Cen b": its host star's name and the letter.
+  const displayName = p.displayName ?? `${starById.get(p.hostId)?.name ?? p.archiveName.replace(/ [a-z]$/, '')} ${letter}`;
   if (nasa) {
     usedNasa.add(nasa);
     const status: PlanetStatus = nasa.controversial ? 'contested' : 'confirmed';

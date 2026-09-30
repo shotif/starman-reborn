@@ -5,7 +5,7 @@
  * unavailable and as the "2D view" of the map. Re-renders itself when the container resizes.
  */
 import '../ui/styles/map.css';
-import { SYSTEMS } from '../data/systems.ts';
+import { isNewSystem, SYSTEMS } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { h, svg } from '../ui/dom.ts';
 import { buildLegend } from './legend.ts';
@@ -134,7 +134,11 @@ function draw(container: HTMLElement, e: Entry): void {
   const captionTop = caption.getBoundingClientRect().top - container.getBoundingClientRect().top;
   const fitH = Math.max(80, Math.min(H, (details?.open ? H : captionTop) - 6));
   const rotate = W / fitH > 1.15;
-  const proj = fitProjection2D(W, fitH, rotate, Math.min(56, W * 0.06 + 12), 22);
+  // Frame what the player knows (the first catalogue's systems, and any visited, selected, current or
+  // the objective): the far shell beyond spills past the edge, as on the 3D map, and is in the list.
+  const st = e.state;
+  const frames = (id: SystemId) => !isNewSystem(id) || st.visited.has(id) || id === st.currentSystemId || id === st.objectiveSystemId || id === e.selected;
+  const proj = fitProjection2D(W, fitH, rotate, Math.min(56, W * 0.06 + 12), 22, frames);
   // Small maps show a second label line (distance, plane height) only for key systems.
   const compact = proj.scale < 26;
   const pt: [number, number] = [0, 0];
@@ -180,15 +184,19 @@ function draw(container: HTMLElement, e: Entry): void {
 
   // Systems as buttons.
   const labelEls: { text: SVGTextElement; name: SVGTSpanElement; meta: SVGTSpanElement; def: MapLabel; box: LabelBox; leader: SVGLineElement | null }[] = [];
-  for (const s of SYSTEMS) {
+  // The far shell first and dimmed, so the systems the player knows are drawn over it.
+  const knownOf = (id: SystemId) => !isNewSystem(id) || e.state.visited.has(id);
+  const drawOrder = [...SYSTEMS].sort((a, b) => Number(knownOf(a.id)) - Number(knownOf(b.id)));
+  for (const s of drawOrder) {
     const id = s.id;
     const [ax, ay] = anchors.get(id)!;
     const isSel = selected === id;
     const isCur = e.state.currentSystemId === id;
     const isObj = e.state.objectiveSystemId === id;
     const isVis = e.state.visited.has(id) && !isCur;
+    const far = !knownOf(id) && !isSel && !isCur && !isObj;
     const g = svg('g', {
-      class: `map2d-sys${isSel ? ' is-selected' : ''}${isCur ? ' is-current' : ''}${isObj ? ' is-objective' : ''}`,
+      class: `map2d-sys${isSel ? ' is-selected' : ''}${isCur ? ' is-current' : ''}${isObj ? ' is-objective' : ''}${far ? ' is-far' : ''}`,
       role: 'button',
       tabindex: 0,
       'aria-pressed': isSel ? 'true' : 'false',
@@ -227,7 +235,11 @@ function draw(container: HTMLElement, e: Entry): void {
       box.anchorX = pt[0];
       box.anchorY = pt[1];
       box.gap = Math.min(7.5, Math.max(2.4, def.glowPx / 5)) * 1.6 + 5;
-      box.priority = (def.primary ? 50 : 30) + (isSel ? 100 : 0) + (isCur ? 60 : 0) + (isObj ? 40 : 0);
+      // As on the 3D map: the first catalogue's systems and those you have been to win space over the far shell.
+      const known = knownOf(id);
+      box.priority = (def.primary ? 50 : 30) + (known ? 8 : 0) + (isSel ? 100 : 0) + (isCur ? 60 : 0) + (isObj ? 40 : 0);
+      // Far-shell dots may sit under a label; the known systems' dots keep theirs clear.
+      box.anchorBlocks = known || isSel || isCur || isObj;
       box.active = true;
       box.far = !def.primary;
       labelEls.push({ text, name, meta, def, box, leader });

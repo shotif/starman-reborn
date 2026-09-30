@@ -274,6 +274,8 @@ export function fitProjection2D(
   rotate: boolean,
   marginX: number,
   marginY: number,
+  /** Which systems the view must hold (all by default); the others may fall outside it. */
+  frames: (systemId: SystemId) => boolean = () => true,
 ): Projection2D {
   let minU = Infinity;
   let maxU = -Infinity;
@@ -281,6 +283,7 @@ export function fitProjection2D(
   let maxV = -Infinity;
   const uv: [number, number] = [0, 0];
   for (const s of MAP_STARS) {
+    if (!frames(s.systemId)) continue;
     planarUV(s.eq, rotate, uv);
     minU = Math.min(minU, uv[0]);
     maxU = Math.max(maxU, uv[0]);
