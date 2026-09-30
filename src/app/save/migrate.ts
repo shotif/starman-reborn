@@ -33,7 +33,8 @@ import { createNewGame, SAVE_VERSION, type CommodityId, type GameState } from '.
  * - v9: `priceWatch` and `rumours` (docs/PROCGEN.md §16); known markets may come from a rumour
  *   or the price watch, with per-good times.
  * - v10 (current): `world` (events ended early, what lingers in each system) and the law's
- *   `pending` crimes and `lastCrimeAt` (docs/PROCGEN.md §17). See GameState in src/app/state.ts.
+ *   `pending` crimes and `lastCrimeAt` (docs/PROCGEN.md §17); `fleet` (owned ships, haulers,
+ *   storage and stakes, §18). See GameState in src/app/state.ts.
  */
 export interface SaveV1 {
   version: 1;
@@ -162,10 +163,16 @@ function migrateV8(old: Omit<GameState, 'version' | 'priceWatch' | 'rumours' | '
  * v9 → v10: fines on record stay on record (every crime so far is known everywhere, and counts as
  * committed now for lapsing); no event ended early and nothing left adrift yet.
  */
-function migrateV9(old: Omit<GameState, 'version' | 'world' | 'law'> & { version: 9; law: { fines: GameState['law']['fines'] } }): GameState {
+function migrateV9(old: Omit<GameState, 'version' | 'world' | 'law' | 'fleet'> & { version: 9; law: { fines: GameState['law']['fines'] } }): GameState {
   const lastCrimeAt: GameState['law']['lastCrimeAt'] = {};
   for (const [f, fine] of Object.entries(old.law.fines)) if ((fine ?? 0) > 0) lastCrimeAt[f as keyof typeof lastCrimeAt] = old.clock;
-  return { ...old, version: SAVE_VERSION, law: { fines: { ...old.law.fines }, pending: [], lastCrimeAt }, world: { relief: {}, raidKills: {}, ended: {}, lingering: {} } };
+  return {
+    ...old,
+    version: SAVE_VERSION,
+    law: { fines: { ...old.law.fines }, pending: [], lastCrimeAt },
+    world: { relief: {}, raidKills: {}, ended: {}, lingering: {} },
+    fleet: { ships: [], storage: {}, stakes: [], reports: [] },
+  };
 }
 
 /** Upgrades any known save version to the current GameState. Throws SaveFormatError when unusable. */
@@ -227,6 +234,17 @@ export function assertValidState(s: GameState): void {
   for (const c of s.law.pending) {
     if (!isRecord(c) || !['sta', 'frontier', 'hollow-wake'].includes(c.faction) || !Number.isFinite(c.amount) || c.amount < 0 || !SYSTEM_IDS.includes(c.systemId) || !Number.isFinite(c.at)) fail('law');
   }
+  const fl = s.fleet;
+  if (!isRecord(fl) || !Array.isArray(fl.ships) || !isRecord(fl.storage) || !Array.isArray(fl.stakes) || !Array.isArray(fl.reports)) fail('fleet');
+  for (const o of fl.ships) {
+    if (!isRecord(o) || typeof o.id !== 'string' || !LOCATION_IDS.has(o.locationId) || !isRecord(o.ship) || !findShip(o.ship.model) || !isRecord(o.ship.cargo)) fail('fleet ship');
+    const h = o.hauler;
+    if (h && (!isRecord(h) || typeof h.captain !== 'string' || !isRecord(h.route) || !LOCATION_IDS.has(h.route.from) || !LOCATION_IDS.has(h.route.to) || !COMMODITY_IDS.includes(h.route.commodity) || !Number.isFinite(h.since) || !Number.isInteger(h.runs))) fail('hauler');
+  }
+  for (const [id, cargo] of Object.entries(fl.storage)) {
+    if (!LOCATION_IDS.has(id) || !isRecord(cargo) || !Object.entries(cargo).every(([c, q]) => COMMODITY_IDS.includes(c as CommodityId) && Number.isInteger(q) && (q as number) >= 0)) fail('storage');
+  }
+  if (!fl.stakes.every((k) => isRecord(k) && LOCATION_IDS.has(k.locationId) && Number.isFinite(k.percent) && k.percent > 0 && Number.isFinite(k.paid) && Number.isFinite(k.since))) fail('stakes');
   const w = s.world;
   if (!isRecord(w) || !isRecord(w.relief) || !isRecord(w.raidKills) || !isRecord(w.ended) || !isRecord(w.lingering)) fail('world');
   for (const [sys, l] of Object.entries(w.lingering)) {

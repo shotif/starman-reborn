@@ -113,6 +113,47 @@ export interface Lingering {
   pods: LingeringPod[];
 }
 
+/** A captain flying a parked ship on one of the player's routes (docs/PROCGEN.md §18). */
+export interface Hauler {
+  captain: string;
+  route: { from: string; to: string; commodity: CommodityId };
+  insured: boolean;
+  /** Game clock when the current run began. */
+  since: number;
+  runs: number;
+  /** Net credits the hauler has made the player. */
+  earned: number;
+}
+
+/** A ship the player owns besides the one they fly. */
+export interface OwnedShip {
+  id: string;
+  ship: ShipState;
+  /** Where it is parked (a hauler's ship: where its runs start). */
+  locationId: string;
+  hauler?: Hauler;
+}
+
+/** A stake in a station's trade. */
+export interface Stake {
+  locationId: string;
+  percent: number;
+  /** What the player paid for it. */
+  paid: number;
+  /** Game clock the dividends are settled to. */
+  since: number;
+}
+
+/** The player's fleet and holdings (docs/PROCGEN.md §18). */
+export interface Fleet {
+  ships: OwnedShip[];
+  /** Leased storage: station id → what is stored there. */
+  storage: Record<string, Cargo>;
+  stakes: Stake[];
+  /** What happened while the player was away, newest last. */
+  reports: { at: number; text: string; amount: number }[];
+}
+
 /** The player's mark on the world (docs/PROCGEN.md §17). */
 export interface WorldLog {
   /** Units sold into a shortage, by event id. */
@@ -207,6 +248,8 @@ export interface GameState {
   law: { fines: Partial<Record<FactionId, number>>; pending: CrimeRecord[]; lastCrimeAt: Partial<Record<FactionId, number>> };
   /** What the player has done to the world (docs/PROCGEN.md §17). */
   world: WorldLog;
+  /** Ships, haulers, storage and stakes (docs/PROCGEN.md §18). */
+  fleet: Fleet;
   /** The codex of the real sky (docs/PROCGEN.md §13): catalogued stars and confirmed planets scanned. */
   codex: string[];
   /** Systems whose completed survey was sold to a research station. */
@@ -267,6 +310,7 @@ export function createNewGame(seed: number = Math.floor(Math.random() * 2 ** 31)
     contracts: {},
     law: { fines: {}, pending: [], lastCrimeAt: {} },
     world: { relief: {}, raidKills: {}, ended: {}, lingering: {} },
+    fleet: { ships: [], storage: {}, stakes: [], reports: [] },
     codex: [],
     surveysSold: [],
     milestones: {},
