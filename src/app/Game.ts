@@ -98,6 +98,7 @@ export class Game {
   private objectiveText: string | null = null;
   private fpsTimer = 0;
   private sheetsOpen = 0;
+  private readonly toastLayer: HTMLElement;
 
   constructor(canvas: HTMLCanvasElement, ui: HTMLElement, saves: SaveManager, settings: Settings) {
     this.canvas = canvas;
@@ -110,6 +111,7 @@ export class Game {
     this.screenLayer = h('div', { class: 'screen-layer passthrough' });
     const modalLayer = h('div', { class: 'modal-layer passthrough' });
     const toastLayer = h('div', { class: 'toasts', 'aria-live': 'polite' });
+    this.toastLayer = toastLayer;
     this.fpsEl = h('div', { class: 'fps-meter num', hidden: true });
     this.hud = new Hud(ui, {
       onMap: () => this.openMap(),
@@ -225,6 +227,7 @@ export class Game {
     this.touch.setVisible(flying && this.scheme === 'touch');
     this.desktop.setEnabled(flying);
     this.canvas.style.cursor = flying && this.scheme === 'desktop' ? 'none' : 'default';
+    setToastRoot(this.mode === 'flight' && this.scheme === 'touch' ? this.hud.toastSlot : this.toastLayer);
   }
 
   // ------------------------------------------------------------------ title
@@ -498,9 +501,8 @@ export class Game {
     this.enterFlight({ kind: 'undock', locationId: from });
     if (!state.flags.flightSchool) {
       state.flags.flightSchool = true;
-      this.openControls('Flight school');
       const aim = this.scheme === 'touch' ? 'hold the right thumb on the aim pad' : 'hold the right mouse button';
-      toast(`Tip: practice drones circle just outside Halcyon Ring. Target one and ${aim} to try your aim.`, 'info', 7000);
+      this.openControls('Flight school', `Practice drones circle just outside Halcyon Ring. Target one and ${aim} to try your aim.`);
     }
   }
 
@@ -851,11 +853,13 @@ export class Game {
     await this.showTitle();
   }
 
-  private openControls(title = 'Controls'): void {
+  private openControls(title = 'Controls', tip?: string): void {
     const wasPaused = this.paused;
     if (this.mode === 'flight' && !wasPaused) this.setPaused(true, false);
     this.sheetsOpen++;
-    sheet(this.screenLayer, title, controlsContent(this.settings.steering, this.scheme), () => {
+    const content = controlsContent(this.settings.steering, this.scheme);
+    if (tip) content.prepend(h('p', { class: 'callout good', 'data-testid': 'flight-school-tip' }, tip));
+    sheet(this.screenLayer, title, content, () => {
       this.sheetsOpen--;
       if (this.mode === 'flight' && !wasPaused) this.setPaused(false);
     }, 'controls-sheet');

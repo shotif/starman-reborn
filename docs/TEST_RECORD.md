@@ -15,7 +15,7 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | Production build | `npm run build` | Pass |
 | Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 7 passed (3 touch-only tests skipped) |
 | Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 9 passed (1 desktop-only test skipped) |
-| Layout screenshots + audits, 7 sizes | `npm run screenshots` | Pass: 35 screenshots, no audit findings |
+| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 54 screenshots, no audit findings |
 
 ### Unit tests (Vitest)
 
@@ -69,10 +69,12 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   - **Rotation mid-flight** (390×844 → 844×390) keeps the ship and re-lays out the controls.
   - **Desktop: a hit on a target away from the screen centre during a turn**, with bolts
     following the visible cursor.
-- `screenshots.spec.ts`: title, contract board, buy dialog, flight HUD and star map at 360×640,
-  640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900 (saved in `docs/screenshots/`).
-  Each is audited for page scroll overflow, clipped controls (controls inside a scrolling panel
-  count only if the panel itself is off-screen), text under 10 px, touch targets under 40 px, and
+- `screenshots.spec.ts`: title, contract board, buy dialog, station overview, flight HUD and star
+  map at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
+  large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
+  zoom). Saved in `docs/screenshots/`. Each is audited for page scroll overflow, clipped controls
+  (controls inside a scrolling panel count only if the panel itself is off-screen), content cut
+  off inside any box that is not meant to scroll, text under 10 px, touch targets under 40 px, and
   overlaps between HUD panels, touch clusters and toasts.
 
 ## Performance notes (not representative)

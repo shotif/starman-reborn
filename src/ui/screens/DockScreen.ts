@@ -108,7 +108,7 @@ export class DockScreen {
           'div',
           { class: 'dock-wallet' },
           h('div', { class: 'row' }, icon('credits'), h('strong', { class: 'num', 'data-testid': 'dock-credits' }, formatCredits(state.credits))),
-          h('div', { class: 'row muted' }, icon('cargo'), h('span', { class: 'num' }, `${cargoUsed(state.ship.cargo)}/${CARGO_CAPACITY} cargo units`)),
+          h('div', { class: 'row muted' }, icon('cargo'), h('span', { class: 'num' }, `${cargoUsed(state.ship.cargo)}/${CARGO_CAPACITY} cargo`)),
         ),
       ),
       h(

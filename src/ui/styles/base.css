@@ -455,6 +455,7 @@ a {
 
 .tabs {
   display: flex;
+  flex-shrink: 0;
   gap: 0.25rem;
   overflow-x: auto;
   scrollbar-width: none;
@@ -638,6 +639,13 @@ input[type='checkbox'] {
   text-align: center;
   box-shadow: var(--shadow);
   animation: toast-in 0.25s ease-out;
+}
+
+/* Small screens show only the two newest toasts. */
+@media (max-width: 600px), (max-height: 460px) {
+  .toasts > .toast:nth-last-child(n + 3) {
+    display: none;
+  }
 }
 
 .toast.good {

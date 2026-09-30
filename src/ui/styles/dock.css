@@ -19,6 +19,7 @@
 }
 
 .dock-header {
+  flex-shrink: 0;
   padding: 0.9rem 1.1rem 0.4rem;
 }
 
@@ -40,6 +41,7 @@
 
 .dock-wallet .row {
   justify-content: flex-end;
+  white-space: nowrap;
 }
 
 .welcome {
@@ -78,12 +80,17 @@
 }
 
 .dock-footer {
+  flex-shrink: 0;
   display: flex;
   justify-content: space-between;
   gap: 0.6rem;
   padding: 0.7rem 1.1rem calc(0.8rem);
   border-top: 1px solid var(--panel-border);
   background: rgba(4, 8, 16, 0.5);
+}
+
+.dock-footer .btn {
+  white-space: nowrap;
 }
 
 .dock-footer .btn-primary {

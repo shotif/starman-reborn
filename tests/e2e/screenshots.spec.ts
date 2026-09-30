@@ -4,10 +4,22 @@ import { api, newGameAndLaunch, openFresh, press, waitUntil } from './helpers.ts
 
 /**
  * Captures every required layout (spec section 10) and audits for common layout failures:
- * page scroll capture, buttons clipped off-screen, unreadably small text, undersized touch
- * targets and overlapping HUD panels. Screenshots go to docs/screenshots/.
+ * page scroll capture, buttons clipped off-screen, content cut off inside a box, unreadably small
+ * text, undersized touch targets and overlapping HUD panels. Screenshots go to docs/screenshots/.
+ *
+ * Two extra cases reproduce large-text phones: Android text scaling (rem sizes at 130%) and
+ * accessibility page zoom (a 411-wide phone at 130% zoom is a 316-wide CSS viewport).
  */
-const SIZES = [
+interface SizeCase {
+  name: string;
+  width: number;
+  height: number;
+  touch: boolean;
+  /** Root font-size multiplier, like Android's text scaling. */
+  textScale?: number;
+}
+
+const SIZES: readonly SizeCase[] = [
   { name: 'phone-portrait-360x640', width: 360, height: 640, touch: true },
   { name: 'phone-landscape-640x360', width: 640, height: 360, touch: true },
   { name: 'iphone-portrait-390x844', width: 390, height: 844, touch: true },
@@ -15,13 +27,16 @@ const SIZES = [
   { name: 'tablet-portrait-768x1024', width: 768, height: 1024, touch: true },
   { name: 'tablet-landscape-1024x768', width: 1024, height: 768, touch: true },
   { name: 'desktop-1440x900', width: 1440, height: 900, touch: false },
-] as const;
+  { name: 'android-text130-411x741', width: 411, height: 741, touch: true, textScale: 1.3 },
+  { name: 'android-zoom130-316x570', width: 316, height: 570, touch: true },
+];
 
 const OUT = 'docs/screenshots';
 
 interface AuditResult {
   overflow: boolean;
   clipped: string[];
+  cutOff: string[];
   tinyText: string[];
   smallTargets: string[];
   overlaps: string[];
@@ -56,6 +71,23 @@ async function audit(page: Page, touch: boolean): Promise<AuditResult> {
       const r = (scrollParent(el) ?? el).getBoundingClientRect();
       if (r.left < -1 || r.top < -1 || r.right > vw + 1 || r.bottom > vh + 1) clipped.push(label(el));
     }
+    // Content cut off inside a box that is not meant to scroll (e.g. a tab bar squeezed by its
+    // column). Vertical scroll areas are marked with .scroll or are the map's own panels.
+    const scrollAreas = '.scroll, .gmap-list, .gmap-legend, .gmap-card, .gmap-foot-info, .enc-nav, .compat-screen';
+    const cutOff: string[] = [];
+    for (const el of scope.querySelectorAll('body *')) {
+      if (!visible(el) || el.closest('.hud-markers, .gmap-stage, .gmap-labels, .map2d-host, .sr-only, svg, canvas')) continue;
+      if (el.id === 'app' || el.id === 'ui' || el.matches(scrollAreas) || !el.textContent?.trim()) continue;
+      // Visually hidden (screen-reader) text is 1px by design.
+      if (el.clientWidth <= 1 || el.clientHeight <= 1) continue;
+      const cs = getComputedStyle(el);
+      if (cs.textOverflow === 'ellipsis' || (cs.getPropertyValue('-webkit-line-clamp') || 'none') !== 'none') continue;
+      const clipsY = cs.overflowY !== 'visible';
+      const clipsX = cs.overflowX === 'hidden' || cs.overflowX === 'clip';
+      if ((clipsY && el.scrollHeight > el.clientHeight + 2) || (clipsX && el.scrollWidth > el.clientWidth + 2)) {
+        cutOff.push(`${label(el)} (${el.clientWidth}x${el.clientHeight} of ${el.scrollWidth}x${el.scrollHeight})`);
+      }
+    }
     const tinyText: string[] = [];
     for (const el of scope.querySelectorAll('body *')) {
       if (!visible(el) || el.closest('.hud-markers') || el.closest('svg')) continue;
@@ -83,7 +115,7 @@ async function audit(page: Page, touch: boolean): Promise<AuditResult> {
       }
     }
     const overflow = document.documentElement.scrollWidth > vw + 1 || document.documentElement.scrollHeight > vh + 1;
-    return { overflow, clipped, tinyText: tinyText.slice(0, 10), smallTargets, overlaps };
+    return { overflow, clipped, cutOff, tinyText: tinyText.slice(0, 10), smallTargets, overlaps };
   }, touch);
 }
 
@@ -105,6 +137,16 @@ for (const size of SIZES) {
     test(`layouts at ${size.name}`, async ({ page }) => {
       mkdirSync(OUT, { recursive: true });
       const results: Record<string, AuditResult> = {};
+      if (size.textScale) {
+        const px = 16 * size.textScale;
+        await page.addInitScript((fontPx) => {
+          document.addEventListener('DOMContentLoaded', () => {
+            const style = document.createElement('style');
+            style.textContent = `html { font-size: ${fontPx}px !important; }`;
+            document.head.appendChild(style);
+          });
+        }, px);
+      }
       await openFresh(page);
       await shot(page, `${size.name}-1-title`, size.touch, results);
       await press(page, 'title-play');
@@ -114,6 +156,8 @@ for (const size of SIZES) {
       await press(page, 'buy-medical');
       await shot(page, `${size.name}-3-buy-dialog`, size.touch, results);
       await press(page, 'buy-confirm');
+      await press(page, 'dock-tab-overview');
+      await shot(page, `${size.name}-3b-overview`, size.touch, results);
       await press(page, 'dock-launch');
       await press(page, 'sheet-close');
       await waitUntil(page, 'undocked', async () => (await api<{ autopilot: string } | null>(page, 'player'))?.autopilot === 'none');
@@ -125,6 +169,7 @@ for (const size of SIZES) {
       for (const [name, r] of Object.entries(results)) {
         expect.soft(r.overflow, `${name}: page overflow`).toBe(false);
         expect.soft(r.clipped, `${name}: clipped controls`).toEqual([]);
+        expect.soft(r.cutOff, `${name}: content cut off inside a box`).toEqual([]);
         expect.soft(r.tinyText, `${name}: text below 10px`).toEqual([]);
         expect.soft(r.smallTargets, `${name}: touch targets below 40px`).toEqual([]);
         expect.soft(r.overlaps, `${name}: overlapping HUD panels`).toEqual([]);

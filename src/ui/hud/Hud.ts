@@ -58,6 +58,8 @@ export class Hud {
   private readonly autopilotText: HTMLElement;
   private readonly warningText: HTMLElement;
   private readonly targetPanel: HTMLElement;
+  /** Toast container used during touch flight (flows below the target panel). */
+  readonly toastSlot: HTMLElement;
   private readonly contextHint: HTMLButtonElement;
   private readonly encounterBanner: HTMLElement;
   private readonly centerColumn: HTMLElement;
@@ -131,6 +133,7 @@ export class Hud {
     this.warningText = h('div', { class: 'hud-warning', role: 'alert' });
 
     this.targetPanel = h('div', { class: 'hud-panel hud-target', 'data-testid': 'hud-target', hidden: true });
+    this.toastSlot = h('div', { class: 'toasts hud-toasts', 'aria-live': 'polite' });
     this.contextHint = h('button', { type: 'button', class: 'hud-context', 'data-testid': 'hud-context', onClick: () => callbacks.onContextAction() });
     this.encounterBanner = h(
       'div',
@@ -166,10 +169,10 @@ export class Hud {
   setDesktopCursor(on: boolean): void {
     this.desktopCursor = on;
     this.root.classList.toggle('touch-mode', !on);
-    // Touch: the bottom of the screen belongs to the thumbs, so the target panel stacks in the
-    // centre column under the objective and any alert (never on top of them).
+    // Touch: the bottom of the screen belongs to the thumbs, so the target panel and toasts stack
+    // in the centre column under the objective and any alert (never on top of them).
     if (on) this.bottomArea.prepend(this.targetPanel);
-    else this.centerColumn.append(this.targetPanel);
+    else this.centerColumn.append(this.targetPanel, this.toastSlot);
   }
 
   /** Immediate reticle move on mouse motion (avoids a frame of latency). */

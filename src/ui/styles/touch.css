@@ -406,6 +406,29 @@
   }
 }
 
+/* Very narrow portrait (320-wide phones, or a 411-wide phone at 130% page zoom): six buttons
+   still fit on one row. */
+@media (orientation: portrait) and (max-width: 340px) {
+  .touch-controls {
+    --btn: 44px;
+  }
+
+  .tbtn.small {
+    --btn: 44px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .tbtn .icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .tlabel {
+    padding: 0;
+  }
+}
+
 /* Very short landscape phones (e.g. 640x360). */
 @media (orientation: landscape) and (max-height: 420px) {
   .touch-controls {

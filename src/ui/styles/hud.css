@@ -585,28 +585,20 @@
   }
 }
 
-/* Touch flight keeps the status, objective and target panels at the top, so toasts sit lower:
-   between the thumbs in landscape, just above the button row in portrait. */
-.hud.touch-mode:not([hidden]) ~ .toasts {
-  top: auto;
-  bottom: calc(var(--safe-bottom) + 3.2rem);
+/* Touch flight: toasts flow in the centre column below the objective and target panels. */
+.hud-toasts {
+  position: static;
+  transform: none;
+  width: min(30rem, 100%);
 }
 
-@media (orientation: portrait) {
-  .hud.touch-mode:not([hidden]) ~ .toasts {
-    bottom: calc(33vh + var(--safe-bottom) + 68px);
-  }
-
-  .hud.touch-mode:not([hidden]) ~ .toasts .toast {
-    font-size: 0.82rem;
-  }
+.hud-toasts:empty {
+  display: none;
 }
 
-/* Tablet buttons are taller. */
-@media (orientation: portrait) and (min-width: 740px) and (min-height: 740px) {
-  .hud.touch-mode:not([hidden]) ~ .toasts {
-    bottom: calc(33vh + var(--safe-bottom) + 90px);
-  }
+.hud-toasts .toast {
+  font-size: 0.82rem;
+  padding: 0.35rem 0.7rem;
 }
 
 /* Short landscape phones: the right column belongs to the touch buttons. */

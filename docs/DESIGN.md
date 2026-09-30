@@ -138,6 +138,43 @@ contracts exist at Barnard, Meridian and Sirius.
 - Touch-action `none` applies only to the flight canvas, stick zones, buttons and slider; menus
   scroll normally. Every edge-anchored control respects safe-area insets.
 
+## Interface direction
+
+The 2026 redesign follows the feel of *Freelancer*'s interface, studied from gameplay screenshots
+the project owner supplied (not stored in this repository). What makes that interface feel like a
+game rather than a web page, and how Starman Reborn adapts it with original work:
+
+**The place is the menu.** Docking puts you in a rendered 3D room — a hangar deck with your ship
+on its pad, a bar with people at tables, a trader's floor — and the interface is a thin layer on
+top. We build procedural interiors per station (`src/world/rooms/`), styled by who runs the
+station and the light of its star.
+
+**Rails of icons instead of tabs.** A room rail is attached to the top edge of the screen: one
+large glyph per room, the current room lit amber. A small tab hangs below it with the actions of
+the current room (launch from the deck; jobs and news in the bar). A second, smaller rail at the
+top right holds the always-available screens (star map, journal, science notes, menu). In flight,
+the same top rail carries the flight commands (free flight, go to, dock, cruise).
+
+**Framed glass.** Panels are translucent navy glass with 45° cut corners, a thin cyan edge that is
+brighter along the cuts, and a faint scanline texture. Buttons follow the same shape. Nothing
+uses rounded web cards.
+
+**Icons and numbers first, prose on demand.** Lists are rows of icon · name · number, colour-coded
+(hostile red, friendly green, neutral white) and always paired with a shape or word. Descriptions
+open from an info button. Gauges are segmented bars; tabular figures keep numbers aligned.
+
+**Typography.** Saira Condensed for labels, rails, buttons and HUD; Saira Semi Condensed for
+reading text (both SIL Open Font License, bundled — no font requests to third parties).
+
+**Adapting to phones.** The reference is a 4:3 desktop game. On landscape phones the rails stay
+at the top; on portrait phones the room rail stays at the top and the global rail moves to the
+bottom edge, and windows become full-width sheets between them. Touch targets stay ≥ 44 px, text
+scaling up to 130% (and 130% page zoom) must not cut anything off, and the flight HUD keeps both
+thumb areas clear.
+
+Nothing is copied: no icons, fonts, logos, names, textures or layouts are taken from the original
+game; the shapes, glyphs, palette variations and 3D rooms are drawn for this project.
+
 ## Audio (`src/audio/`)
 
 Everything is synthesized at runtime with Web Audio. There are generative music moods per system,
