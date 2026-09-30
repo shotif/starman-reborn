@@ -2,6 +2,7 @@ import type { Lingering } from './state.ts';
 import { TRAFFIC } from '../world/traffic/plan.ts';
 import { raidKill } from '../economy/answers.ts';
 import { useWorldLog } from '../economy/events.ts';
+import { fleetNews, settleFleet, type FleetSettlement } from '../economy/fleet.ts';
 import { lastView } from '../ui/station/lastView.ts';
 import { fill, PAYMENT } from '../content/people/lines.ts';
 import * as THREE from 'three';
@@ -437,6 +438,10 @@ export class Game {
       return;
     }
     this.state = loaded.state;
+    // The fleet catches up with the clock the save was made at (docs/PROCGEN.md §18).
+    useWorldLog(this.state.world);
+    const fleet = settleFleet(this.state);
+    if (this.state.fleet.stakes.length || this.state.fleet.ships.some((o) => o.hauler)) this.persist();
     const loc = this.state.location;
     if (loc.dockedAt) this.enterDocked(loc.dockedAt, { titleCard: true });
     else if (loc.flight) {
@@ -447,6 +452,12 @@ export class Game {
       });
     } else this.enterFlight({ kind: 'arrival' });
     toast('Progress restored', 'good', 2000);
+    this.announceFleet(fleet);
+  }
+
+  /** What the fleet did while the player was away, as toasts (docs/PROCGEN.md §18). */
+  private announceFleet(s: FleetSettlement): void {
+    for (const n of fleetNews(s)) toast(n.text, n.tone, 6000);
   }
 
   // ------------------------------------------------------------------ scenes
@@ -958,6 +969,7 @@ export class Game {
     }
     for (const n of out.watchNotes) toast(n.text, 'info', 6000);
     for (const n of out.lawNotes) toast(n, 'good', 6000);
+    this.announceFleet(out.fleet);
     this.announceJobEvents(out.jobEvents, false);
     const deliverable = Object.keys(state.jobs).some((id) => {
       const p = state.jobs[id]!;
@@ -1244,6 +1256,7 @@ export class Game {
         const events = performJump(state, j.route, j.fee);
         this.announceJobEvents(events);
         for (const n of settleLaw(state)) toast(n, 'good', 6000);
+        this.announceFleet(settleFleet(state));
         const wing = payCrew(state, j.route.hops.length);
         if (wing.paid) toast(`Wing fees: ${formatCredits(wing.paid)}`, 'info', 3000);
         for (const note of wing.notes) toast(note, 'bad', 5000);
@@ -1673,6 +1686,14 @@ export class Game {
       setCredits: (credits: number) => {
         if (!this.state) return;
         this.state.credits = credits;
+        this.station?.render();
+      },
+      /** Test-only: let game time pass (as in flight), then settle the fleet as docking does. */
+      advanceClock: (seconds: number) => {
+        if (!this.state) return;
+        this.state.clock += Math.max(0, seconds);
+        this.announceFleet(settleFleet(this.state));
+        this.persist();
         this.station?.render();
       },
       renderInfo: () => ({ quality: this.renderer.quality, pixelRatio: this.renderer.pixelRatio, fps: this.renderer.fps }),
