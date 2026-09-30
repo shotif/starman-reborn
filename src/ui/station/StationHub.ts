@@ -56,8 +56,10 @@ const WINDOW_TITLE: Record<StationWindow, string> = {
 };
 
 /** Rooms a station offers, in rail order (also the rooms its 3D interior builds). */
-export function stationRooms(locationId: string): RoomView[] {
+export function stationRooms(locationId: string, access: 'full' | 'emergency' = 'full'): RoomView[] {
   const list: RoomView[] = ['deck', 'bar'];
+  // Emergency docking: the deck (repairs) and the bar (the customs desk), nothing else.
+  if (access === 'emergency') return list;
   if (hasMarket(locationId)) list.push('trader');
   if (hasOutfitter(locationId)) list.push('outfitter');
   return list;
@@ -144,7 +146,7 @@ export class StationHub {
 
   /** Rooms this station offers, in rail order. */
   rooms(): RoomView[] {
-    return stationRooms(this.ctx.locationId);
+    return stationRooms(this.ctx.locationId, this.ctx.access);
   }
 
   get currentRoom(): RoomView {
@@ -238,8 +240,9 @@ export class StationHub {
         h('span', null, label),
       );
     const items: HTMLElement[] = [];
-    if (room === 'deck' && hasShipyard(this.ctx.locationId)) items.push(act('shipyard', 'Ships', 'shipyard', 'station-ships'));
-    if (room === 'bar') items.push(act('jobs', 'Jobs', 'jobs', 'station-jobs'), act('news', 'News', 'news', 'station-news'));
+    const full = this.ctx.access === 'full';
+    if (room === 'deck' && full && hasShipyard(this.ctx.locationId)) items.push(act('shipyard', 'Ships', 'shipyard', 'station-ships'));
+    if (room === 'bar') items.push(...(full ? [act('jobs', 'Jobs', 'jobs', 'station-jobs')] : []), act('news', 'News', 'news', 'station-news'));
     if (room === 'trader') items.push(act('trader', 'Trade', 'trader', 'station-trade'));
     if (room === 'outfitter') items.push(act('outfitter', 'Equip', 'outfitter', 'station-equip'));
     items.push(button('Launch', { icon: 'launch', variant: 'primary', onClick: () => this.ctx.launch(), testId: 'dock-launch' }));

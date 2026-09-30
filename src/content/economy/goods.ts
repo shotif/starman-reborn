@@ -25,9 +25,12 @@ export type CommodityId =
   | 'data-cores'
   | 'luxuries'
   | 'weapons'
-  | 'salvage';
+  | 'salvage'
+  | 'stims'
+  | 'spoofers';
 
-export type CommodityCategory = 'raw' | 'fuel' | 'refined' | 'food' | 'manufactured' | 'science' | 'luxury' | 'restricted' | 'salvage';
+/** `contraband`: banned in claimed space (docs/PROCGEN.md §12); patrols and customs confiscate it. */
+export type CommodityCategory = 'raw' | 'fuel' | 'refined' | 'food' | 'manufactured' | 'science' | 'luxury' | 'restricted' | 'salvage' | 'contraband';
 
 export interface Commodity {
   id: CommodityId;
@@ -61,6 +64,22 @@ const goods: Commodity[] = [
   { id: 'luxuries', name: 'Luxury goods', category: 'luxury', unitSize: 1, basePrice: 270, description: 'Jewellery, art prints, fine textiles and vintage spirits.' },
   { id: 'weapons', name: 'Small arms', category: 'restricted', unitSize: 1, basePrice: 230, description: 'Sidearms and ammunition. Traded at military bases and, quietly, at free ports.' },
   { id: 'salvage', name: 'Salvage', category: 'salvage', unitSize: 2, basePrice: 42, description: 'Scrap plate, stripped wiring and parts recovered from wrecks.' },
+  {
+    id: 'stims',
+    name: 'Combat stims',
+    category: 'contraband',
+    unitSize: 1,
+    basePrice: 140,
+    description: 'Banned stimulants that keep a shift crew going for days. Contraband in claimed space; the mines and refineries buy them anyway.',
+  },
+  {
+    id: 'spoofers',
+    name: 'Transponder spoofers',
+    category: 'contraband',
+    unitSize: 1,
+    basePrice: 210,
+    description: 'Kits that make a ship’s transponder lie about who it is. Contraband in claimed space; wanted under the counter at busy ports.',
+  },
 ];
 
 export const COMMODITIES = Object.fromEntries(goods.map((g) => [g.id, g])) as Record<CommodityId, Commodity>;

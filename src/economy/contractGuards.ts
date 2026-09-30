@@ -8,7 +8,9 @@ import { shipModel } from '../content/catalog.ts';
 import { RECOVERY_ITEMS } from '../content/contracts/rules.ts';
 import { FLEETS } from '../world/traffic/plan.ts';
 import { boardFor, CONTRACT_PREFIX, expectedTrip, followUpFor, routeFeeBetween } from './contracts.ts';
+import { LAW } from '../content/law/rules.ts';
 import { baseThreat, priceMultiplier, stationEventAt, systemEventAt } from './events.ts';
+import { lawIn, scansOnDocking } from './law.ts';
 import type { JobDef } from './jobs.ts';
 import { marketTables } from './markets.ts';
 
@@ -33,7 +35,8 @@ export function validateContracts(epochs = 40): Issue[] {
   const issues: Issue[] = [];
   const report: Report = (rule, subject, message) => issues.push({ rule, subject, message });
   const markets = marketTables();
-  const givers = ALL_LOCATIONS.filter((l) => l.status === 'functional' && l.dockable !== false && l.services.includes('contracts'));
+  // Every open station with a board, and the raider dens (their boards are for pilots the Wake trusts).
+  const givers = ALL_LOCATIONS.filter((l) => l.status === 'functional' && ((l.dockable !== false && l.services.includes('contracts')) || l.stationType === 'pirate-den'));
   const kinds = new Set<ContractKind>();
   let eventWork = 0;
   let urgent = 0;
@@ -92,7 +95,7 @@ function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, numbe
   if (!o || c.objectives.length !== expected) return report('objectives', c.id, `expected ${expected} objective(s)`);
 
   // Where it sends you, and what the trip costs.
-  const target = o.kind === 'scan' || o.kind === 'bounty' || o.kind === 'recover' || o.kind === 'escort' ? o.systemId : 'locationId' in o ? getLocation(o.locationId).systemId : from;
+  const target = o.kind === 'scan' || o.kind === 'bounty' || o.kind === 'recover' || o.kind === 'escort' || o.kind === 'piracy' ? o.systemId : 'locationId' in o ? getLocation(o.locationId).systemId : from;
   const j = jumps.get(target) ?? Infinity;
   if (j > CONTRACTS.maxJumps[kind]) report('reach', c.id, `${j} jumps (at most ${CONTRACTS.maxJumps[kind]})`);
   let tripFrom = from;
@@ -145,6 +148,31 @@ function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, numbe
       if (o.level !== (threat ?? 1) || c.difficulty !== o.level) report('escort', c.id, 'ambush threat does not match the system');
       const fleets = Object.values(FLEETS).flatMap((f) => f.traders);
       if (!fleets.includes(o.model) || shipModel(o.model).name !== o.shipName) report('escort', c.id, 'escorted ship is not a hauler of the catalogue');
+      break;
+    }
+    case 'smuggle': {
+      if (o.kind !== 'deliver') return report('objectives', c.id, `unexpected objective ${o.kind}`);
+      const dest = getLocation(o.locationId);
+      if (!LAW.contraband.includes(o.commodity)) report('smuggle', c.id, `${o.commodity} is not contraband`);
+      if (markets.get(c.giverLocationId)?.entries.get(o.commodity)?.role !== 'produce') report('smuggle', c.id, `${c.giverLocationId} does not sell ${o.commodity}`);
+      const e = markets.get(dest.id)?.entries.get(o.commodity);
+      if (!e || e.role === 'produce') report('smuggle', c.id, `${dest.id} does not want ${o.commodity}`);
+      if (!lawIn(dest.systemId)) report('smuggle', c.id, 'smuggling goes into claimed space');
+      if (scansOnDocking(dest.id)) report('smuggle', c.id, `${dest.id} scans every ship that docks`);
+      const cargo = c.contract!.cargo;
+      if (!cargo || cargo.commodity !== o.commodity || cargo.qty !== o.qty) report('smuggle', c.id, 'cargo loaded differs from the cargo delivered');
+      const value = e ? o.qty * e.mid * (1 - e.spread / 2) * Math.max(1, priceMultiplier(dest.id, o.commodity, clock)) : 0;
+      if ((c.contract!.deposit ?? 0) < value) report('smuggle', c.id, 'deposit less than the cargo fetches');
+      if (!(c.repReward['hollow-wake']! > 0) || Object.keys(c.repReward).some((f) => f !== 'hollow-wake')) report('smuggle', c.id, 'outlaw work earns standing with the Wake only');
+      break;
+    }
+    case 'piracy': {
+      if (o.kind !== 'piracy') return report('objectives', c.id, `unexpected objective ${o.kind}`);
+      if (getLocation(c.giverLocationId).stationType !== 'pirate-den') report('piracy', c.id, 'only raider dens post piracy');
+      if (o.faction !== lawIn(o.systemId)) report('piracy', c.id, 'target faction is not the system’s law');
+      if (!trafficFor(o.systemId, 'high').plan.traders) report('piracy', c.id, `no haulers work ${o.systemId}`);
+      if (o.count < 2 || o.count > 3) report('piracy', c.id, `count ${o.count}`);
+      if (!(c.repReward['hollow-wake']! > 0) || Object.keys(c.repReward).some((f) => f !== 'hollow-wake')) report('piracy', c.id, 'outlaw work earns standing with the Wake only');
       break;
     }
     case 'recovery': {

@@ -26,6 +26,8 @@ export interface HudStatus {
   objective: string | null;
   systemName: string;
   scaleNote: string;
+  /** "Wanted · fines 1,200 cr" while the player owes fines (docs/PROCGEN.md §12). */
+  wanted?: string | null;
 }
 
 function setText(el: HTMLElement, text: string): void {
@@ -83,6 +85,8 @@ export class Hud {
   private readonly modeText: HTMLElement;
   private readonly creditsText: HTMLElement;
   private readonly cargoText: HTMLElement;
+  private readonly wantedRow: HTMLElement;
+  private readonly wantedText: HTMLElement;
   private readonly objectiveText: HTMLElement;
   private readonly objectivePanel: HTMLElement;
   private readonly autopilotText: HTMLElement;
@@ -146,12 +150,15 @@ export class Hud {
 
     this.creditsText = h('span', { class: 'num', 'data-testid': 'hud-credits' });
     this.cargoText = h('span', { class: 'num', 'data-testid': 'hud-cargo' });
+    this.wantedText = h('span', { 'data-testid': 'hud-wanted' });
+    this.wantedRow = h('div', { class: 'row hud-wanted', hidden: true }, icon('alert'), this.wantedText);
     this.systemText = h('div', { class: 'hud-system' });
     this.wallet = h(
       'div',
       { class: 'hud-panel frame frame-sm hud-wallet' },
       h('div', { class: 'row' }, icon('credits'), this.creditsText),
       h('div', { class: 'row' }, icon('cargo'), this.cargoText),
+      this.wantedRow,
       this.systemText,
     );
     const menuBtn = (g: GlyphName, label: string, testId: string | undefined, onClick: () => void) =>
@@ -314,6 +321,8 @@ export class Hud {
     this.root.dataset.cruise = model.cruise;
     setText(this.creditsText, formatCredits(status.credits));
     setText(this.cargoText, `${status.cargoUsed}/${status.cargoCapacity} cargo`);
+    this.wantedRow.hidden = !status.wanted;
+    if (status.wanted) setText(this.wantedText, status.wanted);
     setText(
       this.systemText,
       model.nearestDock ? `${status.systemName} · dock ${model.nearestDock.name} ${formatRange(model.nearestDock.distance)}` : status.systemName,

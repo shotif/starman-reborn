@@ -41,7 +41,8 @@ let tables: Map<string, StationMarket> | null = null;
 /** Market tables for every station with a market (built on first use). */
 export function marketTables(): ReadonlyMap<string, StationMarket> {
   if (!tables) {
-    const stations = ALL_LOCATIONS.filter((l) => l.status === 'functional' && l.services.includes('market') && l.dockable !== false).map((l) => ({
+    // Open stations with a market, and the raider dens' black markets (open to pilots the Wake trusts).
+    const stations = ALL_LOCATIONS.filter((l) => l.status === 'functional' && ((l.services.includes('market') && l.dockable !== false) || l.stationType === 'pirate-den')).map((l) => ({
       id: l.id,
       systemId: l.systemId,
       type: l.stationType ?? null,

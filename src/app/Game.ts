@@ -15,6 +15,7 @@ import {
   activeJobIds,
   advanceJobs,
   contractPacksIn,
+  countPiracy,
   currentObjective,
   deliverJob,
   describeObjective,
@@ -27,6 +28,7 @@ import {
   type JobEvent,
 } from '../economy/jobs.ts';
 import { moveStock, traderDelivery } from '../economy/markets.ts';
+import { commitCrime, customsScan, dockAccess, isLawful, scansOnDocking, totalFines } from '../economy/law.ts';
 import { welcomeText } from '../economy/dockText.ts';
 import { DesktopInput } from '../flight/input/DesktopInput.ts';
 import { emptyInput, type InputScheme } from '../flight/input/types.ts';
@@ -337,7 +339,7 @@ export class Game {
         skybox: def.skybox,
         starColor: star.color,
         seed: hashString(locationId) % 10_000,
-        rooms: stationRooms(locationId),
+        rooms: stationRooms(locationId, this.state && dockAccess(this.state, locationId) === 'emergency' ? 'emergency' : 'full'),
         ...(model ? { ship: (ctx: ArtContext) => createCatalogShipArt(model, ctx) } : {}),
       },
       this.artCtx,
@@ -447,6 +449,7 @@ export class Game {
       {
         state,
         locationId,
+        access: dockAccess(state, locationId) === 'emergency' ? 'emergency' : 'full',
         save: () => this.onDockStateChanged(),
         shipChanged: () => this.onShipChanged(),
         sfx: (id) => this.sfx(id),
@@ -457,6 +460,7 @@ export class Game {
         openControls: () => this.openControls(),
         quitToTitle: () => void this.quitToTitle(),
         acceptJob: (id) => this.acceptJob(id),
+        reload: () => this.enterDocked(locationId, { room: this.station?.currentRoom ?? 'deck', window: 'news' }),
         deliverJob: (id) => void this.deliver(id),
         travelCost: (from, to) => this.travelCost(from, to),
         // The first view is set while the hub is being built: jump straight there.
@@ -683,6 +687,24 @@ export class Game {
           if (ev) this.announceJobEvents([ev]);
           this.persist();
         },
+        onCrime: (kind, faction, name, role) => {
+          const out = commitCrime(state, kind, faction, state.location.systemId);
+          this.sfx('alert');
+          toast(kind === 'attack' ? `You opened fire on the ${name}. ${out.text}` : `The ${name} is destroyed. ${out.text}`, 'bad', 5000);
+          if (kind === 'destroy' && role === 'trader') this.announceJobEvents(countPiracy(state, state.location.systemId, faction));
+          this.persist();
+        },
+        onScan: (result, faction) => {
+          if (!isLawful(faction)) return;
+          if (result === 'evaded') {
+            const out = commitCrime(state, 'evade', faction, state.location.systemId);
+            toast(`You ran from a cargo scan. ${out.text}`, 'bad', 5000);
+          } else {
+            const scan = customsScan(state, faction);
+            toast(scan.text, scan.found.length ? 'bad' : 'info', scan.found.length ? 5000 : 2600);
+          }
+          this.persist();
+        },
         onRecovered: (jobId) => {
           const progress = state.jobs[jobId];
           const o = currentObjective(state, jobId);
@@ -722,8 +744,18 @@ export class Game {
   private onDocked(locationId: string): void {
     const state = this.state!;
     this.flight?.writeBack(state);
+    // Customs at depots and military bases scan every ship that docks.
+    const customs = scansOnDocking(locationId);
+    if (customs) {
+      const scan = customsScan(state, customs);
+      if (scan.found.length) toast(scan.text, 'bad', 6000);
+    }
     const out = dockAt(state, locationId);
     this.persist();
+    if (dockAccess(state, locationId) === 'emergency') {
+      const faction = getLocation(locationId).factionId!;
+      toast(`Emergency docking only: the ${FACTIONS[faction].name} will repair you, and take your fines at the customs desk (News).`, 'bad', 6000);
+    }
     if (out.clearanceGranted) {
       this.sfx('ui-confirm');
       toast('Interstellar departure clearance granted.', 'good', 4500);
@@ -734,7 +766,11 @@ export class Game {
       return p.status === 'active' && getJob(id, state).destinationLocationId === locationId;
     });
     const news = out.clearanceGranted || hasVoyage(state);
-    this.enterDocked(locationId, deliverable ? { room: 'bar', window: 'jobs', titleCard: true } : { room: 'deck', window: news ? 'arrival' : null, titleCard: true });
+    const emergency = dockAccess(state, locationId) === 'emergency';
+    this.enterDocked(
+      locationId,
+      emergency ? { room: 'bar', window: 'news', titleCard: true } : deliverable ? { room: 'bar', window: 'jobs', titleCard: true } : { room: 'deck', window: news ? 'arrival' : null, titleCard: true },
+    );
   }
 
   // ------------------------------------------------------------------ flight events
@@ -1248,11 +1284,14 @@ export class Game {
     }
     flight.update(dt, input);
     const hudModel = flight.hud;
+    const scan = flight.scanStatus;
+    const fines = totalFines(state);
     this.hud.update(hudModel, {
       credits: state.credits,
       cargoUsed: cargoUsed(state.ship.cargo),
       cargoCapacity: cargoCapacity(state.ship),
-      objective: this.objectiveText,
+      objective: scan ? `Cargo scan by a ${FACTIONS[scan.faction].shortName} patrol: hold your course (${Math.ceil(scan.left)} s)` : this.objectiveText,
+      wanted: fines > 0 ? `Wanted · fines ${formatCredits(fines)}` : null,
       systemName: getSystem(state.location.systemId).displayName,
       scaleNote: `Local scale compressed · ${this.system.def.scaleNote}`,
     });
@@ -1346,6 +1385,11 @@ export class Game {
         if (!this.state.visitedSystems.includes(systemId)) this.state.visitedSystems.push(systemId);
         this.state.flags.flightSchool = true;
         this.enterFlight({ kind: 'arrival' });
+      },
+      /** Test-only: set standing with a faction (the law and the outlaw path). */
+      setReputation: (faction: 'sta' | 'frontier' | 'hollow-wake', value: number) => {
+        if (!this.state) return;
+        this.state.reputation[faction] = value;
       },
       /** Test-only: set the wallet (shipyard and outfitter checks). */
       setCredits: (credits: number) => {

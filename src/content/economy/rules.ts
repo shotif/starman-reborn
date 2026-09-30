@@ -16,25 +16,31 @@ export interface MarketProfile {
   trade: readonly CommodityId[];
 }
 
-export const STATION_MARKETS: Record<Exclude<StationType, 'pirate-den'>, MarketProfile> = {
+export const STATION_MARKETS: Record<StationType, MarketProfile> = {
   'trade-port': {
     produce: ['consumer-goods', 'luxuries', 'electronics'],
-    consume: ['food', 'fine-food', 'water', 'medical', 'research-samples', 'data-cores'],
+    consume: ['food', 'fine-food', 'water', 'medical', 'research-samples', 'data-cores', 'spoofers'],
     trade: ['polymers', 'machinery', 'deuterium'],
   },
   'customs-depot': { produce: ['deuterium'], consume: ['food', 'ship-parts', 'medical', 'weapons'], trade: ['electronics', 'consumer-goods'] },
-  shipyard: { produce: ['ship-parts', 'habitat-modules', 'salvage'], consume: ['metals', 'machinery', 'electronics', 'polymers', 'deuterium'], trade: [] },
-  'mining-outpost': { produce: ['ore', 'water', 'gases'], consume: ['food', 'medical', 'machinery', 'consumer-goods', 'deuterium', 'habitat-modules', 'luxuries'], trade: [] },
-  refinery: { produce: ['metals', 'deuterium', 'polymers', 'helium-3'], consume: ['ore', 'water', 'gases', 'machinery', 'food', 'salvage'], trade: [] },
+  shipyard: { produce: ['ship-parts', 'habitat-modules', 'salvage'], consume: ['metals', 'machinery', 'electronics', 'polymers', 'deuterium', 'spoofers'], trade: [] },
+  'mining-outpost': { produce: ['ore', 'water', 'gases'], consume: ['food', 'medical', 'machinery', 'consumer-goods', 'deuterium', 'habitat-modules', 'luxuries', 'stims'], trade: [] },
+  refinery: { produce: ['metals', 'deuterium', 'polymers', 'helium-3'], consume: ['ore', 'water', 'gases', 'machinery', 'food', 'salvage', 'stims'], trade: [] },
   factory: { produce: ['machinery', 'electronics', 'fabricators', 'consumer-goods', 'weapons'], consume: ['metals', 'polymers', 'deuterium', 'food', 'helium-3'], trade: [] },
   'agri-station': { produce: ['food', 'fine-food', 'medical'], consume: ['water', 'gases', 'machinery', 'polymers', 'fabricators'], trade: [] },
   'research-station': { produce: ['research-samples', 'data-cores', 'medical'], consume: ['electronics', 'food', 'fine-food', 'fabricators', 'helium-3'], trade: [] },
   relay: { produce: [], consume: ['food', 'medical', 'electronics'], trade: ['deuterium', 'helium-3', 'data-cores'] },
   'military-base': { produce: ['salvage'], consume: ['weapons', 'ship-parts', 'deuterium', 'food', 'medical', 'data-cores'], trade: [] },
   freeport: {
-    produce: ['salvage', 'weapons'],
+    produce: ['salvage', 'weapons', 'stims', 'spoofers'],
     consume: ['luxuries', 'fine-food', 'medical', 'consumer-goods', 'electronics'],
     trade: ['food', 'deuterium', 'metals', 'ore', 'data-cores'],
+  },
+  /** Raider dens: a black market for pilots the Hollow Wake trusts (docs/PROCGEN.md §12). */
+  'pirate-den': {
+    produce: ['stims', 'spoofers', 'weapons', 'salvage'],
+    consume: ['luxuries', 'fine-food', 'medical', 'electronics', 'ship-parts', 'consumer-goods'],
+    trade: ['deuterium', 'food'],
   },
 };
 

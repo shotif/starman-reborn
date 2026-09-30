@@ -64,6 +64,7 @@ export const SHORTAGE_CAUSES: Record<CommodityCategory, readonly string[]> = {
   luxury: ['A wedding season', 'A visiting delegation'],
   restricted: ['A security scare'],
   salvage: ['A recycling drive'],
+  contraband: ['A crackdown on the smugglers'],
 };
 
 export const GLUT_CAUSES: readonly string[] = ['A bumper output', 'A cancelled order', 'A new production line'];

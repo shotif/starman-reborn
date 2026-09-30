@@ -10,7 +10,7 @@ import { MISSILE_LOCK_CONE, MISSILE_LOCK_RANGE, updateMissile, type Missile, typ
 import { PirateBrain } from '../combat/PirateAI.ts';
 import { PatrolBrain, TraderBrain } from '../combat/TrafficAI.ts';
 import { Gun, ProjectileSystem, segmentHitsSphere, withinArc } from '../combat/weapons.ts';
-import { EXOPLANETS } from '../data/systems.ts';
+import { EXOPLANETS, getLocation } from '../data/systems.ts';
 import type { FactionId } from '../data/types.ts';
 import type { DamageType } from '../content/types.ts';
 import type { ShipPerformance } from '../content/loadout.ts';
@@ -20,6 +20,8 @@ import { shipModel } from '../content/catalog.ts';
 import { CONTRACTS } from '../content/contracts/rules.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
 import { hashString } from '../content/random.ts';
+import { LAW } from '../content/law/rules.ts';
+import { contrabandIn, huntedBy, huntersIn, patrolsScanIn, wakeFriendly } from '../economy/law.ts';
 import { activeLauncher, fittedGuns, gunSummary, performanceOf, roundsLabel } from '../economy/loadout.ts';
 import { aimErrors, avoidObstacles, flyTo, steerToward, type Obstacle } from '../flight/autopilot.ts';
 import { ChaseCamera } from '../flight/ChaseCamera.ts';
@@ -74,6 +76,10 @@ export interface FlightCallbacks {
   onEscortLost?(jobId: string): void;
   /** The item of a recovery contract was tractored aboard. */
   onRecovered?(jobId: string): void;
+  /** The player fired on (`attack`, once per ship) or destroyed a lawful ship. */
+  onCrime?(kind: 'attack' | 'destroy', faction: FactionId | 'independent', name: string, role: 'trader' | 'patrol'): void;
+  /** A patrol's cargo scan finished (`complete`) or the player flew off before it did (`evaded`). */
+  onScan?(result: 'complete' | 'evaded', faction: FactionId): void;
   onMessage(text: string, tone: 'good' | 'bad' | 'info'): void;
 }
 
@@ -115,6 +121,12 @@ interface NpcShip {
   ace?: boolean;
   /** Ambushers go for this ship (the one the player escorts) rather than the player. */
   prey?: NpcShip;
+  /** A lawful ship the player has fired on (the crime is reported once). */
+  crimeReported?: boolean;
+  /** A bounty hunter after the player's fines: it fights only the player and never gives up. */
+  hunter?: boolean;
+  /** This patrol has decided whether to scan the player. */
+  scanRolled?: boolean;
   /** The ship of an escort contract: where it set off and when the ambush comes. */
   escort?: { jobId: string; start: THREE.Vector3; ambushAt: number; ambushed: boolean; level: 1 | 2 | 3; waiting?: boolean };
   /** Who it is fighting. */
@@ -193,6 +205,8 @@ const DEFAULT_SCAN_RANGE = 9_000;
 const HOSTILE_RADIUS = 3_500;
 /** An escorted ship holds position while the player is further away than this. */
 const ESCORT_WAIT = 2_500;
+/** Patrols go after a pilot their faction hunts within this range. */
+const PATROL_HUNT = 6_000;
 const CONVERGENCE = 700;
 const EXOPLANET_IDS = new Set(EXOPLANETS.planets.map((p) => p.id));
 /** Hollow Wake raiders fly Wake Salvage light fighters. */
@@ -278,7 +292,12 @@ export class FlightSession {
   private readonly missileTargetCache = new Map<string, MissileTarget>();
   private readonly npcShots = new Map<string, number>();
   private readonly traffic: TrafficSetup | null;
-  private trafficTimers = { trader: 3, pack: 0, patrolsLaunched: false, populated: false, contractsSpawned: false, serial: 0 };
+  private trafficTimers = { trader: 3, pack: 0, patrolsLaunched: false, populated: false, contractsSpawned: false, huntersSpawned: false, serial: 0 };
+  /** The raider dens take this pilot in (the Wake trusts them). */
+  private readonly denOpen: boolean;
+  /** A patrol's cargo scan under way, and whether one has run this session. */
+  private scan: { npc: NpcShip; t: number } | null = null;
+  private scanned = false;
 
   constructor(opts: {
     system: SystemScene;
@@ -299,6 +318,11 @@ export class FlightSession {
     this.callbacks = opts.callbacks;
     this.traffic = opts.traffic ?? null;
     this.trafficTimers.pack = this.traffic?.plan.packs?.firstDelay ?? 0;
+    this.denOpen = wakeFriendly(opts.state);
+    // Dens show as friendly places to a pilot the Wake trusts.
+    for (const t of this.system.targets) {
+      if (t.kind === 'station' && t.locationId && getLocation(t.locationId).stationType === 'pirate-den') t.hostile = !this.denOpen;
+    }
     this.rand = seededRandom((opts.state.seed ^ (opts.state.stats.jumps * 7919) ^ Math.floor(opts.state.clock)) >>> 0);
     this.chase = new ChaseCamera(opts.camera);
     this.applyCameraSettings();
@@ -657,7 +681,7 @@ export class FlightSession {
   private nearestDock(): { site: DockSite; distance: number } | null {
     let best: { site: DockSite; distance: number } | null = null;
     for (const site of this.system.docks) {
-      if (!site.dockable) continue;
+      if (!this.canDock(site)) continue;
       const d = site.def.position.distanceTo(this.player.position);
       if (!best || d < best.distance) best = { site, distance: d };
     }
@@ -681,7 +705,7 @@ export class FlightSession {
     const sel = this.selectedTarget;
     if (sel?.kind === 'station' && sel.locationId) {
       const site = this.system.dock(sel.locationId);
-      if (site?.dockable && site.def.position.distanceTo(this.player.position) < DOCK_RANGE) return site;
+      if (site && this.canDock(site) && site.def.position.distanceTo(this.player.position) < DOCK_RANGE) return site;
       return null;
     }
     const dock = this.nearestDock();
@@ -1071,7 +1095,7 @@ export class FlightSession {
       this.throttle = 0;
       if (dockId) {
         const site = this.system.dock(dockId);
-        if (site?.dockable) this.beginDock(site);
+        if (site && this.canDock(site)) this.beginDock(site);
       } else {
         this.callbacks.onMessage(`Arrived: ${target.name}`, 'info');
       }
@@ -1286,10 +1310,13 @@ export class FlightSession {
   private updateProjectiles(dt: number): void {
     this.projectiles.update(dt, (p, from, to) => {
       const byPlayer = p.ownerId === PLAYER_ID;
-      const side = byPlayer ? 'lawful' : (this.npcs.find((n) => n.id === p.ownerId)?.side ?? 'raider');
+      const owner = byPlayer ? null : this.npcs.find((n) => n.id === p.ownerId);
+      const side = byPlayer ? 'lawful' : (owner?.side ?? 'raider');
       // Bolts hit ships of the other side only: no friendly fire among lawful ships or among raiders.
+      // The player's bolts hit a lawful ship only when it is the selected target: attacking one is a choice.
       for (const n of this.npcs) {
-        if (n.durability.hull <= 0 || n.side === side) continue;
+        if (n.durability.hull <= 0) continue;
+        if (byPlayer ? n.side === 'lawful' && n.target.id !== this.selectedId : n.side === side) continue;
         if (segmentHitsSphere(from, to, n.body.position, n.art.radius)) {
           this.damageNpc(n, p.damage, to, p.damageType, byPlayer);
           return true;
@@ -1302,7 +1329,7 @@ export class FlightSession {
             return true;
           }
         }
-      } else if (side === 'raider' && this.alive && segmentHitsSphere(from, to, this.player.position, this.playerArt.radius)) {
+      } else if ((side === 'raider' || owner?.foe === 'player') && this.alive && segmentHitsSphere(from, to, this.player.position, this.playerArt.radius)) {
         this.damagePlayer(p.damage, to, p.damageType);
         return true;
       }
@@ -1434,6 +1461,12 @@ export class FlightSession {
 
   private damageNpc(n: NpcShip, amount: number, at: THREE.Vector3, type?: DamageType, byPlayer = false): void {
     if (byPlayer) n.playerHitAt = this.time;
+    if (byPlayer && n.side === 'lawful' && !n.crimeReported && n.role !== 'raider') {
+      n.crimeReported = true;
+      // A patrol fired on fights back at once; the law hears of it either way.
+      if (n.role === 'patrol') n.foe = 'player';
+      this.callbacks.onCrime?.('attack', n.faction, n.name, n.role);
+    }
     const r = applyDamage(n.durability, amount, type);
     const shieldHit = r.absorbedByShield > 0;
     n.art.flashShield(shieldHit ? 0.8 : 0.2);
@@ -1462,6 +1495,18 @@ export class FlightSession {
     if (n.escort) this.callbacks.onEscortLost?.(n.escort.jobId);
     else if (n.role === 'trader') this.callbacks.onMessage(`${n.name} was destroyed.`, 'bad');
     const byPlayer = this.time - n.playerHitAt < 30;
+    if (byPlayer && n.side === 'lawful' && n.role !== 'raider') {
+      // Piracy: a hauler's hold spills a pod or two of its cargo.
+      if (n.role === 'trader') {
+        const goods: CommodityId[] = ['consumer-goods', 'electronics', 'machinery', 'medical', 'food', 'metals', 'polymers', 'luxuries'];
+        for (let i = 0; i < 1 + Math.floor(this.rand() * 2); i++) {
+          this.spawnLoot(n.body.position.clone().add(this.tmp.set((this.rand() - 0.5) * 40, (this.rand() - 0.5) * 20, (this.rand() - 0.5) * 40)), 0, {
+            cargo: { commodity: goods[Math.floor(this.rand() * goods.length)]!, qty: 3 + Math.floor(this.rand() * 6) },
+          });
+        }
+      }
+      this.callbacks.onCrime?.('destroy', n.faction, n.name, n.role === 'patrol' ? 'patrol' : 'trader');
+    }
     if (n.contract) this.callbacks.onContractKill(n.contract);
     else if (n.side === 'raider' && !n.encounter && byPlayer) this.callbacks.onBounty(n.bounty, n.name);
     this.removeNpc(n);
@@ -1693,9 +1738,16 @@ export class FlightSession {
         timers.pack = THREE.MathUtils.lerp(plan.packs.interval[0], plan.packs.interval[1], this.rand());
       }
     }
+    if (!timers.huntersSpawned && this.time > LAW.hunters.delay && this.alive && huntersIn(this.state, this.state.location.systemId)) {
+      timers.huntersSpawned = true;
+      this.spawnHunters();
+    }
+    this.updateScan(dt);
     this.frameObstacles = this.system.obstacles(null);
     for (const n of [...this.npcs]) {
       if (n.encounter || n.durability.hull <= 0) continue;
+      // Who shows as hostile: raiders (unless the Wake trusts you), hunters, and lawful ships after you.
+      n.target.hostile = n.side === 'raider' ? !this.raiderSparesPlayer(n) : n.foe === 'player';
       if (n.role === 'trader') this.flyTrader(n);
       else if (n.role === 'patrol') this.flyPatrol(n, dt);
       else this.flyRaider(n, dt);
@@ -2003,23 +2055,111 @@ export class FlightSession {
   }
 
   private flyPatrol(n: NpcShip, dt: number): void {
-    // The opening raid and bounty-contract packs are the player's fights; patrols leave them alone.
-    const foe = this.nearestShip(n.body.position, 4_000, (x) => x.side === 'raider' && !x.encounter && !x.contract);
+    // Patrols turn on a pilot their faction hunts (fines owed, or Hostile standing) or who fired on them.
+    const playerFair = this.alive && !this.busy && this.autopilot.mode !== 'lane';
+    const onPlayer = playerFair && (n.foe === 'player' || huntedBy(this.state, n.faction)) && n.body.position.distanceTo(this.player.position) < PATROL_HUNT;
+    // The opening raid, bounty-contract packs and bounty hunters are the player's fights; patrols leave them alone.
+    const foe = onPlayer ? 'player' : this.nearestShip(n.body.position, 4_000, (x) => x.side === 'raider' && !x.encounter && !x.contract && !x.hunter);
     n.foe = foe;
-    if (foe) {
+    if (foe === 'player') {
+      this.fightNpc(n, this.player, dt, TRAFFIC.npcDamage * DIFFICULTY[this.settings.difficulty].enemyDamage);
+    } else if (foe) {
       this.fightNpc(n, foe.body, dt, TRAFFIC.npcDamage);
+    } else if (this.scan?.npc === n) {
+      // Scanning: keep station off the player's wing.
+      for (const g of n.guns) g.tick(dt);
+      flyTo(n.body, this.player.position, { arriveDistance: 450, allowCruise: false, maxThrottle: 0.7 }, n.controls);
+      n.body.requestCruise(false);
     } else {
       for (const g of n.guns) g.tick(dt);
       n.body.requestCruise(n.patrol!.brain.update(n.body, n.controls, this.frameObstacles, n.patrol!.offset));
+      this.maybeScan(n);
     }
     // A badly damaged patrol breaks off and heads home.
     if (n.brain.state === 'escaped') this.removeNpc(n);
   }
 
+  /** A patrol passing close may scan the player's hold: always with contraband aboard, now and then otherwise. */
+  private maybeScan(n: NpcShip): void {
+    if (this.scan || this.scanned || !this.alive || this.busy || n.scanRolled) return;
+    const law = patrolsScanIn(this.state.location.systemId);
+    if (!law || n.faction !== law || huntedBy(this.state, law)) return;
+    if (n.body.position.distanceTo(this.player.position) > LAW.scans.range) return;
+    n.scanRolled = true;
+    if (!contrabandIn(this.state.ship.cargo).length && this.rand() >= LAW.scans.cleanChance) return;
+    this.scan = { npc: n, t: 0 };
+    this.sfx('scan');
+    this.callbacks.onMessage(`${FACTIONS[law].shortName} patrol: hold your course for a cargo scan.`, 'info');
+  }
+
+  private updateScan(dt: number): void {
+    const s = this.scan;
+    if (!s) return;
+    if (s.npc.durability.hull <= 0 || !this.alive || s.npc.foe === 'player') {
+      this.scan = null;
+      return;
+    }
+    const faction = s.npc.faction as FactionId;
+    if (s.npc.body.position.distanceTo(this.player.position) > LAW.scans.escape) {
+      this.scan = null;
+      this.scanned = true;
+      this.callbacks.onScan?.('evaded', faction);
+      return;
+    }
+    s.t += dt;
+    if (s.t >= LAW.scans.seconds) {
+      this.scan = null;
+      this.scanned = true;
+      this.callbacks.onScan?.('complete', faction);
+    }
+  }
+
+  /** A cargo scan under way: who is scanning and how long it has left. */
+  get scanStatus(): { faction: FactionId; left: number } | null {
+    return this.scan ? { faction: this.scan.npc.faction as FactionId, left: Math.max(0, LAW.scans.seconds - this.scan.t) } : null;
+  }
+
+  /** Bounty hunters: a pair after the player's fines, from out of the dark. */
+  private spawnHunters(): void {
+    const a = this.rand() * Math.PI * 2;
+    const home = this.player.position.clone().add(this.tmp.set(Math.cos(a), 0.1, Math.sin(a)).normalize().multiplyScalar(5_000));
+    for (let i = 0; i < LAW.hunters.count; i++) {
+      const position = home.clone().add(new THREE.Vector3(i * 160, i * 40, i * 90));
+      const npc = this.makeNpc(LAW.hunters.model, 'raider', 'independent', position, this.player.position.clone().sub(position).normalize(), 'Bounty hunter · after your fines');
+      npc.hunter = true;
+      npc.name = 'Bounty hunter';
+      npc.target.name = 'Bounty hunter';
+      npc.foe = 'player';
+    }
+    this.sfx('alert');
+    this.callbacks.onMessage('Bounty hunters are on your trail!', 'bad');
+  }
+
+  /** Raiders leave a pilot the Wake trusts alone, until provoked. */
+  private provoked(n: NpcShip): boolean {
+    return this.npcs.some((x) => x.side === 'raider' && (x === n || (n.pack !== undefined && x.pack === n.pack)) && this.time - x.playerHitAt < 30);
+  }
+
+  private raiderSparesPlayer(n: NpcShip): boolean {
+    return !n.hunter && !n.encounter && wakeFriendly(this.state) && !this.provoked(n);
+  }
+
+  /** Can the player dock here? Open stations, and the raider dens for pilots the Wake trusts. */
+  private canDock(site: DockSite): boolean {
+    return site.dockable || (this.denOpen && getLocation(site.def.locationId).stationType === 'pirate-den');
+  }
+
   private flyRaider(n: NpcShip, dt: number): void {
+    if (n.hunter) {
+      // Hunters want the player and nobody else; they wait out lanes and docking.
+      n.foe = this.alive && !this.busy ? 'player' : null;
+      if (n.foe) this.fightNpc(n, this.player, dt, TRAFFIC.npcDamage * DIFFICULTY[this.settings.difficulty].enemyDamage);
+      else for (const g of n.guns) g.tick(dt);
+      return;
+    }
     const pack = this.npcs.filter((x) => x.pack === n.pack && x.durability.hull > 0);
     const sees = (x: NpcShip) => x.body.position.distanceTo(this.player.position) < TRAFFIC.detectRange;
-    const playerFair = this.alive && !this.busy && this.autopilot.mode !== 'lane';
+    const playerFair = this.alive && !this.busy && this.autopilot.mode !== 'lane' && !this.raiderSparesPlayer(n);
     if (n.prey && n.prey.durability.hull > 0 && this.time - n.playerHitAt > 6) {
       // Ambushers go for the escorted ship until the player makes them turn.
       n.foe = n.prey;

@@ -35,6 +35,8 @@ export const COMMODITY_GLYPH: Record<CommodityId, GlyphName> = {
   luxuries: 'luxury',
   weapons: 'weapons',
   salvage: 'salvage',
+  stims: 'stims',
+  spoofers: 'spoofers',
 };
 
 const ROLE_TAG: Record<MarketRole, string> = { produce: 'Made here', trade: 'Traded here', consume: 'Wanted here' };

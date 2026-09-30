@@ -9,6 +9,8 @@ import { formatCredits, h, signed } from '../dom.ts';
 import { glyph, type GlyphName } from '../glyphs.ts';
 import { icon } from '../icons.ts';
 import { newsList } from '../news.ts';
+import { fineOwed, isLawful, payFines } from '../../economy/law.ts';
+import { toast } from '../components.ts';
 import type { StationContext } from './context.ts';
 
 export function pips(level: number, of = 3): HTMLElement {
@@ -70,6 +72,8 @@ const KIND_GLYPH: Record<ContractKind, GlyphName> = {
   escort: 'shieldgen',
   ace: 'missile',
   recovery: 'tractor',
+  smuggle: 'cargopod',
+  piracy: 'weapons',
 };
 const KIND_LABEL: Record<ContractKind, string> = {
   freight: 'Freight',
@@ -80,6 +84,8 @@ const KIND_LABEL: Record<ContractKind, string> = {
   escort: 'Escort',
   ace: 'Ace hunt',
   recovery: 'Recovery',
+  smuggle: 'Smuggling',
+  piracy: 'Piracy',
 };
 
 /** Where a job sends you, for the card's subtitle. */
@@ -94,6 +100,7 @@ function whereTo(job: JobDef): string {
     return `buy at ${source.name}, ${getSystem(source.systemId).displayName}`;
   }
   if (o?.kind === 'escort') return `to ${getLocation(o.locationId).name}, this system`;
+  if (o?.kind === 'piracy') return `in ${getSystem(o.systemId).displayName}`;
   const near = o?.kind === 'bounty' || o?.kind === 'recover';
   const loc = getLocation(near ? o.locationId : job.destinationLocationId);
   return `${near ? 'near' : 'to'} ${loc.name}, ${getSystem(loc.systemId).displayName}`;
@@ -189,7 +196,42 @@ export function newsContent(ctx: StationContext): HTMLElement {
     h('p', { class: 'comm' }, icon('info'), ' ', welcome.text),
     h('p', { class: 'muted' }, loc.description, ' ', dataBadge('fictional')),
     faction ? h('p', null, h('strong', null, faction.name), ` runs this dock. Your standing: ${TIER_LABEL[standingTier(standing)]} (${signed(standing)}).`) : null,
+    customsDesk(ctx),
     h('div', { class: 'list-head' }, h('span', null, 'Local news'), h('span', null, 'within two jumps')),
     newsList(loc.systemId, state.clock),
+  );
+}
+
+/** The customs desk at a lawful station: what you owe its owner, and a pardon for paying it. */
+function customsDesk(ctx: StationContext): HTMLElement | null {
+  const { state, locationId } = ctx;
+  const faction = getLocation(locationId).factionId;
+  if (!isLawful(faction)) return null;
+  const owed = fineOwed(state, faction);
+  const name = FACTIONS[faction].name;
+  return h(
+    'section',
+    { class: 'customs-desk', 'aria-label': 'Customs desk', 'data-testid': 'customs-desk' },
+    h('div', { class: 'list-head' }, h('span', null, 'Customs desk'), h('span', null, owed ? 'Fines owed' : 'Record')),
+    owed
+      ? h(
+          'div',
+          { class: 'callout warn customs-owed' },
+          icon('alert'),
+          h('span', { class: 'grow' }, `You owe the ${name} ${formatCredits(owed)} in fines. Until you pay, its patrols attack you on sight and its stations take you in for repairs only. Paying is a pardon.`),
+          button(`Pay ${formatCredits(owed)}`, {
+            variant: 'primary',
+            testId: 'pay-fines',
+            disabled: state.credits < owed,
+            onClick: () => {
+              const r = payFines(state, faction);
+              ctx.sfx(r.ok ? 'credits' : 'ui-error');
+              toast(r.message, r.ok ? 'good' : 'bad');
+              ctx.save();
+              if (r.ok) ctx.reload();
+            },
+          }),
+        )
+      : h('p', { class: 'muted small' }, `Your record with the ${name} is clean.`),
   );
 }

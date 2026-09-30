@@ -3,6 +3,8 @@ import { gearForSale, resaleValue, shipModel, shipsForSale, shopRule, standingFo
 import type { GearItem, ShipModel, ShipSlot, Tier } from '../content/types.ts';
 import { cargoUsed } from './cargo.ts';
 import { repairDiscount, standingTier, TIER_LABEL } from './factions.ts';
+import { LAW } from '../content/law/rules.ts';
+import { dockAccess } from './law.ts';
 import { ammoName, clampShip, fittedItem, fittedLaunchers, hullMax, newShipState, performanceOf, shieldCapacity, shipSlots } from './loadout.ts';
 import { dockFaction } from './markets.ts';
 
@@ -216,7 +218,8 @@ export function buyRepairKit(state: GameState, locationId: string): Result {
 export function repairQuote(state: GameState, locationId: string): { points: number; cost: number; discount: number } {
   const points = Math.max(0, Math.ceil(hullMax(state.ship) - state.ship.hull));
   const faction = dockFaction(locationId);
-  const discount = faction ? repairDiscount(state.reputation[faction] ?? 0) : 0;
+  // A pilot on emergency docking pays a surcharge instead of any discount (docs/PROCGEN.md §12).
+  const discount = dockAccess(state, locationId) === 'emergency' ? -LAW.emergencyRepairSurcharge : faction ? repairDiscount(state.reputation[faction] ?? 0) : 0;
   const cost = Math.round(points * REPAIR_COST_PER_POINT * (1 - discount));
   return { points, cost, discount };
 }

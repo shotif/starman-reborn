@@ -5,7 +5,7 @@ import type { FactionId, SystemId } from '../data/types.ts';
 import { addCargo, cargoCount, removeCargo } from './cargo.ts';
 import { COMMODITIES } from './commodities.ts';
 import { CONTRACT_PREFIX, contractBlock, followUpFor, postedContract, postedContracts } from './contracts.ts';
-import { adjustReputation, FACTIONS } from './factions.ts';
+import { adjustReputation, FACTIONS, standingTier } from './factions.ts';
 import { cargoCapacity } from './loadout.ts';
 
 export type Objective =
@@ -22,7 +22,9 @@ export type Objective =
   /** See a trader (catalogue ship `model`) safely from one station to another in the same system (JobProgress.escort). */
   | { kind: 'escort'; systemId: SystemId; fromLocationId: string; locationId: string; model: string; shipName: string; level: 1 | 2 | 3; text: string }
   /** Tractor an item in from a wreck near a location, perhaps guarded by raiders of threat `guard` (JobProgress.recovered). */
-  | { kind: 'recover'; systemId: SystemId; locationId: string; item: string; guard: 1 | 2 | 3 | null; text: string };
+  | { kind: 'recover'; systemId: SystemId; locationId: string; item: string; guard: 1 | 2 | 3 | null; text: string }
+  /** Destroy `count` haulers of a lawful faction in a system (outlaw work; progress in JobProgress.kills). */
+  | { kind: 'piracy'; systemId: SystemId; faction: FactionId; count: number; text: string };
 
 export interface JobDef {
   id: string;
@@ -163,6 +165,11 @@ export function jobLockReason(state: GameState, job: JobDef): string | null {
   if (req?.minRep && (state.reputation[req.minRep.faction] ?? 0) < req.minRep.value) {
     return `Requires Friendly standing with the ${FACTIONS[req.minRep.faction].name}`;
   }
+  // A lawful faction that is wary of you only trusts you with the easiest work.
+  if (job.contract && job.factionId && job.factionId !== 'hollow-wake' && job.difficulty >= 2) {
+    const tier = standingTier(state.reputation[job.factionId] ?? 0);
+    if (tier === 'wary' || tier === 'hostile') return `The ${FACTIONS[job.factionId].name} is wary of you: easy work only`;
+  }
   return contractBlock(state, job);
 }
 
@@ -298,6 +305,8 @@ function objectiveSatisfied(state: GameState, jobId: string, o: Objective, ctx: 
       return state.jobs[jobId]?.escort === 'arrived';
     case 'recover':
       return !!state.jobs[jobId]?.recovered;
+    case 'piracy':
+      return (state.jobs[jobId]?.kills ?? 0) >= o.count;
     case 'have-cargo':
       return cargoCount(state.ship.cargo, o.commodity) >= o.qty;
     case 'dock':
@@ -481,6 +490,10 @@ function describeCurrent(state: GameState, jobId: string): ObjectiveSummary | nu
     }
     case 'escort':
       return { ...base, text: inOtherSystem(o.systemId, `${o.text}: stay close and keep it alive`), targetSystemId: o.systemId, targetLocationId: o.locationId };
+    case 'piracy': {
+      const kills = state.jobs[jobId]?.kills ?? 0;
+      return { ...base, text: inOtherSystem(o.systemId, `${o.text} (${kills}/${o.count}): target a hauler to open fire`), targetSystemId: o.systemId, targetLocationId: null };
+    }
     case 'recover':
       return {
         ...base,
@@ -536,6 +549,18 @@ export function wrecksIn(state: GameState, systemId: SystemId): { jobId: string;
     const o = currentObjective(state, jobId);
     return o?.kind === 'recover' && o.systemId === systemId ? [{ jobId, locationId: o.locationId, item: o.item, guard: o.guard }] : [];
   });
+}
+
+/** A lawful hauler went down to the player's guns: count it for piracy work in that system. */
+export function countPiracy(state: GameState, systemId: SystemId, faction: FactionId | 'independent'): JobEvent[] {
+  let counted = false;
+  for (const jobId of activeJobIds(state)) {
+    const o = currentObjective(state, jobId);
+    if (o?.kind !== 'piracy' || o.systemId !== systemId || o.faction !== faction) continue;
+    state.jobs[jobId]!.kills = (state.jobs[jobId]!.kills ?? 0) + 1;
+    counted = true;
+  }
+  return counted ? advanceJobs(state, { dockedAt: state.location.dockedAt, systemId }) : [];
 }
 
 /** Escorts end when the player leaves their system: jumping away fails them. */

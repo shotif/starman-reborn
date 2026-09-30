@@ -5,7 +5,7 @@ import type { FactionId, SystemId, Vec3Tuple } from '../data/types.ts';
 import { newShipState } from '../economy/loadout.ts';
 
 /** Current save format version. Older saves are upgraded by src/app/save/migrate.ts. */
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 export type { CommodityId };
 
@@ -108,6 +108,8 @@ export interface GameState {
   markets: MarketState;
   /** Generated contracts the player accepted, as posted (economy/contracts.ts). */
   contracts: Record<string, JobDef>;
+  /** The law (docs/PROCGEN.md §12): fines owed to each lawful faction. */
+  law: { fines: Partial<Record<FactionId, number>> };
   /** Confirmed-planet / body ids the player has scanned. */
   discoveredBodies: string[];
   jobs: Record<string, JobProgress>;
@@ -147,6 +149,7 @@ export function createNewGame(seed: number = Math.floor(Math.random() * 2 ** 31)
     knownMarkets: {},
     markets: {},
     contracts: {},
+    law: { fines: {} },
     discoveredBodies: [],
     jobs: {},
     pirateOutcome: 'none',

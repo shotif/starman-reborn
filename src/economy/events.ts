@@ -55,14 +55,16 @@ function solJumps(systemId: SystemId): number {
 
 /** Stations whose markets can have events. */
 export function eventStations(): string[] {
-  return [...marketTables().keys()].filter((id) => !NO_EVENT_SYSTEMS.has(getLocation(id).systemId));
+  return [...marketTables().keys()].filter((id) => !NO_EVENT_SYSTEMS.has(getLocation(id).systemId) && getLocation(id).dockable !== false);
 }
 
 function eligibleGoods(locationId: string, roles: readonly string[]): CommodityId[] {
   const table = marketTables().get(locationId);
   if (!table) return [];
   const fixed = new Set(Object.keys(CURATED_MARKETS[locationId]?.anchors ?? {}));
-  return [...table.entries.values()].filter((e) => roles.includes(e.role) && e.commodity !== 'weapons' && !fixed.has(e.commodity)).map((e) => e.commodity);
+  return [...table.entries.values()]
+    .filter((e) => roles.includes(e.role) && e.commodity !== 'weapons' && COMMODITIES[e.commodity].category !== 'contraband' && !fixed.has(e.commodity))
+    .map((e) => e.commodity);
 }
 
 /** The raider threat a system has without events (null: no packs), from the traffic rules. */

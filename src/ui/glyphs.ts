@@ -200,6 +200,21 @@ const GLYPHS = {
     { d: 'M12 4.5v4.5M16 4.5v4.5M20 4.5v4.5M12 23v4.5M16 23v4.5M20 23v4.5M4.5 12H9M4.5 16H9M4.5 20H9M23 12h4.5M23 16h4.5M23 20h4.5', kind: 'line' },
     { d: 'M12.5 12.5h7v7h-7z', kind: 'dark' },
   ],
+  /** Combat stims: an auto-injector with a plunger and needle. */
+  stims: [
+    { d: 'M7.2 21.6l11.3-11.3 3.2 3.2-11.3 11.3z' },
+    { d: 'M18.4 7.3l2.1-2.1 6.3 6.3-2.1 2.1z' },
+    { d: 'M22.6 5.2l2-2 4.2 4.2-2 2z', kind: 'dark' },
+    { d: 'M8.9 23.1L4.5 27.5', kind: 'line' },
+    { d: 'M11 20l5.6-5.6 1 1-5.6 5.6z', kind: 'dark' },
+  ],
+  /** Transponder spoofers: a transmitter box behind a mask. */
+  spoofers: [
+    { d: 'M5 9.5h22v15H5z' },
+    { d: 'M9 13.5c2.4-1.4 4.6-1.4 7 0 2.4-1.4 4.6-1.4 7 0v3.5c-1.2 2.6-4.2 3.6-7 2-2.8 1.6-5.8.6-7-2z', kind: 'dark' },
+    { d: 'M11 15h3M18 15h3', kind: 'line' },
+    { d: 'M21 4.5l3 5M16 3.5v6', kind: 'line' },
+  ],
   /** Consumer goods: a shopping bag. */
   consumer: [
     { d: 'M6 11.5h20l-2 16H8z' },

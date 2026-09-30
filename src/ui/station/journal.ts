@@ -73,7 +73,7 @@ export function journalContent(ctx: StationContext, refresh: Refresh): HTMLEleme
       { class: 'kv' },
       (['sta', 'frontier', 'hollow-wake'] as const).flatMap((f) => [
         h('dt', null, FACTIONS[f].name),
-        h('dd', null, `${TIER_LABEL[standingTier(state.reputation[f] ?? 0)]} (${signed(state.reputation[f] ?? 0)})`),
+        h('dd', null, `${TIER_LABEL[standingTier(state.reputation[f] ?? 0)]} (${signed(state.reputation[f] ?? 0)})${state.law.fines[f] ? ` · owes ${formatCredits(state.law.fines[f])} in fines` : ''}`),
       ]),
     ),
     voyage ? h('div', { class: 'list-head' }, h('span', null, 'Voyage report'), h('span', null, '')) : null,

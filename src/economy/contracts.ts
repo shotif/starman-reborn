@@ -1,6 +1,7 @@
 import type { CommodityId, GameState } from '../app/state.ts';
 import { shipModel } from '../content/catalog.ts';
-import { ACE_NAMES, BOARD_KINDS, CONTRACTS, CURATED_BOARD_KINDS, RECOVERY_ITEMS, type ContractKind, type KindWeights } from '../content/contracts/rules.ts';
+import { ACE_NAMES, BOARD_KINDS, CONTRACTS, CURATED_BOARD_KINDS, DEN_BOARD_KINDS, RECOVERY_ITEMS, type ContractKind, type KindWeights } from '../content/contracts/rules.ts';
+import { LAW } from '../content/law/rules.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
 import { hashString, rng, type Rng } from '../content/random.ts';
 import { jumpsFrom } from '../content/world/network.ts';
@@ -12,6 +13,8 @@ import { FLEETS } from '../world/traffic/plan.ts';
 import { trafficFor } from '../world/traffic/setup.ts';
 import { itemsThatFit } from './cargo.ts';
 import { baseThreat, priceMultiplier, stationEventAt, systemEventAt, type WorldEvent } from './events.ts';
+import { FACTIONS } from './factions.ts';
+import { dockAccess, lawIn, scansOnDocking, wakeFriendly } from './law.ts';
 import type { JobDef } from './jobs.ts';
 import { cargoCapacity } from './loadout.ts';
 import { marketTables } from './markets.ts';
@@ -66,6 +69,7 @@ function openStations(): FictionalLocation[] {
 }
 
 function boardKinds(loc: FictionalLocation): KindWeights | null {
+  if (loc.stationType === 'pirate-den' && loc.status === 'functional') return DEN_BOARD_KINDS;
   if (!loc.services.includes('contracts') || loc.status !== 'functional' || loc.dockable === false) return null;
   return CURATED_BOARD_KINDS[loc.id] ?? (loc.stationType && loc.stationType !== 'pirate-den' ? BOARD_KINDS[loc.stationType] : null);
 }
@@ -152,6 +156,10 @@ function makeContract(kind: ContractKind, giver: FictionalLocation, r: Rng, id: 
       return ace(giver, r, id);
     case 'recovery':
       return recovery(giver, r, id);
+    case 'smuggle':
+      return smuggle(giver, r, id, clock);
+    case 'piracy':
+      return piracy(giver, r, id);
   }
 }
 
@@ -175,6 +183,9 @@ function eventContract(giver: FictionalLocation, r: Rng, id: string, clock: numb
   );
   return raids.length ? bounty(giver, r, id, { event: r.pick(raids) }) : null;
 }
+
+/** Goods ordinary contracts carry: no small arms, no contraband (smuggling is its own kind). */
+const isLegalCargo = (c: CommodityId) => c !== 'weapons' && COMMODITIES[c].category !== 'contraband';
 
 /** The varying part of the pay, higher for work that answers an event. */
 const premium = (event: WorldEvent | undefined) => (event ? CONTRACTS.eventPremium : 1);
@@ -253,7 +264,7 @@ function freight(giver: FictionalLocation, r: Rng, id: string, clock: number, op
   const markets = marketTables();
   const here = markets.get(giver.id);
   if (!here) return null;
-  const made = [...here.entries.values()].filter((e) => e.role === 'produce' && e.commodity !== 'weapons').map((e) => e.commodity);
+  const made = [...here.entries.values()].filter((e) => e.role === 'produce' && isLegalCargo(e.commodity)).map((e) => e.commodity);
   if (!made.length || (opts.commodity && !made.includes(opts.commodity))) return null;
   const commodity = opts.commodity ?? r.pick(made);
   const dests = openStations().filter((l) => {
@@ -290,7 +301,7 @@ function supply(giver: FictionalLocation, r: Rng, id: string, clock: number, opt
   const markets = marketTables();
   const here = markets.get(giver.id);
   if (!here) return null;
-  const wanted = [...here.entries.values()].filter((e) => e.role === 'consume' && e.commodity !== 'weapons').map((e) => e.commodity);
+  const wanted = [...here.entries.values()].filter((e) => e.role === 'consume' && isLegalCargo(e.commodity)).map((e) => e.commodity);
   if (!wanted.length || (opts.commodity && !wanted.includes(opts.commodity))) return null;
   const commodity = opts.commodity ?? r.pick(wanted);
   // Where to buy it: the nearest station that makes it.
@@ -452,6 +463,68 @@ function recovery(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
 }
 
 /**
+ * Smuggling (free ports and raider dens): contraband loaded against a deposit, for a buyer in
+ * claimed space, where patrols scan cargo. Never to a dock whose customs scans every ship.
+ */
+function smuggle(giver: FictionalLocation, r: Rng, id: string, clock: number): JobDef | null {
+  const markets = marketTables();
+  const here = markets.get(giver.id);
+  const made = LAW.contraband.filter((c) => here?.entries.get(c)?.role === 'produce');
+  if (!made.length) return null;
+  const commodity = r.pick(made);
+  const dests = openStations().filter((l) => {
+    if (l.id === giver.id || jumpsBetween(giver.systemId, l.systemId) > CONTRACTS.maxJumps.smuggle || !lawIn(l.systemId) || scansOnDocking(l.id)) return false;
+    const e = markets.get(l.id)?.entries.get(commodity);
+    return !!e && e.role !== 'produce';
+  });
+  if (!dests.length) return null;
+  const dest = r.pick(dests);
+  const e = markets.get(dest.id)!.entries.get(commodity)!;
+  const good = COMMODITIES[commodity];
+  const qty = r.int(6, 12);
+  const deposit = round5(qty * e.mid * (1 - e.spread / 2) * 1.1 * Math.max(1, priceMultiplier(dest.id, commodity, clock)));
+  const rw = CONTRACTS.reward.smuggle;
+  const reward = pay(r, routeFeeBetween(giver.systemId, dest.systemId), rw.base + rw.danger * (1 - security(dest.systemId)) + rw.contrabandShare * qty * good.basePrice);
+  const difficulty = clampDifficulty(2 + (security(dest.systemId) >= 0.75 || jumpsBetween(giver.systemId, dest.systemId) >= 3 ? 1 : 0));
+  const law = lawIn(dest.systemId)!;
+  const name = good.name.toLowerCase();
+  return {
+    ...common(giver, id, difficulty),
+    repReward: { 'hollow-wake': CONTRACTS.outlawWake.smuggle },
+    title: `Smuggle ${qty} ${name} to ${dest.name}`,
+    briefing: `A buyer at ${place(dest)} is waiting for ${qty} ${name}: contraband in ${FACTIONS[law].name} space. We load it on acceptance against a deposit of ${deposit} cr. Patrols there scan cargo, and customs depots and military bases scan every ship that docks: get caught and it is confiscated, with a fine.`,
+    objectives: [{ kind: 'deliver', commodity, qty, locationId: dest.id, text: `Deliver ${qty} ${name} to ${place(dest)}` }],
+    reward,
+    difficultyNote: `Contraband in claimed space; ${routeNote(giver.systemId, dest.systemId).toLowerCase()}`,
+    destinationLocationId: dest.id,
+    contract: { kind: 'smuggle', cargo: { commodity, qty }, deposit },
+  };
+}
+
+/** Piracy (raider dens only): destroy haulers of a lawful faction in a system within reach. */
+function piracy(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
+  const targets = SYSTEMS.filter((s) => jumpsBetween(giver.systemId, s.id) <= CONTRACTS.maxJumps.piracy && lawIn(s.id) && trafficFor(s.id, 'high').plan.traders > 0);
+  if (!targets.length) return null;
+  const system = r.pick(targets);
+  const law = lawIn(system.id)!;
+  const count = r.int(2, 3);
+  const rw = CONTRACTS.reward.piracy;
+  const reward = pay(r, routeFeeBetween(giver.systemId, system.id), rw.base + rw.perShip * count);
+  const difficulty = clampDifficulty(2 + (security(system.id) >= 0.6 ? 1 : 0));
+  return {
+    ...common(giver, id, difficulty),
+    repReward: { 'hollow-wake': CONTRACTS.outlawWake.piracy },
+    title: `Hit the ${FACTIONS[law].shortName} haulers in ${system.displayName}`,
+    briefing: `The Wake wants the ${FACTIONS[law].name} to feel it. Destroy ${count} of the haulers working ${system.displayName}. Every one you hit is a crime: expect fines, angry patrols and, if the fines mount up, bounty hunters.`,
+    objectives: [{ kind: 'piracy', systemId: system.id, faction: law, count, text: `Destroy ${count} ${FACTIONS[law].shortName} haulers in ${system.displayName}` }],
+    reward,
+    difficultyNote: `A crime against the ${FACTIONS[law].shortName}; ${routeNote(giver.systemId, system.id).toLowerCase()}`,
+    destinationLocationId: giver.id,
+    contract: { kind: 'piracy' },
+  };
+}
+
+/**
  * A follow-up to a delivered parcel or haul, offered at its destination (docs/PROCGEN.md §10.2):
  * deterministic from the contract's id, so it is the same whenever it is asked for.
  */
@@ -501,6 +574,9 @@ export function postedContracts(state: GameState, locationId: string): JobDef[] 
   const loc = getLocation(locationId);
   // The hand-made stations join in once the opening delivery is done.
   if (!loc.stationType && state.jobs.lifeline?.status !== 'complete') return [];
+  // Dens deal only with pilots the Wake trusts; a station that only lets you in for repairs posts nothing.
+  if (loc.stationType === 'pirate-den' && !wakeFriendly(state)) return [];
+  if (dockAccess(state, locationId) !== 'full') return [];
   return boardFor(locationId, boardEpoch(state.clock)).filter((c) => {
     if (state.jobs[c.id]) return true;
     const o = c.objectives[0];

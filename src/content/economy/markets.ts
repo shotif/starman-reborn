@@ -45,7 +45,7 @@ export interface MarketStationInput {
 export function profileOf(station: MarketStationInput): MarketProfile | null {
   const curated = CURATED_MARKETS[station.id];
   if (curated) return curated;
-  if (!station.type || station.type === 'pirate-den') return null;
+  if (!station.type) return null;
   return STATION_MARKETS[station.type];
 }
 

@@ -1,6 +1,7 @@
 import type { GameState } from '../app/state.ts';
 import { getLocation } from '../data/systems.ts';
 import { standingTier } from './factions.ts';
+import { dockAccess } from './law.ts';
 
 /**
  * Dock welcome lines (fiction). They change with the player's standing so reputation has a
@@ -36,6 +37,12 @@ const WELCOME: Record<string, { neutral: string; friendly: string }> = {
 };
 
 export function welcomeText(state: GameState, locationId: string): { text: string; improved: boolean } {
+  const loc = getLocation(locationId);
+  // The law and the Wake greet you in their own way (docs/PROCGEN.md §12).
+  if (loc.stationType === 'pirate-den') return { text: `${loc.name}: the Wake knows your ship. Keep your guns cold in here and your mouth shut out there.`, improved: false };
+  if (dockAccess(state, locationId) === 'emergency') {
+    return { text: `${loc.name} traffic control: you are flagged. Emergency berth only: repairs, and the customs desk if you mean to settle up.`, improved: false };
+  }
   const lines = WELCOME[locationId];
   if (!lines) return { text: `${getLocation(locationId).name}: docking complete.`, improved: false };
   const faction = getLocation(locationId).factionId;

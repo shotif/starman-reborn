@@ -853,3 +853,13 @@
     padding-top: 0;
   }
 }
+
+/* The player owes fines (docs/PROCGEN.md §12). */
+.hud-wallet .row.hud-wanted {
+  color: #ff9d9d;
+  font-weight: 600;
+}
+
+.hud-wallet .row.hud-wanted[hidden] {
+  display: none;
+}

@@ -19,9 +19,11 @@ import { createNewGame, SAVE_VERSION, type CommodityId, type GameState } from '.
  *   station).
  * - v5: `contracts` (generated contracts the player accepted, as posted) and bounty progress in
  *   `jobs`.
- * - v6 (current): contracts may be escorts, ace hunts or recoveries, urgent or follow-ups (offered
- *   follow-ups wait in `contracts` without a `jobs` entry); jobs may have failed, and carry escort
- *   and recovery progress. The data of a v5 save is valid v6. See GameState in src/app/state.ts.
+ * - v6: contracts may be escorts, ace hunts or recoveries, urgent or follow-ups (offered follow-ups
+ *   wait in `contracts` without a `jobs` entry); jobs may have failed, and carry escort and
+ *   recovery progress. The data of a v5 save is valid v6.
+ * - v7 (current): `law` (fines owed to the lawful factions), smuggling and piracy contracts, and two
+ *   contraband goods. See GameState in src/app/state.ts.
  */
 export interface SaveV1 {
   version: 1;
@@ -107,8 +109,13 @@ function migrateV4(old: Omit<GameState, 'version' | 'contracts'> & { version: 4 
 }
 
 /** v5 → v6: nothing to change (v6 only adds kinds of contract and progress). */
-function migrateV5(old: Omit<GameState, 'version'> & { version: 5 }): GameState {
-  return { ...old, version: SAVE_VERSION };
+function migrateV5(old: Omit<GameState, 'version' | 'law'> & { version: 5 }): GameState {
+  return migrateV6({ ...old, version: 6 });
+}
+
+/** v6 → v7: a clean record with the law. */
+function migrateV6(old: Omit<GameState, 'version' | 'law'> & { version: 6 }): GameState {
+  return { ...old, version: SAVE_VERSION, law: { fines: {} } };
 }
 
 /** Upgrades any known save version to the current GameState. Throws SaveFormatError when unusable. */
@@ -125,6 +132,7 @@ export function migrateSave(raw: unknown): GameState {
   } else if (raw.version === 3) data = migrateV3(raw as unknown as Parameters<typeof migrateV3>[0]);
   else if (raw.version === 4) data = migrateV4(raw as unknown as Parameters<typeof migrateV4>[0]);
   else if (raw.version === 5) data = migrateV5(raw as unknown as Parameters<typeof migrateV5>[0]);
+  else if (raw.version === 6) data = migrateV6(raw as unknown as Parameters<typeof migrateV6>[0]);
   const state = data as GameState;
   assertValidState(state);
   return state;
@@ -162,6 +170,8 @@ export function assertValidState(s: GameState): void {
   for (const [id, c] of Object.entries(s.contracts)) {
     if (!isRecord(c) || c.id !== id || !Array.isArray(c.objectives) || !c.objectives.length || !Number.isFinite(c.reward) || typeof c.title !== 'string') fail(`contract ${id}`);
   }
+  if (!isRecord(s.law) || !isRecord(s.law.fines)) fail('law');
+  for (const [f, fine] of Object.entries(s.law.fines)) if (!['sta', 'frontier', 'hollow-wake'].includes(f) || !Number.isFinite(fine) || (fine as number) < 0) fail(`fine ${f}`);
   if (!isRecord(s.markets)) fail('markets');
   for (const [id, m] of Object.entries(s.markets)) {
     if (!LOCATION_IDS.has(id) || !isRecord(m) || !Number.isFinite(m.t) || !isRecord(m.stock)) fail(`market ${id}`);

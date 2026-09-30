@@ -37,7 +37,8 @@ export function shipStatus(ctx: StationContext, refresh: Refresh, opts: { repair
   const model = shipModel(ship.model);
   const perf = performanceOf(ship);
   const repair = repairQuote(state, locationId);
-  const canRepair = getLocation(locationId).services.includes('repair');
+  // Raider dens patch up the pilots they take in.
+  const canRepair = getLocation(locationId).services.includes('repair') || getLocation(locationId).stationType === 'pirate-den';
   return h(
     'div',
     { class: 'ship-status stack', 'data-testid': 'ship-status' },
@@ -62,7 +63,7 @@ export function shipStatus(ctx: StationContext, refresh: Refresh, opts: { repair
           bar('Cargo', cargoUsed(ship.cargo), perf.cargo, 'var(--amber)', `${cargoUsed(ship.cargo)}/${perf.cargo}`),
         ],
     opts.repair && canRepair && repair.points > 0
-      ? button(`Repair hull · ${formatCredits(repair.cost)}${repair.discount ? ` (−${Math.round(repair.discount * 100)}%)` : ''}`, {
+      ? button(`Repair hull · ${formatCredits(repair.cost)}${repair.discount > 0 ? ` (−${Math.round(repair.discount * 100)}%)` : repair.discount < 0 ? ` (+${Math.round(-repair.discount * 100)}%)` : ''}`, {
           icon: 'repair',
           testId: 'dock-repair',
           disabled: state.credits <= 0,
