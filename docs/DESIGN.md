@@ -199,6 +199,40 @@ game; the shapes, glyphs, palette variations and 3D rooms are drawn for this pro
 ## Audio (`src/audio/`)
 
 Everything is synthesized at runtime with Web Audio. There are generative music moods per system,
-plus docked, map and title moods, and a combat layer. The 32 sound effects and a continuous engine
+plus docked, map and title moods, and a combat layer. The 33 sound effects and a continuous engine
 hum are also synthesized. The AudioContext is created inside a user gesture (iOS-safe unlock),
 suspends while the page is hidden, and a limiter keeps peaks below 0 dBFS.
+
+**Music.** Twelve moods, each a seeded generative arrangement (a chord graph, voice-led pads, a
+drone, and some of melody, sparkle, comping, bass line, pulse and ticks; `moods.ts`): title, map,
+docked, the themes of the five hand-made systems (other systems borrow the theme whose star is most
+alike), and four for places:
+
+| Mood | Plays | Character |
+| --- | --- | --- |
+| `bar` | in the bar room of any station | Warm, slow lounge groove: G dorian ninths, a walking plucked bass, electric-piano stabs, a swung ride, a vibraphone line |
+| `frontier` | flying in lawless or unclaimed space | Sparse and wide: D mixolydian open fifths over a beating tonic pedal, wind, a lone pluck with long echoes |
+| `deep-space` | after 2 s in a trade lane or 20 s of cruise | Slow evolving drones: B aeolian over a pedal, resonant saw pads whose filters drift, solar-wind noise |
+| `den` | within 12 km of a raider den still standing, and docked at one | Tense and low: B-flat phrygian, sour hollow pads, a fast-beating sub drone, a heartbeat, ticking metal |
+
+The rules are one pure function (`chooseMood` in `moodRules.ts`, unit-tested); `src/app/soundscape.ts`
+gathers the facts it needs (room, system, lawlessness, dens, lane, cruise, fights). Moods crossfade
+over 3 s. The den lets go only beyond 15 km and the drones outlast a ride by 5 s, so the music does
+not flip back and forth at the edges. The combat layer still fades in over whichever mood plays,
+and a fight ends the deep-space drones.
+
+**Station ambience.** A quiet looping bed per room (`ambienceSpecs.ts`, `ambience.ts`): the hangar
+deck's mains hum, hall rumble and air handling with distant clanks, hydraulic hisses and thuds; the
+bar's murmur of talkers (noise bands moving syllable by syllable, never speech) and clinking
+glasses; the trader's conveyors, loader servos and scanner beeps; the outfitter's compressor, impact
+wrenches and welding crackle. Beds crossfade between rooms, fade out on launch and while the star
+map is open, and start only after the audio unlock. A bed runs 11–16 nodes plus at most three event
+voices.
+
+**Radio.** Comm messages in flight (story comms and combat chatter) arrive with a short blip: the
+squelch opening, a key-up chirp and a burst of static. Busy systems have faint bursts of distant
+radio chatter (garbled band-limited static, not speech) every 9–55 s, more often the more traders
+and patrols fly there; quiet and lawless systems are silent, and the local radio keeps quiet in a
+fight. Ambience and radio follow the effects volume; music the music volume; all of it the master
+volume and mute. The dev page `dev/audio.html` auditions every mood, room and effect and measures
+their levels offline.

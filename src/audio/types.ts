@@ -32,7 +32,8 @@ export type SfxId =
   | 'credits'
   | 'mission-complete'
   | 'repair'
-  | 'target-lock';
+  | 'target-lock'
+  | 'radio-blip';
 
 export type MusicMood =
   | 'title'
@@ -42,7 +43,14 @@ export type MusicMood =
   | 'alpha-centauri'
   | 'barnard'
   | 'sirius'
-  | 'epsilon-eridani';
+  | 'epsilon-eridani'
+  | 'bar'
+  | 'frontier'
+  | 'deep-space'
+  | 'den';
+
+/** Station rooms with an ambience bed (the same names as the 3D rooms in src/world/rooms). */
+export type AmbienceRoom = 'deck' | 'bar' | 'trader' | 'outfitter';
 
 export interface SfxOptions {
   /** 0..1 multiplier. */

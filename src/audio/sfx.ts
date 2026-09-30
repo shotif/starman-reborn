@@ -450,6 +450,16 @@ const RECIPES: Record<SfxId, Recipe> = {
     tone(k, 'sine', 3600, 3600, 0.06, 0.002, 0.12, 0.08);
     hiss(k, 'highpass', 5000, 5000, 0.7, 0, 0.0005, 0.01, 0.2);
   },
+
+  'radio-blip': (k) => {
+    // A comm channel opening: the squelch snaps open, a short key-up chirp, then a filtered burst
+    // of static as it settles.
+    hiss(k, 'bandpass', 3400, 2200, 1.2, 0, 0.001, 0.05, 0.6, 0.04);
+    const lp = lowpass(k, 3200);
+    beep(k, 'square', 1320, 0.045, 0.03, 0.22, lp);
+    beep(k, 'square', 1760, 0.085, 0.04, 0.2, lp);
+    hiss(k, 'bandpass', 2600, 1400, 1.8, 0.13, 0.004, 0.18, 0.5, 0.18);
+  },
 };
 
 /** Plays synthesized one-shots with voice limiting, per-sound rate limits, pan and pitch. */

@@ -1,4 +1,5 @@
-import type { AudioUnlockState, AudioVolumes, EngineSoundState, MusicMood, SfxId, SfxOptions } from './types.ts';
+import type { AmbienceRoom, AudioUnlockState, AudioVolumes, EngineSoundState, MusicMood, SfxId, SfxOptions } from './types.ts';
+import { AmbiencePlayer } from './ambience.ts';
 import { EngineSound } from './engineSound.ts';
 import { DEFAULT_VOLUMES, MixGraph } from './graph.ts';
 import { MusicPlayer } from './music.ts';
@@ -70,13 +71,17 @@ export interface AudioDebugStats {
   engineActive: boolean;
   schedulerRunning: boolean;
   combatIntensity: number;
+  ambienceRoom: AmbienceRoom | null;
+  ambienceVoices: number;
+  radio: number;
 }
 
 /**
  * Procedural Web Audio engine. The AudioContext is created only inside `unlock()`, which the app
  * calls from a user gesture (pointerup/keydown/touchend) as browsers, notably iOS Safari, require.
- * Everything is synthesized at runtime (see ./music.ts, ./sfx.ts, ./engineSound.ts); calls made
- * before unlocking are remembered (mood, volumes, mute, intensity, engine) and applied afterwards.
+ * Everything is synthesized at runtime (see ./music.ts, ./sfx.ts, ./engineSound.ts, ./ambience.ts);
+ * calls made before unlocking are remembered (mood, volumes, mute, intensity, engine, ambience,
+ * radio) and applied afterwards.
  */
 export class AudioEngine {
   private unlockState: AudioUnlockState = 'locked';
@@ -85,12 +90,15 @@ export class AudioEngine {
   private mood: MusicMood | null = null;
   private intensity = 0;
   private engineState: EngineSoundState | null = null;
+  private ambienceRoom: AmbienceRoom | null = null;
+  private radio = 0;
   private suspended = false;
   private ctx: AudioContext | null = null;
   private graph: MixGraph | null = null;
   private music: MusicPlayer | null = null;
   private sfx: SfxPlayer | null = null;
   private engine: EngineSound | null = null;
+  private scape: AmbiencePlayer | null = null;
   private musicStarted = false;
 
   get state(): AudioUnlockState {
@@ -175,6 +183,29 @@ export class AudioEngine {
     if (this.music && this.live) this.music.setIntensity(this.intensity);
   }
 
+  /** Station ambience for a room, or null for none; it crossfades between rooms (effects volume). */
+  setAmbience(room: AmbienceRoom | null): void {
+    if (room === this.ambienceRoom) return;
+    this.ambienceRoom = room;
+    if (this.scape && this.live) this.scape.setRoom(room);
+  }
+
+  get currentAmbience(): AmbienceRoom | null {
+    return this.ambienceRoom;
+  }
+
+  /** 0..1 how busy the local radio is: faint bursts of chatter in busy systems, silence at 0. */
+  setRadio(level: number): void {
+    const x = clamp01(level);
+    if (x === this.radio) return;
+    this.radio = x;
+    if (this.scape && this.live) this.scape.setRadio(x);
+  }
+
+  get radioLevel(): number {
+    return this.radio;
+  }
+
   /** Continuous engine hum; call every frame while flying, or with null to silence. */
   setEngine(state: EngineSoundState | null): void {
     this.engineState = state;
@@ -189,6 +220,7 @@ export class AudioEngine {
     if (!ctx) return;
     if (suspended) {
       this.music?.stop();
+      this.scape?.stop();
       safeSuspend(ctx);
     } else {
       // May be refused without a gesture (iOS); state stays 'locked' until the next unlock().
@@ -209,6 +241,9 @@ export class AudioEngine {
       engineActive: this.engine?.isActive ?? false,
       schedulerRunning: this.music?.running ?? false,
       combatIntensity: this.intensity,
+      ambienceRoom: this.scape?.room ?? null,
+      ambienceVoices: this.scape?.voiceCount ?? 0,
+      radio: this.radio,
     };
   }
 
@@ -225,6 +260,7 @@ export class AudioEngine {
     this.music = new MusicPlayer(ctx, graph.music);
     this.sfx = new SfxPlayer(ctx, graph.sfx);
     this.engine = new EngineSound(ctx, graph.sfx.dry);
+    this.scape = new AmbiencePlayer(ctx, graph.sfx);
   }
 
   private applyMix(): void {
@@ -251,8 +287,12 @@ export class AudioEngine {
       music.setIntensity(this.intensity);
       music.start();
       this.engine?.update(this.engineState);
+      this.scape?.setRoom(this.ambienceRoom);
+      this.scape?.setRadio(this.radio);
+      this.scape?.start();
     } else {
       music.stop();
+      this.scape?.stop();
     }
   }
 
@@ -260,10 +300,12 @@ export class AudioEngine {
     this.music?.dispose();
     this.sfx?.stopAll();
     this.engine?.dispose();
+    this.scape?.dispose();
     this.graph?.dispose();
     this.music = null;
     this.sfx = null;
     this.engine = null;
+    this.scape = null;
     this.graph = null;
     this.ctx = null;
     this.musicStarted = false;

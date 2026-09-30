@@ -4,7 +4,7 @@ import { SCALES } from './theory.ts';
 /** Oscillator shapes: native types plus custom PeriodicWaves built at runtime. */
 export type WaveName = 'sine' | 'triangle' | 'sawtooth' | 'square' | 'warm' | 'hollow' | 'glass';
 
-export type ToneKind = 'pluck' | 'bell' | 'ep' | 'pulse' | 'tick' | 'clank';
+export type ToneKind = 'pluck' | 'bell' | 'ep' | 'pulse' | 'tick' | 'clank' | 'thump';
 
 /** How one event voice sounds. */
 export interface ToneDef {
@@ -110,6 +110,19 @@ export interface CompDef {
   rhythms: readonly (readonly number[])[];
 }
 
+/** A bass line: the chord root on the first onset, then chord tones and the odd scale step. */
+export interface BassDef {
+  tone: ToneDef;
+  /** Probability that a bar carries the line. */
+  density: number;
+  low: number;
+  high: number;
+  /** Candidate onset patterns in beats (the first onset lands on the root). */
+  rhythms: readonly (readonly number[])[];
+  /** Chance of a scale step instead of a chord tone: a passing note, or a lead-in to the next bar. */
+  walk: number;
+}
+
 /** 16th-note step patterns (velocity per step, 4 steps per beat). */
 export interface PatternDef {
   tone: ToneDef;
@@ -147,6 +160,7 @@ export interface MoodDef {
   comp?: CompDef;
   pulse?: PatternDef;
   ticks?: PatternDef;
+  bass?: BassDef;
   echo?: EchoDef;
   /** Reverb send for pads and drones. */
   reverb: number;
@@ -467,6 +481,186 @@ export const MOODS: Record<MusicMood, MoodDef> = {
     echo: { beats: 0.75, feedback: 0.35, level: 0.25, tone: 1800 },
     reverb: 0.6,
     level: 1.1,
+  },
+
+  bar: {
+    id: 'bar',
+    character: 'Warm, slow lounge groove: G dorian ninths, a walking plucked bass, soft electric-piano stabs, a swung ride and a vibraphone line.',
+    tempo: 80,
+    beatsPerBar: 4,
+    key: 55,
+    scale: SCALES.dorian,
+    swing: 0.6,
+    chords: [
+      { root: 0, pcs: [3, 10, 2, 7], next: [1, 2, 3] },
+      { root: 5, pcs: [9, 3, 7, 0], next: [0, 4, 2] },
+      { root: 10, pcs: [2, 9, 5, 0], next: [0, 1, 3] },
+      { root: 3, pcs: [7, 2, 10, 3], next: [1, 5, 6] },
+      { root: 7, pcs: [10, 5, 2, 7], next: [0, 1] },
+      { root: 2, pcs: [5, 0, 9, 2], next: [4, 0] },
+      { root: 9, pcs: [0, 7, 3, 9], next: [5, 4] },
+    ],
+    barsPerChord: [1, 2, 2],
+    phraseBars: 8,
+    pad: {
+      voices: 3, wave: 'warm', detune: 5, low: 55, high: 72, cutoff: 800, sweep: 0.25, q: 0.7,
+      lfoRate: 0.05, lfoDepth: 0.2, level: 0.022, glide: 0.35,
+    },
+    drone: { level: 0.05, octave: -12, follow: 'root', upper: 0.15, beat: 0, cutoff: 250 },
+    bass: {
+      tone: { kind: 'pluck', wave: 'triangle', cutoff: 700, q: 1, decay: 0.8, level: 0.13, wet: 0.05 },
+      density: 0.95, low: 40, high: 55, walk: 0.35,
+      rhythms: [[0, 1, 2, 3], [0, 1, 2, 3], [0, 1.5, 2, 3], [0, 2, 2.5, 3.5], [0, 1, 2.5, 3]],
+    },
+    comp: {
+      tone: { kind: 'ep', ratio: 1, index: 1.6, decay: 1.8, level: 0.06, wet: 0.3 },
+      density: 0.85, low: 57, high: 74,
+      rhythms: [[0.5, 2.5], [0, 1.5, 3.5], [1.5, 3], [0.5, 2, 3.5], [0, 2.5]],
+    },
+    melody: {
+      tone: { kind: 'bell', ratio: 4, index: 0.5, decay: 2, level: 0.05, wet: 0.4, echo: 0.25 },
+      density: 0.3, low: 67, high: 84, stepMax: 2,
+      rhythms: [[0, 1.5, 2.5], [0.5, 1, 2], [2, 2.5, 3.5], [0, 3], [1, 1.5, 3]],
+    },
+    ticks: {
+      tone: { kind: 'tick', cutoff: 5600, q: 0.8, decay: 0.12, level: 0.018 },
+      density: 0.9,
+      patterns: [
+        [0.5, 0, 0, 0, 0.7, 0, 0.35, 0, 0.5, 0, 0, 0, 0.7, 0, 0.35, 0],
+        [0.5, 0, 0, 0, 0.7, 0, 0.35, 0, 0.5, 0, 0.3, 0, 0.7, 0, 0.35, 0.2],
+      ],
+    },
+    echo: { beats: 0.75, feedback: 0.25, level: 0.2, tone: 2200 },
+    reverb: 0.5,
+    level: 1.1,
+  },
+
+  frontier: {
+    id: 'frontier',
+    character: 'Sparse and wide: D mixolydian open fifths over a slowly beating tonic pedal, wind, a lone twangy pluck with long echoes.',
+    tempo: 60,
+    beatsPerBar: 4,
+    key: 50,
+    scale: SCALES.mixolydian,
+    swing: 0,
+    chords: [
+      { root: 0, pcs: [7, 2, 0], next: [1, 2, 4] },
+      { root: 10, pcs: [2, 5, 0, 10], next: [0, 2] },
+      { root: 5, pcs: [9, 0, 7, 5], next: [0, 3, 1] },
+      { root: 7, pcs: [10, 2, 5, 7], next: [0, 4] },
+      { root: 9, pcs: [0, 4, 7, 9], next: [2, 1] },
+    ],
+    barsPerChord: [2, 4, 4],
+    phraseBars: 8,
+    pad: {
+      voices: 3, wave: 'triangle', detune: 12, low: 50, high: 76, cutoff: 1400, sweep: 0.4, q: 0.5,
+      lfoRate: 0.025, lfoDepth: 0.3, level: 0.04, glide: 2.2,
+    },
+    drone: { level: 0.1, octave: -12, follow: 'tonic', upper: 0.3, beat: 0.12, cutoff: 380 },
+    noise: { level: 0.022, freq: 650, q: 0.7, lfoRate: 0.035, lfoDepth: 0.6 },
+    melody: {
+      tone: { kind: 'pluck', wave: 'sawtooth', cutoff: 1500, q: 1.5, decay: 2, level: 0.065, wet: 0.5, echo: 0.55 },
+      density: 0.3, low: 62, high: 81, stepMax: 3,
+      rhythms: [[0, 1.5], [0, 2.5, 3], [1, 3], [0], [0, 0.5, 2]],
+    },
+    sparkle: {
+      tone: { kind: 'bell', ratio: 3, index: 0.5, decay: 5, level: 0.035, wet: 0.85, echo: 0.5 },
+      density: 0.16, low: 76, high: 93, maxNotes: 2,
+    },
+    echo: { beats: 1.5, feedback: 0.45, level: 0.4, tone: 1800 },
+    reverb: 1,
+    level: 0.85,
+  },
+
+  'deep-space': {
+    id: 'deep-space',
+    character: 'Slow evolving drones: B aeolian over a tonic pedal, resonant saw pads whose filters drift, solar-wind noise, a rare glassy note.',
+    tempo: 50,
+    beatsPerBar: 4,
+    key: 47,
+    scale: SCALES.aeolian,
+    swing: 0,
+    chords: [
+      { root: 0, pcs: [2, 7, 0], next: [1, 2, 4] },
+      { root: 8, pcs: [0, 7, 3, 8], next: [0, 3] },
+      { root: 5, pcs: [8, 3, 7, 0], next: [0, 1] },
+      { root: 10, pcs: [3, 5, 0, 10], next: [0, 4] },
+      { root: 3, pcs: [7, 10, 5, 3], next: [2, 3] },
+    ],
+    barsPerChord: [2, 4],
+    phraseBars: 8,
+    pad: {
+      voices: 4, wave: 'sawtooth', detune: 11, low: 50, high: 71, cutoff: 750, sweep: 0.6, q: 1.5,
+      lfoRate: 0.03, lfoDepth: 0.45, level: 0.026, glide: 3,
+    },
+    drone: { level: 0.12, octave: -12, follow: 'tonic', upper: 0.35, beat: 0.18, cutoff: 300 },
+    noise: { level: 0.02, freq: 1100, q: 1.1, lfoRate: 0.045, lfoDepth: 0.6 },
+    melody: {
+      tone: { kind: 'pluck', wave: 'glass', cutoff: 1500, decay: 3.2, level: 0.045, wet: 0.7, echo: 0.5 },
+      density: 0.14, low: 59, high: 76, stepMax: 2,
+      rhythms: [[0], [0, 2], [1, 3], [0, 1.5]],
+    },
+    sparkle: {
+      tone: { kind: 'bell', ratio: 2.76, index: 0.6, decay: 6, level: 0.032, wet: 0.9, echo: 0.6 },
+      density: 0.12, low: 71, high: 88, maxNotes: 1,
+    },
+    echo: { beats: 1, feedback: 0.5, level: 0.35, tone: 1500 },
+    reverb: 1,
+    level: 0.8,
+  },
+
+  den: {
+    id: 'den',
+    character: 'Tense and low: B-flat phrygian, sour hollow pads, a fast-beating sub drone, a heartbeat thump, ticking metal and distant clanks.',
+    tempo: 64,
+    beatsPerBar: 4,
+    key: 46,
+    scale: SCALES.phrygian,
+    swing: 0,
+    chords: [
+      { root: 0, pcs: [3, 7, 1], next: [1, 2, 4] },
+      { root: 1, pcs: [5, 8, 1], next: [0, 3] },
+      { root: 5, pcs: [8, 0, 5], next: [0, 1] },
+      { root: 10, pcs: [1, 5, 10], next: [0, 4] },
+      { root: 8, pcs: [0, 3, 8], next: [1, 0] },
+    ],
+    barsPerChord: [2, 4],
+    phraseBars: 8,
+    pad: {
+      voices: 3, wave: 'hollow', detune: 14, low: 46, high: 64, cutoff: 520, sweep: 0.25, q: 1.8,
+      lfoRate: 0.06, lfoDepth: 0.3, level: 0.04, glide: 1.2,
+    },
+    drone: { level: 0.14, octave: -12, follow: 'tonic', upper: 0.4, beat: 0.6, cutoff: 240 },
+    noise: { level: 0.022, freq: 260, q: 1.4, lfoRate: 0.08, lfoDepth: 0.4 },
+    pulse: {
+      tone: { kind: 'thump', decay: 0.32, level: 0.16, wet: 0.08 },
+      density: 0.92,
+      patterns: [
+        [1, 0.55, 0, 0, 0.85, 0.5, 0, 0, 1, 0.55, 0, 0, 0.85, 0.5, 0, 0],
+        [1, 0.55, 0, 0, 0, 0, 0, 0, 0.9, 0.5, 0, 0, 0, 0, 0, 0],
+        [1, 0.55, 0, 0, 0.85, 0.5, 0, 0, 0, 0, 0, 0, 0.85, 0.5, 0, 0],
+      ],
+    },
+    ticks: {
+      tone: { kind: 'tick', cutoff: 3200, q: 7, decay: 0.06, level: 0.02 },
+      density: 0.6,
+      patterns: [
+        [0, 0, 0, 0.6, 0, 0, 0, 0, 0, 0, 0, 0.6, 0, 0, 0, 0],
+        [0, 0, 0, 0.5, 0, 0, 0.3, 0, 0, 0, 0, 0.5, 0, 0, 0, 0.3],
+      ],
+    },
+    sparkle: {
+      tone: { kind: 'clank', ratio: 1.41, index: 3.5, decay: 1.3, cutoff: 1600, level: 0.035, wet: 0.75 },
+      density: 0.18, low: 58, high: 72, maxNotes: 1,
+    },
+    melody: {
+      tone: { kind: 'pluck', wave: 'sawtooth', cutoff: 480, q: 2.5, decay: 1.3, level: 0.075, wet: 0.4 },
+      density: 0.28, low: 46, high: 62, stepMax: 1,
+      rhythms: [[0, 0.75], [0, 2, 2.75], [1.5, 3], [0]],
+    },
+    echo: { beats: 0.75, feedback: 0.3, level: 0.2, tone: 1200 },
+    reverb: 0.8,
+    level: 0.7,
   },
 };
 

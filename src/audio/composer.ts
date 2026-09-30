@@ -1,4 +1,4 @@
-import type { ChordDef, CompDef, MelodyDef, MoodDef, PatternDef, SparkleDef } from './moods.ts';
+import type { BassDef, ChordDef, CompDef, MelodyDef, MoodDef, PatternDef, SparkleDef } from './moods.ts';
 import {
   between,
   chance,
@@ -18,7 +18,7 @@ import type { Rng } from './theory.ts';
 
 /** Deterministic, seeded generative score. Pure: produces note plans, never touches Web Audio. */
 
-export type Part = 'melody' | 'sparkle' | 'comp' | 'pulse' | 'ticks';
+export type Part = 'melody' | 'sparkle' | 'comp' | 'pulse' | 'ticks' | 'bass';
 
 export interface NoteEvent {
   /** Onset in beats from the start of the bar. */
@@ -74,12 +74,14 @@ export class Composer {
   private voicing: number[] | null = null;
   private motif: MotifNote[] | null = null;
   private lastMelody: number;
+  private lastBass: number;
   private readonly patterns = new Map<Part, readonly number[]>();
 
   constructor(def: MoodDef, seed: number) {
     this.def = def;
     this.rng = mulberry32(seed);
     this.lastMelody = def.melody ? Math.round((def.melody.low + def.melody.high) / 2) : def.key + 12;
+    this.lastBass = def.bass ? Math.round((def.bass.low + def.bass.high) / 2) : def.key - 12;
   }
 
   get barIndex(): number {
@@ -127,6 +129,8 @@ export class Composer {
     if (def.comp) this.comp(events, def.comp, chord);
     if (def.pulse) this.pattern(events, 'pulse', def.pulse, chord, phrasePos);
     if (def.ticks) this.pattern(events, 'ticks', def.ticks, chord, phrasePos);
+    // Last, so moods without a bass line draw exactly the random numbers they always did.
+    if (def.bass) this.bass(events, def.bass, chord, scale);
     const bpb = def.beatsPerBar;
     for (const e of events) e.beat = clamp(swingBeat(e.beat, def.swing), 0, bpb - 0.01);
     events.sort((a, b) => a.beat - b.beat);
@@ -259,6 +263,47 @@ export class Composer {
         });
       });
     }
+  }
+
+  /**
+   * A walking line: the root (nearest the last note) on the first onset, then chord tones within a
+   * fifth of the note before, a passing scale step now and then, and often a lead-in a step off
+   * the root on the last onset.
+   */
+  private bass(out: NoteEvent[], b: BassDef, chord: ChordDef, scale: readonly number[]): void {
+    const { rng, def } = this;
+    if (!chance(rng, b.density)) return;
+    const bpb = def.beatsPerBar;
+    const tones = notesInRange(def.key, [chord.root, ...chord.pcs], b.low, b.high);
+    const roots = notesInRange(def.key, [chord.root], b.low, b.high);
+    if (roots.length === 0) return;
+    const root = nearestNote(roots, this.lastBass);
+    const rhythm = pick(rng, b.rhythms).filter((x) => x < bpb);
+    const step = (from: number): number => degreeToMidi(def.key, scale, nearestDegree(def.key, scale, from) + (chance(rng, 0.5) ? 1 : -1));
+    // The octave of a note, within the range, nearest the note before (no leaps at the range's edges).
+    const place = (m: number, near: number): number => nearestNote(notesInRange(def.key, [m - def.key], b.low, b.high), near);
+    let midi = root;
+    rhythm.forEach((beat, i) => {
+      if (i > 0) {
+        const prev = midi;
+        if (i === rhythm.length - 1 && rhythm.length > 2 && chance(rng, b.walk)) midi = place(step(root), prev);
+        else if (chance(rng, b.walk * 0.5)) midi = place(step(prev), prev);
+        else {
+          const near = tones.filter((n) => n !== prev && Math.abs(n - prev) <= 7);
+          midi = near.length > 0 ? pick(rng, near) : place(pick(rng, tones), prev);
+        }
+      }
+      const next = i + 1 < rhythm.length ? rhythm[i + 1] : bpb;
+      out.push({
+        beat: beat + between(rng, 0, 0.01),
+        part: 'bass',
+        midi,
+        vel: (i === 0 ? 0.85 : 0.65) + between(rng, 0, 0.12),
+        dur: Math.max(0.25, next - beat),
+        pan: 0,
+      });
+    });
+    this.lastBass = midi;
   }
 
   private pattern(out: NoteEvent[], part: Part, p: PatternDef, chord: ChordDef, phrasePos: number): void {
