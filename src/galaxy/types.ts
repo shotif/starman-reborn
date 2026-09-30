@@ -1,3 +1,4 @@
+import type { EventKind } from '../content/events/rules.ts';
 import type { SystemId } from '../data/types.ts';
 import type { Route } from './routing.ts';
 
@@ -23,6 +24,19 @@ export interface MapState {
    * Null when no contract covers fees.
    */
   feeCoverage: { systemId: SystemId; note: string } | null;
+  /** World events the player has heard of (the news within reach of where they are). */
+  news?: readonly MapNewsItem[];
+  /** Systems where active contracts send the player (besides the objective). */
+  contractSystems?: ReadonlySet<SystemId>;
+}
+
+export interface MapNewsItem {
+  id: string;
+  systemId: SystemId;
+  kind: EventKind;
+  headline: string;
+  detail: string;
+  active: boolean;
 }
 
 export interface GalaxyMapCallbacks {

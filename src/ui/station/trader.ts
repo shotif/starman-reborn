@@ -4,6 +4,7 @@ import { getLocation, getSystem } from '../../data/systems.ts';
 import { cargoCount, cargoUsed, itemsThatFit } from '../../economy/cargo.ts';
 import { cargoCapacity } from '../../economy/loadout.ts';
 import { COMMODITIES, COMMODITY_IDS } from '../../economy/commodities.ts';
+import { stationEventAt } from '../../economy/events.ts';
 import { marketEntry, stockAvailable } from '../../economy/markets.ts';
 import { bestKnownSale, buyCommodity, liveQuote, marketContext, maxBuyable, orderPrice, routeOpportunities, sellCommodity } from '../../economy/trade.ts';
 import { button, showModal, toast } from '../components.ts';
@@ -52,6 +53,9 @@ export function traderContent(ctx: StationContext, refresh: Refresh): HTMLElemen
   const { state, locationId } = ctx;
   const rows: HTMLElement[] = [];
   const hold: HTMLElement[] = [];
+  // A shortage, glut, boom or strike here moves some prices for a while.
+  const event = stationEventAt(locationId, state.clock);
+  const EVENT_TAG = { shortage: 'Shortage: pays more', glut: 'Glut: cheap', boom: 'Boom: pays more', strike: 'Strike: scarce' } as const;
   // What the dock makes first, then what it trades, then what it wants.
   const order: MarketRole[] = ['produce', 'trade', 'consume'];
   const rank = (c: CommodityId) => {
@@ -66,13 +70,14 @@ export function traderContent(ctx: StationContext, refresh: Refresh): HTMLElemen
     if (entry) {
       const best = bestKnownSale(state, c, locationId);
       const stock = stockAvailable(locationId, c, marketContext(state));
-      const details = [ROLE_TAG[entry.role], units(info.unitSize)];
+      const hit = !!event && event.goods.includes(c) && event.kind in EVENT_TAG;
+      const details = [...(hit ? [EVENT_TAG[event!.kind as keyof typeof EVENT_TAG]] : []), ROLE_TAG[entry.role], units(info.unitSize)];
       if (entry.role !== 'consume') details.push(`${stock} in stock`);
       if (q.buy !== null) details.push(best ? `best known ${best.price} cr at ${getLocation(best.locationId).name}` : 'no other buyer known');
       rows.push(
         h(
           'li',
-          { class: `trade-row market-row role-${entry.role}`, 'data-testid': `market-row-${c}` },
+          { class: `trade-row market-row role-${entry.role}${hit ? ' event' : ''}`, 'data-testid': `market-row-${c}` },
           glyph(COMMODITY_GLYPH[c]),
           h('span', { class: 'trade-text' }, h('span', { class: 'row-name' }, have ? `${info.name} (×${have})` : info.name), h('span', { class: 'row-sub' }, details.join(' · '))),
           h('span', { class: 'row-value num price-buy', title: 'You pay' }, q.buy === null ? '—' : `${q.buy} cr`),
@@ -112,6 +117,7 @@ export function traderContent(ctx: StationContext, refresh: Refresh): HTMLElemen
     h(
       'section',
       { 'aria-label': 'Market' },
+      event?.locationId === locationId ? h('p', { class: 'callout market-event', 'data-testid': 'market-event' }, icon('alert'), h('span', null, event.detail)) : null,
       h('div', { class: 'list-head market-head' }, h('span', null, 'Market'), h('span', { class: 'num' }, 'Buy'), h('span', { class: 'num' }, 'Sell'), h('span')),
       rows.length ? h('ul', { class: 'list market-list' }, rows) : h('p', { class: 'list-empty' }, 'This dock has no market.'),
     ),

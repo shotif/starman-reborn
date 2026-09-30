@@ -33,6 +33,22 @@ function names(path: readonly SystemId[]): string {
   return path.map((id) => getSystem(id).displayName).join(' → ');
 }
 
+/** What the news says about a system (only what the player has heard: events within reach). */
+function newsBlock(systemId: SystemId, state: MapState): HTMLElement | null {
+  const items = (state.news ?? []).filter((n) => n.systemId === systemId);
+  if (!items.length) return null;
+  return h(
+    'div',
+    { class: 'gmap-news', 'data-testid': 'map-news' },
+    h('h4', null, 'In the news'),
+    h(
+      'ul',
+      { class: 'gmap-news-list' },
+      items.map((n) => h('li', { class: `gmap-news-item kind-${n.kind}${n.active ? '' : ' over'}` }, h('strong', null, n.headline), n.active ? '' : ' (over)', h('span', { class: 'gmap-news-detail' }, n.detail))),
+    ),
+  );
+}
+
 export class InfoCard {
   readonly el: HTMLElement;
   private readonly handlers: InfoCardHandlers;
@@ -173,6 +189,7 @@ export class InfoCard {
       badgeHeading('h3', 'Fiction', 'fictional', `${this.ids.title}-fic`),
       h('p', { class: 'gmap-summary' }, system.fiction),
       securityNote(systemId),
+      newsBlock(systemId, state),
       system.fictionalLocations.length ? locationList(system.fictionalLocations, 'compact') : null,
     );
     const links = h(

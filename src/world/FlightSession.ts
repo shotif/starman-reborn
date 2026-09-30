@@ -62,6 +62,8 @@ export interface FlightCallbacks {
   onBounty(credits: number, name: string): void;
   /** A raider of a bounty contract's pack was destroyed. */
   onContractKill(jobId: string): void;
+  /** A trader docked at `to`, coming from the station `from` (null: through the jump beacon). */
+  onTraderArrived?(from: string | null, to: string, shipId: string): void;
   onMessage(text: string, tone: 'good' | 'bad' | 'info'): void;
 }
 
@@ -86,6 +88,8 @@ interface NpcShip {
   /** Combat behaviour (raiders, and patrols when they engage). */
   brain: PirateBrain;
   trader?: TraderBrain;
+  /** Traders: the station it launched from (null: it came through the jump beacon). */
+  origin?: string | null;
   patrol?: { brain: PatrolBrain; offset: THREE.Vector3 };
   controls: ShipControls;
   target: Target;
@@ -1744,6 +1748,7 @@ export class FlightSession {
     const faction = owner === 'hollow-wake' ? 'independent' : owner;
     const npc = this.makeNpc(model, 'trader', faction, position, forward, `${faction === 'independent' ? 'Independent' : FACTIONS[faction].shortName} hauler · bound for ${dest.name}`);
     npc.trader = new TraderBrain({ id: dest.def.locationId, point: dest.dockPoint }, npc.durability);
+    npc.origin = from ? from.def.locationId : null;
   }
 
   private spawnPatrolWing(t: TrafficSetup, wing: number): void {
@@ -1830,8 +1835,11 @@ export class FlightSession {
       n.maydaySent = true;
       if (n.body.position.distanceTo(this.player.position) < 15_000) this.callbacks.onMessage(`Mayday from the ${n.name}: raiders attacking!`, 'bad');
     }
-    // Docked at its destination: it leaves the scene.
-    if (brain.state === 'arrived') this.removeNpc(n);
+    // Docked at its destination: it unloads (the markets feel it) and leaves the scene.
+    if (brain.state === 'arrived') {
+      this.callbacks.onTraderArrived?.(n.origin ?? null, brain.destination.id, n.id);
+      this.removeNpc(n);
+    }
   }
 
   private flyPatrol(n: NpcShip, dt: number): void {

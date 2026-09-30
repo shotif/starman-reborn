@@ -753,3 +753,82 @@
 .trade-in-note .num {
   white-space: nowrap;
 }
+
+/* ---------- World events: local news and market callouts ---------- */
+
+.news-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.news-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0.55rem;
+  padding: 0.45rem 0.5rem;
+  background: rgba(10, 20, 46, 0.5);
+  border-left: 3px solid rgba(255, 216, 74, 0.55);
+}
+
+.news-item.kind-raid {
+  border-left-color: rgba(255, 110, 110, 0.7);
+}
+
+.news-item.kind-sweep,
+.news-item.kind-glut {
+  border-left-color: rgba(98, 227, 160, 0.6);
+}
+
+.news-item.over {
+  opacity: 0.6;
+  border-left-color: transparent;
+}
+
+.news-item > .glyph {
+  width: 1.9rem;
+  height: 1.9rem;
+}
+
+.news-text {
+  min-width: 0;
+}
+
+.news-text .row-name {
+  display: block;
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.news-text .row-sub {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.news-detail {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.callout.market-event {
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  margin: 0 0 0.5rem;
+  border-color: rgba(255, 209, 102, 0.5);
+  background: rgba(80, 60, 10, 0.35);
+}
+
+.callout.market-event .icon {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.market-row.event .row-name {
+  color: var(--amber);
+}

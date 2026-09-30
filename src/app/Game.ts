@@ -8,7 +8,9 @@ import { shipModel } from '../content/catalog.ts';
 import { hashString } from '../content/random.ts';
 import { cargoCapacity } from '../economy/loadout.ts';
 import { adjustReputation, FACTIONS, standingTier, TIER_LABEL } from '../economy/factions.ts';
-import { acceptJob, advanceJobs, contractPacksIn, currentObjective, deliverJob, getJob, LIFELINE_ID, primaryObjective, type JobEvent } from '../economy/jobs.ts';
+import { newsAt, systemEventAt } from '../economy/events.ts';
+import { acceptJob, activeJobIds, advanceJobs, contractPacksIn, currentObjective, deliverJob, describeObjective, getJob, LIFELINE_ID, primaryObjective, type JobEvent } from '../economy/jobs.ts';
+import { moveStock, traderDelivery } from '../economy/markets.ts';
 import { welcomeText } from '../economy/dockText.ts';
 import { DesktopInput } from '../flight/input/DesktopInput.ts';
 import { emptyInput, type InputScheme } from '../flight/input/types.ts';
@@ -589,6 +591,15 @@ export class Game {
     }
   }
 
+  /** Warns about a raid (or tells of a sweep) under way in the system the player is flying in. */
+  private announceSystemEvent(): void {
+    const state = this.state!;
+    const e = systemEventAt(state.location.systemId, state.clock);
+    if (!e) return;
+    if (e.kind === 'raid') toast(`${e.headline}: raider threat ${e.level} of 3. Watch the approaches.`, 'bad', 5000);
+    else toast(`${e.headline}: the lanes are clear of raider packs for now.`, 'good', 4500);
+  }
+
   private launch(): void {
     const state = this.state!;
     const from = state.location.dockedAt;
@@ -596,6 +607,7 @@ export class Game {
     undock(state);
     this.persist();
     this.enterFlight({ kind: 'undock', locationId: from });
+    this.announceSystemEvent();
     if (!state.flags.flightSchool) {
       state.flags.flightSchool = true;
       const aim = this.scheme === 'touch' ? 'hold the right thumb on the aim pad' : 'hold the right mouse button';
@@ -630,6 +642,12 @@ export class Game {
         },
         onBounty: (credits, name) => this.onBounty(credits, name),
         onContractKill: (jobId) => this.onContractKill(jobId),
+        onTraderArrived: (from, to, shipId) => {
+          const flow = traderDelivery(from, to, shipId, state.markets, state.clock);
+          if (!flow) return;
+          if (from) moveStock(state.markets, from, flow.commodity, -flow.qty, state.clock);
+          moveStock(state.markets, to, flow.commodity, flow.qty, state.clock);
+        },
         onMessage: (text, tone) => toast(text, tone, 2600),
       },
       traffic: { ...trafficFor(state.location.systemId, this.renderer.quality, state.clock), contractPacks: contractPacksIn(state, state.location.systemId) },
@@ -787,6 +805,10 @@ export class Game {
       objectiveSystemId: objective?.targetSystemId ?? null,
       discoveredBodies: new Set(state?.discoveredBodies ?? []),
       feeCoverage: state ? this.feeCoverage() : null,
+      news: state
+        ? newsAt(current, state.clock).map((n) => ({ id: n.event.id, systemId: n.event.systemId, kind: n.event.kind, headline: n.event.headline, detail: n.event.detail, active: n.active }))
+        : [],
+      contractSystems: new Set(state ? activeJobIds(state).flatMap((id) => describeObjective(state, id)?.targetSystemId ?? []) : []),
     };
   }
 
@@ -934,6 +956,7 @@ export class Game {
       this.enterFlight({ kind: 'arrival' });
       const dest = getSystem(this.state!.location.systemId);
       toast(`Arrived: ${dest.displayName} — ${dest.distanceLightYears.toFixed(2)} ly from Sol`, 'good', 4000);
+      this.announceSystemEvent();
       this.persist();
     }
   }

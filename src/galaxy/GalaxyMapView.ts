@@ -576,6 +576,8 @@ export class GalaxyMapView {
       s.objectiveSystemId ?? '',
       [...s.discoveredBodies].sort().join(','),
       s.feeCoverage ? `${s.feeCoverage.systemId}:${s.feeCoverage.note}` : '',
+      (s.news ?? []).map((n) => `${n.id}:${n.active ? 1 : 0}`).join(','),
+      [...(s.contractSystems ?? [])].sort().join(','),
     ].join('|');
   }
 
@@ -590,6 +592,8 @@ export class GalaxyMapView {
       const items: Node[] = [];
       if (state.currentSystemId === id) items.push(this.mark('current', icon('goto'), 'you are here'));
       if (state.objectiveSystemId === id) items.push(this.mark('objective', icon('objective'), 'objective'));
+      else if (state.contractSystems?.has(id)) items.push(this.mark('contract', icon('objective'), 'contract'));
+      if (state.news?.some((n) => n.systemId === id && n.active)) items.push(this.mark('news', icon('alert'), 'in the news'));
       if (state.visited.has(id) && state.currentSystemId !== id) items.push(this.mark('visited', mapIcon('check'), 'visited'));
       marks.replaceChildren(...items);
     }
@@ -683,11 +687,15 @@ export class GalaxyMapView {
       const vis = state.visited.has(id) && !cur;
       const onRoute = !!route && route.includes(id);
       l.el.className = `gmap-label${def.primary ? '' : ' is-secondary'}${sel ? ' is-selected' : ''}${cur ? ' is-current' : ''}${obj ? ' is-objective' : ''}${onRoute ? ' on-route' : ''}`;
+      const contract = !obj && !!state.contractSystems?.has(id);
+      const news = !!state.news?.some((n) => n.systemId === id && n.active);
       const marks: Node[] = [];
-      if (def.primary) {
+      if (def.primary || contract || news) {
         if (cur) marks.push(icon('goto'));
         if (obj) marks.push(icon('objective'));
-        if (vis) marks.push(mapIcon('check'));
+        if (contract) marks.push(h('span', { class: 'gmap-contract-mark' }, icon('objective')));
+        if (news) marks.push(h('span', { class: 'gmap-news-mark' }, icon('alert')));
+        if (vis && def.primary) marks.push(mapIcon('check'));
       }
       replaceChildren(
         l.el,
@@ -695,7 +703,7 @@ export class GalaxyMapView {
         h('span', { class: 'gmap-label-name' }, def.name),
         def.distanceLy !== null ? h('span', { class: 'gmap-label-dist' }, ` · ${formatLy(def.distanceLy)}`) : null,
       );
-      l.box.priority = (def.primary ? 50 : 40) + (sel ? 100 : 0) + (cur ? 60 : 0) + (obj ? 40 : 0) + (onRoute ? 20 : 0);
+      l.box.priority = (def.primary ? 50 : 40) + (sel ? 100 : 0) + (cur ? 60 : 0) + (obj ? 40 : 0) + (contract ? 25 : 0) + (news ? 15 : 0) + (onRoute ? 20 : 0);
     }
     this.labelSizeDirty = true;
     this.viewDirty = true;

@@ -8,6 +8,7 @@ import { button, dataBadge } from '../components.ts';
 import { formatCredits, h, signed } from '../dom.ts';
 import { glyph, type GlyphName } from '../glyphs.ts';
 import { icon } from '../icons.ts';
+import { newsList } from '../news.ts';
 import type { StationContext } from './context.ts';
 
 export function pips(level: number, of = 3): HTMLElement {
@@ -138,7 +139,7 @@ function jobCard(o: JobOffer, expanded: boolean, onSelect: (id: string) => void)
   );
 }
 
-/** Station news: the dock's greeting, who runs it and how they see you. */
+/** Station news: the dock's greeting, who runs it and how they see you, and what is happening nearby. */
 export function newsContent(ctx: StationContext): HTMLElement {
   const { state, locationId } = ctx;
   const loc = getLocation(locationId);
@@ -151,5 +152,7 @@ export function newsContent(ctx: StationContext): HTMLElement {
     h('p', { class: 'comm' }, icon('info'), ' ', welcome.text),
     h('p', { class: 'muted' }, loc.description, ' ', dataBadge('fictional')),
     faction ? h('p', null, h('strong', null, faction.name), ` runs this dock. Your standing: ${TIER_LABEL[standingTier(standing)]} (${signed(standing)}).`) : null,
+    h('div', { class: 'list-head' }, h('span', null, 'Local news'), h('span', null, 'within two jumps')),
+    newsList(loc.systemId, state.clock),
   );
 }

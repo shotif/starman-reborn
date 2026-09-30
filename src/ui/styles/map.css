@@ -316,6 +316,57 @@
   color: var(--success);
 }
 
+.gmap-mark-contract,
+.gmap-contract-mark {
+  display: inline-flex;
+  color: var(--warm);
+  opacity: 0.75;
+}
+
+.gmap-mark-news,
+.gmap-news-mark {
+  display: inline-flex;
+  color: #ffb36b;
+}
+
+.gmap-news h4 {
+  margin: 0.6rem 0 0.25rem;
+}
+
+.gmap-news-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.gmap-news-item {
+  padding: 0.3rem 0.45rem;
+  border-left: 3px solid rgba(255, 179, 107, 0.7);
+  background: rgba(10, 20, 46, 0.45);
+  font-size: 0.85rem;
+}
+
+.gmap-news-item.kind-raid {
+  border-left-color: rgba(255, 110, 110, 0.75);
+}
+
+.gmap-news-item.kind-sweep {
+  border-left-color: rgba(98, 227, 160, 0.7);
+}
+
+.gmap-news-item.over {
+  opacity: 0.6;
+}
+
+.gmap-news-detail {
+  display: block;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
 /* ---------- Stage (visible map area) ---------- */
 
 .gmap-stage {
@@ -1131,4 +1182,12 @@
     width: 48px;
     padding: 0;
   }
+}
+
+.gmap-label-marks .gmap-news-mark .icon {
+  color: #ffb36b;
+}
+
+.gmap-label-marks .gmap-contract-mark .icon {
+  color: var(--warm);
 }
