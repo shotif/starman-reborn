@@ -4,6 +4,7 @@ import type { MusicMood, SfxId } from '../audio/types.ts';
 import { getLocation, getPlanet, getSystem, SYSTEMS } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { cargoUsed } from '../economy/cargo.ts';
+import { hashString } from '../content/random.ts';
 import { cargoCapacity } from '../economy/loadout.ts';
 import { adjustReputation, FACTIONS, standingTier, TIER_LABEL } from '../economy/factions.ts';
 import { acceptJob, advanceJobs, deliverJob, getJob, LIFELINE_ID, primaryObjective, type JobEvent } from '../economy/jobs.ts';
@@ -17,7 +18,7 @@ import { button, clearToasts, confirmDialog, dataBadge, setModalRoot, setToastRo
 import { formatCredits, h, signed } from '../ui/dom.ts';
 import { Hud } from '../ui/hud/Hud.ts';
 import { hasVoyage } from '../ui/station/journal.ts';
-import { StationHub, type StationWindow } from '../ui/station/StationHub.ts';
+import { StationHub, stationRooms, type StationWindow } from '../ui/station/StationHub.ts';
 import { bodyCard, controlsContent, planetCard, settingsContent, sheet } from '../ui/screens/panels.ts';
 import { renderTitle } from '../ui/screens/TitleScreen.ts';
 import { TouchControls } from '../ui/touch/TouchControls.ts';
@@ -25,7 +26,7 @@ import { createJumpTunnel, type JumpTunnelArt } from '../world/art/effects.ts';
 import type { ArtContext } from '../world/art/types.ts';
 import { DockedView } from '../world/DockedView.ts';
 import { FlightSession, type EncounterOutcome } from '../world/FlightSession.ts';
-import type { RoomView } from '../world/rooms/types.ts';
+import { createStationInterior, type RoomView, type StationInterior } from '../world/rooms/index.ts';
 import type { EncounterDef } from '../world/sceneTypes.ts';
 import { SCENE_DEFS } from '../world/systems/index.ts';
 import { SystemScene } from '../world/SystemScene.ts';
@@ -91,6 +92,9 @@ export class Game {
   private flight: FlightSession | null = null;
   private dockedView: DockedView | null = null;
   private station: StationHub | null = null;
+  /** The 3D rooms behind the station menus while docked. */
+  private interior: StationInterior | null = null;
+  private interiorsWarm = false;
   private titleEl: HTMLElement | null = null;
   private pauseEl: HTMLElement | null = null;
   private contextLostEl: HTMLElement | null = null;
@@ -272,6 +276,35 @@ export class Game {
     this.refreshFlightUi();
     this.audio.setMusic('title');
     this.titleEl.querySelector<HTMLButtonElement>('button')?.focus();
+    this.warmInteriors(s?.location.dockedAt ?? 'earth-port');
+  }
+
+  /** Builds and drops one interior while the title is up, so the first dock does not hitch on shared caches. */
+  private warmInteriors(locationId: string): void {
+    if (this.interiorsWarm) return;
+    this.interiorsWarm = true;
+    window.setTimeout(() => {
+      if (this.mode !== 'title') return;
+      this.buildInterior(locationId)?.dispose();
+    }, 400);
+  }
+
+  private buildInterior(locationId: string): StationInterior | null {
+    const def = SCENE_DEFS[getLocation(locationId).systemId];
+    const station = def.stations.find((s) => s.locationId === locationId);
+    if (!station) return null;
+    // The light through the bay comes from the nearest star (Meridian orbits Proxima, not A or B).
+    const d2 = (p: THREE.Vector3) => p.distanceToSquared(station.position);
+    const star = def.stars.reduce((best, s) => (d2(s.position) < d2(best.position) ? s : best));
+    return createStationInterior(
+      { station: station.kind, skybox: def.skybox, starColor: star.color, seed: hashString(locationId) % 10_000, rooms: stationRooms(locationId) },
+      this.artCtx,
+    );
+  }
+
+  private disposeInterior(): void {
+    this.interior?.dispose();
+    this.interior = null;
   }
 
   private async newGame(hasSave: boolean): Promise<void> {
@@ -331,6 +364,7 @@ export class Game {
     this.titleEl = null;
     this.station?.destroy();
     this.station = null;
+    this.disposeInterior();
     this.pauseEl?.remove();
     this.pauseEl = null;
     this.paused = false;
@@ -345,6 +379,11 @@ export class Game {
     const site = this.system!.dock(locationId) ?? null;
     this.dockedView = new DockedView(this.system!, this.camera, site);
     this.dockedView.reducedMotion = this.settings.reducedMotion;
+    this.interior = this.buildInterior(locationId);
+    if (this.interior) {
+      const { width, height } = this.renderer.size;
+      this.interior.resize(width, height);
+    }
     this.mode = 'docked';
     this.loop.lowPower = true;
     this.refreshFlightUi();
@@ -365,7 +404,8 @@ export class Game {
         acceptJob: (id) => this.acceptJob(id),
         deliverJob: (id) => void this.deliver(id),
         travelCost: (from, to) => this.travelCost(from, to),
-        setView: () => null,
+        // The first view is set while the hub is being built: jump straight there.
+        setView: (room) => this.interior?.setView(room, !this.station) ?? null,
       },
       { room: opts.room, window: opts.window, titleCard: opts.titleCard && !opts.intro },
     );
@@ -960,6 +1000,7 @@ export class Game {
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     this.flight?.setViewport(width, height);
+    this.interior?.resize(width, height);
     this.map?.resize(width, height);
   }
 
@@ -990,8 +1031,16 @@ export class Game {
     }
     if (this.renderer.contextLost) return;
     switch (this.mode) {
-      case 'title':
       case 'docked':
+        if (this.interior) {
+          this.interior.update(rawDt);
+          this.renderer.render(this.interior.scene, this.interior.camera);
+          break;
+        }
+        this.dockedView?.update(rawDt);
+        if (this.system) this.renderer.render(this.system.scene, this.camera);
+        break;
+      case 'title':
         this.dockedView?.update(rawDt);
         if (this.system) this.renderer.render(this.system.scene, this.camera);
         break;

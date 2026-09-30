@@ -55,6 +55,14 @@ const WINDOW_TITLE: Record<StationWindow, string> = {
   menu: 'Menu',
 };
 
+/** Rooms a station offers, in rail order (also the rooms its 3D interior builds). */
+export function stationRooms(locationId: string): RoomView[] {
+  const list: RoomView[] = ['deck', 'bar'];
+  if (hasMarket(locationId)) list.push('trader');
+  if (hasOutfitter(locationId)) list.push('outfitter');
+  return list;
+}
+
 /**
  * The docked station: a 3D room behind a thin layer of rails and framed windows. The room rail
  * (top centre) switches rooms; the tab hanging under it holds that room's actions and Launch;
@@ -136,10 +144,7 @@ export class StationHub {
 
   /** Rooms this station offers, in rail order. */
   rooms(): RoomView[] {
-    const list: RoomView[] = ['deck', 'bar'];
-    if (hasMarket(this.ctx.locationId)) list.push('trader');
-    if (hasOutfitter(this.ctx.locationId)) list.push('outfitter');
-    return list;
+    return stationRooms(this.ctx.locationId);
   }
 
   get currentRoom(): RoomView {

@@ -158,7 +158,10 @@ game rather than a web page, and how Starman Reborn adapts it with original work
 **The place is the menu.** Docking puts you in a rendered 3D room — a hangar deck with your ship
 on its pad, a bar with people at tables, a trader's floor — and the interface is a thin layer on
 top. We build procedural interiors per station (`src/world/rooms/`), styled by who runs the
-station and the light of its star.
+station and the light of its star: one hangar hall holds the deck, the trader's cargo floor and
+the outfitter's workshop (the camera glides between them), and the bar is a separate room the
+view cuts to behind a quick fade. Each station has its own palette, pillars, bay, props, crew and
+bar decor, and the view through the bay shows its real sky, star and planet.
 
 **Rails of icons instead of tabs.** A room rail is attached to the top edge of the screen: one
 large glyph per room, the current room lit amber. A small tab hangs below it with the actions of

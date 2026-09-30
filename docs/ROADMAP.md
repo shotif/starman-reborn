@@ -10,7 +10,7 @@ labels wrapped, toasts covered panels. Fixed, and the layout audit now reproduce
 phones (130% text scaling, and 130% page zoom = a 316-wide viewport) and flags content cut off
 inside any box that is not meant to scroll.
 
-## 2. Redesign the menus and HUD 🔨
+## 2. Redesign the menus and HUD ✅
 
 A game interface instead of web pages, inspired by the classic space-trader look (see
 [DESIGN.md](DESIGN.md#interface-direction)): docking puts you in a 3D place, room and command
@@ -18,8 +18,10 @@ rails replace tabs, framed glass windows, icons and numbers first, prose on dema
 
 - Design system: condensed technical typeface, navy-glass frames with cut corners and cyan edges,
   amber active state, original icon set.
-- Station hub: procedural 3D hangar deck (your ship on its pad), trader, outfitter and a bar with
-  people; room rail and action tab; two-list dealer windows; job board in the bar.
+- Station hub: procedural 3D interiors for all six stations, each in its own style: hangar deck
+  (your ship on its pad), trader, outfitter and a bar with people; the camera glides between the
+  hangar views and cuts to the bar. Room rail and action tab; two-list dealer windows; job board
+  in the bar; shipyard on the deck.
 - Title screen, pause, settings and map chrome in the same style.
 - Flight HUD: command rail (free flight, go to, dock, cruise), contact list, weapons list,
   segmented gauges, bracketed target box. Touch keeps the thumb areas clear.
