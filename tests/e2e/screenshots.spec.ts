@@ -177,6 +177,8 @@ for (const size of SIZES) {
       await press(page, 'slot-shield');
       await shot(page, `${size.name}-3d-outfitter`, size.touch, results);
       await press(page, 'room-deck');
+      await press(page, 'station-fleet');
+      await shot(page, `${size.name}-3e-fleet`, size.touch, results);
       await press(page, 'dock-launch');
       await press(page, 'sheet-close');
       await waitUntil(page, 'undocked', async () => (await api<{ autopilot: string } | null>(page, 'player'))?.autopilot === 'none');
