@@ -7,6 +7,8 @@ export interface TitleOptions {
   saveSummary: string | null;
   onPlay(): void;
   onContinue(): void;
+  /** Save slots, export and import. */
+  onSaves(): void;
   onControls(): void;
   onAbout(): void;
   onSettings(): void;
@@ -15,7 +17,8 @@ export interface TitleOptions {
 export function renderTitle(parent: HTMLElement, opts: TitleOptions): HTMLElement {
   const root = h(
     'section',
-    { class: 'screen title-screen', 'aria-labelledby': 'title-heading', 'data-testid': 'title-screen' },
+    // Scrolls only when it cannot fit (large text on a short screen).
+    { class: 'screen title-screen scroll', 'aria-labelledby': 'title-heading', 'data-testid': 'title-screen' },
     h(
       'div',
       { class: 'title-card' },
@@ -28,7 +31,7 @@ export function renderTitle(parent: HTMLElement, opts: TitleOptions): HTMLElemen
       ),
       h(
         'div',
-        { class: 'title-actions' },
+        { class: `title-actions${opts.saveSummary ? ' has-save' : ''}` },
         opts.saveSummary
           ? button(h('span', { class: 'stack-tight' }, 'Continue', h('small', null, opts.saveSummary)), {
               variant: 'primary',
@@ -45,9 +48,15 @@ export function renderTitle(parent: HTMLElement, opts: TitleOptions): HTMLElemen
           testId: 'title-play',
           onClick: opts.onPlay,
         }),
-        button('Controls', { icon: 'help', testId: 'title-controls', onClick: opts.onControls }),
-        button('About the science', { icon: 'source', testId: 'title-about', onClick: opts.onAbout }),
-        button('Settings', { icon: 'settings', testId: 'title-settings', onClick: opts.onSettings }),
+        // The rest, smaller and two by two, so the title fits short screens.
+        h(
+          'div',
+          { class: 'title-more' },
+          button('Saves', { icon: 'save', testId: 'saves-open', onClick: opts.onSaves }),
+          button('Controls', { icon: 'help', testId: 'title-controls', onClick: opts.onControls }),
+          button('About the science', { icon: 'source', testId: 'title-about', onClick: opts.onAbout }),
+          button('Settings', { icon: 'settings', testId: 'title-settings', onClick: opts.onSettings }),
+        ),
       ),
       h(
         'p',
@@ -57,7 +66,7 @@ export function renderTitle(parent: HTMLElement, opts: TitleOptions): HTMLElemen
         dataBadge('fictional', 'Fictional stations and travel'),
         hasProvisionalData() ? [' ', dataBadge('provisional')] : null,
       ),
-      h('p', { class: 'title-foot muted' }, 'Sound starts after your first tap or key press. Progress saves in this browser only.'),
+      h('p', { class: 'title-foot muted' }, 'Sound starts after your first tap or key press. Progress saves in this browser.'),
     ),
     h('p', { class: 'title-build', 'aria-label': `Build ${__BUILD_ID__}` }, `Prototype · build ${__BUILD_ID__}`),
   );

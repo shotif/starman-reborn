@@ -126,6 +126,13 @@ the career ([§13](PROCGEN.md#13-goals)), and three hand-written faction arcs te
   20 s in flight, and on tab hide or page hide.
 - Loading migrates older formats (v1 → v2 is covered by tests), validates the result, and falls
   back to the backup when the main save is damaged.
+- That save is the autosave (it keeps its `save:main` key). Three manual slots sit beside it, each
+  one record: a summary for the save list and a full snapshot, migrated only when the slot is
+  loaded or exported. Loading a slot or an imported file takes Continue's path, and the autosave
+  follows the loaded game from then on (`src/ui/screens/saves.ts`).
+- Export writes a versioned file, `{ format: 'starman-reborn-save', version: 1, exportedAt, state }`,
+  as a download (or through the share sheet on iPhone and iPad). Import checks it with the same
+  migration as a stored save and refuses unreadable, foreign, newer or damaged files with a message.
 - Settings are stored separately and survive **New game** and **Reset save**.
 
 ## Rendering and performance

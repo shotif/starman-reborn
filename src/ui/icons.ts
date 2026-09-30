@@ -36,6 +36,10 @@ const PATHS = {
   shield: ['M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'],
   kill: ['M6 6h12v12H6z'],
   decoy: ['M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z', 'M12 2v4', 'M12 18v4', 'M2 12h4', 'M18 12h4', 'M5 5l2.5 2.5', 'M16.5 16.5L19 19', 'M19 5l-2.5 2.5', 'M7.5 16.5L5 19'],
+  /** A data card with a cut corner: saves. */
+  save: ['M5 3h11l3 3v15H5z', 'M8 3v4h6V3', 'M8 12h8', 'M8 16h5'],
+  /** An arrow up out of a tray: import a file. */
+  upload: ['M12 15V3', 'M7 8l5-5 5 5', 'M4 17v3h16v-3'],
 } as const;
 
 export type IconName = keyof typeof PATHS;

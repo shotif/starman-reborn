@@ -6,6 +6,8 @@
     radial-gradient(ellipse at 20% 30%, rgba(4, 8, 18, 0.0), rgba(2, 4, 10, 0.35) 60%),
     linear-gradient(90deg, rgba(2, 4, 10, 0.72), rgba(2, 4, 10, 0.1) 70%);
   justify-content: flex-start;
+  /* It scrolls up and down when it cannot fit, never sideways. */
+  overflow-x: hidden;
 }
 
 .title-card {
@@ -14,6 +16,8 @@
   flex-direction: column;
   gap: 0.7rem;
   margin-left: max(0px, 4vw);
+  /* Centred when it fits; otherwise from the top, and the screen scrolls. */
+  margin-block: auto;
 }
 
 /* Logotype: brushed-steel STARMAN over an amber, wide-tracked REBORN. */
@@ -62,6 +66,17 @@
   justify-content: center;
 }
 
+/* Saves, Controls, About the science and Settings: smaller, two by two (one column at large text). */
+.title-more {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
+  gap: 0.55rem;
+}
+
+.title-more .btn {
+  padding: 0.45rem 0.7rem;
+}
+
 .title-build {
   position: absolute;
   right: calc(var(--safe-right) + 1rem);
@@ -72,6 +87,8 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--text-dim);
+  /* With very large text it can sit over a button: taps go through to it. */
+  pointer-events: none;
 }
 
 .stack-tight {
@@ -101,11 +118,22 @@
 
 @media (max-height: 520px) and (orientation: landscape) {
   .title-card {
+    width: min(36rem, 100%);
     gap: 0.4rem;
   }
 
   .title-actions {
     grid-template-columns: 1fr 1fr;
+  }
+
+  /* Play alone on the first row; the rest in one row of four (fewer at large text). */
+  .title-actions:not(.has-save) > .btn,
+  .title-more {
+    grid-column: 1 / -1;
+  }
+
+  .title-more {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 7rem), 1fr));
   }
 
   .title-tagline {
@@ -175,6 +203,230 @@
   font-size: 0.92rem;
 }
 
+/* ---------- Saves: the autosave, three slots and save files (src/ui/screens/saves.ts) ---------- */
+
+.saves {
+  container: saves / inline-size;
+}
+
+.saves-intro {
+  margin: 0;
+}
+
+.saves-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.55rem 0.75rem;
+  border-left: 3px solid var(--warning);
+  background: rgba(80, 60, 10, 0.35);
+  font-size: 0.9rem;
+}
+
+.saves-warning .icon {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  color: var(--warning);
+}
+
+.save-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+/* A save: name and time, place, credits and play time; its actions below (or beside, when wide). */
+.save-row {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.55rem 0.7rem 0.6rem;
+  background: rgba(10, 20, 46, 0.55);
+  border-left: 3px solid var(--edge);
+}
+
+.save-row.is-auto {
+  border-left-color: var(--amber);
+}
+
+.save-row.is-empty {
+  border-left-color: var(--edge-dim);
+}
+
+.save-row.is-damaged {
+  border-left-color: var(--danger);
+}
+
+.save-row.is-file {
+  border-left-color: var(--accent);
+}
+
+.save-row.is-fresh {
+  animation: save-fresh 1.6s ease-out;
+}
+
+@keyframes save-fresh {
+  from {
+    background: rgba(255, 216, 74, 0.22);
+  }
+  to {
+    background: rgba(10, 20, 46, 0.55);
+  }
+}
+
+.save-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.save-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0 0.8rem;
+}
+
+.save-name {
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--edge-hi);
+}
+
+.save-row.is-auto .save-name {
+  color: var(--amber);
+}
+
+.save-when,
+.save-empty {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.save-row.is-damaged .save-empty {
+  color: #ff9d9d;
+}
+
+.save-place {
+  font-family: var(--font-ui);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
+}
+
+.save-meta {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.save-meta .num {
+  color: var(--amber);
+}
+
+/* Four actions go two by two on a phone; three (on the title) fit in one row. */
+.save-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 7rem), 1fr));
+  gap: 0.4rem;
+}
+
+.save-actions.n3 {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 5.5rem), 1fr));
+}
+
+.save-actions .btn {
+  min-height: 44px;
+  padding: 0.3rem 0.7rem;
+}
+
+/* Wide enough (in rem, so large text keeps the stacked layout): the actions sit beside the save. */
+@container saves (min-width: 34rem) {
+  .save-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 0.9rem;
+  }
+
+  .save-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .save-actions .btn {
+    padding: 0.3rem 0.6rem;
+  }
+}
+
+.saves-file {
+  /* Holds the hidden file input, so it scrolls with the sheet instead of stretching it. */
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.saves-file p {
+  flex: 1 1 12rem;
+  margin: 0;
+}
+
+.saves-file .btn {
+  flex: 1 1 auto;
+  max-width: 100%;
+}
+
+/* The result of the last action, kept in view at the bottom of the scrolling sheet. */
+.saves-message {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  margin: 0;
+  padding: 0.55rem 0.8rem;
+  border-left: 3px solid var(--accent);
+  background: linear-gradient(180deg, var(--glass-solid-top), var(--glass-solid-bottom));
+  box-shadow: 0 -8px 18px rgba(2, 4, 10, 0.65);
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.saves-message.good {
+  border-left-color: var(--friendly);
+}
+
+.saves-message.bad {
+  border-left-color: var(--danger);
+}
+
+.import-targets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
+  gap: 0.4rem;
+}
+
+.import-targets .btn {
+  justify-content: flex-start;
+  min-height: 3rem;
+  text-align: left;
+}
+
+.import-targets .stack-tight small {
+  letter-spacing: 0.02em;
+  text-transform: none;
+  overflow-wrap: anywhere;
+}
+
 /* ---------- Pause ---------- */
 
 .pause-menu {
@@ -191,6 +443,19 @@
 
 .pause-card h2 {
   margin: 0 0 0.3rem;
+}
+
+/* Short landscape screens: two columns, so the whole menu fits. */
+@media (max-height: 520px) and (orientation: landscape) {
+  .pause-card {
+    width: min(34rem, 100%);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pause-card h2,
+  .pause-card .btn-lg {
+    grid-column: 1 / -1;
+  }
 }
 
 /* ---------- Jump overlay ---------- */
