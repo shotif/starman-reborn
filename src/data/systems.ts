@@ -319,8 +319,11 @@ interface CatalogSystemEntry {
   addedBy?: string;
 }
 
-/** Systems extracted from the HYG and Open Exoplanet catalogues (scripts/extract-catalogs.ts). */
+/** Systems extracted from the HYG and Open Exoplanet catalogues (scripts/extract-catalogs.ts), and those the sky snapshot added. */
 const CATALOG_SYSTEMS = (catalogSystemsFile as unknown as { systems: CatalogSystemEntry[] }).systems;
+
+/** Stars the sky snapshot found in the hand-made systems (appended to their components). */
+const CURATED_ADDITIONS = (catalogSystemsFile as unknown as { additions?: Record<string, string[]> }).additions ?? {};
 
 function seedFor(id: SystemId, name: string, componentIds: readonly string[], referenceId: string | null, curated: SystemSeed['curated']): SystemSeed {
   const ref = referenceId ? componentIndex.get(referenceId) : undefined;
@@ -414,7 +417,8 @@ function toLocation(g: GeneratedStation): FictionalLocation {
 
 const ALL: readonly FictionalLocation[] = [...LOCATIONS, ...WORLD.stations.map(toLocation)];
 
-function buildSystem(c: CuratedSystem): StarSystemRecord {
+function buildSystem(curated: CuratedSystem): StarSystemRecord {
+  const c = { ...curated, componentIds: [...curated.componentIds, ...(CURATED_ADDITIONS[curated.id] ?? [])] };
   const ref = c.referenceComponentId ? componentIndex.get(c.referenceComponentId) : undefined;
   if (c.referenceComponentId && !ref) {
     throw new Error(`System ${c.id} references missing component ${c.referenceComponentId}`);
@@ -470,34 +474,51 @@ function describeCatalogSystem(e: CatalogSystemEntry, comps: readonly StellarCom
     comps.length === 1
       ? `A single ${starKindWord(ref.spectralType)}`
       : `${comps.length === 2 ? 'A binary' : `A ${COUNT_WORD[comps.length] ?? comps.length}-star system`}: ${comps.map((c) => `${c.name}, a ${starKindWord(c.spectralType)}`).join('; ')}`;
-  const planetText = planets.length ? ` with ${COUNT_WORD[planets.length] ?? planets.length} confirmed planet${planets.length === 1 ? '' : 's'}` : '';
-  const hygRef = (c: StellarComponent): SourceRef => ({ ...SOURCES.hyg, ...(c.astrometrySource.recordId ? { recordId: c.astrometrySource.recordId } : {}) });
+  const confirmed = planets.filter((p) => p.status === 'confirmed');
+  const others = planets.filter((p) => p.status !== 'confirmed');
+  const planetText = confirmed.length
+    ? ` with ${COUNT_WORD[confirmed.length] ?? confirmed.length} confirmed planet${confirmed.length === 1 ? '' : 's'}`
+    : others.length
+      ? ` with ${COUNT_WORD[others.length] ?? others.length} planet${others.length === 1 ? '' : 's'} not confirmed by the archives`
+      : '';
+  // Cite where the position really came from: Gaia DR3 or SIMBAD after the sky snapshot, HYG before it.
+  const posRef = (c: StellarComponent): SourceRef => (c.verification === 'snapshot' ? c.astrometrySource : { ...SOURCES.hyg, ...(c.astrometrySource.recordId ? { recordId: c.astrometrySource.recordId } : {}) });
+  const planetSource = planets.some((p) => p.verification === 'snapshot') ? SOURCES.exoplanetArchive : SOURCES.openExoplanetCatalogue;
   const facts: ScienceFact[] = [
     {
       text: `${e.displayName} lies about ${ref.distanceLightYears.toFixed(1)} light-years from the Sun.`,
       dataClass: 'observed',
-      source: hygRef(ref),
+      source: posRef(ref),
     },
     {
       text: `${comps.length === 1 ? 'Star' : 'Stars'}: ${stars.join(', ')}.`,
       dataClass: 'observed',
-      source: hygRef(ref),
+      source: ref.spectralTypeSource,
     },
-    planets.length
+    confirmed.length
       ? {
-          text: `Confirmed planets: ${planets.map((p) => p.displayName).join(', ')}. Their surfaces have not been observed; the in-game globes are artist’s impressions.`,
+          text: `Confirmed planets: ${confirmed.map((p) => p.displayName).join(', ')}. Their surfaces have not been observed; the in-game globes are artist’s impressions.`,
           dataClass: 'observed',
-          source: SOURCES.openExoplanetCatalogue,
+          source: planetSource,
         }
       : {
-          text: 'The bundled catalogues list no confirmed planets here.',
+          text: 'The archives list no confirmed planets here.',
           dataClass: 'observed',
-          source: SOURCES.openExoplanetCatalogue,
+          source: planetSource,
         },
+    ...(others.length
+      ? [
+          {
+            text: `Not confirmed, kept in this edition of the game: ${others.map((p) => `${p.displayName} (${p.status})`).join(', ')}.`,
+            dataClass: 'observed' as const,
+            source: planetSource,
+          },
+        ]
+      : []),
     {
       text: 'In flight, distances inside the system are compressed and the stars and planets are drawn schematically.',
       dataClass: 'estimated',
-      source: SOURCES.hyg,
+      source: posRef(ref),
     },
   ];
   return { summary: `${kind}${planetText}.`, facts };

@@ -49,8 +49,8 @@ export function tag(kind: 'discovered' | 'disputed' | 'functional' | 'planned', 
     disputed: {
       cls: 'sci-tag sci-tag-disputed',
       ic: icon('alert'),
-      label: 'Disputed',
-      title: 'The archive flags this planet as controversial',
+      label: 'Contested',
+      title: 'Not confirmed by the archives, or flagged as controversial; this edition of the game keeps it',
     },
     functional: { cls: 'sci-tag sci-tag-open', ic: null, label: 'Open', title: 'Open to traffic (fiction)' },
     planned: { cls: 'sci-tag sci-tag-planned', ic: null, label: 'Planned', title: 'Not yet open (fiction)' },
@@ -197,11 +197,16 @@ function planetItem(p: ConfirmedBody, discovered: ReadonlySet<string>, detail: D
   const measurements = planetMeasurements(p);
   const facts: Child[] = [
     h('dt', null, 'Status'),
-    h('dd', null, dataBadge('observed', 'Confirmed'), p.controversial ? [' ', tag('disputed')] : null),
+    h(
+      'dd',
+      null,
+      p.status === 'confirmed' ? dataBadge('observed', 'Confirmed') : tag('disputed', p.status === 'candidate' ? 'Candidate' : 'Contested'),
+      p.statusNote ? h('span', { class: 'sci-note' }, ` ${p.statusNote}`) : null,
+    ),
     h('dt', null, 'Host star'),
     h('dd', null, host?.name ?? p.hostId),
     h('dt', null, 'Archive name'),
-    h('dd', null, p.archiveName, ' ', sourceLink({ label: EXOPLANETS.source.label, url: p.sourceUrl })),
+    h('dd', null, p.archiveName, ' ', sourceLink({ label: p.sourceLabel ?? EXOPLANETS.source.label, url: p.sourceUrl })),
     h('dt', null, 'As of'),
     h('dd', null, p.asOfDate),
   ];

@@ -28,9 +28,8 @@ export interface PlanetPlacement {
 }
 
 function describe(body: ConfirmedBody): string {
-  const parts = ['Confirmed exoplanet'];
+  const parts = [body.status === 'confirmed' ? 'Confirmed exoplanet' : body.status === 'candidate' ? 'Candidate planet (not confirmed)' : 'Contested planet (kept in this edition)'];
   if (body.discoveryYear) parts.push(`discovered ${body.discoveryYear}`);
-  if (body.controversial) parts.push('flagged controversial in archive');
   parts.push('artist’s impression');
   return parts.join(' · ');
 }

@@ -274,9 +274,10 @@ export function planetCard(body: ConfirmedBody, discovered: boolean): HTMLElemen
     h(
       'div',
       { class: 'row wrap' },
-      dataBadge('observed', 'Confirmed exoplanet'),
+      body.status === 'confirmed'
+        ? dataBadge('observed', 'Confirmed exoplanet')
+        : h('span', { class: 'badge badge-provisional', 'data-testid': 'planet-status' }, body.status === 'candidate' ? 'Candidate planet' : 'Contested planet'),
       body.verification === 'provisional' ? dataBadge('provisional') : null,
-      body.controversial ? h('span', { class: 'badge badge-provisional' }, 'Flagged controversial in archive') : null,
       discovered ? h('span', { class: 'badge badge-friendly' }, '✓ Discovered') : null,
     ),
     h(
@@ -288,9 +289,11 @@ export function planetCard(body: ConfirmedBody, discovered: boolean): HTMLElemen
       h(
         'dd',
         null,
-        body.verification === 'snapshot'
-          ? `Confirmed in the archive as of ${body.asOfDate}`
-          : 'Confirmed per NASA Exoplanet Archive (dated snapshot pending)',
+        body.status !== 'confirmed'
+          ? (body.statusNote ?? 'Not confirmed by the archives; kept in this edition of the game.')
+          : body.verification === 'snapshot'
+            ? `Confirmed in the NASA Exoplanet Archive as of ${body.asOfDate}`
+            : 'Confirmed per NASA Exoplanet Archive (dated snapshot pending)',
       ),
       h('dt', null, 'Host star'),
       h('dd', null, host ? `${host.name} (${host.spectralType})` : body.hostId),
@@ -301,7 +304,7 @@ export function planetCard(body: ConfirmedBody, discovered: boolean): HTMLElemen
       measured('Radius', body.radiusEarth, body.unknowns.includes('radius')),
       body.unknowns.flatMap((u) => [h('dt', null, u[0]!.toUpperCase() + u.slice(1)), h('dd', null, 'Unknown')]),
     ),
-    h('p', { class: 'row wrap' }, sourceLink({ label: 'NASA Exoplanet Archive', url: body.sourceUrl, recordId: body.archiveName, ...(body.verification === 'snapshot' ? { retrieved: body.asOfDate } : {}) })),
+    h('p', { class: 'row wrap' }, sourceLink({ label: body.sourceLabel ?? 'NASA Exoplanet Archive', url: body.sourceUrl, recordId: body.archiveName, ...(body.verification === 'snapshot' ? { retrieved: body.asOfDate } : {}) })),
     h('p', { class: 'muted small' }, dataBadge('estimated'), ' The globe you see in flight is an artist’s impression, not an image or a measurement.'),
   );
 }
