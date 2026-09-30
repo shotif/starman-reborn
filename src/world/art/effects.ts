@@ -6,7 +6,8 @@ import { metalMaterial, standardSet } from './materials.ts';
 import { NOISE_GLSL, OUTPUT_GLSL, getNoiseVolume } from './noise.ts';
 import { approach, byQuality, disposeObject, markShared, seededRandom } from './util.ts';
 
-export type ProjectileKind = 'player-pulse' | 'player-pulse-mk2' | 'enemy-pulse';
+/** Bolt looks: the player's by damage type (pulse, slug, plasma, ion), raiders' in red. */
+export type ProjectileKind = 'player-pulse' | 'player-pulse-mk2' | 'player-kinetic' | 'player-plasma' | 'player-ion' | 'enemy-pulse';
 
 export interface ProjectileView {
   position: THREE.Vector3;
@@ -118,6 +119,9 @@ void main() {
 const PROJECTILE_LOOK: Record<ProjectileKind, { color: [number, number, number]; length: number; width: number }> = {
   'player-pulse': { color: [0.25, 0.8, 1.45], length: 7, width: 0.5 },
   'player-pulse-mk2': { color: [0.95, 0.6, 1.7], length: 8.5, width: 0.62 },
+  'player-kinetic': { color: [1.5, 1.3, 0.8], length: 11, width: 0.32 },
+  'player-plasma': { color: [0.55, 1.6, 0.35], length: 5.5, width: 0.95 },
+  'player-ion': { color: [0.7, 0.45, 1.8], length: 6.5, width: 0.7 },
   'enemy-pulse': { color: [1.6, 0.36, 0.1], length: 6.5, width: 0.55 },
 };
 

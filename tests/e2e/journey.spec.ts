@@ -10,7 +10,7 @@ import { api, isTouch, openFresh, press, waitUntil, type PlayerInfo } from './he
 interface GameStateLite {
   credits: number;
   location: { systemId: string; dockedAt: string | null };
-  ship: { cargo: Record<string, number>; shieldGenerator: string; hull: number };
+  ship: { cargo: Record<string, number>; fittings: Record<string, string>; hull: number };
   jobs: Record<string, { status: string; objectiveIndex: number }>;
   pirateOutcome: string;
   reputation: Record<string, number>;
@@ -212,10 +212,11 @@ test('the prototype journey: Earth → Mars → Alpha Centauri → free explorat
   await press(page, 'sell-confirm');
   expect((await state(page)).ship.cargo.medical).toBe(6);
   await press(page, 'room-outfitter');
-  await press(page, 'buy-shield-mk2');
+  await press(page, 'slot-shield');
+  await press(page, 'buy-gear.shield-balanced.2.halden');
   await press(page, 'shop-confirm');
   s = await state(page);
-  expect(s.ship.shieldGenerator).toBe('shield-mk2');
+  expect(s.ship.fittings.shield).toBe('gear.shield-balanced.2.halden');
   await api(page, 'flush');
 
   // 7. Star map: Alpha Centauri with its real distance, a route and a fictional fee; jump.

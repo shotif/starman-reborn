@@ -168,6 +168,42 @@ const GLYPHS = {
     { d: 'M12 11.5h8v4h-2v-2h-4v2h-2z' },
     { d: 'M20.8 3.4a5 5 0 0 0-6 6.4L8.3 16.3l2.9 2.9 6.5-6.5a5 5 0 0 0 6.4-6l-2.9 2.9-2.4-.5-.5-2.4z', kind: 'dark' },
   ],
+  /** Cruise engine: body and nozzle with exhaust. */
+  engine: [
+    { d: 'M3 11h11v10H3z' },
+    { d: 'M14 12.5l8-4.5v16l-8-4.5z' },
+    { d: 'M23.5 11.5l5.5 4.5-5.5 4.5z' },
+    { d: 'M5.5 13.5h6v5h-6z', kind: 'dark' },
+  ],
+  /** Thruster: a flame. */
+  thruster: [
+    { d: 'M16 2.5c5 6 9 9.5 9 15.5a9 9 0 0 1-18 0c0-4 2-6.5 4-9 .5 3 1.8 4.6 3.6 5.4C14 10.5 14.5 6.5 16 2.5z' },
+    { d: 'M16 16c2 2.2 3.5 3.6 3.5 6a3.5 3.5 0 0 1-7 0c0-2 1.2-3.4 3.5-6z', kind: 'dark' },
+  ],
+  /** Power plant: a lightning bolt. */
+  power: [{ d: 'M18.5 2.5L6.5 18h7.5l-2.5 11.5L25.5 13H18z' }],
+  /** Armour: stacked plates with rivets. */
+  armor: [
+    { d: 'M4 5h24v6.5H4zM4 12.8h24v6.5H4zM4 20.6h24v6.5H4z' },
+    { d: 'M6 7.3h2v2H6zM24 7.3h2v2h-2zM6 15.1h2v2H6zM24 15.1h2v2h-2zM6 22.9h2v2H6zM24 22.9h2v2h-2z', kind: 'dark' },
+  ],
+  /** Cargo pod: a ribbed container. */
+  cargopod: [
+    { d: 'M5 9h22a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-8a3 3 0 0 1 3-3z' },
+    { d: 'M9 9h2v14H9zM15 9h2v14h-2zM21 9h2v14h-2z', kind: 'dark' },
+  ],
+  /** Scanner: a dish sending signal arcs. */
+  scanner: [
+    { d: 'M3 14c4 9 13 13 22 11L9 5C5 7 3 10 3 14z' },
+    { d: 'M20 3a9 9 0 0 1 9 9h-2.5A6.5 6.5 0 0 0 20 5.5z' },
+    { d: 'M20 8a4 4 0 0 1 4 4h-2.4A1.6 1.6 0 0 0 20 10.4z' },
+    { d: 'M11.5 21.5l3.5 7.5H8z', kind: 'dark' },
+  ],
+  /** Tractor beam: a magnet. */
+  tractor: [
+    { d: 'M6 4h7v12a3 3 0 0 0 6 0V4h7v12a10 10 0 0 1-20 0z' },
+    { d: 'M6 4h7v4H6zM19 4h7v4h-7z', kind: 'dark' },
+  ],
   /** Information. */
   info: [
     { d: `${ellipse(16, 16, 13, 13)}M14.3 13.5h3.4v10h-3.4zM16 7.2a2.1 2.1 0 1 1 0 4.2a2.1 2.1 0 1 1 0-4.2z`, evenodd: true },

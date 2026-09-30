@@ -1,7 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import { createNewGame } from '../../src/app/state.ts';
 import { addCargo, CARGO_CAPACITY, cargoFree, cargoUsed, itemsThatFit, removeCargo } from '../../src/economy/cargo.ts';
-import { buyShopItem, repairHull, repairQuote, SHIELDS } from '../../src/economy/equipment.ts';
+import { findGear, shipModel } from '../../src/content/catalog.ts';
+import {
+  ammoOffers,
+  buyAmmo,
+  buyGear,
+  buyRepairKit,
+  buyShip,
+  gearOffer,
+  gearOffers,
+  repairHull,
+  repairQuote,
+  sellGear,
+  sellQuote,
+  shipOffers,
+  tradeInValue,
+} from '../../src/economy/equipment.ts';
+import { cargoCapacity, hullMax, performanceOf, shieldCapacity } from '../../src/economy/loadout.ts';
 import { adjustReputation, standingTier } from '../../src/economy/factions.ts';
 import { baseQuote, quote } from '../../src/economy/markets.ts';
 import {
@@ -126,16 +142,94 @@ describe('route returns use only known market data', () => {
 });
 
 describe('equipment, repairs and reputation effects', () => {
-  it('installs the shield upgrade with a real capacity change', () => {
+  it('replaces a shield, crediting the old one at 70%', () => {
     const s = createNewGame(1);
-    const r = buyShopItem(s, 'mars-depot', 'shield-mk2');
-    expect(r.ok).toBe(true);
-    expect(s.ship.shieldGenerator).toBe('shield-mk2');
-    expect(s.ship.shield).toBe(SHIELDS['shield-mk2'].capacity);
-    expect(SHIELDS['shield-mk2'].capacity).toBeGreaterThan(SHIELDS['shield-mk1'].capacity);
-    expect(s.credits).toBe(800 - SHIELDS['shield-mk2'].price);
-    expect(buyShopItem(s, 'mars-depot', 'shield-mk2').ok).toBe(false);
-    expect(buyShopItem(s, 'earth-port', 'pulse-mk2').ok).toBe(false); // not sold at Earth
+    const id = 'gear.shield-balanced.2.halden';
+    const offer = gearOffer(s, 'mars-depot', id, 'shield')!;
+    expect(offer.tradeIn).toBe(Math.floor(findGear('gear.shield-balanced.1.halden')!.price * 0.7));
+    expect(buyGear(s, 'mars-depot', id, 'shield').ok).toBe(true);
+    expect(s.ship.fittings.shield).toBe(id);
+    expect(s.ship.shield).toBe(shieldCapacity(s.ship));
+    expect(shieldCapacity(s.ship)).toBeGreaterThan(60);
+    expect(s.credits).toBe(800 - offer.net);
+    expect(buyGear(s, 'mars-depot', id, 'shield')).toMatchObject({ ok: false, message: 'Fitted' });
+    expect(buyGear(s, 'earth-port', 'gear.mass-driver.1.ares', 'gun-1').ok).toBe(false); // Ares gear is not sold at Earth
+    expect(buyGear(s, 'mars-depot', 'gear.mass-driver.1.ares', 'shield').ok).toBe(false); // wrong mount
+  });
+
+  it('holds back high classes by mount size and standing', () => {
+    const s = createNewGame(1);
+    s.credits = 50_000;
+    // The courier Mk I's guns take class 3 at most; class 4 and 5 also need friendly standing.
+    const offers = gearOffers(s, 'mars-depot', 'gun-1');
+    expect(offers.find((o) => o.item.id === 'gear.mass-driver.3.ares')?.blocked).toBeNull();
+    expect(offers.find((o) => o.item.id === 'gear.mass-driver.4.ares')?.blocked).toMatch(/class 3/);
+    buyShip(s, 'mars-depot', 'ship.heavy-fighter.2.ares');
+    expect(gearOffers(s, 'mars-depot', 'gun-1').find((o) => o.item.id === 'gear.mass-driver.4.ares')?.blocked).toMatch(/standing/);
+    adjustReputation(s.reputation, 'sta', 12);
+    expect(gearOffers(s, 'mars-depot', 'gun-1').find((o) => o.item.id === 'gear.mass-driver.4.ares')?.blocked).toBeNull();
+  });
+
+  it('sells guns and utility items, never the core systems', () => {
+    const s = createNewGame(1);
+    expect(sellQuote(s, 'earth-port', 'engine')?.blocked).toMatch(/every ship needs one/);
+    const credits = s.credits;
+    const quote = sellQuote(s, 'earth-port', 'gun-2')!;
+    expect(sellGear(s, 'earth-port', 'gun-2').ok).toBe(true);
+    expect(s.ship.fittings['gun-2']).toBeUndefined();
+    expect(s.credits).toBe(credits + quote.value);
+    expect(performanceOf(s.ship).guns).toHaveLength(1);
+  });
+
+  it('armour arrives intact and cargo pods grow the hold', () => {
+    const s = createNewGame(1);
+    s.credits = 5_000;
+    expect(buyGear(s, 'earth-port', 'gear.cargo-pod.1.halden', 'utility-1').ok).toBe(true);
+    expect(cargoCapacity(s.ship)).toBe(28);
+    expect(performanceOf(s.ship).flight.maxSpeed).toBeLessThan(110);
+    // Removing the pod is refused while the cargo would not fit.
+    s.ship.cargo = { medical: 25 };
+    expect(sellQuote(s, 'earth-port', 'utility-1')?.blocked).toMatch(/cargo/);
+    s.ship.cargo = {};
+    buyShip(s, 'mars-depot', 'ship.heavy-fighter.1.ares');
+    expect(s.ship.hull).toBe(hullMax(s.ship)); // stock armour plate included
+    expect(hullMax(s.ship)).toBeGreaterThan(shipModel('ship.heavy-fighter.1.ares').hull);
+  });
+
+  it('sells rounds for the fitted launcher and repair kits', () => {
+    const s = createNewGame(1);
+    const [seekers] = ammoOffers(s, 'earth-port');
+    expect(seekers).toMatchObject({ id: 'launcher-1', have: 4, max: 6, price: 35 });
+    expect(buyAmmo(s, 'earth-port', 'launcher-1', 5).ok).toBe(true);
+    expect(s.ship.ammo['launcher-1']).toBe(6);
+    expect(s.credits).toBe(800 - 2 * 35);
+    expect(buyAmmo(s, 'earth-port', 'launcher-1').ok).toBe(false);
+    expect(ammoOffers(s, 'barnard-relay')).toEqual([]); // no equipment dealer
+    expect(buyRepairKit(s, 'barnard-relay').ok).toBe(true);
+    expect(s.ship.repairKits).toBe(2);
+  });
+
+  it('trades in the ship and its fittings at 70%, so a round trip always costs money', () => {
+    const s = createNewGame(1);
+    s.credits = 20_000;
+    s.ship.cargo = { medical: 10 };
+    const tradeIn = tradeInValue(s);
+    const offer = shipOffers(s, 'earth-port').find((o) => o.model.id === 'ship.freighter.1.halden')!;
+    expect(offer.net).toBe(offer.model.price - tradeIn);
+    expect(buyShip(s, 'earth-port', 'ship.freighter.1.halden').ok).toBe(true);
+    expect(s.ship.model).toBe('ship.freighter.1.halden');
+    expect(s.ship.cargo).toEqual({ medical: 10 });
+    expect(cargoCapacity(s.ship)).toBeGreaterThan(50);
+    expect(s.ship.ammo['launcher-1']).toBe(6); // full racks
+    expect(buyShip(s, 'earth-port', 'ship.courier.1.halden').ok).toBe(true);
+    expect(s.credits).toBeLessThan(20_000);
+    // Damage comes off the trade-in at the repair rate.
+    const intact = tradeInValue(s);
+    s.ship.hull -= 30;
+    expect(tradeInValue(s)).toBe(intact - 60);
+    // A small hold cannot take a big cargo.
+    s.ship.cargo = { medical: 21 };
+    expect(shipOffers(s, 'earth-port').find((o) => o.model.id === 'ship.light-fighter.1.halden')?.blocked).toMatch(/Sell cargo/);
   });
 
   it('repairs only what the player can afford', () => {

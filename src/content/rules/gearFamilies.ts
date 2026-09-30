@@ -220,7 +220,8 @@ export const GEAR_FAMILIES: readonly GearFamilyRule[] = [
     slot: 'utility',
     noun: 'tractor beam',
     kind: 'tractor',
-    base: { amount: 300, penalty: 0 },
+    // Every ship pulls in loose cargo from 350 m on its own; a beam reaches further.
+    base: { amount: 500, penalty: 0 },
     growth: 1.2,
     minTierStep: 0.1,
     basePrice: 90,

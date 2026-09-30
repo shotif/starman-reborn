@@ -1,8 +1,9 @@
 import { applyCredits, type CommodityId, type GameState } from '../app/state.ts';
 import { getLocation } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
-import { addCargo, CARGO_CAPACITY, cargoCount, itemsThatFit, removeCargo } from './cargo.ts';
+import { addCargo, cargoCount, itemsThatFit, removeCargo } from './cargo.ts';
 import { COMMODITIES, COMMODITY_IDS } from './commodities.ts';
+import { cargoCapacity } from './loadout.ts';
 import { allQuotes, quote } from './markets.ts';
 
 export type TradeError =
@@ -24,7 +25,7 @@ function fail(error: TradeError, message: string): TradeResult {
 export function maxBuyable(state: GameState, locationId: string, commodity: CommodityId): number {
   const price = quote(locationId, commodity, state.reputation).buy;
   if (price === null) return 0;
-  return Math.max(0, Math.min(Math.floor(state.credits / price), itemsThatFit(state.ship.cargo, commodity, CARGO_CAPACITY)));
+  return Math.max(0, Math.min(Math.floor(state.credits / price), itemsThatFit(state.ship.cargo, commodity, cargoCapacity(state.ship))));
 }
 
 export function buyCommodity(state: GameState, locationId: string, commodity: CommodityId, qty: number): TradeResult {
@@ -33,10 +34,11 @@ export function buyCommodity(state: GameState, locationId: string, commodity: Co
   if (price === null) return fail('not-traded', `${COMMODITIES[commodity].name} is not sold here.`);
   const total = price * qty;
   if (total > state.credits) return fail('insufficient-credits', 'Not enough credits.');
-  if (qty > itemsThatFit(state.ship.cargo, commodity, CARGO_CAPACITY)) {
+  const capacity = cargoCapacity(state.ship);
+  if (qty > itemsThatFit(state.ship.cargo, commodity, capacity)) {
     return fail('insufficient-space', 'Not enough cargo space.');
   }
-  addCargo(state.ship.cargo, commodity, qty, CARGO_CAPACITY);
+  addCargo(state.ship.cargo, commodity, qty, capacity);
   applyCredits(state, -total, 'buy', `Bought ${qty} ${COMMODITIES[commodity].name}`);
   return { ok: true, qty, unitPrice: price, total };
 }

@@ -205,9 +205,10 @@ with a stock loadout of tier-matched equipment, preferring the maker's own famil
 
 ### Buying ships
 
-The shipyard credits your current ship and its fittings at 70% of their value. The new ship
-arrives with its stock loadout; cargo moves across if it fits (otherwise the sale is refused until
-you sell the excess).
+The shipyard credits your current ship and its fittings (and any rounds in its racks) at 70% of
+their value, less the cost of outstanding hull repairs. The new ship arrives with its stock
+loadout and full racks; cargo and repair kits move across if they fit (otherwise the sale is
+refused until you sell the excess).
 
 ### Adding content
 

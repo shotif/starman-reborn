@@ -1,12 +1,18 @@
+import { findGear, findShip } from '../../content/catalog.ts';
+import { STARTER_SHIP_ID } from '../../content/rules/index.ts';
 import { ALL_LOCATIONS } from '../../data/systems.ts';
 import { SYSTEM_IDS, type SystemId } from '../../data/types.ts';
+import { clampShip, newShipState } from '../../economy/loadout.ts';
 import { createNewGame, SAVE_VERSION, type CommodityId, type GameState } from '../state.ts';
 
 /**
  * Save format history:
  * - v1 (flight-and-dock milestone): flat record { version: 1, system, dockedAt, money, hull, shield,
  *   cargo, visited, seed, savedAt }. No jobs, reputation or market memory.
- * - v2 (current): see GameState in src/app/state.ts.
+ * - v2 (economy milestone): GameState with a fixed courier: ship { hull, shield, shieldGenerator
+ *   ('shield-mk1' | 'shield-mk2'), gun ('pulse-mk1' | 'pulse-mk2'), missiles, repairKits, cargo }.
+ * - v3 (current): ships and equipment from the catalogue (src/content): ship { model, fittings,
+ *   hull, shield, ammo, repairKits, cargo }. See GameState in src/app/state.ts.
  */
 export interface SaveV1 {
   version: 1;
@@ -50,6 +56,38 @@ function migrateV1(old: SaveV1): GameState {
   return state;
 }
 
+/** The v2 ship record. */
+export interface ShipV2 {
+  hull: number;
+  shield: number;
+  shieldGenerator: 'shield-mk1' | 'shield-mk2';
+  gun: 'pulse-mk1' | 'pulse-mk2';
+  missiles: number;
+  repairKits: number;
+  cargo: GameState['ship']['cargo'];
+}
+
+/**
+ * v2 → v3: the fixed courier becomes the Halden courier Mk I from the catalogue. Upgrades map to
+ * the catalogue items closest in strength: the Mk II pulse cannon to two class 2 Kestrels, the
+ * Mk II shield to a class 3 Aegis. Missiles become seekers in the launcher.
+ */
+function migrateV2(old: Omit<GameState, 'version' | 'ship'> & { version: 2; ship: ShipV2 }): GameState {
+  const v2 = old.ship;
+  const ship = newShipState(STARTER_SHIP_ID);
+  if (v2.gun === 'pulse-mk2') {
+    for (const slot of Object.keys(ship.fittings)) if (slot.startsWith('gun-')) ship.fittings[slot] = 'gear.pulse.2.halden';
+  }
+  if (v2.shieldGenerator === 'shield-mk2') ship.fittings.shield = 'gear.shield-balanced.3.halden';
+  ship.hull = Number.isFinite(v2.hull) ? v2.hull : ship.hull;
+  ship.shield = Number.isFinite(v2.shield) ? v2.shield : 0;
+  ship.ammo = { 'launcher-1': Number.isFinite(v2.missiles) ? Math.floor(v2.missiles) : 0 };
+  ship.repairKits = Number.isFinite(v2.repairKits) ? Math.max(0, Math.floor(v2.repairKits)) : 0;
+  ship.cargo = v2.cargo ?? {};
+  clampShip(ship);
+  return { ...old, version: SAVE_VERSION, ship };
+}
+
 /** Upgrades any known save version to the current GameState. Throws SaveFormatError when unusable. */
 export function migrateSave(raw: unknown): GameState {
   if (!isRecord(raw) || typeof raw.version !== 'number') throw new SaveFormatError('Save data is not recognisable.');
@@ -58,6 +96,10 @@ export function migrateSave(raw: unknown): GameState {
     throw new SaveFormatError(`Save was made by a newer version (format ${raw.version}).`);
   }
   if (raw.version === 1) data = migrateV1(raw as unknown as SaveV1);
+  else if (raw.version === 2) {
+    if (!isRecord(raw.ship)) throw new SaveFormatError('Save data is damaged: ship');
+    data = migrateV2(raw as unknown as Parameters<typeof migrateV2>[0]);
+  }
   const state = data as GameState;
   assertValidState(state);
   return state;
@@ -75,6 +117,18 @@ export function assertValidState(s: GameState): void {
   if (!Number.isFinite(s.credits) || s.credits < 0) fail('credits');
   if (!isRecord(s.ship) || !Number.isFinite(s.ship.hull) || !Number.isFinite(s.ship.shield)) fail('ship');
   if (!isRecord(s.ship.cargo)) fail('cargo');
+  const model = typeof s.ship.model === 'string' ? findShip(s.ship.model) : undefined;
+  if (!model) fail('unknown ship model');
+  if (!isRecord(s.ship.fittings) || !isRecord(s.ship.ammo)) fail('fittings');
+  for (const [slotId, gearId] of Object.entries(s.ship.fittings)) {
+    const slot = model!.slots.find((sl) => sl.id === slotId);
+    const item = typeof gearId === 'string' ? findGear(gearId) : undefined;
+    if (!slot || !item || item.slot !== slot.type || item.tier > slot.maxClass) fail(`fitting ${slotId}`);
+  }
+  for (const [slotId, rounds] of Object.entries(s.ship.ammo)) {
+    if (!model!.slots.some((sl) => sl.id === slotId && sl.type === 'launcher') || !Number.isInteger(rounds) || (rounds as number) < 0) fail(`ammo ${slotId}`);
+  }
+  if (!Number.isInteger(s.ship.repairKits) || s.ship.repairKits < 0) fail('repair kits');
   for (const [id, qty] of Object.entries(s.ship.cargo)) {
     if (!COMMODITY_IDS.includes(id as CommodityId) || !Number.isInteger(qty) || (qty as number) < 0) fail('cargo entry');
   }

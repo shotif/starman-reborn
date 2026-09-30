@@ -1,7 +1,7 @@
 import type { Cargo, CommodityId } from '../app/state.ts';
 import { COMMODITIES, COMMODITY_IDS } from './commodities.ts';
 
-/** Cargo hold size of the player's courier, in units. */
+/** Hold of the starting courier, in units. A ship's real hold comes from its model and cargo pods (cargoCapacity in loadout.ts). */
 export const CARGO_CAPACITY = 20;
 
 export function cargoUsed(cargo: Cargo): number {

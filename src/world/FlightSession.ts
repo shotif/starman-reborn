@@ -11,12 +11,15 @@ import { PirateBrain } from '../combat/PirateAI.ts';
 import { Gun, ProjectileSystem, segmentHitsSphere, withinArc } from '../combat/weapons.ts';
 import { EXOPLANETS } from '../data/systems.ts';
 import type { FactionId } from '../data/types.ts';
+import type { DamageType } from '../content/types.ts';
+import type { ShipPerformance } from '../content/loadout.ts';
 import { FACTIONS } from '../economy/factions.ts';
-import { GUNS, HULL_MAX, MISSILE, REPAIR_KIT, SHIELDS } from '../economy/equipment.ts';
+import { REPAIR_KIT } from '../economy/equipment.ts';
+import { activeLauncher, fittedGuns, gunSummary, performanceOf, roundsLabel } from '../economy/loadout.ts';
 import { aimErrors, flyTo, steerToward } from '../flight/autopilot.ts';
 import { ChaseCamera } from '../flight/ChaseCamera.ts';
 import type { FlightAction, FlightInput } from '../flight/input/types.ts';
-import { lookRotation, neutralControls, PLAYER_SHIP, RAIDER_SHIP, ShipBody, stepBounded, type ShipControls } from '../flight/ShipBody.ts';
+import { lookRotation, neutralControls, RAIDER_SHIP, ShipBody, stepBounded, type ShipControls } from '../flight/ShipBody.ts';
 import { emptyHudModel, type HudContextAction, type HudMarker, type HudModel } from '../ui/hud/hudModel.ts';
 import type { AsteroidHit } from './art/asteroids.ts';
 import {
@@ -26,6 +29,7 @@ import {
   createMissileArt,
   createProjectileRenderer,
   createSpeedStreaks,
+  type ProjectileKind,
   type ProjectileRenderer,
   type SpeedStreaksArt,
   type TransientEffect,
@@ -120,6 +124,14 @@ const CONVERGENCE = 700;
 const EXOPLANET_IDS = new Set(EXOPLANETS.planets.map((p) => p.id));
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
 
+/** Bolt look for a player gun: pulse cannons brighten from class 3 up. */
+function boltKind(type: DamageType, tier: number): ProjectileKind {
+  if (type === 'kinetic') return 'player-kinetic';
+  if (type === 'plasma') return 'player-plasma';
+  if (type === 'ion') return 'player-ion';
+  return tier >= 3 ? 'player-pulse-mk2' : 'player-pulse';
+}
+
 function easeInOut(t: number): number {
   return t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
 }
@@ -144,7 +156,14 @@ export class FlightSession {
   private readonly callbacks: FlightCallbacks;
   private readonly audio: AudioEngine;
   private readonly rand: () => number;
-  private readonly gun: Gun;
+  /** The fitted ship: flight, hold, scanner and tractor stats. */
+  private readonly perf: ShipPerformance;
+  /** One gun per fitted gun mount, each firing from its own muzzle. */
+  private readonly guns: Gun[] = [];
+  private readonly gunMuzzles: THREE.Vector3[][] = [];
+  /** Bolt speed used for lead indicators (the first gun's), and the longest gun range. */
+  private readonly leadSpeed: number;
+  private readonly gunRange: number;
   private readonly projectiles = new ProjectileSystem(320);
   private readonly projectileRenderer: ProjectileRenderer;
   private readonly streaks: SpeedStreaksArt;
@@ -199,28 +218,40 @@ export class FlightSession {
     this.chase = new ChaseCamera(opts.camera);
     this.applyCameraSettings();
 
-    this.player = new ShipBody(PLAYER_SHIP);
+    this.perf = performanceOf(opts.state.ship);
+    this.player = new ShipBody(this.perf.flight);
     this.playerArt = createPlayerShip(opts.ctx);
     this.system.scene.add(this.playerArt.object);
-    const shield = SHIELDS[opts.state.ship.shieldGenerator];
+    const shield = this.perf.shield;
     this.playerDurability = {
-      hull: opts.state.ship.hull,
-      hullMax: HULL_MAX,
-      shield: Math.min(opts.state.ship.shield, shield.capacity),
-      shieldMax: shield.capacity,
-      shieldRegen: shield.regenPerSecond,
-      shieldDelay: shield.regenDelay,
+      hull: Math.min(opts.state.ship.hull, this.perf.hullMax),
+      hullMax: this.perf.hullMax,
+      shield: Math.min(opts.state.ship.shield, shield?.capacity ?? 0),
+      shieldMax: shield?.capacity ?? 0,
+      shieldRegen: shield?.regenPerSecond ?? 0,
+      shieldDelay: shield?.regenDelay ?? 3,
+      shieldType: shield?.shieldType ?? 'balanced',
       sinceHit: 99,
     };
-    const gunSpec = GUNS[opts.state.ship.gun];
-    this.gun = new Gun({
-      damage: gunSpec.damage,
-      shotsPerSecond: gunSpec.shotsPerSecond,
-      projectileSpeed: gunSpec.projectileSpeed,
-      range: gunSpec.range,
-      energyPerShot: gunSpec.energyPerShot,
-      kind: opts.state.ship.gun === 'pulse-mk2' ? 'player-pulse-mk2' : 'player-pulse',
+    const fitted = fittedGuns(opts.state.ship);
+    const muzzles = this.playerArt.muzzles;
+    fitted.forEach((g, i) => {
+      const gun = new Gun({
+        damage: g.stats.damage,
+        shotsPerSecond: g.stats.shotsPerSecond,
+        projectileSpeed: g.stats.projectileSpeed,
+        range: g.stats.range,
+        energyPerShot: g.stats.energyPerShot,
+        kind: boltKind(g.stats.damageType, g.item.tier),
+        damageType: g.stats.damageType,
+      });
+      // Spread the first shots so the mounts fire in turn.
+      gun.stagger(i / (fitted.length * g.stats.shotsPerSecond));
+      this.guns.push(gun);
+      this.gunMuzzles.push(muzzles.length ? [muzzles[i % muzzles.length]!] : []);
     });
+    this.leadSpeed = fitted[0]?.stats.projectileSpeed ?? 800;
+    this.gunRange = fitted.reduce((max, g) => Math.max(max, g.stats.range), 0);
     this.projectileRenderer = createProjectileRenderer(320, opts.ctx);
     this.system.scene.add(this.projectileRenderer.object);
     this.streaks = createSpeedStreaks(opts.ctx);
@@ -676,12 +707,13 @@ export class FlightSession {
   }
 
   private scanRangeFor(t: Target): number {
+    const scanner = this.perf.scanRange;
     if (t.kind === 'planet') {
       const def = this.system.planets.find((p) => p.def.id === t.bodyId)?.def;
-      return def?.scanRange ?? DEFAULT_SCAN_RANGE;
+      return (def?.scanRange ?? DEFAULT_SCAN_RANGE) * scanner;
     }
-    if (t.kind === 'star') return Math.max(20_000, t.radius * 6);
-    return DEFAULT_SCAN_RANGE;
+    if (t.kind === 'star') return Math.max(20_000, t.radius * 6) * scanner;
+    return DEFAULT_SCAN_RANGE * scanner;
   }
 
   private manualScan(): void {
@@ -705,32 +737,42 @@ export class FlightSession {
 
   private fireMissile(): void {
     const t = this.selectedTarget;
-    if (this.state.ship.missiles <= 0) {
-      this.callbacks.onMessage('No missiles left.', 'bad');
+    const launcher = activeLauncher(this.state.ship);
+    if (!launcher) {
+      this.callbacks.onMessage('No launcher fitted.', 'bad');
       return;
     }
-    if (!t || !t.hostile || this.hud.missileLock !== 'locked') {
-      this.callbacks.onMessage('No missile lock: target a hostile ahead of you.', 'bad');
+    const rounds = roundsLabel(launcher.stats.kind).toLowerCase();
+    if (launcher.ammo <= 0) {
+      this.callbacks.onMessage(`No ${rounds} left.`, 'bad');
+      return;
+    }
+    const guided = launcher.stats.turnRate > 0;
+    const npc = t ? this.npcs.find((n) => n.target.id === t.id) : undefined;
+    if (guided && (!t || !t.hostile || !npc || this.missileLockTime < launcher.stats.lockTime)) {
+      this.callbacks.onMessage(`No lock for ${rounds}: target a hostile ahead of you.`, 'bad');
       this.sfx('ui-error');
       return;
     }
-    const npc = this.npcs.find((n) => n.target.id === t.id);
-    if (!npc) return;
-    this.state.ship.missiles -= 1;
+    this.state.ship.ammo[launcher.slot.id] = launcher.ammo - 1;
     const art = createMissileArt(this.ctx);
     this.system.scene.add(art.object);
     const dir = this.player.forward(new THREE.Vector3());
     const pos = this.player.position.clone().addScaledVector(this.player.up(this.tmp), -1.5).addScaledVector(dir, 6);
+    // Rockets fly straight at the aim point; guided rounds leave along the nose and steer.
+    if (!guided) dir.copy(this.aimPoint).sub(pos).normalize();
     this.missiles.push({
       art,
       position: pos,
       direction: dir,
       speed: Math.max(60, this.player.forwardSpeed),
-      target: this.missileTargetFor(npc),
+      target: npc && t?.hostile ? this.missileTargetFor(npc) : null,
       ownerId: PLAYER_ID,
-      damage: MISSILE.damage,
-      life: MISSILE.lifetime,
+      damage: launcher.stats.damage,
+      life: launcher.stats.lifetime,
       alive: true,
+      maxSpeed: launcher.stats.speed,
+      turnRate: launcher.stats.turnRate,
     });
     this.sfx('missile-launch');
     this.player.requestCruise(false);
@@ -777,7 +819,7 @@ export class FlightSession {
       this.updateAim(dt, input);
       if (input.fire && !this.busy) this.firePlayerGuns();
     }
-    this.gun.tick(dt);
+    for (const gun of this.guns) gun.tick(dt);
     this.updateProjectiles(dt);
     this.updateMissiles(dt);
     this.updateLoot(dt);
@@ -1061,7 +1103,7 @@ export class FlightSession {
     const assist = this.assistStrength(this.settings.aimAssist);
     const t = this.selectedTarget;
     if (assist > 0 && t && (t.hostile || t.kind === 'drone') && t.velocity) {
-      leadPoint(this.player.position, this.player.velocity, t.position, t.velocity, this.gun.profile.projectileSpeed, this.tmp);
+      leadPoint(this.player.position, this.player.velocity, t.position, t.velocity, this.leadSpeed, this.tmp);
       this.tmp.project(this.camera);
       if (this.tmp.z < 1) {
         const dx = this.tmp.x - this.aim.x;
@@ -1111,9 +1153,13 @@ export class FlightSession {
   }
 
   private firePlayerGuns(): void {
-    const res = this.gun.fire(this.player, this.playerArt.muzzles, this.aimPoint, this.projectiles, PLAYER_ID);
-    if (res.fired) {
-      this.sfx(this.state.ship.gun === 'pulse-mk2' ? 'laser-mk2' : 'laser', 0.55);
+    let fired: DamageType | null = null;
+    for (let i = 0; i < this.guns.length; i++) {
+      const gun = this.guns[i]!;
+      if (gun.fire(this.player, this.gunMuzzles[i]!, this.aimPoint, this.projectiles, PLAYER_ID).fired) fired ??= gun.profile.damageType;
+    }
+    if (fired) {
+      this.sfx(fired === 'kinetic' || fired === 'plasma' ? 'laser-mk2' : 'laser', 0.55);
       if (this.player.cruise !== 'off') {
         this.player.requestCruise(false);
         this.callbacks.onMessage('Cruise disengaged: weapons fired', 'info');
@@ -1130,7 +1176,14 @@ export class FlightSession {
     }
     const before = this.missileLockTime;
     this.missileLockTime = lockable ? this.missileLockTime + dt : 0;
-    if (before < 0.8 && this.missileLockTime >= 0.8) this.sfx('missile-lock', 0.6);
+    const need = this.lockTimeNeeded();
+    if (need > 0 && before < need && this.missileLockTime >= need) this.sfx('missile-lock', 0.6);
+  }
+
+  /** Seconds on target the active launcher needs (0 = unguided or none). */
+  private lockTimeNeeded(): number {
+    const l = activeLauncher(this.state.ship);
+    return l && l.stats.turnRate > 0 ? l.stats.lockTime : 0;
   }
 
   // ---------------------------------------------------------------- projectiles, missiles, loot
@@ -1141,7 +1194,7 @@ export class FlightSession {
         for (const n of this.npcs) {
           if (n.durability.hull <= 0) continue;
           if (segmentHitsSphere(from, to, n.body.position, n.art.radius)) {
-            this.damageNpc(n, p.damage, to);
+            this.damageNpc(n, p.damage, to, p.damageType);
             return true;
           }
         }
@@ -1152,7 +1205,7 @@ export class FlightSession {
           }
         }
       } else if (this.alive && segmentHitsSphere(from, to, this.player.position, this.playerArt.radius)) {
-        this.damagePlayer(p.damage, to);
+        this.damagePlayer(p.damage, to, p.damageType);
         return true;
       }
       for (const d of this.system.docks) {
@@ -1166,12 +1219,15 @@ export class FlightSession {
     for (let i = this.missiles.length - 1; i >= 0; i--) {
       const m = this.missiles[i]!;
       if (m.target) m.target.alive = this.npcs.some((n) => n.id === m.target!.id && n.durability.hull > 0);
-      const result = updateMissile(m, dt, MISSILE.speed, MISSILE.turnRate);
-      if (!result) continue;
-      if (result === 'hit' && m.target) {
-        const npc = this.npcs.find((n) => n.id === m.target!.id);
-        if (npc) this.damageNpc(npc, m.damage, m.position);
+      let result = updateMissile(m, dt, m.maxSpeed, m.turnRate);
+      // Unguided rounds hit whatever they fly into.
+      let struck = m.target ? this.npcs.find((n) => n.id === m.target!.id) : undefined;
+      if (!result && !m.target) {
+        struck = this.npcs.find((n) => n.durability.hull > 0 && n.body.position.distanceTo(m.position) < n.art.radius + 5);
+        if (struck) result = 'hit';
       }
+      if (!result) continue;
+      if (result === 'hit' && struck) this.damageNpc(struck, m.damage, m.position);
       this.spawnEffect(createExplosion(m.position.clone(), result === 'hit' ? 5 : 3, this.ctx));
       this.sfx('explosion-small', 0.6);
       this.system.scene.remove(m.art.object);
@@ -1186,9 +1242,10 @@ export class FlightSession {
       l.life -= dt;
       const toPlayer = this.tmp.copy(this.player.position).sub(l.position);
       const d = toPlayer.length();
-      if (this.alive && d < 350) {
-        // Tractor beam pulls nearby loot in.
-        l.velocity.lerp(toPlayer.normalize().multiplyScalar(Math.min(160, 40 + (350 - d))), 1 - Math.exp(-3 * dt));
+      const reach = Math.max(350, this.perf.tractorRange);
+      if (this.alive && d < reach) {
+        // Tractor beam pulls nearby loot in (fitted beams reach further).
+        l.velocity.lerp(toPlayer.normalize().multiplyScalar(Math.min(160, 40 + (reach - d))), 1 - Math.exp(-3 * dt));
       } else {
         l.velocity.multiplyScalar(Math.exp(-0.3 * dt));
       }
@@ -1246,9 +1303,9 @@ export class FlightSession {
 
   // ---------------------------------------------------------------- damage
 
-  private damagePlayer(amount: number, at: THREE.Vector3): void {
+  private damagePlayer(amount: number, at: THREE.Vector3, type?: DamageType): void {
     if (!this.alive) return;
-    const r = applyDamage(this.playerDurability, amount);
+    const r = applyDamage(this.playerDurability, amount, type);
     const shieldHit = r.absorbedByShield > 0;
     this.playerArt.flashShield(shieldHit ? 0.8 : 0.2);
     this.spawnEffect(createImpactSpark(at.clone(), shieldHit ? '#7fd8ff' : '#ffb070', this.ctx));
@@ -1273,8 +1330,8 @@ export class FlightSession {
     this.deathTimer = 0;
   }
 
-  private damageNpc(n: NpcShip, amount: number, at: THREE.Vector3): void {
-    const r = applyDamage(n.durability, amount);
+  private damageNpc(n: NpcShip, amount: number, at: THREE.Vector3, type?: DamageType): void {
+    const r = applyDamage(n.durability, amount, type);
     const shieldHit = r.absorbedByShield > 0;
     n.art.flashShield(shieldHit ? 0.8 : 0.2);
     this.spawnEffect(createImpactSpark(at.clone(), shieldHit ? '#7fd8ff' : '#ffb070', this.ctx));
@@ -1425,8 +1482,9 @@ export class FlightSession {
       faction,
       body,
       art,
-      durability: { hull: hullMax, hullMax, shield: 60, shieldMax: 60, shieldRegen: 6, shieldDelay: 3, sinceHit: 99 },
-      gun: new Gun({ damage: 4, shotsPerSecond: 3.2, projectileSpeed: 760, range: 900, energyPerShot: 3, kind: 'enemy-pulse' }),
+      // Wake Salvage kit: a deflector shield and plasma guns.
+      durability: { hull: hullMax, hullMax, shield: 60, shieldMax: 60, shieldRegen: 6, shieldDelay: 3, shieldType: 'deflector', sinceHit: 99 },
+      gun: new Gun({ damage: 4, shotsPerSecond: 3.2, projectileSpeed: 760, range: 900, energyPerShot: 3, kind: 'enemy-pulse', damageType: 'plasma' }),
       brain: new PirateBrain(this.rand),
       controls: neutralControls(),
       target: {
@@ -1532,13 +1590,15 @@ export class FlightSession {
     hud.hull = d.hull / d.hullMax;
     hud.shieldValue = d.shield;
     hud.hullValue = d.hull;
-    hud.missiles = this.state.ship.missiles;
+    const launcher = activeLauncher(this.state.ship);
+    hud.missiles = launcher?.ammo ?? 0;
+    hud.launcher = launcher ? roundsLabel(launcher.stats.kind) : null;
     hud.repairKits = this.state.ship.repairKits;
     hud.inLane = this.autopilot.mode === 'lane' && this.autopilot.phase === 'travel';
     hud.encounterActive = this.activeEncounter !== null && !this.activeEncounter.bypassed;
     const ap = this.autopilot;
     hud.autopilotMode = ap.mode;
-    hud.weapon = GUNS[this.state.ship.gun].name;
+    hud.weapon = gunSummary(this.state.ship);
     hud.autopilot =
       ap.mode === 'goto'
         ? ap.label
@@ -1557,7 +1617,8 @@ export class FlightSession {
     hud.reticle.y = ((1 - this.aim.y) / 2) * h;
     hud.reticle.inArc = withinArc(p, this.aimPoint);
     hud.reticle.assisted = this.aimAssisted;
-    hud.missileLock = this.missileLockTime >= 0.8 ? 'locked' : this.missileLockTime > 0 ? 'locking' : 'none';
+    const need = this.lockTimeNeeded();
+    hud.missileLock = need <= 0 ? 'none' : this.missileLockTime >= need ? 'locked' : this.missileLockTime > 0 ? 'locking' : 'none';
 
     // Target panel.
     const sel = this.selectedTarget;
@@ -1565,7 +1626,7 @@ export class FlightSession {
       const npc = this.npcs.find((n) => n.target.id === sel.id);
       let lead: { x: number; y: number } | null = null;
       if (sel.velocity && (sel.hostile || sel.kind === 'drone')) {
-        leadPoint(p.position, p.velocity, sel.position, sel.velocity, this.gun.profile.projectileSpeed, this.tmp2);
+        leadPoint(p.position, p.velocity, sel.position, sel.velocity, this.leadSpeed, this.tmp2);
         const pr = this.project(this.tmp2);
         if (pr.onScreen) lead = { x: pr.x, y: pr.y };
       }
@@ -1581,7 +1642,7 @@ export class FlightSession {
         dataClass: sel.dataClass,
         ...(npc ? { shield: npc.durability.shield / npc.durability.shieldMax, hull: npc.durability.hull / npc.durability.hullMax } : {}),
         lead,
-        inGunRange: dist < this.gun.profile.range,
+        inGunRange: dist < this.gunRange,
       };
     } else {
       hud.target = null;

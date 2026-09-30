@@ -45,6 +45,7 @@ function makeItem(family: GearFamilyRule, tier: Tier, maker: ManufacturerRule, r
     maker: maker.id,
     tier,
     name: `${line} Mk ${ROMAN[tier]} ${family.noun}`,
+    short: `${line} Mk ${ROMAN[tier]}`,
     price: roundPrice(family.basePrice * family.priceGrowth ** (tier - 1) * (maker.traits.price ?? 1)),
     score: gearScore(stats, family),
     stats,

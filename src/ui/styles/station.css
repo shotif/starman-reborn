@@ -567,3 +567,127 @@
     align-items: center;
   }
 }
+
+/* ---------- Outfitter mounts and shipyard ---------- */
+
+.slot-list .list-row .glyph {
+  width: 2rem;
+  height: 2rem;
+}
+
+.slot-list .row-value {
+  color: var(--edge-hi);
+}
+
+.supplies-head {
+  margin-top: 0.9rem;
+}
+
+.sell-row {
+  margin-top: 0.4rem;
+  justify-content: flex-end;
+}
+
+.ship-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-family: var(--font-ui);
+}
+
+.ship-title strong {
+  font-size: 1.08rem;
+  letter-spacing: 0.03em;
+}
+
+.ship-guns {
+  grid-column: 2 / -1;
+  text-align: right;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shipyard section + section {
+  margin-top: 0.8rem;
+}
+
+.trade-in-note {
+  margin: 0;
+}
+
+.compare {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.compare th,
+.compare td {
+  padding: 0.25rem 0.4rem;
+  border-bottom: 1px solid var(--edge-dim);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.compare th[scope='row'],
+.compare thead th:first-child {
+  text-align: left;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.compare thead th {
+  font-family: var(--font-ui);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.outfitter {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas:
+    'mounts sale'
+    'status sale';
+  gap: 0.9rem 1.2rem;
+  align-items: start;
+}
+
+.outfitter-mounts {
+  grid-area: mounts;
+}
+
+.outfitter-status {
+  grid-area: status;
+}
+
+.outfitter-sale {
+  grid-area: sale;
+  scroll-margin-top: 0.5rem;
+}
+
+@media (max-width: 760px) {
+  .outfitter {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'mounts' 'sale' 'status';
+  }
+}
+
+.trade-text .row-note {
+  display: block;
+  font-size: 0.78rem;
+  line-height: 1.3;
+  color: var(--amber);
+}
+
+.trade-in-note .num {
+  white-space: nowrap;
+}

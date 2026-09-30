@@ -1,6 +1,7 @@
 import type { CommodityId } from '../../app/state.ts';
 import { getLocation, getSystem } from '../../data/systems.ts';
-import { CARGO_CAPACITY, cargoCount, cargoUsed, itemsThatFit } from '../../economy/cargo.ts';
+import { cargoCount, cargoUsed, itemsThatFit } from '../../economy/cargo.ts';
+import { cargoCapacity } from '../../economy/loadout.ts';
 import { COMMODITIES, COMMODITY_IDS } from '../../economy/commodities.ts';
 import { quote } from '../../economy/markets.ts';
 import { bestKnownSale, buyCommodity, maxBuyable, routeOpportunities, sellCommodity } from '../../economy/trade.ts';
@@ -70,6 +71,7 @@ export function traderContent(ctx: StationContext, refresh: Refresh): HTMLElemen
     }
   }
   const used = cargoUsed(state.ship.cargo);
+  const capacity = cargoCapacity(state.ship);
   return h(
     'div',
     { class: 'trader' },
@@ -85,8 +87,8 @@ export function traderContent(ctx: StationContext, refresh: Refresh): HTMLElemen
       h(
         'section',
         { 'aria-label': 'Your hold' },
-        h('div', { class: 'list-head' }, h('span', null, 'Your hold'), h('span', { class: 'num' }, `${used}/${CARGO_CAPACITY} units`)),
-        h('div', { class: 'segbar hold-bar', style: `--segments: ${CARGO_CAPACITY}; --fill: ${used / CARGO_CAPACITY}; --seg-color: var(--amber)` }),
+        h('div', { class: 'list-head' }, h('span', null, 'Your hold'), h('span', { class: 'num' }, `${used}/${capacity} units`)),
+        h('div', { class: 'segbar hold-bar', style: `--segments: ${Math.min(capacity, 40)}; --fill: ${used / capacity}; --seg-color: var(--amber)` }),
         hold.length ? h('ul', { class: 'list' }, hold) : h('p', { class: 'list-empty' }, 'Your hold is empty.'),
       ),
     ),
@@ -152,7 +154,7 @@ async function openBuyDialog(ctx: StationContext, c: CommodityId, refresh: Refre
         h('dt', null, 'Credits after'),
         h('dd', { class: 'num' }, formatCredits(state.credits - total)),
         h('dt', null, 'Cargo after'),
-        h('dd', { class: 'num' }, `${unitsAfter}/${CARGO_CAPACITY} units (${itemsThatFit(state.ship.cargo, c) - qty} more fit)`),
+        h('dd', { class: 'num' }, `${unitsAfter}/${cargoCapacity(state.ship)} units (${itemsThatFit(state.ship.cargo, c, cargoCapacity(state.ship)) - qty} more fit)`),
         h('dt', null, 'Destination'),
         h(
           'dd',

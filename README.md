@@ -4,7 +4,9 @@ A browser space trading and combat prototype set among **real nearby stars**: So
 Barnard's Star, Sirius and Epsilon Eridani. You fly a small courier with the mouse or with two
 thumbs. You trade medical supplies, fight or dodge a raider near Mars, jump to Alpha Centauri,
 discover the real exoplanet Proxima Centauri b, and make the first delivery to a fictional
-research outpost. After that the neighbourhood is open for free exploration.
+research outpost. After that the neighbourhood is open for free exploration, with 35 ships in six
+classes from five makers and over 100 pieces of equipment to buy, all generated from rule files
+and balanced by automated guardrails ([docs/PROCGEN.md](docs/PROCGEN.md)).
 
 Star positions, distances and confirmed planets come from astronomical catalogs (see
 [docs/ASTRONOMY_SOURCES.md](docs/ASTRONOMY_SOURCES.md)). Stations, factions, jump travel, trade
@@ -67,7 +69,7 @@ installability behave best over HTTPS. Pick one:
 | Cruise | **Space** | Cruise button |
 | Dock, enter lane, interact | **E** | Green action button |
 | Go to selected target / objective | **G** | Green action button ("Go to") |
-| Missile | **F** or middle mouse | Missile button |
+| Missile, rocket or torpedo | **F** or middle mouse | Missile button |
 | Repair kit | **R** | Repair button |
 | Scan | **X** | Action button ("Scan") |
 | Engines off (drift) | **Z** | Drift button (landscape) |
@@ -88,7 +90,8 @@ src/galaxy/    neighbourhood star map (3D + 2D fallback), routing, info cards
 src/flight/    ship dynamics, chase camera, autopilot, desktop and touch input
 src/combat/    guns, projectiles, missiles, lead/intercept, damage, raider AI
 src/world/     local system scenes, flight session, procedural art (src/world/art)
-src/economy/   commodities, markets, cargo, equipment, factions, jobs
+src/content/   rule-driven ship and equipment catalogue, balance guardrails (docs/PROCGEN.md)
+src/economy/   commodities, markets, cargo, outfitter and shipyard, factions, jobs
 src/audio/     procedural Web Audio music and sound effects
 src/ui/        HUD, touch controls, station screens, encyclopedia, styles
 scripts/       astronomy snapshot, dataset build and validation

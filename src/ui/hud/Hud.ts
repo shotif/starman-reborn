@@ -100,6 +100,7 @@ export class Hud {
   private readonly loadout: HTMLElement;
   private readonly weaponText: HTMLElement;
   private readonly missileText: HTMLElement;
+  private readonly launcherText: HTMLElement;
   private readonly kitText: HTMLElement;
   private readonly left: HTMLElement;
   private readonly centerColumn: HTMLElement;
@@ -214,6 +215,7 @@ export class Hud {
 
     this.weaponText = h('span', { class: 'load-name' });
     this.missileText = h('span', { class: 'num' });
+    this.launcherText = h('span', { class: 'load-name' }, 'Missiles');
     this.kitText = h('span', { class: 'num' });
     const loadRow = (g: GlyphName, name: HTMLElement | string, value: HTMLElement | null, key: string) =>
       h('div', { class: 'load-row' }, glyph(g), typeof name === 'string' ? h('span', { class: 'load-name' }, name) : name, value ?? h('span'), h('kbd', { class: 'kbd' }, key));
@@ -221,7 +223,7 @@ export class Hud {
       'div',
       { class: 'hud-panel frame hud-loadout', 'aria-label': 'Loadout' },
       loadRow('gun', this.weaponText, null, 'RMB'),
-      loadRow('missile', 'Missiles', this.missileText, 'F'),
+      loadRow('missile', this.launcherText, this.missileText, 'F'),
       loadRow('repair', 'Repair kits', this.kitText, 'R'),
     );
 
@@ -333,6 +335,7 @@ export class Hud {
     if (this.commands.dock.disabled === (canDock || ap === 'dock')) this.commands.dock.disabled = !(canDock || ap === 'dock');
     setText(this.weaponText, model.weapon);
     setText(this.missileText, String(model.missiles));
+    setText(this.launcherText, model.launcher ?? 'No launcher');
     setText(this.kitText, String(model.repairKits));
 
     this.updateTarget(model);
@@ -357,7 +360,7 @@ export class Hud {
     }
     this.lockText.hidden = model.missileLock === 'none';
     this.lockText.className = `lock-text ${model.missileLock}`;
-    setText(this.lockText, model.missileLock === 'locked' ? `MISSILE LOCK · ${model.missiles}` : 'Locking…');
+    setText(this.lockText, model.missileLock === 'locked' ? `LOCK · ${(model.launcher ?? 'missiles').toUpperCase()} ${model.missiles}` : 'Locking…');
     this.lockText.style.transform = this.reticle.style.transform;
   }
 

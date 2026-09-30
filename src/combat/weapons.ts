@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type { DamageType } from '../content/types.ts';
 import type { ProjectileKind, ProjectileView } from '../world/art/effects.ts';
 import type { ShipBody } from '../flight/ShipBody.ts';
 import { clampToCone } from './lead.ts';
@@ -6,6 +7,7 @@ import { clampToCone } from './lead.ts';
 export interface Projectile extends ProjectileView {
   ownerId: string;
   damage: number;
+  damageType: DamageType;
   /** Seconds left before the bolt fizzles (range / speed). */
   life: number;
 }
@@ -20,6 +22,7 @@ export interface GunProfile {
   range: number;
   energyPerShot: number;
   kind: ProjectileKind;
+  damageType: DamageType;
 }
 
 const tmpMuzzle = new THREE.Vector3();
@@ -36,7 +39,15 @@ export class ProjectileSystem {
     this.capacity = capacity;
   }
 
-  spawn(position: THREE.Vector3, velocity: THREE.Vector3, kind: ProjectileKind, ownerId: string, damage: number, life: number): void {
+  spawn(
+    position: THREE.Vector3,
+    velocity: THREE.Vector3,
+    kind: ProjectileKind,
+    ownerId: string,
+    damage: number,
+    life: number,
+    damageType: DamageType = 'energy',
+  ): void {
     if (this.list.length >= this.capacity) return;
     const p = this.pool.pop() ?? {
       position: new THREE.Vector3(),
@@ -44,6 +55,7 @@ export class ProjectileSystem {
       kind,
       ownerId,
       damage,
+      damageType,
       life,
     };
     p.position.copy(position);
@@ -51,6 +63,7 @@ export class ProjectileSystem {
     p.kind = kind;
     p.ownerId = ownerId;
     p.damage = damage;
+    p.damageType = damageType;
     p.life = life;
     this.list.push(p);
   }
@@ -110,6 +123,11 @@ export class Gun {
     this.cooldown = Math.max(0, this.cooldown - dt);
   }
 
+  /** Delays the first shot, so several guns on one ship fire in turn rather than together. */
+  stagger(seconds: number): void {
+    this.cooldown = Math.max(this.cooldown, seconds);
+  }
+
   get ready(): boolean {
     return this.cooldown <= 0;
   }
@@ -142,7 +160,7 @@ export class Gun {
       tmpDir.normalize();
       if (clampToCone(tmpDir, forward, GUN_ARC)) clamped = true;
       const velocity = tmpDir.multiplyScalar(this.profile.projectileSpeed).add(ship.velocity);
-      projectiles.spawn(tmpMuzzle, velocity, this.profile.kind, ownerId, this.profile.damage * damageScale, life);
+      projectiles.spawn(tmpMuzzle, velocity, this.profile.kind, ownerId, this.profile.damage * damageScale, life, this.profile.damageType);
     }
     return { fired: true, clamped };
   }

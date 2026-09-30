@@ -183,7 +183,7 @@ describe('aiming, projectiles and damage', () => {
     const targetVel = new THREE.Vector3(-60, 30, 0);
     const aim = new THREE.Vector3();
     leadPoint(shooter.position, shooter.velocity, targetPos, targetVel, 760, aim);
-    const gun = new Gun({ damage: 9, shotsPerSecond: 5, projectileSpeed: 760, range: 2000, energyPerShot: 1, kind: 'player-pulse' });
+    const gun = new Gun({ damage: 9, shotsPerSecond: 5, projectileSpeed: 760, range: 2000, energyPerShot: 1, kind: 'player-pulse', damageType: 'energy' });
     const bolts = new ProjectileSystem();
     const res = gun.fire(shooter, [new THREE.Vector3(0, 0, 0)], aim, bolts, 'player');
     expect(res.fired).toBe(true);
@@ -221,6 +221,29 @@ describe('aiming, projectiles and damage', () => {
     expect(d.shield).toBeGreaterThan(0);
     expect(d.hull).toBe(90);
     expect(applyDamage(d, 500).destroyed).toBe(true);
+  });
+
+  it('applies damage-type multipliers to shields and hull', () => {
+    const fresh = (): Durability => ({ hull: 100, hullMax: 100, shield: 50, shieldMax: 50, shieldRegen: 0, shieldDelay: 3, shieldType: 'deflector', sinceHit: 9 });
+    // Energy is strong against a deflector (×1.3): 20 damage takes 26 shield.
+    const d = fresh();
+    expect(applyDamage(d, 20, 'energy').absorbedByShield).toBeCloseTo(26);
+    // Kinetic is weak against it (×0.7) but hits bare hull hard (×1.2).
+    const k = fresh();
+    applyDamage(k, 20, 'kinetic');
+    expect(k.shield).toBeCloseTo(36);
+    k.shield = 0;
+    expect(applyDamage(k, 10, 'kinetic').hullDamage).toBeCloseTo(12);
+    // Overflow: what the shield cannot stop reaches the hull at the hull multiplier.
+    const o = fresh();
+    o.shield = 13; // stops 10 raw energy damage (13 / 1.3)
+    const r = applyDamage(o, 20, 'energy');
+    expect(r.absorbedByShield).toBeCloseTo(13);
+    expect(r.hullDamage).toBeCloseTo(10 * 0.9);
+    // Ion barely scratches a hull.
+    const i = fresh();
+    i.shield = 0;
+    expect(applyDamage(i, 20, 'ion').hullDamage).toBeCloseTo(5);
   });
 
   it('shapes input axes with a dead zone', () => {

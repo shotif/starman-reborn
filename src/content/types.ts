@@ -344,6 +344,8 @@ export interface GearItem {
   maker: ManufacturerId;
   tier: Tier;
   name: string;
+  /** Name without the noun, for tight spaces ("Kestrel Mk I"). */
+  short: string;
   price: number;
   /** Balance score used by the guardrails. */
   score: number;

@@ -7,6 +7,7 @@ import { migrateSave, SaveFormatError, type SaveV1 } from '../../src/app/save/mi
 import { BACKUP_KEY, SAVE_KEY, SaveManager } from '../../src/app/save/SaveManager.ts';
 import { defaultSettings, sanitizeSettings } from '../../src/app/settings.ts';
 import { createNewGame, SAVE_VERSION } from '../../src/app/state.ts';
+import { shipModel } from '../../src/content/catalog.ts';
 import { SYSTEMS } from '../../src/data/systems.ts';
 import { acceptJob, LIFELINE_ID } from '../../src/economy/jobs.ts';
 import { buyCommodity } from '../../src/economy/trade.ts';
@@ -42,6 +43,34 @@ describe('save migration', () => {
     const s = migrateSave({ ...v1Save, system: 'barnard', dockedAt: 'barnard-relay', visited: ['sol', 'barnard'] });
     expect(s.flags.clearance).toBe(true);
     expect(s.visitedSystems).toEqual(['sol', 'barnard']);
+  });
+
+  it('upgrades a v2 save: the courier becomes the Halden courier Mk I with matching upgrades', () => {
+    const { ship: _drop, ...rest } = createNewGame(9);
+    const v2Ship = { hull: 64, shield: 90, shieldGenerator: 'shield-mk2', gun: 'pulse-mk2', missiles: 3, repairKits: 2, cargo: { medical: 4 } };
+    const v2 = { ...structuredClone(rest), version: 2, ship: v2Ship };
+    const s = migrateSave(v2);
+    expect(s.version).toBe(SAVE_VERSION);
+    expect(s.ship.model).toBe('ship.courier.1.halden');
+    expect(s.ship.fittings['gun-1']).toBe('gear.pulse.2.halden');
+    expect(s.ship.fittings['gun-2']).toBe('gear.pulse.2.halden');
+    expect(s.ship.fittings.shield).toBe('gear.shield-balanced.3.halden');
+    expect(s.ship.ammo).toEqual({ 'launcher-1': 3 });
+    expect(s.ship).toMatchObject({ hull: 64, shield: 90, repairKits: 2, cargo: { medical: 4 } });
+    // A plain v2 courier keeps the original fittings; values are clamped to the new maximums.
+    const plain = migrateSave({ ...v2, ship: { ...v2Ship, gun: 'pulse-mk1', shieldGenerator: 'shield-mk1', shield: 200, missiles: 40 } });
+    expect(plain.ship.fittings).toEqual(shipModel('ship.courier.1.halden').stock);
+    expect(plain.ship.shield).toBe(60);
+    expect(plain.ship.ammo['launcher-1']).toBe(6);
+    expect(() => migrateSave({ ...v2, ship: 'none' })).toThrow(SaveFormatError);
+  });
+
+  it('rejects ships, fittings and rounds that do not exist or do not fit', () => {
+    const s = createNewGame(3);
+    expect(() => migrateSave({ ...s, ship: { ...s.ship, model: 'ship.yacht.1.nobody' } })).toThrow(SaveFormatError);
+    expect(() => migrateSave({ ...s, ship: { ...s.ship, fittings: { ...s.ship.fittings, 'gun-1': 'gear.shield-balanced.1.halden' } } })).toThrow(SaveFormatError);
+    expect(() => migrateSave({ ...s, ship: { ...s.ship, fittings: { ...s.ship.fittings, 'gun-1': 'gear.pulse.5.horizon' } } })).toThrow(SaveFormatError);
+    expect(() => migrateSave({ ...s, ship: { ...s.ship, ammo: { shield: 3 } } })).toThrow(SaveFormatError);
   });
 
   it('accepts the current version unchanged and rejects future or damaged saves', () => {

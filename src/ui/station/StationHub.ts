@@ -1,9 +1,10 @@
 import { getLocation, getSystem } from '../../data/systems.ts';
-import { CARGO_CAPACITY, cargoUsed } from '../../economy/cargo.ts';
+import { cargoUsed } from '../../economy/cargo.ts';
 import { welcomeText } from '../../economy/dockText.ts';
-import { shopItems } from '../../economy/equipment.ts';
+import { hasOutfitter, hasShipyard } from '../../economy/equipment.ts';
 import { FACTIONS, standingTier, TIER_LABEL } from '../../economy/factions.ts';
 import { jobsAt } from '../../economy/jobs.ts';
+import { cargoCapacity } from '../../economy/loadout.ts';
 import { hasMarket } from '../../economy/markets.ts';
 import type { RoomView } from '../../world/rooms/types.ts';
 import { button, dataBadge } from '../components.ts';
@@ -16,9 +17,10 @@ import { jobBoardContent, jobsNeedAttention, newsContent } from './bar.ts';
 import type { StationContext } from './context.ts';
 import { hasVoyage, journalContent, voyageReport } from './journal.ts';
 import { outfitterContent, shipStatus } from './outfitter.ts';
+import { shipyardContent } from './shipyard.ts';
 import { traderContent } from './trader.ts';
 
-export type StationWindow = 'trader' | 'outfitter' | 'jobs' | 'news' | 'journal' | 'arrival' | 'menu';
+export type StationWindow = 'trader' | 'outfitter' | 'shipyard' | 'jobs' | 'news' | 'journal' | 'arrival' | 'menu';
 
 export interface StationOpen {
   room?: RoomView;
@@ -45,6 +47,7 @@ const ROOM_WINDOW: Record<RoomView, StationWindow | null> = {
 const WINDOW_TITLE: Record<StationWindow, string> = {
   trader: 'Trader',
   outfitter: 'Outfitter',
+  shipyard: 'Shipyard',
   jobs: 'Job board',
   news: 'Station news',
   journal: 'Journal',
@@ -63,6 +66,7 @@ export class StationHub {
   private room: RoomView;
   private win: StationWindow | null;
   private selectedJob: string | null = null;
+  private selectedSlot: string | null = null;
   private readonly top: HTMLElement;
   private readonly roomRail: HTMLElement;
   private readonly actionTab: HTMLElement;
@@ -133,7 +137,7 @@ export class StationHub {
   rooms(): RoomView[] {
     const list: RoomView[] = ['deck', 'bar'];
     if (hasMarket(this.ctx.locationId)) list.push('trader');
-    if (shopItems(this.ctx.locationId).length) list.push('outfitter');
+    if (hasOutfitter(this.ctx.locationId)) list.push('outfitter');
     return list;
   }
 
@@ -228,6 +232,7 @@ export class StationHub {
         h('span', null, label),
       );
     const items: HTMLElement[] = [];
+    if (room === 'deck' && hasShipyard(this.ctx.locationId)) items.push(act('shipyard', 'Ships', 'shipyard', 'station-ships'));
     if (room === 'bar') items.push(act('jobs', 'Jobs', 'jobs', 'station-jobs'), act('news', 'News', 'news', 'station-news'));
     if (room === 'trader') items.push(act('trader', 'Trade', 'trader', 'station-trade'));
     if (room === 'outfitter') items.push(act('outfitter', 'Equip', 'outfitter', 'station-equip'));
@@ -259,14 +264,14 @@ export class StationHub {
         'div',
         { class: 'station-wallet' },
         h('span', { class: 'wallet-item' }, icon('credits'), h('strong', { class: 'num', 'data-testid': 'dock-credits' }, formatCredits(state.credits))),
-        h('span', { class: 'wallet-item' }, icon('cargo'), h('span', { class: 'num' }, `${cargoUsed(state.ship.cargo)}/${CARGO_CAPACITY}`)),
+        h('span', { class: 'wallet-item' }, icon('cargo'), h('span', { class: 'num' }, `${cargoUsed(state.ship.cargo)}/${cargoCapacity(state.ship)}`)),
       ),
     );
   }
 
   private renderDeckPanel(): void {
     const { state, locationId } = this.ctx;
-    const show = this.room === 'deck' && this.win !== 'arrival';
+    const show = this.room === 'deck' && this.win !== 'arrival' && this.win !== 'shipyard';
     this.deckPanel.hidden = !show;
     if (!show) return;
     const welcome = welcomeText(state, locationId);
@@ -317,7 +322,16 @@ export class StationHub {
       case 'trader':
         return traderContent(ctx, refresh);
       case 'outfitter':
-        return outfitterContent(ctx, refresh);
+        return outfitterContent(ctx, refresh, this.selectedSlot, (id) => {
+          this.selectedSlot = id;
+          this.render();
+          // Single-column layouts: bring the offers for the chosen mount into view.
+          const sale = this.windowEl.querySelector<HTMLElement>('.outfitter-sale');
+          const mounts = this.windowEl.querySelector<HTMLElement>('.outfitter-mounts');
+          if (sale && mounts && sale.offsetTop > mounts.offsetTop) sale.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        });
+      case 'shipyard':
+        return shipyardContent(ctx, refresh);
       case 'jobs':
         return jobBoardContent(ctx, this.selectedJob, (id) => {
           this.selectedJob = id;

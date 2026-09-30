@@ -1,6 +1,7 @@
 import { getLocation, getSystem } from '../data/systems.ts';
-import { SHIELDS } from '../economy/equipment.ts';
+import { rechargeShield } from '../economy/equipment.ts';
 import { activeFeeCoverage, advanceJobs, type JobEvent } from '../economy/jobs.ts';
+import { hullMax } from '../economy/loadout.ts';
 import { recordMarketVisit } from '../economy/trade.ts';
 import type { Route } from '../galaxy/routing.ts';
 import type { JumpReadiness } from '../galaxy/types.ts';
@@ -26,7 +27,7 @@ export function dockAt(state: GameState, locationId: string): DockOutcome {
   state.location.lastDockId = locationId;
   markVisited(state, loc.systemId, locationId);
   recordMarketVisit(state, locationId);
-  state.ship.shield = SHIELDS[state.ship.shieldGenerator].capacity;
+  rechargeShield(state);
   let clearanceGranted = false;
   if (loc.services.includes('jump-clearance') && !state.flags.clearance) {
     state.flags.clearance = true;
@@ -92,8 +93,8 @@ export function rescueAfterDefeat(state: GameState): { fee: number; dockId: stri
   const dock = getLocation(dockId);
   const fee = Math.min(state.credits, RESCUE_FEE);
   if (fee > 0) applyCredits(state, -fee, 'rescue', `Rescue tow and repairs to ${dock.name}`);
-  state.ship.hull = 100;
-  state.ship.shield = SHIELDS[state.ship.shieldGenerator].capacity;
+  state.ship.hull = hullMax(state.ship);
+  rechargeShield(state);
   state.location.systemId = dock.systemId;
   state.location.dockedAt = dockId;
   state.location.flight = null;

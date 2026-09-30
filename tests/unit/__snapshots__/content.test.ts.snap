@@ -63,7 +63,7 @@ gear.power.3.halden                Lantern Mk III power plant           360  Fee
 gear.cargo-pod.1.halden            Seahold Mk I cargo pod               140  An external hold. +8 cargo; top speed −4%.
 gear.cargo-pod.2.halden            Seahold Mk II cargo pod              210  An external hold. +10 cargo; top speed −4%.
 gear.scanner.1.halden              Lookout Mk I scanner                 120  Longer-range sensors for scans and targeting. Scan range ×1.25.
-gear.tractor.1.halden              Gleaner Mk I tractor beam             90  Reels in loose cargo and salvage. Pulls in loose cargo from 300 m.
+gear.tractor.1.halden              Gleaner Mk I tractor beam             90  Reels in loose cargo and salvage. Pulls in loose cargo from 500 m.
 gear.mass-driver.1.ares            Drophammer Mk I mass driver          200  Fast magnetic slugs, slow to cycle and hard on hulls. 17 kinetic damage per shot, 0.95 shots/s, 1150 m range, 9.5 energy per shot. Weak against deflector shields; hits hulls hard.
 gear.mass-driver.2.ares            Drophammer Mk II mass driver         320  Fast magnetic slugs, slow to cycle and hard on hulls. 22 kinetic damage per shot, 0.95 shots/s, 1170 m range, 10.6 energy per shot. Weak against deflector shields; hits hulls hard.
 gear.mass-driver.3.ares            Drophammer Mk III mass driver        510  Fast magnetic slugs, slow to cycle and hard on hulls. 28 kinetic damage per shot, 0.95 shots/s, 1200 m range, 11.9 energy per shot. Weak against deflector shields; hits hulls hard.
@@ -107,9 +107,9 @@ gear.cargo-pod.3.toliman           Granary Mk III cargo pod             305  An 
 gear.scanner.1.toliman             Taproot Mk I scanner                 116  Longer-range sensors for scans and targeting. Scan range ×1.25.
 gear.scanner.2.toliman             Taproot Mk II scanner                175  Longer-range sensors for scans and targeting. Scan range ×1.4.
 gear.scanner.3.toliman             Taproot Mk III scanner               260  Longer-range sensors for scans and targeting. Scan range ×1.55.
-gear.tractor.1.toliman             Tendril Mk I tractor beam             87  Reels in loose cargo and salvage. Pulls in loose cargo from 300 m.
-gear.tractor.2.toliman             Tendril Mk II tractor beam           131  Reels in loose cargo and salvage. Pulls in loose cargo from 360 m.
-gear.tractor.3.toliman             Tendril Mk III tractor beam          196  Reels in loose cargo and salvage. Pulls in loose cargo from 430 m.
+gear.tractor.1.toliman             Tendril Mk I tractor beam             87  Reels in loose cargo and salvage. Pulls in loose cargo from 500 m.
+gear.tractor.2.toliman             Tendril Mk II tractor beam           131  Reels in loose cargo and salvage. Pulls in loose cargo from 600 m.
+gear.tractor.3.toliman             Tendril Mk III tractor beam          196  Reels in loose cargo and salvage. Pulls in loose cargo from 720 m.
 gear.pulse.2.horizon               Lumen Mk II pulse cannon             350  Rapid energy bolts; the all-rounder. 10.5 energy damage per shot, 3.1 shots/s, 970 m range, 5.3 energy per shot. Strong against deflector shields; weak against diffuser shields.
 gear.pulse.3.horizon               Lumen Mk III pulse cannon            560  Rapid energy bolts; the all-rounder. 13.5 energy damage per shot, 3.1 shots/s, 990 m range, 6 energy per shot. Strong against deflector shields; weak against diffuser shields.
 gear.pulse.4.horizon               Lumen Mk IV pulse cannon             895  Rapid energy bolts; the all-rounder. 17.5 energy damage per shot, 3.1 shots/s, 1010 m range, 6.7 energy per shot. Strong against deflector shields; weak against diffuser shields.
@@ -153,8 +153,8 @@ gear.cargo-pod.3.eridani           Floodgate Mk III cargo pod           285  An 
 gear.cargo-pod.4.eridani           Floodgate Mk IV cargo pod            425  An external hold. +18 cargo; top speed −4%.
 gear.armor.1.eridani               Breakwater Mk I armour plating       117  Bolt-on hull plates. +25 hull; turning −5%.
 gear.armor.2.eridani               Breakwater Mk II armour plating      176  Bolt-on hull plates. +33 hull; turning −5%.
-gear.tractor.1.eridani             Undertow Mk I tractor beam            81  Reels in loose cargo and salvage. Pulls in loose cargo from 300 m.
-gear.tractor.2.eridani             Undertow Mk II tractor beam          122  Reels in loose cargo and salvage. Pulls in loose cargo from 360 m.
+gear.tractor.1.eridani             Undertow Mk I tractor beam            81  Reels in loose cargo and salvage. Pulls in loose cargo from 500 m.
+gear.tractor.2.eridani             Undertow Mk II tractor beam          122  Reels in loose cargo and salvage. Pulls in loose cargo from 600 m.
 gear.plasma.1.wake                 Scorch Mk I plasma cannon            152  Heavy, slow plasma bolts that burn through diffusers. 29 plasma damage per shot, 0.9 shots/s, 850 m range, 15.9 energy per shot. Strong against diffuser shields.
 gear.plasma.2.wake                 Scorch Mk II plasma cannon           245  Heavy, slow plasma bolts that burn through diffusers. 38 plasma damage per shot, 0.9 shots/s, 870 m range, 17.8 energy per shot. Strong against diffuser shields.
 gear.plasma.3.wake                 Scorch Mk III plasma cannon          390  Heavy, slow plasma bolts that burn through diffusers. 49 plasma damage per shot, 0.9 shots/s, 880 m range, 20 energy per shot. Strong against diffuser shields.

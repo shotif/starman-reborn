@@ -1,20 +1,23 @@
+import { STARTER_SHIP_ID } from '../content/rules/index.ts';
 import type { FactionId, SystemId, Vec3Tuple } from '../data/types.ts';
+import { newShipState } from '../economy/loadout.ts';
 
 /** Current save format version. Older saves are upgraded by src/app/save/migrate.ts. */
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 export type CommodityId = 'medical' | 'fabricators' | 'deuterium';
-export type ShieldId = 'shield-mk1' | 'shield-mk2';
-export type GunId = 'pulse-mk1' | 'pulse-mk2';
 
 export type Cargo = Partial<Record<CommodityId, number>>;
 
 export interface ShipState {
+  /** Catalogue ship model id (src/content), e.g. `ship.courier.1.halden`. */
+  model: string;
+  /** Slot id → fitted equipment id; empty slots are absent. */
+  fittings: Record<string, string>;
   hull: number;
   shield: number;
-  shieldGenerator: ShieldId;
-  gun: GunId;
-  missiles: number;
+  /** Launcher slot id → rounds carried. */
+  ammo: Record<string, number>;
   repairKits: number;
   /** Items held per commodity (each item occupies the commodity's unit size in the hold). */
   cargo: Cargo;
@@ -113,15 +116,7 @@ export function createNewGame(seed: number = Math.floor(Math.random() * 2 ** 31)
     clock: 0,
     location: { systemId: 'sol', dockedAt: START_DOCK_ID, flight: null, lastDockId: START_DOCK_ID },
     credits: STARTING_CREDITS,
-    ship: {
-      hull: 100,
-      shield: 60,
-      shieldGenerator: 'shield-mk1',
-      gun: 'pulse-mk1',
-      missiles: 4,
-      repairKits: 1,
-      cargo: {},
-    },
+    ship: starterShip(),
     visitedSystems: ['sol'],
     visitedLocations: [START_DOCK_ID],
     knownMarkets: {},
@@ -134,6 +129,14 @@ export function createNewGame(seed: number = Math.floor(Math.random() * 2 ** 31)
     voyageStartClock: 0,
     stats: { kills: 0, jumps: 0, deliveries: 0, deaths: 0 },
   };
+}
+
+/** The Halden courier Mk I as a new pilot receives it: four seekers and one repair kit. */
+export function starterShip(): ShipState {
+  const ship = newShipState(STARTER_SHIP_ID);
+  for (const slot of Object.keys(ship.ammo)) ship.ammo[slot] = Math.min(ship.ammo[slot] ?? 0, 4);
+  ship.repairKits = 1;
+  return ship;
 }
 
 export function addLedger(state: GameState, entry: Omit<LedgerEntry, 't'>): void {

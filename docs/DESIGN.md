@@ -54,9 +54,15 @@ thin coplanar shells (atmospheres are a rim shader) to prevent z-fighting.
 - Aim assist, touch only by default and set to Low: when the reticle is within a small radius of
   the selected target's lead marker it is pulled part of the way toward it. The reticle shows a
   glow when this happens. Assist never selects a target.
-- Player: Mk I shield 60 (6/s regen after 3 s), hull 100 (no regeneration), weapon energy shared
-  with boost. The pulse cannon does 9 damage per bolt at 5.5 bolts/s from alternating muzzles.
-  Missiles lock on after 0.8 s inside a 40° cone and 1.7 km.
+- Ships and equipment come from the rule-generated catalogue (see [PROCGEN.md](PROCGEN.md)). The
+  starting Halden courier Mk I has a 60-point balanced shield (6/s regen after 3 s), hull 100 (no
+  regeneration) and two pulse cannons (9 damage per bolt, 2.75 bolts/s each, taking turns), with
+  weapon energy shared with boost. Every gun mount fires its own gun; bolts carry a damage type
+  that shields resist or suffer (energy beats deflectors, kinetic beats hulls, plasma beats
+  diffusers, ion strips any shield but barely touches hulls). Seekers and torpedoes lock on inside
+  a 40° cone and 1.7 km after their lock time (0.8 s and 1.6 s); rockets fly unguided at the aim
+  point.
+- Raiders fly Wake Salvage kit: a deflector shield and plasma guns.
 - The Hollow Wake raider flies attack runs with lead aiming and burst fire, breaks off to avoid
   ramming, jinks when its shield collapses and flees below 22% hull. Difficulty scales its damage,
   accuracy and health. The encounter lasts roughly one to two minutes and ends in one of three ways:
@@ -77,8 +83,13 @@ fee is covered by the delivery contract, and repairs cost 2 cr per hull point. T
 also pays a 1,000 cr reward and the optional bounty adds 220 cr. Each voyage report shows its net
 profit.
 
-Upgrades: Aegis Mk II shield (60 → 110 capacity, 450 cr) and Kestrel Mk II cannon (9 → 13
-damage, 420 cr) at Deimos Depot. Missiles and repair kits are sold at most docks.
+Equipment and ships: every station with an outfitter sells its makers' equipment up to a class
+limit (classes 4–5 need standing), rounds for your launchers and repair kits; the Barnard relay
+sells repair kits only. The outfitter is organised by your ship's mounts: pick a mount, and the
+dealer lists what fits it, priced after buying back what it replaces at 70%. Shipyards on the
+hangar deck sell ships of their makers and credit your ship and fittings at 70%; the new ship
+comes with its stock loadout and full racks, and your cargo moves across if it fits. See
+[PROCGEN.md](PROCGEN.md) §6 for the makers, classes and families.
 
 ## Factions and reputation
 

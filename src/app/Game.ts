@@ -3,7 +3,8 @@ import { AudioEngine } from '../audio/AudioEngine.ts';
 import type { MusicMood, SfxId } from '../audio/types.ts';
 import { getLocation, getPlanet, getSystem, SYSTEMS } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
-import { CARGO_CAPACITY, cargoUsed } from '../economy/cargo.ts';
+import { cargoUsed } from '../economy/cargo.ts';
+import { cargoCapacity } from '../economy/loadout.ts';
 import { adjustReputation, FACTIONS, standingTier, TIER_LABEL } from '../economy/factions.ts';
 import { acceptJob, advanceJobs, deliverJob, getJob, LIFELINE_ID, primaryObjective, type JobEvent } from '../economy/jobs.ts';
 import { welcomeText } from '../economy/dockText.ts';
@@ -1054,7 +1055,7 @@ export class Game {
     this.hud.update(hudModel, {
       credits: state.credits,
       cargoUsed: cargoUsed(state.ship.cargo),
-      cargoCapacity: CARGO_CAPACITY,
+      cargoCapacity: cargoCapacity(state.ship),
       objective: this.objectiveText,
       systemName: getSystem(state.location.systemId).displayName,
       scaleNote: `Local scale compressed · ${this.system.def.scaleNote}`,

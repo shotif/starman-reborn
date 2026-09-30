@@ -69,7 +69,9 @@ export interface HudModel {
   missileLock: 'none' | 'locking' | 'locked';
   context: HudContextAction | null;
   warnings: string[];
+  /** Rounds left in the active launcher, and what they are ('Seekers'); null without a launcher. */
   missiles: number;
+  launcher: string | null;
   repairKits: number;
   encounterActive: boolean;
   /** Closest dock in this system (name and distance), for the HUD. */
@@ -100,6 +102,7 @@ export function emptyHudModel(): HudModel {
     context: null,
     warnings: [],
     missiles: 0,
+    launcher: null,
     repairKits: 0,
     encounterActive: false,
     nearestDock: null,

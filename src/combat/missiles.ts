@@ -20,6 +20,9 @@ export interface Missile {
   damage: number;
   life: number;
   alive: boolean;
+  /** Cruise speed and turn rate (0 = unguided) of this round. */
+  maxSpeed: number;
+  turnRate: number;
 }
 
 export const MISSILE_LOCK_RANGE = 1700;

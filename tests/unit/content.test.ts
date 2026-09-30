@@ -7,9 +7,14 @@ import { CATALOG_SEED, RULES, STARTER_SHIP_ID } from '../../src/content/rules/in
 import type { ContentRules, GearItem, ShipModel } from '../../src/content/types.ts';
 import { formatIssues, validateCatalog } from '../../src/content/validate.ts';
 import { PLAYER_SHIP } from '../../src/flight/ShipBody.ts';
-import { GUNS, MISSILE, SHIELDS } from '../../src/economy/equipment.ts';
 
 const catalog = getCatalog();
+/** The original player ship's fittings (before the catalogue), which the starter must reproduce. */
+const ORIGINAL = {
+  shield: { capacity: 60, regenPerSecond: 6, regenDelay: 3 },
+  gun: { damage: 9, shotsPerSecond: 5.5, projectileSpeed: 760, range: 950, energyPerShot: 5 },
+  missile: { damage: 55, speed: 280, turnRate: 2.6, lifetime: 9, maxAmmo: 6 },
+};
 const stock = (s: ShipModel) => shipPerformance(s, s.stock, catalog.gearById);
 
 describe('seeded randomness', () => {
@@ -89,16 +94,15 @@ describe('the starting ship', () => {
 
   it('carries the original shield, guns and missiles', () => {
     const perf = stock(starter);
-    const shield = SHIELDS['shield-mk1'];
-    expect(perf.shield).toMatchObject({ capacity: shield.capacity, regenPerSecond: shield.regenPerSecond, regenDelay: shield.regenDelay });
+    expect(perf.shield).toMatchObject(ORIGINAL.shield);
     // Two gun mounts share the old single gun's rate of fire.
-    const gun = GUNS['pulse-mk1'];
+    const gun = ORIGINAL.gun;
     expect(perf.guns).toHaveLength(2);
     for (const g of perf.guns) {
       expect(g).toMatchObject({ damage: gun.damage, projectileSpeed: gun.projectileSpeed, range: gun.range, energyPerShot: gun.energyPerShot });
       expect(g.shotsPerSecond * 2).toBe(gun.shotsPerSecond);
     }
-    expect(perf.launchers[0]).toMatchObject({ damage: MISSILE.damage, speed: MISSILE.speed, turnRate: MISSILE.turnRate, lifetime: MISSILE.lifetime, maxAmmo: MISSILE.max });
+    expect(perf.launchers[0]).toMatchObject(ORIGINAL.missile);
   });
 });
 
