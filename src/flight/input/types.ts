@@ -9,6 +9,8 @@ export type FlightAction =
   | 'missile'
   | 'repair'
   | 'decoy'
+  /** Starts or stops the mining laser on the selected rock (docs/PROCGEN.md §19). */
+  | 'mine'
   | 'wing-order'
   | 'engine-kill'
   | 'map'

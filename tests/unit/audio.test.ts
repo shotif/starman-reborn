@@ -41,7 +41,7 @@ const ALL_SFX: SfxId[] = [
   'hit-shield', 'hit-hull', 'player-hit-shield', 'player-hit-hull', 'shield-down', 'explosion-small',
   'explosion-large', 'boost-start', 'cruise-charge', 'cruise-engage', 'cruise-exit', 'lane-enter', 'lane-exit',
   'dock-clamp', 'undock', 'jump-charge', 'jump-exit', 'pickup', 'alert', 'scan', 'credits', 'mission-complete',
-  'repair', 'target-lock', 'radio-blip',
+  'repair', 'target-lock', 'radio-blip', 'mining',
 ];
 
 function bars(mood: MusicMood, seed: number, count: number): BarPlan[] {

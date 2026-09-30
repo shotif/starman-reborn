@@ -899,3 +899,37 @@
     outline-offset: -2px;
   }
 }
+
+/* The mining beam under way (docs/PROCGEN.md §19). */
+.hud-mining {
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  letter-spacing: 0.05em;
+  color: var(--warm);
+  text-shadow: 0 1px 3px #000;
+}
+
+.hud-mining[hidden] {
+  display: none;
+}
+
+.marker.kind-rock {
+  color: var(--warm);
+}
+
+.marker.kind-rock .marker-shape {
+  border-radius: 40% 55% 45% 60%;
+  width: 16px;
+  height: 16px;
+  left: -8px;
+  top: -8px;
+}
+
+.marker.kind-belt {
+  color: #dfe6f3;
+}
+
+.marker.kind-belt .marker-shape {
+  border-style: dotted;
+  border-radius: 50%;
+}

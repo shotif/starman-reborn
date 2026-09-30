@@ -184,10 +184,15 @@ export class TouchControls {
     }
   }
 
+  /**
+   * The green action button: dock, enter a lane, scan, go to or stop, and, only while a mining laser
+   * is fitted and a rock is in the beam's reach, an amber Mine button (Stop mining while it cuts).
+   */
   setContextAction(label: string | null, action: FlightAction | null, iconName: IconName = 'dock'): void {
     this.contextAction = action;
     this.contextBtn.disabled = !action;
     this.contextBtn.classList.toggle('ready', !!action);
+    if (this.contextBtn.dataset.action !== (action ?? '')) this.contextBtn.dataset.action = action ?? '';
     const text = label ?? 'No action';
     if (this.contextLabel.textContent !== text) {
       this.contextLabel.textContent = text;

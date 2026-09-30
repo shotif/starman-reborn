@@ -68,7 +68,12 @@ const TARGET_GLYPH: Record<TargetKind, GlyphName> = {
   lane: 'cruise',
   beacon: 'info',
   loot: 'trader',
+  belt: 'science',
+  rock: 'mining-laser',
 };
+
+/** The Mine key (docs/PROCGEN.md §19); on a pad Mine is the context action. */
+const MINE_KEY = 'B';
 
 /**
  * Flight HUD. DOM elements are created once and updated in place each frame; marker elements
@@ -121,6 +126,11 @@ export class Hud {
   private readonly wingText: HTMLElement;
   private readonly wingRow: HTMLElement;
   private readonly wingKey: HTMLElement;
+  private readonly miningName: HTMLElement;
+  private readonly miningState: HTMLElement;
+  private readonly miningRow: HTMLElement;
+  private readonly miningKey: HTMLElement;
+  private readonly miningText: HTMLElement;
   private readonly loadoutKeys: Record<keyof typeof LOADOUT_KEYS, HTMLElement>;
   private readonly flashEl: HTMLElement;
   private readonly left: HTMLElement;
@@ -224,6 +234,7 @@ export class Hud {
       this.objectiveText,
     );
     this.autopilotText = h('div', { class: 'hud-autopilot', 'aria-live': 'polite' });
+    this.miningText = h('div', { class: 'hud-mining', 'data-testid': 'hud-mining', hidden: true });
     this.warningText = h('div', { class: 'hud-warning', role: 'alert' });
 
     this.targetPanel = h('div', { class: 'hud-panel frame hud-target', 'data-testid': 'hud-target', hidden: true });
@@ -248,6 +259,9 @@ export class Hud {
     this.loadoutKeys = { gun: kbd('gun'), missile: kbd('missile'), repair: kbd('repair'), decoy: kbd('decoy') };
     // Wing orders are a key (V) or the Wing chip on touch; no pad button is spare for them.
     this.wingKey = h('kbd', { class: 'kbd' }, 'V');
+    this.miningName = h('span', { class: 'load-name' });
+    this.miningState = h('span', { class: 'num' });
+    this.miningKey = h('kbd', { class: 'kbd' }, MINE_KEY);
     const loadRow = (g: GlyphName, name: HTMLElement | string, value: HTMLElement | null, key: HTMLElement) =>
       h('div', { class: 'load-row' }, glyph(g), typeof name === 'string' ? h('span', { class: 'load-name' }, name) : name, value ?? h('span'), key);
     this.loadout = h(
@@ -258,7 +272,9 @@ export class Hud {
       loadRow('repair', 'Repair kits', this.kitText, this.loadoutKeys.repair),
       loadRow('scanner', 'Decoys', this.decoyText, this.loadoutKeys.decoy),
       (this.wingRow = loadRow('wing', this.wingText, null, this.wingKey)),
+      (this.miningRow = loadRow('mining-laser', this.miningName, this.miningState, this.miningKey)),
     );
+    this.miningRow.hidden = true;
     // Hit flashes around the screen's edges.
     this.flashEl = h('div', { class: 'hud-flash', 'aria-hidden': 'true' });
 
@@ -307,11 +323,13 @@ export class Hud {
       setText(el, pad ? padLabel(LOADOUT_PAD[key], style) : LOADOUT_KEYS[key]);
     }
     this.wingKey.hidden = pad;
+    // On a pad, Mine is the context action (every button already has a job).
+    setText(this.miningKey, pad ? padLabel(PAD_FOR.interact, style) : MINE_KEY);
     const full = scheme !== 'touch';
     this.root.classList.toggle('touch-mode', !full);
     if (full) {
       this.left.replaceChildren(this.wallet, this.scaleText);
-      this.centerColumn.replaceChildren(this.commandRail, this.objectivePanel, this.autopilotText, this.warningText, this.encounterBanner);
+      this.centerColumn.replaceChildren(this.commandRail, this.objectivePanel, this.autopilotText, this.miningText, this.warningText, this.encounterBanner);
       this.right.replaceChildren(this.buttons);
       this.bottomLeft.replaceChildren(this.targetPanel);
       this.bottomCenter.replaceChildren(this.contextHint, this.status);
@@ -320,7 +338,7 @@ export class Hud {
       // Touch: the target panel and toasts stack in the centre column under the objective and
       // any alert (never on top of them).
       this.left.replaceChildren(this.status);
-      this.centerColumn.replaceChildren(this.objectivePanel, this.autopilotText, this.warningText, this.encounterBanner, this.targetPanel, this.toastSlot);
+      this.centerColumn.replaceChildren(this.objectivePanel, this.autopilotText, this.miningText, this.warningText, this.encounterBanner, this.targetPanel, this.toastSlot);
       this.right.replaceChildren(this.buttons, this.wallet);
       this.bottomLeft.replaceChildren();
       this.bottomCenter.replaceChildren(this.contextHint);
@@ -331,7 +349,7 @@ export class Hud {
   /** The key or pad button named in the context action's hint; none on touch, which has its own button. */
   private contextKey(action: FlightAction): string | null {
     if (this.scheme === 'gamepad') return padLabel(PAD_FOR.interact, this.padStyle);
-    if (this.scheme === 'desktop') return action === 'goto' ? 'G' : action === 'scan' ? 'X' : 'E';
+    if (this.scheme === 'desktop') return action === 'goto' ? 'G' : action === 'scan' ? 'X' : action === 'mine' ? MINE_KEY : 'E';
     return null;
   }
 
@@ -396,6 +414,14 @@ export class Hud {
     setText(this.decoyText, String(model.decoys));
     this.wingRow.hidden = !model.wing;
     if (model.wing) setText(this.wingText, `Wing ${model.wing.count} · ${WING_ORDER_LABEL[model.wing.order]}`);
+    const m = model.mining;
+    this.miningRow.hidden = !m;
+    if (m) {
+      setText(this.miningName, `Mining laser ${m.rate}/min${m.prospect > 1 ? ` ×${m.prospect}` : ''}`);
+      setText(this.miningState, m.active ? 'cutting' : m.ready ? 'ready' : '');
+    }
+    this.miningText.hidden = !m?.status;
+    setText(this.miningText, m?.status ?? '');
     const hull = Math.round(model.flash.hull * 100) / 100;
     const shield = Math.round(model.flash.shield * 100) / 100;
     if (this.flashEl.dataset.v !== `${hull},${shield}`) {
@@ -461,6 +487,8 @@ export class Hud {
         h('div', { class: 'target-bars' }),
       );
     }
+    // Subtitles change under way (a rock scanned and cut, a den's reactor exposed).
+    setText(this.targetPanel.querySelector<HTMLElement>('.target-sub')!, t.subtitle);
     const dist = this.targetPanel.querySelector<HTMLElement>('.target-dist')!;
     setText(dist, `${formatRange(t.distance)}${t.hostile ? (t.inGunRange ? ' · in gun range' : ' · out of range') : ''}`);
     const bars = this.targetPanel.querySelector<HTMLElement>('.target-bars')!;
@@ -473,6 +501,10 @@ export class Hud {
       }
       setFill(bars.children[0] as HTMLElement, t.shield);
       setFill(bars.children[1] as HTMLElement, t.hull);
+    } else if (t.amount !== undefined) {
+      // A scanned rock: what is left of it to cut.
+      if (!bars.firstChild) bars.append(h('div', { class: 'segbar', style: '--seg-color: var(--warm); --segments: 10', 'aria-label': 'Rock left' }));
+      setFill(bars.children[0] as HTMLElement, t.amount);
     } else if (bars.firstChild) {
       bars.replaceChildren();
     }

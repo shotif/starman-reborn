@@ -460,6 +460,19 @@ const RECIPES: Record<SfxId, Recipe> = {
     beep(k, 'square', 1760, 0.085, 0.04, 0.2, lp);
     hiss(k, 'bandpass', 2600, 1400, 1.8, 0.13, 0.004, 0.18, 0.5, 0.18);
   },
+
+  mining: (k) => {
+    // The beam's grind: a low buzzing saw through a narrow band, wobbling as it bites, with rock
+    // crackling off the cut.
+    const start = at(k, 0);
+    const trem = tremolo(k, 23, 0.6, start, start + 0.62 * k.s);
+    const bp = filter(k.v, 'bandpass', 520 * k.p, 3);
+    bp.connect(trem.node);
+    tone(k, 'sawtooth', 96, 92, 0, 0.04, 0.5, 0.35, 0.5, bp);
+    tone(k, 'square', 192, 188, 0, 0.04, 0.45, 0.12, 0.45, bp);
+    hiss(k, 'highpass', 3200, 2600, 0.8, 0.02, 0.005, 0.12, 0.18);
+    hiss(k, 'highpass', 3600, 3000, 0.8, 0.24, 0.005, 0.1, 0.14);
+  },
 };
 
 /** Plays synthesized one-shots with voice limiting, per-sound rate limits, pan and pitch. */

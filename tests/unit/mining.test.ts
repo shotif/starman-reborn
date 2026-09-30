@@ -1,6 +1,20 @@
-import { describe, expect, it } from 'vitest';
-import { BELTS, beltsOf, componentsOf, findBelt, getSystem, SYSTEMS } from '../../src/data/systems.ts';
+import * as THREE from 'three';
+import { beforeAll, describe, expect, it } from 'vitest';
+import type { AudioEngine } from '../../src/audio/AudioEngine.ts';
+import { defaultSettings } from '../../src/app/settings.ts';
+import { createNewGame, type GameState } from '../../src/app/state.ts';
+import { COMPOSITION, MINING } from '../../src/content/mining/rules.ts';
+import { BELTS, beltsOf, componentsOf, findBelt, getBelt, getSystem, SYSTEMS } from '../../src/data/systems.ts';
+import type { SystemId } from '../../src/data/types.ts';
+import { cargoUsed } from '../../src/economy/cargo.ts';
+import { cargoCapacity } from '../../src/economy/loadout.ts';
+import { cutRock, minerHunt, rockSpec, rocksInSector, stowUnit } from '../../src/economy/mining.ts';
+import { emptyInput, type FlightAction } from '../../src/flight/input/types.ts';
+import { FlightSession, type FlightCallbacks, type TrafficSetup } from '../../src/world/FlightSession.ts';
+import type { MiningLedger } from '../../src/world/MiningField.ts';
+import { SystemScene } from '../../src/world/SystemScene.ts';
 import { sceneDefFor } from '../../src/world/systems/index.ts';
+import type { TrafficPlan } from '../../src/world/traffic/plan.ts';
 
 /**
  * Mining in the real belts (docs/PROCGEN.md §19): belts only where a cited source reports one, rocks
@@ -73,6 +87,382 @@ describe('belts in the real sky (the citation guardrail)', () => {
           expect(r < ring.innerRadius - 500 || r > ring.outerRadius + 500, `${ring.id}: ${Math.round(r)}`).toBe(true);
         }
       }
+    }
+  });
+});
+
+// ---------------------------------------------------------------- rocks, yields and the beam
+
+const MAIN = getBelt('sol-main-belt');
+const KUIPER = getBelt('sol-kuiper-belt');
+const ERIDANI = getBelt('epsilon-eridani-debris-disc');
+
+describe('rocks and what they yield', () => {
+  it('are the same rocks whenever the player comes by, with shares by kind of belt', () => {
+    const a = rocksInSector('sol-main-belt', MAIN, 12, 100);
+    expect(rocksInSector('sol-main-belt', MAIN, 12, 100)).toEqual(a);
+    expect(a).toHaveLength(MINING.rocks.perSector);
+    expect(rocksInSector('sol-main-belt', MAIN, 13, 100)).not.toEqual(a);
+    for (const belt of [MAIN, KUIPER, ERIDANI]) {
+      for (let s = 0; s < 40; s++) {
+        for (const r of rocksInSector(`${belt.id}-ring`, belt, s, 0)) {
+          expect(Object.values(r.composition).reduce((x, y) => x + y, 0)).toBeCloseTo(1, 9);
+          expect(Object.keys(r.composition).sort()).toEqual(Object.keys(COMPOSITION[belt.kind]).sort());
+          expect(r.radius).toBeGreaterThanOrEqual(MINING.rocks.radius[0]);
+          expect(r.radius).toBeLessThanOrEqual(MINING.rocks.radius[1]);
+          expect(r.amount).toBeGreaterThanOrEqual(MINING.rocks.amount[0]);
+          expect(r.amount).toBeLessThanOrEqual(MINING.rocks.amount[1]);
+          // Main belt: mostly ore, some water. Kuiper: mostly water ice, with volatiles. Discs: mixed.
+          if (belt.kind === 'asteroid-belt') expect(r.composition.ore!).toBeGreaterThanOrEqual(0.55);
+          if (belt.kind === 'kuiper-belt') expect(r.composition.water!).toBeGreaterThanOrEqual(0.5);
+          if (belt.kind === 'debris-disc') expect(Object.keys(r.composition)).toHaveLength(3);
+        }
+      }
+    }
+  });
+
+  it('come back after they are spent: a new growth on the game clock, in the same place', () => {
+    const now = rockSpec('sol-main-belt', MAIN, 5, 2, 1_000);
+    const later = rockSpec('sol-main-belt', MAIN, 5, 2, 1_000 + MINING.rocks.regrowSeconds);
+    expect(later.generation).toBe(now.generation + 1);
+    expect({ u: later.u, radial: later.radial, height: later.height, radius: later.radius }).toEqual({ u: now.u, radial: now.radial, height: now.height, radius: now.radius });
+    // Rocks do not all turn over at once.
+    const turned = rocksInSector('sol-main-belt', MAIN, 5, 1_000).map((r) => rockSpec('sol-main-belt', MAIN, 5, r.index, 1_000 + MINING.rocks.regrowSeconds / 2).generation - r.generation);
+    expect(new Set(turned).size).toBeGreaterThan(1);
+  });
+
+  it('cut at the lasers’ rate, in the rock’s shares, the same in one step or many', () => {
+    const comp = { ore: 0.7, water: 0.3 };
+    const one = { left: 100, acc: {} };
+    const units = cutRock(one, comp, 60, 6);
+    expect(100 - one.left).toBeCloseTo(6, 9);
+    expect(units.filter((g) => g === 'ore')).toHaveLength(4);
+    expect(units.filter((g) => g === 'water')).toHaveLength(1);
+    const many = { left: 100, acc: {} };
+    const stepped: string[] = [];
+    for (let t = 0; t < 600; t++) stepped.push(...cutRock(many, comp, 0.1, 6));
+    expect(many.left).toBeCloseTo(one.left, 6);
+    expect(stepped.filter((g) => g === 'ore')).toHaveLength(4);
+    expect(stepped.filter((g) => g === 'water')).toHaveLength(1);
+    // Rate is units of rock a minute: a class 3 laser cuts 10.
+    const fast = { left: 100, acc: {} };
+    cutRock(fast, comp, 60, 10);
+    expect(100 - fast.left).toBeCloseTo(10, 9);
+  });
+
+  it('give more to a prospecting scanner: each unit of rock yields its multiplier in goods', () => {
+    const comp = { ore: 0.7, water: 0.3 };
+    const plain = { left: 1_000, acc: {} };
+    const read = { left: 1_000, acc: {} };
+    const a = cutRock(plain, comp, 600, 6).length;
+    const b = cutRock(read, comp, 600, 6, 1.2).length;
+    // Ten minutes at 6 a minute: 60 units of rock, 42 ore and 18 water; ×1.2: 50 ore and 21 water.
+    expect(plain.left).toBe(read.left);
+    expect(a).toBe(60);
+    expect(b).toBe(71);
+  });
+
+  it('are spent after their amount: nothing more comes off, and the total is the amount in shares', () => {
+    const rock = { left: 20, acc: {} };
+    const comp = { water: 0.6, gases: 0.4 };
+    const out: string[] = [];
+    for (let t = 0; t < 400; t++) out.push(...cutRock(rock, comp, 1, 6));
+    expect(rock.left).toBe(0);
+    expect(out.filter((g) => g === 'water')).toHaveLength(12);
+    expect(out.filter((g) => g === 'gases')).toHaveLength(8);
+    expect(cutRock(rock, comp, 60, 6)).toEqual([]);
+  });
+
+  it('go into the hold while there is room, then out in pods', () => {
+    const cargo = {};
+    const where = Array.from({ length: 9 }, () => stowUnit(cargo, 20, 'ore'));
+    // Ore takes 3 hold units: six fit in a 20-unit hold.
+    expect(where.filter((w) => w === 'hold')).toHaveLength(6);
+    expect(where.slice(6)).toEqual(['pod', 'pod', 'pod']);
+    expect(cargoUsed(cargo)).toBe(18);
+    // Volatiles take 2: one more fits in the last two units.
+    expect(stowUnit(cargo, 20, 'gases')).toBe('hold');
+    expect(stowUnit(cargo, 20, 'gases')).toBe('pod');
+  });
+});
+
+describe('raiders who hunt miners', () => {
+  it('come often to lawless belts, sometimes to thinly patrolled ones, rarely to patrolled ones', () => {
+    const lawless = minerHunt(0.1, null);
+    const thin = minerHunt(0.5, null);
+    const patrolled = minerHunt(1, null);
+    expect(lawless.chance).toBeGreaterThan(thin.chance);
+    expect(thin.chance).toBeGreaterThan(patrolled.chance);
+    expect(patrolled.chance).toBeLessThanOrEqual(0.02);
+    // Over ten minutes of beam: a patrolled belt rarely sends anyone, a lawless one nearly always.
+    const tenMinutes = (c: number) => 1 - (1 - c) ** ((10 * 60) / MINING.hunt.every);
+    expect(tenMinutes(patrolled.chance)).toBeLessThan(0.25);
+    expect(tenMinutes(lawless.chance)).toBeGreaterThan(0.9);
+    // The system's own packs set the threat when it has any; a hunting pack is small.
+    expect(minerHunt(0.1, 3).level).toBe(3);
+    expect(lawless.size[1]).toBeLessThanOrEqual(2);
+  });
+});
+
+// ---------------------------------------------------------------- in flight
+
+function installCanvasStub(): void {
+  if ((globalThis as { document?: unknown }).document) return;
+  const stub = (): unknown =>
+    new Proxy(function () {}, {
+      get(_t, prop) {
+        if (prop === 'getImageData' || prop === 'createImageData') {
+          return (_x: number, _y: number, w: number, h: number) => ({ data: new Uint8ClampedArray(Math.max(4, w * h * 4)), width: w, height: h });
+        }
+        return stub();
+      },
+      apply() {
+        return stub();
+      },
+      set() {
+        return true;
+      },
+    });
+  (globalThis as { document?: unknown }).document = {
+    createElement: () => ({ width: 0, height: 0, style: {}, getContext: () => stub() }),
+  };
+}
+
+const QUIET: TrafficPlan = { traders: 0, traderInterval: [60, 60], patrolWings: 0, wingSize: 2, packs: null };
+const LASER = 'gear.mining-laser.1.eridani';
+const PROSPECTOR = 'gear.prospector.1.eridani';
+
+function flightIn(systemId: SystemId, setup: (s: GameState) => void = () => {}, ledger?: MiningLedger, clock = 0) {
+  const scene = new SystemScene(sceneDefFor(systemId), { quality: 'low', reducedMotion: true });
+  const state = createNewGame(11);
+  state.location = { systemId, dockedAt: null, flight: null, lastDockId: state.location.lastDockId };
+  state.clock = clock;
+  setup(state);
+  const log: string[] = [];
+  const mined: [string, string, string][] = [];
+  const scans: string[] = [];
+  const noop = () => {};
+  const callbacks: FlightCallbacks = {
+    onDocked: noop,
+    onPlayerDestroyed: noop,
+    onDiscovery: noop,
+    onScanInfo: (t) => scans.push(t.bodyId ?? t.id),
+    onEncounterStart: noop,
+    onEncounterEnd: noop,
+    onLoot: noop,
+    onBounty: noop,
+    onContractKill: noop,
+    onMined: (belt, good, into) => mined.push([belt, good, into]),
+    onMessage: (text) => log.push(text),
+  };
+  const audio = { play() {}, setCombatIntensity() {}, setEngine() {} } as unknown as AudioEngine;
+  const traffic: TrafficSetup = { plan: QUIET, owner: null };
+  const flight = new FlightSession({
+    system: scene,
+    camera: new THREE.PerspectiveCamera(),
+    state,
+    settings: defaultSettings(),
+    ctx: { quality: 'low', reducedMotion: true },
+    audio,
+    callbacks,
+    traffic,
+    ...(ledger ? { minedRocks: ledger } : {}),
+  });
+  flight.start({ kind: 'arrival' });
+  const run = (seconds: number, actions: FlightAction[] = [], until?: () => boolean) => {
+    for (let t = 0; t < seconds; t += 1 / 20) {
+      const input = emptyInput();
+      for (const a of actions) input.actions.add(a);
+      actions = [];
+      state.clock += 1 / 20;
+      flight.update(1 / 20, input);
+      if (until?.()) return true;
+    }
+    return false;
+  };
+  /** Flies into the belt, then parks `distance` metres off its nearest rock, selected. */
+  const atRock = (beltTarget: string, distance = 300) => {
+    expect(flight.placeNear(beltTarget, 0)).toBe(true);
+    run(0.6);
+    const rock = flight
+      .allTargets()
+      .filter((t) => t.kind === 'rock')
+      .sort((x, y) => x.position.distanceTo(flight.player.position) - y.position.distanceTo(flight.player.position))[0]!;
+    expect(rock).toBeDefined();
+    expect(flight.placeNear(rock.id, distance)).toBe(true);
+    flight.selectTarget(rock.id);
+    run(0.1);
+    return rock;
+  };
+  return { flight, state, log, mined, scans, run, atRock };
+}
+
+const withLaser =
+  (gear = LASER) =>
+  (s: GameState) => {
+    s.ship.fittings['utility-1'] = gear;
+  };
+
+const held = (s: GameState) => (s.ship.cargo.ore ?? 0) + (s.ship.cargo.water ?? 0);
+
+describe('mining in flight', () => {
+  beforeAll(installCanvasStub);
+
+  it('shows each belt as a target, scannable for its sources, and a few rocks near the player in it', () => {
+    const f = flightIn('sol', withLaser());
+    const belts = f.flight.allTargets().filter((t) => t.kind === 'belt');
+    expect(belts.map((t) => t.id).sort()).toEqual(['belt:sol-kuiper-belt', 'belt:sol-main-belt']);
+    // No belt record, no belt and no rocks.
+    const barnard = flightIn('barnard', withLaser());
+    barnard.run(1);
+    expect(barnard.flight.allTargets().some((t) => t.kind === 'belt' || t.kind === 'rock')).toBe(false);
+    f.atRock('belt:sol-main-belt');
+    const rocks = f.flight.allTargets().filter((t) => t.kind === 'rock');
+    expect(rocks).toHaveLength(2 * MINING.rocks.perSector);
+    expect(rocks[0]!.name).toMatch(/^Rock \d+\.\d+$/);
+    f.flight.selectTarget('belt:sol-main-belt');
+    f.run(0.1, ['scan']);
+    expect(f.scans).toEqual(['sol-main-belt']);
+    expect(f.flight.hud.target?.distance).toBe(0);
+  });
+
+  it('mines the selected rock within 600 m: units into the hold, and the Mine action to stop', () => {
+    const f = flightIn('sol', withLaser());
+    const rock = f.atRock('belt:sol-main-belt');
+    expect(f.flight.contextAction()).toMatchObject({ label: 'Mine', action: 'mine' });
+    expect(f.flight.hud.mining).toMatchObject({ rate: 6, prospect: 1, active: false, ready: true });
+    f.run(0.1, ['mine']);
+    expect(f.flight.contextAction()).toMatchObject({ label: 'Stop mining', action: 'mine' });
+    f.run(30);
+    // 30 s at 6 a minute: 3 units of rock, whole units in its shares.
+    const got = held(f.state);
+    expect(got).toBeGreaterThanOrEqual(2);
+    expect(got).toBeLessThanOrEqual(3);
+    expect(f.mined).toHaveLength(got);
+    expect(f.mined.every(([belt, , into]) => belt === 'sol-main-belt' && into === 'hold')).toBe(true);
+    expect(f.flight.hud.mining?.status).toMatch(new RegExp(`^Mining ${rock.name.replace('.', '\\.')}`));
+    expect(f.flight.debugMining().rocks.find((r) => r.id === rock.id)!.scanned).toBe(true);
+    f.run(0.1, ['mine']);
+    expect(f.flight.debugMining().beam).toBeNull();
+    const after = held(f.state);
+    f.run(20);
+    expect(held(f.state)).toBe(after);
+  });
+
+  it('needs a laser, a rock and the beam’s reach, and stops when the target is lost or out of reach', () => {
+    const bare = flightIn('sol');
+    bare.atRock('belt:sol-main-belt');
+    expect(bare.flight.contextAction()?.action).not.toBe('mine');
+    bare.run(0.1, ['mine']);
+    expect(bare.log.at(-1)).toMatch(/No mining laser/);
+    expect(bare.flight.hud.mining).toBeNull();
+
+    const f = flightIn('sol', withLaser());
+    const rock = f.atRock('belt:sol-main-belt', MINING.range + 200);
+    // Out of the beam's reach: read it first (a pad scans through the action button), then go to it.
+    expect(f.flight.contextAction()).toMatchObject({ label: 'Scan', action: 'scan' });
+    f.run(0.1, ['scan']);
+    expect(f.flight.contextAction()).toMatchObject({ label: 'Go to', action: 'goto' });
+    f.run(0.1, ['mine']);
+    expect(f.log.at(-1)).toMatch(/Out of the beam’s reach/);
+    f.flight.placeNear(rock.id, 300);
+    f.run(0.1, ['mine']);
+    expect(f.flight.debugMining().beam).toBe(rock.id);
+    // Target lost.
+    f.flight.selectTarget('belt:sol-main-belt');
+    f.run(0.1);
+    expect(f.flight.debugMining().beam).toBeNull();
+    expect(f.log.at(-1)).toMatch(/target lost/);
+    // Out of reach.
+    f.flight.selectTarget(rock.id);
+    f.run(0.1, ['mine']);
+    expect(f.flight.debugMining().beam).toBe(rock.id);
+    f.flight.placeNear(rock.id, MINING.range + 100);
+    f.run(0.1);
+    expect(f.flight.debugMining().beam).toBeNull();
+    expect(f.log.at(-1)).toMatch(/out of the beam’s reach/);
+  });
+
+  it('reads a rock with a scan, and cuts more with a prospecting scanner fitted', () => {
+    const cut = (gear: string[]) => {
+      const f = flightIn('sol', (s) => {
+        s.ship.model = 'ship.freighter.1.eridani';
+        s.ship.fittings = { 'utility-1': gear[0]!, ...(gear[1] ? { 'utility-2': gear[1] } : {}) };
+      });
+      const rock = f.atRock('belt:sol-main-belt');
+      f.run(0.1, ['scan']);
+      expect(f.flight.debugMining().rocks.find((r) => r.id === rock.id)!.scanned).toBe(true);
+      expect(f.log.at(-1)).toMatch(/Metal ore \d+% · Water ice \d+%/);
+      expect(f.flight.hud.target?.amount).toBe(1);
+      f.run(0.1, ['mine']);
+      f.run(100);
+      return held(f.state);
+    };
+    const plain = cut([LASER]);
+    const read = cut([LASER, PROSPECTOR]);
+    expect(plain).toBeGreaterThanOrEqual(8);
+    expect(read).toBeGreaterThan(plain);
+  });
+
+  it('fills the hold, then releases cargo pods, and stops when the hold and the pods are full', () => {
+    const f = flightIn('sol', withLaser());
+    f.atRock('belt:sol-main-belt');
+    const room = cargoCapacity(f.state.ship);
+    f.run(0.1, ['mine']);
+    expect(f.run(400, [], () => f.flight.debugMining().beam === null)).toBe(true);
+    expect(cargoUsed(f.state.ship.cargo)).toBeGreaterThan(room - 3);
+    expect(f.flight.debugMining().pods).toBe(MINING.pods);
+    const pods = f.flight.allTargets().filter((t) => t.kind === 'loot');
+    expect(pods).toHaveLength(MINING.pods);
+    expect(pods.every((p) => p.name === 'Cargo pod')).toBe(true);
+    expect(f.mined.filter(([, , into]) => into === 'pod')).toHaveLength(MINING.pods);
+    expect(f.log.some((m) => m.startsWith('Hold full'))).toBe(true);
+    expect(f.log.at(-1)).toMatch(/the hold is full and 6 pods are adrift/);
+    // The pods wait: the tractor does not pull in what the hold cannot take.
+    f.run(10);
+    expect(f.flight.allTargets().filter((t) => t.kind === 'loot')).toHaveLength(MINING.pods);
+  });
+
+  it('spends a rock, which grows back in its own time (the cut is remembered between flights)', () => {
+    const ledger: MiningLedger = new Map();
+    const rig = (s: GameState) => {
+      s.ship.model = 'ship.freighter.1.eridani';
+      s.ship.fittings = { 'utility-1': 'gear.mining-laser.3.eridani', 'utility-2': 'gear.mining-laser.3.eridani' };
+    };
+    const f = flightIn('sol', rig, ledger);
+    const rock = f.atRock('belt:sol-main-belt');
+    const left = f.flight.debugMining().rocks.find((r) => r.id === rock.id)!.left;
+    f.run(0.1, ['mine']);
+    // Two class 3 lasers cut 20 units of rock a minute; the hold (and pods) run out first, so empty the hold as it fills.
+    const spent = f.run(left * 3 + 30, [], () => {
+      f.state.ship.cargo = {};
+      return !f.flight.allTargets().some((t) => t.id === rock.id);
+    });
+    expect(spent).toBe(true);
+    expect(f.log.some((m) => m.includes('is spent'))).toBe(true);
+    expect([...ledger.values()]).toContain(0);
+    // A new flight at the same time: still spent. A growth later: back.
+    const again = flightIn('sol', rig, ledger, f.state.clock);
+    again.flight.placeNear('belt:sol-main-belt', 0);
+    again.run(0.6);
+    expect(again.flight.allTargets().some((t) => t.id === rock.id)).toBe(false);
+    const later = flightIn('sol', rig, ledger, f.state.clock + MINING.rocks.regrowSeconds);
+    later.flight.placeNear('belt:sol-main-belt', 0);
+    later.run(0.6);
+    expect(later.flight.allTargets().some((t) => t.id === rock.id)).toBe(true);
+  });
+
+  it('draws raiders to a miner in a lawless belt', () => {
+    const chance = MINING.hunt.chance.lawless;
+    MINING.hunt.chance.lawless = 1;
+    try {
+      const f = flightIn('vega', withLaser());
+      f.atRock('belt:vega-debris-disc');
+      f.run(0.1, ['mine']);
+      expect(f.run(MINING.hunt.every + 2, [], () => f.flight.debugMining().minerPack)).toBe(true);
+      expect(f.log.some((m) => m.startsWith('Raiders have seen your beam'))).toBe(true);
+    } finally {
+      MINING.hunt.chance.lawless = chance;
     }
   });
 });

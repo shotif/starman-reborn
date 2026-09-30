@@ -33,7 +33,8 @@ export type SfxId =
   | 'mission-complete'
   | 'repair'
   | 'target-lock'
-  | 'radio-blip';
+  | 'radio-blip'
+  | 'mining';
 
 export type MusicMood =
   | 'title'
