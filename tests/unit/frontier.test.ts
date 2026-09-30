@@ -9,7 +9,7 @@ import { findRoute } from '../../src/galaxy/routing.ts';
 /** The frontier (docs/PROCGEN.md §7.6): new systems beyond 17.5 ly, reached by a long-range jump drive. */
 
 const frontier = SYSTEMS.filter((s) => isFrontier(s.id));
-const ready = { canJump: true, reason: null };
+const ready = { canJump: true };
 
 describe('the frontier', () => {
   it('is the far shell of new systems, and every lane into it needs the drive', () => {

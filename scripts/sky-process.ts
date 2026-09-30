@@ -23,10 +23,10 @@
  *
  * Usage: node scripts/sky-process.ts [date]   (then npm run data:build && npm run data:validate)
  */
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { equatorialToCartesian, parallaxErrorToLightYears, parallaxToLightYears, propagatePosition } from '../src/data/coords.ts';
+import { equatorialToCartesian, parallaxToLightYears, propagatePosition } from '../src/data/coords.ts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const rawRoot = resolve(root, 'data/snapshot/raw');
