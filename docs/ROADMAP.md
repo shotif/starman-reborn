@@ -8,171 +8,152 @@ when it is done, so the game stays playable throughout. Status: ✅ done · 🔨
 After the scripted opening (10–20 minutes), the neighbourhood is an open sandbox: 32 real
 systems, 58 generated stations of twelve kinds, 23 goods with stock-based prices (two of them
 contraband), traders and patrols on the lanes, raider packs in lawless space, 35 ships with over
-100 pieces of equipment, and generated contracts on every job board. Since this plan was written,
-increments 1–6 below have added world events and news, escorts, deadlines, aces, chains and
+100 pieces of equipment, and generated contracts on every job board. Increments 1–6 (under
+[Done so far](#done-so-far)) added world events and news, escorts, deadlines, aces, chains and
 recoveries, the law and the outlaw path, ratings, a codex and milestones, three faction story
-arcs, and combat depth (seekers and decoys, mines, system damage, loot, wingmen, dens under fire).
+arcs, and combat depth.
 
-When this plan was written, what the game lacked was mostly **reasons and consequences**: the
-world only changed when you traded, nothing after the opening told a story, standing barely bit,
-and there was no long-term goal beyond a bigger ship. Increments 1–6 went after that, in the
-order below; the parallel tracks and quick wins are still open. Sizes are relative: S, M, L.
+What it lacks now:
+
+- **Planning.** Trading is the core loop, but the player plans from memory, and the bars are
+  rooms without people in them.
+- **Something to build.** After the biggest ship there is nothing left to own, and no reason to
+  open the game for a short session.
+- **A world that answers.** Events, stock and traffic run on the clock; what the player does
+  barely moves them, and nothing persists after a jump.
+- **A third career.** Trading and fighting (and scanning), but no mining, although the Solar
+  System's asteroid belt is real and not in the game yet.
+- **An ending.** The three arcs end separately and leave one mark on the world, a dark den.
+- **A verified sky.** Every real value still shows *Pending verification*.
+
+The proposals below go after these, numbered in the order I would build them. Sizes are relative:
+S, M, L.
 
 ## Proposed next increments
 
-### 1. A world that moves: events, news and restocking ✅
+### First, alongside: the real sky, verified ⏳ (S–M)
 
-Trading is the core loop, and today a route that pays once pays forever. Events give reasons to
-change plans, reward keeping informed, and make the News room worth opening.
+The snapshot script covers only the seven stars (and their seven planets) of the five hand-made
+systems; the other 37 stars and 30 planets come from HYG and the Open Exoplanet Catalogue. The
+container I work in cannot reach the archives, but GitHub's runners can, and I can drive them
+from here without any change to the environment:
 
-- **World tick**: computed from the world seed and the game clock (no background simulation, the
-  same on every device). Shortages, gluts, strikes, raids and booms start and end at stations and
-  systems and last one to three hours of play. A shortage lifts a wanted good's price and drains
-  its stock, a glut does the opposite, a raid raises a system's raider threat and thins its
-  traffic, a strike closes one service for a while (never repairs).
-- **Traders restock markets**: stock flows from makers to buyers along the lanes at the rate the
-  traffic plan implies, so the traders you see in flight are the local part of a real flow.
-- **News**: every station's News window reports events within two jumps, dated; the star map
-  marks them. News only reports events that exist ([PROCGEN.md §4.5](PROCGEN.md)).
-- **Event contracts**: boards near an event post matching work at a premium (supply runs into a
-  shortage, freight out of a glut, bounties during a raid).
-- **Guardrails**: event prices stay inside the price bands, one event per station at most, the
-  opening route is left alone during the tutorial, every event ends, and the tests sample the
-  tick over thousands of clock values.
+- **Cover the whole sky in the game**: extend `scripts/fetch-astro-snapshot.ts` to all 44 stars
+  (SIMBAD by HIP or Gliese number; the Gaia DR3 id from SIMBAD's cross-identifiers; Gaia DR3
+  astrometry where it passes the quality cuts, otherwise SIMBAD's adopted values with their
+  bibcodes; Hipparcos as a cross-check) and to every confirmed planet of their hosts in the NASA
+  Exoplanet Archive.
+- **A verification report**: star by star, how far the archive values move each star from what
+  the game shows (distance and position); planets the archive adds, drops or marks controversial;
+  and the stations, codex entries and saves that touches. Nothing is merged without reading it.
+- **A workflow on GitHub's runners** (`.github/workflows/sky-snapshot.yml`): `npm ci`, then
+  `data:snapshot`, `data:build`, `data:validate` and the unit tests. The report goes into the
+  run's log, and the dated snapshot, the raw archive responses and the report are committed to a
+  `sky-snapshot` branch with the run's own token. It starts when the workflow or the snapshot
+  script is pushed to the development branch; once it is on `main`, it can be re-run on demand
+  and runs monthly, committing only when the archives changed.
+- **Review and merge from here**: I follow the run and read its log through the GitHub
+  connection, fetch the branch with git (both work from this container), read the report, run
+  every check locally and merge. The badges disappear, and distances get their error bars.
+- **The Solar System on the real date**: the same run fetches JPL's Keplerian elements for
+  1800–2050 ([Approximate Positions of the Planets](https://ssd.jpl.nasa.gov/planets/approx_pos.html))
+  and a few Horizons positions to test against. Sol's planets then sit at their real heliocentric
+  longitudes for the game date (distances stay compressed), and a unit test holds them to Horizons
+  within JPL's stated accuracy.
+- **Nothing needed from you.** The runner has open internet, and pushing a branch needs only the
+  permission the workflow file asks for. (A workflow that opens a pull request would need a
+  repository setting, so it pushes a branch instead.)
+- **Risks**: an archive may refuse or rate-limit a runner (the run fails, commits nothing, and its
+  log says why); a planet the NASA archive does not confirm would take away the station built on
+  it (the report names it first, and a save migration keeps older saves loading).
 
-Shipped as proposed ([PROCGEN.md §11](PROCGEN.md#11-world-events)); Sol's stations and the opening
-goods are never touched, and each jump now adds two minutes of lane transit to the clock.
+### 7. Trade computer, rumours and people in the bars ⏳ (M)
 
-### 2. Contracts II: escorts, deadlines, named targets and chains ✅
+Cheap, and it improves every session: trading gets a planning tool, and the bars get people.
 
-Builds straight on the contract boards, while they are fresh, and gives fighters and couriers
-something new on each visit.
+- **Trade computer** (a journal page, and Plan at the trader): the best routes from prices you
+  have seen, with the age of each price, profit per minute for your hold after jump fees and
+  transit time, and the news that will move them. It knows only what you know.
+- **Price watch**: mark a good at a station; docking within two jumps tells you if it moved.
+- **Rumours** for the price of a drink: true facts from the game's state (a shortage before it
+  reaches the news, where an ace was last seen, a den's defences, a wreck worth recovering),
+  never invented.
+- **People in the bars**: the story characters sit in their bars, and a small cast of generated
+  regulars (traders, pilots, a fixer) offer rumours, contracts and wingmen face to face, with
+  procedural portraits.
+- **Guardrails**: rumours are drawn from the model only, routes only from seen prices, and a
+  rumour never costs more than it is worth.
 
-- **Escorts**: protect a named trader from one station to another. It flies with the traffic
-  system, raiders try to intercept it, and the contract fails if it is lost.
-- **Urgent jobs**: some freight and parcels carry a deadline and a bonus; missing it costs
-  standing. The other contracts stay deadline-free. Deadlines are checked against the route
-  flown in the starting ship, with a margin.
-- **Named targets**: an ace raider with escorts and a better ship, posted as a top-difficulty
-  bounty where packs roam. It drops rare salvage or a piece of equipment to tractor in.
-- **Chains**: some contracts lead to a follow-up at their destination (a parcel's reply, survey
-  data to carry to a research station): two or three steps with rising pay.
-- **Recovery**: fetch a flight recorder or cargo pod from a wreck site near a station (fiction,
-  like the stations) with the tractor beam.
-- **Guardrails**: escort routes only through systems the trader can fly, named targets only
-  where packs roam, chains always end, deadlines reachable with margin.
+### 8. A world that answers ⏳ (M)
 
-Shipped ([PROCGEN.md §10](PROCGEN.md#10-contracts)): escorts run between two stations of one
-system (the hauler holds position if you fall behind), aces drop credits and a cargo pod, and
-follow-ups are parcels or hauls. Marking every contract on the star map came with it.
+- **Events react**: a shortage you help fill ends sooner and pays whoever filled it; destroying
+  raiders shortens a raid.
+- **Goods move everywhere**: traffic moves stock along the lanes out of sight too, so a glut
+  drains into its neighbours and a route you work hard flattens.
+- **Encounters persist**: a pack you fled is still there for a while; a wreck keeps its cargo.
+- **Witnesses**: a crime is known where it was seen and travels with the traffic; fines lapse.
+- **Guardrails**: still a function of the seed and the clock, plus a short log of what the player
+  did; prices stay in their bands; the tutorial is left alone.
 
-### 3. Law and consequences: customs, contraband and the outlaw path ✅
+### 9. A fleet of your own ⏳ (L)
 
-Standing changes prices, welcome text and a few contract gates. It should also change who
-shoots at you and where you can dock. A second way to play doubles the replay value of the same
-world.
+A long-term goal, and a reason to open the game for five minutes.
 
-- **Standing that bites**: at Hostile standing a faction's patrols attack you and its stations
-  refuse docking (a distress dock with repairs always remains); Unfriendly means higher fees and
-  fewer contracts.
-- **Customs**: customs depots and patrols in secure space scan holds. Small arms and new
-  contraband goods outside free ports mean a fine and confiscation. Free ports post smuggling
-  runs that pay well.
-- **The outlaw path**: today the player's guns only hurt raiders. Allow attacking lawful ships,
-  with consequences (a bounty on you, hunters, hostile patrols), and let Hollow Wake standing
-  rise through jobs at free ports. Friendly with the Wake, the raider dens open as docks with a
-  black market.
-- **A way back**: fines and pardons at customs depots, so no choice is a dead end.
-- **Guardrails**: a dock with repairs is always reachable, contraband prices stay in band, and
-  the story never requires a crime.
+- **More than one ship**: park ships at stations and switch where one is parked.
+- **Haulers on your routes**: give a parked ship a hired captain and a route you have flown; it
+  runs out of sight as a function of the clock (trips, profit, losses to raiders by the route's
+  security) and reports when you dock.
+- **Storage and stakes**: rent a hold at a station; later, buy a share of a station's trade.
+- **Guardrails**: a hauler earns well below flying yourself; losses are bounded and can be
+  insured; nothing runs in the background (it is worked out from the clock on load, the same on
+  every device).
 
-Shipped ([PROCGEN.md §12](PROCGEN.md#12-the-law-and-the-outlaw-path)) with fines instead of a
-bounty on the player: while you owe fines or are Hostile, a faction's patrols attack and its
-stations give emergency docking only (repairs at a surcharge and the customs desk), a pardon
-costs the fines (and more for Hostile standing), and big fines bring bounty hunters. Two
-contraband goods, patrol scans and customs at depots and military bases, piracy (haulers spill
-cargo pods), smuggling runs at free ports and dens, piracy jobs at dens, and raider dens with a
-black market for pilots the Wake trusts. A Wary faction offers easy work only.
+### 10. Mining in the real belts ⏳ (M)
 
-### 4. Goals: ratings, a codex of the real sky, milestones, a hint of what to do next ✅
+A third career, for pilots who would rather not fight.
 
-After the opening, the game does not say what to aim for. This is cheap, and it makes every
-other system feel like progress.
+- **Real belts only**: the Solar System's main belt and Kuiper belt (missing today), Epsilon
+  Eridani's two belts, and other catalogued debris discs, each with its source.
+- Mining lasers and prospecting scanners at the outfitters; ore, ice and volatiles for the
+  refineries; claim contracts; raiders who hunt miners.
+- **Guardrails**: mined goods stay in their price bands, and no belt without a citation.
 
-- **Pilot ratings** in trade, combat and exploration, ranked from the career statistics and
-  shown in the journal; higher ranks open better contracts.
-- **A codex of the real sky**: every catalogued star and confirmed planet is an entry that fills
-  in when you scan it, with its catalogue data and sources. Research stations pay for completed
-  systems, and completing the codex has a reward.
-- **Milestones** (first 10,000 cr, first Mk III ship, every system visited...) with a toast and a
-  line in the journal.
-- **What next**: after the opening, the HUD suggests one thing to do: a contract that fits your
-  ship, a route you know, or an unscanned planet nearby.
+### 11. The frontier, out to 25 light-years ⏳ (L)
 
-Shipped ([PROCGEN.md §13](PROCGEN.md#13-goals)): three ratings (ace hunts need a Hardened combat
-rating), a codex of 91 real bodies with survey sales to research stations and a grant for the
-whole sky, seventeen milestones, and a hint that puts fines first, then the hold, the codex, a
-known route and a job board nearby.
+The map stops at about 17 light-years; the next shell holds some of the best-known planetary
+systems (Gliese 581 and HD 219134 among them, if the archive query agrees).
 
-### 5. Faction story arcs ✅
+- New systems straight from the verified pipeline (Gaia DR3, SIMBAD, the NASA Exoplanet
+  Archive), not from HYG.
+- A long-range jump drive to reach them; a thin, lawless frontier with independent colonies;
+  survey contracts for the codex.
+- **Guardrails**: the same world generator and checks; the 32 systems and existing saves stay as
+  they are.
 
-The opening shows the game can tell a small story; three short arcs give the sandbox a spine.
+### 12. The arcs converge ⏳ (L)
 
-- One arc per faction, four to six missions each (a customs scandal for the Transit Authority, a
-  colony in trouble for the Frontier Cooperative, an outlaw arc for the Hollow Wake). They are
-  built from contract objectives plus scripted beats: named characters in the bars, comms in
-  flight, and a choice or two with standing consequences.
-- Finales use increments 2 and 3 (a convoy defence, an assault on a raider den).
-- Written by hand, reviewed, and tested as browser journeys like the opening.
-
-Shipped ([PROCGEN.md §14](PROCGEN.md#14-story-arcs)): Clean Manifests (a customs scandal, ending in
-an assault on a raider den with a Transit Authority wing), The Stonecrop Blight (a colony's crops
-failing at Procyon, ending in a convoy defence) and Salt's Crew (for pilots the Wake trusts, ending
-in holding a den against an Authority sweep); five missions each, with dialogue at the docks, comms
-in flight and a choice each, two of which can end their arc early. Den turrets, a reactor and a
-lawful wing came with it, ahead of increment 6.
-
-### 6. Combat depth ✅
-
-- Countermeasures against seekers and torpedoes, and mines.
-- Subsystem damage (engines, guns, shields), repaired at docks or with kits.
-- Wingmen for hire in the bars, paid per jump.
-- Raider dens with turrets and a reactor: destroying one clears its system for a while (a world
-  event from increment 1).
-- Loot beyond credits: cargo pods and rare equipment to tractor in.
-- Hit and damage effects, radio chatter in fights.
-
-Shipped ([PROCGEN.md §15](PROCGEN.md#15-combat-depth)): seekers fired by heavy raiders, aces and
-hunters, and decoy flares against them; mines dropped by raiders breaking off and guarding dens;
-damage to the engines, guns and shield generator; cargo pods and equipment crates kept in a stash;
-wingmen for hire, paid per jump; every den defends itself and can be knocked out (paid by the law,
-reported in the news, dark for six hours), with den assault contracts on lawful boards; hit
-flashes and radio chatter.
-
-### Parallel track: the real sky, verified ⏳ (S)
-
-- The astronomy snapshot is still provisional because the build container cannot reach the
-  archives (ESA Gaia, SIMBAD, VizieR, the NASA Exoplanet Archive). A GitHub Actions workflow,
-  run by hand or monthly, can run `npm run data:snapshot`, `data:build` and `data:validate` on
-  GitHub's runners and open a pull request with the dated snapshot. That clears the two
-  provisional warnings.
-- Solar System planets at their real positions for the game date, from JPL's Keplerian elements
-  for 1800–2050 ([Approximate Positions of the Planets](https://ssd.jpl.nasa.gov/planets/approx_pos.html)),
-  instead of the schematic placement.
+- **A contested border**: the Transit Authority and the Hollow Wake contest systems through the
+  world tick (blockades, skirmishes, a station changing hands), and the player's work tips it.
+- **A fourth arc** that reads the choices made in the other three, with different endings, and
+  war contracts on both sides.
+- **Guardrails**: a dock with repairs is always reachable, no dead ends, and the finale can be
+  reached as a lawful pilot, an outlaw or neither.
 
 ### Parallel track: polish and reach ⏳ (M)
 
-- The real-device checklist in [TEST_RECORD.md](TEST_RECORD.md) on a mid-range Android phone and
-  an iPhone, then performance tuning from what it finds.
-- Gamepad support; save slots with export and import.
-- More music, station ambience, radio chatter from traffic.
+- **Save slots with export and import**, early: browser storage can be cleared, and there are no
+  cloud saves.
+- Gamepad support.
+- The real-device checklist in [TEST_RECORD.md](TEST_RECORD.md) on an Android phone and an iPhone
+  (this one needs you), then performance tuning from what it finds.
+- More music, station ambience, and chatter from traffic.
 
 ### Quick wins (S each)
 
-- ~~Mark every active contract on the star map, not only the first one.~~ Done with increment 2.
 - Sort and filter the job board (reward, reward per jump, kind).
-- A short sound and comm line when a contract pays.
+- A sound and a comm line when a contract pays.
 - Remember the last open window at each station.
+- Orders for wingmen: attack my target, form up.
 
 ### How an increment ships
 
@@ -182,6 +163,55 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 1. A world that moves: events, news and restocking ✅
+
+World events computed from the seed and the clock (shortages, gluts, strikes, raids, booms and
+sweeps) move prices and traffic; traders restock markets; the News room reports events within two
+jumps and the star map marks them; boards near an event post matching work at a premium
+([PROCGEN.md §11](PROCGEN.md#11-world-events)). Sol's stations and the opening goods are never
+touched, and each jump adds two minutes of lane transit to the clock.
+
+### 2. Contracts II: escorts, deadlines, named targets and chains ✅
+
+Escorts between two stations of one system (the hauler holds position if you fall behind), urgent
+jobs with deadlines and a bonus, aces who drop credits and a cargo pod, chains of follow-up
+parcels and hauls, and wreck recoveries with the tractor beam
+([PROCGEN.md §10](PROCGEN.md#10-contracts)). Every active contract is marked on the star map.
+
+### 3. Law and consequences: customs, contraband and the outlaw path ✅
+
+While you owe fines or are Hostile, a faction's patrols attack and its stations give emergency
+docking only (repairs at a surcharge and the customs desk); a pardon costs the fines (and more for
+Hostile standing), and big fines bring bounty hunters. Two contraband goods, patrol scans and
+customs at depots and military bases, piracy (haulers spill cargo pods), smuggling runs at free
+ports and dens, piracy jobs at dens, and raider dens with a black market for pilots the Wake
+trusts. A Wary faction offers easy work only
+([PROCGEN.md §12](PROCGEN.md#12-the-law-and-the-outlaw-path)).
+
+### 4. Goals: ratings, a codex of the real sky, milestones, a hint of what to do next ✅
+
+Three pilot ratings (ace hunts and den assaults need a Hardened combat rating), a codex of 91 real
+bodies with survey sales to research stations and a grant for the whole sky, twenty milestones,
+and a hint that puts fines first, then the hold, stories waiting, the codex, a known route and a
+job board nearby ([PROCGEN.md §13](PROCGEN.md#13-goals)).
+
+### 5. Faction story arcs ✅
+
+Clean Manifests (a customs scandal, ending in an assault on a raider den with a Transit Authority
+wing), The Stonecrop Blight (a colony's crops failing at Procyon, ending in a convoy defence) and
+Salt's Crew (for pilots the Wake trusts, ending in holding a den against an Authority sweep); five
+missions each, with dialogue at the docks, comms in flight and a choice each, two of which can end
+their arc early ([PROCGEN.md §14](PROCGEN.md#14-story-arcs)).
+
+### 6. Combat depth ✅
+
+Seekers fired by heavy raiders, aces and hunters, and decoy flares against them; mines dropped by
+raiders breaking off and guarding dens; damage to the engines, guns and shield generator; cargo
+pods and equipment crates kept in a stash; wingmen for hire, paid per jump; every den defends
+itself and can be knocked out (paid by the law, reported in the news, dark for six hours), with
+den assault contracts on lawful boards; hit flashes and radio chatter
+([PROCGEN.md §15](PROCGEN.md#15-combat-depth)).
 
 ### Fix what real phones hit ✅
 
@@ -234,7 +264,8 @@ of increment 6.
 
 32 systems within about 17 light-years, with 44 stars and 37 confirmed planets from the HYG
 database and the Open Exoplanet Catalogue, generated fictional stations and jump lanes. Still
-provisional: the archive snapshot (see the parallel track above and [KNOWN_GAPS.md](KNOWN_GAPS.md)).
+provisional: the archive snapshot (see the real sky, verified, at the top of the proposals, and
+[KNOWN_GAPS.md](KNOWN_GAPS.md)).
 
 ### Story and polish
 
