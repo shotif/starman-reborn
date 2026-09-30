@@ -1,5 +1,5 @@
 import { getLocation, getPlanet, getSystem } from '../../data/systems.ts';
-import type { ContractKind } from '../../content/contracts/rules.ts';
+import { CONTRACTS, type ContractKind } from '../../content/contracts/rules.ts';
 import { COMMODITIES } from '../../economy/commodities.ts';
 import { welcomeText } from '../../economy/dockText.ts';
 import { FACTIONS, standingTier, TIER_LABEL } from '../../economy/factions.ts';
@@ -61,8 +61,26 @@ export function jobBoardContent(ctx: StationContext, selected: string | null, on
   );
 }
 
-const KIND_GLYPH: Record<ContractKind, GlyphName> = { freight: 'trader', supply: 'trader', parcel: 'jobs', bounty: 'gun', survey: 'science' };
-const KIND_LABEL: Record<ContractKind, string> = { freight: 'Freight', supply: 'Supply run', parcel: 'Courier', bounty: 'Bounty', survey: 'Survey' };
+const KIND_GLYPH: Record<ContractKind, GlyphName> = {
+  freight: 'trader',
+  supply: 'trader',
+  parcel: 'jobs',
+  bounty: 'gun',
+  survey: 'science',
+  escort: 'shieldgen',
+  ace: 'missile',
+  recovery: 'tractor',
+};
+const KIND_LABEL: Record<ContractKind, string> = {
+  freight: 'Freight',
+  supply: 'Supply run',
+  parcel: 'Courier',
+  bounty: 'Bounty',
+  survey: 'Survey',
+  escort: 'Escort',
+  ace: 'Ace hunt',
+  recovery: 'Recovery',
+};
 
 /** Where a job sends you, for the card's subtitle. */
 function whereTo(job: JobDef): string {
@@ -75,8 +93,10 @@ function whereTo(job: JobDef): string {
     const source = getLocation(job.briefingPrices.locationId);
     return `buy at ${source.name}, ${getSystem(source.systemId).displayName}`;
   }
-  const loc = getLocation(o?.kind === 'bounty' ? o.locationId : job.destinationLocationId);
-  return `${o?.kind === 'bounty' ? 'near' : 'to'} ${loc.name}, ${getSystem(loc.systemId).displayName}`;
+  if (o?.kind === 'escort') return `to ${getLocation(o.locationId).name}, this system`;
+  const near = o?.kind === 'bounty' || o?.kind === 'recover';
+  const loc = getLocation(near ? o.locationId : job.destinationLocationId);
+  return `${near ? 'near' : 'to'} ${loc.name}, ${getSystem(loc.systemId).displayName}`;
 }
 
 /** The accept button's label: the reward, and the deposit when there is one. */
@@ -91,6 +111,13 @@ function jobCard(o: JobOffer, expanded: boolean, onSelect: (id: string) => void)
   const kind = job.contract?.kind;
   const cargo = job.contract?.cargo;
   const deliver = job.objectives.find((x) => x.kind === 'deliver');
+  const urgent = job.contract?.urgent;
+  const chain = job.contract?.chain;
+  const tags = [
+    chain ? h('span', { class: 'job-tag chain' }, `Follow-up ${chain.step}/${CONTRACTS.chain.maxSteps}`) : null,
+    urgent ? h('span', { class: 'job-tag urgent' }, `Urgent · ${urgent.seconds / 60} min`) : null,
+    job.contract?.event ? h('span', { class: 'job-tag event' }, 'In the news') : null,
+  ].filter(Boolean);
   const head = h(
     'button',
     {
@@ -101,7 +128,13 @@ function jobCard(o: JobOffer, expanded: boolean, onSelect: (id: string) => void)
       onClick: () => onSelect(job.id),
     },
     glyph(kind ? KIND_GLYPH[kind] : 'jobs'),
-    h('span', null, h('span', { class: 'row-name' }, job.title), h('span', { class: 'row-sub' }, `${kind ? `${KIND_LABEL[kind]} · ` : ''}${who} · ${whereTo(job)}`)),
+    h(
+      'span',
+      null,
+      h('span', { class: 'row-name' }, job.title),
+      h('span', { class: 'row-sub' }, `${kind ? `${KIND_LABEL[kind]} · ` : ''}${who} · ${whereTo(job)}`),
+      tags.length ? h('span', { class: 'job-tags' }, tags) : null,
+    ),
     h('span', { class: 'job-meta' }, h('span', { class: 'row-value num reward' }, formatCredits(job.reward)), pips(job.difficulty)),
   );
   const status =
@@ -109,7 +142,7 @@ function jobCard(o: JobOffer, expanded: boolean, onSelect: (id: string) => void)
       ? null
       : o.status === 'locked'
         ? h('p', { class: 'blocked' }, icon('alert'), ` ${o.lockReason}`)
-        : h('p', { class: 'muted' }, o.status === 'active' ? 'Accepted — in progress.' : o.status === 'abandoned' ? 'Abandoned.' : 'Completed.');
+        : h('p', { class: 'muted' }, o.status === 'active' ? 'Accepted — in progress.' : o.status === 'abandoned' ? 'Abandoned.' : o.status === 'failed' ? 'Failed.' : 'Completed.');
   return h(
     'li',
     { class: `job-card ${o.status}${expanded ? ' open' : ''}`, 'data-testid': `job-${job.id}` },
@@ -130,6 +163,10 @@ function jobCard(o: JobOffer, expanded: boolean, onSelect: (id: string) => void)
               : null,
             job.contract?.deposit ? h('dt', null, 'Deposit') : null,
             job.contract?.deposit ? h('dd', null, `${formatCredits(job.contract.deposit)}, returned with the reward`) : null,
+            urgent ? h('dt', null, 'Time limit') : null,
+            urgent ? h('dd', null, `${urgent.seconds / 60} min from accepting for a bonus of ${formatCredits(urgent.bonus)}; late costs a little standing`) : null,
+            chain ? h('dt', null, 'Chain') : null,
+            chain ? h('dd', null, `Step ${chain.step} of up to ${CONTRACTS.chain.maxSteps}; the offer lapses if you leave it`) : null,
             h('dt', null, 'Objectives'),
             h('dd', null, h('ol', { class: 'objectives' }, job.objectives.map((x) => h('li', null, x.text)))),
           ),

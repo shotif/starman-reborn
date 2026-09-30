@@ -3,7 +3,7 @@ import type { AudioEngine } from '../audio/AudioEngine.ts';
 import type { EngineSoundState, SfxId } from '../audio/types.ts';
 import type { AimAssist, Settings } from '../app/settings.ts';
 import { DIFFICULTY } from '../app/settings.ts';
-import type { GameState } from '../app/state.ts';
+import type { CommodityId, GameState } from '../app/state.ts';
 import { applyDamage, regenerate, type Durability } from '../combat/damage.ts';
 import { leadPoint } from '../combat/lead.ts';
 import { MISSILE_LOCK_CONE, MISSILE_LOCK_RANGE, updateMissile, type Missile, type MissileTarget } from '../combat/missiles.ts';
@@ -17,6 +17,9 @@ import type { ShipPerformance } from '../content/loadout.ts';
 import { FACTIONS } from '../economy/factions.ts';
 import { REPAIR_KIT } from '../economy/equipment.ts';
 import { shipModel } from '../content/catalog.ts';
+import { CONTRACTS } from '../content/contracts/rules.ts';
+import { COMMODITIES } from '../content/economy/goods.ts';
+import { hashString } from '../content/random.ts';
 import { activeLauncher, fittedGuns, gunSummary, performanceOf, roundsLabel } from '../economy/loadout.ts';
 import { aimErrors, avoidObstacles, flyTo, steerToward, type Obstacle } from '../flight/autopilot.ts';
 import { ChaseCamera } from '../flight/ChaseCamera.ts';
@@ -57,13 +60,20 @@ export interface FlightCallbacks {
   onScanInfo(target: Target): void;
   onEncounterStart(def: EncounterDef): void;
   onEncounterEnd(def: EncounterDef, outcome: EncounterOutcome): void;
-  onLoot(credits: number): void;
+  /** Loot collected: credits, and cargo when the pod held some (an ace's hold). */
+  onLoot(credits: number, cargo?: { commodity: CommodityId; qty: number }): void;
   /** The player destroyed a raider from a pack (the opening raid reports through onEncounterEnd). */
   onBounty(credits: number, name: string): void;
   /** A raider of a bounty contract's pack was destroyed. */
   onContractKill(jobId: string): void;
   /** A trader docked at `to`, coming from the station `from` (null: through the jump beacon). */
   onTraderArrived?(from: string | null, to: string, shipId: string): void;
+  /** The ship of an escort contract docked at its destination. */
+  onEscortArrived?(jobId: string): void;
+  /** The ship of an escort contract was destroyed. */
+  onEscortLost?(jobId: string): void;
+  /** The item of a recovery contract was tractored aboard. */
+  onRecovered?(jobId: string): void;
   onMessage(text: string, tone: 'good' | 'bad' | 'info'): void;
 }
 
@@ -99,6 +109,14 @@ interface NpcShip {
   pack?: number;
   /** Bounty contract this raider belongs to (its pack guards a marked spot and is never replaced). */
   contract?: string;
+  /** Guards an ace or a wreck: holds its spot until it has someone to fight, and never leaves. */
+  guard?: boolean;
+  /** A named ace: tougher, deadlier, and it drops what it carried. */
+  ace?: boolean;
+  /** Ambushers go for this ship (the one the player escorts) rather than the player. */
+  prey?: NpcShip;
+  /** The ship of an escort contract: where it set off and when the ambush comes. */
+  escort?: { jobId: string; start: THREE.Vector3; ambushAt: number; ambushed: boolean; level: 1 | 2 | 3 };
   /** Who it is fighting. */
   foe: NpcShip | 'player' | null;
   /** Bounty paid when the player destroys it. */
@@ -114,8 +132,12 @@ interface NpcShip {
 export interface TrafficSetup {
   plan: TrafficPlan;
   owner: StationOwner | null;
-  /** Packs to spawn for the player's bounty contracts in this system: raiders left, threat level and where they lurk. */
-  contractPacks?: readonly { jobId: string; locationId: string; count: number; level: 1 | 2 | 3 }[];
+  /** Packs to spawn for the player's bounty contracts in this system: raiders left, threat level and where they lurk (or an ace). */
+  contractPacks?: readonly { jobId: string; locationId: string; count: number; level: 1 | 2 | 3; ace?: { name: string; model: string } }[];
+  /** Ships the player escorts in this system: they set off alongside the player. */
+  escorts?: readonly { jobId: string; from: string; to: string; model: string; name: string; level: 1 | 2 | 3 }[];
+  /** Wrecks the player's recovery contracts send them to in this system. */
+  wrecks?: readonly { jobId: string; locationId: string; item: string; guard: 1 | 2 | 3 | null }[];
 }
 
 interface Drone {
@@ -136,6 +158,10 @@ interface LootPod {
   position: THREE.Vector3;
   velocity: THREE.Vector3;
   value: number;
+  /** Cargo in the pod (an ace's hold). */
+  cargo?: { commodity: CommodityId; qty: number };
+  /** The item of a recovery contract (its job id). */
+  recover?: string;
   life: number;
   target: Target;
 }
@@ -228,7 +254,9 @@ export class FlightSession {
   private throttle = 0;
   private drift = false;
   private selectedId: string | null = null;
-  private objective: { locationId: string | null; bodyId: string | null } = { locationId: null, bodyId: null };
+  private objective: { locationId: string | null; bodyId: string | null; targetId: string | null } = { locationId: null, bodyId: null, targetId: null };
+  /** Hulls of wrecks (recovery contracts), scenery that drifts and turns. */
+  private readonly wreckHulls: { art: ShipArt; spin: THREE.Vector3 }[] = [];
   private readonly aim = new THREE.Vector2();
   private aimAssisted = false;
   private missileLockTime = 0;
@@ -368,9 +396,9 @@ export class FlightSession {
     this.chase.reducedMotion = this.settings.reducedMotion;
   }
 
-  setObjective(locationId: string | null, bodyId: string | null): void {
+  setObjective(locationId: string | null, bodyId: string | null, targetId: string | null = null): void {
     const prevId = this.objectiveTargetId();
-    this.objective = { locationId, bodyId };
+    this.objective = { locationId, bodyId, targetId };
     const nextId = this.objectiveTargetId();
     // Keep guiding: if the player had the old objective selected, select the new one.
     if (prevId !== nextId && (this.selectedId === null || this.selectedId === prevId) && nextId && this.findTarget(nextId)) {
@@ -379,6 +407,7 @@ export class FlightSession {
   }
 
   private objectiveTargetId(): string | null {
+    if (this.objective.targetId && this.loot.some((l) => l.target.id === this.objective.targetId)) return this.objective.targetId;
     if (this.objective.locationId) return `station:${this.objective.locationId}`;
     if (this.objective.bodyId) return `planet:${this.objective.bodyId}`;
     return null;
@@ -1318,7 +1347,8 @@ export class FlightSession {
       l.position.addScaledVector(l.velocity, dt);
       l.art.object.position.copy(l.position);
       if (this.alive && d < 30) {
-        this.callbacks.onLoot(l.value);
+        if (l.recover) this.callbacks.onRecovered?.(l.recover);
+        else this.callbacks.onLoot(l.value, l.cargo);
         this.sfx('pickup');
         this.removeLoot(i);
       } else if (l.life <= 0) {
@@ -1336,25 +1366,28 @@ export class FlightSession {
     this.loot.splice(i, 1);
   }
 
-  private spawnLoot(position: THREE.Vector3, value: number): void {
+  private spawnLoot(position: THREE.Vector3, value: number, extra: { cargo?: { commodity: CommodityId; qty: number }; recover?: { jobId: string; item: string } } = {}): void {
     const art = createCargoPod(this.ctx);
     const pos = position.clone();
     art.object.position.copy(pos);
     this.system.scene.add(art.object);
-    const id = `loot:${Math.floor(this.time * 1000)}`;
+    const id = extra.recover ? `wreck:${extra.recover.jobId}` : `loot:${Math.floor(this.time * 1000)}-${this.loot.length}`;
+    const cargo = extra.cargo;
     this.loot.push({
       art,
       position: pos,
-      velocity: new THREE.Vector3(this.rand() - 0.5, this.rand() - 0.5, this.rand() - 0.5).multiplyScalar(20),
+      velocity: extra.recover ? new THREE.Vector3() : new THREE.Vector3(this.rand() - 0.5, this.rand() - 0.5, this.rand() - 0.5).multiplyScalar(20),
       value,
-      life: 240,
+      ...(cargo ? { cargo } : {}),
+      ...(extra.recover ? { recover: extra.recover.jobId } : {}),
+      life: extra.recover ? Infinity : 240,
       target: {
         id,
-        name: 'Salvage pod',
+        name: extra.recover ? `${extra.recover.item.charAt(0).toUpperCase()}${extra.recover.item.slice(1)}` : cargo ? 'Cargo pod' : 'Salvage pod',
         kind: 'loot',
         position: pos,
         radius: 4,
-        subtitle: 'Salvaged components · fly close to collect',
+        subtitle: extra.recover ? 'In the wreckage · fly close to tractor it in' : cargo ? `${cargo.qty} × ${COMMODITIES[cargo.commodity].name.toLowerCase()} · fly close to collect` : 'Salvaged components · fly close to collect',
         dataClass: 'fictional',
         alive: true,
         cycle: true,
@@ -1415,9 +1448,16 @@ export class FlightSession {
     const near = n.body.position.distanceTo(this.player.position) < 6_000;
     this.spawnEffect(createExplosion(n.body.position.clone(), 8, this.ctx));
     if (near) this.sfx('explosion-large', 0.8);
-    // Raiders leave salvage; a lost freighter spills part of its cargo.
+    // Raiders leave salvage; a lost freighter spills part of its cargo; an ace drops its hold.
     this.spawnLoot(n.body.position, n.role === 'trader' ? 90 + Math.round(this.rand() * 160) : n.role === 'raider' ? 60 + Math.round(n.bounty * 0.25) : 40);
-    if (n.role === 'trader') this.callbacks.onMessage(`${n.name} was destroyed.`, 'bad');
+    if (n.ace) {
+      const [lo, hi] = CONTRACTS.ace.loot;
+      this.spawnLoot(n.body.position.clone().add(this.tmp.set(20, 8, -12)), Math.round(lo + this.rand() * (hi - lo)));
+      const goods: CommodityId[] = ['luxuries', 'electronics', 'weapons', 'ship-parts'];
+      this.spawnLoot(n.body.position.clone().add(this.tmp.set(-18, -6, 14)), 0, { cargo: { commodity: goods[Math.floor(this.rand() * goods.length)]!, qty: 3 + Math.floor(this.rand() * 4) } });
+    }
+    if (n.escort) this.callbacks.onEscortLost?.(n.escort.jobId);
+    else if (n.role === 'trader') this.callbacks.onMessage(`${n.name} was destroyed.`, 'bad');
     const byPlayer = this.time - n.playerHitAt < 30;
     if (n.contract) this.callbacks.onContractKill(n.contract);
     else if (n.side === 'raider' && !n.encounter && byPlayer) this.callbacks.onBounty(n.bounty, n.name);
@@ -1624,7 +1664,20 @@ export class FlightSession {
     if (!timers.contractsSpawned && this.time > 2) {
       timers.contractsSpawned = true;
       for (const c of t.contractPacks ?? []) this.spawnContractPack(c);
+      for (const e of t.escorts ?? []) this.spawnEscort(e);
+      for (const w of t.wrecks ?? []) this.spawnWreck(w);
     }
+    // Escorted ships: the ambush comes part-way along the route.
+    for (const n of this.npcs) {
+      const e = n.escort;
+      if (!e || e.ambushed || !n.trader || n.durability.hull <= 0) continue;
+      const total = Math.max(1, e.start.distanceTo(n.trader.destination.point));
+      if (1 - n.body.position.distanceTo(n.trader.destination.point) / total >= e.ambushAt) {
+        e.ambushed = true;
+        this.spawnAmbush(n, e.level);
+      }
+    }
+    for (const w of this.wreckHulls) w.art.object.rotation.x += w.spin.x * dt;
     if (!timers.patrolsLaunched && plan.patrolWings > 0 && this.time > 2) {
       timers.patrolsLaunched = true;
       for (let w = 0; w < plan.patrolWings; w++) this.spawnPatrolWing(t, w);
@@ -1813,19 +1866,113 @@ export class FlightSession {
     const pack = ++this.packSerial;
     this.packHome.set(pack, home);
     const pool = RAIDERS[c.level];
+    const around = () => home.clone().add(this.tmp.set(this.rand() - 0.5, this.rand() - 0.5, this.rand() - 0.5).multiplyScalar(600));
+    const heading = () => this.tmp.set(this.rand() - 0.5, 0, this.rand() - 0.5).normalize().clone();
+    if (c.ace) {
+      // A named ace in a better ship, tougher than its hull suggests, with guards.
+      const ace = this.makeNpc(c.ace.model, 'raider', 'hollow-wake', around(), heading(), `${FACTIONS['hollow-wake'].name} ace · contract target`);
+      ace.name = c.ace.name;
+      ace.target.name = c.ace.name;
+      ace.pack = pack;
+      ace.contract = c.jobId;
+      ace.ace = true;
+      const d = ace.durability;
+      d.hull = d.hullMax = d.hullMax * CONTRACTS.ace.toughness;
+      d.shield = d.shieldMax = d.shieldMax * CONTRACTS.ace.toughness;
+      for (let i = 0; i < CONTRACTS.ace.guards; i++) this.spawnGuard(pool[i % pool.length]!, pack, around());
+      return;
+    }
     for (let i = 0; i < c.count; i++) {
       const model = pool[i % pool.length]!;
-      const position = home.clone().add(this.tmp.set(this.rand() - 0.5, this.rand() - 0.5, this.rand() - 0.5).multiplyScalar(600));
-      const forward = this.tmp.set(this.rand() - 0.5, 0, this.rand() - 0.5).normalize().clone();
-      const npc = this.makeNpc(model, 'raider', 'hollow-wake', position, forward, `${FACTIONS['hollow-wake'].name} raider · contract target`);
+      const npc = this.makeNpc(model, 'raider', 'hollow-wake', around(), heading(), `${FACTIONS['hollow-wake'].name} raider · contract target`);
       npc.pack = pack;
       npc.contract = c.jobId;
+    }
+  }
+
+  /** A raider guarding a spot (an ace or a wreck): the usual bounty, and it never wanders off. */
+  private spawnGuard(model: string, pack: number, position: THREE.Vector3): NpcShip {
+    const bounty = bountyFor(model);
+    const forward = this.tmp.set(this.rand() - 0.5, 0, this.rand() - 0.5).normalize().clone();
+    const npc = this.makeNpc(model, 'raider', 'hollow-wake', position, forward, `${FACTIONS['hollow-wake'].name} raider · hostile · bounty ${bounty} cr`);
+    npc.pack = pack;
+    npc.bounty = bounty;
+    npc.guard = true;
+    return npc;
+  }
+
+  /** The ship of an escort contract: it sets off alongside the player toward its destination. */
+  private spawnEscort(e: NonNullable<TrafficSetup['escorts']>[number]): void {
+    const dest = this.system.dock(e.to);
+    if (!dest) return;
+    const forward = this.player.forward(new THREE.Vector3());
+    const side = new THREE.Vector3(1, 0, 0).applyQuaternion(this.player.quaternion);
+    const position = this.player.position.clone().addScaledVector(forward, 220).addScaledVector(side, 180);
+    const heading = dest.dockPoint.clone().sub(position).normalize();
+    const owner = this.traffic?.owner;
+    const faction = owner === 'sta' || owner === 'frontier' ? owner : 'independent';
+    const npc = this.makeNpc(e.model, 'trader', faction, position, heading, `Your escort · bound for ${dest.name}`);
+    npc.name = e.name;
+    npc.target.name = `${e.name} (escort)`;
+    npc.trader = new TraderBrain({ id: e.to, point: dest.dockPoint }, npc.durability);
+    npc.origin = null;
+    const [a, b] = CONTRACTS.escort.ambushAt;
+    npc.escort = { jobId: e.jobId, start: position.clone(), ambushAt: a + this.rand() * (b - a), ambushed: false, level: e.level };
+    this.callbacks.onMessage(`The ${e.name} is setting off for ${dest.name}. Stay close.`, 'info');
+  }
+
+  /** Raiders jump the escorted ship: they come from ahead of it and go for it first. */
+  private spawnAmbush(target: NpcShip, level: 1 | 2 | 3): void {
+    const pack = ++this.packSerial;
+    const ahead = target.trader!.destination.point.clone().sub(target.body.position).normalize();
+    const side = new THREE.Vector3().crossVectors(ahead, new THREE.Vector3(0, 1, 0)).normalize();
+    const home = target.body.position.clone().addScaledVector(ahead, 2_200).addScaledVector(side, (this.rand() - 0.5) * 1_600);
+    this.packHome.set(pack, home);
+    const pool = RAIDERS[level];
+    const count = level + 1;
+    for (let i = 0; i < count; i++) {
+      const model = pool[i % pool.length]!;
+      const bounty = bountyFor(model);
+      const position = home.clone().add(this.tmp.set(this.rand() - 0.5, this.rand() - 0.5, this.rand() - 0.5).multiplyScalar(500));
+      const npc = this.makeNpc(model, 'raider', 'hollow-wake', position, target.body.position.clone().sub(position).normalize(), `${FACTIONS['hollow-wake'].name} raider · hostile · bounty ${bounty} cr`);
+      npc.pack = pack;
+      npc.bounty = bounty;
+      // Half go for the escorted ship, half for its guard.
+      if (i % 2 === 0) npc.prey = target;
+    }
+    this.sfx('alert');
+    this.callbacks.onMessage(`Ambush! Raiders are closing on the ${target.name}.`, 'bad');
+  }
+
+  /** A recovery contract's wreck: a dead hull a few kilometres off a station, and the item to tractor in. */
+  private spawnWreck(w: NonNullable<TrafficSetup['wrecks']>[number]): void {
+    const site = this.system.dock(w.locationId);
+    if (!site) return;
+    const r = seededRandom(hashString(w.jobId));
+    const dir = new THREE.Vector3(r() - 0.5, (r() - 0.5) * 0.3, r() - 0.5).normalize();
+    const base = site.dockable ? site.dockPoint : site.def.position;
+    const at = base.clone().addScaledVector(dir, site.radius + 4_500 + r() * 2_000);
+    const fleet = FLEETS.independent.traders;
+    const hull = createCatalogShipArt(shipModel(fleet[Math.floor(r() * fleet.length)]!), this.ctx);
+    hull.object.position.copy(at);
+    hull.object.rotation.set(r() * Math.PI, r() * Math.PI, r() * Math.PI);
+    this.system.scene.add(hull.object);
+    this.wreckHulls.push({ art: hull, spin: new THREE.Vector3(0.02 + r() * 0.03, 0, 0) });
+    this.spawnLoot(at.clone().add(new THREE.Vector3(40, 12, -30)), 0, { recover: { jobId: w.jobId, item: w.item } });
+    if (w.guard) {
+      const pack = ++this.packSerial;
+      const home = at.clone().add(new THREE.Vector3(0, 300, 0));
+      this.packHome.set(pack, home);
+      const pool = RAIDERS[w.guard];
+      for (let i = 0; i < w.guard; i++) this.spawnGuard(pool[i % pool.length]!, pack, home.clone().add(this.tmp.set(this.rand() - 0.5, this.rand() - 0.5, this.rand() - 0.5).multiplyScalar(500)));
     }
   }
 
   private flyTrader(n: NpcShip): void {
     const brain = n.trader!;
     const cruise = brain.update(n.body, n.durability, n.controls, this.frameObstacles, () => {
+      // An escorted ship keeps to its course; others run for the nearest dock.
+      if (n.escort) return brain.destination;
       let best: DockSite | null = null;
       for (const d of this.openDocks()) if (!best || d.dockPoint.distanceTo(n.body.position) < best.dockPoint.distanceTo(n.body.position)) best = d;
       return best ? { id: best.def.locationId, point: best.dockPoint } : null;
@@ -1837,7 +1984,8 @@ export class FlightSession {
     }
     // Docked at its destination: it unloads (the markets feel it) and leaves the scene.
     if (brain.state === 'arrived') {
-      this.callbacks.onTraderArrived?.(n.origin ?? null, brain.destination.id, n.id);
+      if (n.escort) this.callbacks.onEscortArrived?.(n.escort.jobId);
+      else this.callbacks.onTraderArrived?.(n.origin ?? null, brain.destination.id, n.id);
       this.removeNpc(n);
     }
   }
@@ -1860,7 +2008,10 @@ export class FlightSession {
     const pack = this.npcs.filter((x) => x.pack === n.pack && x.durability.hull > 0);
     const sees = (x: NpcShip) => x.body.position.distanceTo(this.player.position) < TRAFFIC.detectRange;
     const playerFair = this.alive && !this.busy && this.autopilot.mode !== 'lane';
-    if (playerFair && (n.foe === 'player' || pack.some(sees))) {
+    if (n.prey && n.prey.durability.hull > 0 && this.time - n.playerHitAt > 6) {
+      // Ambushers go for the escorted ship until the player makes them turn.
+      n.foe = n.prey;
+    } else if (playerFair && (n.foe === 'player' || pack.some(sees))) {
       n.foe = 'player';
     } else {
       const prey = n.foe && n.foe !== 'player' && n.foe.durability.hull > 0 ? n.foe : this.nearestShip(n.body.position, TRAFFIC.huntRange, (x) => x.side === 'lawful');
@@ -1878,13 +2029,13 @@ export class FlightSession {
         if (this.autopilot.mode === 'goto') this.autopilot = { mode: 'none' };
         this.player.requestCruise(false);
       }
-      const scale = TRAFFIC.npcDamage * (toPlayer ? DIFFICULTY[this.settings.difficulty].enemyDamage : 1);
+      const scale = TRAFFIC.npcDamage * (toPlayer ? DIFFICULTY[this.settings.difficulty].enemyDamage : 1) * (n.ace ? CONTRACTS.ace.damage : 1);
       this.fightNpc(n, toPlayer ? this.player : (n.foe as NpcShip).body, dt, scale);
     } else {
       n.idle += dt;
       for (const g of n.guns) g.tick(dt);
-      if (n.contract) {
-        // A contract pack holds its spot until someone comes for it.
+      if (n.contract || n.guard) {
+        // A contract pack (or an ace's or a wreck's guards) holds its spot until someone comes for it.
         flyTo(n.body, this.packHome.get(n.pack ?? -1) ?? n.body.position, { arriveDistance: 500, allowCruise: false, maxThrottle: 0.35 }, n.controls);
         n.body.requestCruise(false);
         return;
@@ -2176,6 +2327,11 @@ export class FlightSession {
     }
     this.missiles.length = 0;
     while (this.loot.length) this.removeLoot(this.loot.length - 1);
+    for (const w of this.wreckHulls) {
+      this.system.scene.remove(w.art.object);
+      w.art.dispose();
+    }
+    this.wreckHulls.length = 0;
     for (const d of this.drones) {
       this.system.scene.remove(d.art.object);
       d.art.dispose();

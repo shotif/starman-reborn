@@ -3,13 +3,29 @@ import { AudioEngine } from '../audio/AudioEngine.ts';
 import type { MusicMood, SfxId } from '../audio/types.ts';
 import { getComponent, getLocation, getPlanet, getSystem, SYSTEMS, WORLD } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
-import { cargoUsed } from '../economy/cargo.ts';
+import { addCargo, cargoUsed, itemsThatFit } from '../economy/cargo.ts';
+import { COMMODITIES } from '../economy/commodities.ts';
 import { shipModel } from '../content/catalog.ts';
 import { hashString } from '../content/random.ts';
 import { cargoCapacity } from '../economy/loadout.ts';
 import { adjustReputation, FACTIONS, standingTier, TIER_LABEL } from '../economy/factions.ts';
 import { newsAt, systemEventAt } from '../economy/events.ts';
-import { acceptJob, activeJobIds, advanceJobs, contractPacksIn, currentObjective, deliverJob, describeObjective, getJob, LIFELINE_ID, primaryObjective, type JobEvent } from '../economy/jobs.ts';
+import {
+  acceptJob,
+  activeJobIds,
+  advanceJobs,
+  contractPacksIn,
+  currentObjective,
+  deliverJob,
+  describeObjective,
+  escortsIn,
+  failJob,
+  getJob,
+  LIFELINE_ID,
+  primaryObjective,
+  wrecksIn,
+  type JobEvent,
+} from '../economy/jobs.ts';
 import { moveStock, traderDelivery } from '../economy/markets.ts';
 import { welcomeText } from '../economy/dockText.ts';
 import { DesktopInput } from '../flight/input/DesktopInput.ts';
@@ -583,8 +599,14 @@ export class Game {
     for (const e of events) {
       if (e.kind === 'complete') {
         const job = getJob(e.jobId, this.state!);
+        const bonus = e.text.includes('on-time bonus') ? job.contract?.urgent?.bonus ?? 0 : 0;
         this.sfx('mission-complete');
-        toast(`${job.title} complete: +${formatCredits(job.reward)}`, 'good', 5000);
+        toast(`${job.title} complete: +${formatCredits(job.reward + bonus)}${bonus ? ' with the on-time bonus' : e.text.includes('(late') ? ' (late: no bonus)' : ''}`, 'good', 5000);
+      } else if (e.kind === 'failed') {
+        this.sfx('ui-error');
+        toast(e.text, 'bad', 5000);
+      } else if (e.kind === 'offer') {
+        toast(e.text, 'info', 5000);
       } else {
         toast(`Objective complete: ${e.text}`, 'good');
       }
@@ -635,9 +657,39 @@ export class Game {
         onScanInfo: (t) => this.onScanInfo(t),
         onEncounterStart: (def) => this.onEncounterStart(def),
         onEncounterEnd: (def, outcome) => this.onEncounterEnd(def, outcome),
-        onLoot: (credits) => {
-          applyCredits(state, credits, 'loot', 'Salvaged components');
-          toast(`Salvage collected: +${formatCredits(credits)}`, 'good');
+        onLoot: (credits, cargo) => {
+          if (credits > 0) {
+            applyCredits(state, credits, 'loot', 'Salvaged components');
+            toast(`Salvage collected: +${formatCredits(credits)}`, 'good');
+          }
+          if (cargo) {
+            const got = Math.min(cargo.qty, itemsThatFit(state.ship.cargo, cargo.commodity, cargoCapacity(state.ship)));
+            if (got > 0) addCargo(state.ship.cargo, cargo.commodity, got, cargoCapacity(state.ship));
+            const name = COMMODITIES[cargo.commodity].name.toLowerCase();
+            toast(got > 0 ? `Cargo pod collected: ${got} ${name}${got < cargo.qty ? ' (the hold is full)' : ''}` : `No room in the hold for the ${name}`, got > 0 ? 'good' : 'bad');
+          }
+          this.persist();
+        },
+        onEscortArrived: (jobId) => {
+          const progress = state.jobs[jobId];
+          if (!progress || progress.status !== 'active') return;
+          progress.escort = 'arrived';
+          this.announceJobEvents(advanceJobs(state, { dockedAt: state.location.dockedAt, systemId: state.location.systemId }));
+          this.persist();
+        },
+        onEscortLost: (jobId) => {
+          const o = currentObjective(state, jobId);
+          const ev = failJob(state, jobId, o?.kind === 'escort' ? `the ${o.shipName} was destroyed` : 'the escorted ship was destroyed');
+          if (ev) this.announceJobEvents([ev]);
+          this.persist();
+        },
+        onRecovered: (jobId) => {
+          const progress = state.jobs[jobId];
+          const o = currentObjective(state, jobId);
+          if (!progress || o?.kind !== 'recover') return;
+          progress.recovered = true;
+          toast(`Recovered the ${o.item}. Bring it back.`, 'good', 4000);
+          this.announceJobEvents(advanceJobs(state, { dockedAt: state.location.dockedAt, systemId: state.location.systemId }));
           this.persist();
         },
         onBounty: (credits, name) => this.onBounty(credits, name),
@@ -650,7 +702,12 @@ export class Game {
         },
         onMessage: (text, tone) => toast(text, tone, 2600),
       },
-      traffic: { ...trafficFor(state.location.systemId, this.renderer.quality, state.clock), contractPacks: contractPacksIn(state, state.location.systemId) },
+      traffic: {
+        ...trafficFor(state.location.systemId, this.renderer.quality, state.clock),
+        contractPacks: contractPacksIn(state, state.location.systemId),
+        escorts: escortsIn(state, state.location.systemId),
+        wrecks: wrecksIn(state, state.location.systemId),
+      },
     });
     const { width, height } = this.renderer.size;
     this.flight.setViewport(width, height);
@@ -688,6 +745,7 @@ export class Game {
     const progress = state.jobs[jobId];
     if (!progress || progress.status !== 'active') return;
     progress.kills = (progress.kills ?? 0) + 1;
+    state.stats.kills += 1;
     const o = currentObjective(state, jobId);
     if (o?.kind === 'bounty' && progress.kills < o.count) toast(`Contract target destroyed (${progress.kills}/${o.count})`, 'good', 3000);
     this.announceJobEvents(advanceJobs(state, { dockedAt: state.location.dockedAt, systemId: state.location.systemId }));
@@ -1186,7 +1244,7 @@ export class Game {
       const obj = primaryObjective(state);
       this.objectiveText = obj ? obj.text : state.jobs[LIFELINE_ID]?.status === 'complete' ? 'Free exploration: open the star map and visit any system.' : 'Accept a contract at a station, or explore.';
       const here = obj && obj.targetSystemId === state.location.systemId;
-      flight.setObjective(here ? obj.targetLocationId : null, here ? obj.targetBodyId : null);
+      flight.setObjective(here ? obj.targetLocationId : null, here ? obj.targetBodyId : null, here ? (obj.targetId ?? null) : null);
     }
     flight.update(dt, input);
     const hudModel = flight.hud;

@@ -1,14 +1,30 @@
 import { describe, expect, it } from 'vitest';
 import { migrateSave, SaveFormatError } from '../../src/app/save/migrate.ts';
 import { createNewGame, voyageTotals, type GameState } from '../../src/app/state.ts';
-import { dockAt, discoverBody } from '../../src/app/rules.ts';
+import { dockAt, discoverBody, performJump } from '../../src/app/rules.ts';
 import { CONTRACTS } from '../../src/content/contracts/rules.ts';
 import { formatIssues } from '../../src/content/validate.ts';
 import { getLocation, WORLD } from '../../src/data/systems.ts';
 import { cargoCount } from '../../src/economy/cargo.ts';
 import { validateContracts } from '../../src/economy/contractGuards.ts';
-import { boardEpoch, boardFor, postedContract, postedContracts } from '../../src/economy/contracts.ts';
-import { abandonJob, acceptJob, advanceJobs, contractPacksIn, deliverJob, describeObjective, getJob, jobsAt, type JobDef } from '../../src/economy/jobs.ts';
+import { boardEpoch, boardFor, followUpFor, postedContract, postedContracts } from '../../src/economy/contracts.ts';
+import {
+  abandonJob,
+  acceptJob,
+  advanceJobs,
+  contractPacksIn,
+  deliverJob,
+  describeObjective,
+  escortsIn,
+  failJob,
+  getJob,
+  jobsAt,
+  wreckTargetId,
+  wrecksIn,
+  type JobDef,
+} from '../../src/economy/jobs.ts';
+import { findRoute } from '../../src/galaxy/routing.ts';
+import { SYSTEMS } from '../../src/data/systems.ts';
 
 /**
  * Generated contracts (docs/PROCGEN.md §10): guardrails over many time slots, and each kind played
@@ -30,11 +46,11 @@ function pilotAt(locationId: string, clock = 0): GameState {
   return s;
 }
 
-/** The first posted contract of a kind anywhere, with the time slot it was posted in. */
-function findPosted(kind: NonNullable<JobDef['contract']>['kind']): { job: JobDef; epoch: number } {
-  for (let epoch = 0; epoch < 30; epoch++) {
+/** The first posted contract of a kind anywhere (plain unless `match` says otherwise), with the time slot it was posted in. */
+function findPosted(kind: NonNullable<JobDef['contract']>['kind'], match: (c: JobDef) => boolean = (c) => !c.contract?.urgent && !c.requires): { job: JobDef; epoch: number } {
+  for (let epoch = 0; epoch < 60; epoch++) {
     for (const id of GENERATED) {
-      const job = boardFor(id, epoch).find((c) => c.contract?.kind === kind && !c.requires);
+      const job = boardFor(id, epoch).find((c) => c.contract?.kind === kind && match(c));
       if (job) return { job, epoch };
     }
   }
@@ -109,7 +125,8 @@ describe('playing generated contracts', () => {
     s.location = { ...s.location, systemId: dest.systemId, dockedAt: null };
     const before = s.credits;
     const events = dockAt(s, dest.id).jobEvents;
-    expect(events).toEqual([expect.objectContaining({ jobId: job.id, kind: 'complete' })]);
+    expect(events[0]).toEqual(expect.objectContaining({ jobId: job.id, kind: 'complete' }));
+    expect(events.slice(1).every((e) => e.kind === 'offer')).toBe(true);
     expect(s.credits).toBe(before + job.reward);
   });
 
@@ -224,7 +241,149 @@ describe('playing generated contracts', () => {
   });
 });
 
+describe('contracts II', () => {
+  it('urgent jobs pay a bonus in time, and cost a little standing when late', () => {
+    const { job, epoch } = findPosted('parcel', (c) => !!c.contract?.urgent && !c.requires && c.factionId !== null);
+    const urgent = job.contract!.urgent!;
+    expect(job.title).toMatch(/^Urgent: /);
+    expect(urgent.seconds).toBeGreaterThanOrEqual(CONTRACTS.urgent.minSeconds);
+    const dest = getLocation(job.destinationLocationId);
+    // In time.
+    const a = pilotAt(job.giverLocationId, epoch * CONTRACTS.epochSeconds);
+    acceptJob(a, job.id);
+    expect(describeObjective(a, job.id)!.text).toMatch(/left for the bonus/);
+    a.clock += urgent.seconds - 5;
+    a.location = { ...a.location, systemId: dest.systemId, dockedAt: null };
+    const beforeA = a.credits;
+    const events = dockAt(a, dest.id).jobEvents;
+    expect(events[0]!.text).toMatch(/on-time bonus/);
+    expect(a.credits).toBe(beforeA + job.reward + urgent.bonus);
+    // Late.
+    const b = pilotAt(job.giverLocationId, epoch * CONTRACTS.epochSeconds);
+    b.reputation[job.factionId!] = 20;
+    acceptJob(b, job.id);
+    b.clock += urgent.seconds + 5;
+    expect(describeObjective(b, job.id)!.text).toMatch(/late: no bonus/);
+    b.location = { ...b.location, systemId: dest.systemId, dockedAt: null };
+    const beforeB = b.credits;
+    dockAt(b, dest.id);
+    expect(b.credits).toBe(beforeB + job.reward);
+    expect(b.reputation[job.factionId!]).toBe(20 + job.repReward[job.factionId!]! - CONTRACTS.urgent.lateStanding);
+  });
+
+  it('a delivery can lead to a follow-up at its destination, paying more, which lapses if left', () => {
+    let found: { job: JobDef; epoch: number; next: JobDef } | null = null;
+    for (let epoch = 0; epoch < 60 && !found; epoch++) {
+      for (const id of GENERATED) {
+        const job = boardFor(id, epoch).find((c) => c.contract?.kind === 'parcel' && !c.requires && !c.contract.urgent);
+        const next = job ? followUpFor(job, epoch * CONTRACTS.epochSeconds) : null;
+        if (job && next) {
+          found = { job, epoch, next };
+          break;
+        }
+      }
+    }
+    const { job, epoch, next } = found!;
+    expect(next.title).toMatch(/^Follow-up: /);
+    expect(next.giverLocationId).toBe(job.destinationLocationId);
+    expect(next.contract!.chain).toMatchObject({ step: 2, parent: job.id });
+    const s = pilotAt(job.giverLocationId, epoch * CONTRACTS.epochSeconds);
+    acceptJob(s, job.id);
+    const dest = getLocation(job.destinationLocationId);
+    s.location = { ...s.location, systemId: dest.systemId, dockedAt: null };
+    const events = dockAt(s, dest.id).jobEvents;
+    const offer = events.find((e) => e.kind === 'offer')!;
+    expect(offer.jobId).toBe(next.id);
+    // Offered at the destination, where the player now is.
+    const offered = jobsAt(s, dest.id).find((o) => o.job.id === next.id)!;
+    expect(offered.status).toBe('available');
+    expect(acceptJob(s, next.id)).toMatchObject({ ok: true });
+    expect(getJob(next.id, s).title).toBe(next.title);
+    // Another pilot leaves it: it lapses.
+    const t = pilotAt(job.giverLocationId, epoch * CONTRACTS.epochSeconds);
+    acceptJob(t, job.id);
+    t.location = { ...t.location, systemId: dest.systemId, dockedAt: null };
+    dockAt(t, dest.id);
+    t.clock = next.contract!.chain!.expires + 1;
+    expect(jobsAt(t, dest.id).some((o) => o.job.id === next.id)).toBe(false);
+    expect(acceptJob(t, next.id).ok).toBe(false);
+    // Chains end after the last step.
+    const last = { ...next, id: 'c.x.0.0', contract: { ...next.contract!, chain: { step: CONTRACTS.chain.maxSteps, parent: 'p', expires: 0 } } };
+    expect(followUpFor(last, 0)).toBeNull();
+  });
+
+  it('escorts: the ship flies with you; docking safely pays, losing it or leaving it behind fails', () => {
+    const { job, epoch } = findPosted('escort', (c) => !c.requires && c.factionId !== null);
+    const o = job.objectives[0]!;
+    if (o.kind !== 'escort') throw new Error('escorts escort');
+    expect(getLocation(o.locationId).systemId).toBe(o.systemId);
+    const s = pilotAt(job.giverLocationId, epoch * CONTRACTS.epochSeconds);
+    acceptJob(s, job.id);
+    expect(escortsIn(s, o.systemId)).toEqual([{ jobId: job.id, from: o.fromLocationId, to: o.locationId, model: o.model, name: o.shipName, level: o.level }]);
+    const before = s.credits;
+    s.jobs[job.id]!.escort = 'arrived';
+    expect(advanceJobs(s, { dockedAt: null, systemId: o.systemId })[0]).toMatchObject({ jobId: job.id, kind: 'complete' });
+    expect(s.credits).toBe(before + job.reward);
+    // Lost.
+    const lost = pilotAt(job.giverLocationId, epoch * CONTRACTS.epochSeconds);
+    lost.reputation[job.factionId!] = 20;
+    acceptJob(lost, job.id);
+    expect(failJob(lost, job.id, 'the ship was destroyed')).toMatchObject({ kind: 'failed' });
+    expect(lost.jobs[job.id]!.status).toBe('failed');
+    expect(lost.reputation[job.factionId!]).toBe(20 - CONTRACTS.failStanding);
+    expect(escortsIn(lost, o.systemId)).toEqual([]);
+    // Left behind.
+    const left = pilotAt(job.giverLocationId, epoch * CONTRACTS.epochSeconds);
+    acceptJob(left, job.id);
+    left.location = { ...left.location, dockedAt: null };
+    left.flags.clearance = true;
+    const away = SYSTEMS.find((x) => x.id !== o.systemId && findRoute(SYSTEMS, o.systemId, x.id)?.hops.length === 1)!;
+    const route = findRoute(SYSTEMS, o.systemId, away.id)!;
+    const events = performJump(left, route, route.totalFee);
+    expect(events[0]).toMatchObject({ jobId: job.id, kind: 'failed', text: expect.stringMatching(/left the .* behind/) });
+  });
+
+  it('aces: one named target with guards, paid when the ace goes down', () => {
+    const { job, epoch } = findPosted('ace', () => true);
+    const o = job.objectives[0]!;
+    if (o.kind !== 'bounty' || !o.ace) throw new Error('aces are named bounties');
+    expect(job.difficulty).toBe(3);
+    const s = pilotAt(job.giverLocationId, epoch * CONTRACTS.epochSeconds);
+    if (job.factionId) s.reputation[job.factionId] = CONTRACTS.gateStanding;
+    expect(acceptJob(s, job.id)).toMatchObject({ ok: true });
+    expect(contractPacksIn(s, o.systemId)).toEqual([{ jobId: job.id, locationId: o.locationId, count: 1, level: 3, ace: o.ace }]);
+    expect(describeObjective(s, job.id)!.text).not.toMatch(/\(0\/1\)/);
+    s.jobs[job.id]!.kills = 1;
+    expect(advanceJobs(s, { dockedAt: null, systemId: o.systemId })[0]).toMatchObject({ kind: 'complete' });
+  });
+
+  it('recoveries: find the wreck, tractor the item aboard, bring it back', () => {
+    const { job, epoch } = findPosted('recovery');
+    const [o, back] = job.objectives;
+    if (o?.kind !== 'recover' || back?.kind !== 'visit') throw new Error('recoveries find and return');
+    const s = pilotAt(job.giverLocationId, epoch * CONTRACTS.epochSeconds);
+    acceptJob(s, job.id);
+    expect(wrecksIn(s, o.systemId)).toEqual([{ jobId: job.id, locationId: o.locationId, item: o.item, guard: o.guard }]);
+    s.location = { ...s.location, systemId: o.systemId, dockedAt: null };
+    expect(describeObjective(s, job.id)).toMatchObject({ targetId: wreckTargetId(job.id), targetSystemId: o.systemId });
+    s.jobs[job.id]!.recovered = true;
+    expect(advanceJobs(s, { dockedAt: null, systemId: o.systemId })[0]).toMatchObject({ kind: 'objective' });
+    expect(wrecksIn(s, o.systemId)).toEqual([]);
+    const giver = getLocation(job.giverLocationId);
+    s.location = { ...s.location, systemId: giver.systemId, dockedAt: null };
+    const before = s.credits;
+    expect(dockAt(s, giver.id).jobEvents[0]).toMatchObject({ kind: 'complete' });
+    expect(s.credits).toBe(before + job.reward);
+  });
+});
+
 describe('contract saves', () => {
+  it('upgrades a v5 save as it is', () => {
+    const s = createNewGame(4);
+    const v5 = { ...structuredClone(s), version: 5 };
+    expect(migrateSave(v5)).toEqual(s);
+  });
+
   it('upgrades a v4 save with no contracts and rejects damaged contracts', () => {
     const { contracts: _drop, ...rest } = createNewGame(3);
     const v4 = { ...structuredClone(rest), version: 4 };

@@ -4,15 +4,20 @@ import type { Issue } from '../content/validate.ts';
 import { jumpsFrom } from '../content/world/network.ts';
 import { ALL_LOCATIONS, getLocation, getSystem, WORLD } from '../data/systems.ts';
 import { trafficFor } from '../world/traffic/setup.ts';
-import { boardFor, CONTRACT_PREFIX, routeFeeBetween } from './contracts.ts';
-import { priceMultiplier, stationEventAt, systemEventAt } from './events.ts';
+import { shipModel } from '../content/catalog.ts';
+import { RECOVERY_ITEMS } from '../content/contracts/rules.ts';
+import { FLEETS } from '../world/traffic/plan.ts';
+import { boardFor, CONTRACT_PREFIX, expectedTrip, followUpFor, routeFeeBetween } from './contracts.ts';
+import { baseThreat, priceMultiplier, stationEventAt, systemEventAt } from './events.ts';
 import type { JobDef } from './jobs.ts';
 import { marketTables } from './markets.ts';
 
 /**
- * Contract guardrails (docs/PROCGEN.md §10.3): every board over many time slots posts sound
+ * Contract guardrails (docs/PROCGEN.md §10.4): every board over many time slots posts sound
  * contracts: real destinations in reach, pay that beats the jump fees and repairs, deposits that
- * make stealing freight a loss, bounties only where raiders roam, surveys of confirmed planets.
+ * make stealing freight a loss, bounties and aces only where raiders roam, escorts only where there
+ * is something to fear, surveys of confirmed planets, time limits that can be kept, and follow-ups
+ * as sound as the contracts they follow.
  */
 
 /** Pay must beat the fees there and back plus expected repairs by this factor. */
@@ -31,6 +36,8 @@ export function validateContracts(epochs = 40): Issue[] {
   const givers = ALL_LOCATIONS.filter((l) => l.status === 'functional' && l.dockable !== false && l.services.includes('contracts'));
   const kinds = new Set<ContractKind>();
   let eventWork = 0;
+  let urgent = 0;
+  let chains = 0;
   for (const giver of givers) {
     let empty = 0;
     const jumps = jumpsFrom(WORLD.links, giver.systemId);
@@ -44,9 +51,20 @@ export function validateContracts(epochs = 40): Issue[] {
         if (ids.has(c.id)) report('ids', subject, 'duplicate id on a board');
         ids.add(c.id);
         if (!c.id.startsWith(`${CONTRACT_PREFIX}${giver.id}.${epoch}.`)) report('ids', subject, 'id does not name its station and time slot');
-        checkContract(c, giver.systemId, jumps, markets, report, epoch * CONTRACTS.epochSeconds);
+        const clock = epoch * CONTRACTS.epochSeconds;
+        checkContract(c, giver.systemId, jumps, markets, report, clock);
         if (c.contract) kinds.add(c.contract.kind);
         if (c.contract?.event) answering++;
+        if (c.contract?.urgent) urgent++;
+        // Follow-ups are offered where a parcel or haul ends, and must be as sound.
+        const next = followUpFor(c, clock);
+        if (next) {
+          chains++;
+          const at = getLocation(next.giverLocationId);
+          if (next.contract?.chain?.step !== 2 || next.contract.chain.parent !== c.id) report('chain', next.id, 'follow-up does not name its step and parent');
+          if (!next.id.startsWith(`${CONTRACT_PREFIX}${at.id}.f`)) report('ids', next.id, 'follow-up id does not name its station');
+          checkContract(next, at.systemId, jumpsFrom(WORLD.links, at.systemId), markets, report, clock);
+        }
       }
       if (answering > 1) report('events', giver.id, `${answering} contracts answer events in time slot ${epoch} (at most one)`);
       eventWork += answering;
@@ -55,6 +73,8 @@ export function validateContracts(epochs = 40): Issue[] {
   }
   for (const k of Object.keys(CONTRACTS.maxJumps) as ContractKind[]) if (!kinds.has(k)) report('coverage', k, 'no board ever posts this kind');
   if (!eventWork) report('coverage', 'events', 'no board ever posts work answering a world event');
+  if (!urgent) report('coverage', 'urgent', 'no board ever posts an urgent job');
+  if (!chains) report('coverage', 'chains', 'no delivery ever leads to a follow-up');
   return issues;
 }
 
@@ -68,10 +88,11 @@ function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, numbe
   const gated = !!c.requires?.minRep;
   if (gated !== (c.difficulty >= CONTRACTS.gatedDifficulty && c.factionId !== null)) report('standing', c.id, 'standing gate does not match the difficulty');
   const o = c.objectives[0];
-  if (!o || c.objectives.length !== 1) return report('objectives', c.id, 'expected one objective');
+  const expected = kind === 'recovery' ? 2 : 1;
+  if (!o || c.objectives.length !== expected) return report('objectives', c.id, `expected ${expected} objective(s)`);
 
   // Where it sends you, and what the trip costs.
-  const target = o.kind === 'scan' || o.kind === 'bounty' ? o.systemId : 'locationId' in o ? getLocation(o.locationId).systemId : from;
+  const target = o.kind === 'scan' || o.kind === 'bounty' || o.kind === 'recover' || o.kind === 'escort' ? o.systemId : 'locationId' in o ? getLocation(o.locationId).systemId : from;
   const j = jumps.get(target) ?? Infinity;
   if (j > CONTRACTS.maxJumps[kind]) report('reach', c.id, `${j} jumps (at most ${CONTRACTS.maxJumps[kind]})`);
   let tripFrom = from;
@@ -106,6 +127,34 @@ function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, numbe
       goodsCost = o.qty * (c.briefingPrices?.prices[o.commodity]?.buy ?? 0);
       break;
     }
+    case 'ace': {
+      if (o.kind !== 'bounty' || !o.ace) return report('objectives', c.id, 'an ace hunt must name its ace');
+      if ((baseThreat(o.systemId) ?? 0) < 2) report('ace', c.id, `aces fly only where packs are nasty, not in ${o.systemId}`);
+      if (o.count !== 1 || o.level !== 3 || c.difficulty !== 3) report('ace', c.id, 'an ace is one target at the top difficulty');
+      if (!o.ace.name.trim() || !shipModel(o.ace.model)) report('ace', c.id, 'ace without a name or ship');
+      if (getLocation(o.locationId).systemId !== o.systemId) report('ace', c.id, 'marked spot is in another system');
+      break;
+    }
+    case 'escort': {
+      if (o.kind !== 'escort') return report('objectives', c.id, `unexpected objective ${o.kind}`);
+      const dest = getLocation(o.locationId);
+      if (o.fromLocationId !== c.giverLocationId || o.systemId !== from || dest.systemId !== from) report('escort', c.id, 'escorts run between two stations of the posting station’s system');
+      if (dest.dockable === false || dest.status !== 'functional' || dest.id === c.giverLocationId) report('escort', c.id, `${dest.id} is not another open station`);
+      const threat = baseThreat(from);
+      if (threat === null && (WORLD.profiles.get(from)?.security ?? 1) >= 0.75) report('escort', c.id, 'nothing to fear in secure space');
+      if (o.level !== (threat ?? 1) || c.difficulty !== o.level) report('escort', c.id, 'ambush threat does not match the system');
+      const fleets = Object.values(FLEETS).flatMap((f) => f.traders);
+      if (!fleets.includes(o.model) || shipModel(o.model).name !== o.shipName) report('escort', c.id, 'escorted ship is not a hauler of the catalogue');
+      break;
+    }
+    case 'recovery': {
+      const back = c.objectives[1];
+      if (o.kind !== 'recover' || back?.kind !== 'visit' || back.locationId !== c.giverLocationId) return report('objectives', c.id, 'a recovery finds the item and brings it back');
+      if (getLocation(o.locationId).systemId !== o.systemId) report('recovery', c.id, 'wreck marked in another system');
+      if (o.guard !== baseThreat(o.systemId)) report('recovery', c.id, 'guards do not match the system');
+      if (!RECOVERY_ITEMS.some((x) => x.item === o.item)) report('recovery', c.id, `unknown item ${o.item}`);
+      break;
+    }
     case 'bounty': {
       if (o.kind !== 'bounty') return report('objectives', c.id, `unexpected objective ${o.kind}`);
       // Raid work hunts the raid's packs; other bounties the system's usual ones.
@@ -132,6 +181,14 @@ function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, numbe
       (kind === 'freight' && station?.id === eventId && station.kind === 'glut' && !!good && station.goods.includes(good)) ||
       (kind === 'bounty' && raid?.id === eventId && raid.kind === 'raid');
     if (!answers) report('events', c.id, `does not answer the event ${eventId} under way`);
+  }
+  // Urgent terms: only parcels and hauls, with a time limit that can be kept and a real bonus.
+  const urgent = c.contract?.urgent;
+  if (urgent) {
+    if (kind !== 'parcel' && kind !== 'freight') report('urgent', c.id, `${kind} cannot be urgent`);
+    const trip = expectedTrip(from, target);
+    if (urgent.seconds < 2 * trip) report('urgent', c.id, `${urgent.seconds} s for a trip of about ${trip} s`);
+    if (urgent.bonus <= 0 || urgent.bonus > c.reward) report('urgent', c.id, `bonus ${urgent.bonus}`);
   }
   // Pay beats the trip there and back and the expected repairs (supply runs on top of the goods).
   const trip = 2 * Math.max(routeFeeBetween(from, target), routeFeeBetween(from, tripFrom));

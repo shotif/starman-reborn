@@ -1,23 +1,26 @@
 import type { CommodityId, GameState } from '../app/state.ts';
-import { BOARD_KINDS, CONTRACTS, CURATED_BOARD_KINDS, type ContractKind, type KindWeights } from '../content/contracts/rules.ts';
+import { shipModel } from '../content/catalog.ts';
+import { ACE_NAMES, BOARD_KINDS, CONTRACTS, CURATED_BOARD_KINDS, RECOVERY_ITEMS, type ContractKind, type KindWeights } from '../content/contracts/rules.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
-import { rng, type Rng } from '../content/random.ts';
+import { hashString, rng, type Rng } from '../content/random.ts';
 import { jumpsFrom } from '../content/world/network.ts';
 import { WORLD_SEED } from '../content/world/rules.ts';
 import { ALL_LOCATIONS, getLocation, getSystem, SYSTEMS, WORLD } from '../data/systems.ts';
 import type { FactionId, FictionalLocation, SystemId } from '../data/types.ts';
 import { findRoute } from '../galaxy/routing.ts';
+import { FLEETS } from '../world/traffic/plan.ts';
 import { trafficFor } from '../world/traffic/setup.ts';
 import { itemsThatFit } from './cargo.ts';
-import { priceMultiplier, stationEventAt, systemEventAt, type WorldEvent } from './events.ts';
+import { baseThreat, priceMultiplier, stationEventAt, systemEventAt, type WorldEvent } from './events.ts';
 import type { JobDef } from './jobs.ts';
 import { cargoCapacity } from './loadout.ts';
 import { marketTables } from './markets.ts';
 
 /**
  * Generated contracts (docs/PROCGEN.md §10). Every station with a contracts service posts a board
- * that changes with the game clock: freight hauls, parcels, supply runs, bounties on raider packs
- * and planet surveys, chosen by the kind of station and pointed at real places in the world.
+ * that changes with the game clock: freight hauls, parcels, supply runs, bounties on raider packs,
+ * planet surveys, escorts, aces and wreck recoveries, chosen by the kind of station and pointed at
+ * real places in the world. Some parcels and hauls are urgent, and some lead to a follow-up.
  * A board is a pure function of the station, its time slot and the world (world events included,
  * as they stand when the board is posted); an accepted contract is copied into the save, so it
  * never changes under the player.
@@ -139,6 +142,12 @@ function makeContract(kind: ContractKind, giver: FictionalLocation, r: Rng, id: 
       return bounty(giver, r, id);
     case 'survey':
       return survey(giver, r, id);
+    case 'escort':
+      return escort(giver, r, id);
+    case 'ace':
+      return ace(giver, r, id);
+    case 'recovery':
+      return recovery(giver, r, id);
   }
 }
 
@@ -191,6 +200,30 @@ function difficultyFor(from: SystemId, to: SystemId): 1 | 2 | 3 {
   return clampDifficulty(1 + (security(to) < 0.35 ? 1 : 0) + (jumpsBetween(from, to) >= 3 ? 1 : 0));
 }
 
+/** The expected trip between two systems on the game clock (autopilot, lanes, docking). */
+export function expectedTrip(from: SystemId, to: SystemId): number {
+  const t = CONTRACTS.urgent.trip;
+  return t.depart + jumpsBetween(from, to) * t.perJump + t.arrive;
+}
+
+/** Urgent terms for a parcel or haul: a time limit from acceptance and a bonus for keeping it. */
+function urgentTerms(from: SystemId, to: SystemId, reward: number): { seconds: number; bonus: number } {
+  const u = CONTRACTS.urgent;
+  const seconds = Math.ceil(Math.max(u.minSeconds, expectedTrip(from, to) * u.margin) / 60) * 60;
+  return { seconds, bonus: round5(reward * u.bonus) };
+}
+
+/** Marks a parcel or haul urgent (title, note and terms). */
+function makeUrgent(job: JobDef, from: SystemId, to: SystemId): JobDef {
+  const urgent = urgentTerms(from, to, job.reward);
+  return {
+    ...job,
+    title: `Urgent: ${job.title}`,
+    difficultyNote: `${job.difficultyNote}; +${urgent.bonus} cr if there within ${urgent.seconds / 60} min of accepting`,
+    contract: { ...job.contract!, urgent },
+  };
+}
+
 function parcel(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
   const options = openStations().filter((l) => l.id !== giver.id && jumpsBetween(giver.systemId, l.systemId) <= CONTRACTS.maxJumps.parcel);
   if (!options.length) return null;
@@ -199,7 +232,7 @@ function parcel(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
   const reward = pay(r, routeFeeBetween(giver.systemId, dest.systemId), rw.base + rw.danger * (1 - security(dest.systemId)));
   const difficulty = difficultyFor(giver.systemId, dest.systemId);
   const what = r.pick(['sealed legal papers', 'a crate of spare circuit boards', 'personal letters and data chips', 'a sealed medical sample case', 'encrypted navigation updates']);
-  return {
+  const job: JobDef = {
     ...common(giver, id, difficulty),
     title: `Parcel to ${dest.name}`,
     briefing: `Carry ${what} to ${place(dest)}. It fits in a pocket: no cargo space needed.`,
@@ -209,6 +242,7 @@ function parcel(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
     destinationLocationId: dest.id,
     contract: { kind: 'parcel' },
   };
+  return r.next() < CONTRACTS.urgent.chance ? makeUrgent(job, giver.systemId, dest.systemId) : job;
 }
 
 function freight(giver: FictionalLocation, r: Rng, id: string, clock: number, opts: { commodity?: CommodityId; event?: WorldEvent } = {}): JobDef | null {
@@ -235,7 +269,7 @@ function freight(giver: FictionalLocation, r: Rng, id: string, clock: number, op
   const difficulty = difficultyFor(giver.systemId, dest.systemId);
   const name = good.name.toLowerCase();
   const why = opts.event ? `${opts.event.headline}. ` : '';
-  return {
+  const job: JobDef = {
     ...common(giver, id, difficulty),
     title: opts.event ? `Surplus haul: ${qty} ${name} to ${dest.name}` : `Haul ${qty} ${name} to ${dest.name}`,
     briefing: `${why}${giver.name} has ${qty} ${name} (${qty * good.unitSize} hold units) bound for ${place(dest)}. We load it on acceptance against a deposit of ${deposit} cr, returned with your pay on delivery.`,
@@ -245,6 +279,7 @@ function freight(giver: FictionalLocation, r: Rng, id: string, clock: number, op
     destinationLocationId: dest.id,
     contract: { kind: 'freight', cargo: { commodity, qty }, deposit, ...(opts.event ? { event: opts.event.id } : {}) },
   };
+  return !opts.event && r.next() < CONTRACTS.urgent.chance ? makeUrgent(job, giver.systemId, dest.systemId) : job;
 }
 
 function supply(giver: FictionalLocation, r: Rng, id: string, clock: number, opts: { commodity?: CommodityId; event?: WorldEvent } = {}): JobDef | null {
@@ -332,6 +367,111 @@ function survey(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
     difficultyNote: routeNote(giver.systemId, s.id),
     destinationLocationId: giver.id,
     contract: { kind: 'survey' },
+  };
+}
+
+/** Escorts: see a trader safely to another station in the system; raiders will try for it. */
+function escort(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
+  const system = giver.systemId;
+  const threat = baseThreat(system);
+  if (threat === null && security(system) >= 0.75) return null;
+  const dests = openStations().filter((l) => l.systemId === system && l.id !== giver.id);
+  if (!dests.length) return null;
+  const dest = r.pick(dests);
+  const level = threat ?? 1;
+  const owner = giver.factionId === 'sta' || giver.factionId === 'frontier' ? giver.factionId : 'independent';
+  const model = r.pick(FLEETS[owner].traders.length ? FLEETS[owner].traders : FLEETS.independent.traders);
+  const shipName = shipModel(model).name;
+  const rw = CONTRACTS.reward.escort;
+  const reward = pay(r, 0, rw.base + rw.perLevel * level);
+  return {
+    ...common(giver, id, level),
+    title: `Escort the ${shipName} to ${dest.name}`,
+    briefing: `The ${shipName} is hauling cargo to ${place(dest)} and wants a gun alongside: raiders have been watching the lane. It sets off when you launch. Stay close and see it docked; if it is lost, or you leave the system first, the contract fails.`,
+    objectives: [{ kind: 'escort', systemId: system, fromLocationId: giver.id, locationId: dest.id, model, shipName, level, text: `Escort the ${shipName} to ${dest.name}` }],
+    reward,
+    difficultyNote: `Threat ${level} of 3; expect an ambush on the way`,
+    destinationLocationId: dest.id,
+    contract: { kind: 'escort' },
+  };
+}
+
+/** Aces: a named raider in a better ship, with two guards, where the packs are nasty. */
+function ace(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
+  const targets = SYSTEMS.filter((s) => jumpsBetween(giver.systemId, s.id) <= CONTRACTS.maxJumps.ace && (baseThreat(s.id) ?? 0) >= 2);
+  if (!targets.length) return null;
+  const system = r.pick(targets);
+  const here = ALL_LOCATIONS.filter((l) => l.systemId === system.id && l.status === 'functional');
+  const den = here.find((l) => l.dockable === false);
+  const open = here.filter((l) => l.dockable !== false);
+  const near = den ?? (open.length ? r.pick(open) : null);
+  if (!near) return null;
+  const name = `${r.pick(ACE_NAMES.first)} “${r.pick(ACE_NAMES.nick)}” ${r.pick(ACE_NAMES.last)}`;
+  const reward = pay(r, routeFeeBetween(giver.systemId, system.id), CONTRACTS.reward.ace.base);
+  const common_ = common(giver, id, 3);
+  return {
+    ...common_,
+    repReward: { ...common_.repReward, 'hollow-wake': -5 },
+    title: `Wanted: ${name}`,
+    briefing: `${name} flies a Hollow Wake heavy fighter out of ${place(near)}, with two guards and a long list of kills. Bring the ace down; the guards pay the usual bounty, and whatever the ace was carrying is yours to tractor in.`,
+    objectives: [{ kind: 'bounty', systemId: system.id, locationId: near.id, count: 1, level: 3, text: `Destroy ${name} near ${place(near)}`, ace: { name, model: CONTRACTS.ace.model } }],
+    reward,
+    difficultyNote: `An ace with two guards; ${routeNote(giver.systemId, system.id).toLowerCase()}`,
+    destinationLocationId: near.id,
+    contract: { kind: 'ace' },
+  };
+}
+
+/** Recoveries: find a wreck near a station, tractor in what it carried, and bring it back. */
+function recovery(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
+  const sites = ALL_LOCATIONS.filter((l) => l.status === 'functional' && l.id !== giver.id && jumpsBetween(giver.systemId, l.systemId) <= CONTRACTS.maxJumps.recovery);
+  if (!sites.length) return null;
+  const site = r.pick(sites);
+  const guard = baseThreat(site.systemId);
+  const what = r.pick(RECOVERY_ITEMS);
+  const rw = CONTRACTS.reward.recovery;
+  const reward = pay(r, routeFeeBetween(giver.systemId, site.systemId), rw.base + rw.danger * (1 - security(site.systemId)) + rw.perGuard * (guard ?? 0));
+  const difficulty = clampDifficulty(1 + (guard ? 1 : 0) + (guard === 3 || jumpsBetween(giver.systemId, site.systemId) >= 3 ? 1 : 0));
+  return {
+    ...common(giver, id, difficulty),
+    title: `Recover a ${what.item}`,
+    briefing: `${what.why.replace('{place}', place(site))}. Find the wreck, tractor the ${what.item} aboard and bring it back to ${giver.name}.${guard ? ' Raiders have been seen picking over the wreckage.' : ''}`,
+    objectives: [
+      { kind: 'recover', systemId: site.systemId, locationId: site.id, item: what.item, guard, text: `Recover the ${what.item} from the wreck near ${place(site)}` },
+      { kind: 'visit', locationId: giver.id, text: `Bring the ${what.item} back to ${giver.name}` },
+    ],
+    reward,
+    difficultyNote: `${guard ? `Wreck guarded, threat ${guard} of 3; ` : ''}${routeNote(giver.systemId, site.systemId).toLowerCase()}`,
+    destinationLocationId: giver.id,
+    contract: { kind: 'recovery' },
+  };
+}
+
+/**
+ * A follow-up to a delivered parcel or haul, offered at its destination (docs/PROCGEN.md §10.2):
+ * deterministic from the contract's id, so it is the same whenever it is asked for.
+ */
+export function followUpFor(job: JobDef, clock: number): JobDef | null {
+  const c = job.contract;
+  if (!c || (c.kind !== 'parcel' && c.kind !== 'freight')) return null;
+  const step = (c.chain?.step ?? 1) + 1;
+  if (step > CONTRACTS.chain.maxSteps) return null;
+  const r = rng(WORLD_SEED, 'chain', job.id);
+  if (r.next() >= CONTRACTS.chain.chance) return null;
+  const giver = getLocation(job.destinationLocationId);
+  if (!boardKinds(giver)) return null;
+  const id = `${CONTRACT_PREFIX}${giver.id}.f${hashString(job.id).toString(36)}`;
+  const next = (r.next() < 0.5 ? freight(giver, r, id, clock) : null) ?? parcel(giver, r, id);
+  if (!next) return null;
+  const reward = round5(next.reward * CONTRACTS.chain.stepPay ** (step - 1));
+  const urgent = next.contract?.urgent ? { ...next.contract.urgent, bonus: round5(reward * CONTRACTS.urgent.bonus) } : undefined;
+  return {
+    ...next,
+    title: `Follow-up: ${next.title}`,
+    briefing: `Word of your delivery for ${getLocation(job.giverLocationId).name} got around. ${next.briefing}`,
+    reward,
+    difficultyNote: urgent ? next.difficultyNote.replace(/\+\d+ cr if/, `+${urgent.bonus} cr if`) : next.difficultyNote,
+    contract: { ...next.contract!, ...(urgent ? { urgent } : {}), chain: { step, parent: job.id, expires: clock + CONTRACTS.chain.offerEpochs * CONTRACTS.epochSeconds } },
   };
 }
 

@@ -17,8 +17,11 @@ import { createNewGame, SAVE_VERSION, type CommodityId, type GameState } from '.
  *   shield, ammo, repairKits, cargo }.
  * - v4: 21 goods instead of 3, and `markets` (stock the player's trades have moved at each
  *   station).
- * - v5 (current): `contracts` (generated contracts the player accepted, as posted) and bounty
- *   progress in `jobs`. See GameState in src/app/state.ts.
+ * - v5: `contracts` (generated contracts the player accepted, as posted) and bounty progress in
+ *   `jobs`.
+ * - v6 (current): contracts may be escorts, ace hunts or recoveries, urgent or follow-ups (offered
+ *   follow-ups wait in `contracts` without a `jobs` entry); jobs may have failed, and carry escort
+ *   and recovery progress. The data of a v5 save is valid v6. See GameState in src/app/state.ts.
  */
 export interface SaveV1 {
   version: 1;
@@ -100,7 +103,12 @@ function migrateV3(old: Omit<GameState, 'version' | 'markets' | 'contracts'> & {
 
 /** v4 → v5: no generated contracts accepted yet. */
 function migrateV4(old: Omit<GameState, 'version' | 'contracts'> & { version: 4 }): GameState {
-  return { ...old, version: SAVE_VERSION, contracts: {} };
+  return migrateV5({ ...old, version: 5, contracts: {} });
+}
+
+/** v5 → v6: nothing to change (v6 only adds kinds of contract and progress). */
+function migrateV5(old: Omit<GameState, 'version'> & { version: 5 }): GameState {
+  return { ...old, version: SAVE_VERSION };
 }
 
 /** Upgrades any known save version to the current GameState. Throws SaveFormatError when unusable. */
@@ -116,6 +124,7 @@ export function migrateSave(raw: unknown): GameState {
     data = migrateV2(raw as unknown as Parameters<typeof migrateV2>[0]);
   } else if (raw.version === 3) data = migrateV3(raw as unknown as Parameters<typeof migrateV3>[0]);
   else if (raw.version === 4) data = migrateV4(raw as unknown as Parameters<typeof migrateV4>[0]);
+  else if (raw.version === 5) data = migrateV5(raw as unknown as Parameters<typeof migrateV5>[0]);
   const state = data as GameState;
   assertValidState(state);
   return state;

@@ -832,3 +832,37 @@
 .market-row.event .row-name {
   color: var(--amber);
 }
+
+/* ---------- Job card tags: follow-ups, urgent jobs, news ---------- */
+
+.job-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.2rem;
+}
+
+.job-tag {
+  padding: 0 0.35rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 3px;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1.5;
+}
+
+.job-tag.urgent {
+  border-color: rgba(255, 110, 110, 0.6);
+  color: #ffb1b1;
+}
+
+.job-tag.chain {
+  border-color: rgba(98, 227, 160, 0.55);
+  color: var(--success);
+}
+
+.job-tag.event {
+  border-color: rgba(255, 179, 107, 0.6);
+  color: #ffc98f;
+}

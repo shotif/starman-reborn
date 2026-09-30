@@ -5,7 +5,7 @@ import type { FactionId, SystemId, Vec3Tuple } from '../data/types.ts';
 import { newShipState } from '../economy/loadout.ts';
 
 /** Current save format version. Older saves are upgraded by src/app/save/migrate.ts. */
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 export type { CommodityId };
 
@@ -60,8 +60,11 @@ export interface MarketObservation {
   prices: Partial<Record<CommodityId, PriceQuote>>;
 }
 
-/** `abandoned`: a generated contract the player gave up (its deposit is forfeit). */
-export type JobStatus = 'active' | 'complete' | 'abandoned';
+/**
+ * `abandoned`: a generated contract the player gave up (its deposit is forfeit); `failed`: one that
+ * went wrong (an escorted ship lost or left behind).
+ */
+export type JobStatus = 'active' | 'complete' | 'abandoned' | 'failed';
 
 export interface JobProgress {
   status: JobStatus;
@@ -71,6 +74,10 @@ export interface JobProgress {
   completedAt?: number;
   /** Bounty contracts: raiders of the contract pack destroyed so far. */
   kills?: number;
+  /** Escort contracts: the escorted ship docked at its destination. */
+  escort?: 'arrived';
+  /** Recovery contracts: the item is aboard. */
+  recovered?: boolean;
 }
 
 export type PirateOutcome = 'none' | 'destroyed' | 'bypassed' | 'escaped';

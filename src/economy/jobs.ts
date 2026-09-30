@@ -4,7 +4,7 @@ import { getLocation, getSystem } from '../data/systems.ts';
 import type { FactionId, SystemId } from '../data/types.ts';
 import { addCargo, cargoCount, removeCargo } from './cargo.ts';
 import { COMMODITIES } from './commodities.ts';
-import { CONTRACT_PREFIX, contractBlock, postedContract, postedContracts } from './contracts.ts';
+import { CONTRACT_PREFIX, contractBlock, followUpFor, postedContract, postedContracts } from './contracts.ts';
 import { adjustReputation, FACTIONS } from './factions.ts';
 import { cargoCapacity } from './loadout.ts';
 
@@ -14,8 +14,15 @@ export type Objective =
   | { kind: 'scan'; bodyId: string; systemId: SystemId; text: string }
   | { kind: 'deliver'; commodity: CommodityId; qty: number; locationId: string; text: string }
   | { kind: 'visit'; locationId: string; text: string }
-  /** Destroy `count` raiders of a contract pack lurking near a location (progress in JobProgress.kills). */
-  | { kind: 'bounty'; systemId: SystemId; locationId: string; count: number; level: 1 | 2 | 3; text: string };
+  /**
+   * Destroy `count` raiders of a contract pack lurking near a location (progress in
+   * JobProgress.kills). With `ace`, the pack is a named raider (the one to destroy) and guards.
+   */
+  | { kind: 'bounty'; systemId: SystemId; locationId: string; count: number; level: 1 | 2 | 3; text: string; ace?: { name: string; model: string } }
+  /** See a trader (catalogue ship `model`) safely from one station to another in the same system (JobProgress.escort). */
+  | { kind: 'escort'; systemId: SystemId; fromLocationId: string; locationId: string; model: string; shipName: string; level: 1 | 2 | 3; text: string }
+  /** Tractor an item in from a wreck near a location, perhaps guarded by raiders of threat `guard` (JobProgress.recovered). */
+  | { kind: 'recover'; systemId: SystemId; locationId: string; item: string; guard: 1 | 2 | 3 | null; text: string };
 
 export interface JobDef {
   id: string;
@@ -40,7 +47,16 @@ export interface JobDef {
    * Generated contracts (economy/contracts.ts): their kind, cargo loaded on acceptance, deposit, and
    * the world event they answer (economy/events.ts), if any.
    */
-  contract?: { kind: ContractKind; cargo?: { commodity: CommodityId; qty: number }; deposit?: number; event?: string };
+  contract?: {
+    kind: ContractKind;
+    cargo?: { commodity: CommodityId; qty: number };
+    deposit?: number;
+    event?: string;
+    /** Urgent jobs: a bonus for finishing within `seconds` of accepting (game clock). */
+    urgent?: { seconds: number; bonus: number };
+    /** Follow-ups: step of the chain, the contract it follows, and when the offer lapses (game clock). */
+    chain?: { step: number; parent: string; expires: number };
+  };
 }
 
 export const LIFELINE_ID = 'lifeline';
@@ -152,13 +168,26 @@ export function jobLockReason(state: GameState, job: JobDef): string | null {
 
 export interface JobOffer {
   job: JobDef;
-  status: 'available' | 'locked' | 'active' | 'complete' | 'abandoned';
+  status: 'available' | 'locked' | 'active' | 'complete' | 'abandoned' | 'failed';
   lockReason: string | null;
 }
 
-/** Jobs posted at a dock (hand-made first, then the generated board), with their availability. */
+/** A follow-up offered to the player (kept in the save until taken or lapsed), or null. */
+export function offeredContract(state: GameState, id: string): JobDef | null {
+  const c = state.contracts[id];
+  return c?.contract?.chain && !state.jobs[id] && state.clock < c.contract.chain.expires ? c : null;
+}
+
+/** Jobs posted at a dock (hand-made first, then follow-ups offered to you, then the board), with their availability. */
 export function jobsAt(state: GameState, locationId: string): JobOffer[] {
-  const posted = [...JOBS.filter((j) => j.giverLocationId === locationId), ...postedContracts(state, locationId).map((c) => state.contracts[c.id] ?? c)];
+  const offers = Object.keys(state.contracts)
+    .map((id) => offeredContract(state, id))
+    .filter((c): c is JobDef => !!c && c.giverLocationId === locationId);
+  const posted = [
+    ...JOBS.filter((j) => j.giverLocationId === locationId),
+    ...offers,
+    ...postedContracts(state, locationId).map((c) => state.contracts[c.id] ?? c),
+  ];
   return posted.map((job) => {
     const progress = state.jobs[job.id];
     if (progress) return { job, status: progress.status, lockReason: null };
@@ -167,11 +196,11 @@ export function jobsAt(state: GameState, locationId: string): JobOffer[] {
   });
 }
 
-/** Finished (completed or abandoned) generated contracts kept for the journal; older ones are forgotten. */
+/** Finished (completed, abandoned or failed) generated contracts kept for the journal; older ones are forgotten. */
 const KEEP_COMPLETED_CONTRACTS = 30;
 
 export function acceptJob(state: GameState, jobId: string): { ok: boolean; message: string } {
-  const job = JOBS.find((j) => j.id === jobId) ?? postedContract(jobId);
+  const job = JOBS.find((j) => j.id === jobId) ?? postedContract(jobId) ?? offeredContract(state, jobId);
   if (!job) return { ok: false, message: 'That contract is no longer posted.' };
   if (state.jobs[jobId]) return { ok: false, message: 'Already accepted.' };
   const lock = jobLockReason(state, job);
@@ -216,6 +245,20 @@ export function abandonJob(state: GameState, jobId: string): { ok: boolean; mess
   return { ok: true, message: `Abandoned: ${job.title}${costs.length ? ` (${costs.join(', ')})` : ''}` };
 }
 
+/**
+ * Fails a generated contract in progress (an escorted ship lost or left behind): no pay, any
+ * deposit is forfeit and standing with the station's owner drops.
+ */
+export function failJob(state: GameState, jobId: string, reason: string): JobEvent | null {
+  const progress = state.jobs[jobId];
+  const job = state.contracts[jobId];
+  if (!job || progress?.status !== 'active') return null;
+  progress.status = 'failed';
+  progress.completedAt = state.clock;
+  if (job.factionId) adjustReputation(state.reputation, job.factionId, -CONTRACTS.failStanding);
+  return { jobId, kind: 'failed', text: `${job.title} failed: ${reason}` };
+}
+
 function forgetOldContracts(state: GameState): void {
   const done = Object.entries(state.jobs)
     .filter(([id, p]) => id.startsWith(CONTRACT_PREFIX) && p.status !== 'active')
@@ -223,6 +266,10 @@ function forgetOldContracts(state: GameState): void {
   for (const [id] of done.slice(KEEP_COMPLETED_CONTRACTS)) {
     delete state.jobs[id];
     delete state.contracts[id];
+  }
+  // Follow-ups nobody took lapse.
+  for (const [id, c] of Object.entries(state.contracts)) {
+    if (!state.jobs[id] && c.contract?.chain && state.clock >= c.contract.chain.expires) delete state.contracts[id];
   }
 }
 
@@ -247,6 +294,10 @@ function objectiveSatisfied(state: GameState, jobId: string, o: Objective, ctx: 
   switch (o.kind) {
     case 'bounty':
       return (state.jobs[jobId]?.kills ?? 0) >= o.count;
+    case 'escort':
+      return state.jobs[jobId]?.escort === 'arrived';
+    case 'recover':
+      return !!state.jobs[jobId]?.recovered;
     case 'have-cargo':
       return cargoCount(state.ship.cargo, o.commodity) >= o.qty;
     case 'dock':
@@ -262,7 +313,8 @@ function objectiveSatisfied(state: GameState, jobId: string, o: Objective, ctx: 
 
 export interface JobEvent {
   jobId: string;
-  kind: 'objective' | 'complete';
+  /** `offer`: a follow-up is offered at the station (its id is `jobId`). */
+  kind: 'objective' | 'complete' | 'failed' | 'offer';
   text: string;
 }
 
@@ -281,8 +333,9 @@ export function advanceJobs(state: GameState, ctx: JobContext): JobEvent[] {
       if (!o || !objectiveSatisfied(state, jobId, o, ctx)) break;
       progress.objectiveIndex += 1;
       if (progress.objectiveIndex >= job.objectives.length) {
-        payOut(state, job);
-        events.push({ jobId, kind: 'complete', text: `${job.title} complete` });
+        const out = payOut(state, job);
+        events.push({ jobId, kind: 'complete', text: `${job.title} complete${out.note}` });
+        if (out.offer) events.push(out.offer);
       } else {
         events.push({ jobId, kind: 'objective', text: o.text });
       }
@@ -291,8 +344,25 @@ export function advanceJobs(state: GameState, ctx: JobContext): JobEvent[] {
   return events;
 }
 
-function payOut(state: GameState, job: JobDef): { repChanges: Partial<Record<FactionId, number>> } {
+/** Seconds left to earn an urgent job's bonus (negative once late), or null for other jobs. */
+export function urgentTimeLeft(state: GameState, jobId: string): number | null {
+  const urgent = state.contracts[jobId]?.contract?.urgent;
+  const progress = state.jobs[jobId];
+  return urgent && progress ? progress.acceptedAt + urgent.seconds - state.clock : null;
+}
+
+interface Payout {
+  repChanges: Partial<Record<FactionId, number>>;
+  /** Pay including any urgent bonus. */
+  paid: number;
+  /** Said after "complete" (bonus or lateness). */
+  note: string;
+  offer: JobEvent | null;
+}
+
+function payOut(state: GameState, job: JobDef): Payout {
   const progress = state.jobs[job.id]!;
+  const left = urgentTimeLeft(state, job.id);
   progress.status = 'complete';
   progress.completedAt = state.clock;
   applyCredits(state, job.reward, 'reward', `${job.title} reward`);
@@ -301,8 +371,27 @@ function payOut(state: GameState, job: JobDef): { repChanges: Partial<Record<Fac
   for (const [faction, delta] of Object.entries(job.repReward) as [FactionId, number][]) {
     repChanges[faction] = adjustReputation(state.reputation, faction, delta);
   }
+  // Urgent jobs: a bonus in time, a little standing lost when late.
+  let paid = job.reward;
+  let note = '';
+  const urgent = job.contract?.urgent;
+  if (urgent && left !== null && left >= 0) {
+    applyCredits(state, urgent.bonus, 'reward', `On-time bonus: ${job.title}`);
+    paid += urgent.bonus;
+    note = ` with the on-time bonus (+${urgent.bonus} cr)`;
+  } else if (urgent) {
+    if (job.factionId) repChanges[job.factionId] = (repChanges[job.factionId] ?? 0) + adjustReputation(state.reputation, job.factionId, -CONTRACTS.urgent.lateStanding);
+    note = ' (late: no bonus)';
+  }
   state.stats.deliveries += 1;
-  return { repChanges };
+  // A parcel or haul may lead to a follow-up at its destination.
+  let offer: JobEvent | null = null;
+  const next = followUpFor(job, state.clock);
+  if (next && !state.contracts[next.id]) {
+    state.contracts[next.id] = next;
+    offer = { jobId: next.id, kind: 'offer', text: `Follow-up offered at ${getLocation(next.giverLocationId).name}: ${next.title}` };
+  }
+  return { repChanges, paid, note, offer };
 }
 
 /** Whether the active objective of `jobId` is a delivery that can be turned in here. */
@@ -325,8 +414,8 @@ export function deliverJob(
   if (progress.objectiveIndex < job.objectives.length) {
     return { ok: true, reward: 0, repChanges: {} };
   }
-  const { repChanges } = payOut(state, job);
-  return { ok: true, reward: job.reward, repChanges };
+  const { repChanges, paid } = payOut(state, job);
+  return { ok: true, reward: paid, repChanges };
 }
 
 export interface ObjectiveSummary {
@@ -337,6 +426,8 @@ export interface ObjectiveSummary {
   targetSystemId: SystemId | null;
   targetLocationId: string | null;
   targetBodyId: string | null;
+  /** A flight target to steer to instead (a wreck), when there is one. */
+  targetId?: string;
 }
 
 /**
@@ -345,6 +436,14 @@ export interface ObjectiveSummary {
  * "Buy 2 more medical supplies" after selling some).
  */
 export function describeObjective(state: GameState, jobId: string): ObjectiveSummary | null {
+  const summary = describeCurrent(state, jobId);
+  const left = urgentTimeLeft(state, jobId);
+  if (!summary || left === null) return summary;
+  const clock = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+  return { ...summary, text: `${summary.text} (${left >= 0 ? `${clock(left)} left for the bonus` : 'late: no bonus'})` };
+}
+
+function describeCurrent(state: GameState, jobId: string): ObjectiveSummary | null {
   const o = currentObjective(state, jobId);
   if (!o) return null;
   const job = getJob(jobId, state);
@@ -377,8 +476,19 @@ export function describeObjective(state: GameState, jobId: string): ObjectiveSum
       };
     case 'bounty': {
       const kills = state.jobs[jobId]?.kills ?? 0;
-      return { ...base, text: inOtherSystem(o.systemId, `${o.text} (${kills}/${o.count})`), targetSystemId: o.systemId, targetLocationId: o.locationId };
+      const text = o.ace ? o.text : `${o.text} (${kills}/${o.count})`;
+      return { ...base, text: inOtherSystem(o.systemId, text), targetSystemId: o.systemId, targetLocationId: o.locationId };
     }
+    case 'escort':
+      return { ...base, text: inOtherSystem(o.systemId, `${o.text}: stay close and keep it alive`), targetSystemId: o.systemId, targetLocationId: o.locationId };
+    case 'recover':
+      return {
+        ...base,
+        text: inOtherSystem(o.systemId, `${o.text}: fly close to tractor it in`),
+        targetSystemId: o.systemId,
+        targetLocationId: o.locationId,
+        ...(o.systemId === here ? { targetId: wreckTargetId(jobId) } : {}),
+      };
     case 'deliver': {
       const loc = getLocation(o.locationId);
       const have = cargoCount(state.ship.cargo, o.commodity);
@@ -395,16 +505,47 @@ export function describeObjective(state: GameState, jobId: string): ObjectiveSum
   }
 }
 
-/** Raider packs the player's bounty contracts send them after in a system (raiders still to destroy). */
-export function contractPacksIn(state: GameState, systemId: SystemId): { jobId: string; locationId: string; count: number; level: 1 | 2 | 3 }[] {
-  const out: { jobId: string; locationId: string; count: number; level: 1 | 2 | 3 }[] = [];
+/** Raider packs the player's bounty contracts send them after in a system (raiders still to destroy, or an ace). */
+export function contractPacksIn(state: GameState, systemId: SystemId): { jobId: string; locationId: string; count: number; level: 1 | 2 | 3; ace?: { name: string; model: string } }[] {
+  const out: { jobId: string; locationId: string; count: number; level: 1 | 2 | 3; ace?: { name: string; model: string } }[] = [];
   for (const jobId of activeJobIds(state)) {
     const o = currentObjective(state, jobId);
     if (o?.kind !== 'bounty' || o.systemId !== systemId) continue;
     const left = o.count - (state.jobs[jobId]?.kills ?? 0);
-    if (left > 0) out.push({ jobId, locationId: o.locationId, count: left, level: o.level });
+    if (left > 0) out.push({ jobId, locationId: o.locationId, count: left, level: o.level, ...(o.ace ? { ace: o.ace } : {}) });
   }
   return out;
+}
+
+/** Ships the player is escorting in a system (escorts under way). */
+export function escortsIn(state: GameState, systemId: SystemId): { jobId: string; from: string; to: string; model: string; name: string; level: 1 | 2 | 3 }[] {
+  return activeJobIds(state).flatMap((jobId) => {
+    const o = currentObjective(state, jobId);
+    return o?.kind === 'escort' && o.systemId === systemId ? [{ jobId, from: o.fromLocationId, to: o.locationId, model: o.model, name: o.shipName, level: o.level }] : [];
+  });
+}
+
+/** The flight target of a recovery contract's wreck. */
+export function wreckTargetId(jobId: string): string {
+  return `wreck:${jobId}`;
+}
+
+/** Wrecks the player's recovery contracts send them to in a system (items not yet recovered). */
+export function wrecksIn(state: GameState, systemId: SystemId): { jobId: string; locationId: string; item: string; guard: 1 | 2 | 3 | null }[] {
+  return activeJobIds(state).flatMap((jobId) => {
+    const o = currentObjective(state, jobId);
+    return o?.kind === 'recover' && o.systemId === systemId ? [{ jobId, locationId: o.locationId, item: o.item, guard: o.guard }] : [];
+  });
+}
+
+/** Escorts end when the player leaves their system: jumping away fails them. */
+export function leaveSystem(state: GameState, systemId: SystemId): JobEvent[] {
+  const events: JobEvent[] = [];
+  for (const e of escortsIn(state, systemId)) {
+    const ev = failJob(state, e.jobId, `you left the ${e.name} behind`);
+    if (ev) events.push(ev);
+  }
+  return events;
 }
 
 /** The objective to show in the HUD: the first delivery chain first, then other jobs. */
