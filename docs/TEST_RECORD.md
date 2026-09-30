@@ -11,7 +11,7 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | --- | --- | --- |
 | TypeScript typecheck (app + scripts/tests) | `npm run typecheck` | Pass |
 | Astronomy data validation | `npm run data:validate` | Pass (2 warnings: data is provisional) |
-| Unit tests | `npm test` | Pass: 272 tests in 15 files |
+| Unit tests | `npm test` | Pass: 315 tests in 15 files |
 | Production build | `npm run build` | Pass |
 | Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 9 passed (3 touch-only tests skipped) |
 | Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 11 passed (1 desktop-only test skipped) |
@@ -30,7 +30,8 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   every kind of station, stocks every outfitter and shipyard; broken worlds are caught.
 - `scenes.test.ts`: every catalogue system's generated scene draws exactly its catalogued stars and
   confirmed planets, keeps stations and arrivals clear of them, lanes clear of stars, raider dens
-  hostile and undockable, and builds and disposes in node.
+  hostile and undockable, builds and disposes in node, and shows only catalogued bodies out of a
+  generated station's bay.
 - `market.test.ts`: economy guardrails for the real world and other seeds (every good made and
   wanted, bands, spreads, viable and non-absurd routes, the designed opening prices); live prices
   over 1,500 random market states stay in their bands with buy above sell; no buy-and-sell-back
@@ -66,7 +67,10 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   jump-button rules.
 - `rooms.test.ts`: station interiors: structure per station, camera moves and cuts, reduced
   motion, omitted rooms, determinism, draw-call and triangle budgets per quality, lights per room,
-  hotspots on desktop and phones, portrait framing and disposal.
+  hotspots on desktop and phones, portrait framing and disposal; generated interiors for every
+  station type and owner at every quality (budgets, lights, determinism, ship, dealer, mechanic
+  and bar crowd in shot on desktop and phone, flicker only with motion allowed), and fingerprints
+  proving the six hand-made interiors are unchanged.
 - `stationgen.test.ts`: every station type builds in every owner palette with one lit docking bay,
   a clear approach corridor at every animated pose, a radius that encloses every vertex and light,
   identical geometry for the same look, mesh and triangle budgets per quality, and clean disposal.

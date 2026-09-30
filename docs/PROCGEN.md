@@ -274,7 +274,27 @@ planet; nothing is placed around a body the catalogues do not list. Then:
 - **Look**: each station gets a `StationLook` (type, owner, seed, star colour, size, wear) that the
   exterior and interior art generators build from. Wear grows as security falls.
 
-### 7.4 World guardrails
+### 7.4 Station art
+
+Each generated station is built from its `StationLook` twice:
+
+- **Exterior** (`src/world/art/stationgen/`, gallery at `/dev/stations.html`): the type sets the
+  silhouette (a ring port on a spindle, a customs hangar with scanner gates, open shipyard frames
+  with half-built hulls, a habitat clamped to a mined rock, refinery towers and flare stacks,
+  factory blocks on a conveyor spine, a farm drum of glowing greenhouse rings, research domes and
+  dishes, a relay mast, a military wedge with turrets, a free port of mismatched modules and neon,
+  a raider den dug into a rock or a wreck); the owner sets the paint, size the scale, wear the
+  grime and failing lights. One lit docking bay, a clear approach corridor and a bounding radius
+  are guaranteed and tested.
+- **Interior** (`generateInteriorStyle` in `src/world/rooms/stylegen.ts`): halls, dressing, trade
+  goods, bar and crowd by type, palette and signage by owner, crowd and clutter by size, grime and
+  flickering lamps by wear. The view out of the bay shows only catalogued bodies: the confirmed
+  planet the station orbits, no planet around a lone star, and the system's second star.
+
+Both are deterministic, stay within per-quality mesh, triangle and light budgets, and the
+hand-made stations keep their authored models and rooms (their rooms are fingerprinted in tests).
+
+### 7.5 World guardrails
 
 `validateWorld` (`src/content/world/validate.ts`) checks, and the unit tests run it for the real
 world and for twelve other seeds:
@@ -291,13 +311,14 @@ world and for twelve other seeds:
   equipment, maker, faction or system name, and pass the denylist;
 - every shipyard has something to sell and every outfitter that sells equipment stocks a maker.
 
-### 7.5 Adding to the world
+### 7.6 Adding to the world
 
 - **More systems**: add them to the pick list in `scripts/extract-catalogs.ts`, rerun it and
   `npm run data:build`. If a name pool runs out, the guardrails say so; add words.
 - **A new station type**: add it to `StationType` (`src/content/world/types.ts`) and a rule to
-  `STATION_TYPES` in `rules.ts`; give it a shop entry if it sells equipment. The coverage guardrail
-  makes sure it appears somewhere, and the art generators need a look for it.
+  `STATION_TYPES` in `rules.ts`; give it a shop entry if it sells equipment and a market profile in
+  `src/content/economy/rules.ts`. The coverage guardrail makes sure it appears somewhere; add an
+  archetype to the exterior generator and a character to the interior generator.
 
 ## 8. The economy
 
