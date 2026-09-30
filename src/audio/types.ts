@@ -42,7 +42,11 @@ export type MusicMood =
   | 'alpha-centauri'
   | 'barnard'
   | 'sirius'
-  | 'epsilon-eridani';
+  | 'epsilon-eridani'
+  | 'bar'
+  | 'frontier'
+  | 'deep-space'
+  | 'den';
 
 export interface SfxOptions {
   /** 0..1 multiplier. */

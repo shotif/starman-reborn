@@ -30,7 +30,9 @@ import {
   weightedIndex,
 } from '../../src/audio/theory.ts';
 
-const ALL_MOODS: MusicMood[] = ['title', 'docked', 'map', 'sol', 'alpha-centauri', 'barnard', 'sirius', 'epsilon-eridani'];
+const ALL_MOODS: MusicMood[] = [
+  'title', 'docked', 'map', 'sol', 'alpha-centauri', 'barnard', 'sirius', 'epsilon-eridani', 'bar', 'frontier', 'deep-space', 'den',
+];
 
 const ALL_SFX: SfxId[] = [
   'ui-click', 'ui-confirm', 'ui-error', 'laser', 'laser-mk2', 'laser-enemy', 'missile-launch', 'missile-lock',
@@ -245,6 +247,43 @@ describe('generative composer', () => {
     const density = (mood: MusicMood): number => bars(mood, 8, 64).reduce((n, p) => n + p.events.length, 0) / 64;
     expect(density('barnard')).toBeLessThan(density('sirius'));
     expect(density('map')).toBeLessThan(density('epsilon-eridani'));
+  });
+
+  it('walks a bass line up from each chord root, in range and in key', () => {
+    const withBass = ALL_MOODS.filter((m) => MOODS[m].bass);
+    expect(withBass).toContain('bar');
+    for (const mood of withBass) {
+      const def = MOODS[mood];
+      const b = def.bass!;
+      expect(b.high - b.low).toBeGreaterThanOrEqual(12);
+      const heard = new Set<number>();
+      let lines = 0;
+      for (const plan of bars(mood, 13, 128)) {
+        const chord = def.chords[plan.chord];
+        const line = plan.events.filter((e) => e.part === 'bass');
+        if (line.length === 0) continue;
+        lines++;
+        expect(pitchClass(line[0].midi - def.key)).toBe(pitchClass(chord.root));
+        for (const e of line) {
+          expect(e.midi).toBeGreaterThanOrEqual(b.low);
+          expect(e.midi).toBeLessThanOrEqual(b.high);
+          expect(inScale(def.key, chord.scale ?? def.scale, e.midi)).toBe(true);
+          heard.add(e.midi);
+        }
+        // Stepwise or by chord tones; a minor seventh at most, where a step crosses the range's edge.
+        for (let i = 1; i < line.length; i++) expect(Math.abs(line[i].midi - line[i - 1].midi)).toBeLessThanOrEqual(10);
+      }
+      expect(lines).toBeGreaterThan(100);
+      expect(heard.size).toBeGreaterThan(6);
+    }
+  });
+
+  it('keeps the travel and frontier moods sparse, and the lounge and den busier', () => {
+    const density = (mood: MusicMood): number => bars(mood, 8, 64).reduce((n, p) => n + p.events.length, 0) / 64;
+    expect(density('deep-space')).toBeLessThan(1.5);
+    expect(density('frontier')).toBeLessThan(1.5);
+    expect(density('bar')).toBeGreaterThan(density('frontier') * 4);
+    expect(density('den')).toBeGreaterThan(density('deep-space') * 4);
   });
 
   it('swings only off-beats', () => {
@@ -816,6 +855,39 @@ describe('runtime graph on a fake AudioContext', () => {
     expect(music.layerCount).toBe(1);
     expect(music.mood).toBe('sol');
     music.setIntensity(0);
+    music.dispose();
+    ctx.advance(t + 5);
+    expect(ctx.sources.size).toBe(0);
+  });
+
+  it('plays the new moods (walking bass, heartbeat thumps) within the voice budget', () => {
+    const ctx = new FakeContext();
+    const music = new MusicPlayer(asContext(ctx), fakeBus(ctx), 9);
+    let t = 0;
+    const run = (seconds: number, each?: (voices: number) => void): void => {
+      for (const end = t + seconds; t < end; t += 0.025) {
+        ctx.advance(t);
+        music.scheduleUntil(t + 0.1);
+        each?.(music.voiceCount);
+      }
+    };
+    for (const mood of ['bar', 'frontier', 'deep-space', 'den'] as const) {
+      music.setMood(mood, 3, t);
+      run(8);
+      expect(music.mood).toBe(mood);
+      expect(music.layerCount).toBe(1);
+      let max = 0;
+      run(40, (n) => (max = Math.max(max, n)));
+      const def = MOODS[mood];
+      expect(max).toBeGreaterThan(def.pad.voices + 1);
+      expect(max).toBeLessThanOrEqual(def.pad.voices + 1 + MAX_LAYER_VOICES);
+    }
+    music.setMood('bar');
+    music.setMood('den');
+    music.setMood('bar');
+    run(10);
+    expect(music.mood).toBe('bar');
+    expect(music.layerCount).toBe(1);
     music.dispose();
     ctx.advance(t + 5);
     expect(ctx.sources.size).toBe(0);

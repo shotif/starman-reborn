@@ -89,6 +89,16 @@ function playTone(res: Resources, v: Voice, tone: ToneDef, freq: number, t: numb
       chain(n, f, g, v.out);
       break;
     }
+    case 'thump': {
+      // A soft tuned kick: a sine that drops from well above the note onto it (heartbeats, thuds).
+      const end = t + 0.003 + decay;
+      const o = osc(v, res, 'sine', freq * 3, t, end + 0.01);
+      sweep(o.frequency, freq * 3, freq, t, Math.min(0.09, decay * 0.35));
+      const g = amp(v);
+      perc(g.gain, t, 0.003, decay, peak);
+      chain(o, g, v.out);
+      break;
+    }
   }
 }
 
@@ -223,6 +233,7 @@ class MoodLayer {
       ['comp', def.comp?.tone],
       ['pulse', def.pulse?.tone],
       ['ticks', def.ticks?.tone],
+      ['bass', def.bass?.tone],
     ];
     for (const [part, tone] of partTones) {
       if (!tone) continue;
