@@ -47,6 +47,8 @@ import { catalogue, checkMilestones, codexProgress } from '../economy/progress.t
 import { CODEX_GRANT } from '../content/progress/rules.ts';
 import { welcomeText } from '../economy/dockText.ts';
 import { DesktopInput } from '../flight/input/DesktopInput.ts';
+import { GamepadInput, PAD_HOLDS, padLabel } from '../flight/input/GamepadInput.ts';
+import { SchemeTracker } from '../flight/input/scheme.ts';
 import { emptyInput, type InputScheme } from '../flight/input/types.ts';
 import type { GalaxyMapView } from '../galaxy/GalaxyMapView.ts';
 import { findRoute, type Route } from '../galaxy/routing.ts';
@@ -134,6 +136,9 @@ export class Game {
   private readonly hud: Hud;
   private readonly touch: TouchControls;
   private readonly desktop: DesktopInput;
+  private readonly gamepad = new GamepadInput();
+  /** Which device was used last (it drives the HUD's layout and hints). */
+  private readonly schemes: SchemeTracker;
   private map: GalaxyMapView | null = null;
   private mapLoading: Promise<GalaxyMapView> | null = null;
   private readonly screenLayer: HTMLElement;
@@ -165,7 +170,8 @@ export class Game {
     this.ui = ui;
     this.saves = saves;
     this.settings = settings;
-    this.scheme = isTouchDevice() ? 'touch' : 'desktop';
+    this.schemes = new SchemeTracker(isTouchDevice() ? 'touch' : 'desktop');
+    this.scheme = this.schemes.scheme;
     this.renderer = new GameRenderer(canvas, resolveQuality(settings.quality));
     this.renderer.setQuality(resolveQuality(settings.quality), settings.bloom && !settings.reducedMotion);
     this.screenLayer = h('div', { class: 'screen-layer passthrough' });
@@ -201,6 +207,14 @@ export class Game {
     this.desktop.onPointerMove = (x, y) => {
       if (this.scheme === 'desktop') this.hud.moveReticle(x, y);
     };
+    this.gamepad.onActivity = () => this.setScheme('gamepad');
+    this.gamepad.onConnected = (supported) => {
+      toast(supported ? 'Gamepad connected' : 'Gamepad connected, but its button layout is not supported', supported ? 'good' : 'bad', supported ? 3200 : 5000);
+      // A new pad may name its buttons differently.
+      this.refreshFlightUi();
+    };
+    this.gamepad.onDisconnected = (anyLeft) => this.onGamepadLost(anyLeft);
+    this.gamepad.listen(window);
     ui.append(this.screenLayer, modalLayer, toastLayer, this.fpsEl);
     setModalRoot(modalLayer);
     setToastRoot(toastLayer);
@@ -247,6 +261,7 @@ export class Game {
     this.desktop.steering = next.steering;
     this.desktop.invertY = next.invertY;
     this.touch.invertY = next.invertY;
+    this.gamepad.invertY = next.invertY;
     this.touch.setSwapSides(next.swapTouchSides);
     this.touch.setAimAssist(next.aimAssist);
     this.flight?.updateSettings(next);
@@ -277,18 +292,35 @@ export class Game {
   }
 
   private setScheme(scheme: InputScheme): void {
-    if (this.scheme === scheme) return;
-    this.scheme = scheme;
+    if (!this.schemes.use(scheme)) return;
+    this.scheme = this.schemes.scheme;
+    // Back on the keyboard, the guns aim at the mouse again: show the reticle there.
+    const cursor = this.desktop.cursor;
+    if (scheme === 'desktop' && cursor.present) this.hud.moveReticle(cursor.x, cursor.y);
+    this.refreshFlightUi();
+  }
+
+  /** A pad went away: the HUD returns to the device used before it, and flight pauses rather than drift on. */
+  private onGamepadLost(anyLeft: boolean): void {
+    toast('Gamepad disconnected', 'info');
+    if (!anyLeft && this.schemes.gamepadLost()) {
+      this.scheme = this.schemes.scheme;
+      if (this.mode === 'flight' && !this.paused) {
+        this.setPaused(true);
+        return;
+      }
+    }
+    // The HUD's device may have changed, or a pad left behind may name its buttons differently.
     this.refreshFlightUi();
   }
 
   private refreshFlightUi(): void {
     const flying = this.mode === 'flight' && !this.paused;
     this.hud.setVisible(this.mode === 'flight');
-    this.hud.setDesktopCursor(this.scheme === 'desktop');
+    this.hud.setScheme(this.scheme, this.gamepad.style);
     this.touch.setVisible(flying && this.scheme === 'touch');
     this.desktop.setEnabled(flying);
-    this.canvas.style.cursor = flying && this.scheme === 'desktop' ? 'none' : 'default';
+    this.canvas.style.cursor = flying && this.scheme !== 'touch' ? 'none' : 'default';
     this.updateToastRoot();
   }
 
@@ -724,7 +756,12 @@ export class Game {
     this.announceSystemEvent();
     if (!state.flags.flightSchool) {
       state.flags.flightSchool = true;
-      const aim = this.scheme === 'touch' ? 'hold the right thumb on the aim pad' : 'hold the right mouse button';
+      const aim =
+        this.scheme === 'touch'
+          ? 'hold the right thumb on the aim pad'
+          : this.scheme === 'gamepad'
+            ? `hold ${padLabel(PAD_HOLDS.fire, this.gamepad.style)}`
+            : 'hold the right mouse button';
       this.openControls('Flight school', `Practice drones circle just outside Halcyon Ring. Target one and ${aim} to try your aim.`);
     }
   }
@@ -1408,6 +1445,8 @@ export class Game {
       this.fpsEl.textContent = `${Math.round(this.renderer.fps)} fps · ${this.renderer.quality} · ${Math.round(this.renderer.pixelRatio * 100) / 100}x`;
     }
     if (this.renderer.contextLost) return;
+    // Pads are read every frame on every screen, so a press counts once and never carries over.
+    this.gamepad.update();
     switch (this.mode) {
       case 'docked':
         if (this.interior) {
@@ -1423,6 +1462,11 @@ export class Game {
         if (this.system) this.renderer.render(this.system.scene, this.camera);
         break;
       case 'map':
+        // Back closes the star map, as it opened it.
+        if (this.gamepad.pressed('map') && !document.querySelector('.modal-backdrop, .sheet-backdrop')) {
+          this.closeMap();
+          break;
+        }
         this.map?.render(rawDt);
         break;
       case 'jump':
@@ -1448,6 +1492,10 @@ export class Game {
     const state = this.state;
     if (!flight || !state || !this.system) return;
     if (this.paused || this.sheetsOpen > 0) {
+      // Start closes the pause menu, as Esc does.
+      if (this.gamepad.pressed('pause') && this.pauseEl && !this.sheetsOpen && !document.querySelector('.modal-backdrop, .sheet-backdrop')) {
+        this.setPaused(false);
+      }
       this.renderer.render(this.system.scene, this.camera);
       return;
     }
@@ -1455,6 +1503,7 @@ export class Game {
     const input = emptyInput();
     this.desktop.poll(dt, input);
     this.touch.poll(input);
+    this.gamepad.poll(dt, input, this.scheme === 'gamepad');
     if (input.actions.has('map')) {
       input.actions.delete('map');
       this.openMap();

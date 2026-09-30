@@ -1,6 +1,7 @@
 import { WING_ORDER_LABEL } from './hudModel.ts';
 import { FACTIONS } from '../../economy/factions.ts';
-import type { FlightAction } from '../../flight/input/types.ts';
+import { PAD_FOR, PAD_HOLDS, padLabel, type PadButton, type PadStyle } from '../../flight/input/GamepadInput.ts';
+import type { FlightAction, InputScheme } from '../../flight/input/types.ts';
 import type { TargetKind } from '../../world/targets.ts';
 import { dataBadge } from '../components.ts';
 import { formatCredits, formatRange, h, replaceChildren } from '../dom.ts';
@@ -49,6 +50,15 @@ function setFlag(el: HTMLElement, attr: string, on: boolean): void {
   if (el.getAttribute(attr) !== v) el.setAttribute(attr, v);
 }
 
+/** The loadout panel's key hints, and the pad buttons that do the same. */
+const LOADOUT_KEYS = { gun: 'RMB', missile: 'F', repair: 'R', decoy: 'C' } as const;
+const LOADOUT_PAD: Record<keyof typeof LOADOUT_KEYS, PadButton> = {
+  gun: PAD_HOLDS.fire,
+  missile: PAD_FOR.missile,
+  repair: PAD_FOR.repair,
+  decoy: PAD_FOR.decoy,
+};
+
 const TARGET_GLYPH: Record<TargetKind, GlyphName> = {
   station: 'dock',
   ship: 'gun',
@@ -64,10 +74,10 @@ const TARGET_GLYPH: Record<TargetKind, GlyphName> = {
  * Flight HUD. DOM elements are created once and updated in place each frame; marker elements
  * are pooled. Every state carries a shape and text alongside colour.
  *
- * Desktop follows the classic layout: command rail top centre (objective hanging below), menus
- * top right, wallet top left, target window bottom left, gauge cluster bottom centre, loadout
- * bottom right. Touch keeps the bottom of the screen for the thumbs: gauges top left, menus and
- * wallet top right, objective, target and toasts in the centre column.
+ * Desktop (and gamepad) follows the classic layout: command rail top centre (objective hanging
+ * below), menus top right, wallet top left, target window bottom left, gauge cluster bottom centre,
+ * loadout bottom right. Touch keeps the bottom of the screen for the thumbs: gauges top left, menus
+ * and wallet top right, objective, target and toasts in the centre column.
  */
 export class Hud {
   readonly root: HTMLElement;
@@ -110,6 +120,8 @@ export class Hud {
   private readonly decoyText: HTMLElement;
   private readonly wingText: HTMLElement;
   private readonly wingRow: HTMLElement;
+  private readonly wingKey: HTMLElement;
+  private readonly loadoutKeys: Record<keyof typeof LOADOUT_KEYS, HTMLElement>;
   private readonly flashEl: HTMLElement;
   private readonly left: HTMLElement;
   private readonly centerColumn: HTMLElement;
@@ -123,7 +135,8 @@ export class Hud {
   private lastTargetKey = '';
   /** Mirrors the Text size setting (label decluttering estimates label sizes from it). */
   textScale = 1;
-  private desktopCursor = true;
+  private scheme: InputScheme = 'desktop';
+  private padStyle: PadStyle = 'xbox';
   private reticleMoved = false;
 
   constructor(parent: HTMLElement, callbacks: HudCallbacks) {
@@ -231,16 +244,20 @@ export class Hud {
     this.kitText = h('span', { class: 'num' });
     this.decoyText = h('span', { class: 'num' });
     this.wingText = h('span', { class: 'load-name' });
-    const loadRow = (g: GlyphName, name: HTMLElement | string, value: HTMLElement | null, key: string) =>
-      h('div', { class: 'load-row' }, glyph(g), typeof name === 'string' ? h('span', { class: 'load-name' }, name) : name, value ?? h('span'), h('kbd', { class: 'kbd' }, key));
+    const kbd = (key: keyof typeof LOADOUT_KEYS) => h('kbd', { class: 'kbd' }, LOADOUT_KEYS[key]);
+    this.loadoutKeys = { gun: kbd('gun'), missile: kbd('missile'), repair: kbd('repair'), decoy: kbd('decoy') };
+    // Wing orders are a key (V) or the Wing chip on touch; no pad button is spare for them.
+    this.wingKey = h('kbd', { class: 'kbd' }, 'V');
+    const loadRow = (g: GlyphName, name: HTMLElement | string, value: HTMLElement | null, key: HTMLElement) =>
+      h('div', { class: 'load-row' }, glyph(g), typeof name === 'string' ? h('span', { class: 'load-name' }, name) : name, value ?? h('span'), key);
     this.loadout = h(
       'div',
       { class: 'hud-panel frame hud-loadout', 'aria-label': 'Loadout' },
-      loadRow('gun', this.weaponText, null, 'RMB'),
-      loadRow('missile', this.launcherText, this.missileText, 'F'),
-      loadRow('repair', 'Repair kits', this.kitText, 'R'),
-      loadRow('scanner', 'Decoys', this.decoyText, 'C'),
-      (this.wingRow = loadRow('wing', this.wingText, null, 'V')),
+      loadRow('gun', this.weaponText, null, this.loadoutKeys.gun),
+      loadRow('missile', this.launcherText, this.missileText, this.loadoutKeys.missile),
+      loadRow('repair', 'Repair kits', this.kitText, this.loadoutKeys.repair),
+      loadRow('scanner', 'Decoys', this.decoyText, this.loadoutKeys.decoy),
+      (this.wingRow = loadRow('wing', this.wingText, null, this.wingKey)),
     );
     // Hit flashes around the screen's edges.
     this.flashEl = h('div', { class: 'hud-flash', 'aria-hidden': 'true' });
@@ -265,23 +282,34 @@ export class Hud {
       this.bottomRight,
     );
     parent.appendChild(this.root);
-    this.setDesktopCursor(true);
+    this.setScheme('desktop');
     this.setVisible(false);
   }
 
   setVisible(on: boolean): void {
     this.root.hidden = !on;
     // Until the mouse moves, the desktop reticle waits at the screen centre (not the corner).
-    if (on && this.desktopCursor && !this.reticleMoved) {
+    if (on && this.scheme === 'desktop' && !this.reticleMoved) {
       this.reticle.style.transform = `translate(${window.innerWidth / 2}px, ${window.innerHeight / 2}px)`;
     }
   }
 
-  /** Desktop shows the reticle at the mouse and the full layout; touch keeps the thumbs' areas clear. */
-  setDesktopCursor(on: boolean): void {
-    this.desktopCursor = on;
-    this.root.classList.toggle('touch-mode', !on);
-    if (on) {
+  /**
+   * Follows the device in use. Desktop and gamepad get the full layout; touch keeps the thumbs'
+   * areas clear. The reticle sits at the mouse on desktop and follows the aim (stick or pad)
+   * otherwise, and the hints name the keys or the pad's buttons (`style`: whose names).
+   */
+  setScheme(scheme: InputScheme, style: PadStyle = 'xbox'): void {
+    this.scheme = scheme;
+    this.padStyle = style;
+    const pad = scheme === 'gamepad';
+    for (const [key, el] of Object.entries(this.loadoutKeys) as [keyof typeof LOADOUT_KEYS, HTMLElement][]) {
+      setText(el, pad ? padLabel(LOADOUT_PAD[key], style) : LOADOUT_KEYS[key]);
+    }
+    this.wingKey.hidden = pad;
+    const full = scheme !== 'touch';
+    this.root.classList.toggle('touch-mode', !full);
+    if (full) {
       this.left.replaceChildren(this.wallet, this.scaleText);
       this.centerColumn.replaceChildren(this.commandRail, this.objectivePanel, this.autopilotText, this.warningText, this.encounterBanner);
       this.right.replaceChildren(this.buttons);
@@ -298,6 +326,13 @@ export class Hud {
       this.bottomCenter.replaceChildren(this.contextHint);
       this.bottomRight.replaceChildren();
     }
+  }
+
+  /** The key or pad button named in the context action's hint; none on touch, which has its own button. */
+  private contextKey(action: FlightAction): string | null {
+    if (this.scheme === 'gamepad') return padLabel(PAD_FOR.interact, this.padStyle);
+    if (this.scheme === 'desktop') return action === 'goto' ? 'G' : action === 'scan' ? 'X' : 'E';
+    return null;
   }
 
   /** Immediate reticle move on mouse motion (avoids a frame of latency). */
@@ -376,11 +411,11 @@ export class Hud {
     const ctx = model.context;
     this.contextHint.hidden = !ctx;
     if (ctx) {
-      const label = this.desktopCursor ? `${ctx.label}  [${ctx.action === 'goto' ? 'G' : ctx.action === 'scan' ? 'X' : 'E'}]` : ctx.label;
-      setText(this.contextHint, label);
+      const key = this.contextKey(ctx.action);
+      setText(this.contextHint, key ? `${ctx.label}  [${key}]` : ctx.label);
     }
 
-    if (!this.desktopCursor) this.moveReticle(model.reticle.x, model.reticle.y);
+    if (this.scheme !== 'desktop') this.moveReticle(model.reticle.x, model.reticle.y);
     this.reticle.classList.toggle('out-of-arc', !model.reticle.inArc);
     this.reticle.classList.toggle('assisted', model.reticle.assisted);
     const t = model.target;

@@ -3,7 +3,7 @@
 A browser space trading and combat prototype set among **real nearby stars**: 32 systems within
 about 17 light-years, from Sol, Alpha Centauri and Barnard's Star out to Tau Ceti, 61 Cygni,
 Gliese 876 and Altair, with 44 stars and 37 confirmed planets. You fly a small courier with the
-mouse or with two thumbs. You trade medical supplies, fight or dodge a raider near Mars, jump to
+mouse, two thumbs or a gamepad. You trade medical supplies, fight or dodge a raider near Mars, jump to
 Alpha Centauri, discover the real exoplanet Proxima Centauri b, and make the first delivery to a
 fictional research outpost. After that the neighbourhood is open: 58 generated stations of twelve
 kinds (ports, mines, refineries, farms, research stations, shipyards, free ports, raider dens...),
@@ -72,24 +72,32 @@ installability behave best over HTTPS. Pick one:
 
 ## Controls
 
-| Action | Mouse and keyboard | Touch |
-| --- | --- | --- |
-| Steer | Move the mouse; the ship turns toward the cursor | Left thumb: drag anywhere in the lower left |
-| Aim and fire | Cursor is the reticle; hold the **right** mouse button | Right thumb: drag in the lower right; fires while held |
-| Select target | Left-click a marker or object; **T** cycles, **H** nearest hostile | Target button (hold for nearest hostile) or tap a marker |
-| Throttle | **W / S**, mouse wheel | Slider on the left edge |
-| Strafe | **A / D** | – |
-| Boost | **Shift** | Boost button (hold) |
-| Cruise | **Space** | Cruise button |
-| Dock, enter lane, interact | **E** | Green action button |
-| Go to selected target / objective | **G** | Green action button ("Go to") |
-| Missile, rocket or torpedo | **F** or middle mouse | Missile button |
-| Repair kit | **R** | Repair button |
-| Decoy flare against seekers | **C** | Decoy button |
-| Scan | **X** | Action button ("Scan") |
-| Engines off (drift) | **Z** | Drift button (landscape) |
-| Star map | **Tab** or **M** | Map button |
-| Pause | **Esc** or **P** | Pause button |
+| Action | Mouse and keyboard | Touch | Gamepad |
+| --- | --- | --- | --- |
+| Steer | Move the mouse; the ship turns toward the cursor | Left thumb: drag anywhere in the lower left | Left stick |
+| Aim and fire | Cursor is the reticle; hold the **right** mouse button | Right thumb: drag in the lower right; fires while held | Right stick moves the reticle; hold **RT** |
+| Select target | Left-click a marker or object; **T** cycles, **H** nearest hostile | Target button (hold for nearest hostile) or tap a marker | **Y** cycles, **RB** nearest hostile |
+| Throttle | **W / S**, mouse wheel | Slider on the left edge | D-pad **↑ / ↓** |
+| Strafe | **A / D** | – | – |
+| Boost | **Shift** | Boost button (hold) | **LT** (hold) |
+| Cruise | **Space** | Cruise button | D-pad **→** |
+| Dock, enter lane, interact | **E** | Green action button | **A** |
+| Go to selected target / objective | **G** | Green action button ("Go to") | **A** ("Go to") or **R3** |
+| Autopilot off (free flight) | **Free flight** on the command rail | Steer, or the action button ("Stop") | **B**, or steer |
+| Missile, rocket or torpedo | **F** or middle mouse | Missile button | **X** |
+| Repair kit | **R** | Repair button | D-pad **←** |
+| Decoy flare against seekers | **C** | Decoy button | **LB** |
+| Scan | **X** | Action button ("Scan") | **A** ("Scan") |
+| Engines off (drift) | **Z** | Drift button (landscape) | **L3** |
+| Star map | **Tab** or **M** | Map button | **Back** (View) |
+| Pause | **Esc** or **P** | Pause button | **Start** (Menu) |
+
+Any gamepad the browser reports in the standard layout works in flight. Buttons are named as on an
+Xbox pad; on a PlayStation pad **A** is ✕, **B** ○, **X** □, **Y** △, **LB / RB** are L1 / R1,
+**LT / RT** L2 / R2, **Back** is Create and **Start** Options, and **L3 / R3** mean clicking the
+sticks. Stations and menus use the mouse, keyboard or touch (Start closes the pause menu again and
+Back the star map). The HUD's hints follow whichever device you used last, and on a phone or tablet
+the touch controls hide while you use the pad.
 
 Settings include alternate desktop steering (drag-to-steer, or keyboard steer with mouse aim),
 invert pitch, a left-handed touch layout, aim assist (Off/Low/Medium, touch default Low), difficulty,
@@ -102,7 +110,7 @@ attached to a tablet switches it to the desktop controls automatically.
 src/app/       boot, game controller, renderer, loop, rules, settings, save (IndexedDB)
 src/data/      curated systems, generated astronomy snapshot, coordinates, validation
 src/galaxy/    neighbourhood star map (3D + 2D fallback), routing, info cards
-src/flight/    ship dynamics, chase camera, autopilot, desktop and touch input
+src/flight/    ship dynamics, chase camera, autopilot, desktop, touch and gamepad input
 src/combat/    guns, projectiles, missiles, lead/intercept, damage, raider AI
 src/world/     local system scenes (hand-made and generated), flight session, traffic and raider
                packs (src/world/traffic), procedural art (src/world/art)
