@@ -385,7 +385,7 @@ describe('mining claims', () => {
     expect(countMined(state, 'sol-main-belt', other)).toEqual([]);
     expect(state.jobs[job.id]!.mined).toBeUndefined();
     for (let i = 1; i < mine.qty; i++) expect(countMined(state, 'sol-main-belt', mine.commodity)).toEqual([]);
-    expect(describeObjective(state, job.id)!.text).toContain(`(${mine.qty - 1}/${mine.qty})`);
+    expect(describeObjective(state, job.id)!.text).toBe(`${mine.text}: ${mine.qty - 1} of ${mine.qty} cut (select a rock and mine it)`);
     const done = countMined(state, 'sol-main-belt', mine.commodity);
     expect(done).toMatchObject([{ jobId: job.id, kind: 'objective', text: mine.text }]);
     expect(currentObjective(state, job.id)?.kind).toBe('deliver');
@@ -520,6 +520,11 @@ describe('mining in flight', () => {
     f.run(0.1, ['scan']);
     expect(f.scans).toEqual(['sol-main-belt']);
     expect(f.flight.hud.target?.distance).toBe(0);
+    // Its distance is to the band of rock: 5 km above the plane is well clear of its 2.4 km thickness.
+    f.flight.player.position.y += 5_000;
+    f.run(0.1);
+    expect(f.flight.hud.target?.distance).toBeGreaterThan(3_000);
+    expect(f.flight.hud.target?.distance).toBeLessThan(5_000);
   });
 
   it('mines the selected rock within 600 m: units into the hold, and the Mine action to stop', () => {

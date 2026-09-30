@@ -602,7 +602,7 @@ function describeCurrent(state: GameState, jobId: string): ObjectiveSummary | nu
       const mined = Math.min(o.qty, state.jobs[jobId]?.mined ?? 0);
       return {
         ...base,
-        text: inOtherSystem(o.systemId, `${o.text} (${mined}/${o.qty}): select a rock and mine it`),
+        text: inOtherSystem(o.systemId, `${o.text}: ${mined} of ${o.qty} cut (select a rock and mine it)`),
         targetSystemId: o.systemId,
         targetLocationId: null,
         ...(o.systemId === here ? { targetId: beltTargetId(o.beltId) } : {}),

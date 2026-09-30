@@ -309,9 +309,9 @@ function boltKind(type: DamageType, tier: number): ProjectileKind {
   return tier >= 3 ? 'player-pulse-mk2' : 'player-pulse';
 }
 
-/** Targets whose distance is shown to their surface (or a belt's band of rock) rather than their centre. */
+/** Targets whose distance is shown to their surface rather than their centre (a belt's is to its band of rock). */
 function surfaced(kind: Target['kind']): boolean {
-  return kind === 'planet' || kind === 'star' || kind === 'rock' || kind === 'belt';
+  return kind === 'planet' || kind === 'star' || kind === 'rock';
 }
 
 function easeInOut(t: number): number {
@@ -899,7 +899,7 @@ export class FlightSession {
     if (sel && this.canScanMining(sel) && (sel.kind === 'rock' || this.surfaceDistance(sel) < 1_500)) return { label: 'Scan', action: 'scan', icon: 'scan' };
     const goal = sel ?? this.objectiveTarget();
     const headingTo = this.autopilotTargetId();
-    const far = goal ? (goal.kind === 'rock' ? this.surfaceDistance(goal) > MINING.range : goal.position.distanceTo(this.player.position) > (goal.kind === 'belt' ? goal.radius + 1_500 : 1_500)) : false;
+    const far = !goal ? false : goal.kind === 'rock' ? this.surfaceDistance(goal) > MINING.range : goal.kind === 'belt' ? this.surfaceDistance(goal) > 1_500 : goal.position.distanceTo(this.player.position) > 1_500;
     if (goal && far && goal.id !== headingTo) {
       return { label: sel ? 'Go to' : 'Go to goal', action: 'goto', icon: 'goto' };
     }
@@ -3131,9 +3131,9 @@ export class FlightSession {
 
   // ---------------------------------------------------------------- mining (docs/PROCGEN.md §19)
 
-  /** Distance from the player to a target's surface. */
+  /** Distance from the player to a target's surface (a belt: its band of rock). */
   private surfaceDistance(t: Target): number {
-    return Math.max(0, t.position.distanceTo(this.player.position) - t.radius);
+    return this.mining.bandDistance(t.id, this.player.position) ?? Math.max(0, t.position.distanceTo(this.player.position) - t.radius);
   }
 
   /** A mining laser is fitted and the selected rock is within the beam's reach. */
@@ -3463,7 +3463,7 @@ export class FlightSession {
         name: sel.name,
         kind: sel.kind,
         subtitle: sel.subtitle,
-        distance: Math.max(0, dist - (surfaced(sel.kind) ? sel.radius : 0)),
+        distance: sel.kind === 'belt' ? this.surfaceDistance(sel) : Math.max(0, dist - (surfaced(sel.kind) ? sel.radius : 0)),
         hostile: !!sel.hostile,
         ...(sel.faction ? { faction: sel.faction } : {}),
         dataClass: sel.dataClass,
@@ -3507,7 +3507,7 @@ export class FlightSession {
         y: pr.y,
         onScreen: pr.onScreen,
         edgeAngle: pr.angle,
-        distance: Math.max(0, dist - (surfaced(t.kind) ? t.radius : 0)),
+        distance: t.kind === 'belt' ? this.surfaceDistance(t) : Math.max(0, dist - (surfaced(t.kind) ? t.radius : 0)),
         hostile: !!t.hostile,
         ...(t.faction ? { faction: t.faction } : {}),
         selected,

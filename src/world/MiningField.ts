@@ -118,6 +118,12 @@ export class MiningField {
     for (const r of this.rocks.values()) if (r.position.distanceTo(point) < radius + r.spec.radius) yield r;
   }
 
+  /** How far a point is from the band of rock of a belt target's ring (0 inside it), or null for another target. */
+  bandDistance(targetId: string, p: THREE.Vector3): number | null {
+    const ring = this.rings.find((r) => r.target.id === targetId);
+    return ring ? this.distanceToBand(ring, p) : null;
+  }
+
   /** How far the player is from a ring's band of rock (0 inside it). */
   distanceToBand(ring: BeltRing, p: THREE.Vector3): number {
     const c = ring.def.center;
