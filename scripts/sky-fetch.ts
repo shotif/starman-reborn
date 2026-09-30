@@ -16,6 +16,11 @@
  *     searches around the brightest stars (which lack usable Gaia DR3 astrometry).
  *   - VizieR I/311/hip2 (Hipparcos, new reduction): by HIP number, and every star with Plx >= 120 mas.
  *   - NASA Exoplanet Archive: every confirmed planet (pscomppars) within 8.3 pc.
+ *   - The Extrasolar Planets Encyclopaedia (exoplanet.eu, Paris Observatory): every planet it lists
+ *     within 8.4 pc, with its status (confirmed, candidate, controversial, retracted), so planets
+ *     the NASA archive does not confirm are named and dated rather than silently dropped.
+ *   - SIMBAD's bibliography: papers about debris discs, dust belts and infrared excesses for every
+ *     neighbourhood star, so each belt in the game cites a paper the archive links to that star.
  *   - JPL: the Keplerian elements for approximate planet positions (1800-2050), and Horizons
  *     heliocentric vectors for the eight planets at three dates, to test the elements against.
  *
@@ -36,12 +41,15 @@ const TAP = {
   simbad: 'https://simbad.cds.unistra.fr/simbad/sim-tap',
   vizier: 'https://tapvizier.cds.unistra.fr/TAPVizieR/tap',
   nasa: 'https://exoplanetarchive.ipac.caltech.edu/TAP',
+  exoplaneteu: 'https://voparis-tap-planeto.obspm.fr/tap',
 } as const;
 
 /** Parallax floor for the neighbourhood (mas): 120 mas is about 27.2 light-years. */
 const NEIGHBOURHOOD_PLX = 120;
 /** Distance ceiling for planets (pc): 8.3 pc is about 27.1 light-years. */
 const PLANET_DIST_PC = 8.3;
+/** The Encyclopaedia's distances are rounder; a little margin keeps the edge of the shell. */
+const ENCYCLOPAEDIA_DIST_PC = 8.4;
 
 type Row = Record<string, unknown>;
 
@@ -60,9 +68,10 @@ const manifest: ManifestEntry[] = [];
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function rowsOf(text: string): Row[] {
-  const json = JSON.parse(text) as { metadata?: { name: string }[]; data?: unknown[][] } | Row[];
+  const json = JSON.parse(text) as { metadata?: { name: string }[]; columns?: { name: string }[]; data?: unknown[][] } | Row[];
   if (Array.isArray(json)) return json;
-  const cols = (json.metadata ?? []).map((m) => m.name);
+  // TAP services answer JSON as {metadata, data}; DaCHS services (exoplanet.eu) as {columns, data}.
+  const cols = (json.metadata ?? json.columns ?? []).map((m) => m.name);
   return (json.data ?? []).map((r) => Object.fromEntries(cols.map((c, i) => [c, r[i]])));
 }
 
@@ -299,9 +308,24 @@ async function main(): Promise<void> {
 
   // NASA Exoplanet Archive: every confirmed planet within reach.
   const columns =
-    'pl_name, hostname, hip_name, hd_name, gaia_id, sy_dist, sy_plx, ra, dec, sy_snum, sy_pnum, disc_year, discoverymethod, disc_facility, pl_controv_flag, pl_orbper, pl_orbpererr1, pl_orbsmax, pl_orbsmaxerr1, pl_orbeccen, pl_bmasse, pl_bmasseerr1, pl_bmassprov, pl_rade, pl_radeerr1, pl_eqt, st_spectype, st_teff, st_mass, st_rad, rowupdate';
+    'pl_name, pl_letter, hostname, hip_name, hd_name, gaia_dr3_id, sy_dist, sy_plx, ra, dec, sy_snum, sy_pnum, disc_year, discoverymethod, disc_facility, disc_refname, pl_controv_flag, pl_pubdate, pl_orbper, pl_orbpererr1, pl_orbsmax, pl_orbsmaxerr1, pl_orbeccen, pl_bmasse, pl_bmasseerr1, pl_bmassprov, pl_rade, pl_radeerr1, pl_eqt, st_spectype, st_teff, st_mass, st_rad';
   const planets = await tap('nasa', `select ${columns} from pscomppars where sy_dist < ${PLANET_DIST_PC}`, 'nasa-pscomppars-neighbourhood', { nasa: true });
   if (!planets.length) await tap('nasa', `select * from pscomppars where sy_dist < ${PLANET_DIST_PC}`, 'nasa-pscomppars-neighbourhood-all', { nasa: true });
+
+  // The Extrasolar Planets Encyclopaedia: every planet it lists nearby, whatever its status.
+  await tap('exoplaneteu', `SELECT * FROM exoplanet.epn_core WHERE star_distance < ${ENCYCLOPAEDIA_DIST_PC}`, 'exoplanet-eu-neighbourhood');
+
+  // SIMBAD's bibliography: papers on discs, belts and infrared excesses around the neighbourhood's stars.
+  const stellar = [...oids];
+  const topics = ['debris', 'Debris', 'DEBRIS', 'disk', 'Disk', 'disc', 'Disc', 'belt', 'Belt', 'Kuiper', 'dust', 'Dust', 'infrared excess', 'Infrared excess', 'Infrared Excess', 'exozodi', 'Exozodi', 'zodiacal', 'Zodiacal'];
+  const titleFilter = topics.map((t) => `r.title LIKE '%${t}%'`).join(' OR ');
+  for (const [i, part] of chunks(stellar, 150).entries()) {
+    await tap(
+      'simbad',
+      `SELECT h.oidref, r.bibcode, r.title, r."year", r.journal FROM has_ref AS h JOIN ref AS r ON h.oidbibref = r.oidbib WHERE h.oidref IN (${part.join(',')}) AND (${titleFilter})`,
+      `simbad-disc-refs-${i}`,
+    );
+  }
 
   // JPL: Keplerian elements (1800-2050) and Horizons vectors to test them against.
   await getText('https://ssd.jpl.nasa.gov/planets/approx_pos.html', 'jpl-approx-pos-page', 'html');
