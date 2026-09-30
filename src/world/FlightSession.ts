@@ -153,6 +153,8 @@ interface NpcShip {
   mineRolled?: boolean;
   /** The ship whose fire last hit this one (for who gets the credit). */
   lastHitBy?: string;
+  /** Seconds until a badly damaged ship next throws sparks. */
+  sparkIn?: number;
   /** A ship of the sweep coming for a den (a den defence): it fights the player and the den's crews. */
   sweep?: { locationId: string };
   /** This patrol has decided whether to scan the player. */
@@ -1082,7 +1084,10 @@ export class FlightSession {
 
     // Visuals.
     this.syncPlayerArt(dt);
-    for (const n of this.npcs) this.syncNpcArt(n);
+    for (const n of this.npcs) {
+      this.syncNpcArt(n);
+      this.hurtSparks(n, dt);
+    }
     const speedFrac = this.player.speed / this.player.params.cruiseSpeed;
     this.chase.update(this.player, dt, this.autopilot.mode === 'lane' ? 1 : speedFrac);
     const streak =
@@ -3179,6 +3184,17 @@ export class FlightSession {
     art.setBoost(p.boosting);
     art.setCruise(p.cruise === 'on' || (this.autopilot.mode === 'lane' && this.autopilot.phase === 'travel'));
     art.update?.(dt, this.time, this.camera);
+  }
+
+  /** A badly hurt ship keeps throwing sparks (docs/PROCGEN.md §15.6), when the player is near enough to see. */
+  private hurtSparks(n: NpcShip, dt: number): void {
+    if (n.durability.hull <= 0 || n.durability.hull > n.durability.hullMax * 0.34) return;
+    n.sparkIn = (n.sparkIn ?? 0) - dt;
+    if (n.sparkIn > 0) return;
+    n.sparkIn = 0.35 + this.rand() * 0.4;
+    if (n.body.position.distanceTo(this.player.position) > 2_500) return;
+    const at = n.body.position.clone().add(this.tmp.set(this.rand() - 0.5, this.rand() - 0.5, this.rand() - 0.5).multiplyScalar(n.art.radius));
+    this.spawnEffect(createImpactSpark(at, this.rand() < 0.5 ? '#ff9a4a' : '#8a8f99', this.ctx));
   }
 
   private syncNpcArt(n: NpcShip): void {
