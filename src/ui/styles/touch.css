@@ -124,9 +124,10 @@
   grid-template-columns: repeat(2, var(--btn));
 }
 
+/* Three across in landscape, so the decoy button adds no row (the cluster stays clear of the HUD). */
 .tcluster.right {
   right: calc(var(--safe-right) + 12px);
-  grid-template-columns: repeat(2, var(--btn));
+  grid-template-columns: repeat(3, var(--btn));
 }
 
 .touch-controls.swapped .tcluster.left {
