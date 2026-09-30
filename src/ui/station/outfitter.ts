@@ -194,6 +194,12 @@ function systemsLine(ship: StationContext['state']['ship']): HTMLElement | null 
   return hurt.length ? h('p', { class: 'callout warn small', 'data-testid': 'systems-damage' }, `Damaged systems: ${hurt.join(', ')}.`) : null;
 }
 
+function mountName(ctx: StationContext, slotId: string): string {
+  const slots = shipSlots(ctx.state.ship);
+  const slot = slots.find((x) => x.id === slotId);
+  return slot ? slotLabel(slot, slots) : slotId;
+}
+
 /** A salvaged item: fit it (into the selected mount when it fits there) or sell it. */
 function stashRow(ctx: StationContext, o: ReturnType<typeof stashOffers>[number], selectedSlot: string, refresh: Refresh): HTMLElement {
   const item = gearItem(o.gearId);
@@ -212,7 +218,7 @@ function stashRow(ctx: StationContext, o: ReturnType<typeof stashOffers>[number]
       'span',
       { class: 'trade-text' },
       h('span', { class: 'row-name' }, o.name),
-      h('span', { class: 'row-sub' }, into ? `Fits ${into.id}${into.replaces ? ` (replaces ${into.replaces})` : ''}` : gearLine(item)),
+      h('span', { class: 'row-sub' }, into ? `${mountName(ctx, into.id)}${into.replaces ? `: replaces ${into.replaces}` : ': empty mount'}` : gearLine(item)),
       o.blocked ? h('span', { class: 'row-note' }, o.blocked) : null,
     ),
     h(

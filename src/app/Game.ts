@@ -1546,6 +1546,14 @@ export class Game {
         this.state.flags.clearance = true;
         this.station?.render();
       },
+      /** Test-only: damage the ship's systems, set its decoys, or fill the stash (combat depth checks). */
+      setCombat: (patch: { systems?: GameState['ship']['systems']; decoys?: number; stash?: string[] }) => {
+        if (!this.state) return;
+        if (patch.systems) this.state.ship.systems = { ...patch.systems };
+        if (patch.decoys !== undefined) this.state.ship.decoys = patch.decoys;
+        if (patch.stash) this.state.stash = [...patch.stash];
+        this.station?.render();
+      },
       /** Test-only: set the fines owed to a faction. */
       setFines: (faction: 'sta' | 'frontier', amount: number) => {
         if (!this.state) return;
