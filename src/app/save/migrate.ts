@@ -27,10 +27,11 @@ import { createNewGame, SAVE_VERSION, type CommodityId, type GameState } from '.
  * - v7: `law` (fines owed to the lawful factions), smuggling and piracy contracts, two contraband
  *   goods; `codex`, `surveysSold`, `milestones`, and `stats.sales` / `stats.rewards` (the trade
  *   rating).
- * - v8 (current): `story` (choices made in the faction arcs, beats already told) and `dens` (raider
+ * - v8: `story` (choices made in the faction arcs, beats already told) and `dens` (raider
  *   dens knocked out, and when); jobs may carry convoy and den assault progress; `stash` (salvaged
- *   equipment aboard) and `crew` (wingmen for hire); the ship's `decoys` and `systems` damage. See
- *   GameState in src/app/state.ts.
+ *   equipment aboard) and `crew` (wingmen for hire); the ship's `decoys` and `systems` damage.
+ * - v9 (current): `priceWatch` and `rumours` (docs/PROCGEN.md §16); known markets may come from a
+ *   rumour or the price watch, with per-good times. See GameState in src/app/state.ts.
  */
 export interface SaveV1 {
   version: 1;
@@ -147,7 +148,12 @@ function migrateV7(
   old: Omit<GameState, 'version' | 'story' | 'dens' | 'stash' | 'crew' | 'ship'> & { version: 7; ship: Omit<GameState['ship'], 'decoys' | 'systems'> & Partial<Pick<GameState['ship'], 'decoys' | 'systems'>> },
 ): GameState {
   const ship = { ...old.ship, decoys: old.ship.decoys ?? COMBAT.decoys.starting, systems: old.ship.systems ?? { engines: 0, guns: 0, shields: 0 } };
-  return { ...old, ship, version: SAVE_VERSION, story: { choices: {}, seen: [] }, dens: {}, stash: [], crew: [] };
+  return migrateV8({ ...old, ship, version: 8, story: { choices: {}, seen: [] }, dens: {}, stash: [], crew: [] });
+}
+
+/** v8 → v9: no prices watched and nothing heard in the bars yet. */
+function migrateV8(old: Omit<GameState, 'version' | 'priceWatch' | 'rumours'> & { version: 8 }): GameState {
+  return { ...old, version: SAVE_VERSION, priceWatch: [], rumours: [] };
 }
 
 /** Upgrades any known save version to the current GameState. Throws SaveFormatError when unusable. */
@@ -166,6 +172,7 @@ export function migrateSave(raw: unknown): GameState {
   else if (raw.version === 5) data = migrateV5(raw as unknown as Parameters<typeof migrateV5>[0]);
   else if (raw.version === 6) data = migrateV6(raw as unknown as Parameters<typeof migrateV6>[0]);
   else if (raw.version === 7) data = migrateV7(raw as unknown as Parameters<typeof migrateV7>[0]);
+  else if (raw.version === 8) data = migrateV8(raw as unknown as Parameters<typeof migrateV8>[0]);
   const state = data as GameState;
   assertValidState(state);
   return state;
@@ -220,6 +227,14 @@ export function assertValidState(s: GameState): void {
   if (!Number.isInteger(s.ship.decoys) || s.ship.decoys < 0 || s.ship.decoys > COMBAT.decoys.max) fail('decoys');
   const sys = s.ship.systems;
   if (!isRecord(sys) || !(['engines', 'guns', 'shields'] as const).every((k) => Number.isFinite(sys[k]) && sys[k] >= 0 && sys[k] <= 1)) fail('systems');
+  if (!Array.isArray(s.priceWatch) || !s.priceWatch.every((w) => isRecord(w) && LOCATION_IDS.has(w.locationId) && COMMODITY_IDS.includes(w.commodity))) fail('price watch');
+  const kinds = ['price', 'event', 'den', 'ace', 'wreck', 'story'];
+  if (!Array.isArray(s.rumours) || !s.rumours.every((r) => isRecord(r) && typeof r.key === 'string' && typeof r.text === 'string' && kinds.includes(r.kind) && Number.isFinite(r.at))) fail('rumours');
+  if (!isRecord(s.knownMarkets)) fail('known markets');
+  for (const [id, m] of Object.entries(s.knownMarkets)) {
+    if (!LOCATION_IDS.has(id) || !isRecord(m) || !Number.isFinite(m.observedAt) || !isRecord(m.prices) || !['visited', 'briefing', 'rumour', 'watch'].includes(m.source)) fail(`known market ${id}`);
+    if (m.goodsAt !== undefined && (!isRecord(m.goodsAt) || !Object.values(m.goodsAt).every((g) => isRecord(g) && Number.isFinite(g.t)))) fail(`known market ${id}`);
+  }
   if (!isRecord(s.markets)) fail('markets');
   for (const [id, m] of Object.entries(s.markets)) {
     if (!LOCATION_IDS.has(id) || !isRecord(m) || !Number.isFinite(m.t) || !isRecord(m.stock)) fail(`market ${id}`);

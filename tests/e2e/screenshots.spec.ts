@@ -105,7 +105,7 @@ async function audit(page: Page, touch: boolean): Promise<AuditResult> {
       }
     }
     const overlaps: string[] = [];
-    const panels = [...document.querySelectorAll('.hud-status, .hud-wallet, .hud-buttons, .hud-objective, .hud-target, .encounter-banner, .tcluster, .assist-chip, .throttle, .toast')].filter(visible);
+    const panels = [...document.querySelectorAll('.hud-status, .hud-wallet, .hud-buttons, .hud-objective, .hud-target, .encounter-banner, .tcluster, .assist-chip, .wing-chip, .throttle, .toast')].filter(visible);
     for (let i = 0; i < panels.length; i++) {
       for (let j = i + 1; j < panels.length; j++) {
         const a = panels[i]!.getBoundingClientRect();

@@ -1,3 +1,4 @@
+import { getLocation } from '../../data/systems.ts';
 import { voyageTotals, type GameState } from '../../app/state.ts';
 import { storyRecord } from '../story.ts';
 import { cargoCount } from '../../economy/cargo.ts';
@@ -80,9 +81,28 @@ export function journalContent(ctx: StationContext, refresh: Refresh): HTMLEleme
       ]),
     ),
     storyRecord(state),
+    heardRecord(state),
     pilotRecord(state),
     voyage ? h('div', { class: 'list-head' }, h('span', null, 'Voyage report'), h('span', null, '')) : null,
     voyage,
+  );
+}
+
+/** What was heard in the bars, newest first (docs/PROCGEN.md §16). */
+function heardRecord(state: GameState): HTMLElement | null {
+  if (!state.rumours.length) return null;
+  return h(
+    'section',
+    { 'aria-label': 'Heard in the bars', 'data-testid': 'heard' },
+    h('div', { class: 'list-head' }, h('span', null, 'Heard in the bars'), h('span', null, '')),
+    h(
+      'ul',
+      { class: 'plain heard-list' },
+      [...state.rumours].reverse().map((r) => {
+        const m = Math.max(0, Math.round((state.clock - r.at) / 60));
+        return h('li', null, h('span', { class: 'muted small' }, `${getLocation(r.locationId).name} · ${m < 1 ? 'just now' : m < 60 ? `${m} min ago` : `${Math.round(m / 60)} h ago`}`), h('div', null, r.text));
+      }),
+    ),
   );
 }
 

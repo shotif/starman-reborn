@@ -289,6 +289,25 @@ export function eventsSince(clock: number, recent: number): WorldEvent[] {
   return out;
 }
 
+/** Events that start after `from` and by `to` (what the bars hear before the news does). */
+export function eventsStarting(from: number, to: number): WorldEvent[] {
+  const out: WorldEvent[] = [];
+  const keep = (e: WorldEvent | null) => {
+    if (e && e.start > from && e.start <= to) out.push(e);
+  };
+  for (const id of eventStations()) {
+    const w = windowIndex(id, EVENTS.stationWindow, from);
+    keep(stationEventIn(id, w));
+    keep(stationEventIn(id, w + 1));
+  }
+  for (const s of SYSTEMS) {
+    const w = windowIndex(s.id, EVENTS.systemWindow, from);
+    keep(systemEventIn(s.id, w));
+    keep(systemEventIn(s.id, w + 1));
+  }
+  return out.sort((a, b) => a.start - b.start);
+}
+
 export interface NewsItem {
   event: WorldEvent;
   jumps: number;

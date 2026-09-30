@@ -1,3 +1,4 @@
+import { WING_ORDER_LABEL, type WingOrder } from '../hud/hudModel.ts';
 import type { AimAssist } from '../../app/settings.ts';
 import type { FlightAction, FlightInput } from '../../flight/input/types.ts';
 import { TouchControlsModel, type VirtualStick } from '../../flight/input/touchModel.ts';
@@ -42,6 +43,7 @@ export class TouchControls {
   private readonly decoyCount: HTMLElement;
   private readonly driftBtn: HTMLButtonElement;
   private readonly assistChip: HTMLButtonElement;
+  private readonly wingChip: HTMLButtonElement;
   private readonly throttleTrack: HTMLElement;
   private readonly throttleFill: HTMLElement;
   private readonly throttleValue: HTMLElement;
@@ -114,6 +116,9 @@ export class TouchControls {
     this.bindTap(this.driftBtn, 'engine-kill');
     this.assistChip = h('button', { type: 'button', class: 'assist-chip', 'data-testid': 'touch-assist' }, 'Aim assist: Low');
     this.assistChip.addEventListener('click', () => this.callbacks.onAimAssistCycle());
+    // The wing's standing order, shown and cycled only while a wing flies with you.
+    this.wingChip = h('button', { type: 'button', class: 'wing-chip', 'data-testid': 'touch-wing', hidden: true }, 'Wing') as HTMLButtonElement;
+    this.bindTap(this.wingChip, 'wing-order');
 
     this.throttleFill = h('div', { class: 'throttle-fill' });
     this.throttleValue = h('div', { class: 'throttle-value num' }, '0%');
@@ -149,7 +154,7 @@ export class TouchControls {
       leftCluster,
       rightCluster,
       h('div', { class: 'throttle' }, this.throttleValue, this.throttleTrack, this.driftBtn),
-      this.assistChip,
+      h('div', { class: 'touch-chips' }, this.wingChip, this.assistChip),
     );
     parent.appendChild(this.root);
     this.setVisible(false);
@@ -196,6 +201,15 @@ export class TouchControls {
 
   setCruiseState(state: 'off' | 'charging' | 'on'): void {
     this.cruiseBtn.dataset.state = state;
+  }
+
+  /** Shows the wing's order chip while a wing flies with the player. */
+  setWing(wing: { count: number; order: WingOrder } | null): void {
+    this.wingChip.hidden = !wing;
+    if (wing) {
+      const text = `Wing: ${WING_ORDER_LABEL[wing.order]}`;
+      if (this.wingChip.textContent !== text) this.wingChip.textContent = text;
+    }
   }
 
   setCounts(missiles: number, repairKits: number, decoys = 0): void {

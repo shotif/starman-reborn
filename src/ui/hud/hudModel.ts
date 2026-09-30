@@ -44,6 +44,11 @@ export interface HudContextAction {
   icon: IconName;
 }
 
+/** A wing's standing order: engage raiders near the player, go for the player's target, or stay in formation. */
+export type WingOrder = 'free' | 'attack' | 'form';
+
+export const WING_ORDER_LABEL: Record<WingOrder, string> = { free: 'Engage at will', attack: 'Attack my target', form: 'Form up' };
+
 export interface HudModel {
   speed: number;
   throttle: number;
@@ -80,6 +85,8 @@ export interface HudModel {
   systems: { engines: number; guns: number; shields: number };
   /** Screen-edge flashes after hits, 0–1 (hull red, shield blue). */
   flash: { hull: number; shield: number };
+  /** Ships flying on the player's wing, and their standing order (null without a wing). */
+  wing: { count: number; order: WingOrder } | null;
   encounterActive: boolean;
   /** Closest dock in this system (name and distance), for the HUD. */
   nearestDock: { name: string; distance: number } | null;
@@ -115,6 +122,7 @@ export function emptyHudModel(): HudModel {
     incoming: 0,
     systems: { engines: 0, guns: 0, shields: 0 },
     flash: { hull: 0, shield: 0 },
+    wing: null,
     encounterActive: false,
     nearestDock: null,
   };

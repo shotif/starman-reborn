@@ -3,7 +3,6 @@ import { cargoUsed } from '../../economy/cargo.ts';
 import { welcomeText } from '../../economy/dockText.ts';
 import { hasOutfitter, hasShipyard } from '../../economy/equipment.ts';
 import { FACTIONS, standingTier, TIER_LABEL } from '../../economy/factions.ts';
-import { jobsAt } from '../../economy/jobs.ts';
 import { cargoCapacity } from '../../economy/loadout.ts';
 import { hasMarket } from '../../economy/markets.ts';
 import type { RoomView } from '../../world/rooms/types.ts';
@@ -13,15 +12,19 @@ import { glyph, type GlyphName } from '../glyphs.ts';
 import { icon } from '../icons.ts';
 import '../styles/dock.css';
 import '../styles/station.css';
-import { acceptLabel, jobBoardContent, jobsNeedAttention, newsContent } from './bar.ts';
+import '../styles/people.css';
+import { acceptLabel, jobBoardContent, jobsNeedAttention, newsContent, visibleOffers } from './bar.ts';
 import { choiceHere } from '../../economy/story.ts';
 import type { StationContext } from './context.ts';
 import { hasVoyage, journalContent, voyageReport } from './journal.ts';
 import { outfitterContent, shipStatus } from './outfitter.ts';
 import { shipyardContent } from './shipyard.ts';
 import { traderContent } from './trader.ts';
+import { peopleContent } from './people.ts';
+import { computerContent } from './computer.ts';
+import { rememberView } from './lastView.ts';
 
-export type StationWindow = 'trader' | 'outfitter' | 'shipyard' | 'jobs' | 'news' | 'journal' | 'arrival' | 'menu';
+export type StationWindow = 'trader' | 'outfitter' | 'shipyard' | 'jobs' | 'people' | 'news' | 'computer' | 'journal' | 'arrival' | 'menu';
 
 export interface StationOpen {
   room?: RoomView;
@@ -50,7 +53,9 @@ const WINDOW_TITLE: Record<StationWindow, string> = {
   outfitter: 'Outfitter',
   shipyard: 'Shipyard',
   jobs: 'Job board',
+  people: 'People',
   news: 'Station news',
+  computer: 'Trade computer',
   journal: 'Journal',
   arrival: 'Arrival',
   menu: 'Menu',
@@ -102,6 +107,7 @@ export class StationHub {
       'nav',
       { class: 'rail frame attach-top attach-right station-global', 'aria-label': 'Menus' },
       this.globalButton('map', 'Star map', 'dock-map', () => ctx.openMap()),
+      this.globalButton('electronics', 'Trade computer', 'station-computer', () => this.openWindow(this.win === 'computer' ? null : 'computer')),
       this.globalButton('journal', 'Journal', 'station-journal', () => this.openWindow(this.win === 'journal' ? null : 'journal')),
       this.globalButton('science', 'Science notes', 'station-science', () => ctx.openEncyclopedia()),
       this.globalButton('menu', 'Menu', 'station-menu', () => this.openWindow(this.win === 'menu' ? null : 'menu')),
@@ -159,6 +165,7 @@ export class StationHub {
     const changed = room !== this.room;
     this.room = room;
     this.win = win;
+    rememberView(this.ctx.locationId, room, win);
     if (changed) {
       const transition = this.ctx.setView(room);
       if (transition === 'cut') this.playFade();
@@ -170,6 +177,7 @@ export class StationHub {
 
   openWindow(win: StationWindow | null): void {
     this.win = win;
+    rememberView(this.ctx.locationId, this.room, win);
     this.render();
     this.focusDefault();
   }
@@ -217,7 +225,7 @@ export class StationHub {
   // ---------------------------------------------------------------- parts
 
   private globalButton(g: GlyphName, label: string, testId: string, onClick: () => void): HTMLElement {
-    const win = testId === 'station-journal' ? 'journal' : testId === 'station-menu' ? 'menu' : undefined;
+    const win = testId === 'station-journal' ? 'journal' : testId === 'station-menu' ? 'menu' : testId === 'station-computer' ? 'computer' : undefined;
     return h(
       'button',
       { type: 'button', class: 'rail-btn rail-btn-sm', 'aria-label': label, title: label, 'data-testid': testId, 'data-window': win, onClick },
@@ -243,7 +251,7 @@ export class StationHub {
     const items: HTMLElement[] = [];
     const full = this.ctx.access === 'full';
     if (room === 'deck' && full && hasShipyard(this.ctx.locationId)) items.push(act('shipyard', 'Ships', 'shipyard', 'station-ships'));
-    if (room === 'bar') items.push(...(full ? [act('jobs', 'Jobs', 'jobs', 'station-jobs')] : []), act('news', 'News', 'news', 'station-news'));
+    if (room === 'bar') items.push(...(full ? [act('jobs', 'Jobs', 'jobs', 'station-jobs')] : []), act('bar', 'People', 'people', 'station-people'), act('news', 'News', 'news', 'station-news'));
     if (room === 'trader') items.push(act('trader', 'Trade', 'trader', 'station-trade'));
     if (room === 'outfitter') items.push(act('outfitter', 'Equip', 'outfitter', 'station-equip'));
     items.push(button('Launch', { icon: 'launch', variant: 'primary', onClick: () => this.ctx.launch(), testId: 'dock-launch' }));
@@ -318,7 +326,7 @@ export class StationHub {
   private windowFoot(win: StationWindow): HTMLElement | null {
     if (win !== 'jobs') return null;
     const { state, locationId } = this.ctx;
-    const offers = jobsAt(state, locationId);
+    const offers = visibleOffers(state, locationId);
     const open = this.selectedJob ?? offers.find((o) => o.status === 'available')?.job.id ?? null;
     const offer = offers.find((o) => o.job.id === open && o.status === 'available');
     // A story choice waiting here (docs/PROCGEN.md §14).
@@ -333,7 +341,7 @@ export class StationHub {
     const { ctx } = this;
     switch (win) {
       case 'trader':
-        return traderContent(ctx, refresh);
+        return traderContent(ctx, refresh, () => this.openWindow('computer'));
       case 'outfitter':
         return outfitterContent(ctx, refresh, this.selectedSlot, (id) => {
           this.selectedSlot = id;
@@ -355,8 +363,15 @@ export class StationHub {
           },
           refresh,
         );
+      case 'people':
+        return peopleContent(ctx, refresh, (jobId) => {
+          this.selectedJob = jobId;
+          this.openRoom('bar', 'jobs');
+        });
       case 'news':
         return newsContent(ctx);
+      case 'computer':
+        return computerContent(ctx, refresh);
       case 'journal':
         return journalContent(ctx, refresh);
       case 'arrival':

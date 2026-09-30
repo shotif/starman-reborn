@@ -209,6 +209,36 @@ describe('combat depth in flight', () => {
     expect(f.calls.wingmanLost).toEqual([['w1']]);
   });
 
+  it('the wing takes orders: attack my target, form up, engage at will', () => {
+    const crew = [{ id: 'w1', name: 'Maren Okoro', model: 'ship.light-fighter.1.halden', skill: 'sharp' as const }];
+    const packs = { max: 1, level: 1 as const, size: [2, 2] as const, firstDelay: 1, interval: [999, 999] as const };
+    const f = flightIn('altair', { plan: { ...QUIET, packs }, crew });
+    f.run(2);
+    const raiders = f.inner.npcs.filter((n) => n.side === 'raider');
+    expect(raiders).toHaveLength(2);
+    const wing = f.inner.npcs.find((n) => n.wingman?.crewId)!;
+    // Both raiders close by; the player picks the farther one.
+    raiders[0]!.body.position.copy(f.flight.player.position).add(new THREE.Vector3(500, 0, 0));
+    raiders[1]!.body.position.copy(f.flight.player.position).add(new THREE.Vector3(-1_500, 0, 0));
+    f.flight.selectTarget(raiders[1]!.target.id);
+    f.run(0.1);
+    expect(f.flight.hud.wing).toEqual({ count: 1, order: 'free' });
+    expect(wing.foe).toBe(raiders[0]);
+    f.run(0.1, undefined, ['wing-order']);
+    expect(f.flight.hud.wing?.order).toBe('attack');
+    f.run(0.1);
+    expect(wing.foe).toBe(raiders[1]);
+    expect(f.comms.some((c) => c === 'Maren Okoro: Copy, going for your target.')).toBe(true);
+    f.run(0.1, undefined, ['wing-order']);
+    f.run(0.1);
+    expect(f.flight.hud.wing?.order).toBe('form');
+    expect(wing.foe).toBeNull();
+    f.run(0.1, undefined, ['wing-order']);
+    f.run(0.1);
+    expect(f.flight.hud.wing?.order).toBe('free');
+    expect(wing.foe).not.toBeNull();
+  });
+
   it('a raider den wakes when a pilot it does not trust comes near, and knocking it out on your own pays', () => {
     const f = flightIn('wolf-1061', {});
     f.run(2);

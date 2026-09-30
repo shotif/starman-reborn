@@ -114,6 +114,8 @@ const GLYPHS = {
   ],
   /** Menu: three bars. */
   menu: [{ d: 'M5 7h22v3.6H5zM5 14.2h22v3.6H5zM5 21.4h22v3.6H5z' }],
+  /** Wing: two ships in formation. */
+  wing: [{ d: 'M10 3l5.2 13.5-5.2-2.6-5.2 2.6z' }, { d: 'M22 14l5.2 13.5-5.2-2.6-5.2 2.6z' }],
   /** Free flight: arrows bursting outwards. */
   freeflight: [0, 90, 180, 270].map((deg) => ({ d: burstArm(deg) })),
   /** Go to: an arrow heading for a marked target. */

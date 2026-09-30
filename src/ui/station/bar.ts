@@ -1,11 +1,12 @@
-import { getLocation, getPlanet, getSystem } from '../../data/systems.ts';
+import { getLocation, getPlanet, getSystem, WORLD } from '../../data/systems.ts';
 import { CONTRACTS, type ContractKind } from '../../content/contracts/rules.ts';
 import { COMMODITIES } from '../../economy/commodities.ts';
 import { welcomeText } from '../../economy/dockText.ts';
 import { FACTIONS, standingTier, TIER_LABEL } from '../../economy/factions.ts';
 import { canDeliver, describeObjective, jobsAt, type JobDef, type JobOffer } from '../../economy/jobs.ts';
 import { ARCS, CHARACTERS } from '../../content/story/arcs.ts';
-import { arcMissions, briefingFor, choiceHere } from '../../economy/story.ts';
+import { arcMissions, briefingFor, choiceHere, objectiveSystem } from '../../economy/story.ts';
+import { jumpsFrom } from '../../content/world/network.ts';
 import { button, dataBadge } from '../components.ts';
 import { formatCredits, h, signed } from '../dom.ts';
 import { glyph, type GlyphName } from '../glyphs.ts';
@@ -14,10 +15,6 @@ import { denNews, newsList } from '../news.ts';
 import { fineOwed, isLawful, pardonCost, payFines } from '../../economy/law.ts';
 import { buysSurveys, sellSurvey, surveysForSale, surveyValue } from '../../economy/progress.ts';
 import { toast } from '../components.ts';
-import { dismissWingman, hireWingman, pilotsFor } from '../../economy/combat.ts';
-import { COMBAT } from '../../content/combat/rules.ts';
-import { shipModel } from '../../content/catalog.ts';
-import type { Wingman } from '../../app/state.ts';
 import type { StationContext } from './context.ts';
 
 export function pips(level: number, of = 3): HTMLElement {
@@ -37,10 +34,87 @@ export function deliverableJobs(ctx: StationContext): string[] {
   return Object.keys(state.jobs).filter((id) => canDeliver(state, id, locationId));
 }
 
-/** The job board: deliveries due here, posted contracts (one expanded), your active contracts, and pilots for hire. */
+export type BoardFilter = 'all' | 'hauling' | 'combat' | 'other';
+export type BoardSort = 'posted' | 'reward' | 'per-jump';
+
+/** Remembered for the session: which contracts the board shows, and in what order. */
+let boardFilter: BoardFilter = 'all';
+let boardSort: BoardSort = 'posted';
+
+const FILTER_LABEL: Record<BoardFilter, string> = { all: 'All', hauling: 'Hauling', combat: 'Combat', other: 'Other' };
+const SORT_LABEL: Record<BoardSort, string> = { posted: 'As posted', reward: 'Reward', 'per-jump': 'Reward per jump' };
+const CATEGORY: Record<ContractKind, BoardFilter> = {
+  freight: 'hauling',
+  parcel: 'hauling',
+  supply: 'hauling',
+  smuggle: 'hauling',
+  bounty: 'combat',
+  ace: 'combat',
+  escort: 'combat',
+  den: 'combat',
+  piracy: 'combat',
+  survey: 'other',
+  recovery: 'other',
+};
+
+/** Jumps from a dock to where a job ends (0 in the same system). */
+function jobJumps(from: string, job: JobDef): number {
+  const at = getLocation(from).systemId;
+  const to = job.destinationLocationId ? getLocation(job.destinationLocationId).systemId : (objectiveSystem(job.objectives[0]) ?? at);
+  return jumpsFrom(WORLD.links, at).get(to) ?? 0;
+}
+
+/** The offers the board shows under its filter and sort (the Accept button follows the same list). */
+export function visibleOffers(state: StationContext['state'], locationId: string): JobOffer[] {
+  const offers = jobsAt(state, locationId).filter((o) => boardFilter === 'all' || (o.job.contract ? CATEGORY[o.job.contract.kind] === boardFilter : boardFilter === 'other'));
+  if (boardSort === 'reward') return [...offers].sort((a, b) => b.job.reward - a.job.reward);
+  if (boardSort === 'per-jump') {
+    const per = (o: JobOffer) => o.job.reward / Math.max(1, jobJumps(locationId, o.job));
+    return [...offers].sort((a, b) => per(b) - per(a));
+  }
+  return offers;
+}
+
+/** Filter and sort controls for the board. */
+function boardTools(refresh: () => void): HTMLElement {
+  return h(
+    'div',
+    { class: 'row wrap board-tools', role: 'toolbar', 'aria-label': 'Filter and sort contracts' },
+    (Object.keys(FILTER_LABEL) as BoardFilter[]).map((f) =>
+      button(FILTER_LABEL[f], {
+        size: 'sm',
+        variant: boardFilter === f ? 'primary' : 'ghost',
+        testId: `board-filter-${f}`,
+        onClick: () => {
+          boardFilter = f;
+          refresh();
+        },
+      }),
+    ),
+    h(
+      'label',
+      { class: 'board-sort' },
+      h('span', { class: 'muted small' }, 'Sort'),
+      h(
+        'select',
+        {
+          'data-testid': 'board-sort',
+          onChange: (e: Event) => {
+            boardSort = (e.target as HTMLSelectElement).value as BoardSort;
+            refresh();
+          },
+        },
+        (Object.keys(SORT_LABEL) as BoardSort[]).map((k) => h('option', { value: k, selected: k === boardSort }, SORT_LABEL[k])),
+      ),
+    ),
+  );
+}
+
+/** The job board: deliveries due here, posted contracts (one expanded) and your active contracts. */
 export function jobBoardContent(ctx: StationContext, selected: string | null, onSelect: (id: string) => void, refresh: () => void = () => {}): HTMLElement {
   const { state, locationId } = ctx;
-  const offers = jobsAt(state, locationId);
+  const all = jobsAt(state, locationId);
+  const offers = visibleOffers(state, locationId);
   const deliverable = deliverableJobs(ctx);
   const open = selected ?? offers.find((o) => o.status === 'available')?.job.id ?? offers[0]?.job.id ?? null;
   const active = Object.entries(state.jobs)
@@ -59,8 +133,11 @@ export function jobBoardContent(ctx: StationContext, selected: string | null, on
           deliverable.map((id) => button('Deliver', { variant: 'primary', testId: `deliver-${id}`, onClick: () => ctx.deliverJob(id) })),
         )
       : null,
+    all.length > 3 ? boardTools(refresh) : null,
     h('div', { class: 'list-head' }, h('span', null, 'Contracts posted here'), h('span', null, 'Reward')),
-    offers.length ? h('ul', { class: 'list' }, offers.map((o) => jobCard(ctx, o, o.job.id === open, onSelect))) : h('p', { class: 'list-empty' }, 'No contracts posted at this dock.'),
+    offers.length
+      ? h('ul', { class: 'list' }, offers.map((o) => jobCard(ctx, o, o.job.id === open, onSelect)))
+      : h('p', { class: 'list-empty' }, all.length ? 'No contracts of that kind here.' : 'No contracts posted at this dock.'),
     active.length
       ? h(
           'section',
@@ -69,63 +146,6 @@ export function jobBoardContent(ctx: StationContext, selected: string | null, on
           h('ul', { class: 'plain active-jobs' }, active.map((o) => h('li', null, icon('objective'), h('strong', null, ` ${o.jobTitle}: `), o.text))),
         )
       : null,
-    wingSection(ctx, refresh),
-  );
-}
-
-/** Pilots for hire at this dock, and the wing you already pay (docs/PROCGEN.md §15). */
-function wingSection(ctx: StationContext, refresh: () => void): HTMLElement | null {
-  const { state, locationId } = ctx;
-  const pilots = ctx.access === 'full' ? pilotsFor(locationId, state.clock).filter((p) => !state.crew.some((w) => w.id === p.id)) : [];
-  if (!pilots.length && !state.crew.length) return null;
-  const act = (r: { ok: boolean; message: string }) => {
-    ctx.sfx(r.ok ? 'ui-confirm' : 'ui-error');
-    toast(r.message, r.ok ? 'good' : 'bad');
-    ctx.save();
-    refresh();
-  };
-  const row = (w: Wingman, action: HTMLElement) =>
-    h(
-      'li',
-      { class: 'trade-row', 'data-testid': `pilot-${w.id}` },
-      glyph('gun'),
-      h(
-        'span',
-        { class: 'trade-text' },
-        h('span', { class: 'row-name' }, w.name),
-        h('span', { class: 'row-sub' }, `${shipModel(w.model).name} · ${w.skill === 'sharp' ? 'sharp shot' : 'steady hand'} · ${formatCredits(w.fee)} a jump`),
-      ),
-      action,
-    );
-  return h(
-    'section',
-    { class: 'wing-section', 'aria-label': 'Wingmen' },
-    h('div', { class: 'list-head' }, h('span', null, 'Pilots for hire'), h('span', null, `Your wing ${state.crew.length}/${COMBAT.wingmen.max}`)),
-    state.crew.length
-      ? h(
-          'ul',
-          { class: 'list', 'data-testid': 'your-wing' },
-          state.crew.map((w) => row(w, button('Dismiss', { size: 'sm', testId: `dismiss-${w.id}`, onClick: () => act(dismissWingman(state, w.id)) }))),
-        )
-      : null,
-    pilots.length
-      ? h(
-          'ul',
-          { class: 'list' },
-          pilots.map((w) =>
-            row(
-              w,
-              button(`Hire · ${formatCredits(w.fee)}`, {
-                size: 'sm',
-                testId: `hire-${w.id}`,
-                disabled: state.crew.length >= COMBAT.wingmen.max || state.credits < w.fee,
-                onClick: () => act(hireWingman(state, locationId, w.id)),
-              }),
-            ),
-          ),
-        )
-      : null,
-    h('p', { class: 'muted small' }, 'A wingman flies with you and fights raiders at your side, for a fee at every jump. Lose their ship and they leave.'),
   );
 }
 

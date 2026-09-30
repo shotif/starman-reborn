@@ -19,6 +19,7 @@ export const KEY_BINDINGS = {
   missile: ['KeyF'],
   repair: ['KeyR'],
   decoy: ['KeyC'],
+  wingOrder: ['KeyV'],
   engineKill: ['KeyZ'],
   help: ['F1', 'Slash'],
   steerLeft: ['ArrowLeft', 'KeyJ'],
@@ -40,6 +41,7 @@ for (const [binding, action] of [
   ['missile', 'missile'],
   ['repair', 'repair'],
   ['decoy', 'decoy'],
+  ['wingOrder', 'wing-order'],
   ['engineKill', 'engine-kill'],
   ['help', 'help'],
 ] as const) {

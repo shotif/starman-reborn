@@ -6,7 +6,8 @@ import { cargoCapacity } from '../../economy/loadout.ts';
 import { COMMODITIES, COMMODITY_IDS } from '../../economy/commodities.ts';
 import { stationEventAt } from '../../economy/events.ts';
 import { marketEntry, stockAvailable } from '../../economy/markets.ts';
-import { bestKnownSale, buyCommodity, liveQuote, marketContext, maxBuyable, orderPrice, routeOpportunities, sellCommodity } from '../../economy/trade.ts';
+import { bestKnownSale, buyCommodity, knownVia, liveQuote, marketContext, maxBuyable, orderPrice, sellCommodity } from '../../economy/trade.ts';
+import { isWatched, toggleWatch, tradeRoutes } from '../../economy/tradeComputer.ts';
 import { button, showModal, toast } from '../components.ts';
 import { formatCredits, h, replaceChildren, signed } from '../dom.ts';
 import { glyph, type GlyphName } from '../glyphs.ts';
@@ -41,6 +42,12 @@ export const COMMODITY_GLYPH: Record<CommodityId, GlyphName> = {
 
 const ROLE_TAG: Record<MarketRole, string> = { produce: 'Made here', trade: 'Traded here', consume: 'Wanted here' };
 
+/** How and when a known price was had, for a route line. */
+function priceSource(source: string, clock: number, t: number): string {
+  if (source === 'briefing') return 'briefing';
+  return `${source === 'rumour' ? 'heard' : source === 'watch' ? 'watched' : 'seen'} ${ago(clock, t)}`;
+}
+
 function ago(clock: number, t: number): string {
   const s = Math.max(0, clock - t);
   if (s < 90) return 'just now';
@@ -51,7 +58,7 @@ function ago(clock: number, t: number): string {
 const units = (n: number) => `${n} unit${n > 1 ? 's' : ''}`;
 
 /** The commodity trader: what the dock makes, trades and wants, your hold, and known routes. */
-export function traderContent(ctx: StationContext, refresh: Refresh): HTMLElement {
+export function traderContent(ctx: StationContext, refresh: Refresh, openComputer?: () => void): HTMLElement {
   const { state, locationId } = ctx;
   const rows: HTMLElement[] = [];
   const hold: HTMLElement[] = [];
@@ -130,41 +137,62 @@ export function traderContent(ctx: StationContext, refresh: Refresh): HTMLElemen
       h('div', { class: 'segbar hold-bar', style: `--segments: ${Math.min(capacity, 40)}; --fill: ${used / capacity}; --seg-color: var(--amber)` }),
       hold.length ? h('ul', { class: 'list' }, hold) : h('p', { class: 'list-empty' }, used ? 'Everything you carry is traded here.' : 'Your hold is empty.'),
     ),
-    tradeComputer(ctx),
+    tradeComputer(ctx, openComputer),
   );
 }
 
-function tradeComputer(ctx: StationContext): HTMLElement {
+/** The best known routes for buying here (docs/PROCGEN.md §16); the full computer has the rest. */
+function tradeComputer(ctx: StationContext, openComputer?: () => void): HTMLElement {
   const { state, locationId } = ctx;
-  const opps = routeOpportunities(state, locationId, (a, b) => ctx.travelCost(a, b)).slice(0, 4);
+  const routes = tradeRoutes(state, locationId, { fromHere: true, limit: 4 });
   return h(
     'details',
-    { class: 'trade-computer', 'data-testid': 'trade-computer', open: opps.length > 0 },
+    { class: 'trade-computer', 'data-testid': 'trade-computer', open: routes.length > 0 },
     h('summary', null, icon('list'), ' Trade computer'),
-    h('p', { class: 'muted small' }, 'Returns for buying here, from prices you have seen or been told in briefings.'),
-    opps.length
+    h('p', { class: 'muted small' }, 'Returns for buying here, from prices you have seen, read in briefings, heard in a bar or watched.'),
+    routes.length
       ? h(
           'ul',
           { class: 'list' },
-          opps.map((o) => {
-            const dest = getLocation(o.destinationId);
-            const fee = o.travelCost ? ` · fees −${o.travelCost}` : o.destinationSystemId !== state.location.systemId ? ' · fee covered' : '';
+          routes.map((r) => {
+            const dest = getLocation(r.to);
             return h(
               'li',
               { class: 'trade-row route' },
-              glyph(COMMODITY_GLYPH[o.commodity]),
+              glyph(COMMODITY_GLYPH[r.commodity]),
               h(
                 'span',
                 { class: 'trade-text' },
-                h('span', { class: 'row-name' }, `${COMMODITIES[o.commodity].name} → ${dest.name}`),
-                h('span', { class: 'row-sub' }, `${getSystem(o.destinationSystemId).displayName} · ${o.buyPrice}→${o.sellPrice} cr × ${o.items}${fee} · ${o.source === 'briefing' ? 'briefing' : `seen ${ago(state.clock, o.observedAt)}`}`),
+                h('span', { class: 'row-name' }, `${COMMODITIES[r.commodity].name} → ${dest.name}`),
+                h('span', { class: 'row-sub' }, `${getSystem(dest.systemId).displayName} · ${r.buy}→${r.sell} cr × ${r.items}${r.fees ? ` · fees −${r.fees}` : ''} · ${priceSource(knownVia(state.knownMarkets[r.to]!, r.commodity), state.clock, state.clock - r.sellAge)}`),
               ),
-              h('span', { class: `row-value num ${o.netProfit >= 0 ? 'pos' : 'neg'}` }, `${signed(o.netProfit)} cr`),
+              h('span', { class: 'row-value num pos stack-tight' }, h('strong', null, `${signed(r.profit)} cr`), h('small', null, `${r.perMinute} cr/min`)),
             );
           }),
         )
-      : h('p', { class: 'list-empty' }, 'No profitable route known yet. Visit more docks or accept a contract with a price briefing.'),
+      : h('p', { class: 'list-empty' }, 'No profitable route known yet. Visit more docks, accept a contract with a price briefing, or buy a round in a bar.'),
+    openComputer ? h('div', { class: 'row wrap' }, button('All routes', { size: 'sm', icon: 'list', testId: 'open-computer', onClick: openComputer })) : null,
   );
+}
+
+/** Watch this good's price here: docking within reach later brings it up to date (docs/PROCGEN.md §16). */
+function watchToggle(ctx: StationContext, c: CommodityId): HTMLElement {
+  const { state, locationId } = ctx;
+  const label = () => (isWatched(state, locationId, c) ? 'Watching this price' : 'Watch this price');
+  const btn = button(label(), {
+    size: 'sm',
+    variant: 'ghost',
+    icon: 'eye',
+    testId: `watch-here-${c}`,
+    onClick: () => {
+      const r = toggleWatch(state, locationId, c);
+      toast(r.message, r.ok ? 'info' : 'bad', 3000);
+      ctx.save();
+      const text = btn.querySelector('span:last-child') ?? btn;
+      text.textContent = label();
+    },
+  });
+  return h('div', { class: 'row wrap' }, btn);
 }
 
 async function openBuyDialog(ctx: StationContext, c: CommodityId, refresh: Refresh): Promise<void> {
@@ -198,7 +226,7 @@ async function openBuyDialog(ctx: StationContext, c: CommodityId, refresh: Refre
           'dd',
           null,
           best
-            ? `${getLocation(best.locationId).name} buys at ${best.price} cr (${signed(best.price - price)} per item, ${best.source === 'briefing' ? 'posted in briefing' : 'from your visit'})`
+            ? `${getLocation(best.locationId).name} buys at ${best.price} cr (${signed(best.price - price)} per item, ${best.source === 'briefing' ? 'posted in briefing' : best.source === 'rumour' ? 'heard in a bar' : best.source === 'watch' ? 'from your price watch' : 'from your visit'})`
             : 'No known buyer yet',
         ),
       ),
@@ -222,6 +250,7 @@ async function openBuyDialog(ctx: StationContext, c: CommodityId, refresh: Refre
       button('Max', { size: 'sm', onClick: step(max), testId: 'buy-max' }),
     ),
     summary,
+    watchToggle(ctx, c),
   );
   renderSummary();
   const choice = await showModal({

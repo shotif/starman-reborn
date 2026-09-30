@@ -33,7 +33,10 @@ import { aimErrors, avoidObstacles, flyTo, steerToward, type Obstacle } from '..
 import { ChaseCamera } from '../flight/ChaseCamera.ts';
 import type { FlightAction, FlightInput } from '../flight/input/types.ts';
 import { lookRotation, neutralControls, RAIDER_SHIP, ShipBody, stepBounded, type ShipControls, type ShipParams } from '../flight/ShipBody.ts';
-import { emptyHudModel, type HudContextAction, type HudMarker, type HudModel } from '../ui/hud/hudModel.ts';
+import { emptyHudModel, WING_ORDER_LABEL, type HudContextAction, type HudMarker, type HudModel, type WingOrder } from '../ui/hud/hudModel.ts';
+
+/** What a wingman says when given an order. */
+const WING_ACK: Record<WingOrder, string> = { free: 'Copy. Engaging at will.', attack: 'Copy, going for your target.', form: 'Copy. Forming up on you.' };
 import type { AsteroidHit } from './art/asteroids.ts';
 import {
   createCargoPod,
@@ -386,6 +389,8 @@ export class FlightSession {
   private readonly baseShield: { regen: number; capacity: number };
   /** Session time of the last chatter line (rate limit), and dens whose defences are awake. */
   private chatterAt = -99;
+  /** The wing's standing order (docs/PROCGEN.md §16). */
+  private wingOrder: WingOrder = 'free';
   private readonly denAlerted = new Set<string>();
   private lootSerial = 0;
   /** Raider dens knocked out (before this flight or during it): wrecked, silent, closed. */
@@ -757,6 +762,9 @@ export class FlightSession {
         break;
       case 'decoy':
         this.launchDecoy();
+        break;
+      case 'wing-order':
+        this.cycleWingOrder();
         break;
       case 'engine-kill':
         if (this.busy) return;
@@ -2548,7 +2556,10 @@ export class FlightSession {
       w.hurtAt = this.time;
       this.chatter('wing-hurt', n.name);
     }
-    const foe = this.alive && !this.busy ? this.nearestShip(this.player.position, 3_000, (x) => x.side === 'raider' && !x.hunter && !this.raiderSparesPlayer(x) && !(x.den?.part === 'reactor' && this.turretsStanding(x.den.locationId))) : null;
+    const fair = (x: NpcShip) => x.side === 'raider' && !x.hunter && !this.raiderSparesPlayer(x) && !(x.den?.part === 'reactor' && this.turretsStanding(x.den.locationId));
+    // Orders (docs/PROCGEN.md §16): the player's target when it is fair game, nothing while formed up.
+    const ordered = this.wingOrder === 'attack' ? this.npcs.find((x) => x.target.id === this.selectedId && x.durability.hull > 0 && (fair(x) || x.foe === 'player')) : undefined;
+    const foe = !this.alive || this.busy || this.wingOrder === 'form' ? null : (ordered ?? this.nearestShip(this.player.position, 3_000, fair));
     n.foe = foe;
     if (foe) {
       this.fightNpc(n, foe.body, dt, w.damage ?? TRAFFIC.npcDamage);
@@ -2558,6 +2569,21 @@ export class FlightSession {
     const slot = this.tmp2.copy(w.offset).applyQuaternion(this.player.quaternion).add(this.player.position);
     flyTo(n.body, slot, { arriveDistance: 60, allowCruise: false, maxThrottle: 1 }, n.controls);
     n.body.requestCruise(this.player.cruise === 'on' && n.body.position.distanceTo(slot) > 400);
+  }
+
+  /** The wing's standing order, cycled by the player: engage at will, attack my target, form up. */
+  private cycleWingOrder(): void {
+    const wing = this.npcs.filter((x) => x.wingman && x.durability.hull > 0);
+    if (!wing.length) {
+      this.callbacks.onMessage('Nobody is flying on your wing.', 'info');
+      return;
+    }
+    const next: Record<WingOrder, WingOrder> = { free: 'attack', attack: 'form', form: 'free' };
+    this.wingOrder = next[this.wingOrder];
+    this.sfx('ui-click');
+    this.callbacks.onMessage(`Wing: ${WING_ORDER_LABEL[this.wingOrder].toLowerCase()}.`, 'info');
+    const lead = wing.find((x) => x.wingman?.crewId) ?? wing[0]!;
+    this.callbacks.onComm?.(lead.name, WING_ACK[this.wingOrder]);
   }
 
   /** A sweep comes for a den: waves of lawful ships from the jump beacon, and the den's crews turn out. */
@@ -3057,6 +3083,8 @@ export class FlightSession {
     hud.launcher = launcher ? roundsLabel(launcher.stats.kind) : null;
     hud.repairKits = this.state.ship.repairKits;
     hud.decoys = this.state.ship.decoys;
+    const wingCount = this.npcs.filter((x) => x.wingman && x.durability.hull > 0).length;
+    hud.wing = wingCount ? { count: wingCount, order: this.wingOrder } : null;
     hud.incoming = this.incomingSeekers;
     hud.systems = { ...this.state.ship.systems };
     hud.flash = { hull: this.settings.reducedMotion ? Math.min(0.4, this.hullFlash) : this.hullFlash, shield: this.settings.reducedMotion ? Math.min(0.3, this.shieldFlash) : this.shieldFlash };

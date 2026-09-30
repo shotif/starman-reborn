@@ -1,4 +1,4 @@
-import { applyCredits, type CommodityId, type GameState } from '../app/state.ts';
+import { applyCredits, type CommodityId, type GameState, type MarketObservation } from '../app/state.ts';
 import { getLocation } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { addCargo, cargoCount, itemsThatFit, removeCargo } from './cargo.ts';
@@ -80,6 +80,33 @@ export function sellCommodity(state: GameState, locationId: string, commodity: C
   return { ok: true, qty, unitPrice: Math.round(total / qty), total };
 }
 
+/** When the player last had word of a good's price at a known market (game-clock seconds). */
+export function knownAt(obs: MarketObservation, commodity: CommodityId): number {
+  return obs.goodsAt?.[commodity]?.t ?? obs.observedAt;
+}
+
+/** How the player came by that price. */
+export function knownVia(obs: MarketObservation, commodity: CommodityId): MarketObservation['source'] {
+  return obs.goodsAt?.[commodity]?.via ?? obs.source;
+}
+
+/**
+ * Word of one good's price at a station (a rumour, the price watch): kept with its own time, so
+ * the rest of what the player knows of that market keeps its age.
+ */
+export function learnPrice(state: GameState, locationId: string, commodity: CommodityId, source: 'rumour' | 'watch'): void {
+  const prices = allQuotes(locationId, state.reputation, marketContext(state));
+  const q = prices[commodity];
+  if (!q) return;
+  const obs = state.knownMarkets[locationId];
+  if (!obs) {
+    state.knownMarkets[locationId] = { source, observedAt: state.clock, prices: { [commodity]: q } };
+    return;
+  }
+  obs.prices[commodity] = q;
+  if (obs.observedAt !== state.clock) (obs.goodsAt ??= {})[commodity] = { t: state.clock, via: source };
+}
+
 /** Records the prices seen while docked, so the trade computer can use them later. */
 export function recordMarketVisit(state: GameState, locationId: string): void {
   state.knownMarkets[locationId] = {
@@ -95,7 +122,7 @@ export interface RouteOpportunity {
   destinationId: string;
   destinationSystemId: SystemId;
   sellPrice: number;
-  source: 'visited' | 'briefing';
+  source: MarketObservation['source'];
   observedAt: number;
   profitPerItem: number;
   /** Items affordable and fitting in the hold right now. */
@@ -135,8 +162,8 @@ export function routeOpportunities(
         destinationId: destId,
         destinationSystemId: destSystem,
         sellPrice,
-        source: obs.source,
-        observedAt: obs.observedAt,
+        source: knownVia(obs, commodity),
+        observedAt: knownAt(obs, commodity),
         profitPerItem,
         items,
         grossProfit: gross,
@@ -153,12 +180,12 @@ export function bestKnownSale(
   state: GameState,
   commodity: CommodityId,
   excludeLocationId?: string,
-): { locationId: string; price: number; source: 'visited' | 'briefing' } | null {
-  let best: { locationId: string; price: number; source: 'visited' | 'briefing' } | null = null;
+): { locationId: string; price: number; source: MarketObservation['source'] } | null {
+  let best: { locationId: string; price: number; source: MarketObservation['source'] } | null = null;
   for (const [id, obs] of Object.entries(state.knownMarkets)) {
     if (id === excludeLocationId) continue;
     const price = obs.prices[commodity]?.sell ?? null;
-    if (price !== null && (!best || price > best.price)) best = { locationId: id, price, source: obs.source };
+    if (price !== null && (!best || price > best.price)) best = { locationId: id, price, source: knownVia(obs, commodity) };
   }
   return best;
 }

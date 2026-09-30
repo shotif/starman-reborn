@@ -1,3 +1,5 @@
+import { lastView } from '../ui/station/lastView.ts';
+import { fill, PAYMENT } from '../content/people/lines.ts';
 import * as THREE from 'three';
 import { AudioEngine } from '../audio/AudioEngine.ts';
 import type { MusicMood, SfxId } from '../audio/types.ts';
@@ -625,6 +627,12 @@ export class Game {
         this.sfx('mission-complete');
         if (job.reward + bonus === 0) toast(`${job.title} complete`, 'good', 5000);
         else toast(`${job.title} complete: +${formatCredits(job.reward + bonus)}${bonus ? ' with the on-time bonus' : e.text.includes('(late') ? ' (late: no bonus)' : ''}`, 'good', 5000);
+        // The poster's dispatcher confirms the payment (story missions have their own words).
+        if (job.reward + bonus > 0 && !job.story) {
+          const giver = getLocation(job.giverLocationId);
+          const lines = PAYMENT[giver.factionId ?? 'independent'];
+          commToast(`${giver.name} dispatch`, fill(lines[hashString(e.jobId) % lines.length]!, { amount: formatCredits(job.reward + bonus) }), 4500);
+        }
       } else if (e.kind === 'failed') {
         this.sfx('ui-error');
         toast(e.text, 'bad', 5000);
@@ -872,6 +880,7 @@ export class Game {
       this.sfx('ui-confirm');
       toast('Interstellar departure clearance granted.', 'good', 4500);
     }
+    for (const n of out.watchNotes) toast(n.text, 'info', 6000);
     this.announceJobEvents(out.jobEvents, false);
     const deliverable = Object.keys(state.jobs).some((id) => {
       const p = state.jobs[id]!;
@@ -886,7 +895,10 @@ export class Game {
         ? { room: 'bar', window: 'news', titleCard: true }
         : deliverable || decision
           ? { room: 'bar', window: 'jobs', titleCard: true }
-          : { room: 'deck', window: news ? 'arrival' : null, titleCard: true },
+          : news
+            ? { room: 'deck', window: 'arrival', titleCard: true }
+            : // Back at a station after the opening: where the player left off there.
+              { ...((state.jobs.lifeline?.status === 'complete' && lastView(locationId)) || { room: 'deck', window: null }), titleCard: true },
     );
     this.tellStory();
   }
@@ -1445,6 +1457,7 @@ export class Game {
       this.touch.setContextAction(ctx?.label ?? null, ctx?.action ?? null, ctx?.icon);
       this.touch.setCruiseState(hudModel.cruise);
       this.touch.setCounts(hudModel.missiles, hudModel.repairKits, hudModel.decoys);
+      this.touch.setWing(hudModel.wing);
       this.touch.setThrottle(hudModel.throttle);
       this.touch.setDrift(hudModel.drift);
     }

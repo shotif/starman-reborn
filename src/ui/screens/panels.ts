@@ -66,6 +66,7 @@ const DESKTOP_ROWS: [string, readonly string[] | string][] = [
   ['Missile', [...KEY_BINDINGS.missile, 'middle mouse']],
   ['Repair kit', KEY_BINDINGS.repair],
   ['Decoy flare', KEY_BINDINGS.decoy],
+  ['Wing orders (cycle)', KEY_BINDINGS.wingOrder],
   ['Scan target', KEY_BINDINGS.scan],
   ['Engines off (drift)', KEY_BINDINGS.engineKill],
   ['Star map', KEY_BINDINGS.map],

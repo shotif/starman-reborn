@@ -304,10 +304,18 @@
   z-index: 1;
 }
 
-.assist-chip {
+/* The aim-assist chip, and the wing's orders beside it when a wing flies with you. */
+.touch-chips {
   position: absolute;
   right: calc(var(--safe-right) + 12px);
   bottom: calc(var(--cluster-bottom) + 2 * var(--btn) + 22px);
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.assist-chip,
+.wing-chip {
   min-height: 36px;
   padding: 0.2rem 0.7rem;
   border-radius: 999px;
@@ -317,9 +325,14 @@
   font: inherit;
   font-size: 12px;
   touch-action: manipulation;
+  white-space: nowrap;
 }
 
-.touch-controls.swapped .assist-chip {
+.wing-chip {
+  border-color: rgba(98, 227, 154, 0.55);
+}
+
+.touch-controls.swapped .touch-chips {
   right: auto;
   left: calc(var(--safe-left) + 12px);
 }
@@ -379,7 +392,7 @@
     display: none;
   }
 
-  .assist-chip {
+  .touch-chips {
     bottom: calc(33vh + var(--safe-bottom) - 44px);
     right: calc(var(--safe-right) + 8px);
   }
@@ -445,14 +458,14 @@
     display: none;
   }
 
-  /* The right column is full here, so the chip sits above the Cruise/Go To pair. */
-  .assist-chip {
+  /* The right column is full here, so the chips sit above the Cruise/Go To pair. */
+  .touch-chips {
     right: auto;
     left: calc(var(--safe-left) + 66px);
     bottom: calc(var(--cluster-bottom) + var(--btn) + 12px);
   }
 
-  .touch-controls.swapped .assist-chip {
+  .touch-controls.swapped .touch-chips {
     left: auto;
     right: calc(var(--safe-right) + 66px);
   }

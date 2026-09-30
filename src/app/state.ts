@@ -6,7 +6,7 @@ import type { FactionId, SystemId, Vec3Tuple } from '../data/types.ts';
 import { newShipState } from '../economy/loadout.ts';
 
 /** Current save format version. Older saves are upgraded by src/app/save/migrate.ts. */
-export const SAVE_VERSION = 8;
+export const SAVE_VERSION = 9;
 
 export type { CommodityId };
 
@@ -74,12 +74,35 @@ export interface MarketStock {
 /** Station id → stock the player has moved there (untouched markets are absent). */
 export type MarketState = Record<string, MarketStock>;
 
-/** Market data the player has actually seen (visited) or been told (contract briefing). */
+/**
+ * Market data the player has actually seen (visited), been told (contract briefing, a rumour in a
+ * bar) or had relayed by the price watch.
+ */
 export interface MarketObservation {
-  source: 'visited' | 'briefing';
+  source: 'visited' | 'briefing' | 'rumour' | 'watch';
   /** Game-clock seconds when observed. */
   observedAt: number;
   prices: Partial<Record<CommodityId, PriceQuote>>;
+  /** Goods heard of later than `observedAt` (a rumour or the price watch): when, and how. */
+  goodsAt?: Partial<Record<CommodityId, { t: number; via: 'rumour' | 'watch' }>>;
+}
+
+/** A price the player asked to watch (docs/PROCGEN.md §16). */
+export interface PriceWatch {
+  locationId: string;
+  commodity: CommodityId;
+}
+
+/** Something heard in a bar (docs/PROCGEN.md §16). */
+export interface HeardRumour {
+  /** The person and time slot it came from (a person tells one thing a shift). */
+  key: string;
+  kind: 'price' | 'event' | 'den' | 'ace' | 'wreck' | 'story';
+  text: string;
+  /** Game-clock seconds. */
+  at: number;
+  /** The bar it was heard in. */
+  locationId: string;
 }
 
 /**
@@ -131,6 +154,9 @@ export interface GameState {
   visitedSystems: SystemId[];
   visitedLocations: string[];
   knownMarkets: Record<string, MarketObservation>;
+  /** Prices the player watches, and what was heard in the bars (newest last). */
+  priceWatch: PriceWatch[];
+  rumours: HeardRumour[];
   /** Stock the player's trades have moved (economy/markets.ts). */
   markets: MarketState;
   /** Generated contracts the player accepted, as posted (economy/contracts.ts). */
@@ -191,6 +217,8 @@ export function createNewGame(seed: number = Math.floor(Math.random() * 2 ** 31)
     visitedSystems: ['sol'],
     visitedLocations: [START_DOCK_ID],
     knownMarkets: {},
+    priceWatch: [],
+    rumours: [],
     markets: {},
     contracts: {},
     law: { fines: {} },

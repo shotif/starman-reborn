@@ -9,6 +9,7 @@ export type FlightAction =
   | 'missile'
   | 'repair'
   | 'decoy'
+  | 'wing-order'
   | 'engine-kill'
   | 'map'
   | 'pause'

@@ -1,0 +1,221 @@
+/* People in the bars and the trade computer (docs/PROCGEN.md §16). */
+
+.tag {
+  display: inline-block;
+  padding: 0.05rem 0.4rem;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-ui);
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.tag.story-tag {
+  color: var(--fiction);
+  border-color: rgba(207, 168, 255, 0.5);
+}
+
+.tag.risk-lawless {
+  color: var(--hostile);
+  border-color: rgba(255, 95, 95, 0.5);
+}
+
+.tag.risk-thin {
+  color: var(--warning);
+  border-color: rgba(255, 209, 102, 0.45);
+}
+
+.tag.news {
+  color: var(--warm);
+  border-color: rgba(255, 180, 92, 0.45);
+  text-transform: none;
+}
+
+.person-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.2rem;
+}
+
+.people-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  gap: 0.4rem;
+}
+
+.person-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.6rem;
+  align-items: center;
+  width: 100%;
+  min-height: 64px;
+  padding: 0.4rem 0.5rem;
+  background: rgba(10, 20, 46, 0.5);
+  border: 0;
+  border-left: 3px solid transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.person-card:hover,
+.person-card:focus-visible {
+  background: var(--row-hover);
+  border-left-color: rgba(255, 216, 74, 0.6);
+}
+
+.person-card.story {
+  border-left-color: rgba(207, 168, 255, 0.7);
+}
+
+.person-text {
+  min-width: 0;
+}
+
+.person-text .row-name {
+  display: block;
+  font-family: var(--font-ui);
+  font-size: 1.02rem;
+  font-weight: 600;
+}
+
+.person-text .row-sub {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.face {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--panel-border-strong);
+  background: #0b1630;
+}
+
+.face.lg {
+  width: 96px;
+  height: 96px;
+}
+
+.face > svg,
+.face > .portrait {
+  width: 100%;
+  height: 100%;
+}
+
+.face-initials {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 1.3rem;
+  color: var(--accent-strong);
+}
+
+.face-initials.lg {
+  font-size: 2rem;
+}
+
+.face-initials.faction-sta {
+  background: #0e2447;
+}
+
+.face-initials.faction-frontier {
+  background: #15301c;
+}
+
+.face-initials.faction-hollow-wake {
+  background: #34150f;
+}
+
+.face-initials.faction-independent {
+  background: #262036;
+}
+
+.person-head {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.person-dialog .speech {
+  margin: 0.7rem 0;
+}
+
+.person-dialog .speech.told {
+  border-left-color: var(--warm);
+}
+
+.person-actions {
+  gap: 0.5rem;
+}
+
+.heard-list li {
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+/* Trade computer routes: the watch button sits under the numbers. */
+.computer .route {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.computer .route > .trade-text {
+  grid-row: span 2;
+}
+
+.computer .route > .btn {
+  grid-column: 3;
+  justify-self: end;
+}
+
+.computer .route.stale {
+  opacity: 0.78;
+}
+
+.row-value.stack-tight small {
+  display: block;
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.segmented {
+  gap: 0.35rem;
+}
+
+/* Job board filters and sort (docs/PROCGEN.md §16). */
+.board-tools {
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.board-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: auto;
+}
+
+.board-sort select {
+  min-height: 40px;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--panel-border-strong);
+  border-radius: var(--radius-sm);
+  background: rgba(8, 16, 32, 0.85);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+}
