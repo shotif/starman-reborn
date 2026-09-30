@@ -1151,7 +1151,7 @@ function eyes(t: PortraitTraits, c: Tones, id: string): string {
   const bw = t.browW;
   s += shape(`M${n(bi[0])} ${n(bi[1] + bw * 0.5)}L${n(bi[0] + 0.2)} ${n(bi[1] - bw * 0.5)}Q${n(peak[0])} ${n(peak[1] - bw * 0.55)} ${pt(bo)}Q${n(peak[0])} ${n(peak[1] + bw * 0.5)} ${n(bi[0])} ${n(bi[1] + bw * 0.5)}Z`, t.brow);
   const shine = circle(x - 0.6, E - 0.6, 0.6, '#ffffff', { opacity: 0.9 }) + circle(96 - x - 0.6, E - 0.6, 0.6, '#ffffff', { opacity: 0.9 });
-  return el('g', { id: `${id}E` }, s) + use(`${id}E`, { transform: MIRROR }) + shine;
+  return el('g', { id: `${id}g` }, s) + use(`${id}g`, { transform: MIRROR }) + shine;
 }
 
 function nose(t: PortraitTraits, c: Tones): string {
