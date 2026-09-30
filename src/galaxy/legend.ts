@@ -4,10 +4,11 @@ import { dataBadge } from '../ui/components.ts';
 import { h, svg } from '../ui/dom.ts';
 import { MAP_LEGEND_TEXT } from './mapText.ts';
 
-function swatch(kind: 'link' | 'route' | 'current' | 'objective' | 'visited' | 'drop'): SVGSVGElement {
+function swatch(kind: 'link' | 'frontier' | 'route' | 'current' | 'objective' | 'visited' | 'drop'): SVGSVGElement {
   const el = svg('svg', { class: `gmap-swatch gmap-swatch-${kind}`, viewBox: '0 0 28 16', 'aria-hidden': 'true' });
   switch (kind) {
     case 'link':
+    case 'frontier':
       el.append(svg('line', { x1: 2, y1: 8, x2: 26, y2: 8 }));
       break;
     case 'route':
@@ -45,6 +46,7 @@ export function buildLegend(mode: '3d' | '2d', tag: 'div' | 'figcaption' = 'div'
     'ul',
     { class: 'gmap-key-list' },
     h('li', null, swatch('link'), h('span', null, 'Jump link ', dataBadge('fictional'))),
+    h('li', null, swatch('frontier'), h('span', null, 'Frontier lane: needs a long-range jump drive ', dataBadge('fictional'))),
     h('li', null, swatch('route'), h('span', null, 'Selected route ', dataBadge('fictional'))),
     h('li', null, swatch('current'), h('span', null, 'You are here')),
     h('li', null, swatch('objective'), h('span', null, 'Objective')),

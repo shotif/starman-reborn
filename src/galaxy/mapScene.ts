@@ -29,6 +29,8 @@ const COLORS = {
   background: '#050912',
   grid: '#7eaaff',
   link: '#cfa8ff',
+  /** Frontier lanes, for ships with a long-range jump drive. */
+  frontierLink: '#ffb45c',
   route: '#5cc8ff',
   current: '#5cc8ff',
   selected: '#ffffff',
@@ -234,13 +236,15 @@ export class MapScene {
     }
     this.addLines(drops, { color: '#ffffff', opacity: 0.5, width: 1.25, order: 1, colors: dropColors }, [0, 0, 0]);
 
-    // Fictional jump links (dashed) between system reference positions.
+    // Fictional jump links (dashed) between system reference positions; frontier lanes in amber.
     const links: number[] = [];
+    const frontier: number[] = [];
     for (const link of MAP_LINKS) {
       const a = systemAnchor(link.a);
       const b = systemAnchor(link.b);
-      links.push(a[0], a[1], a[2], b[0], b[1], b[2]);
+      (link.drive ? frontier : links).push(a[0], a[1], a[2], b[0], b[1], b[2]);
     }
+    if (frontier.length) this.addLines(frontier, { color: COLORS.frontierLink, opacity: 0.55, width: 1.4, order: 2, dashed: true }, [0, 0, 0]);
     const linkLine = this.addLines(
       links,
       { color: COLORS.link, opacity: 0.8, width: 1.6, order: 2, dashed: true },

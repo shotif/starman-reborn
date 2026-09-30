@@ -489,6 +489,11 @@
   stroke-dasharray: 5 3;
 }
 
+.gmap-swatch-frontier {
+  stroke: #ffb45c;
+  stroke-dasharray: 5 3;
+}
+
 .gmap-swatch-route {
   stroke: var(--accent);
   stroke-width: 4;

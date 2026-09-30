@@ -111,7 +111,15 @@ function makeSlots(cls: ShipClassRule, tier: Tier): ShipSlot[] {
 }
 
 const LAUNCHER_FAMILY = { rocket: 'rocket-pod', seeker: 'seeker', torpedo: 'torpedo' } as const satisfies Record<string, GearFamilyId>;
-const UTILITY_FAMILY = { armor: 'armor', 'cargo-pod': 'cargo-pod', scanner: 'scanner', tractor: 'tractor' } as const satisfies Record<
+const UTILITY_FAMILY = {
+  armor: 'armor',
+  'cargo-pod': 'cargo-pod',
+  scanner: 'scanner',
+  tractor: 'tractor',
+  'jump-drive': 'jump-drive',
+  'mining-laser': 'mining-laser',
+  prospector: 'prospector',
+} as const satisfies Record<
   string,
   GearFamilyId
 >;

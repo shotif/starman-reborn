@@ -14,7 +14,7 @@ import { addCargo, cargoUsed, itemsThatFit } from '../economy/cargo.ts';
 import { COMMODITIES } from '../economy/commodities.ts';
 import { shipModel } from '../content/catalog.ts';
 import { hashString } from '../content/random.ts';
-import { cargoCapacity } from '../economy/loadout.ts';
+import { cargoCapacity, performanceOf } from '../economy/loadout.ts';
 import { adjustReputation, FACTIONS, standingTier, TIER_LABEL } from '../economy/factions.ts';
 import { newsAt, systemEventAt } from '../economy/events.ts';
 import {
@@ -1160,6 +1160,7 @@ export class Game {
         : [],
       contractSystems: new Set(state ? activeJobIds(state).flatMap((id) => describeObjective(state, id)?.targetSystemId ?? []) : []),
       ...(state ? { catalogued: new Set(state.codex) } : {}),
+      jumpReach: state ? performanceOf(state.ship).jumpReach : 0,
     };
   }
 

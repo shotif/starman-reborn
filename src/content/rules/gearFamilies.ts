@@ -228,4 +228,43 @@ export const GEAR_FAMILIES: readonly GearFamilyRule[] = [
     priceGrowth: 1.5,
     flavour: 'Reels in loose cargo and salvage.',
   },
+  {
+    id: 'jump-drive',
+    slot: 'utility',
+    noun: 'long-range jump drive',
+    kind: 'jump-drive',
+    // Reach in light-years: frontier lanes (docs/PROCGEN.md §7.6) need a drive that reaches them.
+    base: { amount: 11, penalty: 0 },
+    growth: 1.06,
+    minTierStep: 0.04,
+    basePrice: 2_400,
+    priceGrowth: 1.45,
+    flavour: 'Reaches the unbeaconed lanes of the frontier.',
+  },
+  {
+    id: 'mining-laser',
+    slot: 'utility',
+    noun: 'mining laser',
+    kind: 'mining-laser',
+    // Units of ore or ice cut from a rock per minute of beam.
+    base: { amount: 6, penalty: 0 },
+    growth: 1.3,
+    minTierStep: 0.15,
+    basePrice: 220,
+    priceGrowth: 1.5,
+    flavour: 'Cuts ore and ice from rock.',
+  },
+  {
+    id: 'prospector',
+    slot: 'utility',
+    noun: 'prospecting scanner',
+    kind: 'prospector',
+    // Yield: a rock gives this many times what it would to an unaided cut.
+    base: { amount: 1.2, penalty: 0 },
+    growth: 1.1,
+    minTierStep: 0.05,
+    basePrice: 160,
+    priceGrowth: 1.5,
+    flavour: 'Reads a rock’s seams before you cut.',
+  },
 ];

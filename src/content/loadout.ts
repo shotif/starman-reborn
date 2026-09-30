@@ -20,6 +20,12 @@ export interface ShipPerformance {
   scanRange: number;
   /** Loose-cargo pickup range in metres (0 = no tractor beam). */
   tractorRange: number;
+  /** Longest frontier lane the ship's long-range jump drive reaches, light-years (0: no drive). */
+  jumpReach: number;
+  /** Ore or ice cut per minute of mining beam (0: no mining laser). */
+  miningRate: number;
+  /** Yield multiplier from a prospecting scanner (1: none). */
+  prospect: number;
 }
 
 /** Items that actually fit: the slot exists, the type matches and the class is within the limit. */
@@ -46,6 +52,9 @@ export function shipPerformance(ship: ShipModel, fittings: Fittings, gearById: R
   let speedFactor = 1;
   let scanRange = 1;
   let tractorRange = 0;
+  let jumpReach = 0;
+  let miningRate = 0;
+  let prospect = 1;
   for (const { item } of fittedItems(ship, fittings, gearById)) {
     const s = item.stats;
     switch (s.slot) {
@@ -76,7 +85,10 @@ export function shipPerformance(ship: ShipModel, fittings: Fittings, gearById: R
           pods += u.amount;
           speedFactor *= 1 - u.penalty;
         } else if (u.kind === 'scanner') scanRange = Math.max(scanRange, u.amount);
-        else tractorRange = Math.max(tractorRange, u.amount);
+        else if (u.kind === 'tractor') tractorRange = Math.max(tractorRange, u.amount);
+        else if (u.kind === 'jump-drive') jumpReach = Math.max(jumpReach, u.amount);
+        else if (u.kind === 'mining-laser') miningRate += u.amount;
+        else if (u.kind === 'prospector') prospect = Math.max(prospect, u.amount);
         break;
       }
     }
@@ -102,7 +114,7 @@ export function shipPerformance(ship: ShipModel, fittings: Fittings, gearById: R
     boostDrain: thruster?.boostDrain ?? 0,
     radius: ship.radius,
   };
-  return { flight, hullMax: ship.hull + armour, cargo: ship.cargo + pods, shield, guns, launchers, scanRange, tractorRange };
+  return { flight, hullMax: ship.hull + armour, cargo: ship.cargo + pods, shield, guns, launchers, scanRange, tractorRange, jumpReach, miningRate, prospect };
 }
 
 /** Share of the time the guns can fire over a fight of `seconds`: full until energy runs dry, then what regeneration allows. */

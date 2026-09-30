@@ -90,6 +90,8 @@ gear.power.1.ares                  Furnace Mk I power plant             158  Fee
 gear.power.2.ares                  Furnace Mk II power plant            245  Feeds the guns and the boost. 128 energy stored, 23 regenerated per second.
 gear.power.3.ares                  Furnace Mk III power plant           380  Feeds the guns and the boost. 153 energy stored, 27.6 regenerated per second.
 gear.power.4.ares                  Furnace Mk IV power plant            585  Feeds the guns and the boost. 184 energy stored, 33.2 regenerated per second.
+gear.mining-laser.1.ares           Chisel Mk I mining laser             230  Cuts ore and ice from rock. Cuts 6 units of ore or ice a minute from rock.
+gear.mining-laser.2.ares           Chisel Mk II mining laser            345  Cuts ore and ice from rock. Cuts 8 units of ore or ice a minute from rock.
 gear.pulse.1.toliman               Thorn Mk I pulse cannon              184  Rapid energy bolts; the all-rounder. 9 energy damage per shot, 2.75 shots/s, 950 m range, 4.5 energy per shot. Strong against deflector shields; weak against diffuser shields.
 gear.pulse.2.toliman               Thorn Mk II pulse cannon             295  Rapid energy bolts; the all-rounder. 11.5 energy damage per shot, 2.75 shots/s, 970 m range, 5 energy per shot. Strong against deflector shields; weak against diffuser shields.
 gear.shield-diffuser.1.toliman     Canopy Mk I diffuser shield          215  Spreads energy hits thin and recovers quickly. 54 capacity, recharges 7.4/s after 2.8 s. Resists energy; weak against plasma.
@@ -110,6 +112,8 @@ gear.scanner.3.toliman             Taproot Mk III scanner               260  Lon
 gear.tractor.1.toliman             Tendril Mk I tractor beam             87  Reels in loose cargo and salvage. Pulls in loose cargo from 500 m.
 gear.tractor.2.toliman             Tendril Mk II tractor beam           131  Reels in loose cargo and salvage. Pulls in loose cargo from 600 m.
 gear.tractor.3.toliman             Tendril Mk III tractor beam          196  Reels in loose cargo and salvage. Pulls in loose cargo from 720 m.
+gear.prospector.1.toliman          Assayer Mk I prospecting scanner     155  Reads a rock’s seams before you cut. Rocks yield ×1.2.
+gear.prospector.2.toliman          Assayer Mk II prospecting scanner    235  Reads a rock’s seams before you cut. Rocks yield ×1.3.
 gear.pulse.2.horizon               Lumen Mk II pulse cannon             350  Rapid energy bolts; the all-rounder. 10.5 energy damage per shot, 3.1 shots/s, 970 m range, 5.3 energy per shot. Strong against deflector shields; weak against diffuser shields.
 gear.pulse.3.horizon               Lumen Mk III pulse cannon            560  Rapid energy bolts; the all-rounder. 13.5 energy damage per shot, 3.1 shots/s, 990 m range, 6 energy per shot. Strong against deflector shields; weak against diffuser shields.
 gear.pulse.4.horizon               Lumen Mk IV pulse cannon             895  Rapid energy bolts; the all-rounder. 17.5 energy damage per shot, 3.1 shots/s, 1010 m range, 6.7 energy per shot. Strong against deflector shields; weak against diffuser shields.
@@ -138,6 +142,9 @@ gear.power.4.horizon               Flux Mk IV power plant               640  Fee
 gear.power.5.horizon               Flux Mk V power plant                995  Feeds the guns and the boost. 196 energy stored, 43.1 regenerated per second.
 gear.scanner.3.horizon             Iris Mk III scanner                  310  Longer-range sensors for scans and targeting. Scan range ×1.55.
 gear.scanner.4.horizon             Iris Mk IV scanner                   465  Longer-range sensors for scans and targeting. Scan range ×1.75.
+gear.jump-drive.1.horizon          Strider Mk I long-range jump drive  2750  Reaches the unbeaconed lanes of the frontier. Jumps frontier lanes up to 11 ly long.
+gear.jump-drive.2.horizon          Strider Mk II long-range jump drive  4000  Reaches the unbeaconed lanes of the frontier. Jumps frontier lanes up to 11.7 ly long.
+gear.jump-drive.3.horizon          Strider Mk III long-range jump drive  5800  Reaches the unbeaconed lanes of the frontier. Jumps frontier lanes up to 12.4 ly long.
 gear.mass-driver.1.eridani         Millrace Mk I mass driver            171  Fast magnetic slugs, slow to cycle and hard on hulls. 15.5 kinetic damage per shot, 1.1 shots/s, 1150 m range, 9 energy per shot. Weak against deflector shields; hits hulls hard.
 gear.mass-driver.2.eridani         Millrace Mk II mass driver           275  Fast magnetic slugs, slow to cycle and hard on hulls. 20 kinetic damage per shot, 1.1 shots/s, 1170 m range, 10.1 energy per shot. Weak against deflector shields; hits hulls hard.
 gear.mass-driver.3.eridani         Millrace Mk III mass driver          440  Fast magnetic slugs, slow to cycle and hard on hulls. 26 kinetic damage per shot, 1.1 shots/s, 1200 m range, 11.3 energy per shot. Weak against deflector shields; hits hulls hard.
@@ -155,6 +162,11 @@ gear.armor.1.eridani               Breakwater Mk I armour plating       117  Bol
 gear.armor.2.eridani               Breakwater Mk II armour plating      176  Bolt-on hull plates. +33 hull; turning −5%.
 gear.tractor.1.eridani             Undertow Mk I tractor beam            81  Reels in loose cargo and salvage. Pulls in loose cargo from 500 m.
 gear.tractor.2.eridani             Undertow Mk II tractor beam          122  Reels in loose cargo and salvage. Pulls in loose cargo from 600 m.
+gear.mining-laser.1.eridani        Pickaxe Mk I mining laser            198  Cuts ore and ice from rock. Cuts 6 units of ore or ice a minute from rock.
+gear.mining-laser.2.eridani        Pickaxe Mk II mining laser           295  Cuts ore and ice from rock. Cuts 8 units of ore or ice a minute from rock.
+gear.mining-laser.3.eridani        Pickaxe Mk III mining laser          445  Cuts ore and ice from rock. Cuts 10 units of ore or ice a minute from rock.
+gear.prospector.1.eridani          Dowser Mk I prospecting scanner      144  Reads a rock’s seams before you cut. Rocks yield ×1.2.
+gear.prospector.2.eridani          Dowser Mk II prospecting scanner     215  Reads a rock’s seams before you cut. Rocks yield ×1.3.
 gear.plasma.1.wake                 Scorch Mk I plasma cannon            152  Heavy, slow plasma bolts that burn through diffusers. 29 plasma damage per shot, 0.9 shots/s, 850 m range, 15.9 energy per shot. Strong against diffuser shields.
 gear.plasma.2.wake                 Scorch Mk II plasma cannon           245  Heavy, slow plasma bolts that burn through diffusers. 38 plasma damage per shot, 0.9 shots/s, 870 m range, 17.8 energy per shot. Strong against diffuser shields.
 gear.plasma.3.wake                 Scorch Mk III plasma cannon          390  Heavy, slow plasma bolts that burn through diffusers. 49 plasma damage per shot, 0.9 shots/s, 880 m range, 20 energy per shot. Strong against diffuser shields.
@@ -167,5 +179,7 @@ gear.ion.2.wake                    Static Mk II ion disruptor           245  Col
 gear.rocket-pod.1.wake             Spite Mk I rocket pod                112  Unguided rockets; aim well, reload cheaply. 40 damage per hit, unguided, carries 12 at 10 cr each.
 gear.rocket-pod.2.wake             Spite Mk II rocket pod               168  Unguided rockets; aim well, reload cheaply. 49 damage per hit, unguided, carries 12 at 12 cr each.
 gear.rocket-pod.3.wake             Spite Mk III rocket pod              250  Unguided rockets; aim well, reload cheaply. 61 damage per hit, unguided, carries 12 at 16 cr each.
-gear.torpedo.2.wake                Grudge Mk II torpedo tube            290  Slow, heavy torpedoes for big targets. 222 damage per hit, locks on in 1.6 s, carries 2 at 125 cr each."
+gear.torpedo.2.wake                Grudge Mk II torpedo tube            290  Slow, heavy torpedoes for big targets. 222 damage per hit, locks on in 1.6 s, carries 2 at 125 cr each.
+gear.jump-drive.1.wake             Leapfrog Mk I long-range jump drive  1920  Reaches the unbeaconed lanes of the frontier. Jumps frontier lanes up to 11 ly long.
+gear.jump-drive.2.wake             Leapfrog Mk II long-range jump drive  2800  Reaches the unbeaconed lanes of the frontier. Jumps frontier lanes up to 11.7 ly long."
 `;

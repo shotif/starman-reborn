@@ -21,6 +21,7 @@ import {
   project2D,
   type MapLabel,
 } from './mapData.ts';
+import { laneTaker } from './jumpRules.ts';
 import { findRoute } from './routing.ts';
 import { createLabelBox, layoutLabels, rectsOverlap, type LabelBox } from './screenLayout.ts';
 import type { MapState } from './types.ts';
@@ -167,7 +168,7 @@ function draw(container: HTMLElement, e: Entry): void {
   svgEl.append(links);
   const selected = e.selected;
   if (selected && selected !== e.state.currentSystemId) {
-    const route = findRoute(SYSTEMS, e.state.currentSystemId, selected);
+    const route = findRoute(SYSTEMS, e.state.currentSystemId, selected, { canTake: laneTaker(e.state.jumpReach ?? 0) });
     if (route && route.path.length > 1) {
       const points = route.path.map((id) => anchors.get(id)!.join(',')).join(' ');
       svgEl.append(

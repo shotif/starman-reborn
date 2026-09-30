@@ -4,7 +4,7 @@
  * coincide at map scale (Alpha Centauri A/B, Sirius A/B) but keep Proxima Centauri separate.
  */
 import { distance3 } from '../data/coords.ts';
-import { ASTROMETRY, SYSTEMS, getSystem, isNewSystem } from '../data/systems.ts';
+import { ASTROMETRY, SYSTEMS, getSystem, isNewSystem, laneNeedsDrive } from '../data/systems.ts';
 import type { SystemId, Vec3Tuple } from '../data/types.ts';
 import { equatorialToMap, type Vec3 } from './mapMath.ts';
 
@@ -56,6 +56,8 @@ export interface MapLink {
   b: SystemId;
   /** Real straight-line distance between the systems' reference positions. */
   distanceLy: number;
+  /** A frontier lane: a long-range jump drive is needed (docs/PROCGEN.md §7.6). */
+  drive: boolean;
 }
 
 export function glowPxForSpectralType(spectralType: string | null): number {
@@ -164,7 +166,7 @@ function buildLinks(): MapLink[] {
       const key = `${a}|${b}`;
       if (seen.has(key)) continue;
       seen.add(key);
-      links.push({ a, b, distanceLy: distance3(getSystem(a).positionLy, getSystem(b).positionLy) });
+      links.push({ a, b, distanceLy: distance3(getSystem(a).positionLy, getSystem(b).positionLy), drive: laneNeedsDrive(a, b) });
     }
   }
   return links;

@@ -67,7 +67,7 @@ describe('ship and equipment catalogue', () => {
     }
     expect(buyable.length).toBeGreaterThanOrEqual(35);
     expect(catalog.gear.length).toBeGreaterThanOrEqual(100);
-    expect(new Set(catalog.gear.map((g) => g.family)).size).toBe(17);
+    expect(new Set(catalog.gear.map((g) => g.family)).size).toBe(20);
   });
 
   it('builds fast enough for a phone', () => {

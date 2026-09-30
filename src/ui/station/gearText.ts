@@ -86,6 +86,9 @@ export function gearStats(item: GearItem): string {
       if (u.kind === 'armor') return `+${u.amount} hull · turning −${Math.round(u.penalty * 100)}%`;
       if (u.kind === 'cargo-pod') return `+${u.amount} cargo · speed −${Math.round(u.penalty * 100)}%`;
       if (u.kind === 'scanner') return `scan range ×${u.amount}`;
+      if (u.kind === 'jump-drive') return `frontier lanes to ${u.amount} ly`;
+      if (u.kind === 'mining-laser') return `cuts ${u.amount}/min`;
+      if (u.kind === 'prospector') return `yield ×${u.amount}`;
       return `pulls cargo from ${u.amount} m`;
     }
   }

@@ -30,6 +30,8 @@ export interface MapState {
   contractSystems?: ReadonlySet<SystemId>;
   /** The player's codex: bodies scanned (for the science notes). */
   catalogued?: ReadonlySet<string>;
+  /** Reach of the ship's long-range jump drive, light-years (0: none): frontier lanes need it. */
+  jumpReach?: number;
 }
 
 export interface MapNewsItem {

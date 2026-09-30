@@ -119,7 +119,7 @@ function solveStats(f: GearFamilyRule, tier: Tier, traits: MakerTraits, target: 
       };
     }
     case 'utility': {
-      const step = f.kind === 'scanner' ? 0.05 : f.kind === 'tractor' ? 10 : 1;
+      const step = f.kind === 'scanner' || f.kind === 'prospector' ? 0.05 : f.kind === 'tractor' ? 10 : f.kind === 'jump-drive' ? 0.1 : 1;
       return { slot: 'utility', utility: { kind: f.kind, amount: roundTo(f.base.amount * target, step), penalty: f.base.penalty } };
     }
   }
@@ -201,6 +201,12 @@ export function describeStats(stats: GearStats): string {
           return `Scan range ×${u.amount}.`;
         case 'tractor':
           return `Pulls in loose cargo from ${u.amount} m.`;
+        case 'jump-drive':
+          return `Jumps frontier lanes up to ${u.amount} ly long.`;
+        case 'mining-laser':
+          return `Cuts ${u.amount} units of ore or ice a minute from rock.`;
+        case 'prospector':
+          return `Rocks yield ×${u.amount}.`;
       }
     }
   }

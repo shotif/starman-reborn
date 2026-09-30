@@ -316,6 +316,25 @@ const GLYPHS = {
     { d: 'M6 4h7v12a3 3 0 0 0 6 0V4h7v12a10 10 0 0 1-20 0z' },
     { d: 'M6 4h7v4H6zM19 4h7v4h-7z', kind: 'dark' },
   ],
+  /** Long-range jump drive: a ring with an arrow leaping through it. */
+  'jump-drive': [
+    { d: `${ellipse(13, 16, 8, 11)}${ellipse(13, 16, 4.5, 7.5)}`, evenodd: true },
+    { d: 'M4 17.2h17.5v3.6H4zM20 12.5l9 6.5-9 6.5z' },
+  ],
+  /** Mining laser: an emitter cutting a rock. */
+  'mining-laser': [
+    { d: 'M3 6h11l3 3v4l-3 3H3z' },
+    { d: 'M17 10h8v2h-8z', kind: 'line' },
+    { d: 'M22 16l7 3-2 8-9 2-4-6 3-6z' },
+    { d: 'M20 21l3 1-1 3-3-1z', kind: 'dark' },
+  ],
+  /** Prospecting scanner: a lens over a rock with a vein. */
+  prospector: [
+    { d: 'M4 22l6-8 9 1 6 7-3 7H8z' },
+    { d: 'M9 21l5 2 5-3 3 2', kind: 'line' },
+    { d: `${ellipse(21, 9, 7, 7)}${ellipse(21, 9, 4.2, 4.2)}`, evenodd: true },
+    { d: 'M15.5 13.5l2 2-4 4-2-2z' },
+  ],
   /** Information. */
   info: [
     { d: `${ellipse(16, 16, 13, 13)}M14.3 13.5h3.4v10h-3.4zM16 7.2a2.1 2.1 0 1 1 0 4.2a2.1 2.1 0 1 1 0-4.2z`, evenodd: true },

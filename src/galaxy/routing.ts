@@ -44,13 +44,20 @@ export function linkDistance(systems: readonly StarSystemRecord[], a: SystemId, 
   return distance3(sa.positionLy, sb.positionLy);
 }
 
+export interface RouteOptions {
+  /** Whether the ship can take a lane (frontier lanes need a long-range jump drive that reaches them). */
+  canTake?: (a: SystemId, b: SystemId, distanceLy: number) => boolean;
+}
+
 /**
- * Shortest route by total light-years over the fictional jump links (Dijkstra).
- * Returns null when no route exists; a zero-hop route when from === to.
+ * Shortest route by total light-years over the fictional jump links (Dijkstra), over the lanes
+ * `canTake` allows (all of them by default). Returns null when no route exists; a zero-hop route
+ * when from === to.
  */
-export function findRoute(systems: readonly StarSystemRecord[], from: SystemId, to: SystemId): Route | null {
+export function findRoute(systems: readonly StarSystemRecord[], from: SystemId, to: SystemId, opts: RouteOptions = {}): Route | null {
   const byId = new Map(systems.map((s) => [s.id, s]));
   if (!byId.has(from) || !byId.has(to)) return null;
+  const ly = (a: SystemId, b: SystemId) => distance3(byId.get(a)!.positionLy, byId.get(b)!.positionLy);
   const dist = new Map<SystemId, number>([[from, 0]]);
   const prev = new Map<SystemId, SystemId>();
   const done = new Set<SystemId>();
@@ -67,8 +74,10 @@ export function findRoute(systems: readonly StarSystemRecord[], from: SystemId, 
     if (current === to) break;
     done.add(current);
     for (const next of byId.get(current)!.jumpLinks) {
-      if (done.has(next)) continue;
-      const candidate = best + linkDistance(systems, current, next);
+      if (done.has(next) || !byId.has(next)) continue;
+      const d = ly(current, next);
+      if (opts.canTake && !opts.canTake(current, next, d)) continue;
+      const candidate = best + d;
       if (candidate < (dist.get(next) ?? Infinity)) {
         dist.set(next, candidate);
         prev.set(next, current);

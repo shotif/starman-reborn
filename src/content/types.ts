@@ -14,7 +14,7 @@ export type DamageType = 'energy' | 'kinetic' | 'plasma' | 'ion';
 export type ShieldType = 'deflector' | 'diffuser' | 'balanced';
 export type SlotType = 'gun' | 'launcher' | 'shield' | 'engine' | 'thruster' | 'power' | 'utility';
 export type LauncherKind = 'rocket' | 'seeker' | 'torpedo';
-export type UtilityKind = 'armor' | 'cargo-pod' | 'scanner' | 'tractor';
+export type UtilityKind = 'armor' | 'cargo-pod' | 'scanner' | 'tractor' | 'jump-drive' | 'mining-laser' | 'prospector';
 
 export type GearFamilyId =
   | 'pulse'
@@ -33,7 +33,10 @@ export type GearFamilyId =
   | 'armor'
   | 'cargo-pod'
   | 'scanner'
-  | 'tractor';
+  | 'tractor'
+  | 'jump-drive'
+  | 'mining-laser'
+  | 'prospector';
 
 // ---------------------------------------------------------------- rules
 

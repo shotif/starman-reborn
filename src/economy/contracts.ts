@@ -6,7 +6,7 @@ import { COMMODITIES } from '../content/economy/goods.ts';
 import { hashString, rng, type Rng } from '../content/random.ts';
 import { jumpsFrom } from '../content/world/network.ts';
 import { WORLD_SEED } from '../content/world/rules.ts';
-import { ALL_LOCATIONS, getLocation, getSystem, SYSTEMS, WORLD } from '../data/systems.ts';
+import { ALL_LOCATIONS, getLocation, getSystem, isFrontier, SYSTEMS, WORLD } from '../data/systems.ts';
 import type { FactionId, FictionalLocation, SystemId } from '../data/types.ts';
 import { findRoute } from '../galaxy/routing.ts';
 import { FLEETS } from '../world/traffic/plan.ts';
@@ -38,7 +38,12 @@ export function boardEpoch(clock: number): number {
 // ---------------------------------------------------------------- world lookups (cached)
 
 let jumpCache: Map<SystemId, Map<SystemId, number>> | null = null;
+/**
+ * Jumps between two systems for a contract. Boards outside the frontier never send a pilot into it
+ * (that takes a long-range jump drive the pilot may not have); frontier boards send anywhere.
+ */
 function jumpsBetween(a: SystemId, b: SystemId): number {
+  if (isFrontier(b) && !isFrontier(a)) return Infinity;
   jumpCache ??= new Map();
   let m = jumpCache.get(a);
   if (!m) {
