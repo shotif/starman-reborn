@@ -1,5 +1,5 @@
 import type { AimAssist } from '../../app/settings.ts';
-import type { FlightAction, FlightInput } from '../../flight/input/types.ts';
+import { AIM_REACH, type FlightAction, type FlightInput } from '../../flight/input/types.ts';
 import { TouchControlsModel, type VirtualStick } from '../../flight/input/touchModel.ts';
 import { h } from '../dom.ts';
 import { icon, type IconName } from '../icons.ts';
@@ -11,9 +11,6 @@ export interface TouchCallbacks {
   /** Any touch activity (switches the UI to the touch scheme). */
   onActivity(): void;
 }
-
-const AIM_RANGE_X = 0.62;
-const AIM_RANGE_Y = 0.55;
 
 /**
  * Two-thumb flight controls. The left zone spawns a floating steering stick; the right zone
@@ -230,8 +227,8 @@ export class TouchControls {
     }
     if (this.model.aim.active) {
       const aim = this.model.aim.vector;
-      out.aimX = aim.x * AIM_RANGE_X;
-      out.aimY = aim.y * AIM_RANGE_Y;
+      out.aimX = aim.x * AIM_REACH.x;
+      out.aimY = aim.y * AIM_REACH.y;
       out.aimActive = true;
       out.fire = true;
     }

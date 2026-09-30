@@ -4,6 +4,8 @@ import { getComponent, getPlanet, SOLAR_BODIES } from '../../data/systems.ts';
 import { formatDec, formatRa } from '../../data/coords.ts';
 import type { ConfirmedBody } from '../../data/types.ts';
 import { KEY_BINDINGS, keyLabel } from '../../flight/input/DesktopInput.ts';
+import { PAD_FOR, PAD_HOLDS, padLabel, type PadButton } from '../../flight/input/GamepadInput.ts';
+import type { InputScheme } from '../../flight/input/types.ts';
 import { button, dataBadge, sourceLink } from '../components.ts';
 import { h, type Child } from '../dom.ts';
 import { icon } from '../icons.ts';
@@ -78,11 +80,39 @@ function keys(v: readonly string[] | string): Child {
   return v.map((code, i) => [i > 0 ? ' ' : null, code.includes(' ') ? code : h('kbd', { class: 'kbd' }, keyLabel(code))]);
 }
 
-export function controlsContent(steering: SteeringMode, scheme: 'desktop' | 'touch' = 'desktop'): HTMLElement {
-  const root = h(
-    'div',
-    { class: 'stack controls-help' },
-    h(
+const GAMEPAD_ROWS: [string, readonly PadButton[] | string][] = [
+  ['Steer', 'Left stick'],
+  ['Aim guns', 'Right stick: the reticle drifts back to the centre when you let go'],
+  ['Fire guns (hold)', [PAD_HOLDS.fire]],
+  ['Boost (hold)', [PAD_HOLDS.boost]],
+  ['Throttle', [PAD_HOLDS.throttleUp, PAD_HOLDS.throttleDown]],
+  ['Cruise on/off', [PAD_FOR.cruise]],
+  ['Dock / lane / scan / go to', [PAD_FOR.interact]],
+  ['Free flight (autopilot off)', [PAD_FOR['cancel-autopilot']]],
+  ['Go to selected target', [PAD_FOR.goto]],
+  ['Cycle targets', [PAD_FOR['target-next']]],
+  ['Nearest hostile', [PAD_FOR['target-hostile']]],
+  ['Missile', [PAD_FOR.missile]],
+  ['Repair kit', [PAD_FOR.repair]],
+  ['Decoy flare', [PAD_FOR.decoy]],
+  ['Engines off (drift)', [PAD_FOR['engine-kill']]],
+  ['Star map', [PAD_FOR.map]],
+  ['Pause', [PAD_FOR.pause]],
+];
+
+/** Each button as named on an Xbox pad, then on a PlayStation pad where that differs. */
+function padKeys(v: readonly PadButton[] | string): Child {
+  if (typeof v === 'string') return v;
+  return v.map((b, i) => {
+    const xbox = padLabel(b, 'xbox');
+    const ps = padLabel(b, 'playstation');
+    return [i > 0 ? ' ' : null, h('kbd', { class: 'kbd' }, xbox), ps === xbox ? null : [' / ', h('kbd', { class: 'kbd' }, ps)]];
+  });
+}
+
+export function controlsContent(steering: SteeringMode, scheme: InputScheme = 'desktop'): HTMLElement {
+  const cards: Record<InputScheme, HTMLElement> = {
+    desktop: h(
       'div',
       { class: 'overview-card' },
       h('h3', null, icon('info'), 'Mouse and keyboard'),
@@ -97,7 +127,7 @@ export function controlsContent(steering: SteeringMode, scheme: 'desktop' | 'tou
         : null,
       h('table', { class: 'table' }, h('tbody', null, DESKTOP_ROWS.map(([label, v]) => h('tr', null, h('td', null, label), h('td', null, keys(v)))))),
     ),
-    h(
+    touch: h(
       'div',
       { class: 'overview-card' },
       h('h3', null, icon('help'), 'Touch (phone and tablet)'),
@@ -113,10 +143,26 @@ export function controlsContent(steering: SteeringMode, scheme: 'desktop' | 'tou
         h('li', null, h('strong', null, 'Practice: '), 'three training drones circle just outside Halcyon Ring. Select one and shoot it to try aiming — no reward, no risk.'),
       ),
     ),
-  );
+    gamepad: h(
+      'div',
+      { class: 'overview-card', 'data-testid': 'controls-gamepad' },
+      h('h3', null, icon('gamepad'), 'Gamepad'),
+      h(
+        'p',
+        { class: 'muted small' },
+        'Any pad the browser reports in the standard layout. Buttons are named as on an Xbox pad, then as on a PlayStation pad; L3 and R3 mean clicking the left and right stick.',
+      ),
+      h('table', { class: 'table' }, h('tbody', null, GAMEPAD_ROWS.map(([label, v]) => h('tr', null, h('td', null, label), h('td', null, padKeys(v)))))),
+      h(
+        'p',
+        { class: 'muted small' },
+        'The HUD names the buttons of whichever device you used last, and on a phone or tablet the touch controls hide while you use the pad. Stations and menus need the mouse, keyboard or touch, but Start closes the pause menu again and Back closes the star map.',
+      ),
+    ),
+  };
   // Show the scheme in use first.
-  if (scheme === 'touch') root.prepend(root.lastElementChild!);
-  return root;
+  const order: InputScheme[] = [scheme, ...(['desktop', 'touch', 'gamepad'] as const).filter((s) => s !== scheme)];
+  return h('div', { class: 'stack controls-help' }, order.map((s) => cards[s]));
 }
 
 // ---------------------------------------------------------------- settings

@@ -15,9 +15,13 @@ export type FlightAction =
   | 'help'
   | 'cancel-autopilot';
 
-export type InputScheme = 'desktop' | 'touch';
+/** The device driving the HUD: its layout, where the reticle comes from and which buttons it names. */
+export type InputScheme = 'desktop' | 'touch' | 'gamepad';
 
-/** One frame of player intent, produced by the desktop or touch adapter. */
+/** How far from the screen centre (NDC) a fully pushed aim stick puts the reticle, on touch and gamepad. */
+export const AIM_REACH = { x: 0.62, y: 0.55 } as const;
+
+/** One frame of player intent, produced by the desktop, touch or gamepad adapter. */
 export interface FlightInput {
   /** Steering command, -1..1: x = yaw (+ right), y = pitch (+ up). */
   steerX: number;
