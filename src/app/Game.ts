@@ -71,6 +71,7 @@ import { Loop } from './Loop.ts';
 import { discoverBody, dockAt, jumpReadiness, performJump, rescueAfterDefeat, routeFee, undock } from './rules.ts';
 import type { SaveManager } from './save/SaveManager.ts';
 import type { Settings } from './settings.ts';
+import { Soundscape } from './soundscape.ts';
 import { applyCredits, createNewGame, type GameState } from './state.ts';
 
 type Mode = 'loading' | 'title' | 'docked' | 'flight' | 'map' | 'jump';
@@ -112,6 +113,8 @@ export function applyDocumentSettings(settings: Settings): void {
 
 export class Game {
   readonly audio = new AudioEngine();
+  /** Music, station ambience and local radio, kept in step with where the player is. */
+  private readonly soundscape = new Soundscape(this.audio);
   readonly saves: SaveManager;
   settings: Settings;
   state: GameState | null = null;
@@ -256,18 +259,17 @@ export class Game {
     await this.audio.unlock();
     this.audio.setVolumes(this.settings.volumes);
     this.audio.setMuted(this.settings.muted);
-    this.audio.setMusic(this.currentMood());
-  }
-
-  private currentMood(): MusicMood {
-    if (this.mode === 'title' || this.mode === 'loading') return 'title';
-    if (this.mode === 'docked') return 'docked';
-    if (this.mode === 'map') return 'map';
-    return moodFor(this.state?.location.systemId ?? 'sol');
+    this.soundscape.refresh();
   }
 
   private sfx(id: SfxId, volume = 1): void {
     this.audio.play(id, { volume });
+  }
+
+  /** A comm message in flight: the radio blips as it comes in. */
+  private comm(speaker: string, text: string, ms: number): void {
+    this.sfx('radio-blip');
+    commToast(speaker, text, ms);
   }
 
   private setScheme(scheme: InputScheme): void {
@@ -320,7 +322,7 @@ export class Game {
       onSettings: () => this.openSettings(),
     });
     this.refreshFlightUi();
-    this.audio.setMusic('title');
+    this.soundscape.title();
     this.titleEl.querySelector<HTMLButtonElement>('button')?.focus();
     this.warmInteriors(s?.location.dockedAt ?? 'earth-port');
   }
@@ -455,7 +457,6 @@ export class Game {
     this.mode = 'docked';
     this.loop.lowPower = true;
     this.refreshFlightUi();
-    this.audio.setMusic('docked');
     this.station = new StationHub(
       this.screenLayer,
       {
@@ -477,7 +478,10 @@ export class Game {
         deliverJob: (id) => void this.deliver(id),
         travelCost: (from, to) => this.travelCost(from, to),
         // The first view is set while the hub is being built: jump straight there.
-        setView: (room) => this.interior?.setView(room, !this.station) ?? null,
+        setView: (room) => {
+          this.soundscape.docked(locationId, room);
+          return this.interior?.setView(room, !this.station) ?? null;
+        },
       },
       { room: opts.room, window: opts.window, titleCard: opts.titleCard && !opts.intro },
     );
@@ -658,7 +662,7 @@ export class Game {
       this.persist();
     }
     if (!docked) {
-      for (const b of beats) for (const l of b.lines) commToast(speakerName(l.who), l.text, 9000);
+      for (const b of beats) for (const l of b.lines) this.comm(speakerName(l.who), l.text, 9000);
       return;
     }
     for (const b of beats) await showDialogue(b.kind === 'debrief' ? `${b.title}: complete` : b.title, b.lines);
@@ -803,7 +807,7 @@ export class Game {
           wingmanLost(state, id);
           this.persist();
         },
-        onComm: (speaker, text) => commToast(speaker, text, 5000),
+        onComm: (speaker, text) => this.comm(speaker, text, 5000),
         onHunterDown: () => {
           state.stats.kills += 1;
           toast('Bounty hunter destroyed. Nobody pays for that one.', 'good', 3500);
@@ -829,7 +833,7 @@ export class Game {
     this.objectiveTimer = 0;
     this.hint = null;
     this.refreshFlightUi();
-    this.audio.setMusic(moodFor(state.location.systemId));
+    this.soundscape.flight(this.system!.def, moodFor(state.location.systemId), state, this.flight.player.position);
     this.tellStory();
   }
 
@@ -1077,7 +1081,7 @@ export class Game {
     const objective = primaryObjective(this.state);
     this.map.open(this.mapState(), objective?.targetSystemId ?? undefined);
     this.loop.lowPower = false;
-    this.audio.setMusic('map');
+    this.soundscape.map(true);
   }
 
   private closeMap(): void {
@@ -1087,7 +1091,7 @@ export class Game {
     this.station?.root.removeAttribute('hidden');
     this.loop.lowPower = this.mode === 'docked';
     this.refreshFlightUi();
-    this.audio.setMusic(this.currentMood());
+    this.soundscape.map(false);
   }
 
   private startJump(route: Route, fee: number): void {
@@ -1429,6 +1433,7 @@ export class Game {
     }
     flight.update(dt, input);
     const hudModel = flight.hud;
+    this.soundscape.update(dt, { position: flight.player.position, inLane: hudModel.inLane, cruising: hudModel.cruise === 'on', combat: hudModel.encounterActive });
     const scan = flight.scanStatus;
     const fines = totalFines(state);
     this.hud.update(hudModel, {
