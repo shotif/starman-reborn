@@ -7,6 +7,7 @@ import { recordMarketVisit } from '../economy/trade.ts';
 import { watchOnDock, type WatchNote } from '../economy/tradeComputer.ts';
 import { settleLaw } from '../economy/law.ts';
 import { tidyWorldLog } from '../economy/answers.ts';
+import { settleFleet, type FleetSettlement } from '../economy/fleet.ts';
 import type { Route } from '../galaxy/routing.ts';
 import type { JumpReadiness } from '../galaxy/types.ts';
 import { applyCredits, markVisited, type GameState } from './state.ts';
@@ -24,6 +25,8 @@ export interface DockOutcome {
   watchNotes: WatchNote[];
   /** Fines that lapsed (docs/PROCGEN.md §17). */
   lawNotes: string[];
+  /** What the fleet did since the last settle (docs/PROCGEN.md §18). */
+  fleet: FleetSettlement;
 }
 
 export function dockAt(state: GameState, locationId: string): DockOutcome {
@@ -37,6 +40,7 @@ export function dockAt(state: GameState, locationId: string): DockOutcome {
   recordMarketVisit(state, locationId);
   const watchNotes = watchOnDock(state, locationId);
   const lawNotes = settleLaw(state);
+  const fleet = settleFleet(state);
   tidyWorldLog(state);
   rechargeShield(state);
   let clearanceGranted = false;
@@ -45,7 +49,7 @@ export function dockAt(state: GameState, locationId: string): DockOutcome {
     clearanceGranted = true;
   }
   const jobEvents = advanceJobs(state, { dockedAt: locationId, systemId: loc.systemId });
-  return { jobEvents, clearanceGranted, firstVisit, watchNotes, lawNotes };
+  return { jobEvents, clearanceGranted, firstVisit, watchNotes, lawNotes, fleet };
 }
 
 export function undock(state: GameState): void {

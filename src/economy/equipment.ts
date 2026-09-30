@@ -1,4 +1,4 @@
-import { applyCredits, type GameState } from '../app/state.ts';
+import { applyCredits, type GameState, type ShipState } from '../app/state.ts';
 import { gearForSale, resaleValue, shipModel, shipsForSale, shopRule, standingForGear, standingForShip } from '../content/catalog.ts';
 import type { GearItem, ShipModel, ShipSlot, Tier } from '../content/types.ts';
 import { cargoUsed } from './cargo.ts';
@@ -73,15 +73,15 @@ function capacityWith(state: GameState, slotId: string, gearId: string | null): 
   return performanceOf({ model: state.ship.model, fittings }).cargo;
 }
 
-function ammoRefund(state: GameState, slotId: string): number {
-  const item = fittedItem(state.ship, slotId);
-  const rounds = state.ship.ammo[slotId] ?? 0;
+function ammoRefund(ship: ShipState, slotId: string): number {
+  const item = fittedItem(ship, slotId);
+  const rounds = ship.ammo[slotId] ?? 0;
   return item?.stats.slot === 'launcher' && rounds > 0 ? resaleValue(rounds * item.stats.launcher.ammoPrice) : 0;
 }
 
 function offerFor(state: GameState, locationId: string, item: GearItem, slot: ShipSlot): GearOffer {
   const current = fittedItem(state.ship, slot.id);
-  const tradeIn = current ? resaleValue(current.price) + ammoRefund(state, slot.id) : 0;
+  const tradeIn = current ? resaleValue(current.price) + ammoRefund(state.ship, slot.id) : 0;
   const net = item.price - tradeIn;
   const fitted = current?.id === item.id;
   let blocked: string | null = null;
@@ -133,7 +133,7 @@ export function sellQuote(state: GameState, locationId: string, slotId: string):
   if (!sellsEquipment(locationId)) blocked = 'No equipment dealer here';
   else if (CORE_SLOT_TYPES.has(slot.type)) blocked = 'Replace it instead: every ship needs one';
   else if (capacityWith(state, slotId, null) < cargoUsed(state.ship.cargo)) blocked = 'Your cargo would not fit';
-  return { item, value: resaleValue(item.price) + ammoRefund(state, slotId), blocked };
+  return { item, value: resaleValue(item.price) + ammoRefund(state.ship, slotId), blocked };
 }
 
 export function sellGear(state: GameState, locationId: string, slotId: string): Result {
@@ -239,16 +239,26 @@ export function repairHull(state: GameState, locationId: string): { points: numb
 
 // ---------------------------------------------------------------- shipyard
 
-/** What the shipyard pays for your ship: hull and fittings (and rounds) at the resale rate, less outstanding repairs. */
-export function tradeInValue(state: GameState): number {
-  const model = shipModel(state.ship.model);
+/** What a shipyard pays for a ship: hull and fittings (and rounds) at the resale rate, less outstanding repairs. */
+export function shipTradeIn(ship: ShipState): number {
+  const model = shipModel(ship.model);
   let value = resaleValue(model.hullPrice);
   for (const slot of model.slots) {
-    const item = fittedItem(state.ship, slot.id);
-    if (item) value += resaleValue(item.price) + ammoRefund(state, slot.id);
+    const item = fittedItem(ship, slot.id);
+    if (item) value += resaleValue(item.price) + ammoRefund(ship, slot.id);
   }
-  const damage = Math.max(0, Math.ceil(hullMax(state.ship) - state.ship.hull));
+  const damage = Math.max(0, Math.ceil(hullMax(ship) - ship.hull));
   return Math.max(0, value - damage * REPAIR_COST_PER_POINT);
+}
+
+/** What the shipyard pays for the ship you fly. */
+export function tradeInValue(state: GameState): number {
+  return shipTradeIn(state.ship);
+}
+
+/** Why the shipyard here will not sell this model to the player (their standing), or null. */
+export function shipStandingBlock(state: GameState, locationId: string, model: ShipModel): string | null {
+  return standingBlock(state, locationId, standingForShip(model.tier as Tier));
 }
 
 export interface ShipOffer {
@@ -264,7 +274,7 @@ export function shipOffers(state: GameState, locationId: string): ShipOffer[] {
   return shipsForSale(locationId).map((model) => {
     const net = model.price - tradeIn;
     const current = model.id === state.ship.model;
-    let blocked: string | null = current ? 'Your current ship' : standingBlock(state, locationId, standingForShip(model.tier as Tier));
+    let blocked: string | null = current ? 'Your current ship' : shipStandingBlock(state, locationId, model);
     if (!blocked && net > state.credits) blocked = 'Not enough credits';
     if (!blocked && performanceOf({ model: model.id, fittings: model.stock }).cargo < cargoUsed(state.ship.cargo)) blocked = 'Sell cargo first: the hold is smaller';
     return { model, tradeIn, net, blocked, current };
