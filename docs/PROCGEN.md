@@ -413,46 +413,48 @@ hand-made stations join in once the opening delivery is done.
 
 ### 10.1 Boards
 
-- A board is a pure function of the station, its time slot and the world
-  (`rng(WORLD_SEED, "contracts", station, slot)`). Boards change every 25 minutes of play (the game
-  clock). Ids are `c.<station>.<slot>.<index>`, so a contract can be found again from its id.
+- A board is a pure function of the station, its time slot and the world, world events included
+  as they stand when it is posted (`rng(WORLD_SEED, "contracts", station, slot)`). Boards change
+  every 25 minutes of play (the game clock). Ids are `c.<station>.<slot>.<index>`, so a contract
+  can be found again from its id.
 - Two contracts per board, one more at large stations and one more at trade ports and military
-  bases (at most four).
+  bases (at most four), plus at most one that answers a world event (§11.3). No board posts two
+  contracts of a kind to the same place.
 - What a station posts depends on its type:
 
-  | Station | Freight | Parcel | Supply | Bounty | Survey |
-  | --- | --- | --- | --- | --- | --- |
-  | Trade port | 3 | 2 | 2 | 1 | |
-  | Customs depot | 1 | 2 | | 3 | |
-  | Shipyard | 1 | 1 | 3 | | |
-  | Mining outpost | 2 | | 2 | 1 | |
-  | Refinery | 2 | 1 | 2 | | |
-  | Factory | 3 | | 2 | | |
-  | Agri station (farm) | 3 | 1 | 1 | | |
-  | Research station | | 2 | 1 | | 3 |
-  | Relay | | 3 | | 1 | |
-  | Military base | | 1 | | 4 | |
-  | Free port | 2 | 2 | 1 | 1 | |
+  | Station | Freight | Parcel | Supply | Bounty | Survey | Escort | Ace | Recovery |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | Trade port | 3 | 2 | 2 | 1 | | 1 | | |
+  | Customs depot | 1 | 2 | | 3 | | | 1 | 1 |
+  | Shipyard | 1 | 1 | 3 | | | | | 1 |
+  | Mining outpost | 2 | | 2 | 1 | | 1 | | |
+  | Refinery | 2 | 1 | 2 | | | 1 | | |
+  | Factory | 3 | | 2 | | | 1 | | |
+  | Agri station (farm) | 3 | 1 | 1 | | | 1 | | |
+  | Research station | | 2 | 1 | | 3 | | | 2 |
+  | Relay | | 3 | | 1 | | | | 1 |
+  | Military base | | 1 | | 4 | | | 2 | |
+  | Free port | 2 | 2 | 1 | 1 | | 1 | 1 | 1 |
 
   The hand-made stations have their own mixes (Horizon Platform posts surveys, Deimos Depot
-  bounties, and so on).
-- Accepting copies the contract into the save (`GameState.contracts`, save format 5), so the board
+  bounties and aces, and so on).
+- Accepting copies the contract into the save (`GameState.contracts`, save format 6), so the board
   moving on or the rules being tuned never changes a contract under the player. At most five
-  generated contracts can be in progress; the 30 most recent finished ones are kept for the
-  journal.
+  generated contracts can be in progress; the 30 most recent finished ones (completed, abandoned
+  or failed) are kept for the journal.
 - A survey of a planet the player has already scanned is not offered.
 
 ### 10.2 Kinds
 
 - **Freight**: the station loads goods it makes (8–30 hold units, worth at most 900 cr at base
   prices; never small arms) for a station within three jumps that wants or trades them. The player
-  pays a deposit of 110% of what the cargo fetches at its destination; it comes back with the pay
-  on delivery, so selling the cargo instead always loses money.
+  pays a deposit of 110% of what the cargo fetches at its destination (events there included); it
+  comes back with the pay on delivery, so selling the cargo instead always loses money.
 - **Courier parcel**: a pocket-sized parcel for any open station within four jumps. No cargo
   space; completes on docking there.
 - **Supply run**: the station is short of a good it wants. The briefing names the nearest station
-  within three jumps that makes it, with its price (the trade computer learns that price). The pay
-  covers the goods at that price plus a 35% markup.
+  within three jumps that makes it, with its price there right now (the trade computer learns that
+  price). The pay covers the goods at that price plus a 35% markup.
 - **Bounty**: a Hollow Wake pack preying near a marked spot (the system's raider den, or one of its
   stations) in a system within two jumps where raiders roam. The pack has the system's threat
   level and one more raider than that level. It appears shortly after the player arrives, a few
@@ -462,46 +464,151 @@ hand-made stations join in once the opening delivery is done.
   standing with the Hollow Wake.
 - **Survey**: fly close enough to a confirmed planet within three jumps for the scanner to log it
   (real catalogued planets only). Pays as soon as the scan is logged.
+- **Escort**: a hauler of the station's owner (independents' otherwise) sets off alongside the
+  player for another station in the same system; only in systems with something to fear (raider
+  packs, or security below 0.75). It keeps to sublight speed and holds position while the player is
+  more than 2.5 km away. A quarter to nearly half of the way along, raiders of the system's threat
+  (at least 1) ambush it from ahead, and half of them go for the hauler until the player draws them
+  off. The contract pays when the hauler docks; it fails if the hauler is destroyed or the player
+  jumps out of the system first.
+- **Ace hunt**: a named Hollow Wake ace (names from invented pools) in a heavy fighter, 80% tougher
+  and 30% deadlier than its hull suggests, with two guards, near a marked spot within three jumps
+  where packs are nasty (threat 2 or more). Always difficulty 3. The guards pay the usual bounty;
+  the ace drops a salvage pod worth 500–900 cr and a pod of 3–6 luxuries, electronics, small arms
+  or ship components, tractored in like any loot.
+- **Recovery**: a wreck (a dead hauler, slowly turning) lies a few kilometres off a station within
+  three jumps. In systems where raiders roam, guards of the system's threat wait by it. Tractor the
+  item aboard (a flight recorder, a sealed cargo pod, a survey drone, a data vault or a courier's
+  strongbox), then bring it back to the station that posted the job. The HUD steers to the item.
+
+Two variations:
+
+- **Urgent** (three in ten parcels and hauls): a bonus of 40% of the pay for finishing within a time
+  limit counted from acceptance on the game clock: 2.5 times the expected trip (45 s to fly out,
+  165 s per jump including two minutes of lane transit, 30 s to dock), and at least 8 minutes.
+  Late deliveries still pay, without the bonus, and cost 2 standing. The HUD counts down.
+- **Follow-ups**: a delivered parcel or haul leads, in 45% of cases (decided by its id, so always
+  the same), to a follow-up offered at its destination: a parcel or haul from there, paying a
+  quarter more per step, up to three steps. The offer waits in the save and lapses after two board
+  changes.
 
 ### 10.3 Pay, difficulty and standing
 
 - **Pay** = 2.5 × the one-way jump fees (always paid in full) + the goods on a supply run + a part
-  that varies by ±10% from one posting to the next: a base (110–200 cr), a danger part times
-  (1 − the destination's security), and the kind's own part (15% of the freight's base value, the
-  35% markup on supply goods, 150 cr per raider per threat level on bounties). Rounded to 5 cr.
+  that varies by ±10% from one posting to the next: a base (110–900 cr by kind), a danger part
+  times (1 − the destination's security), and the kind's own part (15% of the freight's base value,
+  the 35% markup on supply goods, 150 cr per raider per threat level on bounties, 180 cr per threat
+  level on escorts, 150 cr per guard level on recoveries). Work that answers an event pays 30% more
+  on the varying part. Rounded to 5 cr.
 - **Difficulty** 1–3: one more for a lawless destination (security below 0.35) and one more for
-  three jumps or more; supply runs count the trip to the source; bounties take the pack's threat
-  level. The briefing notes the route and the risk.
+  three jumps or more; supply runs count the trip to the source; bounties and escorts take the
+  threat level; aces are always 3. The briefing notes the route and the risk.
 - **Standing** with the station's owner: +2, +4 or +6 by difficulty; difficulty 3 needs Friendly
   standing (10). Independent stations have no gates and give no standing.
 - **Abandoning** a generated contract (from the journal): any deposit is forfeit, the cargo stays
   in the hold, standing with the owner drops by 3, and the contract stays on its board as
-  abandoned so it cannot be taken again. The story jobs cannot be abandoned.
+  abandoned so it cannot be taken again. **Failing** one (an escort lost or left behind) costs the
+  same standing. The story jobs cannot be abandoned.
 
 ### 10.4 Contract guardrails
 
 `validateContracts` (`src/economy/contractGuards.ts`) checks every board at every station over
-forty time slots (`tests/unit/contracts.test.ts`):
+forty time slots, and every follow-up those boards lead to (`tests/unit/contracts.test.ts`):
 
-- ids name their station and time slot and are unique on a board; text is filled in (no
-  `undefined`, `NaN` or braces);
+- ids name their station and time slot (follow-ups their station) and are unique on a board; text
+  is filled in (no `undefined`, `NaN` or braces);
 - rewards between 0 and 4,500 cr; difficulty 1–3; the standing gate matches the difficulty;
 - every target is within the kind's reach, and destinations are open stations;
 - freight: the giver makes the goods, the destination wants or trades them, the deposit is at
   least what the cargo fetches there, and the load is a contract-sized one;
 - supply runs: the giver wants the goods and the named source makes them;
-- bounties: raiders roam the system, and the pack's size and threat match the system's;
+- bounties: raiders roam the system, and the pack's size and threat match the system's (or the
+  raid's);
+- escorts: two stations of the posting station's system, something to fear there, the ambush
+  threat matching the system, a hauler from the catalogue;
+- aces: one named target at the top difficulty, where packs are nasty;
+- recoveries: find and bring back, guards matching the system, a known item;
 - surveys: the planet is a confirmed planet of that system;
+- urgent terms only on parcels and hauls, with at least twice the expected trip and a real bonus;
+- work that answers an event answers one under way where it says, one per board at most;
 - pay beats 1.2 × the jump fees there and back plus 40 cr of expected repairs per difficulty level
   (plus the goods on a supply run);
-- no station's board is empty in more than one time slot in ten, and every kind is posted
-  somewhere.
+- no station's board is empty in more than one time slot in ten; every kind, urgent jobs, event
+  work and follow-ups all occur.
+
+`tests/unit/flightContracts.test.ts` flies an escort with its ambush, an ace with its guards and
+loot, and a wreck's recovery in a real `FlightSession` (in node, without rendering).
 
 ### 10.5 What the player sees
 
 - The job board in the bar: each card shows the kind, who posts it (or *Independent*), where it
-  sends you, the reward and the difficulty; opened, the briefing, the route note, the cargo and
-  the deposit. The accept button shows the reward and the deposit.
+  sends you, the reward and the difficulty, and tags for follow-ups, urgent jobs and work in the
+  news; opened, the briefing, the route note, the cargo, the deposit, the time limit and the chain
+  step. The accept button shows the reward and the deposit.
 - The HUD objective and the map marker follow the story job first, then the other contracts in the
-  order they were accepted; bounties count kills (*k/N*).
+  order they were accepted; bounties count kills (*k/N*), urgent jobs count down, recoveries steer
+  to the wreck's item. The star map marks every system an active contract sends you to.
 - The journal lists contracts in progress, with *Abandon* for the generated ones.
+
+## 11. World events
+
+The neighbourhood does not stand still (`src/economy/events.ts`; rules in
+`src/content/events/rules.ts`). Like the markets, events are a pure function of the world seed and
+the game clock: nothing runs in the background and nothing is saved, and every device sees the
+same events at the same clock. The clock runs while flying, and each jump adds two minutes of lane
+transit, so the world moves on while you travel.
+
+### 11.1 What happens
+
+- **Stations** (every station with a market, except Sol's two, which keep the opening as designed)
+  have one two-hour window after another, each shifted by the station's own phase so the
+  neighbourhood never goes quiet at once. In each window there may be one event, lasting 30–90
+  minutes inside the window, so a station never has two at once:
+  - **shortage** (18% of windows): one good the station wants; its price × 1.2–1.4 and its normal
+    stock × 0.6;
+  - **glut** (10%): one good it makes; price × 0.7–0.85, stock × 1.8;
+  - **boom** (7%): a construction boom, a founders' festival, a research push or a fleet refit
+    raises up to three goods it wants or trades; price × 1.15–1.3, stock × 0.8;
+  - **strike** (5%): the goods it makes; price × 1.2–1.35, stock × 0.5.
+
+  The hand-made stations' three opening goods and small arms are never touched. The lower stock
+  moves the price further through scarcity, and the price bands (0.4–2.2 × base) still hold.
+- **Systems** have three-hour windows:
+  - **raid** (22%, below security 0.75): one more raider threat level (at most 3), one more pack
+    at a time, packs sooner and more often, half the traders; 40–100 minutes;
+  - **security sweep** (12%, in claimed space where packs roam): no packs, one more patrol wing.
+- News text says what an event does in numbers printed from the event itself ("pays up to 49%
+  more than usual"), with the cause from a small pool of phrases.
+
+### 11.2 How the world feels them
+
+- **Markets**: live prices and stock follow the event while it lasts (stock the player moved
+  recovers toward the event's normal stock).
+- **Traffic**: raids and sweeps change the traffic plan when the player arrives or launches, and
+  the HUD says so.
+- **Traders**: a hauler docking in the player's system moves a small load (6–14 units) of something
+  its destination wants or trades, taken from its origin when it came from a station that makes
+  it. Deliveries top short stock up to at most 1.2 × normal and never take a maker below 0.8 ×
+  normal, so traffic refills markets without flooding them. Elsewhere, stock recovers toward
+  normal on its own.
+
+### 11.3 News and work
+
+- **News** reaches two jumps: the bar's News window lists events under way (then those over within
+  the last half hour), nearest first, with how long they have run and how long they have left. The
+  star map marks systems in the news and the system card repeats it. The trader window flags the
+  goods an event moves at that station.
+- **Work**: a station's board posts at most one contract answering an event: a *shortage run* or
+  *boom supplies* into its own shortage or boom (markup 60% instead of 35%), a *surplus haul* out
+  of its glut, or a *raid response* bounty on a raid within two jumps (the raid's threat). Their
+  varying pay is 30% higher.
+
+### 11.4 Event guardrails
+
+`validateEvents` (`src/economy/eventGuards.ts`, run over 300 hours of clock in
+`tests/unit/events.test.ts`) checks that events never overlap at a place or spill out of their
+window, never touch Sol or the opening goods, only concern goods the station deals in the right
+way, keep effects inside the rules, state the change they cause, keep live prices inside their
+bands with buy above sell, put raids only below security 0.75 with the threat one above the
+system's, put sweeps only where packs roam in claimed space, happen at a sensible rate (3–25
+station events under way on average) and cover every kind.

@@ -109,11 +109,13 @@ selling the cargo, or scanning Proxima b early are all handled: the objective te
 is: buy 6 medical supplies → dock at Deimos Depot (grants interstellar clearance) → scan Proxima b
 → deliver at Meridian Outpost. The raider ambush near Mars is part of that leg. Follow-up
 contracts exist at Barnard, Meridian and Sirius. Every other contract is generated per station and
-time slot (freight, parcels, supply runs, bounties, surveys: [PROCGEN.md §10](PROCGEN.md#10-contracts)).
+time slot (freight, parcels, supply runs, bounties, surveys, escorts, ace hunts and recoveries:
+[PROCGEN.md §10](PROCGEN.md#10-contracts)), and world events move prices and raiders
+([§11](PROCGEN.md#11-world-events)).
 
 ## Saves (`src/app/save/`)
 
-- The whole solo state is one versioned record (`GameState`, format v5), stored in IndexedDB. Each
+- The whole solo state is one versioned record (`GameState`, format v6), stored in IndexedDB. Each
   write is a single transaction that also rotates the previous save into a backup slot.
   localStorage is the fallback, then memory.
 - The game saves after docking, trades, rewards, jumps, discoveries and encounter outcomes, every

@@ -39,12 +39,15 @@ This is an honest list of what the prototype does not do yet, or what has not be
 ## Deliberate prototype limits
 
 - Only the first delivery chain is scripted as a story, with three short optional jobs after it.
-  Everything else on the job boards is generated (freight, parcels, supply runs, bounties,
-  surveys): contracts do not chain into stories, have no deadlines, and do not react to what
-  happens in the world (a bounty pack exists only while you are in its system).
-- Market stock only moves when the player trades; traders flying the lanes are scenery for the
-  economy (they do not restock stations), and nothing is simulated in systems the player is not in.
-- Traffic and raider packs exist only around the player: nothing persists after you jump or dock.
+  Everything else on the job boards is generated. Follow-ups chain a delivery into up to three
+  steps, but nothing tells a longer story yet.
+- World events are a pure function of the clock: they do not react to what the player does (a
+  shortage does not end sooner because you filled it; destroying raiders does not end a raid).
+  Outside the player's system, stock only recovers toward normal; traders move goods only in the
+  system the player is in.
+- Traffic and raider packs exist only around the player: nothing persists after you jump or dock,
+  except the packs and wrecks of the player's own contracts, which are waiting when they come back.
+- Escorts run between two stations of one system; there are no escorts across jumps.
 - Generated stations have generated exteriors and interiors (twelve kinds in four owner
   palettes). Known rough edges: the half-built hull outside a shipyard bay reads as a flat block
   on the phone deck view, some white crates on factory conveyors bloom under the lamps, and mining

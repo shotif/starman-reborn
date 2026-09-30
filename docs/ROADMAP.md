@@ -18,7 +18,7 @@ are relative: S, M, L.
 
 ## Proposed next increments
 
-### 1. A world that moves: events, news and restocking ⏳ (M)
+### 1. A world that moves: events, news and restocking ✅
 
 Trading is the core loop, and today a route that pays once pays forever. Events give reasons to
 change plans, reward keeping informed, and make the News room worth opening.
@@ -38,7 +38,10 @@ change plans, reward keeping informed, and make the News room worth opening.
   opening route is left alone during the tutorial, every event ends, and the tests sample the
   tick over thousands of clock values.
 
-### 2. Contracts II: escorts, deadlines, named targets and chains ⏳ (M)
+Shipped as proposed ([PROCGEN.md §11](PROCGEN.md#11-world-events)); Sol's stations and the opening
+goods are never touched, and each jump now adds two minutes of lane transit to the clock.
+
+### 2. Contracts II: escorts, deadlines, named targets and chains ✅
 
 Builds straight on the contract boards, while they are fresh, and gives fighters and couriers
 something new on each visit.
@@ -56,6 +59,10 @@ something new on each visit.
   like the stations) with the tractor beam.
 - **Guardrails**: escort routes only through systems the trader can fly, named targets only
   where packs roam, chains always end, deadlines reachable with margin.
+
+Shipped ([PROCGEN.md §10](PROCGEN.md#10-contracts)): escorts run between two stations of one
+system (the hauler holds position if you fall behind), aces drop credits and a cargo pod, and
+follow-ups are parcels or hauls. Marking every contract on the star map came with it.
 
 ### 3. Law and consequences: customs, contraband and the outlaw path ⏳ (M–L)
 
@@ -133,7 +140,7 @@ The opening shows the game can tell a small story; three short arcs give the san
 
 ### Quick wins (S each)
 
-- Mark every active contract on the star map, not only the first one.
+- ~~Mark every active contract on the star map, not only the first one.~~ Done with increment 2.
 - Sort and filter the job board (reward, reward per jump, kind).
 - A short sound and comm line when a contract pays.
 - Remember the last open window at each station.

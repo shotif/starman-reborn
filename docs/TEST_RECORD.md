@@ -11,7 +11,7 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | --- | --- | --- |
 | TypeScript typecheck (app + scripts/tests) | `npm run typecheck` | Pass |
 | Astronomy data validation | `npm run data:validate` | Pass (2 warnings: data is provisional) |
-| Unit tests | `npm test` | Pass: 327 tests in 16 files |
+| Unit tests | `npm test` | Pass: 345 tests in 18 files |
 | Production build | `npm run build` | Pass |
 | Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 9 passed (3 touch-only tests skipped) |
 | Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 11 passed (1 desktop-only test skipped) |
@@ -52,15 +52,31 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   rules are caught; a balance table snapshot records every ship and item.
 - `jobs.test.ts`: the full delivery chain, detours (other systems, selling and re-buying cargo),
   early scans, reputation-gated contracts, visit-only couriers, rescue after defeat.
-- `contracts.test.ts`: every station's contract board passes the guardrails over forty time
-  slots (reach, pay against fees and repairs, deposits against the cargo's value, bounties only
-  where raiders roam, surveys of confirmed planets) and is deterministic; the hand-made stations
-  post only after the first delivery; each kind played through (freight loads cargo against a
-  deposit and refunds it, parcels complete on docking, supply runs brief the source, bounties
-  count kills, surveys complete on a scan and are not offered twice); refusals without hold space
-  or credits; abandoning (deposit forfeit, cargo kept, standing lost, no second try, story jobs
-  kept); the five-contract limit; accepted contracts survive later boards and the save; v4 → v5
-  migration and damaged contracts rejected.
+- `contracts.test.ts`: every station's contract board, and every follow-up it leads to, passes the
+  guardrails over forty time slots (reach, pay against fees and repairs, deposits against the
+  cargo's value, bounties and aces only where raiders roam, escorts only where there is something
+  to fear, surveys of confirmed planets, time limits that can be kept, event work matching an event
+  under way) and is deterministic; the hand-made stations post only after the first delivery; each
+  kind played through (freight loads cargo against a deposit and refunds it, parcels complete on
+  docking, supply runs brief the source, bounties count kills, surveys complete on a scan and are
+  not offered twice, escorts pay on arrival and fail when lost or left behind, aces pay for one
+  named kill, recoveries find the item and bring it back); urgent jobs pay the bonus in time and
+  cost standing when late; follow-ups are offered at the destination, pay more, can be taken, and
+  lapse; refusals without hold space or credits; abandoning (deposit forfeit, cargo kept, standing
+  lost, no second try, story jobs kept); the five-contract limit; accepted contracts survive later
+  boards and the save; v4 → v5 and v5 → v6 migrations and damaged contracts rejected.
+- `flightContracts.test.ts`: a real `FlightSession` in node flies an escorted hauler that sets off
+  with the player, is ambushed part-way and ends docked or lost; an ace with two guards that is
+  tougher than a guard in the same ship and drops credits and a cargo pod; and a wreck, guarded,
+  whose item the tractor beam pulls in.
+- `events.test.ts`: world events pass their guardrails over 300 hours of clock (no overlaps, only
+  goods the station deals in, never Sol or the opening goods, prices in their bands, news text
+  quoting the change, raids and sweeps only where they can happen, a sensible rate, every kind);
+  they are a pure function of the clock; a shortage raises what a station pays and a glut lowers
+  what it asks; moved stock recovers toward the event's normal stock; raids bring nastier packs and
+  fewer traders and sweeps clear them; news reaches two jumps, nearest first, and keeps recent
+  events for half an hour; boards post a shortage run, a surplus haul and a raid response; traders
+  top short stock up without flooding a market or emptying a maker; each jump moves the clock on.
 - `save.test.ts`: v1, v2 and v3 migrations (the v2 courier and its upgrades become catalogue
   items; v3 saves gain untouched markets),
   unknown ships, fittings and rounds rejected, future/damaged save rejection, IndexedDB round trip with
