@@ -871,7 +871,7 @@
 
 .ratings .rating {
   display: grid;
-  grid-template-columns: 7rem minmax(6rem, auto) minmax(4rem, 1fr) auto;
+  grid-template-columns: 7rem 8.5rem minmax(4rem, 1fr) 9.5rem;
   align-items: center;
   gap: 0.35rem 0.75rem;
 }
