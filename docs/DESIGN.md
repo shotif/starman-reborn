@@ -113,12 +113,13 @@ time slot (freight, parcels, supply runs, bounties, surveys, escorts, ace hunts 
 and at free ports and raider dens smuggling runs and piracy:
 [PROCGEN.md §10](PROCGEN.md#10-contracts)), world events move prices and raiders
 ([§11](PROCGEN.md#11-world-events)), the law fines crimes and contraband
-([§12](PROCGEN.md#12-the-law-and-the-outlaw-path)), and ratings, the codex and milestones track
-the career ([§13](PROCGEN.md#13-goals)).
+([§12](PROCGEN.md#12-the-law-and-the-outlaw-path)), ratings, the codex and milestones track
+the career ([§13](PROCGEN.md#13-goals)), and three hand-written faction arcs tell a story each
+([§14](PROCGEN.md#14-story-arcs)).
 
 ## Saves (`src/app/save/`)
 
-- The whole solo state is one versioned record (`GameState`, format v7), stored in IndexedDB. Each
+- The whole solo state is one versioned record (`GameState`, format v8), stored in IndexedDB. Each
   write is a single transaction that also rotates the previous save into a backup slot.
   localStorage is the fallback, then memory.
 - The game saves after docking, trades, rewards, jumps, discoveries and encounter outcomes, every

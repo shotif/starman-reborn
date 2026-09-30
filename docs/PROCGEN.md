@@ -626,8 +626,9 @@ Hollow Wake keeps none, but remembers (`src/economy/law.ts`; rules in `src/conte
   - destroying one: 1,000 cr and −15 standing (and +4 with the Hollow Wake);
   - leaving a patrol's cargo scan before it finishes: 400 cr and −5 standing;
   - contraband found: confiscated, fined at twice its base value, −3 standing.
-- The player's guns hit a lawful ship only when it is the selected target, so no crime happens by
-  accident in a crossfire.
+- The player's guns hit a lawful ship only when it is the selected target or it is attacking the
+  player, so no crime happens by accident in a crossfire. Firing back at a lawful ship that is
+  attacking you is self-defence and is not fined; destroying it still is.
 - **Hunted**: while a pilot owes a faction fines, or its standing is Hostile (−30 or worse), its
   patrols attack on sight within 6 km and its stations give **emergency docking** only: the deck
   (hull repairs at a 50% surcharge) and the bar's News window, where the **customs desk** takes
@@ -646,8 +647,10 @@ Hollow Wake keeps none, but remembers (`src/economy/law.ts`; rules in `src/conte
   spoofers. Ordinary contracts never carry contraband (or small arms).
 - **Patrol scans** in claimed space at security 0.5 or more: a patrol passing within 1.2 km scans
   the hold (always with contraband aboard, a quarter of the time otherwise; at most one scan a
-  flight). It keeps station off the player's wing for 5 seconds; flying more than 2.2 km away first
-  is evasion. The HUD counts the scan down.
+  flight). The ship drops out of cruise and the Go To autopilot holds until the scan is done, so the
+  autopilot never runs from a scan; the patrol keeps station off the player's wing for 5 seconds,
+  and flying more than 2.2 km away first (the pilot's own choice) is evasion. The HUD counts the
+  scan down.
 - **Customs** at customs depots and military bases of a lawful owner scans every ship that docks.
 
 ### 12.3 The outlaw path
@@ -699,7 +702,7 @@ Three ratings follow the career record and show in the journal with the next ran
 
 | Rating | Score | Ranks |
 | --- | --- | --- |
-| Combat | raiders and bounty hunters destroyed | Green, Blooded (3), Steady (10), Hardened (25), Veteran (50), Ace (100), Legend (200) |
+| Combat | hostile ships and den turrets destroyed | Green, Blooded (3), Steady (10), Hardened (25), Veteran (50), Ace (100), Legend (200) |
 | Trade | contract and survey pay, plus a quarter of sales | Hauler, Dealer (2,000), Merchant (8,000), Broker (20,000), Magnate (50,000), Tycoon (120,000) |
 | Exploration | 3 per system visited, 1 per codex entry | Stay-at-home, Drifter (10), Wayfarer (30), Pathfinder (60), Surveyor (100), Cartographer (150) |
 
@@ -707,18 +710,20 @@ Ace hunts (§10.2) need a Hardened combat rating.
 
 ### 13.3 Milestones
 
-Seventeen milestones, each earned once and toasted when it happens: the first and the 25th
+Twenty milestones, each earned once and toasted when it happens: the first and the 25th
 contract, 10,000 and 50,000 credits in hand, flying a Mk II and a Mk III ship, ten and all
 systems visited, ten confirmed planets scanned, half and all of the codex, ten and fifty raiders
 down, Friendly with the Transit Authority and with the Frontier Cooperative, trusted by the Hollow
-Wake, and a top rank in any rating. The journal lists those earned.
+Wake, a top rank in any rating, and each of the three story arcs (§14) finished. The journal lists
+those earned.
 
 ### 13.4 What next
 
 After the opening chain, when no contract is under way, the HUD's objective line suggests one
 concrete thing from what the player already knows, in this order: pay fines owed (and where); sell
-goods in the hold where the best known price is; catalogue a body of this system the codex lacks;
-run a known trade route from the last dock; or dock at a station here with a job board. The hint
+goods in the hold where the best known price is; see someone with a story mission waiting (§14);
+catalogue a body of this system the codex lacks; run a known trade route from the last dock; or dock
+at a station here with a job board. The hint
 is worked out again after a scan, a launch or a jump.
 
 ### 13.5 Progress saves
@@ -726,3 +731,92 @@ is worked out again after a scan, a launch or a jump.
 Save version 7 adds the codex, the surveys sold, the milestones earned, the fines owed and the
 career's sales and contract pay. Older saves start their codex from the bodies already scanned,
 with no fines and no milestones yet (they are awarded at the next save if already earned).
+
+## 14. Story arcs
+
+Three short arcs give the sandbox a spine, one per faction (`src/content/story/arcs.ts`, played by
+`src/economy/story.ts`). Unlike everything else in this document they are written by hand, not
+generated, and reviewed like code: the guardrails below check them, unit tests play each one
+through, and a browser test flies the first steps.
+
+### 14.1 How an arc is built
+
+- A **mission** is a job with story data: its arc and step, the character who gives it, and its
+  words. Its objectives are the contract objectives (dock, deliver, scan, escort, recover, bounty,
+  piracy) plus three made for the story: a **choice** made at a dock, a **den assault** and a **den
+  defence**.
+- **Beats** are the words: the briefing (in the giver's voice, sometimes following an earlier
+  choice), lines said when an objective is done, comms when the player arrives in the system of the
+  objective in hand, and a debrief when the mission is complete. Each is told once: as dialogue at
+  a dock, as comms in flight. The journal keeps each arc's progress, the choices made and the last
+  words said.
+- **Gating**: the first mission of an arc shows at its giver's dock from the start (locked until
+  its conditions are met); every later one shows only once the step before is done, and after a
+  choice only the way it went. Finished missions leave the board. The two lawful arcs start after
+  the opening delivery; the Wake's arc is given at a raider den, to pilots the Wake trusts.
+- **A way back**: a story mission that fails (an escort lost or left behind, a convoy that loses too
+  many ships) goes back to its giver to try again; nothing in an arc is lost for good except by
+  choice.
+- **Choices** have two or three options, each with standing (and often credits) attached, shown
+  before the player decides. An option may end the arc early: the arc is then over, with no
+  finale. A deal with the law (in the Wake's arc) is a pardon: every fine cleared and lawful
+  standing lifted to Wary.
+- Save version 8 records the choices made, the beats told and the dens knocked out.
+
+### 14.2 The three arcs
+
+| Arc | Faction and giver | Steps | Choice | Finale |
+| --- | --- | --- | --- | --- |
+| Clean Manifests | Transit Authority: Rhea Castell, auditor, at Halcyon Ring | an audit at Barnard Transit Relay, a flight recorder from a wreck in Ross 154, a witness escorted across Ross 154 | what happens to the evidence against a corrupt customs officer: the Frontier press, the Authority's own hands, or sold back (ends the arc) | an assault on Maw Roost, the den at Wolf 1061 |
+| The Stonecrop Blight | Frontier Cooperative: Amara Quist, relief coordinator, at Meridian Outpost | a visit to Stonecrop Gardens and Dawnfield Institute at Procyon, clean water ice hauled from a mine, a sample canister from a wreck | seal the Gardens, or burn the worst bays and reseed | a relief convoy of three haulers under two ambushes |
+| Salt's Crew | Hollow Wake: Salt, a Wake captain, at Graveyard Nest | transponder spoofers smuggled into Ross 154, two Authority haulers taken, a strongbox recovered in Wolf 1061 | what Salt is told about Juno Fiske, who wrote a list of Nests for the Authority: everything, a warning to Juno first, or the Nest sold to the Authority (a pardon, and the end of the arc) | holding Graveyard Nest against an Authority sweep |
+
+Each finished arc is a milestone. Standing moves with every step, most of all at the choices and
+finales (the Wake's arc makes an outlaw of anyone who finishes it).
+
+### 14.3 Finales in flight
+
+Rules in `src/content/dens/rules.ts`.
+
+- **Convoy**: the ships set off together alongside the player and wait when left behind; ambushes
+  come in waves as the leading ship passes a fifth of the route and three quarters of it. Two of
+  the three must arrive; losing more fails the convoy.
+- **Den assault**: three gun turrets (240 hull, 90 shield, 1.5 km range) stand around the den, and
+  the reactor pod on its far side (900 hull) is shielded while any turret stands. Two raiders defend
+  it, and a wing of three Transit Authority fighters flies with the player, keeping station off
+  their wing and going for raiders and turrets near them. Turrets destroyed stay destroyed if the
+  player leaves and comes back.
+- **A den knocked out** goes dark for six hours of game clock: it is shown wrecked, sends no raider
+  packs and cannot be docked at, even by friends of the Wake. Then it is rebuilt.
+- **Den defence**: a sweep of lawful ships comes from the jump beacon in two waves (one ship more
+  than must be downed), the second when the first is down to one ship. Two of the den's crews fly
+  with the player. The sweep's ships attack the player on sight, so the player's guns hit them
+  without selecting them; each one destroyed is still a crime (§12.1).
+
+### 14.4 Story guardrails
+
+`validateStory` (`src/economy/storyGuards.ts`, run in `tests/unit/story.test.ts`, which also feeds
+it broken arcs to prove it catches them) checks that:
+
+- each arc has four to six missions in a chain, step by step, ending in its one finale, the lawful
+  arcs after the opening delivery;
+- every speaker exists and gives missions where they are; every place is a real, open station in
+  the system named, within four jumps of where the mission is given; lawful arcs never dock at a
+  raider den; den fights are finales at dens;
+- choices offer two or three options, each changing standing (by at most 50) and paying sensibly;
+  at least one option goes on, the next step follows exactly the options that go on, and every
+  option has its own words wherever later words depend on it;
+- lawful arcs never ask for a crime (piracy, a den defence, contraband); the Wake's arc starts only
+  for pilots it trusts;
+- missions pay 300–6,000 cr (decisions pay through their options) and each finale pays the most in
+  its arc; escorts fly real catalogue ships and convoys can be brought home;
+- every briefing, line and objective has words, within length limits.
+
+### 14.5 Writing for the story
+
+- The people, their stations and what happens to them are fiction and marked so; the stars and
+  planets they live around are real and are never given invented properties (a story may send
+  the player to scan a planet, never tell them something about it the catalogues do not).
+- Short plain lines: a briefing under 520 characters, a line under 300. British spelling. The giver
+  speaks the briefing; scene lines are in the third person.
+- No real people, organisations or other games' names, places or plots.

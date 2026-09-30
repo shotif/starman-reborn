@@ -38,9 +38,11 @@ This is an honest list of what the prototype does not do yet, or what has not be
 
 ## Deliberate prototype limits
 
-- Only the first delivery chain is scripted as a story, with three short optional jobs after it.
-  Everything else on the job boards is generated. Follow-ups chain a delivery into up to three
-  steps, but nothing tells a longer story yet.
+- The written story is the opening chain, three short optional jobs and three faction arcs of five
+  missions each; everything else on the job boards is generated. The arcs do not know about each
+  other beyond standing (finishing the Transit Authority's arc does not change the Wake's), the
+  characters are not in the bars as people you can walk up to, and a knocked-out den is the only
+  lasting mark an arc leaves on the world.
 - World events are a pure function of the clock: they do not react to what the player does (a
   shortage does not end sooner because you filled it; destroying raiders does not end a raid).
   Outside the player's system, stock only recovers toward normal; traders move goods only in the

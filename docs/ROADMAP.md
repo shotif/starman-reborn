@@ -113,7 +113,7 @@ rating), a codex of 91 real bodies with survey sales to research stations and a 
 whole sky, seventeen milestones, and a hint that puts fines first, then the hold, the codex, a
 known route and a job board nearby.
 
-### 5. Faction story arcs ⏳ (L)
+### 5. Faction story arcs ✅
 
 The opening shows the game can tell a small story; three short arcs give the sandbox a spine.
 
@@ -123,6 +123,13 @@ The opening shows the game can tell a small story; three short arcs give the san
   flight, and a choice or two with standing consequences.
 - Finales use increments 2 and 3 (a convoy defence, an assault on a raider den).
 - Written by hand, reviewed, and tested as browser journeys like the opening.
+
+Shipped ([PROCGEN.md §14](PROCGEN.md#14-story-arcs)): Clean Manifests (a customs scandal, ending in
+an assault on a raider den with a Transit Authority wing), The Stonecrop Blight (a colony's crops
+failing at Procyon, ending in a convoy defence) and Salt's Crew (for pilots the Wake trusts, ending
+in holding a den against an Authority sweep); five missions each, with dialogue at the docks, comms
+in flight and a choice each, two of which can end their arc early. Den turrets, a reactor and a
+lawful wing came with it, ahead of increment 6.
 
 ### 6. Combat depth ⏳ (L)
 
@@ -222,7 +229,7 @@ provisional: the archive snapshot (see the parallel track above and [KNOWN_GAPS.
 
 ### Story and polish
 
-Folded into increment 5 and the polish track.
+The opening chain and three faction arcs (increment 5); the rest is in the polish track.
 
 ## Text generation
 

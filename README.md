@@ -14,7 +14,9 @@ bounties, planet surveys, escorts, ace hunts and wreck recoveries, some urgent, 
 follow-ups), and 35 ships in six classes from five makers with over 100 pieces of equipment.
 The law has teeth: fines, cargo scans, contraband, bounty hunters and pardons, and an outlaw path
 of piracy and smuggling that opens the raider dens' black markets. Pilot ratings, a codex of the
-real sky to fill by scanning, milestones and a hint of what to do next give the sandbox goals.
+real sky to fill by scanning, milestones and a hint of what to do next give the sandbox goals, and
+three hand-written faction story arcs, with choices and finales (a den assault, a convoy defence
+and a den under siege), give it a spine.
 Ships, equipment, the world, the economy, events, contracts and the law are generated from rule
 files and checked by automated guardrails ([docs/PROCGEN.md](docs/PROCGEN.md)).
 
@@ -104,10 +106,11 @@ src/world/     local system scenes (hand-made and generated), flight session, tr
 src/content/   rule-driven generators and guardrails (docs/PROCGEN.md): ships and equipment,
                the world (src/content/world: lanes, territory, stations) and the economy
                (src/content/economy: goods, market profiles), contract rules (src/content/contracts),
-               event rules (src/content/events), the law (src/content/law) and progress
-               (src/content/progress)
+               event rules (src/content/events), the law (src/content/law), progress
+               (src/content/progress), the story arcs (src/content/story) and dens under fire
+               (src/content/dens)
 src/economy/   live markets, world events, trade, cargo, outfitter and shipyard, factions, jobs and
-               generated contracts, the law, ratings, the codex and milestones
+               generated contracts, the law, ratings, the codex, milestones and the story
 src/audio/     procedural Web Audio music and sound effects
 src/ui/        HUD, touch controls, station screens, encyclopedia, styles
 scripts/       astronomy snapshot, catalogue extraction (HYG, Open Exoplanet Catalogue), dataset

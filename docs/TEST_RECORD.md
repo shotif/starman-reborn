@@ -90,7 +90,8 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 - `flightLaw.test.ts`: a real `FlightSession` in node: the player's bolts hit a lawful ship only
   when it is the selected target; firing on a patrol is reported once and turns it; patrols hunt a
   pilot owing fines; a passing patrol scans a hold with contraband (staying finishes the scan,
-  fleeing is evasion); bounty hunters come for big fines in secure space and pay nothing when
+  fleeing is evasion); the autopilot, cruising, holds for a scan coming up from behind instead of
+  carrying the pilot away from it; bounty hunters come for big fines in secure space and pay nothing when
   downed; raiders spare a pilot the Wake trusts until provoked; the dens take that pilot in.
 - `progress.test.ts`: the codex lists exactly the catalogued stars, confirmed planets and the Solar
   System's bodies, each scannable in its scene; a scan counts once and off-catalogue bodies are
@@ -98,6 +99,25 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   milestones are earned once and the whole sky pays the grant; the what-next hint puts fines
   first, then the hold, the codex, a route and a job board; v6 saves start the codex from the
   bodies already scanned.
+- `story.test.ts`: the story arcs pass their guardrails, and broken arcs (a missing step, a crime
+  in a lawful arc, a den as a dock, a place out of reach, choices that all end or that the next
+  step does not follow, missing words, a stranger speaking, a cheap finale, the Wake's arc open to
+  anyone) are caught; only the step in hand of each arc shows, and a finished step leaves the
+  board; Clean Manifests is played through (words at the relay told once, comms in Ross 154, the
+  wreck, the witness, a choice that pays and moves standing, a finale whose words follow the
+  choice, the milestone); selling the evidence ends the arc with no finale; choices are made at
+  their dock, once; The Stonecrop Blight's water run and convoy (two ships lost fails it and it goes
+  back to its giver, two of three in completes it); a story escort left behind goes back to its
+  giver; Salt's Crew needs the Wake's trust, hands over its contraband, counts haulers taken, and
+  its betrayal is a pardon that ends the arc; the Wake's finale counts sweep ships; a knocked-out
+  den is rebuilt after six hours; v7 saves gain an empty story, damaged story data rejected.
+- `flightStory.test.ts`: a real `FlightSession` in node flies a convoy of three that sets off
+  together, is ambushed in two waves along its route and reports each ship lost; a den assault
+  with three turrets that fire on a pilot in range, a reactor that shrugs off hits until the
+  turrets are down, two guards and a wing of three that keeps station, ending with the den wrecked
+  and silent; an assault with turrets already destroyed bringing only the rest; a knocked-out den
+  closed even to Wake friends; and a sweep coming for a den in waves, whose ships can be hit
+  without selecting them, each kill counted (and a crime), the second wave when the first is spent.
 - `save.test.ts`: v1, v2 and v3 migrations (the v2 courier and its upgrades become catalogue
   items; v3 saves gain untouched markets),
   unknown ships, fittings and rounds rejected, future/damaged save rejection, IndexedDB round trip with
@@ -161,6 +181,9 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 - `law.spec.ts`: a wanted pilot sees the fines on the HUD, docks at Halcyon Ring for repairs and
   the customs desk only (no trader, no job board), buys a pardon and has the whole station back;
   the journal shows the three ratings and the codex.
+- `story.spec.ts`: the first step of Clean Manifests flown for real (the relay's words, the debrief
+  and pay at Halcyon Ring), then the choice about Oren Vail made in its dialogue, and the journal's
+  record of the arc.
 - `screenshots.spec.ts`: title, job board, buy dialog, station deck, shipyard, outfitter, flight
   HUD and star map at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
