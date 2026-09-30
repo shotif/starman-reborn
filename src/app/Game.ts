@@ -1,3 +1,4 @@
+import { gameJulianDate } from '../data/solar.ts';
 import type { Lingering } from './state.ts';
 import { TRAFFIC } from '../world/traffic/plan.ts';
 import { raidKill } from '../economy/answers.ts';
@@ -148,6 +149,8 @@ export class Game {
   private readonly screenLayer: HTMLElement;
   private readonly fpsEl: HTMLElement;
   private system: SystemScene | null = null;
+  /** The game day Sol's scene was laid out for (null for other systems). */
+  private systemDay: number | null = null;
   private flight: FlightSession | null = null;
   private dockedView: DockedView | null = null;
   private station: StationHub | null = null;
@@ -377,8 +380,13 @@ export class Game {
     }, 400);
   }
 
+  /** The game date (Julian): when the save began plus the time played; Sol's planets sit where they really are then. */
+  private gameDate(): number | null {
+    return this.state ? gameJulianDate(this.state.createdAt, this.state.clock) : null;
+  }
+
   private buildInterior(locationId: string): StationInterior | null {
-    const def = sceneDefFor(getLocation(locationId).systemId);
+    const def = sceneDefFor(getLocation(locationId).systemId, this.gameDate());
     const station = def.stations.find((s) => s.locationId === locationId);
     if (!station) return null;
     // The light through the bay comes from the nearest star (Meridian orbits Proxima, not A or B).
@@ -472,11 +480,15 @@ export class Game {
   // ------------------------------------------------------------------ scenes
 
   private loadSystem(systemId: SystemId): void {
-    if (this.system && this.system.def.systemId === systemId) return;
+    // Sol is laid out for the game date: rebuilt when the day changes (and after the title's schematic Sol).
+    const jd = this.gameDate();
+    const day = systemId === 'sol' && jd !== null ? Math.floor(jd) : null;
+    if (this.system && this.system.def.systemId === systemId && this.systemDay === day) return;
     this.disposeFlight();
     this.dockedView = null;
     this.system?.dispose();
-    this.system = new SystemScene(sceneDefFor(systemId), this.artCtx);
+    this.system = new SystemScene(sceneDefFor(systemId, jd), this.artCtx);
+    this.systemDay = day;
     this.system.scene.add(this.camera);
   }
 

@@ -5,7 +5,7 @@ import { BARNARD_SCENE } from './barnard.ts';
 import { catalogSceneDef } from './generated.ts';
 import { EPSILON_ERIDANI_SCENE } from './epsilonEridani.ts';
 import { SIRIUS_SCENE } from './sirius.ts';
-import { SOL_SCENE } from './sol.ts';
+import { SOL_SCENE, solScene } from './sol.ts';
 
 /** The hand-made scenes. */
 export const SCENE_DEFS: Record<SystemId, SystemSceneDef> = {
@@ -16,7 +16,11 @@ export const SCENE_DEFS: Record<SystemId, SystemSceneDef> = {
   'epsilon-eridani': EPSILON_ERIDANI_SCENE,
 };
 
-/** The scene of any system: hand-made for the five originals, generated for the catalogue systems. */
-export function sceneDefFor(systemId: SystemId): SystemSceneDef {
+/**
+ * The scene of any system: hand-made for the five originals, generated for the catalogue systems.
+ * `jd` is the game date (a Julian date): Sol's planets then sit where they really are.
+ */
+export function sceneDefFor(systemId: SystemId, jd: number | null = null): SystemSceneDef {
+  if (systemId === 'sol' && jd !== null) return solScene(jd);
   return SCENE_DEFS[systemId] ?? catalogSceneDef(systemId);
 }

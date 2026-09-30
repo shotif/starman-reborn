@@ -42,6 +42,10 @@ export const SOURCES = {
     label: 'Open Exoplanet Catalogue',
     url: 'https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue',
   },
+  jplApproxPositions: {
+    label: 'JPL: Approximate Positions of the Planets',
+    url: 'https://ssd.jpl.nasa.gov/planets/approx_pos.html',
+  },
   gaiaArchive: {
     label: 'ESA Gaia archive',
     url: 'https://gea.esac.esa.int/archive/',

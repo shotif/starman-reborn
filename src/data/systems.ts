@@ -197,9 +197,9 @@ const CURATED: readonly CuratedSystem[] = [
         source: SOURCES.nasaPlanets,
       },
       {
-        text: 'In flight, planet sizes, colours and orbital spacing are schematic, and planet positions do not match today’s sky.',
+        text: 'In flight, the planets sit in their real directions from the Sun on the game date, worked out from JPL’s approximate positions of the planets; their sizes, colours and spacing are schematic.',
         dataClass: 'estimated',
-        source: SOURCES.nasaPlanets,
+        source: SOURCES.jplApproxPositions,
       },
     ],
     fiction:
