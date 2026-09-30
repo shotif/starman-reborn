@@ -33,7 +33,9 @@ test('salvage fitted, systems repaired, decoys bought, and a wingman who flies w
   expect(s.ship.systems).toEqual({ engines: 0, guns: 0, shields: 0 });
   expect(s.ship.decoys).toBe(2);
 
-  await openWindow(page, 'room-bar', 'station-jobs', 'jobs-window');
+  // Pilots for hire sit in the bar with everyone else (docs/PROCGEN.md §16).
+  await openWindow(page, 'room-bar', 'station-people', 'people-window');
+  await page.locator('[data-testid^="person-w."]').first().click();
   const hire = page.locator('[data-testid^="hire-"]').first();
   await expect(hire).toBeVisible();
   await hire.click();
