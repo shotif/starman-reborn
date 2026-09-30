@@ -155,6 +155,22 @@ describe('the law in flight', () => {
     expect(flee.calls.scan).toEqual([['evaded', 'sta']]);
   });
 
+  it('the autopilot holds for a cargo scan instead of carrying the pilot away from it', () => {
+    const f = flightIn('sol', { patrolWings: 1 }, 'sta', (s) => (s.ship.cargo = { stims: 2 }));
+    f.run(3);
+    // Cruising on autopilot when a patrol comes alongside.
+    f.flight.beginGoTo('station:mars-depot', true);
+    expect(f.run(30, () => f.flight.player.speed > 450)).toBe(true);
+    const p = f.npcs().find((n) => n.role === 'patrol')!;
+    // It comes up from behind: an autopilot that kept cruising would leave it far behind.
+    const ahead = f.flight.player.forward(new THREE.Vector3());
+    p.body.position.copy(f.flight.player.position).addScaledVector(ahead, -900);
+    expect(f.run(30, () => !!f.calls.scan)).toBe(true);
+    expect(f.calls.scan).toEqual([['complete', 'sta']]);
+    // Then it carries on.
+    expect(f.flight.autopilotMode).toBe('goto');
+  });
+
   it('bounty hunters come for a pilot owing big fines in secure space, and pay nothing when downed', () => {
     const { flight, run, npcs, log, calls } = flightIn('sol', {}, 'sta', (s) => (s.law.fines.sta = LAW.hunters.fines));
     expect(run(LAW.hunters.delay + 5, () => npcs().some((n) => n.hunter))).toBe(true);

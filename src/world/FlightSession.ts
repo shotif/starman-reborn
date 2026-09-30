@@ -1102,6 +1102,12 @@ export class FlightSession {
   private runGoTo(dt: number): void {
     const ap = this.autopilot;
     if (ap.mode !== 'goto') return;
+    // The autopilot holds for a patrol's cargo scan: it never runs from one on the pilot's behalf.
+    if (this.scan) {
+      Object.assign(this.controls, neutralControls());
+      this.player.requestCruise(false);
+      return;
+    }
     const leg = ap.legs[0];
     if (!leg) {
       this.autopilot = { mode: 'none' };
@@ -2180,6 +2186,8 @@ export class FlightSession {
     n.scanRolled = true;
     if (!contrabandIn(this.state.ship.cargo).length && this.rand() >= LAW.scans.cleanChance) return;
     this.scan = { npc: n, t: 0 };
+    // Out of cruise for the scan: fleeing it is the pilot's choice, never the ship's.
+    this.player.requestCruise(false);
     this.sfx('scan');
     this.callbacks.onMessage(`${FACTIONS[law].shortName} patrol: hold your course for a cargo scan.`, 'info');
   }
