@@ -173,6 +173,65 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   survives other ships' disposal.
 - `audio.test.ts`: music theory, deterministic seeded patterns, mood definitions, voice limits,
   engine parameter mapping.
+- `soundscape.test.ts` and `ambience.test.ts`: the mood rules (title and map themes, the bar and
+  docked themes, a system's theme in flight, the den near a den until it is knocked out, deep-space
+  drones on long rides and never in a fight, only moods that exist); each system's peacekeeper,
+  dens and radio traffic; a bed for every station room with its own sounds, within level, pitch,
+  rate and node limits; sparse events planned deterministically; a local radio that stays silent in
+  quiet systems and faint under the comm blip.
+- `gamepad.test.ts`: one job per button with Xbox and PlayStation names; sticks with a dead zone,
+  inverted pitch and a springing reticle; each press acting once, held buttons repeating, Start and
+  Back heard by the pause menu and the map; connections and disconnections reported once; the last
+  device used owns the HUD, and a drifting stick never takes it.
+- `portraits.test.ts`: portraits are a pure function of seed and look, differ between seeds, keep
+  the face when only the clothes change, dress each role and faction, grey with age, give the six
+  story characters faces of their own, stay well-formed and light, and describe themselves to screen
+  readers.
+- `people.test.ts`: a bar of regulars at every dock, the same for everyone in a shift; story
+  characters in their own bars; whatever anyone says in any bar, at any time, holds in the game; a
+  price tip is worth more than its round, and a round buys one true thing a shift; the trade
+  computer knows nothing it has not been told and ranks routes by profit per minute with fees, trip
+  time and the age of each price; the price watch; v8 saves.
+- `answers.test.ts`: selling into a shortage relieves it early, with a bonus and standing; enough
+  raiders destroyed break a raid; a glut drifts into its neighbours, peaks and fades; a crime is
+  known where it was seen and the news travels a jump at a time; fines lapse after a quiet spell,
+  but not for a Hostile pilot; a pack that saw the player, and pods left adrift, are there on a
+  return; v9 saves and damaged world logs.
+- `fleet.test.ts`: buy and keep, the hangar's limit, switching ships (each keeps its cargo and
+  gear), selling a parked ship; leased storage; stakes of 1–10% in at most five stations, paid by
+  the hour and moved by events, bought up or sold mid-hour fairly; haulers only to docks you know,
+  loading, selling and coming home, waiting while a run does not pay, recalled, and a very long
+  absence worked out quickly; a hauler earns well below flying yourself, the worst a run can do is
+  bounded and insurable, and settling is deterministic however often it happens; the reports; v9
+  saves and damaged fleets.
+- `mining.test.ts`: every belt record belongs to a system, circles one of its stars and cites a
+  source, and rings are drawn only for belt records (Sol's main belt between Mars and Jupiter and
+  the Kuiper Belt beyond Neptune, on any date); rocks are the same whenever the player comes by,
+  cut at the lasers' rate in their shares, give more to a prospecting scanner, are spent and grow
+  back; the hold fills, then pods, with nothing lost; raiders come to lawless belts often and
+  patrolled ones rarely; mined goods sell within their price bands and come only from the hold; a
+  miner earns like a modest trade route and never above the best hauling route near each belt;
+  claims are posted where they should be, count each unit once, guide the flight to their belt and
+  pay on delivery; in a real `FlightSession`: belts as targets, the beam's reach and stops, scans,
+  pods, spent rocks, and raiders coming for a miner in a lawless belt.
+- `frontier.test.ts`: the frontier is the far shell of new systems and every lane into it needs the
+  long-range drive; a pilot without one is turned away, one with a short drive is told the lane's
+  length; the whole neighbourhood outside it stays reachable without a drive, and drives are sold
+  where such a pilot can buy one; no board outside the frontier sends a pilot into it.
+- `worldLock.test.ts`: the frozen core generates exactly as it shipped, is untouched by the systems
+  the world grows into, and every body a core station orbits is still in the dataset.
+- `solar.test.ts`: JPL's elements put every planet where JPL Horizons does, within the accuracy JPL
+  states; the game date follows the save's start and the time played; the planets move the right
+  way round, faster nearer the Sun.
+- `border.test.ts`: every front runs from a working den to lawful space and never leaves a system
+  without a repair dock or takes a story character's home; fronts swing with the tide through every
+  phase, the same on every device; deeds push, fade and are kept only so long; a fallen station
+  gives lawful pilots an emergency berth and its friends the usual welcome, posts no board, and no
+  board asks for a delivery to a station that can fall; traffic and the news follow the fronts;
+  war contracts are posted by the law only while its front fights and by the dens against the front
+  faction's haulers, push the front their way and stop once it is settled; The Long Border reads
+  the other arcs' choices and is finished as a lawful pilot, an outlaw hunted by the Authority, and
+  neither, each ending holding the front for good (and earning its milestone); border saves.
 
 ### Browser tests (Playwright)
 
@@ -211,10 +270,23 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   the journal shows the three ratings and the codex.
 - `story.spec.ts`: the first step of Clean Manifests flown for real (the relay's words, the debrief
   and pay at Halcyon Ring), then the choice about Oren Vail made in its dialogue, and the journal's
-  record of the arc.
+  record of the arc. The Long Border: eight hours on, a blockade of Ross 154 in the
+  News at Waymark Waypoint, Kettering's arc on the board, and at the three letters the Wake's answer
+  closed (with what it needs) to a pilot the Wake does not trust; the truce chosen, its next step
+  on the board.
 - `combat.spec.ts`: salvaged equipment fitted from the stash, damaged systems repaired and a decoy
   bought at the outfitter, then a wingman hired in the bar who launches with the player and forms
   up alongside.
+- `people.spec.ts`: a round in the bar buys something true, the journal keeps it, the trade
+  computer ranks what the player knows, and a price can be watched.
+- `fleet.spec.ts`: buy a ship and keep the old one, switch back, lease storage and move cargo into
+  it, buy a stake in the station's trade and collect its dividends, and find it all again after a
+  reload.
+- `gamepad.spec.ts`: a gamepad flies alongside the mouse or touch, pauses the game with Start and
+  hands the controls back when it is unplugged.
+- `mining.spec.ts`: a mining laser fitted, Sol's main belt scanned for its source, a rock mined with
+  the Mine action (B on the keyboard, the amber action button on touch), ore in the hold, and the
+  beam stopped the same way.
 - `screenshots.spec.ts`: title, job board, buy dialog, station deck, shipyard, outfitter, flight
   HUD and star map at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
