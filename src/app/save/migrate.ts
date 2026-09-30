@@ -23,9 +23,12 @@ import { createNewGame, SAVE_VERSION, type CommodityId, type GameState } from '.
  * - v6: contracts may be escorts, ace hunts or recoveries, urgent or follow-ups (offered follow-ups
  *   wait in `contracts` without a `jobs` entry); jobs may have failed, and carry escort and
  *   recovery progress. The data of a v5 save is valid v6.
- * - v7 (current): `law` (fines owed to the lawful factions), smuggling and piracy contracts, two
- *   contraband goods; `codex`, `surveysSold`, `milestones`, and `stats.sales` / `stats.rewards`
- *   (the trade rating). See GameState in src/app/state.ts.
+ * - v7: `law` (fines owed to the lawful factions), smuggling and piracy contracts, two contraband
+ *   goods; `codex`, `surveysSold`, `milestones`, and `stats.sales` / `stats.rewards` (the trade
+ *   rating).
+ * - v8 (current): `story` (choices made in the faction arcs, beats already told) and `dens` (raider
+ *   dens knocked out, and when); jobs may carry convoy and den assault progress. See GameState in
+ *   src/app/state.ts.
  */
 export interface SaveV1 {
   version: 1;
@@ -119,17 +122,24 @@ function migrateV5(old: Parameters<typeof migrateV6>[0] extends infer T ? Omit<T
  * v6 → v7: a clean record with the law; the codex starts from the planets already scanned; no
  * milestones yet (they are awarded on the next check), no survey sold, the trade record at zero.
  */
-function migrateV6(old: Omit<GameState, 'version' | 'law' | 'codex' | 'surveysSold' | 'milestones' | 'stats'> & { version: 6; stats: Omit<GameState['stats'], 'sales' | 'rewards'> }): GameState {
+function migrateV6(
+  old: Omit<GameState, 'version' | 'law' | 'codex' | 'surveysSold' | 'milestones' | 'stats' | 'story' | 'dens'> & { version: 6; stats: Omit<GameState['stats'], 'sales' | 'rewards'> },
+): GameState {
   const known = new Set(codexEntries().map((e) => e.id));
-  return {
+  return migrateV7({
     ...old,
-    version: SAVE_VERSION,
+    version: 7,
     law: { fines: {} },
     codex: old.discoveredBodies.filter((id) => known.has(id)),
     surveysSold: [],
     milestones: {},
     stats: { ...old.stats, sales: 0, rewards: 0 },
-  };
+  });
+}
+
+/** v7 → v8: no story choices made and no den knocked out yet. */
+function migrateV7(old: Omit<GameState, 'version' | 'story' | 'dens'> & { version: 7 }): GameState {
+  return { ...old, version: SAVE_VERSION, story: { choices: {}, seen: [] }, dens: {} };
 }
 
 /** Upgrades any known save version to the current GameState. Throws SaveFormatError when unusable. */
@@ -147,6 +157,7 @@ export function migrateSave(raw: unknown): GameState {
   else if (raw.version === 4) data = migrateV4(raw as unknown as Parameters<typeof migrateV4>[0]);
   else if (raw.version === 5) data = migrateV5(raw as unknown as Parameters<typeof migrateV5>[0]);
   else if (raw.version === 6) data = migrateV6(raw as unknown as Parameters<typeof migrateV6>[0]);
+  else if (raw.version === 7) data = migrateV7(raw as unknown as Parameters<typeof migrateV7>[0]);
   const state = data as GameState;
   assertValidState(state);
   return state;
@@ -190,6 +201,9 @@ export function assertValidState(s: GameState): void {
   if (!Array.isArray(s.surveysSold) || !s.surveysSold.every((id) => SYSTEM_IDS.includes(id))) fail('surveys');
   if (!isRecord(s.milestones) || !Object.values(s.milestones).every((t) => Number.isFinite(t))) fail('milestones');
   if (!Number.isFinite(s.stats?.sales) || !Number.isFinite(s.stats?.rewards)) fail('stats');
+  if (!isRecord(s.story) || !isRecord(s.story.choices) || !Array.isArray(s.story.seen)) fail('story');
+  if (!Object.values(s.story.choices).every((v) => typeof v === 'string') || !s.story.seen.every((v) => typeof v === 'string')) fail('story');
+  if (!isRecord(s.dens) || !Object.entries(s.dens).every(([id, t]) => LOCATION_IDS.has(id) && Number.isFinite(t))) fail('dens');
   if (!isRecord(s.markets)) fail('markets');
   for (const [id, m] of Object.entries(s.markets)) {
     if (!LOCATION_IDS.has(id) || !isRecord(m) || !Number.isFinite(m.t) || !isRecord(m.stock)) fail(`market ${id}`);

@@ -6,7 +6,7 @@ import type { FactionId, SystemId, Vec3Tuple } from '../data/types.ts';
 import { newShipState } from '../economy/loadout.ts';
 
 /** Current save format version. Older saves are upgraded by src/app/save/migrate.ts. */
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
 
 export type { CommodityId };
 
@@ -79,6 +79,11 @@ export interface JobProgress {
   escort?: 'arrived';
   /** Recovery contracts: the item is aboard. */
   recovered?: boolean;
+  /** Convoys: ships seen in, and ships lost. */
+  escorted?: number;
+  lost?: number;
+  /** Den assaults: the den's reactor is down. */
+  assault?: 'done';
 }
 
 export type PirateOutcome = 'none' | 'destroyed' | 'bypassed' | 'escaped';
@@ -117,6 +122,10 @@ export interface GameState {
   surveysSold: SystemId[];
   /** Milestones earned, with the game clock when they were. */
   milestones: Partial<Record<MilestoneId, number>>;
+  /** Story arcs (docs/PROCGEN.md §14): choices made (choice id → option id), and beats already told. */
+  story: { choices: Record<string, string>; seen: string[] };
+  /** Raider dens knocked out: den id → game clock when its reactor went down. */
+  dens: Record<string, number>;
   /** Confirmed-planet / body ids the player has scanned. */
   discoveredBodies: string[];
   jobs: Record<string, JobProgress>;
@@ -163,6 +172,8 @@ export function createNewGame(seed: number = Math.floor(Math.random() * 2 ** 31)
     codex: [],
     surveysSold: [],
     milestones: {},
+    story: { choices: {}, seen: [] },
+    dens: {},
     discoveredBodies: [],
     jobs: {},
     pirateOutcome: 'none',

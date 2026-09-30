@@ -68,7 +68,10 @@ export type MilestoneId =
   | 'friend-sta'
   | 'friend-frontier'
   | 'friend-wake'
-  | 'rank-top';
+  | 'rank-top'
+  | 'story-sta'
+  | 'story-frontier'
+  | 'story-wake';
 
 export const MILESTONES: readonly { id: MilestoneId; title: string }[] = [
   { id: 'first-contract', title: 'First contract completed' },
@@ -88,4 +91,7 @@ export const MILESTONES: readonly { id: MilestoneId; title: string }[] = [
   { id: 'friend-frontier', title: 'Friendly with the Frontier Cooperative' },
   { id: 'friend-wake', title: 'Trusted by the Hollow Wake' },
   { id: 'rank-top', title: 'Top rank in a rating' },
+  { id: 'story-sta', title: 'Clean Manifests: the Transit Authority’s story finished' },
+  { id: 'story-frontier', title: 'The Stonecrop Blight: the Frontier Cooperative’s story finished' },
+  { id: 'story-wake', title: 'Salt’s Crew: the Hollow Wake’s story finished' },
 ];

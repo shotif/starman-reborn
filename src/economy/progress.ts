@@ -1,5 +1,7 @@
 import { applyCredits, type GameState } from '../app/state.ts';
 import { CODEX_GRANT, MILESTONES, RATINGS, SURVEY_SALE, type MilestoneId, type RatingKind } from '../content/progress/rules.ts';
+import { ARC_JOBS } from '../content/story/arcs.ts';
+import type { ArcId } from '../content/story/types.ts';
 import { getComponent, getLocation, getSystem, SOLAR_BODIES, SYSTEMS } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { standingTier } from './factions.ts';
@@ -145,7 +147,18 @@ function earned(state: GameState, id: MilestoneId): boolean {
       return wakeFriendly(state);
     case 'rank-top':
       return (Object.keys(RATINGS) as RatingKind[]).some((k) => rating(state, k).next === null);
+    case 'story-sta':
+      return finaleDone(state, 'sta');
+    case 'story-frontier':
+      return finaleDone(state, 'frontier');
+    case 'story-wake':
+      return finaleDone(state, 'wake');
   }
+}
+
+/** An arc's finale flown to the end. */
+function finaleDone(state: GameState, arc: ArcId): boolean {
+  return ARC_JOBS.some((j) => j.story?.arc === arc && j.story.finale && state.jobs[j.id]?.status === 'complete');
 }
 
 /**

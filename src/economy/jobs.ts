@@ -1,12 +1,14 @@
 import { applyCredits, type CommodityId, type GameState, type PriceQuote } from '../app/state.ts';
 import { CONTRACTS, type ContractKind } from '../content/contracts/rules.ts';
 import { ACE_COMBAT_RANK, RATINGS } from '../content/progress/rules.ts';
+import { ARC_JOBS, CHARACTERS } from '../content/story/arcs.ts';
+import type { StoryMeta, StoryOption } from '../content/story/types.ts';
 import { getLocation, getSystem } from '../data/systems.ts';
 import type { FactionId, SystemId } from '../data/types.ts';
-import { addCargo, cargoCount, removeCargo } from './cargo.ts';
+import { addCargo, cargoCount, itemsThatFit, removeCargo } from './cargo.ts';
 import { COMMODITIES } from './commodities.ts';
 import { CONTRACT_PREFIX, contractBlock, followUpFor, postedContract, postedContracts } from './contracts.ts';
-import { adjustReputation, FACTIONS, standingTier } from './factions.ts';
+import { adjustReputation, FACTIONS, standingTier, TIER_LABEL } from './factions.ts';
 import { cargoCapacity } from './loadout.ts';
 import { rating } from './progress.ts';
 
@@ -21,12 +23,32 @@ export type Objective =
    * JobProgress.kills). With `ace`, the pack is a named raider (the one to destroy) and guards.
    */
   | { kind: 'bounty'; systemId: SystemId; locationId: string; count: number; level: 1 | 2 | 3; text: string; ace?: { name: string; model: string } }
-  /** See a trader (catalogue ship `model`) safely from one station to another in the same system (JobProgress.escort). */
-  | { kind: 'escort'; systemId: SystemId; fromLocationId: string; locationId: string; model: string; shipName: string; level: 1 | 2 | 3; text: string }
+  /**
+   * See a trader (catalogue ship `model`) safely from one station to another in the same system
+   * (JobProgress.escort). A convoy is several ships (`names`) under `waves` ambushes, of which
+   * `need` must arrive (JobProgress.escorted / lost).
+   */
+  | {
+      kind: 'escort';
+      systemId: SystemId;
+      fromLocationId: string;
+      locationId: string;
+      model: string;
+      shipName: string;
+      level: 1 | 2 | 3;
+      text: string;
+      convoy?: { names: readonly string[]; need: number; waves: number };
+    }
   /** Tractor an item in from a wreck near a location, perhaps guarded by raiders of threat `guard` (JobProgress.recovered). */
   | { kind: 'recover'; systemId: SystemId; locationId: string; item: string; guard: 1 | 2 | 3 | null; text: string }
   /** Destroy `count` haulers of a lawful faction in a system (outlaw work; progress in JobProgress.kills). */
-  | { kind: 'piracy'; systemId: SystemId; faction: FactionId; count: number; text: string };
+  | { kind: 'piracy'; systemId: SystemId; faction: FactionId; count: number; text: string }
+  /** A story decision made at a dock (recorded in GameState.story.choices under `choiceId`). */
+  | { kind: 'choice'; locationId: string; choiceId: string; prompt: string; options: readonly StoryOption[]; text: string }
+  /** Knock out a raider den's turrets, then its reactor (JobProgress.assault). */
+  | { kind: 'assault'; systemId: SystemId; locationId: string; text: string }
+  /** Hold a den against a lawful sweep: destroy `count` of its ships (JobProgress.kills). */
+  | { kind: 'defend'; systemId: SystemId; locationId: string; count: number; text: string };
 
 export interface JobDef {
   id: string;
@@ -42,7 +64,12 @@ export interface JobDef {
   difficulty: 1 | 2 | 3;
   difficultyNote: string;
   destinationLocationId: string;
-  requires?: { jobComplete?: string; minRep?: { faction: FactionId; value: number } };
+  requires?: {
+    jobComplete?: string;
+    minRep?: { faction: FactionId; value: number };
+    /** A story choice already made one of these ways. */
+    choice?: { id: string; oneOf: readonly string[] };
+  };
   /** Jumps ending in this system cost nothing while the job is active. */
   coversJumpFeesTo?: SystemId;
   /** Prices the giver tells you about (shown as "posted in briefing"). */
@@ -61,6 +88,8 @@ export interface JobDef {
     /** Follow-ups: step of the chain, the contract it follows, and when the offer lapses (game clock). */
     chain?: { step: number; parent: string; expires: number };
   };
+  /** Story arc missions (content/story/arcs.ts): arc, step, speaker and beats. */
+  story?: StoryMeta;
 }
 
 export const LIFELINE_ID = 'lifeline';
@@ -151,9 +180,9 @@ export const JOBS: readonly JobDef[] = [
   },
 ];
 
-/** A hand-made job, or a generated contract the player has accepted (kept in the save). */
+/** A hand-made job, a story mission, or a generated contract the player has accepted (kept in the save). */
 export function getJob(id: string, state?: Pick<GameState, 'contracts'>): JobDef {
-  const job = JOBS.find((j) => j.id === id) ?? state?.contracts[id];
+  const job = JOBS.find((j) => j.id === id) ?? ARC_JOBS.find((j) => j.id === id) ?? state?.contracts[id];
   if (!job) throw new Error(`Unknown job ${id}`);
   return job;
 }
@@ -165,7 +194,12 @@ export function jobLockReason(state: GameState, job: JobDef): string | null {
     return `Available after “${getJob(req.jobComplete).title}”`;
   }
   if (req?.minRep && (state.reputation[req.minRep.faction] ?? 0) < req.minRep.value) {
-    return `Requires Friendly standing with the ${FACTIONS[req.minRep.faction].name}`;
+    return `Requires ${TIER_LABEL[standingTier(req.minRep.value)]} standing with the ${FACTIONS[req.minRep.faction].name}`;
+  }
+  if (req?.choice && !req.choice.oneOf.includes(state.story.choices[req.choice.id] ?? '')) return 'Not after what you chose';
+  const cargo = job.story?.cargo;
+  if (cargo && itemsThatFit(state.ship.cargo, cargo.commodity, cargoCapacity(state.ship)) < cargo.qty) {
+    return `Needs ${cargo.qty * COMMODITIES[cargo.commodity].unitSize} free hold units`;
   }
   // Ace hunts are for pilots with a record.
   if (job.contract?.kind === 'ace' && rating(state, 'combat').index < ACE_COMBAT_RANK) {
@@ -191,13 +225,28 @@ export function offeredContract(state: GameState, id: string): JobDef | null {
   return c?.contract?.chain && !state.jobs[id] && state.clock < c.contract.chain.expires ? c : null;
 }
 
-/** Jobs posted at a dock (hand-made first, then follow-ups offered to you, then the board), with their availability. */
+/**
+ * Story missions show at their giver's dock once the step before is done (and, after a choice, only
+ * the way it went), so nothing is given away early. The first step of each arc shows from the start.
+ */
+export function storyVisible(state: GameState, job: JobDef): boolean {
+  const story = job.story;
+  if (!story) return false;
+  if (state.jobs[job.id]) return true;
+  const req = job.requires;
+  if (req?.choice && !req.choice.oneOf.includes(state.story.choices[req.choice.id] ?? '')) return false;
+  if (story.step === 1) return true;
+  return !!req?.jobComplete && state.jobs[req.jobComplete]?.status === 'complete';
+}
+
+/** Jobs posted at a dock (hand-made and story first, then follow-ups offered to you, then the board), with their availability. */
 export function jobsAt(state: GameState, locationId: string): JobOffer[] {
   const offers = Object.keys(state.contracts)
     .map((id) => offeredContract(state, id))
     .filter((c): c is JobDef => !!c && c.giverLocationId === locationId);
   const posted = [
     ...JOBS.filter((j) => j.giverLocationId === locationId),
+    ...ARC_JOBS.filter((j) => j.giverLocationId === locationId && storyVisible(state, j)),
     ...offers,
     ...postedContracts(state, locationId).map((c) => state.contracts[c.id] ?? c),
   ];
@@ -213,7 +262,8 @@ export function jobsAt(state: GameState, locationId: string): JobOffer[] {
 const KEEP_COMPLETED_CONTRACTS = 30;
 
 export function acceptJob(state: GameState, jobId: string): { ok: boolean; message: string } {
-  const job = JOBS.find((j) => j.id === jobId) ?? postedContract(jobId) ?? offeredContract(state, jobId);
+  const story = ARC_JOBS.find((j) => j.id === jobId && storyVisible(state, j));
+  const job = JOBS.find((j) => j.id === jobId) ?? story ?? postedContract(jobId) ?? offeredContract(state, jobId);
   if (!job) return { ok: false, message: 'That contract is no longer posted.' };
   if (state.jobs[jobId]) return { ok: false, message: 'Already accepted.' };
   const lock = jobLockReason(state, job);
@@ -227,6 +277,8 @@ export function acceptJob(state: GameState, jobId: string): { ok: boolean; messa
     if (cargo) addCargo(state.ship.cargo, cargo.commodity, cargo.qty, cargoCapacity(state.ship));
     forgetOldContracts(state);
   }
+  // A story mission may hand over cargo to carry (it was checked to fit).
+  if (job.story?.cargo) addCargo(state.ship.cargo, job.story.cargo.commodity, job.story.cargo.qty, cargoCapacity(state.ship));
   state.jobs[jobId] = { status: 'active', objectiveIndex: 0, acceptedAt: state.clock };
   if (job.briefingPrices) {
     const existing = state.knownMarkets[job.briefingPrices.locationId];
@@ -260,10 +312,17 @@ export function abandonJob(state: GameState, jobId: string): { ok: boolean; mess
 
 /**
  * Fails a generated contract in progress (an escorted ship lost or left behind): no pay, any
- * deposit is forfeit and standing with the station's owner drops.
+ * deposit is forfeit and standing with the station's owner drops. A story mission is not lost:
+ * it goes back to its giver, to try again.
  */
 export function failJob(state: GameState, jobId: string, reason: string): JobEvent | null {
   const progress = state.jobs[jobId];
+  const story = ARC_JOBS.find((j) => j.id === jobId);
+  if (story && progress?.status === 'active') {
+    delete state.jobs[jobId];
+    const giver = CHARACTERS[story.story!.speaker];
+    return { jobId, kind: 'failed', text: `${story.title} failed: ${reason}. ${giver.name} will give you another try at ${getLocation(story.giverLocationId).name}.` };
+  }
   const job = state.contracts[jobId];
   if (!job || progress?.status !== 'active') return null;
   progress.status = 'failed';
@@ -307,8 +366,18 @@ function objectiveSatisfied(state: GameState, jobId: string, o: Objective, ctx: 
   switch (o.kind) {
     case 'bounty':
       return (state.jobs[jobId]?.kills ?? 0) >= o.count;
-    case 'escort':
-      return state.jobs[jobId]?.escort === 'arrived';
+    case 'escort': {
+      const p = state.jobs[jobId];
+      if (!o.convoy) return p?.escort === 'arrived';
+      // A convoy is through when every ship has arrived or been lost, and enough arrived.
+      return (p?.escorted ?? 0) >= o.convoy.need && (p?.escorted ?? 0) + (p?.lost ?? 0) >= o.convoy.names.length;
+    }
+    case 'choice':
+      return state.story.choices[o.choiceId] !== undefined;
+    case 'assault':
+      return state.jobs[jobId]?.assault === 'done';
+    case 'defend':
+      return (state.jobs[jobId]?.kills ?? 0) >= o.count;
     case 'recover':
       return !!state.jobs[jobId]?.recovered;
     case 'piracy':
@@ -495,8 +564,23 @@ function describeCurrent(state: GameState, jobId: string): ObjectiveSummary | nu
       const text = o.ace ? o.text : `${o.text} (${kills}/${o.count})`;
       return { ...base, text: inOtherSystem(o.systemId, text), targetSystemId: o.systemId, targetLocationId: o.locationId };
     }
-    case 'escort':
-      return { ...base, text: inOtherSystem(o.systemId, `${o.text}: stay close and keep it alive`), targetSystemId: o.systemId, targetLocationId: o.locationId };
+    case 'escort': {
+      if (!o.convoy) return { ...base, text: inOtherSystem(o.systemId, `${o.text}: stay close and keep it alive`), targetSystemId: o.systemId, targetLocationId: o.locationId };
+      const p = state.jobs[jobId];
+      const tally = `${p?.escorted ?? 0} in, ${p?.lost ?? 0} lost; ${o.convoy.need} of ${o.convoy.names.length} must arrive`;
+      return { ...base, text: inOtherSystem(o.systemId, `${o.text} (${tally})`), targetSystemId: o.systemId, targetLocationId: o.locationId };
+    }
+    case 'choice': {
+      const loc = getLocation(o.locationId);
+      const text = state.location.dockedAt === o.locationId ? `${o.text}: open the Jobs window` : `Dock at ${loc.name}: ${o.text.charAt(0).toLowerCase()}${o.text.slice(1)}`;
+      return { ...base, text: inOtherSystem(loc.systemId, text), targetSystemId: loc.systemId, targetLocationId: loc.id };
+    }
+    case 'assault':
+      return { ...base, text: inOtherSystem(o.systemId, o.text), targetSystemId: o.systemId, targetLocationId: o.locationId };
+    case 'defend': {
+      const kills = state.jobs[jobId]?.kills ?? 0;
+      return { ...base, text: inOtherSystem(o.systemId, `${o.text} (${kills}/${o.count})`), targetSystemId: o.systemId, targetLocationId: o.locationId };
+    }
     case 'piracy': {
       const kills = state.jobs[jobId]?.kills ?? 0;
       return { ...base, text: inOtherSystem(o.systemId, `${o.text} (${kills}/${o.count}): target a hauler to open fire`), targetSystemId: o.systemId, targetLocationId: null };
@@ -537,11 +621,44 @@ export function contractPacksIn(state: GameState, systemId: SystemId): { jobId: 
   return out;
 }
 
-/** Ships the player is escorting in a system (escorts under way). */
-export function escortsIn(state: GameState, systemId: SystemId): { jobId: string; from: string; to: string; model: string; name: string; level: 1 | 2 | 3 }[] {
+export interface EscortSetup {
+  jobId: string;
+  from: string;
+  to: string;
+  model: string;
+  name: string;
+  level: 1 | 2 | 3;
+  /** A convoy: the ships still to see in, and how many ambushes come. */
+  convoy?: { names: readonly string[]; waves: number };
+}
+
+/** Ships the player is escorting in a system (escorts under way; a convoy's ships not yet in or lost). */
+export function escortsIn(state: GameState, systemId: SystemId): EscortSetup[] {
   return activeJobIds(state).flatMap((jobId) => {
     const o = currentObjective(state, jobId);
-    return o?.kind === 'escort' && o.systemId === systemId ? [{ jobId, from: o.fromLocationId, to: o.locationId, model: o.model, name: o.shipName, level: o.level }] : [];
+    if (o?.kind !== 'escort' || o.systemId !== systemId) return [];
+    const base = { jobId, from: o.fromLocationId, to: o.locationId, model: o.model, name: o.shipName, level: o.level };
+    if (!o.convoy) return [base];
+    const p = state.jobs[jobId];
+    const done = (p?.escorted ?? 0) + (p?.lost ?? 0);
+    return [{ ...base, convoy: { names: o.convoy.names.slice(done), waves: o.convoy.waves } }];
+  });
+}
+
+/** Den assaults under way in a system (the den to knock out). */
+export function assaultsIn(state: GameState, systemId: SystemId): { jobId: string; locationId: string }[] {
+  return activeJobIds(state).flatMap((jobId) => {
+    const o = currentObjective(state, jobId);
+    return o?.kind === 'assault' && o.systemId === systemId ? [{ jobId, locationId: o.locationId }] : [];
+  });
+}
+
+/** Den defences under way in a system (sweep ships still to destroy). */
+export function defencesIn(state: GameState, systemId: SystemId): { jobId: string; locationId: string; count: number }[] {
+  return activeJobIds(state).flatMap((jobId) => {
+    const o = currentObjective(state, jobId);
+    const left = o?.kind === 'defend' ? o.count - (state.jobs[jobId]?.kills ?? 0) : 0;
+    return o?.kind === 'defend' && o.systemId === systemId && left > 0 ? [{ jobId, locationId: o.locationId, count: left }] : [];
   });
 }
 
@@ -570,6 +687,33 @@ export function countPiracy(state: GameState, systemId: SystemId, faction: Facti
   return counted ? advanceJobs(state, { dockedAt: state.location.dockedAt, systemId }) : [];
 }
 
+/** An escorted ship docked at its destination: the escort is done, or one more ship of a convoy is in. */
+export function escortArrived(state: GameState, jobId: string): JobEvent[] {
+  const progress = state.jobs[jobId];
+  const o = currentObjective(state, jobId);
+  if (!progress || progress.status !== 'active' || o?.kind !== 'escort') return [];
+  if (o.convoy) progress.escorted = (progress.escorted ?? 0) + 1;
+  else progress.escort = 'arrived';
+  return advanceJobs(state, { dockedAt: state.location.dockedAt, systemId: state.location.systemId });
+}
+
+/** An escorted ship was destroyed: the escort fails, or a convoy once more ships are lost than it can spare. */
+export function escortLost(state: GameState, jobId: string): JobEvent[] {
+  const progress = state.jobs[jobId];
+  const o = currentObjective(state, jobId);
+  if (!progress || progress.status !== 'active' || o?.kind !== 'escort') return [];
+  if (!o.convoy) {
+    const ev = failJob(state, jobId, `the ${o.shipName} was destroyed`);
+    return ev ? [ev] : [];
+  }
+  progress.lost = (progress.lost ?? 0) + 1;
+  if (progress.lost > o.convoy.names.length - o.convoy.need) {
+    const ev = failJob(state, jobId, `${progress.lost} ships of the ${o.shipName} were lost`);
+    return ev ? [ev] : [];
+  }
+  return [{ jobId, kind: 'objective', text: `A ship of the ${o.shipName} is lost (${progress.lost} of ${o.convoy.names.length - o.convoy.need} you can spare)` }, ...advanceJobs(state, { dockedAt: state.location.dockedAt, systemId: state.location.systemId })];
+}
+
 /** Escorts end when the player leaves their system: jumping away fails them. */
 export function leaveSystem(state: GameState, systemId: SystemId): JobEvent[] {
   const events: JobEvent[] = [];
@@ -580,9 +724,10 @@ export function leaveSystem(state: GameState, systemId: SystemId): JobEvent[] {
   return events;
 }
 
-/** The objective to show in the HUD: the first delivery chain first, then other jobs. */
+/** The objective to show in the HUD: the first delivery chain first, then story missions, then other jobs. */
 export function primaryObjective(state: GameState): ObjectiveSummary | null {
-  const ids = activeJobIds(state).sort((a, b) => (a === LIFELINE_ID ? -1 : b === LIFELINE_ID ? 1 : 0));
+  const rank = (id: string) => (id === LIFELINE_ID ? 0 : id.startsWith('arc.') ? 1 : 2);
+  const ids = activeJobIds(state).sort((a, b) => rank(a) - rank(b));
   for (const id of ids) {
     const summary = describeObjective(state, id);
     if (summary) return summary;
