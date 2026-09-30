@@ -1509,6 +1509,8 @@ export class FlightSession {
     hud.inLane = this.autopilot.mode === 'lane' && this.autopilot.phase === 'travel';
     hud.encounterActive = this.activeEncounter !== null && !this.activeEncounter.bypassed;
     const ap = this.autopilot;
+    hud.autopilotMode = ap.mode;
+    hud.weapon = GUNS[this.state.ship.gun].name;
     hud.autopilot =
       ap.mode === 'goto'
         ? ap.label

@@ -1,0 +1,648 @@
+/* Starman Reborn — framed-glass design system (see docs/DESIGN.md → Interface direction).
+   Panels are translucent navy glass with 45° cut corners and a thin cyan edge that brightens
+   along the cuts. Everything is drawn with CSS (clip-path rings, gradients); no images. */
+
+:root {
+  --glass-top: rgba(52, 88, 160, 0.52);
+  --glass-bottom: rgba(8, 17, 42, 0.84);
+  --glass-solid-top: #1a2c55;
+  --glass-solid-bottom: #081126;
+  --scanline: rgba(170, 205, 255, 0.035);
+  --edge: rgba(122, 182, 255, 0.78);
+  --edge-dim: rgba(122, 182, 255, 0.34);
+  --edge-hi: #c9e8ff;
+  --amber: #ffd84a;
+  --amber-deep: #e59a12;
+  --glow: rgba(110, 190, 255, 0.35);
+  --row-hover: rgba(120, 180, 255, 0.12);
+  --row-selected: rgba(255, 216, 74, 0.12);
+}
+
+/* ---------- Frame: cut-corner glass ----------
+   --cut sets all four corners; --ctl/--ctr/--cbr/--cbl override single corners (0 = square, used
+   where a frame is attached to a screen edge). --bw is the edge thickness. */
+
+.frame,
+.panel,
+.btn {
+  --cut: 12px;
+  --ctl: var(--cut);
+  --ctr: var(--cut);
+  --cbr: var(--cut);
+  --cbl: var(--cut);
+  --bw: 1px;
+  --bwk: calc(var(--bw) * 0.414);
+  position: relative;
+  clip-path: polygon(
+    var(--ctl) 0,
+    calc(100% - var(--ctr)) 0,
+    100% var(--ctr),
+    100% calc(100% - var(--cbr)),
+    calc(100% - var(--cbr)) 100%,
+    var(--cbl) 100%,
+    0 calc(100% - var(--cbl)),
+    0 var(--ctl)
+  );
+}
+
+.frame,
+.panel {
+  background:
+    repeating-linear-gradient(180deg, var(--scanline) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, var(--glass-top), var(--glass-bottom));
+}
+
+/* The edge: a ring polygon (outer outline, then the inner outline) filled even-odd. */
+.frame::before,
+.panel::before,
+.btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(180deg, var(--edge-hi), var(--edge) 35%, var(--edge-dim));
+  clip-path: polygon(
+    evenodd,
+    var(--ctl) 0,
+    calc(100% - var(--ctr)) 0,
+    100% var(--ctr),
+    100% calc(100% - var(--cbr)),
+    calc(100% - var(--cbr)) 100%,
+    var(--cbl) 100%,
+    0 calc(100% - var(--cbl)),
+    0 var(--ctl),
+    var(--ctl) 0,
+    calc(var(--ctl) + var(--bwk)) var(--bw),
+    var(--bw) calc(var(--ctl) + var(--bwk)),
+    var(--bw) calc(100% - var(--cbl) - var(--bwk)),
+    calc(var(--cbl) + var(--bwk)) calc(100% - var(--bw)),
+    calc(100% - var(--cbr) - var(--bwk)) calc(100% - var(--bw)),
+    calc(100% - var(--bw)) calc(100% - var(--cbr) - var(--bwk)),
+    calc(100% - var(--bw)) calc(var(--ctr) + var(--bwk)),
+    calc(100% - var(--ctr) - var(--bwk)) var(--bw),
+    calc(var(--ctl) + var(--bwk)) var(--bw)
+  );
+}
+
+/* Bright ticks along the four cuts (inside the edge). */
+.frame::after,
+.panel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background:
+    linear-gradient(to top left, transparent calc(50% - 2px), var(--edge-hi) calc(50% - 2px) 50%, transparent 50%) 0 0 / var(--ctl) var(--ctl) no-repeat,
+    linear-gradient(to top right, transparent calc(50% - 2px), var(--edge-hi) calc(50% - 2px) 50%, transparent 50%) 100% 0 / var(--ctr) var(--ctr) no-repeat,
+    linear-gradient(to top left, transparent 50%, var(--edge-hi) 50% calc(50% + 2px), transparent calc(50% + 2px)) 100% 100% / var(--cbr) var(--cbr) no-repeat,
+    linear-gradient(to top right, transparent 50%, var(--edge-hi) 50% calc(50% + 2px), transparent calc(50% + 2px)) 0 100% / var(--cbl) var(--cbl) no-repeat;
+}
+
+.frame-solid {
+  background:
+    repeating-linear-gradient(180deg, var(--scanline) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, var(--glass-solid-top), var(--glass-solid-bottom));
+}
+
+.frame-sm {
+  --cut: 8px;
+}
+
+.frame-lg {
+  --cut: 18px;
+}
+
+/* Attached to a screen edge: the corners on that edge are square. */
+.attach-top {
+  --ctl: 0px;
+  --ctr: 0px;
+}
+
+.attach-bottom {
+  --cbl: 0px;
+  --cbr: 0px;
+}
+
+.attach-left {
+  --ctl: 0px;
+  --cbl: 0px;
+}
+
+.attach-right {
+  --ctr: 0px;
+  --cbr: 0px;
+}
+
+/* ---------- Buttons: cut-corner, condensed caps ---------- */
+
+.btn {
+  --cut: 8px;
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: var(--tap);
+  min-width: var(--tap);
+  padding: 0.5rem 1.15rem;
+  border: 0;
+  border-radius: 0;
+  background: linear-gradient(180deg, rgba(60, 98, 176, 0.55), rgba(14, 26, 60, 0.9));
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  line-height: 1.1;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn:hover {
+  background: linear-gradient(180deg, rgba(84, 132, 220, 0.7), rgba(22, 40, 86, 0.92));
+}
+
+.btn:active {
+  background: linear-gradient(180deg, rgba(24, 44, 94, 0.95), rgba(64, 104, 186, 0.7));
+}
+
+/* Clip-path hides outlines, so focus shows as a bright edge plus an inner glow. */
+.btn:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--amber), inset 0 0 14px rgba(255, 216, 74, 0.35);
+}
+
+.btn:focus-visible::before {
+  background: var(--amber);
+}
+
+.btn[disabled],
+.btn[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  --edge-hi: #fff4c2;
+  --edge: rgba(255, 216, 74, 0.9);
+  --edge-dim: rgba(229, 154, 18, 0.7);
+  color: #1d1300;
+  background: linear-gradient(180deg, #ffe37a, #f0b42a 55%, #c98410);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(180deg, #fff0a8, #ffc940 55%, #d8921a);
+}
+
+.btn-primary:active {
+  background: linear-gradient(180deg, #c98410, #f0b42a);
+}
+
+.btn-danger {
+  --edge-hi: #ffd0d0;
+  --edge: rgba(255, 107, 107, 0.85);
+  background: linear-gradient(180deg, rgba(150, 40, 48, 0.75), rgba(60, 12, 20, 0.92));
+}
+
+.btn-ghost {
+  --edge: rgba(122, 182, 255, 0.45);
+  --edge-hi: rgba(170, 214, 255, 0.8);
+  background: rgba(8, 17, 42, 0.35);
+}
+
+.btn-lg {
+  --cut: 11px;
+  min-height: 3.25rem;
+  padding: 0.65rem 1.6rem;
+  font-size: 1.15rem;
+}
+
+.btn-sm {
+  --cut: 6px;
+  min-height: 40px;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.9rem;
+}
+
+.btn-block {
+  display: flex;
+  width: 100%;
+}
+
+.btn .icon {
+  flex: 0 0 auto;
+}
+
+/* ---------- Glyphs: filled rail icons (see src/ui/glyphs.ts) ---------- */
+
+.glyph {
+  width: 2.4rem;
+  height: 2.4rem;
+  flex: 0 0 auto;
+  overflow: visible;
+}
+
+.glyph .g-fill {
+  fill: url(#g-glyph);
+  stroke: rgba(4, 12, 30, 0.75);
+  stroke-width: 0.9;
+  stroke-linejoin: round;
+}
+
+.glyph .g-line {
+  fill: none;
+  stroke: url(#g-glyph);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.glyph .g-dark {
+  fill: rgba(4, 12, 30, 0.72);
+  stroke: none;
+}
+
+[aria-current='page'] > .glyph .g-fill,
+[aria-pressed='true'] > .glyph .g-fill,
+.is-on > .glyph .g-fill {
+  fill: url(#g-glyph-on);
+}
+
+[aria-current='page'] > .glyph .g-line,
+[aria-pressed='true'] > .glyph .g-line,
+.is-on > .glyph .g-line {
+  stroke: url(#g-glyph-on);
+}
+
+/* ---------- Rails: icon bars attached to screen edges ---------- */
+
+.rail {
+  --cut: 16px;
+  display: flex;
+  align-items: stretch;
+  gap: 0.15rem;
+  padding: 0.3rem 1.2rem 0.45rem;
+}
+
+.rail.attach-top {
+  padding-top: calc(var(--safe-top) + 0.3rem);
+}
+
+.rail.attach-bottom {
+  padding-bottom: calc(var(--safe-bottom) + 0.35rem);
+}
+
+.rail-btn {
+  appearance: none;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  min-width: 3.6rem;
+  min-height: 3.4rem;
+  padding: 0.25rem 0.45rem 0.35rem;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.12s, color 0.12s;
+}
+
+.rail-btn:hover {
+  color: var(--text);
+}
+
+.rail-btn:hover > .glyph {
+  filter: drop-shadow(0 0 6px var(--glow));
+}
+
+.rail-btn:active {
+  transform: translateY(1px);
+}
+
+.rail-btn[aria-current='page'],
+.rail-btn[aria-pressed='true'] {
+  color: var(--amber);
+}
+
+/* The current room is underlined, like a lit indicator strip. */
+.rail-btn[aria-current='page']::after {
+  content: '';
+  position: absolute;
+  left: 22%;
+  right: 22%;
+  bottom: 0.1rem;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--amber), transparent);
+}
+
+.rail-btn:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: -3px;
+}
+
+.rail-btn .rail-badge {
+  position: absolute;
+  top: 0.2rem;
+  right: 0.35rem;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  padding: 0 0.25rem;
+  border-radius: 999px;
+  background: var(--amber);
+  color: #1d1300;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.15rem;
+  text-align: center;
+}
+
+.rail-btn-sm {
+  min-width: 3rem;
+  min-height: 2.9rem;
+}
+
+.rail-btn-sm > .glyph {
+  width: 1.9rem;
+  height: 1.9rem;
+}
+
+/* A small tab hanging under a rail, holding the actions of the current room or mode. */
+.rail-tab {
+  --cut: 12px;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.6rem 0.4rem;
+}
+
+/* ---------- Windows: framed dialogs over the 3D scene ---------- */
+
+.window {
+  --cut: 16px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: 100%;
+}
+
+.window-head {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.7rem 0.45rem 1.1rem;
+  border-bottom: 1px solid var(--edge-dim);
+  background: linear-gradient(180deg, rgba(120, 170, 255, 0.14), transparent);
+}
+
+.window-title {
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--font-ui);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--edge-hi);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.window-title small {
+  margin-left: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.window-close {
+  --cut: 6px;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0;
+}
+
+.window-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0.8rem 1.1rem;
+}
+
+.window-foot {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.6rem 1.1rem 0.8rem;
+  border-top: 1px solid var(--edge-dim);
+}
+
+/* ---------- Lists: icon · name · number rows ---------- */
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.list-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0 0 0.35rem;
+  padding: 0 0.2rem 0.25rem;
+  border-bottom: 1px solid var(--edge-dim);
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.list-row {
+  appearance: none;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  min-height: 48px;
+  padding: 0.35rem 0.6rem;
+  border: 0;
+  border-left: 3px solid transparent;
+  background: rgba(10, 20, 46, 0.45);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.list-row:hover {
+  background: var(--row-hover);
+}
+
+.list-row[aria-selected='true'] {
+  background: var(--row-selected);
+  border-left-color: var(--amber);
+}
+
+.list-row:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: -2px;
+}
+
+.list-row .row-icon {
+  width: 2.2rem;
+  height: 2.2rem;
+}
+
+.list-row .row-name {
+  display: block;
+  font-family: var(--font-ui);
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.list-row .row-sub {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.list-row .row-value {
+  font-family: var(--font-ui);
+  font-size: 1.05rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.list-empty {
+  padding: 0.8rem 0.4rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* ---------- Stat bars and pips ---------- */
+
+.statbar {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.segbar {
+  --segments: 10;
+  --fill: 1;
+  --seg-color: var(--shield);
+  height: 0.65rem;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 calc(100% / var(--segments) - 2px), rgba(2, 6, 16, 0.9) calc(100% / var(--segments) - 2px) calc(100% / var(--segments))),
+    linear-gradient(90deg, var(--seg-color) calc(var(--fill) * 100%), rgba(120, 170, 255, 0.14) calc(var(--fill) * 100%));
+  box-shadow: 0 0 0 1px rgba(2, 6, 16, 0.8);
+}
+
+.pips {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.pips > span {
+  width: 0.55rem;
+  height: 0.55rem;
+  transform: rotate(45deg);
+  background: rgba(120, 170, 255, 0.2);
+  box-shadow: 0 0 0 1px rgba(120, 170, 255, 0.35);
+}
+
+.pips > span.on {
+  background: var(--amber);
+  box-shadow: 0 0 6px rgba(255, 216, 74, 0.6);
+}
+
+/* ---------- Name card (station arrival, system names) ---------- */
+
+.name-card {
+  text-align: center;
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.name-card .name-main {
+  display: block;
+  font-size: clamp(1.8rem, 6vw, 3.4rem);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: #f4f9ff;
+  text-shadow: 0 0 18px rgba(110, 190, 255, 0.55), 0 2px 0 rgba(0, 0, 0, 0.6);
+}
+
+.name-card .name-sub {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: clamp(0.85rem, 2.4vw, 1.1rem);
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  color: var(--edge-hi);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :root:not(.reduced-motion) .name-card.animate {
+    animation: name-card 3.4s ease-out forwards;
+  }
+}
+
+@keyframes name-card {
+  0% {
+    opacity: 0;
+    letter-spacing: 0.4em;
+  }
+  18% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}

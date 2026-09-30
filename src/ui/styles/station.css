@@ -1,0 +1,569 @@
+/* Docked station hub: a 3D room behind rails and framed windows (see StationHub.ts).
+   --win-top / --win-bottom are measured at runtime so windows sit between the rails at any
+   text size. --station-layout tells the script which arrangement is active. */
+
+.station {
+  --station-layout: wide;
+  --win-top: 9rem;
+  --win-bottom: 1rem;
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.station > *,
+.station-top > * {
+  pointer-events: auto;
+}
+
+.station > .station-top,
+.station > .station-fade,
+.station > .station-title {
+  pointer-events: none;
+}
+
+/* ---------- Rails ---------- */
+
+.station-top {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: calc(100% - 1rem);
+}
+
+.station-rooms {
+  justify-content: center;
+}
+
+.station-actions {
+  margin-top: -1px;
+  --ctl: 0px;
+  --ctr: 0px;
+}
+
+.station-actions .btn-primary {
+  min-height: 2.9rem;
+}
+
+.station-global {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: calc(var(--safe-top) + 0.25rem) calc(var(--safe-right) + 0.5rem) 0.4rem 1rem;
+}
+
+/* ---------- Station identity and wallet ---------- */
+
+.station-id {
+  position: absolute;
+  top: calc(var(--safe-top) + 0.7rem);
+  left: calc(var(--safe-left) + 1rem);
+  max-width: min(24rem, calc(50% - 12rem));
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  pointer-events: none;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9), 0 0 12px rgba(0, 0, 0, 0.6);
+}
+
+.station-name {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1.05;
+  text-transform: uppercase;
+  color: #f2f8ff;
+}
+
+.station-sub {
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--edge-hi);
+}
+
+.station-sub .badge {
+  vertical-align: middle;
+  text-shadow: none;
+}
+
+.station-wallet {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  font-size: 1.05rem;
+}
+
+.wallet-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.wallet-item .icon {
+  color: var(--amber);
+}
+
+/* ---------- Windows ---------- */
+
+.station-window {
+  position: absolute;
+  left: 50%;
+  top: var(--win-top);
+  transform: translateX(-50%);
+  width: min(58rem, calc(100% - 2rem));
+  max-height: calc(100% - var(--win-top) - var(--win-bottom));
+}
+
+.station-window[hidden] {
+  display: none;
+}
+
+.station-window .window-title:focus {
+  outline: none;
+}
+
+.trade-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 21rem), 1fr));
+  gap: 0.9rem 1.2rem;
+  align-items: start;
+}
+
+.trade-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 52px;
+  padding: 0.3rem 0.4rem 0.3rem 0.5rem;
+  background: rgba(10, 20, 46, 0.5);
+  border-left: 3px solid transparent;
+}
+
+.trade-row:hover {
+  background: var(--row-hover);
+  border-left-color: rgba(255, 216, 74, 0.6);
+}
+
+.trade-row.owned {
+  opacity: 0.75;
+}
+
+.trade-row > .glyph {
+  width: 2.1rem;
+  height: 2.1rem;
+}
+
+.trade-row.route {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.trade-text {
+  min-width: 0;
+}
+
+.trade-text .row-name {
+  display: block;
+  font-family: var(--font-ui);
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trade-text .row-sub {
+  display: block;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  color: var(--text-muted);
+}
+
+.trade-row .row-value {
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.row-value.pos,
+.num.pos {
+  color: var(--friendly);
+}
+
+.row-value.neg,
+.num.neg {
+  color: var(--hostile);
+}
+
+.hold-bar {
+  margin: 0.1rem 0 0.5rem;
+}
+
+.trade-computer {
+  margin-top: 1rem;
+}
+
+.trade-computer > summary {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--edge-hi);
+  cursor: pointer;
+}
+
+/* Job board */
+
+.job-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.job-head {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.job-head .row-sub {
+  white-space: normal;
+}
+
+.job-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.job-head .reward {
+  color: var(--amber);
+}
+
+.job-detail {
+  padding: 0.6rem 0.8rem 0.9rem;
+  background: rgba(8, 16, 38, 0.72);
+  border-left: 3px solid var(--amber);
+}
+
+.job-brief {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.job-card.locked .job-head {
+  opacity: 0.7;
+}
+
+.deliver-callout {
+  align-items: center;
+}
+
+.deliver-callout .glyph {
+  width: 2rem;
+  height: 2rem;
+}
+
+.active-jobs li {
+  margin: 0.25rem 0;
+}
+
+.comm {
+  margin: 0;
+  padding: 0.45rem 0.7rem;
+  border-left: 3px solid var(--edge);
+  background: rgba(120, 180, 255, 0.08);
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.comm.improved {
+  border-left-color: var(--friendly);
+}
+
+.menu-list .btn {
+  justify-content: flex-start;
+}
+
+/* ---------- Deck: ship status panel ---------- */
+
+.deck-panel {
+  position: absolute;
+  left: calc(var(--safe-left) + 1rem);
+  bottom: calc(var(--safe-bottom) + 1rem);
+  width: min(23rem, calc(100% - 2rem));
+  padding: 0.8rem 1rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.deck-panel .callout {
+  margin: 0;
+}
+
+.ship-status .statbar {
+  grid-template-columns: 5.6rem minmax(0, 1fr) auto;
+}
+
+.ship-status .statbar .num {
+  min-width: 3.4rem;
+  text-align: right;
+  color: var(--text);
+  text-transform: none;
+}
+
+/* ---------- Arrival title card and room-cut fade ---------- */
+
+.station-title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 36%;
+  opacity: 0;
+}
+
+:root.reduced-motion .station-title {
+  display: none;
+}
+
+.station-fade {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+}
+
+.station-fade.run {
+  animation: station-cut 0.55s ease-in-out;
+}
+
+@keyframes station-cut {
+  0% {
+    opacity: 0;
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ---------- Narrow screens: identity moves below the rails ---------- */
+
+@media (max-width: 999px) {
+  .station-id {
+    max-width: calc(50% - 10rem);
+  }
+
+  .station-name {
+    font-size: 1.25rem;
+  }
+}
+
+/* ---------- Portrait phones: menus rail at the bottom, identity strip above it ---------- */
+
+@media (orientation: portrait) and (max-width: 740px) {
+  .station {
+    --station-layout: portrait;
+  }
+
+  .station-rooms {
+    padding-left: 0.6rem;
+    padding-right: 0.6rem;
+  }
+
+  .station-rooms .rail-btn {
+    min-width: 3.3rem;
+  }
+
+  .station-global {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    justify-content: space-around;
+    --ctl: 16px;
+    --ctr: 16px;
+    --cbl: 0px;
+    --cbr: 0px;
+    padding: 0.35rem 0.6rem calc(var(--safe-bottom) + 0.35rem);
+  }
+
+  .station-id {
+    top: auto;
+    bottom: calc(var(--safe-bottom) + 4.3rem);
+    left: calc(var(--safe-left) + 0.7rem);
+    right: calc(var(--safe-right) + 0.7rem);
+    max-width: none;
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.6rem;
+  }
+
+  .station-name-block {
+    min-width: 0;
+  }
+
+  .station-sub {
+    font-size: 0.72rem;
+  }
+
+  .station-wallet {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.1rem;
+    font-size: 0.95rem;
+  }
+
+  .station-window {
+    width: calc(100% - 0.8rem);
+  }
+
+  .deck-panel {
+    left: calc(var(--safe-left) + 0.4rem);
+    right: calc(var(--safe-right) + 0.4rem);
+    width: auto;
+    bottom: var(--win-bottom);
+    max-height: calc(100% - var(--win-top) - var(--win-bottom));
+    overflow-y: auto;
+  }
+
+  .station.has-window .station-id .station-sub {
+    display: none;
+  }
+}
+
+/* ---------- Short landscape phones: compact, icon-only rails ---------- */
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .station-rooms {
+    padding: calc(var(--safe-top) + 0.1rem) 0.8rem 0.25rem;
+  }
+
+  .station-rooms .rail-btn,
+  .station-actions .rail-btn {
+    min-width: 2.9rem;
+    min-height: 2.75rem;
+    padding: 0.15rem 0.3rem;
+  }
+
+  .station-rooms .rail-btn > span:not(.rail-badge),
+  .station-actions .rail-btn > span {
+    display: none;
+  }
+
+  .station-rooms .rail-btn > .glyph,
+  .station-actions .rail-btn > .glyph {
+    width: 1.85rem;
+    height: 1.85rem;
+  }
+
+  .station-rooms .rail-btn[aria-current='page']::after {
+    bottom: 0;
+  }
+
+  .station-actions {
+    padding: 0.15rem 0.5rem 0.3rem;
+  }
+
+  .station-actions .btn-primary {
+    min-height: 2.6rem;
+    padding: 0.3rem 0.9rem;
+    font-size: 0.95rem;
+  }
+
+  .station-global {
+    padding: calc(var(--safe-top) + 0.1rem) calc(var(--safe-right) + 0.4rem) 0.25rem 0.8rem;
+  }
+
+  .station-global .rail-btn {
+    min-width: 2.7rem;
+    min-height: 2.6rem;
+  }
+
+  .station-global .rail-btn > .glyph {
+    width: 1.6rem;
+    height: 1.6rem;
+  }
+
+  .station-id {
+    top: calc(var(--safe-top) + 0.4rem);
+    max-width: calc(50% - 9rem);
+    gap: 0.15rem;
+  }
+
+  .station-name {
+    font-size: 1.05rem;
+  }
+
+  .station-sub {
+    display: none;
+  }
+
+  .station-wallet {
+    font-size: 0.92rem;
+    gap: 0.1rem 0.7rem;
+  }
+
+  .station-window {
+    width: min(58rem, calc(100% - 1rem));
+  }
+
+  .deck-panel {
+    left: calc(var(--safe-left) + 0.5rem);
+    bottom: calc(var(--safe-bottom) + 0.5rem);
+    width: min(21rem, 45%);
+    max-height: calc(100% - var(--win-top) - 0.5rem);
+    overflow-y: auto;
+    padding: 0.5rem 0.7rem;
+    gap: 0.4rem;
+  }
+
+  .deck-panel .comm {
+    display: none;
+  }
+}
+
+/* ---------- Toasts while docked ---------- */
+
+.station-toasts {
+  top: auto;
+  left: auto;
+  transform: none;
+  right: calc(var(--safe-right) + 1rem);
+  bottom: calc(var(--safe-bottom) + 1rem);
+  width: min(24rem, calc(100% - 2rem));
+  align-items: flex-end;
+}
+
+.station-toasts:empty {
+  display: none;
+}
+
+@media (orientation: portrait) and (max-width: 740px) {
+  .station-toasts {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    bottom: calc(var(--win-bottom) + 0.3rem);
+    width: calc(100% - 1.5rem);
+    align-items: center;
+  }
+}

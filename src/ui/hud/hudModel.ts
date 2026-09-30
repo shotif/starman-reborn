@@ -58,6 +58,10 @@ export interface HudModel {
   hullValue: number;
   /** Label for the active autopilot/lane leg, or null under manual control. */
   autopilot: string | null;
+  /** Which autopilot is flying the ship (drives the command rail). */
+  autopilotMode: 'none' | 'goto' | 'lane' | 'dock' | 'undock';
+  /** Name of the fitted gun (loadout panel). */
+  weapon: string;
   inLane: boolean;
   target: HudTarget | null;
   markers: HudMarker[];
@@ -86,6 +90,8 @@ export function emptyHudModel(): HudModel {
     shieldValue: 0,
     hullValue: 0,
     autopilot: null,
+    autopilotMode: 'none',
+    weapon: '',
     inLane: false,
     target: null,
     markers: [],

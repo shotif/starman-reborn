@@ -1,6 +1,12 @@
 /* Starman Reborn — design tokens and shared components.
    Sizes use rem so the "Text size" setting (--text-scale) scales every menu and HUD label. */
 
+@import '@fontsource/saira-condensed/latin-600.css';
+@import '@fontsource/saira-condensed/latin-700.css';
+@import '@fontsource/saira-semi-condensed/latin-400.css';
+@import '@fontsource/saira-semi-condensed/latin-600.css';
+@import './frame.css';
+
 :root {
   color-scheme: dark;
   --bg: #04060b;
@@ -28,11 +34,13 @@
   --shield: #5cc8ff;
   --hull: #ffb45c;
   --energy: #b9f36b;
-  --radius: 14px;
-  --radius-sm: 9px;
+  --radius: 4px;
+  --radius-sm: 3px;
   --gap: 0.75rem;
   --text-scale: 1;
-  --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font: 'Saira Semi Condensed', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  /* Labels, rails, buttons, numbers and the HUD. */
+  --font-ui: 'Saira Condensed', 'Saira Semi Condensed', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
@@ -133,8 +141,16 @@ a {
 }
 
 .num {
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-ui);
+  letter-spacing: 0.03em;
 }
 
 .muted {
@@ -168,15 +184,6 @@ a {
   background: radial-gradient(ellipse at center, rgba(4, 8, 18, 0.55), rgba(2, 4, 10, 0.88));
 }
 
-.panel {
-  background: var(--panel);
-  border: 1px solid var(--panel-border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-}
-
 .panel-pad {
   padding: 1rem 1.1rem;
 }
@@ -196,8 +203,10 @@ a {
 }
 
 .eyebrow {
-  font-size: 0.72rem;
-  letter-spacing: 0.14em;
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--text-muted);
 }
@@ -237,94 +246,7 @@ a {
   min-width: 0;
 }
 
-/* ---------- Buttons ---------- */
-
-.btn {
-  appearance: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
-  min-height: var(--tap);
-  min-width: var(--tap);
-  padding: 0.55rem 1.05rem;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--panel-border-strong);
-  background: var(--panel-raised);
-  color: var(--text);
-  font: inherit;
-  font-size: 0.95rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  cursor: pointer;
-  touch-action: manipulation;
-  transition:
-    background 0.15s,
-    border-color 0.15s,
-    transform 0.08s;
-}
-
-.btn:hover {
-  border-color: var(--accent);
-  background: rgba(40, 60, 96, 0.95);
-}
-
-.btn:active {
-  transform: translateY(1px);
-}
-
-.btn[disabled],
-.btn[aria-disabled='true'] {
-  opacity: 0.45;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.btn-primary {
-  background: linear-gradient(180deg, #7ad6ff, #3fb2ec);
-  color: var(--accent-ink);
-  border-color: #9be0ff;
-}
-
-.btn-primary:hover {
-  background: linear-gradient(180deg, #95e0ff, #52bdf2);
-}
-
-.btn-danger {
-  border-color: rgba(255, 107, 107, 0.6);
-  color: #ffd0d0;
-}
-
-.btn-danger:hover {
-  background: rgba(120, 30, 40, 0.8);
-  border-color: var(--danger);
-}
-
-.btn-ghost {
-  background: transparent;
-  border-color: transparent;
-}
-
-.btn-ghost:hover {
-  background: rgba(120, 160, 230, 0.12);
-  border-color: var(--panel-border);
-}
-
-.btn-lg {
-  min-height: 56px;
-  padding: 0.7rem 1.4rem;
-  font-size: 1.08rem;
-}
-
-.btn-sm {
-  min-height: 40px;
-  padding: 0.35rem 0.75rem;
-  font-size: 0.85rem;
-}
-
-.btn-block {
-  width: 100%;
-}
+/* ---------- Buttons: see frame.css ---------- */
 
 .icon {
   width: 1.1em;

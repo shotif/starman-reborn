@@ -15,7 +15,8 @@ import type { MapState } from '../galaxy/types.ts';
 import { button, clearToasts, confirmDialog, dataBadge, setModalRoot, setToastRoot, showModal, sourceLink, toast } from '../ui/components.ts';
 import { formatCredits, h, signed } from '../ui/dom.ts';
 import { Hud } from '../ui/hud/Hud.ts';
-import { DockScreen } from '../ui/screens/DockScreen.ts';
+import { hasVoyage } from '../ui/station/journal.ts';
+import { StationHub, type StationWindow } from '../ui/station/StationHub.ts';
 import { bodyCard, controlsContent, planetCard, settingsContent, sheet } from '../ui/screens/panels.ts';
 import { renderTitle } from '../ui/screens/TitleScreen.ts';
 import { TouchControls } from '../ui/touch/TouchControls.ts';
@@ -23,6 +24,7 @@ import { createJumpTunnel, type JumpTunnelArt } from '../world/art/effects.ts';
 import type { ArtContext } from '../world/art/types.ts';
 import { DockedView } from '../world/DockedView.ts';
 import { FlightSession, type EncounterOutcome } from '../world/FlightSession.ts';
+import type { RoomView } from '../world/rooms/types.ts';
 import type { EncounterDef } from '../world/sceneTypes.ts';
 import { SCENE_DEFS } from '../world/systems/index.ts';
 import { SystemScene } from '../world/SystemScene.ts';
@@ -87,7 +89,7 @@ export class Game {
   private system: SystemScene | null = null;
   private flight: FlightSession | null = null;
   private dockedView: DockedView | null = null;
-  private dockScreen: DockScreen | null = null;
+  private station: StationHub | null = null;
   private titleEl: HTMLElement | null = null;
   private pauseEl: HTMLElement | null = null;
   private contextLostEl: HTMLElement | null = null;
@@ -99,6 +101,7 @@ export class Game {
   private fpsTimer = 0;
   private sheetsOpen = 0;
   private readonly toastLayer: HTMLElement;
+  private toastRoot: HTMLElement;
 
   constructor(canvas: HTMLCanvasElement, ui: HTMLElement, saves: SaveManager, settings: Settings) {
     this.canvas = canvas;
@@ -112,6 +115,7 @@ export class Game {
     const modalLayer = h('div', { class: 'modal-layer passthrough' });
     const toastLayer = h('div', { class: 'toasts', 'aria-live': 'polite' });
     this.toastLayer = toastLayer;
+    this.toastRoot = toastLayer;
     this.fpsEl = h('div', { class: 'fps-meter num', hidden: true });
     this.hud = new Hud(ui, {
       onMap: () => this.openMap(),
@@ -227,7 +231,16 @@ export class Game {
     this.touch.setVisible(flying && this.scheme === 'touch');
     this.desktop.setEnabled(flying);
     this.canvas.style.cursor = flying && this.scheme === 'desktop' ? 'none' : 'default';
-    setToastRoot(this.mode === 'flight' && this.scheme === 'touch' ? this.hud.toastSlot : this.toastLayer);
+    this.updateToastRoot();
+  }
+
+  /** Toasts go where they cannot cover controls: HUD slot (touch flight), station slot (docked). */
+  private updateToastRoot(): void {
+    const next = this.mode === 'flight' && this.scheme === 'touch' ? this.hud.toastSlot : this.mode === 'docked' && this.station ? this.station.toastSlot : this.toastLayer;
+    if (next === this.toastRoot) return;
+    next.append(...Array.from(this.toastRoot.children));
+    this.toastRoot = next;
+    setToastRoot(next);
   }
 
   // ------------------------------------------------------------------ title
@@ -271,7 +284,7 @@ export class Game {
     }
     this.state = createNewGame();
     await this.saves.save(this.state);
-    this.enterDocked('earth-port', { intro: true });
+    this.enterDocked('earth-port', { intro: true, room: 'bar', window: 'jobs' });
   }
 
   private async continueGame(): Promise<void> {
@@ -282,7 +295,7 @@ export class Game {
     }
     this.state = loaded.state;
     const loc = this.state.location;
-    if (loc.dockedAt) this.enterDocked(loc.dockedAt, {});
+    if (loc.dockedAt) this.enterDocked(loc.dockedAt, { titleCard: true });
     else if (loc.flight) {
       this.enterFlight({
         kind: 'restore',
@@ -314,14 +327,14 @@ export class Game {
   private clearScreens(): void {
     this.titleEl?.remove();
     this.titleEl = null;
-    this.dockScreen?.destroy();
-    this.dockScreen = null;
+    this.station?.destroy();
+    this.station = null;
     this.pauseEl?.remove();
     this.pauseEl = null;
     this.paused = false;
   }
 
-  private enterDocked(locationId: string, opts: { intro?: boolean; tab?: 'overview' | 'market' | 'outfitter' | 'contracts' }): void {
+  private enterDocked(locationId: string, opts: { intro?: boolean; room?: RoomView; window?: StationWindow | null; titleCard?: boolean }): void {
     const state = this.state!;
     this.clearScreens();
     if (this.map?.isOpen) this.map.close();
@@ -334,7 +347,7 @@ export class Game {
     this.loop.lowPower = true;
     this.refreshFlightUi();
     this.audio.setMusic('docked');
-    this.dockScreen = new DockScreen(
+    this.station = new StationHub(
       this.screenLayer,
       {
         state,
@@ -344,12 +357,17 @@ export class Game {
         launch: () => this.launch(),
         openMap: () => this.openMap(),
         openEncyclopedia: () => this.openAbout(state.location.systemId),
+        openSettings: () => this.openSettings(),
+        openControls: () => this.openControls(),
+        quitToTitle: () => void this.quitToTitle(),
         acceptJob: (id) => this.acceptJob(id),
         deliverJob: (id) => void this.deliver(id),
         travelCost: (from, to) => this.travelCost(from, to),
+        setView: () => null,
       },
-      opts.tab ?? (opts.intro ? 'contracts' : 'overview'),
+      { room: opts.room, window: opts.window, titleCard: opts.titleCard && !opts.intro },
     );
+    this.updateToastRoot();
     if (opts.intro) void this.showIntro();
   }
 
@@ -401,12 +419,12 @@ export class Game {
         // The voyage report counts everything from accepting the first delivery onward.
         state.voyageStartClock = state.clock;
         state.flags.voyage = true;
-        toast('Buy 6 medical supplies in the Market, then launch for Mars.', 'info', 5000);
-        this.dockScreen?.setTab('market');
+        toast('Buy 6 medical supplies from the Trader, then launch for Mars.', 'info', 5000);
+        this.station?.openRoom('trader');
       }
     }
     this.persist();
-    this.dockScreen?.render();
+    this.station?.render();
   }
 
   private async deliver(jobId: string): Promise<void> {
@@ -423,7 +441,7 @@ export class Game {
     }
     this.sfx('mission-complete');
     this.persist();
-    this.dockScreen?.render();
+    this.station?.render();
     const repLines = (Object.keys(r.repChanges) as (keyof typeof r.repChanges)[]).map((f) => {
       const after = state.reputation[f];
       return h('li', null, `${FACTIONS[f].name}: ${signed(after - repBefore[f])} → ${TIER_LABEL[standingTier(after)]}`);
@@ -558,7 +576,8 @@ export class Game {
       const p = state.jobs[id]!;
       return p.status === 'active' && getJob(id).destinationLocationId === locationId;
     });
-    this.enterDocked(locationId, { tab: deliverable ? 'contracts' : 'overview' });
+    const news = out.clearanceGranted || hasVoyage(state);
+    this.enterDocked(locationId, deliverable ? { room: 'bar', window: 'jobs', titleCard: true } : { room: 'deck', window: news ? 'arrival' : null, titleCard: true });
   }
 
   // ------------------------------------------------------------------ flight events
@@ -696,7 +715,7 @@ export class Game {
     this.modeBeforeMap = this.mode;
     this.mode = 'map';
     clearToasts();
-    this.dockScreen?.root.setAttribute('hidden', '');
+    this.station?.root.setAttribute('hidden', '');
     this.refreshFlightUi();
     this.map.resize(this.renderer.size.width, this.renderer.size.height);
     const objective = primaryObjective(this.state);
@@ -709,7 +728,7 @@ export class Game {
     if (!this.map?.isOpen) return;
     this.map.close();
     this.mode = this.modeBeforeMap;
-    this.dockScreen?.root.removeAttribute('hidden');
+    this.station?.root.removeAttribute('hidden');
     this.loop.lowPower = this.mode === 'docked';
     this.refreshFlightUi();
     this.audio.setMusic(this.currentMood());

@@ -205,13 +205,13 @@ test('the prototype journey: Earth → Mars → Alpha Centauri → free explorat
     await expect(page.getByTestId('dock-welcome')).toContainText('Good shooting');
   }
   await expect(page.getByTestId('voyage-report')).toBeVisible();
-  await press(page, 'dock-tab-market');
+  await press(page, 'room-trader');
   await press(page, 'sell-medical');
   for (let i = 0; i < 6; i++) await page.locator('.modal .qty-row button').first().click();
   await expect(page.getByTestId('sell-qty')).toHaveText('4');
   await press(page, 'sell-confirm');
   expect((await state(page)).ship.cargo.medical).toBe(6);
-  await press(page, 'dock-tab-outfitter');
+  await press(page, 'room-outfitter');
   await press(page, 'buy-shield-mk2');
   await press(page, 'shop-confirm');
   s = await state(page);

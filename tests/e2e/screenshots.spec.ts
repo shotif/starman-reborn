@@ -156,8 +156,8 @@ for (const size of SIZES) {
       await press(page, 'buy-medical');
       await shot(page, `${size.name}-3-buy-dialog`, size.touch, results);
       await press(page, 'buy-confirm');
-      await press(page, 'dock-tab-overview');
-      await shot(page, `${size.name}-3b-overview`, size.touch, results);
+      await press(page, 'room-deck');
+      await shot(page, `${size.name}-3b-deck`, size.touch, results);
       await press(page, 'dock-launch');
       await press(page, 'sheet-close');
       await waitUntil(page, 'undocked', async () => (await api<{ autopilot: string } | null>(page, 'player'))?.autopilot === 'none');

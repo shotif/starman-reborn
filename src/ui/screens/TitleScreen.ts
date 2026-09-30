@@ -19,8 +19,8 @@ export function renderTitle(parent: HTMLElement, opts: TitleOptions): HTMLElemen
     h(
       'div',
       { class: 'title-card' },
-      h('p', { class: 'eyebrow' }, 'A prototype among real nearby stars'),
       h('h1', { id: 'title-heading', class: 'game-title' }, 'Starman', h('span', null, ' Reborn')),
+      h('p', { class: 'eyebrow title-eyebrow' }, 'Among real nearby stars'),
       h(
         'p',
         { class: 'title-tagline' },
@@ -59,6 +59,7 @@ export function renderTitle(parent: HTMLElement, opts: TitleOptions): HTMLElemen
       ),
       h('p', { class: 'title-foot muted' }, 'Sound starts after your first tap or key press. Progress saves in this browser only.'),
     ),
+    h('p', { class: 'title-build', 'aria-label': `Build ${__BUILD_ID__}` }, `Prototype · build ${__BUILD_ID__}`),
   );
   parent.appendChild(root);
   return root;

@@ -7,6 +7,9 @@ export default defineConfig(({ mode }) => ({
   // Relative asset paths so the static build works from any sub-path
   // (GitHub Pages project sites, file servers, tunnels).
   base: './',
+  define: {
+    __BUILD_ID__: JSON.stringify((process.env.GITHUB_SHA ?? '').slice(0, 7) || 'local'),
+  },
   plugins: mode === 'https' ? [basicSsl({ name: 'starman-reborn-dev' })] : [],
   build: {
     target: 'es2022',
