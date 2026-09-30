@@ -947,3 +947,31 @@
   gap: 0.2rem;
   margin: 0.2rem 0 0.2rem 1rem;
 }
+
+/* ---------- Portraits: people in the bars (src/ui/portraits.ts) ----------
+   The span also carries .frame .frame-sm, so it has the cut corners and cyan edge of every other
+   window; the SVG fills it. Sizes are rem, so they follow the Text size setting. */
+
+.portrait {
+  --portrait-size: 4.5rem;
+  display: inline-block;
+  flex: 0 0 auto;
+  width: var(--portrait-size);
+  height: var(--portrait-size);
+  vertical-align: middle;
+  background: #070e1d;
+}
+
+.portrait > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.portrait-sm {
+  --portrait-size: 3.5rem;
+}
+
+.portrait-lg {
+  --portrait-size: 6rem;
+}
