@@ -20,9 +20,26 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 ### Unit tests (Vitest)
 
 - `data.test.ts`: coordinate conversion, parallax → light-years, proper-motion propagation,
-  dataset validation (and that broken data is caught), reachability, familiar distance bands,
-  Proxima separate from A/B, confirmed-only planets, jump routing and fees.
-- `economy.test.ts`: cargo bounds, exact trade arithmetic, rejected orders leave state unchanged,
+  dataset validation (and that broken data is caught), the five hand-authored systems plus the
+  catalogue systems all reachable from Sol, catalogue values from HYG and the Open Exoplanet
+  Catalogue, familiar distance bands, Proxima separate from A/B, confirmed-only planets, jump
+  routing and fees.
+- `world.test.ts`: the world generator passes every guardrail for the real catalogue and twelve
+  other seeds, is deterministic, keeps the hand-authored core, grows lawless toward the edge,
+  hides raider dens away from Sol, attaches stations to real stars and confirmed planets, builds
+  every kind of station, stocks every outfitter and shipyard; broken worlds are caught.
+- `scenes.test.ts`: every catalogue system's generated scene draws exactly its catalogued stars and
+  confirmed planets, keeps stations and arrivals clear of them, lanes clear of stars, raider dens
+  hostile and undockable, and builds and disposes in node.
+- `market.test.ts`: economy guardrails for the real world and other seeds (every good made and
+  wanted, bands, spreads, viable and non-absurd routes, the designed opening prices); live prices
+  over 1,500 random market states stay in their bands with buy above sell; no buy-and-sell-back
+  round trip pays at any dock or standing; stock moves and recovers; drift stays gentle.
+- `traffic.test.ts`: fleets fly real catalogue ships; Sol busy and safe, the lawless edge quiet
+  and dangerous, no packs next to Sol; fewer ships on phones; bounties; a trader flies around a
+  planet and docks, runs for a haven when shot at; a patrol flies its loop.
+- `economy.test.ts`: cargo bounds, exact trade arithmetic with every unit priced at the stock it
+  leaves, stock recovery, rejected orders leave state unchanged,
   max-buy limits, no same-dock arbitrage, the Earth → Mars → Proxima profit, route returns from
   known markets only, repair affordability, reputation effects on repairs, prices and welcome
   text; the outfitter (replacing a shield with a 70% buy-back, mount classes and standing gates,
@@ -34,7 +51,8 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   rules are caught; a balance table snapshot records every ship and item.
 - `jobs.test.ts`: the full delivery chain, detours (other systems, selling and re-buying cargo),
   early scans, reputation-gated contracts, visit-only couriers, rescue after defeat.
-- `save.test.ts`: v1 and v2 migrations (the v2 courier and its upgrades become catalogue items),
+- `save.test.ts`: v1, v2 and v3 migrations (the v2 courier and its upgrades become catalogue
+  items; v3 saves gain untouched markets),
   unknown ships, fittings and rounds rejected, future/damaged save rejection, IndexedDB round trip with
   backup rotation, fallback to the backup, coalesced writes, **save after jump** survives a fresh
   load, reset keeps settings, settings sanitising.
@@ -42,7 +60,8 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   moves, cancel, hold button), frame-rate independence (30 Hz vs 120 Hz), drift, boost/cruise,
   bounded sub-steps, ship orientation, autopilot arrival, the portrait camera field of view,
   intercept maths, a lead shot hitting an off-axis crossing target, gun-arc clamping, shield/hull
-  damage and regeneration, damage-type multipliers on shields and hull.
+  damage and regeneration, damage-type multipliers on shields and hull, and the autopilot's
+  obstacle avoidance (clear paths, the nearest blocking sphere on the right side, spheres behind).
 - `galaxy-map.test.ts`: camera-relative transforms, orbit controller, projection and label layout,
   jump-button rules.
 - `rooms.test.ts`: station interiors: structure per station, camera moves and cuts, reduced

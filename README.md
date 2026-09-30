@@ -1,12 +1,16 @@
 # Starman Reborn
 
-A browser space trading and combat prototype set among **real nearby stars**: Sol, Alpha Centauri,
-Barnard's Star, Sirius and Epsilon Eridani. You fly a small courier with the mouse or with two
-thumbs. You trade medical supplies, fight or dodge a raider near Mars, jump to Alpha Centauri,
-discover the real exoplanet Proxima Centauri b, and make the first delivery to a fictional
-research outpost. After that the neighbourhood is open for free exploration, with 35 ships in six
-classes from five makers and over 100 pieces of equipment to buy, all generated from rule files
-and balanced by automated guardrails ([docs/PROCGEN.md](docs/PROCGEN.md)).
+A browser space trading and combat prototype set among **real nearby stars**: 32 systems within
+about 17 light-years, from Sol, Alpha Centauri and Barnard's Star out to Tau Ceti, 61 Cygni,
+Gliese 876 and Altair, with 44 stars and 37 confirmed planets. You fly a small courier with the
+mouse or with two thumbs. You trade medical supplies, fight or dodge a raider near Mars, jump to
+Alpha Centauri, discover the real exoplanet Proxima Centauri b, and make the first delivery to a
+fictional research outpost. After that the neighbourhood is open: 58 generated stations of twelve
+kinds (ports, mines, refineries, farms, research stations, shipyards, free ports, raider dens...),
+21 goods with stock-based prices, traders and patrols on the lanes, raider packs in lawless
+space, and 35 ships in six classes from five makers with over 100 pieces of equipment. Ships,
+equipment, the world and the economy are generated from rule files and checked by automated
+guardrails ([docs/PROCGEN.md](docs/PROCGEN.md)).
 
 Star positions, distances and confirmed planets come from astronomical catalogs (see
 [docs/ASTRONOMY_SOURCES.md](docs/ASTRONOMY_SOURCES.md)). Stations, factions, jump travel, trade
@@ -89,12 +93,16 @@ src/data/      curated systems, generated astronomy snapshot, coordinates, valid
 src/galaxy/    neighbourhood star map (3D + 2D fallback), routing, info cards
 src/flight/    ship dynamics, chase camera, autopilot, desktop and touch input
 src/combat/    guns, projectiles, missiles, lead/intercept, damage, raider AI
-src/world/     local system scenes, flight session, procedural art (src/world/art)
-src/content/   rule-driven ship and equipment catalogue, balance guardrails (docs/PROCGEN.md)
-src/economy/   commodities, markets, cargo, outfitter and shipyard, factions, jobs
+src/world/     local system scenes (hand-made and generated), flight session, traffic and raider
+               packs (src/world/traffic), procedural art (src/world/art)
+src/content/   rule-driven generators and guardrails (docs/PROCGEN.md): ships and equipment,
+               the world (src/content/world: lanes, territory, stations) and the economy
+               (src/content/economy: goods, market profiles)
+src/economy/   live markets, trade, cargo, outfitter and shipyard, factions, jobs
 src/audio/     procedural Web Audio music and sound effects
 src/ui/        HUD, touch controls, station screens, encyclopedia, styles
-scripts/       astronomy snapshot, dataset build and validation
+scripts/       astronomy snapshot, catalogue extraction (HYG, Open Exoplanet Catalogue), dataset
+               build and validation
 tests/         unit tests (Vitest) and browser journeys (Playwright)
 docs/          sources, design notes, test record, known gaps, screenshots
 ```
@@ -114,7 +122,9 @@ issues are listed in [docs/KNOWN_GAPS.md](docs/KNOWN_GAPS.md).
 ## Astronomy data
 
 `npm run data:snapshot` captures a dated snapshot from the ESA Gaia archive, SIMBAD, VizieR and
-the NASA Exoplanet Archive. `npm run data:build` regenerates the bundled dataset, and
+the NASA Exoplanet Archive. The 27 catalogue systems come from the HYG star database v4.0 (CC BY-SA
+4.0) and the Open Exoplanet Catalogue (MIT) through `scripts/extract-catalogs.ts`; the derived
+data keep those licences ([data/provisional/NOTICE.md](data/provisional/NOTICE.md)). `npm run data:build` regenerates the bundled dataset, and
 `npm run data:validate` checks it. The game never calls these services at runtime. Details,
 exceptions and uncertainty are in [docs/ASTRONOMY_SOURCES.md](docs/ASTRONOMY_SOURCES.md).
 
