@@ -100,7 +100,7 @@ export function boardFor(locationId: string, epoch: number): JobDef[] {
     const size = Math.min(b.max, b.base + ((loc.look?.size ?? 0.8) > b.largeAbove ? 1 : 0) + (loc.stationType && b.busy.includes(loc.stationType) ? 1 : 0));
     const kinds = Object.keys(weights) as ContractKind[];
     // No two contracts of a kind sending you to the same place on one board.
-    const placed = new Set<ContractKind>(['parcel', 'freight', 'escort', 'bounty', 'ace']);
+    const placed = new Set<ContractKind>(['parcel', 'freight', 'escort', 'bounty', 'ace', 'smuggle', 'piracy']);
     const same = (a: JobDef, b: JobDef) =>
       a.title === b.title || (a.contract?.kind === b.contract?.kind && placed.has(a.contract!.kind) && a.destinationLocationId === b.destinationLocationId);
     for (let attempt = 0; out.length < size && attempt < size * 5; attempt++) {

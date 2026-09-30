@@ -34,6 +34,8 @@ export const LAW = {
   },
   /** Pardons (paying all fines at one of the faction's stations) lift standing to at least this. */
   pardonFloor: -10,
+  /** A pardon also costs this much per point of standing below the floor (so Hostile pilots without fines have a way back). */
+  pardonPerStanding: 50,
   /** A hostile or wanted pilot may still dock for repairs, at this surcharge. */
   emergencyRepairSurcharge: 0.5,
   /** Bounty hunters come for pilots owing this much in secure space. */

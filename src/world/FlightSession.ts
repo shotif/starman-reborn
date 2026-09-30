@@ -303,8 +303,12 @@ export class FlightSession {
   private readonly npcShots = new Map<string, number>();
   private readonly traffic: TrafficSetup | null;
   private trafficTimers = { trader: 3, pack: 0, patrolsLaunched: false, populated: false, contractsSpawned: false, huntersSpawned: false, serial: 0 };
-  /** The raider dens take this pilot in (the Wake trusts them). */
-  private readonly denOpen: boolean;
+  /** The raider dens take this pilot in (the Wake trusts them), checked live. */
+  private get denOpen(): boolean {
+    return wakeFriendly(this.state);
+  }
+  /** Station targets of raider dens, shown friendly or hostile as the Wake's trust changes. */
+  private readonly denTargets: Target[] = [];
   /** A patrol's cargo scan under way, and whether one has run this session. */
   private scan: { npc: NpcShip; t: number } | null = null;
   private scanned = false;
@@ -328,11 +332,11 @@ export class FlightSession {
     this.callbacks = opts.callbacks;
     this.traffic = opts.traffic ?? null;
     this.trafficTimers.pack = this.traffic?.plan.packs?.firstDelay ?? 0;
-    this.denOpen = wakeFriendly(opts.state);
     // Dens show as friendly places to a pilot the Wake trusts.
     for (const t of this.system.targets) {
-      if (t.kind === 'station' && t.locationId && getLocation(t.locationId).stationType === 'pirate-den') t.hostile = !this.denOpen;
+      if (t.kind === 'station' && t.locationId && getLocation(t.locationId).stationType === 'pirate-den') this.denTargets.push(t);
     }
+    for (const t of this.denTargets) t.hostile = !this.denOpen;
     this.rand = seededRandom((opts.state.seed ^ (opts.state.stats.jumps * 7919) ^ Math.floor(opts.state.clock)) >>> 0);
     this.chase = new ChaseCamera(opts.camera);
     this.applyCameraSettings();
@@ -460,8 +464,15 @@ export class FlightSession {
     return this.autopilot.mode;
   }
 
+  /**
+   * Raiders hostile to the player nearby (they block docking and jumping). Raiders that spare a
+   * pilot the Wake trusts do not count, and nor do lawful patrols hunting the player: a hunted
+   * pilot can always dock at one of their stations to give themselves up and pay.
+   */
   hostilesNearby(radius = HOSTILE_RADIUS): boolean {
-    return this.npcs.some((n) => n.side === 'raider' && n.durability.hull > 0 && n.body.position.distanceTo(this.player.position) < radius && n.brain.state !== 'escaped');
+    return this.npcs.some(
+      (n) => n.side === 'raider' && n.durability.hull > 0 && !this.raiderSparesPlayer(n) && n.body.position.distanceTo(this.player.position) < radius && n.brain.state !== 'escaped',
+    );
   }
 
   get encounterActive(): boolean {
@@ -1747,6 +1758,7 @@ export class FlightSession {
         timers.pack = THREE.MathUtils.lerp(plan.packs.interval[0], plan.packs.interval[1], this.rand());
       }
     }
+    for (const d of this.denTargets) d.hostile = !this.denOpen;
     if (!timers.huntersSpawned && this.time > LAW.hunters.delay && this.alive && huntersIn(this.state, this.state.location.systemId)) {
       timers.huntersSpawned = true;
       this.spawnHunters();

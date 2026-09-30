@@ -866,3 +866,60 @@
   border-color: rgba(255, 179, 107, 0.6);
   color: #ffc98f;
 }
+
+/* ---------- Journal: pilot ratings and milestones (docs/PROCGEN.md §13) ---------- */
+
+.ratings .rating {
+  display: grid;
+  grid-template-columns: 7rem minmax(6rem, auto) minmax(4rem, 1fr) auto;
+  align-items: center;
+  gap: 0.35rem 0.75rem;
+}
+
+.rating-kind {
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.rating-rank {
+  font-family: var(--font-ui);
+  color: var(--accent-strong);
+}
+
+.rating-bar {
+  --fill: 0;
+  height: 0.5rem;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--warm) calc(var(--fill) * 100%), rgba(120, 170, 255, 0.14) calc(var(--fill) * 100%));
+  box-shadow: 0 0 0 1px rgba(2, 6, 16, 0.8);
+}
+
+.rating-next {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.milestones li {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+@media (max-width: 40rem) {
+  .ratings .rating {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .rating-bar {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .rating-next {
+    grid-column: 1 / -1;
+    text-align: left;
+  }
+}

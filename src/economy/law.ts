@@ -87,16 +87,22 @@ export function customsScan(state: GameState, faction: LawfulFaction): { found: 
   return { found, fine, text: `${FACTIONS[faction].shortName} customs confiscated ${list} and fined you ${fine} cr.` };
 }
 
-/** Pays every fine owed to a faction: a pardon, which lifts standing to at least Wary. */
+/** What a pardon costs: every fine owed, and so much per point of standing below the floor (0: nothing to pardon). */
+export function pardonCost(state: GameState, faction: LawfulFaction): number {
+  const gap = Math.max(0, LAW.pardonFloor - (state.reputation[faction] ?? 0));
+  return fineOwed(state, faction) + gap * LAW.pardonPerStanding;
+}
+
+/** A pardon: pays every fine owed to a faction and lifts standing to at least Wary. */
 export function payFines(state: GameState, faction: LawfulFaction): { ok: boolean; message: string } {
-  const owed = fineOwed(state, faction);
-  if (owed <= 0) return { ok: false, message: 'You owe nothing.' };
-  if (state.credits < owed) return { ok: false, message: `The fine is ${owed} cr; you have ${state.credits} cr.` };
-  applyCredits(state, -owed, 'fee', `Fines paid to the ${FACTIONS[faction].name}`);
+  const cost = pardonCost(state, faction);
+  if (cost <= 0) return { ok: false, message: 'You owe nothing.' };
+  if (state.credits < cost) return { ok: false, message: `A pardon costs ${cost} cr; you have ${state.credits} cr.` };
+  applyCredits(state, -cost, 'fee', `Pardon from the ${FACTIONS[faction].name}`);
   delete state.law.fines[faction];
   const before = state.reputation[faction] ?? 0;
   if (before < LAW.pardonFloor) adjustReputation(state.reputation, faction, LAW.pardonFloor - before);
-  return { ok: true, message: `Fines paid: the ${FACTIONS[faction].name} has pardoned you.` };
+  return { ok: true, message: `Pardoned: the ${FACTIONS[faction].name} has cleared your record.` };
 }
 
 /**

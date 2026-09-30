@@ -11,7 +11,7 @@ import { cargoCount } from '../../src/economy/cargo.ts';
 import { boardFor, postedContracts } from '../../src/economy/contracts.ts';
 import { repairQuote } from '../../src/economy/equipment.ts';
 import { acceptJob, countPiracy, deliverJob, jobLockReason, jobsAt, type JobDef } from '../../src/economy/jobs.ts';
-import { commitCrime, customsScan, dockAccess, huntedBy, lawIn, payFines, scansOnDocking, wakeFriendly } from '../../src/economy/law.ts';
+import { commitCrime, customsScan, dockAccess, huntedBy, lawIn, pardonCost, payFines, scansOnDocking, wakeFriendly } from '../../src/economy/law.ts';
 import { validateLaw } from '../../src/economy/lawGuards.ts';
 
 /** The law and the outlaw path (docs/PROCGEN.md §12). */
@@ -77,18 +77,27 @@ describe('the law', () => {
     expect(s.law.fines.sta).toBe(r.fine);
   });
 
-  it('a pardon: paying the fines clears the hunt and lifts standing to Wary at worst', () => {
+  it('a pardon: paying the fines (and for the bad blood) clears the hunt and lifts standing to Wary at worst', () => {
     const s = pilot();
     s.reputation.sta = -60;
     s.law.fines.sta = 1_500;
+    const cost = pardonCost(s, 'sta');
+    expect(cost).toBe(1_500 + (LAW.pardonFloor + 60) * LAW.pardonPerStanding);
     s.credits = 1_000;
     expect(payFines(s, 'sta').ok).toBe(false);
     s.credits = 5_000;
     expect(payFines(s, 'sta')).toMatchObject({ ok: true });
-    expect(s.credits).toBe(3_500);
+    expect(s.credits).toBe(5_000 - cost);
     expect(s.law.fines.sta).toBeUndefined();
     expect(s.reputation.sta).toBe(LAW.pardonFloor);
     expect(huntedBy(s, 'sta')).toBe(false);
+    // Hostile without fines: a pardon still has a price, so there is always a way back.
+    const t = pilot();
+    t.reputation.frontier = -45;
+    expect(pardonCost(t, 'frontier')).toBe((LAW.pardonFloor + 45) * LAW.pardonPerStanding);
+    expect(payFines(t, 'frontier').ok).toBe(true);
+    expect(huntedBy(t, 'frontier')).toBe(false);
+    expect(pardonCost(t, 'frontier')).toBe(0);
   });
 
   it('hunted pilots get emergency docking only: repairs at a surcharge, no contracts; dens only open to Wake friends', () => {

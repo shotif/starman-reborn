@@ -9,7 +9,7 @@ import { formatCredits, h, signed } from '../dom.ts';
 import { glyph, type GlyphName } from '../glyphs.ts';
 import { icon } from '../icons.ts';
 import { newsList } from '../news.ts';
-import { fineOwed, isLawful, payFines } from '../../economy/law.ts';
+import { fineOwed, isLawful, pardonCost, payFines } from '../../economy/law.ts';
 import { buysSurveys, sellSurvey, surveysForSale, surveyValue } from '../../economy/progress.ts';
 import { toast } from '../components.ts';
 import type { StationContext } from './context.ts';
@@ -210,18 +210,20 @@ function customsDesk(ctx: StationContext): HTMLElement | null {
   const faction = getLocation(locationId).factionId;
   if (!isLawful(faction)) return null;
   const owed = fineOwed(state, faction);
+  const cost = pardonCost(state, faction);
   const name = FACTIONS[faction].name;
+  const why = owed ? `You owe the ${name} ${formatCredits(owed)} in fines.` : `The ${name} counts you an enemy.`;
   return h(
     'section',
     { class: 'customs-desk', 'aria-label': 'Customs desk', 'data-testid': 'customs-desk' },
-    h('div', { class: 'list-head' }, h('span', null, 'Customs desk'), h('span', null, owed ? 'Fines owed' : 'Record')),
-    owed
+    h('div', { class: 'list-head' }, h('span', null, 'Customs desk'), h('span', null, cost ? 'Pardon' : 'Record')),
+    cost
       ? h(
           'div',
           { class: 'callout warn customs-owed' },
           icon('alert'),
-          h('span', { class: 'grow' }, `You owe the ${name} ${formatCredits(owed)} in fines. Until you pay, its patrols attack you on sight and its stations take you in for repairs only. Paying is a pardon.`),
-          button(`Pay ${formatCredits(owed)}`, {
+          h('span', { class: 'grow' }, `${why} Until you are pardoned, its patrols attack you on sight and its stations take you in for repairs only.`),
+          button(`Pardon · ${formatCredits(cost)}`, {
             variant: 'primary',
             testId: 'pay-fines',
             disabled: state.credits < owed,

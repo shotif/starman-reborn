@@ -1416,6 +1416,11 @@ export class Game {
         if (!this.state) return;
         this.state.reputation[faction] = value;
       },
+      /** Test-only: set the fines owed to a faction. */
+      setFines: (faction: 'sta' | 'frontier', amount: number) => {
+        if (!this.state) return;
+        this.state.law.fines[faction] = amount;
+      },
       /** Test-only: set the wallet (shipyard and outfitter checks). */
       setCredits: (credits: number) => {
         if (!this.state) return;
