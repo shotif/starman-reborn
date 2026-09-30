@@ -283,7 +283,7 @@ function haulingPerHour(model: string, around: SystemId): number[] {
 const quantile = (sorted: readonly number[], p: number) => sorted[Math.floor(p * (sorted.length - 1))]!;
 
 describe('what a miner earns', () => {
-  const rigs = [
+  const rigs: { name: string; model: string; fittings: Record<string, string> }[] = [
     { name: 'the starter courier with a class 1 laser', model: 'ship.courier.1.halden', fittings: { 'utility-1': LASER } },
     { name: 'a class 1 freighter with a class 1 laser and prospector', model: 'ship.freighter.1.eridani', fittings: { 'utility-1': LASER, 'utility-2': PROSPECTOR } },
   ];
