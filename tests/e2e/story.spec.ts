@@ -6,7 +6,7 @@ import { api, openFresh, press, waitUntil } from './helpers.ts';
  * real (words at the relay, the debrief at Halcyon Ring), then its choice, and the journal's record.
  */
 
-type Hooks = { __starman: { completeJobs(ids: string[]): void; warp(id: string): void } };
+type Hooks = { __starman: { completeJobs(ids: string[]): void; warp(id: string): void; dockAt(id: string): void } };
 
 async function flyAndDock(page: Page, system: string, station: string): Promise<void> {
   await page.evaluate((id) => (window as unknown as Hooks).__starman.warp(id), system);
@@ -66,4 +66,42 @@ test('Clean Manifests: an audit flown for real, then the choice about Oren Vail'
   await press(page, 'station-journal');
   await expect(page.getByTestId('arc-sta')).toContainText('Step 5 of 5');
   await expect(page.getByTestId('arc-sta')).toContainText('Keep it inside the Authority');
+});
+
+test('The Long Border: a blockade in the news, Kettering’s letters, and a choice closed by standing', async ({ page }) => {
+  await openFresh(page);
+  await press(page, 'title-play');
+  await press(page, 'intro-ok');
+  await page.evaluate(() => (window as unknown as Hooks).__starman.completeJobs(['lifeline']));
+  // Eight hours on, the tide has the Wake blockading Ross 154 (docs/PROCGEN.md §20).
+  await api(page, 'advanceClock', 30_000);
+  await page.evaluate(() => (window as unknown as Hooks).__starman.dockAt('waymark-waypoint'));
+  await waitUntil(page, 'docked at Waymark Waypoint', async () => (await api<{ location: { dockedAt: string | null } }>(page, 'state')).location.dockedAt === 'waymark-waypoint');
+  await press(page, 'room-bar');
+  if (!(await page.getByTestId('news-window').isVisible().catch(() => false))) await press(page, 'station-news');
+  await expect(page.getByTestId('border-wolf-1061~ross-154')).toContainText('blockades Ross 154');
+
+  // Kettering's arc waits on the board.
+  await openJobs(page);
+  await expect(page.getByTestId('job-arc.border.1')).toContainText('The Long Border');
+
+  // Later, the three letters: the Wake's answer is closed to a pilot the Wake does not trust.
+  await page.evaluate(() => (window as unknown as Hooks).__starman.completeJobs(['arc.border.1', 'arc.border.2']));
+  await openJobs(page);
+  await press(page, 'accept-arc.border.3');
+  await waitUntil(page, 'the choice', async () => {
+    if (await page.getByTestId('choice-dialog').isVisible().catch(() => false)) return true;
+    const next = page.getByTestId('story-continue');
+    if (await next.isVisible().catch(() => false)) await next.click().catch(() => {});
+    return false;
+  }, 30_000);
+  await expect(page.getByTestId('choice-wake')).toBeDisabled();
+  await expect(page.getByTestId('choice-wake')).toContainText('Hollow Wake');
+  await press(page, 'choice-truce');
+  await expect(page.getByTestId('story-dialog')).toContainText('envoys');
+  await press(page, 'story-continue');
+  const s = await api<{ story: { choices: Record<string, string> } }>(page, 'state');
+  expect(s.story.choices['border.side']).toBe('truce');
+  await openJobs(page);
+  await expect(page.getByTestId('job-arc.border.4.truce')).toBeVisible();
 });

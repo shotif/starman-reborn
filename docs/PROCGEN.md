@@ -734,10 +734,11 @@ with no fines and no milestones yet (they are awarded at the next save if alread
 
 ## 14. Story arcs
 
-Three short arcs give the sandbox a spine, one per faction (`src/content/story/arcs.ts`, played by
-`src/economy/story.ts`). Unlike everything else in this document they are written by hand, not
-generated, and reviewed like code: the guardrails below check them, unit tests play each one
-through, and a browser test flies the first steps.
+Three short arcs give the sandbox a spine, one per faction, and a fourth, The Long Border (§20.5),
+is where they meet (`src/content/story/arcs.ts`, played by `src/economy/story.ts`). Unlike
+everything else in this document they are written by hand, not generated, and reviewed like code:
+the guardrails below check them, unit tests play each one through, and a browser test flies the
+first steps.
 
 ### 14.1 How an arc is built
 
@@ -760,7 +761,9 @@ through, and a browser test flies the first steps.
 - **Choices** have two or three options, each with standing (and often credits) attached, shown
   before the player decides. An option may end the arc early: the arc is then over, with no
   finale. A deal with the law (in the Wake's arc) is a pardon: every fine cleared and lawful
-  standing lifted to Wary.
+  standing lifted to Wary. An option may ask for standing (shown, with what it needs, but closed
+  until then), and a choice may branch the arc: each answer then has its own later steps and
+  finale. Briefings may also carry **echoes**: a line for each choice made in another arc.
 - Save version 8 records the choices made, the beats told and the dens knocked out.
 
 ### 14.2 The three arcs
@@ -798,16 +801,19 @@ Rules in `src/content/dens/rules.ts`.
 `validateStory` (`src/economy/storyGuards.ts`, run in `tests/unit/story.test.ts`, which also feeds
 it broken arcs to prove it catches them) checks that:
 
-- each arc has four to six missions in a chain, step by step, ending in its one finale, the lawful
-  arcs after the opening delivery;
+- each arc has four to six steps in a chain, ending in a finale (one for each way a branching
+  choice can go, each way following its own branch), every arc but the Wake's after the opening
+  delivery;
 - every speaker exists and gives missions where they are; every place is a real, open station in
   the system named, within four jumps of where the mission is given; lawful arcs never dock at a
   raider den; den fights are finales at dens;
 - choices offer two or three options, each changing standing (by at most 50) and paying sensibly;
-  at least one option goes on, the next step follows exactly the options that go on, and every
-  option has its own words wherever later words depend on it;
+  at least one option goes on and is open to every pilot, the next step follows exactly the
+  options that go on, every option has its own words wherever later words depend on it, and
+  every echo answers a real question of another arc;
 - lawful arcs never ask for a crime (piracy, a den defence, contraband); the Wake's arc starts only
-  for pilots it trusts;
+  for pilots it trusts; an arc of nobody's asks for one only on the branch of a choice only the
+  Wake's friends can make;
 - missions pay 300–6,000 cr (decisions pay through their options) and each finale pays the most in
   its arc; escorts fly real catalogue ships and convoys can be brought home;
 - every briefing, line and objective has words, within length limits.
@@ -1000,3 +1006,111 @@ at the plain rate in one sum, so a settle never loops for long.
 - **Nothing runs in the background**: see §18.4. The fleet in the save is checked in full: owned
   ships like the flown one, at most four, a hauler's route starting where its ship is parked,
   storage within 60 units, stakes of 1–10% at no more than five stations, reports of known kinds.
+
+## 20. The border war
+
+Where a lawful faction's space meets a Hollow Wake den, the two sides fight over the lanes
+(`src/economy/border.ts`; rules in `src/content/border/rules.ts`). Like the world events of §11, a
+front is a function of the seed and the game clock, plus a short log of what the player did there
+(`world.border` in the save, version 10).
+
+### 20.1 Fronts
+
+- A **front** is a lane between a system with a working raider den and a neighbouring system that
+  the Transit Authority or the Frontier Cooperative owns. The world has five: the Ross 154 – Wolf
+  1061 line (the Authority's, against Maw Roost) and four the Cooperative holds against dens further
+  out (two at Lacaille 9352, one at YZ Ceti, one at WISE 0722−0540).
+- Each front may have an **exposed station**: the station on the lawful side that can fall. It is
+  never a story character's home, and a front gets one only when another dock with repairs stays
+  open in the lawful system (WISE 0722−0540 has only its military base, so its front can be
+  blockaded but never broken). Regent Concourse is the Ross 154 line's; Waymark Waypoint, Sabine Kettering's home,
+  never falls.
+
+### 20.2 Pressure and phases
+
+- **Pressure** runs from −100 (the Wake) to +100 (the law): a tide of 70 × sin(2π (clock / 48 h +
+  phase)), each front with its own phase from the seed, plus the player's deeds, each fading with
+  a time constant of 24 hours of game clock. The newest 24 deeds of a front are kept.
+- **Phases**: pushed back (35 or more), skirmish, blockade (−30 or less), fallen (−60 or less, only
+  where there is an exposed station), and truce (only as an ending, §20.5). Left alone, a front
+  goes round them all every 48 hours of game time, and its station is held for about eight.
+- **Deeds**: a war contract done moves its front 18 its way; a raider destroyed in a front's
+  system +2; a lawful patrol or hauler destroyed there −3. A kill counts on every front through the
+  system.
+
+### 20.3 How the world feels it
+
+- **Traffic** (`withBorder` in `src/world/traffic/setup.ts`): a skirmish brings a patrol wing and a
+  raider pack more (level 2) to both systems; a blockade halves the lawful side's traders and adds
+  two packs (level 2, or 3 once the station has fallen); a front pushed back sends a patrol wing
+  into the den's system; a truce clears the packs from the lawful side. A raid or a sweep (§11)
+  under way comes on top: a sweep clears the border's packs too.
+- **A fallen station** is held by the Wake: lawful pilots get emergency docking only (repairs and
+  the customs desk, §12), friends of the Wake dock as usual, and it posts no contracts.
+- **News**: the News room reports every front within three jumps (a headline and a line), and
+  officers and pilots in the bars tell how a front within two jumps stands and where its tide
+  takes it in the next four hours (§16).
+
+### 20.4 War contracts
+
+- War work joins a board only while a front within two jumps is fighting, so every other board is
+  exactly as it was. Lawful military bases (weight 3), customs depots (2), trade ports and relays
+  (1) of the front's own faction post it while the front is in a skirmish, a blockade or fallen;
+  raider dens (2) post it for any front not at peace.
+- **The law's**: destroy a pack near the lawful system's exposed station (or another of its
+  stations): three raiders at level 2 in a skirmish, four at level 3 in a blockade; retaking a
+  fallen station is five at level 3 and pays a quarter more. Pay: 450 cr + 140 per raider per
+  level, plus the jump fees (§10.3); −4 standing with the Wake.
+- **The Wake's**: destroy two or three of the front faction's haulers in the lawful system (450 cr
+  + 240 a ship), +12 standing with the Wake. Each hauler is a crime, as in piracy.
+- Done, a war contract pushes its front 18 its way (the pay message says so). A front that The
+  Long Border has settled posts no war work.
+- A station that can fall is never the destination of a delivery (generated parcels, hauls and
+  supply runs go elsewhere, and such stations post no supply runs), so a contract never waits on a
+  station the Wake might hold. A wreck's find may still be brought back to one: that is a visit,
+  and docking is enough.
+
+### 20.5 The Long Border
+
+The fourth arc (`src/content/story/arcs.ts`) is given by Sabine Kettering, an independent hauler
+at Waymark Waypoint in Ross 154, to any pilot after the opening delivery. It decides the Ross 154 –
+Wolf 1061 line for good.
+
+| Step | For the Authority | For the Wake | For neither |
+| --- | --- | --- | --- |
+| 1 | Fly the line: dock at Flotsam Diggings, on the Wake side, and report | | |
+| 2 | Letters under fire: a mail pouch from a wreck near Jackpot Stillworks | | |
+| 3 | Three letters: the choice | | |
+| 4 | the Wake's forward pack at Flotsam Diggings | two Authority haulers in Ross 154 | a letter to both sides and back |
+| 5 | break the Wake's push on Regent Concourse | break the Authority's sweep at Maw Roost | escort the envoys to Regent Concourse (two of three must arrive) |
+
+- **It reads the other arcs**: Kettering's first briefing, and the choice, carry a line for each
+  choice made in the other three arcs (what happened to Oren Vail, the quarantine at Stonecrop,
+  Juno Fiske).
+- **The choice** is open by standing: flying for the Authority asks for neutral standing with it
+  (0 or more), flying for the Wake for a friend of the Wake (10 or more); the truce is open to
+  everyone. The choice dialog shows what a closed answer needs. So the finale can be reached as a
+  lawful pilot, an outlaw or neither, and each way has its own step 4 and finale.
+- **The endings hold the front for good**: the Authority's at pressure 70 (pushed back, and Regent
+  Concourse never falls), the Wake's at −80 (Regent Concourse the Wake's for good), the truce at 0
+  (quiet lanes, no packs on the Authority's side). Deeds no longer move it.
+- Kettering asks nobody's leave: a pilot the Authority hunts, on an emergency berth at Waymark
+  Waypoint, is still offered her missions (and nothing else there).
+
+### 20.6 Border guardrails
+
+- **A dock with repairs is always within reach**: every exposed station leaves another open dock
+  with repairs in its system, and no story character's home can fall (`tests/unit/border.test.ts`
+  checks every front).
+- **No dead ends**: a held station posts nothing, no contract asks for a delivery to a station that
+  can fall, and the contract guardrails do not count a held station's empty board against it.
+- **The story guardrails** (§14.4) allow a choice to branch an arc, each way to its own steps and
+  finale; one way on must be open to every pilot; an arc of nobody's may ask for a crime only on the
+  branch of a choice that only the Wake's friends can make; and every echo answers a real question
+  of another arc.
+- **The finale can be reached as a lawful pilot, an outlaw (the Authority hunting them) or
+  neither**: the unit tests play all three ways through and check what each ending does to the
+  front, its station and its news.
+- **Deterministic**: the tide repeats every 48 hours, deeds fade and only 24 are kept, boards are
+  cached per save (the log is the save's own), and the log round-trips through the save and is
+  checked when loaded.

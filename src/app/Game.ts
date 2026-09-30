@@ -1724,6 +1724,13 @@ export class Game {
         this.state.flags.flightSchool = true;
         this.enterFlight({ kind: 'arrival' });
       },
+      /** Test-only: dock at a station without flying there (a blockaded lane is no place for a test to be). */
+      dockAt: (locationId: string) => {
+        if (!this.state) return;
+        this.state.location = { ...this.state.location, systemId: getLocation(locationId).systemId, dockedAt: null, flight: null };
+        if (!this.state.visitedSystems.includes(this.state.location.systemId)) this.state.visitedSystems.push(this.state.location.systemId);
+        this.onDocked(locationId);
+      },
       /** Test-only: set standing with a faction (the law and the outlaw path). */
       setReputation: (faction: 'sta' | 'frontier' | 'hollow-wake', value: number) => {
         if (!this.state) return;
