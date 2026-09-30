@@ -88,12 +88,20 @@ async function tap(service: keyof typeof TAP, query: string, label: string, opts
   const entry: ManifestEntry = { label, service, query, ok: false, file, ms: 0 };
   manifest.push(entry);
   try {
-    let text: string;
-    const sync = await httpText(`${TAP[service]}/sync`, { method: 'POST', body: new URLSearchParams(params), headers: { Accept: 'application/json' } });
-    if (sync.status >= 200 && sync.status < 300) text = sync.text;
-    else {
-      console.log(`  ${label}: sync HTTP ${sync.status}, trying an async job`);
-      writeFileSync(resolve(rawDir, `${label}.sync-error.txt`), sync.text);
+    let text: string | null = null;
+    // A busy archive answers 5xx now and then: wait and ask again before switching to an async job.
+    for (let attempt = 0; attempt < 3 && text === null; attempt++) {
+      const sync = await httpText(`${TAP[service]}/sync`, { method: 'POST', body: new URLSearchParams(params), headers: { Accept: 'application/json' } });
+      if (sync.status >= 200 && sync.status < 300) text = sync.text;
+      else {
+        console.log(`  ${label}: sync HTTP ${sync.status}${attempt < 2 && sync.status >= 500 ? ', asking again shortly' : ''}`);
+        writeFileSync(resolve(rawDir, `${label}.sync-error.txt`), sync.text);
+        if (sync.status < 500) break;
+        if (attempt < 2) await sleep(20_000 * (attempt + 1));
+      }
+    }
+    if (text === null) {
+      console.log(`  ${label}: trying an async job`);
       text = await tapAsync(service, params, label);
     }
     writeFileSync(resolve(rawDir, file), text);
@@ -111,9 +119,14 @@ async function tap(service: keyof typeof TAP, query: string, label: string, opts
 }
 
 async function tapAsync(service: keyof typeof TAP, params: Record<string, string>, label: string): Promise<string> {
-  const submit = await fetch(`${TAP[service]}/async`, { method: 'POST', body: new URLSearchParams({ ...params, PHASE: 'RUN' }), redirect: 'manual' });
-  const job = submit.headers.get('location');
-  if (!job) throw new Error(`${label}: async submit gave HTTP ${submit.status} and no job URL`);
+  let job: string | null = null;
+  for (let attempt = 0; attempt < 3 && !job; attempt++) {
+    const submit = await fetch(`${TAP[service]}/async`, { method: 'POST', body: new URLSearchParams({ ...params, PHASE: 'RUN' }), redirect: 'manual' });
+    job = submit.headers.get('location');
+    if (!job && (submit.status < 500 || attempt === 2)) throw new Error(`${label}: async submit gave HTTP ${submit.status} and no job URL`);
+    if (!job) await sleep(30_000);
+  }
+  if (!job) throw new Error(`${label}: no async job`);
   const jobUrl = new URL(job, TAP[service]).toString();
   for (let i = 0; i < 90; i++) {
     await sleep(Math.min(10_000, 1_000 * (i + 1)));
@@ -215,11 +228,17 @@ async function main(): Promise<void> {
   const oids = new Set<number>([...near, ...gameRows].map((r) => num(r.oid)).filter((x): x is number => x !== null));
   console.log(`Neighbourhood: ${near.length} SIMBAD objects; ${oids.size} with the game's stars.`);
 
-  // Hierarchy: parents (multiple systems) and their other members.
+  // Hierarchy: the multiple systems they belong to (not clusters or moving groups), and their other members.
   const oidList = [...oids];
   const links: Row[] = [];
   for (const [i, part] of chunks(oidList, 400).entries()) links.push(...(await tap('simbad', `SELECT parent, child, membership FROM h_link WHERE child IN (${part.join(',')})`, `simbad-h-link-up-${i}`)));
-  const parents = [...new Set(links.map((l) => num(l.parent)).filter((x): x is number => x !== null))];
+  const anyParent = [...new Set(links.map((l) => num(l.parent)).filter((x): x is number => x !== null))];
+  const parentRows: Row[] = [];
+  for (const [i, part] of chunks(anyParent, 400).entries()) {
+    parentRows.push(...(await tap('simbad', `SELECT oid, main_id, otype, plx_value FROM basic WHERE oid IN (${part.join(',')})`, `simbad-parents-${i}`)));
+  }
+  const parents = parentRows.filter((p) => String(p.otype ?? '').trim() === '**').map((p) => num(p.oid)).filter((x): x is number => x !== null);
+  console.log(`Multiple systems: ${parents.length} of ${anyParent.length} parents.`);
   const down: Row[] = [];
   for (const [i, part] of chunks(parents, 400).entries()) down.push(...(await tap('simbad', `SELECT parent, child, membership FROM h_link WHERE parent IN (${part.join(',')})`, `simbad-h-link-down-${i}`)));
   const extra = [...new Set([...parents, ...down.map((l) => num(l.child)).filter((x): x is number => x !== null)])].filter((o) => !oids.has(o));
@@ -279,10 +298,13 @@ async function main(): Promise<void> {
   await tap('vizier', `SELECT HIP, RArad, DErad, Plx, e_Plx, pmRA, pmDE, Hpmag FROM "I/311/hip2" WHERE Plx >= ${NEIGHBOURHOOD_PLX}`, 'vizier-hip2-neighbourhood');
 
   // NASA Exoplanet Archive: every confirmed planet within reach.
-  await tap('nasa', `select * from pscomppars where sy_dist < ${PLANET_DIST_PC}`, 'nasa-pscomppars-neighbourhood', { nasa: true });
+  const columns =
+    'pl_name, hostname, hip_name, hd_name, gaia_id, sy_dist, sy_plx, ra, dec, sy_snum, sy_pnum, disc_year, discoverymethod, disc_facility, pl_controv_flag, pl_orbper, pl_orbpererr1, pl_orbsmax, pl_orbsmaxerr1, pl_orbeccen, pl_bmasse, pl_bmasseerr1, pl_bmassprov, pl_rade, pl_radeerr1, pl_eqt, st_spectype, st_teff, st_mass, st_rad, rowupdate';
+  const planets = await tap('nasa', `select ${columns} from pscomppars where sy_dist < ${PLANET_DIST_PC}`, 'nasa-pscomppars-neighbourhood', { nasa: true });
+  if (!planets.length) await tap('nasa', `select * from pscomppars where sy_dist < ${PLANET_DIST_PC}`, 'nasa-pscomppars-neighbourhood-all', { nasa: true });
 
   // JPL: Keplerian elements (1800-2050) and Horizons vectors to test them against.
-  await getText('https://ssd.jpl.nasa.gov/txt/p_elem_t1.txt', 'jpl-keplerian-elements-1800-2050');
+  await getText('https://ssd.jpl.nasa.gov/planets/approx_pos.html', 'jpl-approx-pos-page', 'html');
   const bodies: [string, string][] = [
     ['199', 'mercury'],
     ['299', 'venus'],
@@ -321,8 +343,8 @@ async function main(): Promise<void> {
   console.log(`${manifest.length - failed.length} of ${manifest.length} queries worked.`);
   for (const f of failed) console.log(`  failed: ${f.label}: ${f.error}`);
   // The essentials: the game's stars, the neighbourhood and the planets.
-  const essential = ['simbad-game-stars', 'simbad-neighbourhood', 'nasa-pscomppars-neighbourhood'];
-  if (failed.some((f) => essential.includes(f.label))) process.exit(1);
+  const worked = (label: string) => manifest.some((m) => m.label === label && m.ok && (m.rows ?? 0) > 0);
+  if (!worked('simbad-game-stars') || !worked('simbad-neighbourhood') || !(worked('nasa-pscomppars-neighbourhood') || worked('nasa-pscomppars-neighbourhood-all'))) process.exit(1);
 }
 
 main().catch((err) => {
