@@ -1,0 +1,81 @@
+import type { ShipClassRule } from '../types.ts';
+
+/**
+ * Ship classes. `base` is a Mk I model with neutral maker traits; the Halden courier Mk I is the
+ * starting ship, so the courier baseline equals the original player ship.
+ */
+export const SHIP_CLASSES: readonly ShipClassRule[] = [
+  {
+    id: 'courier',
+    name: 'Courier',
+    role: 'fast runs and light trade',
+    base: { hull: 100, cargo: 20, radius: 8, maxSpeed: 110, turnRate: 1.55, angularResponse: 6, linearResponse: 1.6, power: 1 },
+    growth: { hull: 1.28, cargo: 1.25, power: 1.1, handling: 1.02 },
+    slots: { gun: [2, 2, 2, 2, 2], launcher: [1, 1, 1, 1, 1], utility: [1, 1, 2, 2, 2] },
+    maxClass: { default: 3 },
+    stockLauncher: 'seeker',
+    stockUtility: [],
+    basePrice: 2400,
+  },
+  {
+    id: 'light-fighter',
+    name: 'Light fighter',
+    role: 'dogfights and escort work',
+    base: { hull: 90, cargo: 8, radius: 7, maxSpeed: 118, turnRate: 1.75, angularResponse: 6.6, linearResponse: 1.8, power: 1 },
+    growth: { hull: 1.28, cargo: 1.2, power: 1.1, handling: 1.02 },
+    slots: { gun: [2, 3, 3, 3, 3], launcher: [1, 1, 1, 1, 1], utility: [1, 1, 1, 1, 1] },
+    maxClass: { default: 3 },
+    stockLauncher: 'seeker',
+    stockUtility: [],
+    basePrice: 2800,
+  },
+  {
+    id: 'heavy-fighter',
+    name: 'Heavy fighter',
+    role: 'hunting raiders and collecting bounties',
+    base: { hull: 150, cargo: 12, radius: 9, maxSpeed: 102, turnRate: 1.4, angularResponse: 5.2, linearResponse: 1.4, power: 1.5 },
+    growth: { hull: 1.28, cargo: 1.2, power: 1.1, handling: 1.02 },
+    slots: { gun: [4, 4, 5, 5, 6], launcher: [1, 1, 1, 1, 1], utility: [1, 1, 2, 2, 2] },
+    maxClass: { default: 3 },
+    stockLauncher: 'rocket',
+    stockUtility: ['armor'],
+    basePrice: 3600,
+  },
+  {
+    id: 'gunship',
+    name: 'Gunship',
+    role: 'holding ground and breaking blockades',
+    base: { hull: 240, cargo: 14, radius: 11, maxSpeed: 90, turnRate: 1.15, angularResponse: 4.4, linearResponse: 1.2, power: 1.9 },
+    growth: { hull: 1.28, cargo: 1.2, power: 1.1, handling: 1.02 },
+    slots: { gun: [5, 5, 6, 6, 6], launcher: [2, 2, 2, 2, 2], utility: [2, 2, 2, 3, 3] },
+    maxClass: { default: 3 },
+    stockLauncher: 'torpedo',
+    stockUtility: ['armor', 'armor'],
+    basePrice: 5200,
+  },
+  {
+    id: 'freighter',
+    name: 'Freighter',
+    role: 'bulk trade',
+    base: { hull: 170, cargo: 48, radius: 12, maxSpeed: 92, turnRate: 1.1, angularResponse: 4.2, linearResponse: 1.1, power: 1.1 },
+    growth: { hull: 1.28, cargo: 1.3, power: 1.1, handling: 1.02 },
+    slots: { gun: [1, 2, 2, 2, 2], launcher: [1, 1, 1, 1, 1], utility: [2, 2, 3, 3, 3] },
+    // Freighters mount lighter guns than fighters of the same tier.
+    maxClass: { default: 3, gun: 2 },
+    stockLauncher: 'seeker',
+    stockUtility: ['cargo-pod'],
+    basePrice: 3000,
+  },
+  {
+    id: 'surveyor',
+    name: 'Surveyor',
+    role: 'exploration and science contracts',
+    base: { hull: 110, cargo: 26, radius: 9, maxSpeed: 106, turnRate: 1.45, angularResponse: 5.6, linearResponse: 1.5, power: 1.2 },
+    growth: { hull: 1.28, cargo: 1.25, power: 1.1, handling: 1.02 },
+    slots: { gun: [2, 2, 2, 2, 2], launcher: [1, 1, 1, 1, 1], utility: [2, 2, 3, 3, 3] },
+    maxClass: { default: 3 },
+    stockLauncher: 'seeker',
+    stockUtility: ['scanner', 'tractor'],
+    basePrice: 3200,
+  },
+];

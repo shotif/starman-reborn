@@ -24,9 +24,13 @@ rails replace tabs, framed glass windows, icons and numbers first, prose on dema
 - Flight HUD: command rail (free flight, go to, dock, cruise), contact list, weapons list,
   segmented gauges, bracketed target box. Touch keeps the thumb areas clear.
 
-## 3. Content generator ⏳
+## 3. Content generator 🔨
 
-Rules and guidelines as data files (factions, station types and where they may appear, mission
+Guidelines and guardrails: [PROCGEN.md](PROCGEN.md). First application done: the ship and
+equipment catalogue is generated from rule files (6 makers, 6 ship classes, 17 equipment families)
+and checked by guardrails in the unit tests.
+
+Next: rules and guidelines as data files (factions, station types and where they may appear, mission
 types with conditions and reward formulas, economy, names, tone). A seeded generator builds
 stations, points of interest, traffic and people; a daily world tick moves prices, faction
 influence and pirate activity; jobs come out of that state. Every generated item is validated
@@ -39,11 +43,15 @@ tutorial.
 Dynamic prices, faction influence and conflicts, news, reputation that changes prices, access and
 who attacks you, traffic in the lanes.
 
-## 5. Ships and combat
+## 5. Ships and combat 🔨
 
-Shipyard with 6–10 flyable ships; weapon families (lasers, particle guns, plasma, missiles,
-torpedoes, mines), countermeasures, shield and thruster classes, a tractor beam for loot; pirate
-packs, patrols, bounty targets with escorts, hired wingmen, subsystem damage.
+In progress: 35 buyable ship models across six classes from five makers, and over 100 pieces of
+equipment: four gun families whose damage types counter shield types, rocket pods, seekers and
+torpedoes, three shield types, engines, thrusters, power plants, armour, cargo pods, scanners and
+tractor beams. They come to the game with a shipyard (trade-in at 70%) and an outfitter by slot.
+
+Then: mines and countermeasures, loot to tractor in, pirate packs, patrols, bounty targets with
+escorts, hired wingmen, subsystem damage.
 
 ## 6. More real stars
 

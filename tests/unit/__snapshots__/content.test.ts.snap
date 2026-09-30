@@ -1,0 +1,171 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`catalogue summary > matches the reviewed balance table (update with \`vitest -u\` when tuning on purpose) 1`] = `
+"SHIPS
+ship.courier.1.halden          Halden Gannet          3570 hull 100  cargo 20   v 110    turn 1.55  guns 2  rating 82.3  mirror 11.5 s
+ship.courier.2.halden          Halden Albatross       7125 hull 128  cargo 25   v 112    turn 1.58  guns 2  rating 111.5 mirror 11.6 s
+ship.courier.3.halden          Halden Fulmar         14495 hull 164  cargo 31   v 114    turn 1.61  guns 2  rating 145.8 mirror 11.4 s
+ship.light-fighter.1.halden    Halden Skua            3970 hull 90   cargo 8    v 118    turn 1.75  guns 2  rating 84.6  mirror 10.8 s
+ship.light-fighter.2.halden    Halden Kittiwake       8280 hull 115  cargo 10   v 120    turn 1.79  guns 3  rating 118.8 mirror 7.7 s
+ship.freighter.1.halden        Halden Petrel          4120 hull 170  cargo 56   v 88.3   turn 1.1   guns 1  rating 61.6  mirror 33.5 s
+ship.freighter.2.halden        Halden Shearwater      8635 hull 220  cargo 72   v 90.2   turn 1.12  guns 2  rating 113.0 mirror 16.9 s
+ship.heavy-fighter.1.ares      Ares Rampart           5542 hull 189  cargo 12   v 97     turn 1.2   guns 4  rating 117.6 mirror 12.9 s
+ship.heavy-fighter.2.ares      Ares Casemate         11025 hull 243  cargo 14   v 99     turn 1.23  guns 4  rating 153.7 mirror 12.9 s
+ship.heavy-fighter.3.ares      Ares Redoubt          23065 hull 312  cargo 17   v 101    turn 1.24  guns 5  rating 221.2 mirror 10.5 s
+ship.gunship.2.ares            Ares Barbican         15790 hull 401  cargo 17   v 87     turn 0.96  guns 5  rating 184.7 mirror 14.5 s
+ship.gunship.3.ares            Ares Mattock          32780 hull 514  cargo 20   v 89     turn 0.97  guns 6  rating 260.2 mirror 12.2 s
+ship.freighter.2.ares          Ares Anvil             9045 hull 240  cargo 72   v 85.4   turn 1.01  guns 2  rating 98.1  mirror 25.5 s
+ship.light-fighter.1.toliman   Toliman Alder          3844 hull 86   cargo 9    v 118    turn 1.75  guns 2  rating 85.8  mirror 11.6 s
+ship.freighter.1.toliman       Toliman Aspen          3996 hull 163  cargo 63   v 88.3   turn 1.1   guns 1  rating 59.9  mirror 34.8 s
+ship.freighter.2.toliman       Toliman Hawthorn       8445 hull 210  cargo 82   v 90.2   turn 1.12  guns 2  rating 109.5 mirror 17.5 s
+ship.freighter.3.toliman       Toliman Larch         17445 hull 265  cargo 107  v 92.2   turn 1.14  guns 2  rating 143.3 mirror 16.8 s
+ship.surveyor.1.toliman        Toliman Cedar          4447 hull 106  cargo 30   v 106    turn 1.45  guns 2  rating 83.5  mirror 13.1 s
+ship.surveyor.2.toliman        Toliman Juniper        8996 hull 135  cargo 37   v 108    turn 1.48  guns 2  rating 107.6 mirror 13.1 s
+ship.surveyor.3.toliman        Toliman Rowan         18496 hull 173  cargo 47   v 110    turn 1.51  guns 2  rating 142.0 mirror 12.8 s
+ship.courier.2.horizon         Horizon Parallax       8145 hull 116  cargo 25   v 121    turn 1.71  guns 2  rating 111.5 mirror 11.6 s
+ship.courier.3.horizon         Horizon Nadir         16625 hull 148  cargo 31   v 124    turn 1.74  guns 2  rating 144.4 mirror 11.6 s
+ship.light-fighter.2.horizon   Horizon Aphelion       9545 hull 104  cargo 10   v 130    turn 1.93  guns 3  rating 122.7 mirror 7.3 s
+ship.light-fighter.3.horizon   Horizon Perihelion    19435 hull 133  cargo 12   v 133    turn 1.97  guns 3  rating 172.3 mirror 7.3 s
+ship.heavy-fighter.2.horizon   Horizon Umbra         12031 hull 207  cargo 14   v 112    turn 1.46  guns 4  rating 165.5 mirror 8.4 s
+ship.heavy-fighter.3.horizon   Horizon Zenith        25200 hull 262  cargo 17   v 115    turn 1.49  guns 5  rating 230.2 mirror 6.6 s
+ship.surveyor.2.horizon        Horizon Solstice      10492 hull 127  cargo 33   v 117    turn 1.6   guns 2  rating 111.0 mirror 12.2 s
+ship.surveyor.3.horizon        Horizon Penumbra      21581 hull 163  cargo 41   v 119    turn 1.63  guns 2  rating 144.1 mirror 12.2 s
+ship.courier.1.eridani         Eridani Longshore      3240 hull 98   cargo 24   v 105    turn 1.55  guns 2  rating 76.5  mirror 13.9 s
+ship.courier.2.eridani         Eridani Riptide        6545 hull 125  cargo 30   v 107    turn 1.58  guns 2  rating 99.4  mirror 13.9 s
+ship.gunship.2.eridani         Eridani Headwater     13772 hull 366  cargo 20   v 87     turn 1.06  guns 5  rating 190.1 mirror 11.6 s
+ship.gunship.3.eridani         Eridani Oxbow         28700 hull 469  cargo 24   v 89     turn 1.08  guns 6  rating 271.1 mirror 9.5 s
+ship.freighter.1.eridani       Eridani Tidewater      3745 hull 167  cargo 66   v 83.5   turn 1.1   guns 1  rating 54.6  mirror 39.1 s
+ship.freighter.2.eridani       Eridani Confluence     7934 hull 215  cargo 85   v 85.4   turn 1.12  guns 2  rating 100.5 mirror 19.6 s
+ship.freighter.3.eridani       Eridani Meander       16225 hull 275  cargo 111  v 87.4   turn 1.14  guns 2  rating 130.5 mirror 19.2 s
+ship.light-fighter.1.wake      Wake Cinder            3292 hull 83   cargo 8    v 124    turn 1.93  guns 2  rating 91.7  mirror 9.7 s
+ship.light-fighter.2.wake      Wake Ember             6815 hull 106  cargo 10   v 126    turn 1.96  guns 3  rating 130.1 mirror 6.7 s
+ship.heavy-fighter.1.wake      Wake Marten            4345 hull 163  cargo 12   v 107    turn 1.46  guns 4  rating 121.3 mirror 9.3 s
+ship.heavy-fighter.2.wake      Wake Jackal            8608 hull 210  cargo 14   v 109    turn 1.49  guns 4  rating 172.9 mirror 7.3 s
+
+EQUIPMENT
+gear.pulse.1.halden                Kestrel Mk I pulse cannon            190  Rapid energy bolts; the all-rounder. 9 energy damage per shot, 2.75 shots/s, 950 m range, 5 energy per shot. Strong against deflector shields; weak against diffuser shields.
+gear.pulse.2.halden                Kestrel Mk II pulse cannon           305  Rapid energy bolts; the all-rounder. 11.5 energy damage per shot, 2.75 shots/s, 970 m range, 5.6 energy per shot. Strong against deflector shields; weak against diffuser shields.
+gear.pulse.3.halden                Kestrel Mk III pulse cannon          485  Rapid energy bolts; the all-rounder. 15 energy damage per shot, 2.75 shots/s, 990 m range, 6.3 energy per shot. Strong against deflector shields; weak against diffuser shields.
+gear.shield-balanced.1.halden      Aegis Mk I shield                    220  An even field with no weak spots. 60 capacity, recharges 6/s after 3 s. No strengths or weaknesses.
+gear.shield-balanced.2.halden      Aegis Mk II shield                   350  An even field with no weak spots. 77 capacity, recharges 7.7/s after 2.9 s. No strengths or weaknesses.
+gear.shield-balanced.3.halden      Aegis Mk III shield                  565  An even field with no weak spots. 100 capacity, recharges 10/s after 2.75 s. No strengths or weaknesses.
+gear.seeker.1.halden               Merlin Mk I seeker launcher          150  Homing missiles that lock on and give chase. 55 damage per hit, locks on in 0.8 s, carries 6 at 35 cr each.
+gear.seeker.2.halden               Merlin Mk II seeker launcher         225  Homing missiles that lock on and give chase. 67 damage per hit, locks on in 0.8 s, carries 6 at 46 cr each.
+gear.engine.1.halden               Tailwind Mk I cruise engine          160  Sets cruise speed and acceleration. Cruise 620 m/s after a 1.8 s spin-up; acceleration ×1.
+gear.engine.2.halden               Tailwind Mk II cruise engine         240  Sets cruise speed and acceleration. Cruise 650 m/s after a 1.7 s spin-up; acceleration ×1.03.
+gear.engine.3.halden               Tailwind Mk III cruise engine        360  Sets cruise speed and acceleration. Cruise 685 m/s after a 1.6 s spin-up; acceleration ×1.05.
+gear.thruster.1.halden             Updraft Mk I thruster                110  Afterburner for combat boosts. Boost +95 m/s for 28 energy per second.
+gear.thruster.2.halden             Updraft Mk II thruster               165  Afterburner for combat boosts. Boost +103 m/s for 28 energy per second.
+gear.thruster.3.halden             Updraft Mk III thruster              250  Afterburner for combat boosts. Boost +111 m/s for 28 energy per second.
+gear.power.1.halden                Lantern Mk I power plant             150  Feeds the guns and the boost. 100 energy stored, 20 regenerated per second.
+gear.power.2.halden                Lantern Mk II power plant            235  Feeds the guns and the boost. 120 energy stored, 24 regenerated per second.
+gear.power.3.halden                Lantern Mk III power plant           360  Feeds the guns and the boost. 144 energy stored, 28.8 regenerated per second.
+gear.cargo-pod.1.halden            Seahold Mk I cargo pod               140  An external hold. +8 cargo; top speed −4%.
+gear.cargo-pod.2.halden            Seahold Mk II cargo pod              210  An external hold. +10 cargo; top speed −4%.
+gear.scanner.1.halden              Lookout Mk I scanner                 120  Longer-range sensors for scans and targeting. Scan range ×1.25.
+gear.tractor.1.halden              Gleaner Mk I tractor beam             90  Reels in loose cargo and salvage. Pulls in loose cargo from 300 m.
+gear.mass-driver.1.ares            Drophammer Mk I mass driver          200  Fast magnetic slugs, slow to cycle and hard on hulls. 17 kinetic damage per shot, 0.95 shots/s, 1150 m range, 9.5 energy per shot. Weak against deflector shields; hits hulls hard.
+gear.mass-driver.2.ares            Drophammer Mk II mass driver         320  Fast magnetic slugs, slow to cycle and hard on hulls. 22 kinetic damage per shot, 0.95 shots/s, 1170 m range, 10.6 energy per shot. Weak against deflector shields; hits hulls hard.
+gear.mass-driver.3.ares            Drophammer Mk III mass driver        510  Fast magnetic slugs, slow to cycle and hard on hulls. 28 kinetic damage per shot, 0.95 shots/s, 1200 m range, 11.9 energy per shot. Weak against deflector shields; hits hulls hard.
+gear.mass-driver.4.ares            Drophammer Mk IV mass driver         815  Fast magnetic slugs, slow to cycle and hard on hulls. 37 kinetic damage per shot, 0.95 shots/s, 1220 m range, 13.3 energy per shot. Weak against deflector shields; hits hulls hard.
+gear.mass-driver.5.ares            Drophammer Mk V mass driver         1305  Fast magnetic slugs, slow to cycle and hard on hulls. 48 kinetic damage per shot, 0.95 shots/s, 1240 m range, 14.9 energy per shot. Weak against deflector shields; hits hulls hard.
+gear.shield-deflector.1.ares       Bulwark Mk I deflector shield        230  A hard field that sheds slugs. 65 capacity, recharges 4.6/s after 3.2 s. Resists kinetic; weak against energy.
+gear.shield-deflector.2.ares       Bulwark Mk II deflector shield       370  A hard field that sheds slugs. 84 capacity, recharges 6/s after 3.05 s. Resists kinetic; weak against energy.
+gear.shield-deflector.3.ares       Bulwark Mk III deflector shield      590  A hard field that sheds slugs. 110 capacity, recharges 7.8/s after 2.95 s. Resists kinetic; weak against energy.
+gear.shield-deflector.4.ares       Bulwark Mk IV deflector shield       945  A hard field that sheds slugs. 140 capacity, recharges 9.9/s after 2.85 s. Resists kinetic; weak against energy.
+gear.shield-deflector.5.ares       Bulwark Mk V deflector shield       1515  A hard field that sheds slugs. 180 capacity, recharges 12.8/s after 2.7 s. Resists kinetic; weak against energy.
+gear.plasma.2.ares                 Bellows Mk II plasma cannon          320  Heavy, slow plasma bolts that burn through diffusers. 44 plasma damage per shot, 0.7 shots/s, 870 m range, 16.5 energy per shot. Strong against diffuser shields.
+gear.plasma.3.ares                 Bellows Mk III plasma cannon         510  Heavy, slow plasma bolts that burn through diffusers. 57 plasma damage per shot, 0.7 shots/s, 880 m range, 18.5 energy per shot. Strong against diffuser shields.
+gear.plasma.4.ares                 Bellows Mk IV plasma cannon          815  Heavy, slow plasma bolts that burn through diffusers. 73 plasma damage per shot, 0.7 shots/s, 900 m range, 20.7 energy per shot. Strong against diffuser shields.
+gear.rocket-pod.1.ares             Rivet Mk I rocket pod                147  Unguided rockets; aim well, reload cheaply. 39 damage per hit, unguided, carries 12 at 13 cr each.
+gear.rocket-pod.2.ares             Rivet Mk II rocket pod               220  Unguided rockets; aim well, reload cheaply. 48 damage per hit, unguided, carries 12 at 16 cr each.
+gear.rocket-pod.3.ares             Rivet Mk III rocket pod              330  Unguided rockets; aim well, reload cheaply. 60 damage per hit, unguided, carries 12 at 21 cr each.
+gear.torpedo.2.ares                Sledge Mk II torpedo tube            380  Slow, heavy torpedoes for big targets. 218 damage per hit, locks on in 1.6 s, carries 2 at 164 cr each.
+gear.torpedo.3.ares                Sledge Mk III torpedo tube           565  Slow, heavy torpedoes for big targets. 267 damage per hit, locks on in 1.6 s, carries 2 at 215 cr each.
+gear.torpedo.4.ares                Sledge Mk IV torpedo tube            850  Slow, heavy torpedoes for big targets. 332 damage per hit, locks on in 1.6 s, carries 2 at 275 cr each.
+gear.armor.1.ares                  Ironclad Mk I armour plating         137  Bolt-on hull plates. +25 hull; turning −5%.
+gear.armor.2.ares                  Ironclad Mk II armour plating        205  Bolt-on hull plates. +33 hull; turning −5%.
+gear.armor.3.ares                  Ironclad Mk III armour plating       305  Bolt-on hull plates. +42 hull; turning −5%.
+gear.power.1.ares                  Furnace Mk I power plant             158  Feeds the guns and the boost. 106 energy stored, 19.2 regenerated per second.
+gear.power.2.ares                  Furnace Mk II power plant            245  Feeds the guns and the boost. 128 energy stored, 23 regenerated per second.
+gear.power.3.ares                  Furnace Mk III power plant           380  Feeds the guns and the boost. 153 energy stored, 27.6 regenerated per second.
+gear.power.4.ares                  Furnace Mk IV power plant            585  Feeds the guns and the boost. 184 energy stored, 33.2 regenerated per second.
+gear.pulse.1.toliman               Thorn Mk I pulse cannon              184  Rapid energy bolts; the all-rounder. 9 energy damage per shot, 2.75 shots/s, 950 m range, 4.5 energy per shot. Strong against deflector shields; weak against diffuser shields.
+gear.pulse.2.toliman               Thorn Mk II pulse cannon             295  Rapid energy bolts; the all-rounder. 11.5 energy damage per shot, 2.75 shots/s, 970 m range, 5 energy per shot. Strong against deflector shields; weak against diffuser shields.
+gear.shield-diffuser.1.toliman     Canopy Mk I diffuser shield          215  Spreads energy hits thin and recovers quickly. 54 capacity, recharges 7.4/s after 2.8 s. Resists energy; weak against plasma.
+gear.shield-diffuser.2.toliman     Canopy Mk II diffuser shield         340  Spreads energy hits thin and recovers quickly. 69 capacity, recharges 9.5/s after 2.7 s. Resists energy; weak against plasma.
+gear.shield-diffuser.3.toliman     Canopy Mk III diffuser shield        545  Spreads energy hits thin and recovers quickly. 90 capacity, recharges 12.4/s after 2.6 s. Resists energy; weak against plasma.
+gear.engine.1.toliman              Seedwind Mk I cruise engine          155  Sets cruise speed and acceleration. Cruise 600 m/s after a 1.8 s spin-up; acceleration ×1.07.
+gear.engine.2.toliman              Seedwind Mk II cruise engine         235  Sets cruise speed and acceleration. Cruise 630 m/s after a 1.7 s spin-up; acceleration ×1.1.
+gear.engine.3.toliman              Seedwind Mk III cruise engine        350  Sets cruise speed and acceleration. Cruise 665 m/s after a 1.6 s spin-up; acceleration ×1.11.
+gear.power.1.toliman               Sapwell Mk I power plant             146  Feeds the guns and the boost. 87 energy stored, 21.9 regenerated per second.
+gear.power.2.toliman               Sapwell Mk II power plant            225  Feeds the guns and the boost. 105 energy stored, 26.3 regenerated per second.
+gear.power.3.toliman               Sapwell Mk III power plant           350  Feeds the guns and the boost. 126 energy stored, 31.5 regenerated per second.
+gear.cargo-pod.1.toliman           Granary Mk I cargo pod               136  An external hold. +8 cargo; top speed −4%.
+gear.cargo-pod.2.toliman           Granary Mk II cargo pod              205  An external hold. +10 cargo; top speed −4%.
+gear.cargo-pod.3.toliman           Granary Mk III cargo pod             305  An external hold. +14 cargo; top speed −4%.
+gear.scanner.1.toliman             Taproot Mk I scanner                 116  Longer-range sensors for scans and targeting. Scan range ×1.25.
+gear.scanner.2.toliman             Taproot Mk II scanner                175  Longer-range sensors for scans and targeting. Scan range ×1.4.
+gear.scanner.3.toliman             Taproot Mk III scanner               260  Longer-range sensors for scans and targeting. Scan range ×1.55.
+gear.tractor.1.toliman             Tendril Mk I tractor beam             87  Reels in loose cargo and salvage. Pulls in loose cargo from 300 m.
+gear.tractor.2.toliman             Tendril Mk II tractor beam           131  Reels in loose cargo and salvage. Pulls in loose cargo from 360 m.
+gear.tractor.3.toliman             Tendril Mk III tractor beam          196  Reels in loose cargo and salvage. Pulls in loose cargo from 430 m.
+gear.pulse.2.horizon               Lumen Mk II pulse cannon             350  Rapid energy bolts; the all-rounder. 10.5 energy damage per shot, 3.1 shots/s, 970 m range, 5.3 energy per shot. Strong against deflector shields; weak against diffuser shields.
+gear.pulse.3.horizon               Lumen Mk III pulse cannon            560  Rapid energy bolts; the all-rounder. 13.5 energy damage per shot, 3.1 shots/s, 990 m range, 6 energy per shot. Strong against deflector shields; weak against diffuser shields.
+gear.pulse.4.horizon               Lumen Mk IV pulse cannon             895  Rapid energy bolts; the all-rounder. 17.5 energy damage per shot, 3.1 shots/s, 1010 m range, 6.7 energy per shot. Strong against deflector shields; weak against diffuser shields.
+gear.pulse.5.horizon               Lumen Mk V pulse cannon             1430  Rapid energy bolts; the all-rounder. 23 energy damage per shot, 3.1 shots/s, 1030 m range, 7.5 energy per shot. Strong against deflector shields; weak against diffuser shields.
+gear.shield-diffuser.2.horizon     Prism Mk II diffuser shield          405  Spreads energy hits thin and recovers quickly. 68 capacity, recharges 9.8/s after 2.7 s. Resists energy; weak against plasma.
+gear.shield-diffuser.3.horizon     Prism Mk III diffuser shield         650  Spreads energy hits thin and recovers quickly. 88 capacity, recharges 12.6/s after 2.6 s. Resists energy; weak against plasma.
+gear.shield-diffuser.4.horizon     Prism Mk IV diffuser shield         1035  Spreads energy hits thin and recovers quickly. 115 capacity, recharges 16.5/s after 2.5 s. Resists energy; weak against plasma.
+gear.shield-diffuser.5.horizon     Prism Mk V diffuser shield          1660  Spreads energy hits thin and recovers quickly. 145 capacity, recharges 20.8/s after 2.4 s. Resists energy; weak against plasma.
+gear.ion.2.horizon                 Eclipse Mk II ion disruptor          350  Collapses shields fast but barely scratches a hull; pair it with another gun. 15 ion damage per shot, 2.45 shots/s, 920 m range, 6.4 energy per shot. Strong against deflector, diffuser and balanced shields; barely scratches hulls.
+gear.ion.3.horizon                 Eclipse Mk III ion disruptor         560  Collapses shields fast but barely scratches a hull; pair it with another gun. 20 ion damage per shot, 2.45 shots/s, 940 m range, 7.2 energy per shot. Strong against deflector, diffuser and balanced shields; barely scratches hulls.
+gear.ion.4.horizon                 Eclipse Mk IV ion disruptor          895  Collapses shields fast but barely scratches a hull; pair it with another gun. 26 ion damage per shot, 2.45 shots/s, 960 m range, 8 energy per shot. Strong against deflector, diffuser and balanced shields; barely scratches hulls.
+gear.ion.5.horizon                 Eclipse Mk V ion disruptor          1430  Collapses shields fast but barely scratches a hull; pair it with another gun. 33 ion damage per shot, 2.45 shots/s, 970 m range, 9 energy per shot. Strong against deflector, diffuser and balanced shields; barely scratches hulls.
+gear.seeker.2.horizon              Glint Mk II seeker launcher          260  Homing missiles that lock on and give chase. 66 damage per hit, locks on in 0.8 s, carries 6 at 52 cr each.
+gear.seeker.3.horizon              Glint Mk III seeker launcher         390  Homing missiles that lock on and give chase. 82 damage per hit, locks on in 0.8 s, carries 6 at 68 cr each.
+gear.seeker.4.horizon              Glint Mk IV seeker launcher          580  Homing missiles that lock on and give chase. 101 damage per hit, locks on in 0.8 s, carries 6 at 88 cr each.
+gear.engine.2.horizon              Apogee Mk II cruise engine           275  Sets cruise speed and acceleration. Cruise 690 m/s after a 1.7 s spin-up; acceleration ×0.92.
+gear.engine.3.horizon              Apogee Mk III cruise engine          415  Sets cruise speed and acceleration. Cruise 725 m/s after a 1.6 s spin-up; acceleration ×0.94.
+gear.engine.4.horizon              Apogee Mk IV cruise engine           620  Sets cruise speed and acceleration. Cruise 760 m/s after a 1.55 s spin-up; acceleration ×0.98.
+gear.thruster.2.horizon            Flare Mk II thruster                 190  Afterburner for combat boosts. Boost +100 m/s for 26.5 energy per second.
+gear.thruster.3.horizon            Flare Mk III thruster                285  Afterburner for combat boosts. Boost +108 m/s for 26.5 energy per second.
+gear.thruster.4.horizon            Flare Mk IV thruster                 425  Afterburner for combat boosts. Boost +116 m/s for 26.5 energy per second.
+gear.thruster.5.horizon            Flare Mk V thruster                  640  Afterburner for combat boosts. Boost +126 m/s for 26.5 energy per second.
+gear.power.2.horizon               Flux Mk II power plant               265  Feeds the guns and the boost. 113 energy stored, 25 regenerated per second.
+gear.power.3.horizon               Flux Mk III power plant              415  Feeds the guns and the boost. 136 energy stored, 29.9 regenerated per second.
+gear.power.4.horizon               Flux Mk IV power plant               640  Feeds the guns and the boost. 163 energy stored, 35.9 regenerated per second.
+gear.power.5.horizon               Flux Mk V power plant                995  Feeds the guns and the boost. 196 energy stored, 43.1 regenerated per second.
+gear.scanner.3.horizon             Iris Mk III scanner                  310  Longer-range sensors for scans and targeting. Scan range ×1.55.
+gear.scanner.4.horizon             Iris Mk IV scanner                   465  Longer-range sensors for scans and targeting. Scan range ×1.75.
+gear.mass-driver.1.eridani         Millrace Mk I mass driver            171  Fast magnetic slugs, slow to cycle and hard on hulls. 15.5 kinetic damage per shot, 1.1 shots/s, 1150 m range, 9 energy per shot. Weak against deflector shields; hits hulls hard.
+gear.mass-driver.2.eridani         Millrace Mk II mass driver           275  Fast magnetic slugs, slow to cycle and hard on hulls. 20 kinetic damage per shot, 1.1 shots/s, 1170 m range, 10.1 energy per shot. Weak against deflector shields; hits hulls hard.
+gear.mass-driver.3.eridani         Millrace Mk III mass driver          440  Fast magnetic slugs, slow to cycle and hard on hulls. 26 kinetic damage per shot, 1.1 shots/s, 1200 m range, 11.3 energy per shot. Weak against deflector shields; hits hulls hard.
+gear.shield-balanced.1.eridani     Levee Mk I shield                    198  An even field with no weak spots. 61 capacity, recharges 5.8/s after 3 s. No strengths or weaknesses.
+gear.shield-balanced.2.eridani     Levee Mk II shield                   315  An even field with no weak spots. 79 capacity, recharges 7.5/s after 2.9 s. No strengths or weaknesses.
+gear.shield-balanced.3.eridani     Levee Mk III shield                  505  An even field with no weak spots. 100 capacity, recharges 9.5/s after 2.75 s. No strengths or weaknesses.
+gear.shield-balanced.4.eridani     Levee Mk IV shield                   810  An even field with no weak spots. 130 capacity, recharges 12.3/s after 2.65 s. No strengths or weaknesses.
+gear.engine.1.eridani              Current Mk I cruise engine           144  Sets cruise speed and acceleration. Cruise 620 m/s after a 1.8 s spin-up; acceleration ×1.
+gear.engine.2.eridani              Current Mk II cruise engine          215  Sets cruise speed and acceleration. Cruise 650 m/s after a 1.7 s spin-up; acceleration ×1.03.
+gear.cargo-pod.1.eridani           Floodgate Mk I cargo pod             126  An external hold. +8 cargo; top speed −4%.
+gear.cargo-pod.2.eridani           Floodgate Mk II cargo pod            189  An external hold. +10 cargo; top speed −4%.
+gear.cargo-pod.3.eridani           Floodgate Mk III cargo pod           285  An external hold. +14 cargo; top speed −4%.
+gear.cargo-pod.4.eridani           Floodgate Mk IV cargo pod            425  An external hold. +18 cargo; top speed −4%.
+gear.armor.1.eridani               Breakwater Mk I armour plating       117  Bolt-on hull plates. +25 hull; turning −5%.
+gear.armor.2.eridani               Breakwater Mk II armour plating      176  Bolt-on hull plates. +33 hull; turning −5%.
+gear.tractor.1.eridani             Undertow Mk I tractor beam            81  Reels in loose cargo and salvage. Pulls in loose cargo from 300 m.
+gear.tractor.2.eridani             Undertow Mk II tractor beam          122  Reels in loose cargo and salvage. Pulls in loose cargo from 360 m.
+gear.plasma.1.wake                 Scorch Mk I plasma cannon            152  Heavy, slow plasma bolts that burn through diffusers. 29 plasma damage per shot, 0.9 shots/s, 850 m range, 15.9 energy per shot. Strong against diffuser shields.
+gear.plasma.2.wake                 Scorch Mk II plasma cannon           245  Heavy, slow plasma bolts that burn through diffusers. 38 plasma damage per shot, 0.9 shots/s, 870 m range, 17.8 energy per shot. Strong against diffuser shields.
+gear.plasma.3.wake                 Scorch Mk III plasma cannon          390  Heavy, slow plasma bolts that burn through diffusers. 49 plasma damage per shot, 0.9 shots/s, 880 m range, 20 energy per shot. Strong against diffuser shields.
+gear.shield-deflector.1.wake       Scab Mk I deflector shield           176  A hard field that sheds slugs. 62 capacity, recharges 5.2/s after 3.2 s. Resists kinetic; weak against energy.
+gear.shield-deflector.2.wake       Scab Mk II deflector shield          280  A hard field that sheds slugs. 80 capacity, recharges 6.7/s after 3.05 s. Resists kinetic; weak against energy.
+gear.mass-driver.1.wake            Fang Mk I mass driver                152  Fast magnetic slugs, slow to cycle and hard on hulls. 15 kinetic damage per shot, 1.2 shots/s, 1150 m range, 10.2 energy per shot. Weak against deflector shields; hits hulls hard.
+gear.mass-driver.2.wake            Fang Mk II mass driver               245  Fast magnetic slugs, slow to cycle and hard on hulls. 19.5 kinetic damage per shot, 1.2 shots/s, 1170 m range, 11.5 energy per shot. Weak against deflector shields; hits hulls hard.
+gear.ion.1.wake                    Static Mk I ion disruptor            152  Collapses shields fast but barely scratches a hull; pair it with another gun. 12.5 ion damage per shot, 2.4 shots/s, 900 m range, 6.8 energy per shot. Strong against deflector, diffuser and balanced shields; barely scratches hulls.
+gear.ion.2.wake                    Static Mk II ion disruptor           245  Collapses shields fast but barely scratches a hull; pair it with another gun. 16.5 ion damage per shot, 2.4 shots/s, 920 m range, 7.6 energy per shot. Strong against deflector, diffuser and balanced shields; barely scratches hulls.
+gear.rocket-pod.1.wake             Spite Mk I rocket pod                112  Unguided rockets; aim well, reload cheaply. 40 damage per hit, unguided, carries 12 at 10 cr each.
+gear.rocket-pod.2.wake             Spite Mk II rocket pod               168  Unguided rockets; aim well, reload cheaply. 49 damage per hit, unguided, carries 12 at 12 cr each.
+gear.rocket-pod.3.wake             Spite Mk III rocket pod              250  Unguided rockets; aim well, reload cheaply. 61 damage per hit, unguided, carries 12 at 16 cr each.
+gear.torpedo.2.wake                Grudge Mk II torpedo tube            290  Slow, heavy torpedoes for big targets. 222 damage per hit, locks on in 1.6 s, carries 2 at 125 cr each."
+`;
