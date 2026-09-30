@@ -3,6 +3,7 @@ export * from './stars.ts';
 export * from './planets.ts';
 export * from './skybox.ts';
 export * from './ships.ts';
+export * from './shipgen/index.ts';
 export * from './stations.ts';
 export * from './structures.ts';
 export * from './asteroids.ts';

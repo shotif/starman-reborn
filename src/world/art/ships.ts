@@ -153,7 +153,7 @@ void main() {
  * Shared ship assembly.
  * ---------------------------------------------------------------------------------------------- */
 
-interface EngineLook {
+export interface EngineLook {
   nozzles: V3[];
   /** Nozzle exit radius. */
   radius: number;
@@ -166,7 +166,7 @@ interface EngineLook {
   cruiseColor: THREE.ColorRepresentation;
 }
 
-interface ShipBuild {
+export interface ShipBuild {
   kit: Kit;
   engine: EngineLook;
   lights: LightSpec[];
@@ -177,7 +177,7 @@ interface ShipBuild {
   name: string;
 }
 
-function assembleShip(b: ShipBuild, ctx: ArtContext): ShipArt {
+export function assembleShip(b: ShipBuild, ctx: ArtContext): ShipArt {
   const group = new THREE.Group();
   group.name = b.name;
   b.kit.build(group, standardSet(ctx.quality));
