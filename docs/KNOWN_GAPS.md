@@ -43,8 +43,9 @@ This is an honest list of what the prototype does not do yet, or what has not be
 - Market stock only moves when the player trades; traders flying the lanes are scenery for the
   economy (they do not restock stations), and nothing is simulated in systems the player is not in.
 - Traffic and raider packs exist only around the player: nothing persists after you jump or dock.
-- Generated stations borrow the closest hand-made exterior and interior model until the station
-  generators are integrated (the bay view of a borrowed Earth-orbit interior still shows Earth).
+- Generated stations have generated exteriors (twelve kinds in four owner palettes) but still
+  borrow the closest hand-made interior until the interior generator is integrated (the bay view
+  of a borrowed Earth-orbit interior still shows Earth).
 - No subsystem damage, fleet battles, multiplayer, cloud saves or cross-device sync (out of scope
   per the spec).
 - Solar System planet positions are schematic and do not follow an ephemeris.
