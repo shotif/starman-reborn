@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import { spectralClass } from '../../content/world/generate.ts';
 import type { GeneratedStation, StationType } from '../../content/world/types.ts';
-import { getComponent, getSystem, WORLD } from '../../data/systems.ts';
-import type { StellarComponent, SystemId } from '../../data/types.ts';
+import { beltsOf, getComponent, getSystem, WORLD } from '../../data/systems.ts';
+import type { BeltRecord, StellarComponent, SystemId } from '../../data/types.ts';
 import { hashString, rng } from '../../content/random.ts';
 import type { StarKind } from '../art/stars.ts';
 import type { StationKind } from '../art/stations.ts';
-import type { SceneLaneDef, SceneStarDef, SceneStationDef, SystemSceneDef } from '../sceneTypes.ts';
+import type { SceneBeltDef, SceneDustDef, SceneLaneDef, ScenePlanetDef, SceneStarDef, SceneStationDef, SystemSceneDef } from '../sceneTypes.ts';
 import { confirmedPlanets, dirTo, polar, v } from './helpers.ts';
 
 /**
@@ -122,6 +122,13 @@ function buildCatalogScene(systemId: SystemId): SystemSceneDef {
   const outward = main ? dirTo(main.anchor, hub) : v(1, 0, 0);
   const side = new THREE.Vector3().crossVectors(outward, v(0, 1, 0)).normalize();
   const arrival = hub.clone().addScaledVector(outward, 9_000).addScaledVector(side, 3_500).add(v(0, 1_600, 0));
+  // Belts ring the stations and the arrival point, so nobody arrives or docks in the rocks.
+  const hostOf = (anchorId: string) => (starPos.has(anchorId) ? anchorId : planets.find((p) => p.id === anchorId)?.hostStarId);
+  const rings = beltRings(systemId, starPos, stars, [
+    ...planets.map((p) => ({ position: p.position, radius: p.radius, hostStarId: p.hostStarId })),
+    ...placed.map((p) => ({ position: p.position, radius: 1_500, ...(hostOf(p.g.anchorId) ? { hostStarId: hostOf(p.g.anchorId)! } : {}) })),
+    { position: arrival, radius: 1_500, ...(main && hostOf(main.g.anchorId) ? { hostStarId: hostOf(main.g.anchorId)! } : {}) },
+  ]);
 
   const stations: SceneStationDef[] = placed.map(({ g, position, anchor }) => ({
     locationId: g.id,
@@ -141,15 +148,65 @@ function buildCatalogScene(systemId: SystemId): SystemSceneDef {
     planets,
     stations,
     lanes: lanesFor(placed, stars),
-    belts: [],
-    dust: [],
+    belts: rings.belts,
+    dust: rings.dust,
     beacons: [{ id: `${systemId}-jump`, name: `${sys.displayName} jump beacon`, position: arrival.clone().add(v(220, -90, 280)), kind: 'jump' }],
     scanZones: [],
     encounters: [],
     arrival: { position: arrival, lookAt: hub },
     orbitLines: planets.length > 0,
-    scaleNote: comps.length > 1 ? 'Star separations, planet orbits and sizes are compressed and schematic.' : 'Planet orbits, sizes and station distances are compressed and schematic.',
+    scaleNote: `${comps.length > 1 ? 'Star separations, planet orbits and sizes are compressed and schematic.' : 'Planet orbits, sizes and station distances are compressed and schematic.'}${rings.belts.length ? ' The belt is placed schematically.' : ''}`,
   };
+}
+
+/** Rock colour by what a belt is reported as (an artistic choice). */
+const BELT_COLOR: Record<BeltRecord['kind'], { rock: string; dust: string }> = {
+  'asteroid-belt': { rock: '#8c8174', dust: '#a09482' },
+  'kuiper-belt': { rock: '#a9bccb', dust: '#9fb0c2' },
+  'debris-disc': { rock: '#94857a', dust: '#b09080' },
+};
+
+/**
+ * A ring for every belt or debris disc a cited source reports round one of the system's stars
+ * (docs/PROCGEN.md §19). Where the source gives no extent, which is every catalogue system's, the
+ * ring sits schematically beyond the host's compressed planet orbits and whatever else is placed
+ * round it (`around`: planets of that host, stations, the arrival point), with dust, since debris
+ * discs are seen by their dust.
+ */
+function beltRings(
+  systemId: SystemId,
+  starPos: ReadonlyMap<string, THREE.Vector3>,
+  stars: readonly SceneStarDef[],
+  around: readonly (Pick<ScenePlanetDef, 'position' | 'radius'> & { hostStarId?: string })[],
+): { belts: SceneBeltDef[]; dust: SceneDustDef[] } {
+  const belts: SceneBeltDef[] = [];
+  const dust: SceneDustDef[] = [];
+  for (const b of beltsOf(systemId)) {
+    const star = stars.find((s) => s.id === b.hostId) ?? stars[0]!;
+    const center = starPos.get(star.id) ?? v(0, 0, 0);
+    const radial = (p: THREE.Vector3) => Math.hypot(p.x - center.x, p.z - center.z);
+    const outermost = around.filter((p) => !p.hostStarId || p.hostStarId === star.id).reduce((m, p) => Math.max(m, radial(p.position) + p.radius), 0);
+    const inner = Math.round(Math.max(18_000, star.radius * 6, outermost + 6_500) / 500) * 500;
+    const outer = inner + 12_000;
+    const seed = hashString(b.id) % 997;
+    const look = BELT_COLOR[b.kind];
+    belts.push({
+      id: `${b.id}-ring`,
+      beltId: b.id,
+      center,
+      shape: 'ring',
+      innerRadius: inner,
+      outerRadius: outer,
+      thickness: 2_000,
+      count: { low: 300, medium: 600, high: 1_000 },
+      sizeMin: 14,
+      sizeMax: 120,
+      color: look.rock,
+      seed,
+    });
+    dust.push({ center, innerRadius: inner - 2_500, outerRadius: outer + 2_500, color: look.dust, opacity: 0.14, seed: seed + 1 });
+  }
+  return { belts, dust };
 }
 
 /** A trade lane from the arrival station to each open station far away, unless it would graze a star. */

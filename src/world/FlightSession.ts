@@ -24,6 +24,9 @@ import { LAW } from '../content/law/rules.ts';
 import type { EscortSetup } from '../economy/jobs.ts';
 import type { Lingering } from '../app/state.ts';
 import { DENS } from '../content/dens/rules.ts';
+import { MINED_GOODS, MINING } from '../content/mining/rules.ts';
+import { cutRock, minerHunt, securityOf, stowUnit } from '../economy/mining.ts';
+import { itemsThatFit } from '../economy/cargo.ts';
 import { COMBAT } from '../content/combat/rules.ts';
 import { CHATTER, type ChatterKind } from '../content/combat/chatter.ts';
 import { getCatalog } from '../content/catalog.ts';
@@ -34,7 +37,9 @@ import { aimErrors, avoidObstacles, flyTo, steerToward, type Obstacle } from '..
 import { ChaseCamera } from '../flight/ChaseCamera.ts';
 import type { FlightAction, FlightInput } from '../flight/input/types.ts';
 import { lookRotation, neutralControls, RAIDER_SHIP, ShipBody, stepBounded, type ShipControls, type ShipParams } from '../flight/ShipBody.ts';
-import { emptyHudModel, WING_ORDER_LABEL, type HudContextAction, type HudMarker, type HudModel, type WingOrder } from '../ui/hud/hudModel.ts';
+import { emptyHudModel, WING_ORDER_LABEL, type HudContextAction, type HudMarker, type HudMining, type HudModel, type WingOrder } from '../ui/hud/hudModel.ts';
+import { createMiningBeam, type MiningBeamArt } from './art/mining.ts';
+import { MiningField, type MinableRock, type MiningLedger } from './MiningField.ts';
 
 /** What a wingman says when given an order. */
 const WING_ACK: Record<WingOrder, string> = { free: 'Copy. Engaging at will.', attack: 'Copy, going for your target.', form: 'Copy. Forming up on you.' };
@@ -100,6 +105,8 @@ export interface FlightCallbacks {
   onWingmanLost?(crewId: string): void;
   /** Radio chatter: who speaks, and the line. */
   onComm?(speaker: string, text: string): void;
+  /** The mining laser cut a whole unit from a rock of belt `beltId`: into the hold, or out in a cargo pod (docs/PROCGEN.md §19). */
+  onMined?(beltId: string, commodity: CommodityId, into: 'hold' | 'pod'): void;
   onMessage(text: string, tone: 'good' | 'bad' | 'info'): void;
 }
 
@@ -300,6 +307,11 @@ function boltKind(type: DamageType, tier: number): ProjectileKind {
   return tier >= 3 ? 'player-pulse-mk2' : 'player-pulse';
 }
 
+/** Targets whose distance is shown to their surface rather than their centre (a belt's is to its band of rock). */
+function surfaced(kind: Target['kind']): boolean {
+  return kind === 'planet' || kind === 'star' || kind === 'rock';
+}
+
 function easeInOut(t: number): number {
   return t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
 }
@@ -405,6 +417,12 @@ export class FlightSession {
   /** A patrol's cargo scan under way, and whether one has run this session. */
   private scan: { npc: NpcShip; t: number } | null = null;
   private scanned = false;
+  /** The belts and their minable rocks (docs/PROCGEN.md §19), the mining beam, and the pack hunting the miner. */
+  private readonly mining: MiningField;
+  private readonly beamArt: MiningBeamArt;
+  private beam: { rockId: string; cut: number; pods: number; soundIn: number; sparkIn: number; huntIn: number } | null = null;
+  private minerPack: number | null = null;
+  private holdFullSaid = false;
 
   constructor(opts: {
     system: SystemScene;
@@ -415,6 +433,8 @@ export class FlightSession {
     audio: AudioEngine;
     callbacks: FlightCallbacks;
     traffic?: TrafficSetup | null;
+    /** What has been cut from rocks, kept between flights (never saved). */
+    minedRocks?: MiningLedger;
   }) {
     this.system = opts.system;
     this.camera = opts.camera;
@@ -480,6 +500,15 @@ export class FlightSession {
     this.applySystems();
     this.projectileRenderer = createProjectileRenderer(320, opts.ctx);
     this.system.scene.add(this.projectileRenderer.object);
+    // Rocks keep clear of stations (the Eridani Mining Hub sits in its belt), planets and stars.
+    const clear = MINING.rocks.clearance;
+    this.mining = new MiningField(this.system.scene, this.system.def.belts, opts.ctx, opts.minedRocks, [
+      ...this.system.docks.map((d) => ({ center: d.def.position, radius: d.radius + clear })),
+      ...this.system.planets.map((p) => ({ center: p.def.position, radius: p.def.radius + clear })),
+      ...this.system.stars.map((s) => ({ center: s.def.position, radius: s.def.radius * 1.3 + clear })),
+    ]);
+    this.beamArt = createMiningBeam(opts.ctx);
+    this.system.scene.add(this.beamArt.object);
     this.streaks = createSpeedStreaks(opts.ctx);
     this.camera.add(this.streaks.object);
     if (!this.camera.parent) this.system.scene.add(this.camera);
@@ -516,6 +545,8 @@ export class FlightSession {
       this.throttle = 0;
     }
     this.spawnPracticeDrones();
+    // The belts' nearest points, and any rocks already near the player (the Eridani hub is in its belt).
+    this.mining.update(0, p.position, this.state.clock, this.camera);
     this.syncPlayerArt(0);
     this.chase.snap(p);
     // Encounters already resolved in this save never retrigger.
@@ -547,7 +578,8 @@ export class FlightSession {
   }
 
   private objectiveTargetId(): string | null {
-    if (this.objective.targetId && this.loot.some((l) => l.target.id === this.objective.targetId)) return this.objective.targetId;
+    const id = this.objective.targetId;
+    if (id && (this.loot.some((l) => l.target.id === id) || this.mining.find(id))) return id;
     if (this.objective.locationId) return `station:${this.objective.locationId}`;
     if (this.objective.bodyId) return `planet:${this.objective.bodyId}`;
     return null;
@@ -599,6 +631,7 @@ export class FlightSession {
     for (const l of this.loot) if (l.target.alive) list.push(l.target);
     for (const d of this.drones) if (d.target.alive) list.push(d.target);
     for (const m of this.mines) if (m.target.alive) list.push(m.target);
+    for (const t of this.mining.targets()) if (t.alive) list.push(t);
     return list;
   }
 
@@ -696,7 +729,7 @@ export class FlightSession {
     for (const n of this.npcs) if (n.target.id === id && n.target.alive) return n.target;
     for (const l of this.loot) if (l.target.id === id && l.target.alive) return l.target;
     for (const d of this.drones) if (d.target.id === id && d.target.alive) return d.target;
-    return null;
+    return this.mining.find(id);
   }
 
   selectTarget(id: string | null): void {
@@ -766,6 +799,9 @@ export class FlightSession {
       case 'decoy':
         this.launchDecoy();
         break;
+      case 'mine':
+        this.toggleMining();
+        break;
       case 'wing-order':
         this.cycleWingOrder();
         break;
@@ -800,10 +836,11 @@ export class FlightSession {
   }
 
   private objectiveTarget(): Target | null {
-    const { locationId, bodyId } = this.objective;
+    const { locationId, bodyId, targetId } = this.objective;
     if (locationId) return this.findTarget(`station:${locationId}`);
     if (bodyId) return this.findTarget(`planet:${bodyId}`);
-    return null;
+    // A claim sends the player to a belt.
+    return targetId ? this.mining.find(targetId) : null;
   }
 
   private nearestDock(): { site: DockSite; distance: number } | null {
@@ -851,6 +888,9 @@ export class FlightSession {
     if (mode === 'dock' || mode === 'lane') return { label: 'Stop', action: 'cancel-autopilot', icon: 'close' };
     if (this.busy) return null;
     const sel = this.selectedTarget;
+    // The selected rock in the beam's reach: mining comes first (docs/PROCGEN.md §19).
+    if (this.beam) return { label: 'Stop mining', action: 'mine', icon: 'mine' };
+    if (this.miningReady()) return { label: 'Mine', action: 'mine', icon: 'mine' };
     if (this.dockCandidate() && !this.hostilesNearby(2_200)) {
       return { label: 'Dock', action: 'interact', icon: 'dock' };
     }
@@ -859,9 +899,12 @@ export class FlightSession {
     if (sel && (sel.kind === 'planet' || sel.kind === 'star') && sel.position.distanceTo(this.player.position) < this.scanRangeFor(sel) * 3) {
       return { label: 'Scan', action: 'scan', icon: 'scan' };
     }
+    // A rock in scan range that has not been read; a belt once the ship is at it (Go to comes first).
+    if (sel && this.canScanMining(sel) && (sel.kind === 'rock' || this.surfaceDistance(sel) < 1_500)) return { label: 'Scan', action: 'scan', icon: 'scan' };
     const goal = sel ?? this.objectiveTarget();
     const headingTo = this.autopilotTargetId();
-    if (goal && goal.position.distanceTo(this.player.position) > 1_500 && goal.id !== headingTo) {
+    const far = !goal ? false : goal.kind === 'rock' ? this.surfaceDistance(goal) > MINING.range : goal.kind === 'belt' ? this.surfaceDistance(goal) > 1_500 : goal.position.distanceTo(this.player.position) > 1_500;
+    if (goal && far && goal.id !== headingTo) {
       return { label: sel ? 'Go to' : 'Go to goal', action: 'goto', icon: 'goto' };
     }
     if (this.autopilot.mode === 'goto') return { label: 'Stop', action: 'cancel-autopilot', icon: 'close' };
@@ -960,8 +1003,12 @@ export class FlightSession {
 
   private manualScan(): void {
     const t = this.selectedTarget;
+    if (t && (t.kind === 'belt' || t.kind === 'rock')) {
+      this.scanMining(t);
+      return;
+    }
     if (!t || (t.kind !== 'planet' && t.kind !== 'star')) {
-      this.callbacks.onMessage('Select a planet or star to scan.', 'info');
+      this.callbacks.onMessage('Select a planet, star, belt or rock to scan.', 'info');
       return;
     }
     const d = t.position.distanceTo(this.player.position);
@@ -1073,6 +1120,7 @@ export class FlightSession {
     this.updateMines(dt);
     this.updateLoot(dt);
     this.updateDrones(dt);
+    this.mining.update(dt, this.player.position, this.state.clock, this.camera, this.beam?.rockId ?? null);
     if (this.alive) this.collide(this.player, this.playerDurability, true);
     for (const n of this.npcs) if (!n.den) this.collide(n.body, n.durability, false);
     regenerate(this.playerDurability, dt);
@@ -1095,6 +1143,7 @@ export class FlightSession {
 
     // Visuals.
     this.syncPlayerArt(dt);
+    this.updateMining(dt);
     for (const n of this.npcs) {
       this.syncNpcArt(n);
       this.hurtSparks(n, dt);
@@ -1229,8 +1278,18 @@ export class FlightSession {
       this.autopilot = { mode: 'none' };
       return;
     }
-    // Stop short of stations and ships, but fly right up to loot so the tractor beam reaches it.
-    const standoff = target.kind === 'station' ? target.radius + 450 : target.kind === 'loot' ? 40 : target.radius + 600;
+    // Stop short of stations and ships, but fly right up to loot so the tractor beam reaches it,
+    // within the mining beam's reach of a rock, and well inside a belt's band of rock.
+    const standoff =
+      target.kind === 'station'
+        ? target.radius + 450
+        : target.kind === 'loot'
+          ? 40
+          : target.kind === 'rock'
+            ? target.radius + MINING.range * 0.4
+            : target.kind === 'belt'
+              ? target.radius * 0.5
+              : target.radius + 600;
     // Round any planet, star or station in the way; the target itself is where we stop.
     const way = avoidObstacles(this.player.position, target.position, this.system.obstacles(target.id), AVOID_MARGIN, this.wayPoint);
     const st = flyTo(this.player, way.point, { arriveDistance: way.detour ? 0 : standoff, allowCruise: true }, this.controls);
@@ -1528,7 +1587,9 @@ export class FlightSession {
       const toPlayer = this.tmp.copy(this.player.position).sub(l.position);
       const d = toPlayer.length();
       const reach = Math.max(350, this.perf.tractorRange);
-      if (this.alive && d < reach) {
+      // A pod of cargo that does not fit the hold stays adrift until there is room for it.
+      const room = !l.cargo || itemsThatFit(this.state.ship.cargo, l.cargo.commodity, this.perf.cargo) > 0;
+      if (this.alive && d < reach && room) {
         // Tractor beam pulls nearby loot in (fitted beams reach further).
         l.velocity.lerp(toPlayer.normalize().multiplyScalar(Math.min(160, 40 + (reach - d))), 1 - Math.exp(-3 * dt));
       } else {
@@ -1536,7 +1597,7 @@ export class FlightSession {
       }
       l.position.addScaledVector(l.velocity, dt);
       l.art.object.position.copy(l.position);
-      if (this.alive && d < 30) {
+      if (this.alive && d < 30 && room) {
         if (l.recover) this.callbacks.onRecovered?.(l.recover);
         else this.callbacks.onLoot(l.value, l.cargo, l.gear);
         this.sfx('pickup');
@@ -1755,6 +1816,7 @@ export class FlightSession {
       const a = this.asteroidHits[i]!;
       bump(a.position, a.radius, true);
     }
+    for (const rock of this.mining.rocksNear(body.position, 260)) bump(rock.position, rock.spec.radius * 0.95, true);
     if (isPlayer) for (const n of this.npcs) bump(n.body.position, n.art.radius * 0.6, false);
   }
 
@@ -2101,11 +2163,12 @@ export class FlightSession {
     }
   }
 
-  private spawnPack(spec: NonNullable<TrafficPlan['packs']>): void {
+  /** A raider pack from the den or out of the dark (`fromDark`: always, as for the packs that hunt miners). Returns its number. */
+  private spawnPack(spec: NonNullable<TrafficPlan['packs']>, fromDark = false): number {
     const pack = ++this.packSerial;
     const den = this.system.docks.find((d) => !d.dockable);
     let home: THREE.Vector3;
-    const fromDen = !!den && this.rand() < 0.6;
+    const fromDen = !fromDark && !!den && this.rand() < 0.6;
     if (fromDen) {
       home = den!.def.position.clone().addScaledVector(den!.approach, den!.radius + 1_200);
     } else {
@@ -2133,6 +2196,7 @@ export class FlightSession {
       npc.bounty = bounty;
       npc.patrol = { brain: new PatrolBrain(route, 0), offset: new THREE.Vector3((i - size / 2) * 140, (i % 2) * 60, (i % 3) * 90) };
     }
+    return pack;
   }
 
   /** A pack the player left behind (docs/PROCGEN.md §17): back where it was, and still hunting. */
@@ -3068,6 +3132,233 @@ export class FlightSession {
     }
   }
 
+  // ---------------------------------------------------------------- mining (docs/PROCGEN.md §19)
+
+  /** Distance from the player to a target's surface (a belt: its band of rock). */
+  private surfaceDistance(t: Target): number {
+    return this.mining.bandDistance(t.id, this.player.position) ?? Math.max(0, t.position.distanceTo(this.player.position) - t.radius);
+  }
+
+  /** The distance the HUD shows (`centre`: to the target's centre): to a body's surface or a belt's band, else to its centre. */
+  private shownDistance(t: Target, centre: number): number {
+    return t.kind === 'belt' || surfaced(t.kind) ? this.surfaceDistance(t) : centre;
+  }
+
+  /** A mining laser is fitted and the selected rock is within the beam's reach. */
+  private miningReady(): boolean {
+    if (this.perf.miningRate <= 0 || !this.alive || this.busy) return false;
+    const sel = this.selectedTarget;
+    return sel?.kind === 'rock' && this.surfaceDistance(sel) <= MINING.range;
+  }
+
+  /** A belt close enough to scan for its sources, or an unscanned rock close enough to read. */
+  private canScanMining(t: Target): boolean {
+    if (t.kind === 'rock') return !this.mining.rock(t.id)?.scanned && this.surfaceDistance(t) <= MINING.scanRange * this.perf.scanRange;
+    if (t.kind === 'belt') return this.surfaceDistance(t) <= DEFAULT_SCAN_RANGE * 3 * this.perf.scanRange;
+    return false;
+  }
+
+  /** Scanning a belt opens its science card; scanning a rock reads what it holds. */
+  private scanMining(t: Target): void {
+    const rock = this.mining.rock(t.id);
+    const range = t.kind === 'belt' ? DEFAULT_SCAN_RANGE * 3 * this.perf.scanRange : MINING.scanRange * this.perf.scanRange;
+    if (this.surfaceDistance(t) > range) {
+      this.callbacks.onMessage('Out of scan range — fly closer.', 'bad');
+      return;
+    }
+    this.sfx('scan');
+    if (t.kind === 'belt' || !rock) {
+      this.callbacks.onScanInfo(t);
+      return;
+    }
+    this.mining.scan(rock);
+    const seams = this.perf.prospect > 1 ? ` Your prospecting scanner reads its seams: ×${this.perf.prospect} yield.` : '';
+    this.callbacks.onMessage(`${t.name}: ${this.mining.contents(rock)}; ${Math.ceil(rock.left.left)} units of rock.${seams}`, 'info');
+  }
+
+  /** The Mine action: starts the beam on the selected rock, or stops it. */
+  private toggleMining(): void {
+    if (this.beam) {
+      this.stopMining('Mining laser off.');
+      return;
+    }
+    if (this.busy || !this.alive) return;
+    if (this.perf.miningRate <= 0) {
+      this.callbacks.onMessage('No mining laser fitted: outfitters sell them.', 'bad');
+      this.sfx('ui-error');
+      return;
+    }
+    const sel = this.selectedTarget;
+    const rock = this.mining.rock(sel?.id ?? null);
+    if (!sel || !rock) {
+      this.callbacks.onMessage('Select a rock in a belt to mine.', 'info');
+      return;
+    }
+    if (this.surfaceDistance(sel) > MINING.range) {
+      this.callbacks.onMessage(`Out of the beam’s reach: fly within ${MINING.range} m of the rock.`, 'bad');
+      this.sfx('ui-error');
+      return;
+    }
+    if (!this.roomForMining(rock)) {
+      this.callbacks.onMessage(`No room: the hold is full and ${MINING.pods} pods are adrift.`, 'bad');
+      this.sfx('ui-error');
+      return;
+    }
+    // What comes off the rock shows what it holds.
+    if (!rock.scanned) this.mining.scan(rock);
+    this.beam = { rockId: sel.id, cut: 0, pods: 0, soundIn: 0, sparkIn: 0, huntIn: MINING.hunt.every };
+    this.player.requestCruise(false);
+    this.callbacks.onMessage(`Mining ${sel.name}: ${this.mining.contents(rock)}.`, 'info');
+  }
+
+  private stopMining(message: string | null, tone: 'good' | 'bad' | 'info' = 'info'): void {
+    if (!this.beam) return;
+    this.beam = null;
+    this.beamArt.set(null);
+    if (message) this.callbacks.onMessage(message, tone);
+  }
+
+  /**
+   * Cargo pods of cut rock adrift: any pod of ore, ice or volatiles (nothing else carries them in a
+   * pod), including those the player left here last time.
+   */
+  private minedPods(): number {
+    let n = 0;
+    for (const l of this.loot) if (l.target.alive && l.cargo && (MINED_GOODS as readonly CommodityId[]).includes(l.cargo.commodity)) n++;
+    return n;
+  }
+
+  /** Room for whatever the beam cuts from this rock next: one more pod, or room in the hold for each of its goods. */
+  private roomForMining(rock: MinableRock): boolean {
+    if (this.minedPods() < MINING.pods) return true;
+    return (Object.keys(rock.spec.composition) as CommodityId[]).every((g) => itemsThatFit(this.state.ship.cargo, g, this.perf.cargo) > 0);
+  }
+
+  private readonly beamFrom = new THREE.Vector3();
+  private readonly beamTo = new THREE.Vector3();
+
+  /**
+   * The beam at work: it cuts the rock at the lasers' rate, each whole unit into the hold when it
+   * fits and out in a cargo pod when it does not, and stops when the target is lost, out of reach
+   * or spent, or when the hold and the pods are full. Now and then raiders come for the miner.
+   */
+  private updateMining(dt: number): void {
+    const b = this.beam;
+    if (!b) return;
+    const rock = this.mining.rock(b.rockId);
+    if (!this.alive) return this.stopMining(null);
+    if (this.busy) return this.stopMining('Mining laser off.');
+    if (!rock || !rock.target.alive) return this.stopMining('The rock is spent. It grows back in time: try another.');
+    if (this.selectedId !== b.rockId) return this.stopMining('Mining laser off: target lost.');
+    if (this.surfaceDistance(rock.target) > MINING.range) return this.stopMining(`Mining laser off: out of the beam’s reach (${MINING.range} m).`, 'bad');
+    if (!this.roomForMining(rock)) return this.stopMining(`Mining laser off: the hold is full and ${MINING.pods} pods are adrift. Collect them, or go and sell.`, 'bad');
+    const out = this.tmp2.copy(this.player.position).sub(rock.position).normalize();
+    const surface = this.beamTo.copy(rock.position).addScaledVector(out, rock.spec.radius * 0.92);
+    for (const g of cutRock(rock.left, rock.spec.composition, dt, this.perf.miningRate, this.perf.prospect)) {
+      if (stowUnit(this.state.ship.cargo, this.perf.cargo, g) === 'hold') {
+        b.cut++;
+        this.sfx('pickup', 0.25);
+        this.callbacks.onMined?.(rock.spec.beltId, g, 'hold');
+      } else {
+        // Nothing cut is ever thrown away: the beam stops before the pods run out (a frame's cut may take one more).
+        b.pods++;
+        if (!this.holdFullSaid) {
+          this.holdFullSaid = true;
+          this.callbacks.onMessage('Hold full: what the beam cuts now goes out in cargo pods. Sell, then come back for them.', 'info');
+        }
+        this.spawnLoot(surface.clone().addScaledVector(out, 14), 0, { cargo: { commodity: g, qty: 1 } });
+        this.callbacks.onMined?.(rock.spec.beltId, g, 'pod');
+      }
+    }
+    this.mining.recordCut(rock);
+    if (rock.left.left <= 0) return this.stopMining(`${rock.target.name} is spent. It grows back in time: try another.`);
+    // The beam from the ship's nose to the cut, sparks where it bites, and its grind.
+    this.playerArt.object.updateMatrixWorld();
+    const muzzle = this.playerArt.muzzles[0];
+    const from = muzzle ? this.playerArt.object.localToWorld(this.beamFrom.copy(muzzle)) : this.beamFrom.copy(this.player.position);
+    this.beamArt.set(from, surface);
+    this.beamArt.update?.(dt, this.time, this.camera);
+    b.sparkIn -= dt;
+    if (b.sparkIn <= 0) {
+      b.sparkIn = 0.22;
+      this.spawnEffect(createImpactSpark(surface.clone(), '#ffb070', this.ctx));
+    }
+    b.soundIn -= dt;
+    if (b.soundIn <= 0) {
+      b.soundIn = 0.45;
+      this.sfx('mining', 0.8);
+    }
+    b.huntIn -= dt;
+    if (b.huntIn <= 0) {
+      b.huntIn = MINING.hunt.every;
+      this.huntMiner();
+    }
+  }
+
+  /**
+   * Raiders who hunt miners: a beam lights up a belt, and lawless and thinly patrolled belts
+   * sometimes send a small pack out of the dark for the miner; patrolled belts rarely do. The Wake
+   * leaves a pilot it trusts alone, and one pack at a time comes.
+   */
+  private huntMiner(): void {
+    if (this.denOpen || !this.traffic) return;
+    if (this.minerPack !== null && this.npcs.some((n) => n.pack === this.minerPack && n.durability.hull > 0)) return;
+    const odds = minerHunt(securityOf(this.system.def.systemId), this.traffic.plan.packs?.level ?? null);
+    if (this.rand() >= odds.chance) return;
+    this.minerPack = this.spawnPack({ max: 1, level: odds.level, size: odds.size, firstDelay: 0, interval: [60, 60] }, true);
+    this.sfx('alert', 0.7);
+    this.callbacks.onMessage('Raiders have seen your beam: a pack is coming for the miner.', 'bad');
+  }
+
+  /** What the HUD shows of the mining laser (null without one). */
+  private miningHud(): HudMining | null {
+    if (this.perf.miningRate <= 0) return null;
+    const b = this.beam;
+    const rock = b ? this.mining.rock(b.rockId) : undefined;
+    return {
+      rate: this.perf.miningRate,
+      prospect: this.perf.prospect,
+      active: !!b,
+      ready: this.miningReady(),
+      cut: b?.cut ?? 0,
+      pods: b?.pods ?? 0,
+      status: b && rock ? `Mining ${rock.target.name}: ${b.cut} cut${b.pods ? `, ${b.pods} in pods` : ''} · ${Math.ceil(rock.left.left)} units of rock left` : null,
+    };
+  }
+
+  /** Mining state for automated tests. */
+  debugMining(): { beam: string | null; cut: number; pods: number; rocks: { id: string; left: number; scanned: boolean; distance: number }[]; minerPack: boolean } {
+    const rocks = this.mining.targets().filter((t) => t.kind === 'rock');
+    return {
+      beam: this.beam?.rockId ?? null,
+      cut: this.beam?.cut ?? 0,
+      pods: this.minedPods(),
+      rocks: rocks.map((t) => {
+        const r = this.mining.rock(t.id)!;
+        return { id: t.id, left: r.left.left, scanned: r.scanned, distance: this.surfaceDistance(t) };
+      }),
+      minerPack: this.minerPack !== null && this.npcs.some((n) => n.pack === this.minerPack && n.durability.hull > 0),
+    };
+  }
+
+  /** Test hook: puts the ship `distance` metres from a target's surface (a belt: its middle), facing it, at rest. */
+  placeNear(targetId: string, distance: number): boolean {
+    this.mining.update(0, this.player.position, this.state.clock, this.camera, this.beam?.rockId ?? null);
+    const t = this.findTarget(targetId);
+    if (!t || this.busy) return false;
+    const away = this.tmp.copy(this.player.position).sub(t.position);
+    if (away.lengthSq() < 1) away.set(0, 0, 1);
+    away.normalize();
+    this.player.position.copy(t.position).addScaledVector(away, (t.kind === 'belt' ? 0 : t.radius) + distance);
+    this.player.velocity.set(0, 0, 0);
+    this.player.angularVelocity.set(0, 0, 0);
+    this.player.lookAlong(away.negate());
+    this.throttle = 0;
+    this.autopilot = { mode: 'none' };
+    this.chase.snap(this.player);
+    return true;
+  }
+
   // ---------------------------------------------------------------- selection and HUD
 
   private pickAt(x: number, y: number): void {
@@ -3137,6 +3428,7 @@ export class FlightSession {
     hud.decoys = this.state.ship.decoys;
     const wingCount = this.npcs.filter((x) => x.wingman && x.durability.hull > 0).length;
     hud.wing = wingCount ? { count: wingCount, order: this.wingOrder } : null;
+    hud.mining = this.miningHud();
     hud.incoming = this.incomingSeekers;
     hud.systems = { ...this.state.ship.systems };
     hud.flash = { hull: this.settings.reducedMotion ? Math.min(0.4, this.hullFlash) : this.hullFlash, shield: this.settings.reducedMotion ? Math.min(0.3, this.shieldFlash) : this.shieldFlash };
@@ -3177,16 +3469,18 @@ export class FlightSession {
         if (pr.onScreen) lead = { x: pr.x, y: pr.y };
       }
       const dist = sel.position.distanceTo(p.position);
+      const rock = sel.kind === 'rock' ? this.mining.rock(sel.id) : undefined;
       hud.target = {
         id: sel.id,
         name: sel.name,
         kind: sel.kind,
         subtitle: sel.subtitle,
-        distance: Math.max(0, dist - (sel.kind === 'planet' || sel.kind === 'star' ? sel.radius : 0)),
+        distance: this.shownDistance(sel, dist),
         hostile: !!sel.hostile,
         ...(sel.faction ? { faction: sel.faction } : {}),
         dataClass: sel.dataClass,
         ...(npc ? { shield: npc.durability.shield / npc.durability.shieldMax, hull: npc.durability.hull / npc.durability.hullMax } : {}),
+        ...(rock?.scanned ? { amount: rock.left.left / rock.spec.amount } : {}),
         lead,
         inGunRange: dist < this.gunRange,
       };
@@ -3200,7 +3494,9 @@ export class FlightSession {
       ? `station:${this.objective.locationId}`
       : this.objective.bodyId
         ? `planet:${this.objective.bodyId}`
-        : null;
+        : this.objective.targetId && this.mining.find(this.objective.targetId)
+          ? this.objective.targetId
+          : null;
     for (const t of this.allTargets()) {
       const dist = t.position.distanceTo(p.position);
       const selected = t.id === this.selectedId;
@@ -3211,6 +3507,7 @@ export class FlightSession {
         if (t.kind === 'loot' && dist > 3_000) continue;
         if (t.kind === 'drone' && dist > 4_000) continue;
         if (t.kind === 'beacon' && dist > 20_000) continue;
+        if (t.kind === 'rock' && dist > 6_000) continue;
       }
       const pr = this.project(t.position);
       if (!pr.onScreen && !important) continue;
@@ -3222,7 +3519,7 @@ export class FlightSession {
         y: pr.y,
         onScreen: pr.onScreen,
         edgeAngle: pr.angle,
-        distance: Math.max(0, dist - (t.kind === 'planet' || t.kind === 'star' ? t.radius : 0)),
+        distance: this.shownDistance(t, dist),
         hostile: !!t.hostile,
         ...(t.faction ? { faction: t.faction } : {}),
         selected,
@@ -3304,6 +3601,10 @@ export class FlightSession {
   dispose(): void {
     this.audio.setEngine(null);
     this.audio.setCombatIntensity(0);
+    this.stopMining(null);
+    this.mining.dispose();
+    this.system.scene.remove(this.beamArt.object);
+    this.beamArt.dispose();
     for (const n of [...this.npcs]) this.removeNpc(n);
     for (const m of this.missiles) {
       this.system.scene.remove(m.art.object);

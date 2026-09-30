@@ -5,11 +5,12 @@
  */
 import '../ui/styles/encyclopedia.css';
 import { formatDec, formatRa } from '../data/coords.ts';
-import { EXOPLANETS, SOLAR_BODIES, WORLD, componentsOf, getComponent } from '../data/systems.ts';
+import { EXOPLANETS, SOLAR_BODIES, WORLD, beltsOf, componentsOf, getComponent } from '../data/systems.ts';
 import { trafficFor } from '../world/traffic/setup.ts';
 import { COMMODITIES } from '../economy/commodities.ts';
 import { marketTables } from '../economy/markets.ts';
 import type {
+  BeltRecord,
   ConfirmedBody,
   FictionalLocation,
   StarSystemRecord,
@@ -287,6 +288,39 @@ export function solarBodyList(): HTMLElement {
     ),
     h('p', { class: 'sci-note' }, dataBadge('estimated'), ' Positions, sizes and orbital spacing in flight are schematic.'),
   );
+}
+
+// ---------- Belts ----------
+
+const BELT_KIND: Record<BeltRecord['kind'], string> = { 'asteroid-belt': 'asteroid belt', 'kuiper-belt': 'Kuiper belt', 'debris-disc': 'debris disc' };
+
+/** What the cited source says of a belt, and how the game draws it (docs/PROCGEN.md §19). */
+function beltLines(b: BeltRecord, detail: Detail): Child[] {
+  const sources = detail === 'full' ? b.sources : b.sources.slice(0, 2);
+  return [
+    h('p', { class: 'sci-item-text' }, b.note),
+    b.innerAu !== undefined && b.outerAu !== undefined
+      ? h('p', { class: 'sci-item-text' }, 'Extent: ', h('span', { class: 'num' }, `${b.innerAu}–${b.outerAu} au`), ` from ${b.hostId === 'sun' ? 'the Sun' : 'its star'}, as the source gives it.`)
+      : h('p', { class: 'sci-item-text muted' }, 'The source gives no extent.'),
+    h('p', { class: 'sci-item-src' }, sources.map((s, i) => [i > 0 ? ' ' : null, sourceLink(s)]), sources.length < b.sources.length ? h('span', { class: 'sci-note' }, ` and ${b.sources.length - sources.length} more`) : null),
+    h('p', { class: 'sci-note' }, dataBadge('estimated'), ' Placed schematically in flight: its place and its rocks are illustrative, and what the rocks hold is game fiction.'),
+  ];
+}
+
+/** The belts and debris discs cited sources report in a system, or nothing when there are none. */
+export function beltBlock(systemId: SystemId, detail: Detail): HTMLElement | null {
+  const belts = beltsOf(systemId);
+  if (!belts.length) return null;
+  return h(
+    'ul',
+    { class: 'sci-list sci-belts', 'data-testid': 'science-belts' },
+    belts.map((b) => h('li', { class: 'sci-item' }, h('div', { class: 'sci-item-head' }, h('strong', null, b.name), ' ', h('span', { class: 'sci-chip' }, BELT_KIND[b.kind])), beltLines(b, detail))),
+  );
+}
+
+/** The science card a belt scan in flight opens. */
+export function beltCard(b: BeltRecord): HTMLElement {
+  return h('div', { class: 'stack science-card', 'data-testid': 'belt-card' }, h('div', { class: 'row wrap' }, dataBadge('observed', `Real ${BELT_KIND[b.kind]}`)), beltLines(b, 'full'));
 }
 
 // ---------- Facts ----------

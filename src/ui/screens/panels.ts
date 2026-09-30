@@ -1,8 +1,9 @@
 import type { Settings, SteeringMode } from '../../app/settings.ts';
 import { TEXT_SCALES } from '../../app/settings.ts';
-import { getComponent, getPlanet, SOLAR_BODIES } from '../../data/systems.ts';
+import { findBelt, getComponent, getPlanet, SOLAR_BODIES } from '../../data/systems.ts';
 import { formatDec, formatRa } from '../../data/coords.ts';
 import type { ConfirmedBody } from '../../data/types.ts';
+import { beltCard } from '../../galaxy/scienceBlocks.ts';
 import { KEY_BINDINGS, keyLabel } from '../../flight/input/DesktopInput.ts';
 import { PAD_FOR, PAD_HOLDS, padLabel, type PadButton } from '../../flight/input/GamepadInput.ts';
 import type { InputScheme } from '../../flight/input/types.ts';
@@ -71,6 +72,7 @@ const DESKTOP_ROWS: [string, readonly string[] | string][] = [
   ['Decoy flare', KEY_BINDINGS.decoy],
   ['Wing orders (cycle)', KEY_BINDINGS.wingOrder],
   ['Scan target', KEY_BINDINGS.scan],
+  ['Mine the selected rock (mining laser, within 600 m)', KEY_BINDINGS.mine],
   ['Engines off (drift)', KEY_BINDINGS.engineKill],
   ['Star map', KEY_BINDINGS.map],
   ['Pause', KEY_BINDINGS.pause],
@@ -89,7 +91,7 @@ const GAMEPAD_ROWS: [string, readonly PadButton[] | string][] = [
   ['Boost (hold)', [PAD_HOLDS.boost]],
   ['Throttle', [PAD_HOLDS.throttleUp, PAD_HOLDS.throttleDown]],
   ['Cruise on/off', [PAD_FOR.cruise]],
-  ['Dock / lane / scan / go to', [PAD_FOR.interact]],
+  ['Dock / lane / scan / mine / go to', [PAD_FOR.interact]],
   ['Free flight (autopilot off)', [PAD_FOR['cancel-autopilot']]],
   ['Go to selected target', [PAD_FOR.goto]],
   ['Cycle targets', [PAD_FOR['target-next']]],
@@ -139,7 +141,7 @@ export function controlsContent(steering: SteeringMode, scheme: InputScheme = 'd
         h('li', null, h('strong', null, 'Left thumb: '), 'touch anywhere in the lower-left area to drop a steering stick and drag.'),
         h('li', null, h('strong', null, 'Right thumb: '), 'touch and drag in the lower-right area to move the reticle; guns fire while you hold.'),
         h('li', null, h('strong', null, 'Throttle: '), 'slide the bar on the left edge (bottom section is reverse).'),
-        h('li', null, h('strong', null, 'Buttons: '), 'Boost (hold), Cruise, Target (hold for nearest hostile), Missile, Repair, and the green action button for Dock, Enter lane, Scan or Go to.'),
+        h('li', null, h('strong', null, 'Buttons: '), 'Boost (hold), Cruise, Target (hold for nearest hostile), Missile, Repair, and the green action button for Dock, Enter lane, Scan or Go to. With a mining laser fitted and a rock selected within 600 m, it turns amber: Mine (and Stop mining).'),
         h('li', null, h('strong', null, 'Aim assist: '), 'the chip above the right buttons shows and changes its strength (Off / Low / Medium). It only nudges your reticle toward the selected target’s lead marker; it never picks targets for you.'),
         h('li', null, 'A mouse or keyboard plugged into a tablet switches to the desktop controls automatically.'),
         h('li', null, h('strong', null, 'Practice: '), 'three training drones circle just outside Halcyon Ring. Select one and shoot it to try aiming — no reward, no risk.'),
@@ -352,5 +354,7 @@ export function bodyCard(bodyId: string, name: string): HTMLElement {
   }
   const planet = getPlanet(bodyId);
   if (planet) return planetCard(planet, true);
+  const belt = findBelt(bodyId);
+  if (belt) return beltCard(belt);
   return h('p', null, `${name}: no catalogue data bundled.`);
 }

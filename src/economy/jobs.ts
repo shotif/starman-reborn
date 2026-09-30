@@ -53,7 +53,9 @@ export type Objective =
   /** Knock out a raider den's turrets, then its reactor (JobProgress.assault). */
   | { kind: 'assault'; systemId: SystemId; locationId: string; text: string }
   /** Hold a den against a lawful sweep: destroy `count` of its ships (JobProgress.kills). */
-  | { kind: 'defend'; systemId: SystemId; locationId: string; count: number; text: string };
+  | { kind: 'defend'; systemId: SystemId; locationId: string; count: number; text: string }
+  /** Mine `qty` units of a good in a cited belt (JobProgress.mined; docs/PROCGEN.md §19). */
+  | { kind: 'mine'; systemId: SystemId; beltId: string; commodity: CommodityId; qty: number; text: string };
 
 export interface JobDef {
   id: string;
@@ -396,6 +398,8 @@ function objectiveSatisfied(state: GameState, jobId: string, o: Objective, ctx: 
       return !!state.jobs[jobId]?.recovered;
     case 'piracy':
       return (state.jobs[jobId]?.kills ?? 0) >= o.count;
+    case 'mine':
+      return (state.jobs[jobId]?.mined ?? 0) >= o.qty;
     case 'have-cargo':
       return cargoCount(state.ship.cargo, o.commodity) >= o.qty;
     case 'dock':
@@ -612,6 +616,16 @@ function describeCurrent(state: GameState, jobId: string): ObjectiveSummary | nu
       const kills = state.jobs[jobId]?.kills ?? 0;
       return { ...base, text: inOtherSystem(o.systemId, `${o.text} (${kills}/${o.count}): target a hauler to open fire`), targetSystemId: o.systemId, targetLocationId: null };
     }
+    case 'mine': {
+      const mined = Math.min(o.qty, state.jobs[jobId]?.mined ?? 0);
+      return {
+        ...base,
+        text: inOtherSystem(o.systemId, `${o.text}: ${mined} of ${o.qty} cut (select a rock and mine it)`),
+        targetSystemId: o.systemId,
+        targetLocationId: null,
+        ...(o.systemId === here ? { targetId: beltTargetId(o.beltId) } : {}),
+      };
+    }
     case 'recover':
       return {
         ...base,
@@ -703,6 +717,33 @@ export function wrecksIn(state: GameState, systemId: SystemId): { jobId: string;
     const o = currentObjective(state, jobId);
     return o?.kind === 'recover' && o.systemId === systemId ? [{ jobId, locationId: o.locationId, item: o.item, guard: o.guard }] : [];
   });
+}
+
+/** The flight target of a belt (its first ring). */
+export function beltTargetId(beltId: string): string {
+  return `belt:${beltId}`;
+}
+
+/**
+ * The mining laser cut `qty` units of a good in a belt: they count for claims on that belt and good
+ * (docs/PROCGEN.md §19), each unit for one claim only, the claim taken first filled first.
+ */
+export function countMined(state: GameState, beltId: string, commodity: CommodityId, qty = 1): JobEvent[] {
+  const claims = activeJobIds(state)
+    .flatMap((id) => {
+      const o = currentObjective(state, id);
+      return o?.kind === 'mine' && o.beltId === beltId && o.commodity === commodity ? [{ id, o, p: state.jobs[id]! }] : [];
+    })
+    .sort((a, b) => a.p.acceptedAt - b.p.acceptedAt || a.id.localeCompare(b.id));
+  let left = qty;
+  for (const c of claims) {
+    const take = Math.min(left, c.o.qty - (c.p.mined ?? 0));
+    if (take <= 0) continue;
+    c.p.mined = (c.p.mined ?? 0) + take;
+    left -= take;
+    if (left <= 0) break;
+  }
+  return left < qty ? advanceJobs(state, { dockedAt: state.location.dockedAt, systemId: state.location.systemId }) : [];
 }
 
 /** A lawful hauler went down to the player's guns: count it for piracy work in that system. */

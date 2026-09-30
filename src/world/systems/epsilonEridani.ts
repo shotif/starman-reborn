@@ -26,9 +26,13 @@ export const EPSILON_ERIDANI_SCENE: SystemSceneDef = {
   ),
   stations: [{ locationId: 'eridani-hub', kind: 'eridani-hub', position: hub, approach: dirTo(hub, arrival) }],
   lanes: [],
+  // Both rings draw the one belt record the snapshot cites (NASA's SOFIA results, and the papers
+  // SIMBAD links to the star); their places are schematic.
   belts: [
     {
       id: 'eps-inner-belt',
+      beltId: 'epsilon-eridani-debris-disc',
+      label: 'inner ring',
       center: STAR,
       shape: 'ring',
       innerRadius: 20_000,
@@ -42,6 +46,8 @@ export const EPSILON_ERIDANI_SCENE: SystemSceneDef = {
     },
     {
       id: 'eps-outer-belt',
+      beltId: 'epsilon-eridani-debris-disc',
+      label: 'outer ring',
       center: STAR,
       shape: 'ring',
       innerRadius: 82_000,

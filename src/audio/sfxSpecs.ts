@@ -52,6 +52,8 @@ export const SFX_SPECS: Record<SfxId, SfxSpec> = {
   repair: { dur: 1.2, gain: 0.4, minGap: 0.3, maxInst: 1, prio: 2, wet: 0.1 },
   'target-lock': { dur: 0.35, gain: 0.55, minGap: 0.1, maxInst: 1, prio: 3, wet: 0.05 },
   'radio-blip': { dur: 0.35, gain: 0.42, minGap: 0.12, maxInst: 2, prio: 2, wet: 0.05 },
+  /** The mining laser's grind, repeated while the beam cuts. */
+  mining: { dur: 0.6, gain: 0.3, minGap: 0.4, maxInst: 2, prio: 2, wet: 0.08 },
 };
 
 export const SFX_IDS = Object.keys(SFX_SPECS) as SfxId[];

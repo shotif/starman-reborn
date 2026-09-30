@@ -35,7 +35,8 @@ import { createNewGame, SAVE_VERSION, type CommodityId, type GameState } from '.
  *   or the price watch, with per-good times.
  * - v10 (current): `world` (events ended early, what lingers in each system) and the law's
  *   `pending` crimes and `lastCrimeAt` (docs/PROCGEN.md §17); `fleet` (owned ships, haulers,
- *   storage and stakes, §18). See GameState in src/app/state.ts.
+ *   storage and stakes, §18); contracts may be mining claims, whose jobs carry `mined` (§19). See
+ *   GameState in src/app/state.ts.
  */
 export interface SaveV1 {
   version: 1;

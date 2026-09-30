@@ -223,6 +223,13 @@
   opacity: 0.4;
 }
 
+/* Mining (docs/PROCGEN.md §19): the action button turns amber while it offers Mine or Stop mining. */
+.tbtn.context.ready[data-action='mine'] {
+  background: rgba(86, 52, 12, 0.75);
+  border-color: var(--warm);
+  box-shadow: 0 0 14px rgba(255, 180, 90, 0.35);
+}
+
 .tbtn.small {
   --btn: 50px;
   width: 50px;

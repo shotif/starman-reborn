@@ -33,6 +33,8 @@ export interface HudTarget {
   dataClass: DataClass;
   shield?: number;
   hull?: number;
+  /** A scanned rock: the share of it still to cut (0–1). */
+  amount?: number;
   /** Lead indicator (CSS px) for moving targets, when on screen. */
   lead: { x: number; y: number } | null;
   inGunRange: boolean;
@@ -42,6 +44,22 @@ export interface HudContextAction {
   label: string;
   action: FlightAction;
   icon: IconName;
+}
+
+/** The mining laser (docs/PROCGEN.md §19): what it cuts, and what the beam is doing. */
+export interface HudMining {
+  /** Units of rock a minute, and the prospecting scanner's yield (1 without one). */
+  rate: number;
+  prospect: number;
+  /** The beam is cutting the selected rock. */
+  active: boolean;
+  /** A rock is selected within the beam's reach. */
+  ready: boolean;
+  /** Units cut into the hold and cargo pods released since the beam started. */
+  cut: number;
+  pods: number;
+  /** "Rock 12.3: metal ore 70% · water ice 30%" while cutting. */
+  status: string | null;
 }
 
 /** A wing's standing order: engage raiders near the player, go for the player's target, or stay in formation. */
@@ -87,6 +105,8 @@ export interface HudModel {
   flash: { hull: number; shield: number };
   /** Ships flying on the player's wing, and their standing order (null without a wing). */
   wing: { count: number; order: WingOrder } | null;
+  /** The mining laser, when one is fitted. */
+  mining: HudMining | null;
   encounterActive: boolean;
   /** Closest dock in this system (name and distance), for the HUD. */
   nearestDock: { name: string; distance: number } | null;
@@ -123,6 +143,7 @@ export function emptyHudModel(): HudModel {
     systems: { engines: 0, guns: 0, shields: 0 },
     flash: { hull: 0, shield: 0 },
     wing: null,
+    mining: null,
     encounterActive: false,
     nearestDock: null,
   };

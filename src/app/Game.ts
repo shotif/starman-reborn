@@ -15,7 +15,7 @@ import { ALL_LOCATIONS, getComponent, getLocation, getPlanet, getSystem, SYSTEMS
 import type { SystemId } from '../data/types.ts';
 import { addCargo, cargoUsed, itemsThatFit } from '../economy/cargo.ts';
 import { COMMODITIES } from '../economy/commodities.ts';
-import { shipModel } from '../content/catalog.ts';
+import { getCatalog, shipModel } from '../content/catalog.ts';
 import { hashString } from '../content/random.ts';
 import { cargoCapacity, performanceOf } from '../economy/loadout.ts';
 import { adjustReputation, FACTIONS, standingTier, TIER_LABEL } from '../economy/factions.ts';
@@ -26,6 +26,7 @@ import {
   advanceJobs,
   assaultsIn,
   contractPacksIn,
+  countMined,
   countPiracy,
   currentObjective,
   defencesIn,
@@ -71,6 +72,7 @@ import { createCatalogShipArt } from '../world/art/shipgen/index.ts';
 import type { ArtContext } from '../world/art/types.ts';
 import { DockedView } from '../world/DockedView.ts';
 import { FlightSession, type EncounterOutcome } from '../world/FlightSession.ts';
+import type { MiningLedger } from '../world/MiningField.ts';
 import { createStationInterior, type RoomView, type StationInterior } from '../world/rooms/index.ts';
 import type { EncounterDef } from '../world/sceneTypes.ts';
 import { spectralClass } from '../content/world/generate.ts';
@@ -155,6 +157,8 @@ export class Game {
   /** The game day Sol's scene was laid out for (null for other systems). */
   private systemDay: number | null = null;
   private flight: FlightSession | null = null;
+  /** What has been cut from the rocks this session (docs/PROCGEN.md §19): it outlives a flight, not the page. */
+  private readonly minedRocks: MiningLedger = new Map();
   private dockedView: DockedView | null = null;
   private station: StationHub | null = null;
   /** The 3D rooms behind the station menus while docked. */
@@ -439,6 +443,7 @@ export class Game {
       if (!ok) return;
     }
     this.state = createNewGame();
+    this.minedRocks.clear();
     await this.saves.save(this.state);
     this.enterDocked('earth-port', { intro: true, room: 'bar', window: 'jobs' });
   }
@@ -455,6 +460,8 @@ export class Game {
   /** Enters a game where it was saved: docked, or in flight at the saved pose (Continue, and loaded saves). */
   private resume(state: GameState, message = 'Progress restored'): void {
     this.state = state;
+    // Rocks cut in another game are whole in this one.
+    this.minedRocks.clear();
     // The fleet catches up with the clock the save was made at (docs/PROCGEN.md §18).
     useWorldLog(this.state.world);
     const fleet = settleFleet(this.state);
@@ -908,6 +915,13 @@ export class Game {
           this.persist();
         },
         onComm: (speaker, text) => this.comm(speaker, text, 5000),
+        // A unit cut counts for mining claims on its belt (docs/PROCGEN.md §19); the hold itself autosaves.
+        onMined: (beltId, commodity) => {
+          const events = countMined(state, beltId, commodity);
+          if (!events.length) return;
+          this.announceJobEvents(events);
+          this.persist();
+        },
         onHunterDown: () => {
           state.stats.kills += 1;
           toast('Bounty hunter destroyed. Nobody pays for that one.', 'good', 3500);
@@ -924,6 +938,7 @@ export class Game {
         onMessage: (text, tone) => toast(text, tone, 2600),
       },
       traffic: this.trafficHere(),
+      minedRocks: this.minedRocks,
     });
     const { width, height } = this.renderer.size;
     this.flight.setViewport(width, height);
@@ -1781,6 +1796,21 @@ export class Game {
         this.persist();
         this.station?.render();
       },
+      /** Test-only: fit a catalogue item to the first slot of its type (empty first); flights launched after it fly with it. */
+      fit: (gearId: string) => {
+        const item = this.state ? getCatalog().gearById.get(gearId) : undefined;
+        if (!this.state || !item) return false;
+        const slots = shipModel(this.state.ship.model).slots.filter((s) => s.type === item.slot && item.tier <= s.maxClass);
+        const slot = slots.find((s) => !this.state!.ship.fittings[s.id]) ?? slots[0];
+        if (!slot) return false;
+        this.state.ship.fittings[slot.id] = gearId;
+        this.station?.render();
+        return true;
+      },
+      /** Test-only: put the ship at rest `distance` metres from a target's surface, facing it. */
+      placeNear: (arg: { id: string; distance: number }) => this.flight?.placeNear(arg.id, arg.distance) ?? false,
+      /** Test-only: the mining laser, the rocks near the player and any pack hunting the miner. */
+      mining: () => this.flight?.debugMining() ?? null,
       renderInfo: () => ({ quality: this.renderer.quality, pixelRatio: this.renderer.pixelRatio, fps: this.renderer.fps }),
       flush: () => this.saves.flush(),
     };

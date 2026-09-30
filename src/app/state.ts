@@ -253,6 +253,8 @@ export interface JobProgress {
   lost?: number;
   /** Den assaults: the den's reactor is down. */
   assault?: 'done';
+  /** Mining claims: units of the good mined in the belt so far (docs/PROCGEN.md §19). */
+  mined?: number;
 }
 
 export type PirateOutcome = 'none' | 'destroyed' | 'bypassed' | 'escaped';

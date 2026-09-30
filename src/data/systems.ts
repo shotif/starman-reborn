@@ -3,11 +3,13 @@ import { generateWorld } from '../content/world/generate.ts';
 import { GROWTH, WORLD_SEED } from '../content/world/rules.ts';
 import type { GeneratedStation, StationType, SystemSeed, WorldResult } from '../content/world/types.ts';
 import astrometryFile from './generated/astrometry.json' with { type: 'json' };
+import beltsFile from './generated/belts.json' with { type: 'json' };
 import catalogSystemsFile from './generated/catalog-systems.json' with { type: 'json' };
 import exoplanetFile from './generated/exoplanets.json' with { type: 'json' };
 import { distance3 } from './coords.ts';
 import { SOURCES } from './sources.ts';
 import type {
+  BeltRecord,
   ConfirmedBody,
   FictionalLocation,
   LocationKind,
@@ -590,6 +592,32 @@ export function getPlanet(id: string): ConfirmedBody | undefined {
 /** Straight-line distance between two systems' reference positions, light-years. */
 export function systemDistance(a: SystemId, b: SystemId): number {
   return distance3(getSystem(a).positionLy, getSystem(b).positionLy);
+}
+
+// ---------------------------------------------------------------- belts and debris discs
+
+/**
+ * Belts and debris discs a cited source reports (src/data/generated/belts.json, from the sky
+ * snapshot): the Solar System's two from NASA, the others from papers SIMBAD links to the star. Only
+ * belts of systems in the game, and only with a citation: no belt is ever invented.
+ */
+export const BELTS: readonly BeltRecord[] = (beltsFile as unknown as { belts: BeltRecord[] }).belts.filter((b) => systemIndex.has(b.systemId) && b.sources.length > 0);
+
+const beltIndex = new Map<string, BeltRecord>(BELTS.map((b) => [b.id, b]));
+
+/** The belts of a system (none for most). */
+export function beltsOf(systemId: SystemId): BeltRecord[] {
+  return BELTS.filter((b) => b.systemId === systemId);
+}
+
+export function getBelt(id: string): BeltRecord {
+  const b = beltIndex.get(id);
+  if (!b) throw new Error(`Unknown belt ${id}`);
+  return b;
+}
+
+export function findBelt(id: string): BeltRecord | undefined {
+  return beltIndex.get(id);
 }
 
 /** True when any bundled record is still a provisional transcription. */
