@@ -3,6 +3,7 @@ import type { Lingering } from './state.ts';
 import { TRAFFIC } from '../world/traffic/plan.ts';
 import { raidKill } from '../economy/answers.ts';
 import { useWorldLog } from '../economy/events.ts';
+import { fleetNews, settleFleet, type FleetSettlement } from '../economy/fleet.ts';
 import { lastView } from '../ui/station/lastView.ts';
 import { fill, PAYMENT } from '../content/people/lines.ts';
 import * as THREE from 'three';
@@ -452,6 +453,10 @@ export class Game {
   /** Enters a game where it was saved: docked, or in flight at the saved pose (Continue, and loaded saves). */
   private resume(state: GameState, message = 'Progress restored'): void {
     this.state = state;
+    // The fleet catches up with the clock the save was made at (docs/PROCGEN.md §18).
+    useWorldLog(this.state.world);
+    const fleet = settleFleet(this.state);
+    if (fleet.steps) this.persist();
     const loc = state.location;
     if (loc.dockedAt) this.enterDocked(loc.dockedAt, { titleCard: true });
     else if (loc.flight) {
@@ -462,6 +467,7 @@ export class Game {
       });
     } else this.enterFlight({ kind: 'arrival' });
     toast(message, 'good', 2000);
+    this.announceFleet(fleet);
   }
 
   /**
@@ -475,6 +481,11 @@ export class Game {
     this.state = state;
     await this.saves.save(state);
     this.resume(state, message);
+  }
+
+  /** What the fleet did while the player was away, as toasts (docs/PROCGEN.md §18). */
+  private announceFleet(s: FleetSettlement): void {
+    for (const n of fleetNews(s)) toast(n.text, n.tone, 6000);
   }
 
   // ------------------------------------------------------------------ scenes
@@ -991,6 +1002,7 @@ export class Game {
     }
     for (const n of out.watchNotes) toast(n.text, 'info', 6000);
     for (const n of out.lawNotes) toast(n, 'good', 6000);
+    this.announceFleet(out.fleet);
     this.announceJobEvents(out.jobEvents, false);
     const deliverable = Object.keys(state.jobs).some((id) => {
       const p = state.jobs[id]!;
@@ -1281,6 +1293,8 @@ export class Game {
         const wing = payCrew(state, j.route.hops.length);
         if (wing.paid) toast(`Wing fees: ${formatCredits(wing.paid)}`, 'info', 3000);
         for (const note of wing.notes) toast(note, 'bad', 5000);
+        // The wing is paid first: a hauler loading out of sight never leaves it unpaid.
+        this.announceFleet(settleFleet(state));
         void this.saves.save(state);
         // Build the tunnel scene, then load the destination while the tunnel plays.
         j.tunnelScene = new THREE.Scene();
@@ -1730,6 +1744,14 @@ export class Game {
       setCredits: (credits: number) => {
         if (!this.state) return;
         this.state.credits = credits;
+        this.station?.render();
+      },
+      /** Test-only: let game time pass (as in flight), then settle the fleet as docking does. */
+      advanceClock: (seconds: number) => {
+        if (!this.state) return;
+        this.state.clock += Math.max(0, seconds);
+        this.announceFleet(settleFleet(this.state));
+        this.persist();
         this.station?.render();
       },
       renderInfo: () => ({ quality: this.renderer.quality, pixelRatio: this.renderer.pixelRatio, fps: this.renderer.fps }),

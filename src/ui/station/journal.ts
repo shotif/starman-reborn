@@ -38,6 +38,7 @@ export function voyageReport(state: GameState): HTMLElement | null {
       row('Repairs and rescue', t.repairsAndRescue),
       row('Jump fees', t.fees),
       row('Equipment', t.equipment),
+      t.fleet ? row('Stakes and storage', t.fleet) : null,
       h('dt', null, h('strong', null, 'Net change')),
       h('dd', { class: `num ${t.net >= 0 ? 'pos' : 'neg'}` }, h('strong', null, signed(t.net) + ' cr')),
     ),

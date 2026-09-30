@@ -40,8 +40,10 @@ export interface TradeRoute {
   notes: string[];
 }
 
-const security = (systemId: SystemId) => WORLD.profiles.get(systemId)?.security ?? 1;
-const riskOf = (sec: number): RouteRisk => (sec < 0.35 ? 'lawless' : sec < 0.6 ? 'thin' : 'patrolled');
+/** A system's security, 0 (lawless) to 1 (patrolled core). */
+export const security = (systemId: SystemId) => WORLD.profiles.get(systemId)?.security ?? 1;
+/** How dangerous a route is, from its worst security (the fleet's haulers use the same levels). */
+export const riskOf = (sec: number): RouteRisk => (sec < 0.35 ? 'lawless' : sec < 0.6 ? 'thin' : 'patrolled');
 
 interface Known {
   locationId: string;

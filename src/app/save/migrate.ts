@@ -5,8 +5,9 @@ import { SYSTEM_IDS } from '../../data/systems.ts';
 import { codexEntries } from '../../economy/progress.ts';
 import type { SystemId } from '../../data/types.ts';
 import { clampShip, newShipState } from '../../economy/loadout.ts';
-import { COMMODITY_IDS } from '../../content/economy/goods.ts';
+import { COMMODITIES, COMMODITY_IDS } from '../../content/economy/goods.ts';
 import { COMBAT } from '../../content/combat/rules.ts';
+import { FLEET } from '../../content/fleet/rules.ts';
 import { createNewGame, SAVE_VERSION, type CommodityId, type GameState } from '../state.ts';
 
 /**
@@ -198,6 +199,99 @@ export function migrateSave(raw: unknown): GameState {
   return state;
 }
 
+/** A cargo record: known goods in whole, non-negative quantities. */
+function validCargo(cargo: unknown): cargo is Record<string, number> {
+  return isRecord(cargo) && Object.entries(cargo).every(([c, q]) => COMMODITY_IDS.includes(c as CommodityId) && Number.isInteger(q) && (q as number) >= 0);
+}
+
+/** Checks one ship (the one flown, or one the player owns): the model, its fittings, racks, systems and hold. */
+function assertValidShip(ship: GameState['ship'], fail: (msg: string) => never, what = 'ship'): void {
+  if (!isRecord(ship) || !Number.isFinite(ship.hull) || !Number.isFinite(ship.shield)) fail(what);
+  if (!isRecord(ship.cargo)) fail(`${what} cargo`);
+  const model = typeof ship.model === 'string' ? findShip(ship.model) : undefined;
+  if (!model) fail(`unknown ${what} model`);
+  if (!isRecord(ship.fittings) || !isRecord(ship.ammo)) fail(`${what} fittings`);
+  for (const [slotId, gearId] of Object.entries(ship.fittings)) {
+    const slot = model!.slots.find((sl) => sl.id === slotId);
+    const item = typeof gearId === 'string' ? findGear(gearId) : undefined;
+    if (!slot || !item || item.slot !== slot.type || item.tier > slot.maxClass) fail(`${what} fitting ${slotId}`);
+  }
+  for (const [slotId, rounds] of Object.entries(ship.ammo)) {
+    if (!model!.slots.some((sl) => sl.id === slotId && sl.type === 'launcher') || !Number.isInteger(rounds) || (rounds as number) < 0) fail(`${what} ammo ${slotId}`);
+  }
+  if (!Number.isInteger(ship.repairKits) || ship.repairKits < 0) fail(`${what} repair kits`);
+  if (!validCargo(ship.cargo)) fail(`${what} cargo entry`);
+  if (!Number.isInteger(ship.decoys) || ship.decoys < 0 || ship.decoys > COMBAT.decoys.max) fail(`${what} decoys`);
+  const sys = ship.systems;
+  if (!isRecord(sys) || !(['engines', 'guns', 'shields'] as const).every((k) => Number.isFinite(sys[k]) && sys[k] >= 0 && sys[k] <= 1)) fail(`${what} systems`);
+}
+
+/** The fleet (docs/PROCGEN.md §18): owned ships and their captains, storage, stakes and reports. */
+function assertValidFleet(fl: GameState['fleet'], fail: (msg: string) => never): void {
+  if (!isRecord(fl) || !Array.isArray(fl.ships) || !isRecord(fl.storage) || !Array.isArray(fl.stakes) || !Array.isArray(fl.reports)) fail('fleet');
+  if (fl.ships.length > FLEET.hangar.max) fail('fleet: too many ships');
+  const ids = new Set<string>();
+  for (const o of fl.ships) {
+    if (!isRecord(o) || typeof o.id !== 'string' || ids.has(o.id) || !LOCATION_IDS.has(o.locationId)) fail('fleet ship');
+    ids.add(o.id);
+    assertValidShip(o.ship, fail, `fleet ship ${o.id}`);
+    const h = o.hauler;
+    if (h === undefined) continue;
+    const time = (t: unknown) => Number.isFinite(t);
+    if (
+      !isRecord(h) ||
+      typeof h.captain !== 'string' ||
+      !isRecord(h.route) ||
+      h.route.from !== o.locationId ||
+      !LOCATION_IDS.has(h.route.to) ||
+      h.route.to === h.route.from ||
+      !COMMODITY_IDS.includes(h.route.commodity) ||
+      typeof h.insured !== 'boolean' ||
+      typeof h.recalled !== 'boolean' ||
+      !['home', 'out', 'back'].includes(h.leg) ||
+      ![null, 'unprofitable', 'credits'].includes(h.waiting) ||
+      !Number.isInteger(h.waits) ||
+      h.waits < 0 ||
+      !time(h.hired) ||
+      !time(h.since) ||
+      !Number.isFinite(h.cost) ||
+      h.cost < 0 ||
+      !Number.isInteger(h.runs) ||
+      h.runs < 0 ||
+      !Number.isFinite(h.earned)
+    ) {
+      fail('hauler');
+    }
+  }
+  for (const [id, cargo] of Object.entries(fl.storage)) {
+    if (!LOCATION_IDS.has(id) || !validCargo(cargo)) fail('storage');
+    let used = 0;
+    for (const [c, q] of Object.entries(cargo)) used += (q ?? 0) * COMMODITIES[c as CommodityId].unitSize;
+    if (used > FLEET.storage.capacity) fail('storage');
+  }
+  const stakes = new Set<string>();
+  for (const k of fl.stakes) {
+    if (
+      !isRecord(k) ||
+      !LOCATION_IDS.has(k.locationId) ||
+      stakes.has(k.locationId) ||
+      !Number.isInteger(k.percent) ||
+      k.percent < 1 ||
+      k.percent > FLEET.stakes.maxPercent ||
+      !Number.isFinite(k.paid) ||
+      k.paid < 0 ||
+      !Number.isFinite(k.since) ||
+      !Number.isFinite(k.earned)
+    ) {
+      fail('stakes');
+    }
+    stakes.add(k.locationId);
+  }
+  if (stakes.size > FLEET.stakes.maxStations) fail('stakes');
+  const kinds = ['run', 'raid', 'lost', 'wait', 'home'];
+  if (!fl.reports.every((r) => isRecord(r) && Number.isFinite(r.at) && kinds.includes(r.kind) && typeof r.text === 'string' && Number.isFinite(r.amount) && (r.shipId === undefined || typeof r.shipId === 'string'))) fail('fleet reports');
+}
+
 /** Structural and range checks; throws SaveFormatError on anything that would break the game. */
 export function assertValidState(s: GameState): void {
   const fail = (msg: string): never => {
@@ -208,23 +302,7 @@ export function assertValidState(s: GameState): void {
   if (s.location.dockedAt !== null && !LOCATION_IDS.has(s.location.dockedAt)) fail('unknown dock');
   if (!LOCATION_IDS.has(s.location.lastDockId)) fail('unknown respawn dock');
   if (!Number.isFinite(s.credits) || s.credits < 0) fail('credits');
-  if (!isRecord(s.ship) || !Number.isFinite(s.ship.hull) || !Number.isFinite(s.ship.shield)) fail('ship');
-  if (!isRecord(s.ship.cargo)) fail('cargo');
-  const model = typeof s.ship.model === 'string' ? findShip(s.ship.model) : undefined;
-  if (!model) fail('unknown ship model');
-  if (!isRecord(s.ship.fittings) || !isRecord(s.ship.ammo)) fail('fittings');
-  for (const [slotId, gearId] of Object.entries(s.ship.fittings)) {
-    const slot = model!.slots.find((sl) => sl.id === slotId);
-    const item = typeof gearId === 'string' ? findGear(gearId) : undefined;
-    if (!slot || !item || item.slot !== slot.type || item.tier > slot.maxClass) fail(`fitting ${slotId}`);
-  }
-  for (const [slotId, rounds] of Object.entries(s.ship.ammo)) {
-    if (!model!.slots.some((sl) => sl.id === slotId && sl.type === 'launcher') || !Number.isInteger(rounds) || (rounds as number) < 0) fail(`ammo ${slotId}`);
-  }
-  if (!Number.isInteger(s.ship.repairKits) || s.ship.repairKits < 0) fail('repair kits');
-  for (const [id, qty] of Object.entries(s.ship.cargo)) {
-    if (!COMMODITY_IDS.includes(id as CommodityId) || !Number.isInteger(qty) || (qty as number) < 0) fail('cargo entry');
-  }
+  assertValidShip(s.ship, fail);
   if (!Array.isArray(s.visitedSystems) || !Array.isArray(s.discoveredBodies)) fail('lists');
   if (!isRecord(s.contracts)) fail('contracts');
   for (const [id, c] of Object.entries(s.contracts)) {
@@ -234,17 +312,7 @@ export function assertValidState(s: GameState): void {
   for (const c of s.law.pending) {
     if (!isRecord(c) || !['sta', 'frontier', 'hollow-wake'].includes(c.faction) || !Number.isFinite(c.amount) || c.amount < 0 || !SYSTEM_IDS.includes(c.systemId) || !Number.isFinite(c.at)) fail('law');
   }
-  const fl = s.fleet;
-  if (!isRecord(fl) || !Array.isArray(fl.ships) || !isRecord(fl.storage) || !Array.isArray(fl.stakes) || !Array.isArray(fl.reports)) fail('fleet');
-  for (const o of fl.ships) {
-    if (!isRecord(o) || typeof o.id !== 'string' || !LOCATION_IDS.has(o.locationId) || !isRecord(o.ship) || !findShip(o.ship.model) || !isRecord(o.ship.cargo)) fail('fleet ship');
-    const h = o.hauler;
-    if (h && (!isRecord(h) || typeof h.captain !== 'string' || !isRecord(h.route) || !LOCATION_IDS.has(h.route.from) || !LOCATION_IDS.has(h.route.to) || !COMMODITY_IDS.includes(h.route.commodity) || !Number.isFinite(h.since) || !Number.isInteger(h.runs))) fail('hauler');
-  }
-  for (const [id, cargo] of Object.entries(fl.storage)) {
-    if (!LOCATION_IDS.has(id) || !isRecord(cargo) || !Object.entries(cargo).every(([c, q]) => COMMODITY_IDS.includes(c as CommodityId) && Number.isInteger(q) && (q as number) >= 0)) fail('storage');
-  }
-  if (!fl.stakes.every((k) => isRecord(k) && LOCATION_IDS.has(k.locationId) && Number.isFinite(k.percent) && k.percent > 0 && Number.isFinite(k.paid) && Number.isFinite(k.since))) fail('stakes');
+  assertValidFleet(s.fleet, fail);
   const w = s.world;
   if (!isRecord(w) || !isRecord(w.relief) || !isRecord(w.raidKills) || !isRecord(w.ended) || !isRecord(w.lingering)) fail('world');
   for (const [sys, l] of Object.entries(w.lingering)) {
@@ -266,9 +334,6 @@ export function assertValidState(s: GameState): void {
   for (const w of s.crew) {
     if (!isRecord(w) || typeof w.id !== 'string' || typeof w.name !== 'string' || !findShip(w.model) || !Number.isFinite(w.fee) || w.fee < 0 || (w.skill !== 'steady' && w.skill !== 'sharp')) fail('crew');
   }
-  if (!Number.isInteger(s.ship.decoys) || s.ship.decoys < 0 || s.ship.decoys > COMBAT.decoys.max) fail('decoys');
-  const sys = s.ship.systems;
-  if (!isRecord(sys) || !(['engines', 'guns', 'shields'] as const).every((k) => Number.isFinite(sys[k]) && sys[k] >= 0 && sys[k] <= 1)) fail('systems');
   if (!Array.isArray(s.priceWatch) || !s.priceWatch.every((w) => isRecord(w) && LOCATION_IDS.has(w.locationId) && COMMODITY_IDS.includes(w.commodity))) fail('price watch');
   const kinds = ['price', 'event', 'den', 'ace', 'wreck', 'story'];
   if (!Array.isArray(s.rumours) || !s.rumours.every((r) => isRecord(r) && typeof r.key === 'string' && typeof r.text === 'string' && kinds.includes(r.kind) && Number.isFinite(r.at))) fail('rumours');

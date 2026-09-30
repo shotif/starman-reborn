@@ -113,13 +113,32 @@ export interface Lingering {
   pods: LingeringPod[];
 }
 
-/** A captain flying a parked ship on one of the player's routes (docs/PROCGEN.md §18). */
+/**
+ * A captain flying a parked ship on one of the player's routes (docs/PROCGEN.md §18). A run loads
+ * at `route.from`, carries the cargo in the ship's hold to `route.to`, sells it there and flies home
+ * empty; everything is worked out from the game clock (economy/fleet.ts settleFleet).
+ */
 export interface Hauler {
   captain: string;
   route: { from: string; to: string; commodity: CommodityId };
   insured: boolean;
-  /** Game clock when the current run began. */
+  /** Game clock when the captain was hired (with the ship's id and the run, it keys each run's luck). */
+  hired: number;
+  /** `home`: at `route.from`, loading next; `out`: carrying the cargo to `route.to`; `back`: flying home empty. */
+  leg: 'home' | 'out' | 'back';
+  /** Game clock when the current run began (at home: when the captain next looks at the route). */
   since: number;
+  /** What the run under way cost when it set out: the goods, both ways' jump fees and the captain's fee. */
+  cost: number;
+  /**
+   * Why the captain waits at home (null: not waiting), and how many looks at the route in a row
+   * found no run to make. A wait is reported once, when it outlasts the first look.
+   */
+  waiting: 'unprofitable' | 'credits' | null;
+  waits: number;
+  /** Called home: the ship parks at `route.from` when this run is done. */
+  recalled: boolean;
+  /** Runs finished (sold or raided). */
   runs: number;
   /** Net credits the hauler has made the player. */
   earned: number;
@@ -137,11 +156,26 @@ export interface OwnedShip {
 /** A stake in a station's trade. */
 export interface Stake {
   locationId: string;
+  /** Whole per-cent, 1 to FLEET.stakes.maxPercent. */
   percent: number;
   /** What the player paid for it. */
   paid: number;
-  /** Game clock the dividends are settled to. */
+  /** Game clock the dividends are settled to (whole hours from the purchase). */
   since: number;
+  /** Dividends paid so far. */
+  earned: number;
+}
+
+/** Something the fleet did while the player was away. */
+export interface FleetReport {
+  /** Game clock when it happened. */
+  at: number;
+  kind: 'run' | 'raid' | 'lost' | 'wait' | 'home';
+  text: string;
+  /** Credits it made (negative: cost) the player. */
+  amount: number;
+  /** The owned ship it concerns. */
+  shipId?: string;
 }
 
 /** The player's fleet and holdings (docs/PROCGEN.md §18). */
@@ -151,7 +185,7 @@ export interface Fleet {
   storage: Record<string, Cargo>;
   stakes: Stake[];
   /** What happened while the player was away, newest last. */
-  reports: { at: number; text: string; amount: number }[];
+  reports: FleetReport[];
 }
 
 /** The player's mark on the world (docs/PROCGEN.md §17). */
@@ -214,7 +248,8 @@ export type PirateOutcome = 'none' | 'destroyed' | 'bypassed' | 'escaped';
 export interface LedgerEntry {
   /** Game-clock seconds. */
   t: number;
-  kind: 'buy' | 'sell' | 'bounty' | 'reward' | 'repair' | 'fee' | 'equipment' | 'loot' | 'rescue';
+  /** `fleet`: stakes bought and sold, storage leased (docs/PROCGEN.md §18). */
+  kind: 'buy' | 'sell' | 'bounty' | 'reward' | 'repair' | 'fee' | 'equipment' | 'loot' | 'rescue' | 'fleet';
   amount: number;
   note: string;
 }
@@ -356,9 +391,10 @@ export function voyageTotals(state: GameState, sinceClock: number): {
   repairsAndRescue: number;
   fees: number;
   equipment: number;
+  fleet: number;
   net: number;
 } {
-  const t = { trade: 0, bountiesAndSalvage: 0, rewards: 0, repairsAndRescue: 0, fees: 0, equipment: 0, net: 0 };
+  const t = { trade: 0, bountiesAndSalvage: 0, rewards: 0, repairsAndRescue: 0, fees: 0, equipment: 0, fleet: 0, net: 0 };
   for (const e of state.ledger) {
     if (e.t < sinceClock) continue;
     if (e.kind === 'buy' || e.kind === 'sell') t.trade += e.amount;
@@ -367,6 +403,7 @@ export function voyageTotals(state: GameState, sinceClock: number): {
     else if (e.kind === 'repair' || e.kind === 'rescue') t.repairsAndRescue += e.amount;
     else if (e.kind === 'fee') t.fees += e.amount;
     else if (e.kind === 'equipment') t.equipment += e.amount;
+    else if (e.kind === 'fleet') t.fleet += e.amount;
     t.net += e.amount;
   }
   return t;
