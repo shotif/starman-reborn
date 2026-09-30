@@ -116,7 +116,7 @@ interface NpcShip {
   /** Ambushers go for this ship (the one the player escorts) rather than the player. */
   prey?: NpcShip;
   /** The ship of an escort contract: where it set off and when the ambush comes. */
-  escort?: { jobId: string; start: THREE.Vector3; ambushAt: number; ambushed: boolean; level: 1 | 2 | 3 };
+  escort?: { jobId: string; start: THREE.Vector3; ambushAt: number; ambushed: boolean; level: 1 | 2 | 3; waiting?: boolean };
   /** Who it is fighting. */
   foe: NpcShip | 'player' | null;
   /** Bounty paid when the player destroys it. */
@@ -191,6 +191,8 @@ const LANE_ENTER_RANGE = 450;
 const AVOID_MARGIN = 700;
 const DEFAULT_SCAN_RANGE = 9_000;
 const HOSTILE_RADIUS = 3_500;
+/** An escorted ship holds position while the player is further away than this. */
+const ESCORT_WAIT = 2_500;
 const CONVERGENCE = 700;
 const EXOPLANET_IDS = new Set(EXOPLANETS.planets.map((p) => p.id));
 /** Hollow Wake raiders fly Wake Salvage light fighters. */
@@ -1056,7 +1058,8 @@ export class FlightSession {
       this.autopilot = { mode: 'none' };
       return;
     }
-    const standoff = target.kind === 'station' ? target.radius + 450 : target.radius + 600;
+    // Stop short of stations and ships, but fly right up to loot so the tractor beam reaches it.
+    const standoff = target.kind === 'station' ? target.radius + 450 : target.kind === 'loot' ? 40 : target.radius + 600;
     // Round any planet, star or station in the way; the target itself is where we stop.
     const way = avoidObstacles(this.player.position, target.position, this.system.obstacles(target.id), AVOID_MARGIN, this.wayPoint);
     const st = flyTo(this.player, way.point, { arriveDistance: way.detour ? 0 : standoff, allowCruise: true }, this.controls);
@@ -1926,7 +1929,7 @@ export class FlightSession {
     const pack = ++this.packSerial;
     const ahead = target.trader!.destination.point.clone().sub(target.body.position).normalize();
     const side = new THREE.Vector3().crossVectors(ahead, new THREE.Vector3(0, 1, 0)).normalize();
-    const home = target.body.position.clone().addScaledVector(ahead, 2_200).addScaledVector(side, (this.rand() - 0.5) * 1_600);
+    const home = target.body.position.clone().addScaledVector(ahead, 1_600).addScaledVector(side, (this.rand() - 0.5) * 1_200);
     this.packHome.set(pack, home);
     const pool = RAIDERS[level];
     const count = level + 1;
@@ -1958,7 +1961,7 @@ export class FlightSession {
     hull.object.rotation.set(r() * Math.PI, r() * Math.PI, r() * Math.PI);
     this.system.scene.add(hull.object);
     this.wreckHulls.push({ art: hull, spin: new THREE.Vector3(0.02 + r() * 0.03, 0, 0) });
-    this.spawnLoot(at.clone().add(new THREE.Vector3(40, 12, -30)), 0, { recover: { jobId: w.jobId, item: w.item } });
+    this.spawnLoot(at.clone().add(new THREE.Vector3(80, 20, -60)), 0, { recover: { jobId: w.jobId, item: w.item } });
     if (w.guard) {
       const pack = ++this.packSerial;
       const home = at.clone().add(new THREE.Vector3(0, 300, 0));
@@ -1977,7 +1980,16 @@ export class FlightSession {
       for (const d of this.openDocks()) if (!best || d.dockPoint.distanceTo(n.body.position) < best.dockPoint.distanceTo(n.body.position)) best = d;
       return best ? { id: best.def.locationId, point: best.dockPoint } : null;
     });
-    n.body.requestCruise(cruise);
+    if (n.escort) {
+      // An escorted ship keeps to sublight speed, and waits for its guard when left behind.
+      n.body.requestCruise(false);
+      const far = n.body.position.distanceTo(this.player.position) > ESCORT_WAIT;
+      if (far && brain.state === 'travel') {
+        n.controls.throttle = 0;
+        if (!n.escort.waiting) this.callbacks.onMessage(`The ${n.name} is holding position until you catch up.`, 'info');
+      }
+      n.escort.waiting = far;
+    } else n.body.requestCruise(cruise);
     if (brain.attacked && !n.maydaySent) {
       n.maydaySent = true;
       if (n.body.position.distanceTo(this.player.position) < 15_000) this.callbacks.onMessage(`Mayday from the ${n.name}: raiders attacking!`, 'bad');

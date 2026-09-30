@@ -12,17 +12,17 @@ export type ContractKind = 'freight' | 'parcel' | 'supply' | 'bounty' | 'survey'
 export type KindWeights = Partial<Record<ContractKind, number>>;
 
 export const BOARD_KINDS: Record<Exclude<StationType, 'pirate-den'>, KindWeights> = {
-  'trade-port': { freight: 3, parcel: 2, supply: 2, bounty: 1, escort: 2 },
+  'trade-port': { freight: 3, parcel: 2, supply: 2, bounty: 1, escort: 1 },
   'customs-depot': { parcel: 2, bounty: 3, freight: 1, ace: 1, recovery: 1 },
   shipyard: { supply: 3, freight: 1, parcel: 1, recovery: 1 },
-  'mining-outpost': { freight: 2, supply: 2, bounty: 1, escort: 2 },
+  'mining-outpost': { freight: 2, supply: 2, bounty: 1, escort: 1 },
   refinery: { freight: 2, supply: 2, parcel: 1, escort: 1 },
   factory: { freight: 3, supply: 2, escort: 1 },
   'agri-station': { freight: 3, supply: 1, parcel: 1, escort: 1 },
   'research-station': { survey: 3, parcel: 2, supply: 1, recovery: 2 },
   relay: { parcel: 3, bounty: 1, recovery: 1 },
   'military-base': { bounty: 4, parcel: 1, ace: 2 },
-  freeport: { freight: 2, parcel: 2, supply: 1, bounty: 1, recovery: 1, escort: 1 },
+  freeport: { freight: 2, parcel: 2, supply: 1, bounty: 1, recovery: 1, escort: 1, ace: 1 },
 };
 
 /** The hand-made stations post generated contracts too, once the opening delivery is done. */
@@ -43,7 +43,7 @@ export const CONTRACTS = {
   /** At most this many generated contracts in progress at once. */
   maxActive: 5,
   /** How far contracts send you, in jumps (escorts stay in the posting station's system). */
-  maxJumps: { freight: 3, parcel: 4, supply: 3, bounty: 2, survey: 3, escort: 0, ace: 2, recovery: 3 } satisfies Record<ContractKind, number>,
+  maxJumps: { freight: 3, parcel: 4, supply: 3, bounty: 2, survey: 3, escort: 0, ace: 3, recovery: 3 } satisfies Record<ContractKind, number>,
   /** Hold units a freight or supply contract asks for (before the good's unit size). */
   cargoUnits: [8, 30] as const,
   /** Most the cargo may be worth at base prices (keeps deposits and purchases within a young pilot's reach). */
@@ -96,7 +96,7 @@ export const CONTRACTS = {
   /** Aces: a named raider in a better ship (tougher by `toughness`, deadlier by `damage`) with two guards. */
   ace: { model: 'ship.heavy-fighter.2.wake', guards: 2, toughness: 1.8, damage: 1.3, loot: [500, 900] as const },
   /** Escorts: the ambush comes when the escorted ship is this far along its route. */
-  escort: { ambushAt: [0.35, 0.55] as const },
+  escort: { ambushAt: [0.25, 0.45] as const },
   /** Difficulty 3 contracts need Friendly standing with the station's owner. */
   gatedDifficulty: 3,
   gateStanding: 10,

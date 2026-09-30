@@ -95,14 +95,18 @@ export function boardFor(locationId: string, epoch: number): JobDef[] {
     const b = CONTRACTS.board;
     const size = Math.min(b.max, b.base + ((loc.look?.size ?? 0.8) > b.largeAbove ? 1 : 0) + (loc.stationType && b.busy.includes(loc.stationType) ? 1 : 0));
     const kinds = Object.keys(weights) as ContractKind[];
+    // No two contracts of a kind sending you to the same place on one board.
+    const placed = new Set<ContractKind>(['parcel', 'freight', 'escort', 'bounty', 'ace']);
+    const same = (a: JobDef, b: JobDef) =>
+      a.title === b.title || (a.contract?.kind === b.contract?.kind && placed.has(a.contract!.kind) && a.destinationLocationId === b.destinationLocationId);
     for (let attempt = 0; out.length < size && attempt < size * 5; attempt++) {
       const kind = weightedPick(r, kinds, kinds.map((k) => weights[k] ?? 0));
       const c = makeContract(kind, loc, r, `${CONTRACT_PREFIX}${locationId}.${epoch}.${out.length}`, clock);
-      if (c && !out.some((o) => o.title === c.title)) out.push(c);
+      if (c && !out.some((o) => same(o, c))) out.push(c);
     }
     // Work answering a world event, from its own stream so the rest of the board does not move.
     const e = eventContract(loc, rng(WORLD_SEED, 'contracts', 'event', locationId, epoch), `${CONTRACT_PREFIX}${locationId}.${epoch}.${out.length}`, clock);
-    if (e && !out.some((o) => o.title === e.title)) out.push(e);
+    if (e && !out.some((o) => same(o, e))) out.push(e);
   }
   if (boardCache.size > 400) boardCache.clear();
   boardCache.set(key, out);
