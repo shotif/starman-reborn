@@ -25,6 +25,9 @@ export const BOARD_KINDS: Record<Exclude<StationType, 'pirate-den'>, KindWeights
   freeport: { freight: 2, parcel: 2, supply: 1, bounty: 1, recovery: 1, escort: 1, ace: 1, smuggle: 2 },
 };
 
+/** Frontier boards want the new systems surveyed for the codex: this much extra survey weight. */
+export const FRONTIER_SURVEY_WEIGHT = 2;
+
 /** Raider dens post work for pilots the Hollow Wake trusts (docs/PROCGEN.md §12). */
 export const DEN_BOARD_KINDS: KindWeights = { smuggle: 3, piracy: 2, parcel: 1 };
 
@@ -65,7 +68,8 @@ export const CONTRACTS = {
     parcel: { base: 150, danger: 200 },
     supply: { base: 110, goodsMarkup: 1.35, urgentMarkup: 1.6 },
     bounty: { base: 200, perRaider: 150 },
-    survey: { base: 180, danger: 160 },
+    /** Surveys pay more out in the frontier (the long-range drive, the long lanes). */
+    survey: { base: 180, danger: 160, frontier: 1.5 },
     escort: { base: 260, perLevel: 180 },
     ace: { base: 900 },
     recovery: { base: 220, danger: 180, perGuard: 150 },

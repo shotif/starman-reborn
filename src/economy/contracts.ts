@@ -1,6 +1,6 @@
 import type { CommodityId, GameState } from '../app/state.ts';
 import { shipModel } from '../content/catalog.ts';
-import { ACE_NAMES, BOARD_KINDS, CONTRACTS, CURATED_BOARD_KINDS, DEN_BOARD_KINDS, RECOVERY_ITEMS, type ContractKind, type KindWeights } from '../content/contracts/rules.ts';
+import { ACE_NAMES, BOARD_KINDS, CONTRACTS, CURATED_BOARD_KINDS, DEN_BOARD_KINDS, FRONTIER_SURVEY_WEIGHT, RECOVERY_ITEMS, type ContractKind, type KindWeights } from '../content/contracts/rules.ts';
 import { LAW } from '../content/law/rules.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
 import { hashString, rng, type Rng } from '../content/random.ts';
@@ -77,7 +77,9 @@ function openStations(): FictionalLocation[] {
 function boardKinds(loc: FictionalLocation): KindWeights | null {
   if (loc.stationType === 'pirate-den' && loc.status === 'functional') return DEN_BOARD_KINDS;
   if (!loc.services.includes('contracts') || loc.status !== 'functional' || loc.dockable === false) return null;
-  return CURATED_BOARD_KINDS[loc.id] ?? (loc.stationType && loc.stationType !== 'pirate-den' ? BOARD_KINDS[loc.stationType] : null);
+  const kinds = CURATED_BOARD_KINDS[loc.id] ?? (loc.stationType && loc.stationType !== 'pirate-den' ? BOARD_KINDS[loc.stationType] : null);
+  // Out in the frontier every board wants the new systems surveyed.
+  return kinds && isFrontier(loc.systemId) ? { ...kinds, survey: (kinds.survey ?? 0) + FRONTIER_SURVEY_WEIGHT } : kinds;
 }
 
 const place = (loc: FictionalLocation) => `${loc.name} (${getSystem(loc.systemId).displayName})`;
@@ -385,12 +387,18 @@ function survey(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
   if (!planets.length) return null;
   const { p, s } = r.pick(planets);
   const rw = CONTRACTS.reward.survey;
-  const reward = pay(r, routeFeeBetween(giver.systemId, s.id), rw.base + rw.danger * (1 - security(s.id)));
+  const reward = pay(r, routeFeeBetween(giver.systemId, s.id), (rw.base + rw.danger * (1 - security(s.id))) * (isFrontier(s.id) ? rw.frontier : 1));
   const difficulty = difficultyFor(giver.systemId, s.id);
+  const what =
+    p.status === 'confirmed'
+      ? `a confirmed planet in ${s.displayName}`
+      : p.status === 'candidate'
+        ? `a candidate planet in ${s.displayName} that no one has confirmed; the readings could settle it`
+        : `a planet in ${s.displayName} the archives disagree about; the readings could settle it`;
   return {
     ...common(giver, id, difficulty),
     title: `Survey ${p.displayName}`,
-    briefing: `${giver.name} wants fresh instrument readings of ${p.displayName}, a confirmed planet in ${s.displayName}. Fly close enough for your scanner to log it.`,
+    briefing: `${giver.name} wants fresh instrument readings of ${p.displayName}, ${what}. Fly close enough for your scanner to log it.`,
     objectives: [{ kind: 'scan', bodyId: p.id, systemId: s.id, text: `Scan ${p.displayName} (${s.displayName})` }],
     reward,
     difficultyNote: routeNote(giver.systemId, s.id),
