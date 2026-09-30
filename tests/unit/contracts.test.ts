@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { migrateSave, SaveFormatError } from '../../src/app/save/migrate.ts';
-import { createNewGame, type GameState } from '../../src/app/state.ts';
+import { createNewGame, voyageTotals, type GameState } from '../../src/app/state.ts';
 import { dockAt, discoverBody } from '../../src/app/rules.ts';
 import { CONTRACTS } from '../../src/content/contracts/rules.ts';
 import { formatIssues } from '../../src/content/validate.ts';
@@ -8,7 +8,7 @@ import { getLocation, WORLD } from '../../src/data/systems.ts';
 import { cargoCount } from '../../src/economy/cargo.ts';
 import { validateContracts } from '../../src/economy/contractGuards.ts';
 import { boardEpoch, boardFor, postedContract, postedContracts } from '../../src/economy/contracts.ts';
-import { acceptJob, advanceJobs, contractPacksIn, deliverJob, describeObjective, getJob, jobsAt, type JobDef } from '../../src/economy/jobs.ts';
+import { abandonJob, acceptJob, advanceJobs, contractPacksIn, deliverJob, describeObjective, getJob, jobsAt, type JobDef } from '../../src/economy/jobs.ts';
 
 /**
  * Generated contracts (docs/PROCGEN.md §10): guardrails over many time slots, and each kind played
@@ -156,6 +156,37 @@ describe('playing generated contracts', () => {
     expect(discoverBody(s, o.bodyId).jobEvents).toEqual([expect.objectContaining({ jobId: job.id, kind: 'complete' })]);
   });
 
+  it('abandoning forfeits the deposit, keeps the cargo, costs a little standing and cannot be undone', () => {
+    const { job, epoch } = findPosted('freight');
+    const s = pilotAt(job.giverLocationId, epoch * CONTRACTS.epochSeconds);
+    const { cargo, deposit } = job.contract!;
+    const faction = job.factionId!;
+    s.reputation[faction] = 20;
+    const before = voyageTotals(s, 0);
+    acceptJob(s, job.id);
+    expect(abandonJob(s, job.id)).toMatchObject({ ok: true, message: expect.stringContaining(`deposit of ${deposit} cr forfeit`) });
+    expect(s.jobs[job.id]!.status).toBe('abandoned');
+    expect(cargoCount(s.ship.cargo, cargo!.commodity)).toBe(cargo!.qty);
+    expect(s.reputation[faction]).toBe(20 - CONTRACTS.abandonStanding);
+    // The deposit counts against contract money, not jump fees.
+    const after = voyageTotals(s, 0);
+    expect(after.rewards - before.rewards).toBe(-deposit!);
+    expect(after.fees).toBe(before.fees);
+    // It stays on its board as abandoned: no second try, no delivery, no second abandon.
+    expect(jobsAt(s, job.giverLocationId).find((o) => o.job.id === job.id)?.status).toBe('abandoned');
+    expect(acceptJob(s, job.id).ok).toBe(false);
+    const dest = getLocation(job.destinationLocationId);
+    s.location = { ...s.location, systemId: dest.systemId, dockedAt: dest.id };
+    expect(deliverJob(s, job.id, dest.id).ok).toBe(false);
+    expect(abandonJob(s, job.id).ok).toBe(false);
+    expect(migrateSave(structuredClone(s)).jobs[job.id]!.status).toBe('abandoned');
+    // The hand-made story jobs cannot be dropped.
+    const story = createNewGame(2);
+    expect(acceptJob(story, 'lifeline').ok).toBe(true);
+    expect(abandonJob(story, 'lifeline').ok).toBe(false);
+    expect(story.jobs.lifeline!.status).toBe('active');
+  });
+
   it('limits contracts in progress and keeps accepted ones in the save through later time slots', () => {
     const s = pilotAt(GENERATED[0]!);
     let accepted = 0;
@@ -174,11 +205,22 @@ describe('playing generated contracts', () => {
     expect(accepted).toBe(CONTRACTS.maxActive);
     const kept = Object.keys(s.contracts);
     expect(kept.length).toBe(CONTRACTS.maxActive);
+    // Abandoning one frees its slot.
+    const first = kept[0]!;
+    const blocked = boardFor(GENERATED[0]!, 99).find((c) => !c.requires && !c.contract?.cargo && !c.contract?.deposit)!;
+    s.clock = 99 * CONTRACTS.epochSeconds;
+    s.location = { ...s.location, dockedAt: GENERATED[0]!, systemId: getLocation(GENERATED[0]!).systemId };
+    expect(acceptJob(s, blocked.id).message).toMatch(/already have/);
+    abandonJob(s, first);
+    expect(acceptJob(s, blocked.id).ok).toBe(true);
+    abandonJob(s, blocked.id);
     // Much later, the boards have moved on but the accepted contracts are still there.
+    const all = Object.keys(s.contracts);
+    expect(all).toEqual([...kept, blocked.id]);
     s.clock += CONTRACTS.epochSeconds * 100;
-    for (const id of kept) expect(getJob(id, s).id).toBe(id);
+    for (const id of all) expect(getJob(id, s).id).toBe(id);
     const saved = migrateSave(structuredClone(s));
-    expect(Object.keys(saved.contracts)).toEqual(kept);
+    expect(Object.keys(saved.contracts)).toEqual(all);
   });
 });
 

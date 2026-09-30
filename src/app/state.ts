@@ -60,7 +60,8 @@ export interface MarketObservation {
   prices: Partial<Record<CommodityId, PriceQuote>>;
 }
 
-export type JobStatus = 'active' | 'complete';
+/** `abandoned`: a generated contract the player gave up (its deposit is forfeit). */
+export type JobStatus = 'active' | 'complete' | 'abandoned';
 
 export interface JobProgress {
   status: JobStatus;

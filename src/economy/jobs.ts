@@ -1,5 +1,5 @@
 import { applyCredits, type CommodityId, type GameState, type PriceQuote } from '../app/state.ts';
-import type { ContractKind } from '../content/contracts/rules.ts';
+import { CONTRACTS, type ContractKind } from '../content/contracts/rules.ts';
 import { getLocation, getSystem } from '../data/systems.ts';
 import type { FactionId, SystemId } from '../data/types.ts';
 import { addCargo, cargoCount, removeCargo } from './cargo.ts';
@@ -149,7 +149,7 @@ export function jobLockReason(state: GameState, job: JobDef): string | null {
 
 export interface JobOffer {
   job: JobDef;
-  status: 'available' | 'locked' | 'active' | 'complete';
+  status: 'available' | 'locked' | 'active' | 'complete' | 'abandoned';
   lockReason: string | null;
 }
 
@@ -164,7 +164,7 @@ export function jobsAt(state: GameState, locationId: string): JobOffer[] {
   });
 }
 
-/** Completed generated contracts kept for the journal; older ones are forgotten. */
+/** Finished (completed or abandoned) generated contracts kept for the journal; older ones are forgotten. */
 const KEEP_COMPLETED_CONTRACTS = 30;
 
 export function acceptJob(state: GameState, jobId: string): { ok: boolean; message: string } {
@@ -177,7 +177,8 @@ export function acceptJob(state: GameState, jobId: string): { ok: boolean; messa
     // Generated contracts are copied into the save, so they never change under the player.
     state.contracts[jobId] = structuredClone(job);
     const { cargo, deposit } = job.contract;
-    if (deposit) applyCredits(state, -deposit, 'fee', `Deposit: ${job.title}`);
+    // Deposits and their refunds both count as contract money in the voyage report.
+    if (deposit) applyCredits(state, -deposit, 'reward', `Deposit: ${job.title}`);
     if (cargo) addCargo(state.ship.cargo, cargo.commodity, cargo.qty, cargoCapacity(state.ship));
     forgetOldContracts(state);
   }
@@ -195,9 +196,26 @@ export function acceptJob(state: GameState, jobId: string): { ok: boolean; messa
   return { ok: true, message: `Accepted: ${job.title}` };
 }
 
+/**
+ * Gives up a generated contract (the hand-made ones cannot be dropped): any deposit is forfeit, the
+ * cargo stays in the hold and standing with the station's owner drops a little. It stays on its
+ * board as abandoned, so it cannot be taken again.
+ */
+export function abandonJob(state: GameState, jobId: string): { ok: boolean; message: string } {
+  const progress = state.jobs[jobId];
+  const job = state.contracts[jobId];
+  if (!job || progress?.status !== 'active') return { ok: false, message: 'Only generated contracts in progress can be abandoned.' };
+  progress.status = 'abandoned';
+  progress.completedAt = state.clock;
+  const lost = job.factionId ? -adjustReputation(state.reputation, job.factionId, -CONTRACTS.abandonStanding) : 0;
+  const deposit = job.contract?.deposit;
+  const costs = [deposit ? `deposit of ${deposit} cr forfeit` : '', lost && job.factionId ? `standing with the ${FACTIONS[job.factionId].name} −${lost}` : ''].filter(Boolean);
+  return { ok: true, message: `Abandoned: ${job.title}${costs.length ? ` (${costs.join(', ')})` : ''}` };
+}
+
 function forgetOldContracts(state: GameState): void {
   const done = Object.entries(state.jobs)
-    .filter(([id, p]) => id.startsWith(CONTRACT_PREFIX) && p.status === 'complete')
+    .filter(([id, p]) => id.startsWith(CONTRACT_PREFIX) && p.status !== 'active')
     .sort((a, b) => (b[1].completedAt ?? 0) - (a[1].completedAt ?? 0));
   for (const [id] of done.slice(KEEP_COMPLETED_CONTRACTS)) {
     delete state.jobs[id];

@@ -69,4 +69,6 @@ export const CONTRACTS = {
   gateStanding: 10,
   /** Standing gained with the station's owner by difficulty (1, 2, 3). */
   repReward: [2, 4, 6] as const,
+  /** Standing lost with the station's owner for abandoning a contract (any deposit is forfeit). */
+  abandonStanding: 3,
 };

@@ -334,6 +334,16 @@
   margin: 0.25rem 0;
 }
 
+.active-jobs li.active-job {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.active-jobs li.active-job .btn {
+  flex-shrink: 0;
+}
+
 .comm {
   margin: 0;
   padding: 0.45rem 0.7rem;

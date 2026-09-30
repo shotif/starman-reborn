@@ -346,7 +346,7 @@ export class StationHub {
       case 'news':
         return newsContent(ctx);
       case 'journal':
-        return journalContent(ctx.state);
+        return journalContent(ctx, refresh);
       case 'arrival':
         return this.arrivalContent();
       case 'menu':

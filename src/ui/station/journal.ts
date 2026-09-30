@@ -2,10 +2,12 @@ import { voyageTotals, type GameState } from '../../app/state.ts';
 import { cargoCount } from '../../economy/cargo.ts';
 import { COMMODITIES, COMMODITY_IDS } from '../../economy/commodities.ts';
 import { FACTIONS, standingTier, TIER_LABEL } from '../../economy/factions.ts';
-import { describeObjective, getJob } from '../../economy/jobs.ts';
-import { dataBadge } from '../components.ts';
-import { h, signed } from '../dom.ts';
+import { abandonJob, describeObjective, getJob } from '../../economy/jobs.ts';
+import { CONTRACTS } from '../../content/contracts/rules.ts';
+import { button, confirmDialog, dataBadge, toast } from '../components.ts';
+import { formatCredits, h, signed } from '../dom.ts';
 import { icon } from '../icons.ts';
+import type { Refresh, StationContext } from './context.ts';
 
 /** True when the current voyage has anything to report. */
 export function hasVoyage(state: GameState): boolean {
@@ -40,7 +42,8 @@ export function voyageReport(state: GameState): HTMLElement | null {
 }
 
 /** Your contracts, standing with each faction and the voyage so far. */
-export function journalContent(state: GameState): HTMLElement {
+export function journalContent(ctx: StationContext, refresh: Refresh): HTMLElement {
+  const { state } = ctx;
   const active = Object.entries(state.jobs).filter(([, p]) => p.status === 'active');
   const done = Object.entries(state.jobs).filter(([, p]) => p.status === 'complete');
   const voyage = voyageReport(state);
@@ -54,7 +57,12 @@ export function journalContent(state: GameState): HTMLElement {
           { class: 'plain active-jobs' },
           active.map(([id]) => {
             const o = describeObjective(state, id);
-            return h('li', null, icon('objective'), h('strong', null, ` ${getJob(id, state).title}`), o ? h('div', { class: 'muted small' }, o.text) : null);
+            return h(
+              'li',
+              { class: 'active-job' },
+              h('div', { class: 'grow' }, icon('objective'), h('strong', null, ` ${getJob(id, state).title}`), o ? h('div', { class: 'muted small' }, o.text) : null),
+              state.contracts[id] ? button('Abandon', { size: 'sm', variant: 'ghost', testId: `abandon-${id}`, onClick: () => void confirmAbandon(ctx, id, refresh) }) : null,
+            );
           }),
         )
       : h('p', { class: 'list-empty' }, 'No active contracts. Check the job board in a station bar.'),
@@ -71,4 +79,20 @@ export function journalContent(state: GameState): HTMLElement {
     voyage ? h('div', { class: 'list-head' }, h('span', null, 'Voyage report'), h('span', null, '')) : null,
     voyage,
   );
+}
+
+async function confirmAbandon(ctx: StationContext, jobId: string, refresh: Refresh): Promise<void> {
+  const job = ctx.state.contracts[jobId]!;
+  const deposit = job.contract?.deposit;
+  const costs = [
+    deposit ? `Your deposit of ${formatCredits(deposit)} is forfeit; the cargo stays in your hold.` : '',
+    job.factionId ? `Your standing with the ${FACTIONS[job.factionId].name} drops by ${CONTRACTS.abandonStanding}.` : '',
+  ].filter(Boolean);
+  const ok = await confirmDialog(`Abandon “${job.title}”?`, `${costs.join(' ')} The contract cannot be taken again.`.trim(), 'Abandon', { danger: true });
+  if (!ok) return;
+  const r = abandonJob(ctx.state, jobId);
+  ctx.sfx(r.ok ? 'ui-confirm' : 'ui-error');
+  toast(r.message, r.ok ? 'info' : 'bad');
+  ctx.save();
+  refresh();
 }

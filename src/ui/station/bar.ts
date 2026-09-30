@@ -108,7 +108,7 @@ function jobCard(o: JobOffer, expanded: boolean, onSelect: (id: string) => void)
       ? null
       : o.status === 'locked'
         ? h('p', { class: 'blocked' }, icon('alert'), ` ${o.lockReason}`)
-        : h('p', { class: 'muted' }, o.status === 'active' ? 'Accepted — in progress.' : 'Completed.');
+        : h('p', { class: 'muted' }, o.status === 'active' ? 'Accepted — in progress.' : o.status === 'abandoned' ? 'Abandoned.' : 'Completed.');
   return h(
     'li',
     { class: `job-card ${o.status}${expanded ? ' open' : ''}`, 'data-testid': `job-${job.id}` },
