@@ -924,8 +924,10 @@ claims are game fiction, and the numbers are game balance.
 ### 19.2 Rocks
 
 - Each ring is cut into stretches of about 8 km. Within 14 km of the band, the stretch the player
-  is over and its nearer neighbour hold four larger rocks each (26–60 m in radius), seeded
-  where they sit, so they are the same rocks every time.
+  is over and its nearer neighbour hold four larger rocks each (26–60 m in radius), seeded where
+  they sit, so they are the same rocks every time; a stretch stays out while the player is next to
+  it. No rock sits within 1.5 km of a station, planet or star (the Eridani Mining Hub lies in its
+  belt).
 - What a rock holds, by kind of belt (a weight per good drawn per rock, then scaled to add up to
   one): main belt 55–85% metal ore, the rest water ice; Kuiper Belt 50–75% water ice, the rest
   volatile gases; debris discs ore, ice and volatiles mixed. A rock holds 40–110 units of rock.
@@ -946,10 +948,11 @@ claims are game fiction, and the numbers are game balance.
   button's action, since every standard button already has a job.
 - The beam cuts the lasers' rate of rock; each unit of rock gives the prospector's multiplier in
   goods, in the rock's shares. Each whole unit goes into the hold when it fits, and otherwise out in
-  a cargo pod beside the rock (a unit a pod, six adrift at most). The tractor leaves a pod alone
-  while the hold cannot take it.
-- The beam stops when its target is lost (another one selected), out of reach or spent, when the
-  hold and the six pods are full, and on docking or entering a lane.
+  a cargo pod beside the rock (a unit a pod); nothing cut is thrown away. The tractor leaves a pod
+  alone while the hold cannot take it, and pods of cut rock left adrift last time still count.
+- The beam stops when its target is lost (another one selected), out of reach or spent, when six
+  pods are adrift and the hold cannot take one more unit of each of the rock's goods, and on docking
+  or entering a lane.
 - The beam runs from the ship's nose to the cut, with sparks where it bites and its own grinding
   sound; the HUD shows the laser in the loadout and what the beam has cut.
 
@@ -974,9 +977,10 @@ claims are game fiction, and the numbers are game balance.
   carries it), then deliver them to the station. Pay: the route's fees as for every contract, plus
   160 cr and 200 cr × the belt's danger (both varying a little), plus 2.4 times the goods' base
   price, more than any market pays for the load.
-- Every unit the laser cuts of that good in that belt counts (the job's `mined`); once the count is
-  met the load is delivered like freight. The star map marks the belt's system, and in flight the
-  belt is the objective, with Go to.
+- Every unit the laser cuts of that good in that belt counts (the job's `mined`), for one claim
+  only, the claim taken first filled first; once the count is met the load is delivered like
+  freight. The star map marks the belt's system, and in flight the belt is the objective, with
+  Go to.
 
 ### 19.6 Raiders who hunt miners
 
@@ -996,15 +1000,16 @@ claims are game fiction, and the numbers are game balance.
   of every ring (the Eridani Mining Hub sits in its inner ring by design);
 - rocks are the same on every visit, with shares by kind of belt, and grow back in their own time;
   the beam cuts at the lasers' rate, the same in one step or many; the prospector multiplies the
-  yield; a rock is spent after its amount; the hold fills, then the pods;
+  yield; a rock is spent after its amount; the hold fills, then the pods, and every unit cut is in
+  one or the other; no rock near the Eridani Mining Hub;
 - mined goods reach a market only from the hold, and thirty loads into one dock keep every price in
   its band;
 - with a class 1 laser the typical core belt pays within the middle half of the hauling routes near
   Sol (the trade computer's estimates), and no belt, even with two class 3 lasers, pays more than
   the best hauling route;
 - claims pass the contract guardrails at every station (a cited belt, a good it yields, reach, the
-  load and pay above what the load would fetch), count only their belt and good, and pay on
-  delivery;
+  load and pay above what the load would fetch), count only their belt and good, each unit for one
+  claim, and pay on delivery;
 - in a real `FlightSession` in node: belts and rocks as targets, the beam's rate into the hold, why
   it stops, the pods, a spent rock growing back, a claim's belt as the objective, and raiders
   coming for a miner in a lawless belt.
