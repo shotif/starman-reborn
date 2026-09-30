@@ -1,4 +1,4 @@
-import type { CommodityId } from '../app/state.ts';
+import type { CommodityId, WorldLog } from '../app/state.ts';
 import { BOOMS, EVENTS, GLUT_CAUSES, SHORTAGE_CAUSES, STRIKE_CAUSES, type EventKind, type StationEventKind, type SystemEventKind } from '../content/events/rules.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
 import { CURATED_MARKETS, ECONOMY } from '../content/economy/rules.ts';
@@ -240,9 +240,32 @@ function systemEventIn(systemId: SystemId, index: number): WorldEvent | null {
   });
 }
 
+// ---------------------------------------------------------------- the player's mark (docs/PROCGEN.md §17)
+
+/**
+ * Events stay a pure function of the clock, except that the player can end one early (relieving a
+ * shortage, breaking a raid). The game points this at the save's world log; tests may too.
+ */
+let worldLog: Pick<WorldLog, 'ended'> | null = null;
+
+export function useWorldLog(log: Pick<WorldLog, 'ended'> | null): void {
+  worldLog = log;
+}
+
+/** When an event really ends: its scheduled end, or earlier if the player ended it. */
+export function eventEnd(e: WorldEvent): number {
+  const early = worldLog?.ended[e.id];
+  return early !== undefined ? Math.min(e.end, early) : e.end;
+}
+
+/** Whether the player ended this event early. */
+export function endedEarly(e: WorldEvent): boolean {
+  return worldLog?.ended[e.id] !== undefined;
+}
+
 // ---------------------------------------------------------------- queries
 
-const within = (e: WorldEvent | null, clock: number): e is WorldEvent => !!e && clock >= e.start && clock < e.end;
+const within = (e: WorldEvent | null, clock: number): e is WorldEvent => !!e && clock >= e.start && clock < eventEnd(e);
 
 /** The event at a station right now, if any. */
 export function stationEventAt(locationId: string, clock: number): WorldEvent | null {
@@ -274,7 +297,7 @@ export function eventsAt(clock: number): WorldEvent[] {
 export function eventsSince(clock: number, recent: number): WorldEvent[] {
   const out: WorldEvent[] = [];
   const keep = (e: WorldEvent | null) => {
-    if (e && e.start <= clock && e.end > clock - recent) out.push(e);
+    if (e && e.start <= clock && eventEnd(e) > clock - recent) out.push(e);
   };
   for (const id of eventStations()) {
     const w = windowIndex(id, EVENTS.stationWindow, clock);
@@ -312,13 +335,15 @@ export interface NewsItem {
   event: WorldEvent;
   jumps: number;
   active: boolean;
+  /** The player ended it early (a shortage relieved, a raid broken). */
+  endedEarly: boolean;
 }
 
 /** News at a system: events within reach (EVENTS.newsJumps), under way or recently over, nearest first. */
 export function newsAt(systemId: SystemId, clock: number): NewsItem[] {
   const jumps = jumpsFrom(WORLD.links, systemId);
   return eventsSince(clock, EVENTS.newsRecent)
-    .map((event) => ({ event, jumps: jumps.get(event.systemId) ?? 99, active: clock < event.end }))
+    .map((event) => ({ event, jumps: jumps.get(event.systemId) ?? 99, active: clock < eventEnd(event), endedEarly: endedEarly(event) }))
     .filter((n) => n.jumps <= EVENTS.newsJumps)
     .sort((a, b) => Number(b.active) - Number(a.active) || a.jumps - b.jumps || b.event.start - a.event.start);
 }

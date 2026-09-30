@@ -6,7 +6,7 @@ import type { FactionId, SystemId, Vec3Tuple } from '../data/types.ts';
 import { newShipState } from '../economy/loadout.ts';
 
 /** Current save format version. Older saves are upgraded by src/app/save/migrate.ts. */
-export const SAVE_VERSION = 9;
+export const SAVE_VERSION = 10;
 
 export type { CommodityId };
 
@@ -87,6 +87,44 @@ export interface MarketObservation {
   goodsAt?: Partial<Record<CommodityId, { t: number; via: 'rumour' | 'watch' }>>;
 }
 
+/** A crime seen at `systemId` whose news is still travelling (docs/PROCGEN.md §17). */
+export interface CrimeRecord {
+  faction: FactionId;
+  amount: number;
+  systemId: SystemId;
+  /** Game-clock seconds. */
+  at: number;
+}
+
+/** Something the player left adrift in a system: a pod of cargo, salvage or equipment. */
+export interface LingeringPod {
+  position: [number, number, number];
+  value: number;
+  cargo?: { commodity: CommodityId; qty: number };
+  gear?: string;
+}
+
+/** What is still in a system when the player comes back (docs/PROCGEN.md §17). */
+export interface Lingering {
+  /** Game-clock seconds when the player left. */
+  at: number;
+  /** Raider packs that saw the player: their threat level, ships left and where they were. */
+  packs: { level: 1 | 2 | 3; count: number; position: [number, number, number] }[];
+  pods: LingeringPod[];
+}
+
+/** The player's mark on the world (docs/PROCGEN.md §17). */
+export interface WorldLog {
+  /** Units sold into a shortage, by event id. */
+  relief: Record<string, number>;
+  /** Raiders destroyed during a raid, by event id. */
+  raidKills: Record<string, number>;
+  /** Events the player ended early: event id → game clock. */
+  ended: Record<string, number>;
+  /** What is still out there, by system. */
+  lingering: Record<SystemId, Lingering>;
+}
+
 /** A price the player asked to watch (docs/PROCGEN.md §16). */
 export interface PriceWatch {
   locationId: string;
@@ -162,7 +200,13 @@ export interface GameState {
   /** Generated contracts the player accepted, as posted (economy/contracts.ts). */
   contracts: Record<string, JobDef>;
   /** The law (docs/PROCGEN.md §12): fines owed to each lawful faction. */
-  law: { fines: Partial<Record<FactionId, number>> };
+  /**
+   * Fines on record everywhere, crimes whose news is still travelling from where they were seen,
+   * and when each faction last had a crime to its name (fines lapse without new ones).
+   */
+  law: { fines: Partial<Record<FactionId, number>>; pending: CrimeRecord[]; lastCrimeAt: Partial<Record<FactionId, number>> };
+  /** What the player has done to the world (docs/PROCGEN.md §17). */
+  world: WorldLog;
   /** The codex of the real sky (docs/PROCGEN.md §13): catalogued stars and confirmed planets scanned. */
   codex: string[];
   /** Systems whose completed survey was sold to a research station. */
@@ -221,7 +265,8 @@ export function createNewGame(seed: number = Math.floor(Math.random() * 2 ** 31)
     rumours: [],
     markets: {},
     contracts: {},
-    law: { fines: {} },
+    law: { fines: {}, pending: [], lastCrimeAt: {} },
+    world: { relief: {}, raidKills: {}, ended: {}, lingering: {} },
     codex: [],
     surveysSold: [],
     milestones: {},

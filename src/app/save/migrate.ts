@@ -30,8 +30,10 @@ import { createNewGame, SAVE_VERSION, type CommodityId, type GameState } from '.
  * - v8: `story` (choices made in the faction arcs, beats already told) and `dens` (raider
  *   dens knocked out, and when); jobs may carry convoy and den assault progress; `stash` (salvaged
  *   equipment aboard) and `crew` (wingmen for hire); the ship's `decoys` and `systems` damage.
- * - v9 (current): `priceWatch` and `rumours` (docs/PROCGEN.md §16); known markets may come from a
- *   rumour or the price watch, with per-good times. See GameState in src/app/state.ts.
+ * - v9: `priceWatch` and `rumours` (docs/PROCGEN.md §16); known markets may come from a rumour
+ *   or the price watch, with per-good times.
+ * - v10 (current): `world` (events ended early, what lingers in each system) and the law's
+ *   `pending` crimes and `lastCrimeAt` (docs/PROCGEN.md §17). See GameState in src/app/state.ts.
  */
 export interface SaveV1 {
   version: 1;
@@ -132,7 +134,7 @@ function migrateV6(
   return migrateV7({
     ...old,
     version: 7,
-    law: { fines: {} },
+    law: { fines: {}, pending: [], lastCrimeAt: {} },
     codex: old.discoveredBodies.filter((id) => known.has(id)),
     surveysSold: [],
     milestones: {},
@@ -152,8 +154,18 @@ function migrateV7(
 }
 
 /** v8 → v9: no prices watched and nothing heard in the bars yet. */
-function migrateV8(old: Omit<GameState, 'version' | 'priceWatch' | 'rumours'> & { version: 8 }): GameState {
-  return { ...old, version: SAVE_VERSION, priceWatch: [], rumours: [] };
+function migrateV8(old: Omit<GameState, 'version' | 'priceWatch' | 'rumours' | 'world' | 'law'> & { version: 8; law: { fines: GameState['law']['fines'] } }): GameState {
+  return migrateV9({ ...old, version: 9, priceWatch: [], rumours: [] });
+}
+
+/**
+ * v9 → v10: fines on record stay on record (every crime so far is known everywhere, and counts as
+ * committed now for lapsing); no event ended early and nothing left adrift yet.
+ */
+function migrateV9(old: Omit<GameState, 'version' | 'world' | 'law'> & { version: 9; law: { fines: GameState['law']['fines'] } }): GameState {
+  const lastCrimeAt: GameState['law']['lastCrimeAt'] = {};
+  for (const [f, fine] of Object.entries(old.law.fines)) if ((fine ?? 0) > 0) lastCrimeAt[f as keyof typeof lastCrimeAt] = old.clock;
+  return { ...old, version: SAVE_VERSION, law: { fines: { ...old.law.fines }, pending: [], lastCrimeAt }, world: { relief: {}, raidKills: {}, ended: {}, lingering: {} } };
 }
 
 /** Upgrades any known save version to the current GameState. Throws SaveFormatError when unusable. */
@@ -173,6 +185,7 @@ export function migrateSave(raw: unknown): GameState {
   else if (raw.version === 6) data = migrateV6(raw as unknown as Parameters<typeof migrateV6>[0]);
   else if (raw.version === 7) data = migrateV7(raw as unknown as Parameters<typeof migrateV7>[0]);
   else if (raw.version === 8) data = migrateV8(raw as unknown as Parameters<typeof migrateV8>[0]);
+  else if (raw.version === 9) data = migrateV9(raw as unknown as Parameters<typeof migrateV9>[0]);
   const state = data as GameState;
   assertValidState(state);
   return state;
@@ -210,7 +223,18 @@ export function assertValidState(s: GameState): void {
   for (const [id, c] of Object.entries(s.contracts)) {
     if (!isRecord(c) || c.id !== id || !Array.isArray(c.objectives) || !c.objectives.length || !Number.isFinite(c.reward) || typeof c.title !== 'string') fail(`contract ${id}`);
   }
-  if (!isRecord(s.law) || !isRecord(s.law.fines)) fail('law');
+  if (!isRecord(s.law) || !isRecord(s.law.fines) || !Array.isArray(s.law.pending) || !isRecord(s.law.lastCrimeAt)) fail('law');
+  for (const c of s.law.pending) {
+    if (!isRecord(c) || !['sta', 'frontier', 'hollow-wake'].includes(c.faction) || !Number.isFinite(c.amount) || c.amount < 0 || !SYSTEM_IDS.includes(c.systemId) || !Number.isFinite(c.at)) fail('law');
+  }
+  const w = s.world;
+  if (!isRecord(w) || !isRecord(w.relief) || !isRecord(w.raidKills) || !isRecord(w.ended) || !isRecord(w.lingering)) fail('world');
+  for (const [sys, l] of Object.entries(w.lingering)) {
+    if (!SYSTEM_IDS.includes(sys) || !isRecord(l) || !Number.isFinite(l.at) || !Array.isArray(l.packs) || !Array.isArray(l.pods)) fail('world');
+    const v3 = (p: unknown) => Array.isArray(p) && p.length === 3 && p.every(Number.isFinite);
+    if (!l.packs.every((p) => isRecord(p) && [1, 2, 3].includes(p.level) && Number.isInteger(p.count) && p.count > 0 && v3(p.position))) fail('world');
+    if (!l.pods.every((p) => isRecord(p) && v3(p.position) && Number.isFinite(p.value) && (!p.cargo || COMMODITY_IDS.includes(p.cargo.commodity)) && (!p.gear || !!findGear(p.gear)))) fail('world');
+  }
   for (const [f, fine] of Object.entries(s.law.fines)) if (!['sta', 'frontier', 'hollow-wake'].includes(f) || !Number.isFinite(fine) || (fine as number) < 0) fail(`fine ${f}`);
   if (!Array.isArray(s.codex) || !s.codex.every((id) => typeof id === 'string')) fail('codex');
   if (!Array.isArray(s.surveysSold) || !s.surveysSold.every((id) => SYSTEM_IDS.includes(id))) fail('surveys');

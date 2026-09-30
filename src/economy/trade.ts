@@ -5,6 +5,7 @@ import { addCargo, cargoCount, itemsThatFit, removeCargo } from './cargo.ts';
 import { COMMODITIES, COMMODITY_IDS } from './commodities.ts';
 import { cargoCapacity } from './loadout.ts';
 import { allQuotes, moveStock, orderTotal, quote, stockAvailable, type MarketContext } from './markets.ts';
+import { relieveShortage, type Answer } from './answers.ts';
 
 export type TradeError =
   | 'invalid-quantity'
@@ -15,7 +16,7 @@ export type TradeError =
   | 'insufficient-cargo';
 
 export type TradeResult =
-  | { ok: true; qty: number; unitPrice: number; total: number }
+  | { ok: true; qty: number; unitPrice: number; total: number; relief?: Answer | null }
   | { ok: false; error: TradeError; message: string };
 
 function fail(error: TradeError, message: string): TradeResult {
@@ -77,7 +78,9 @@ export function sellCommodity(state: GameState, locationId: string, commodity: C
   moveStock(state.markets, locationId, commodity, qty, state.clock);
   applyCredits(state, total, 'sell', `Sold ${qty} ${COMMODITIES[commodity].name}`);
   state.stats.sales += total;
-  return { ok: true, qty, unitPrice: Math.round(total / qty), total };
+  // Selling into a shortage helps end it (docs/PROCGEN.md §17).
+  const relief = relieveShortage(state, locationId, commodity, qty);
+  return { ok: true, qty, unitPrice: Math.round(total / qty), total, relief };
 }
 
 /** When the player last had word of a good's price at a known market (game-clock seconds). */

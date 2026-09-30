@@ -3,7 +3,7 @@ import { getLocation, getSystem } from '../data/systems.ts';
 import type { GameState } from '../app/state.ts';
 import { densDownNear } from '../economy/dens.ts';
 import type { SystemId } from '../data/types.ts';
-import { minutes, newsAt, type NewsItem, type WorldEvent } from '../economy/events.ts';
+import { eventEnd, minutes, newsAt, type NewsItem, type WorldEvent } from '../economy/events.ts';
 import { h } from './dom.ts';
 import { glyph, type GlyphName } from './glyphs.ts';
 import { COMMODITY_GLYPH } from './station/trader.ts';
@@ -27,7 +27,9 @@ export function eventGlyph(e: Pick<WorldEvent, 'kind' | 'goods'>): GlyphName {
 
 function when(n: NewsItem, clock: number): string {
   const e = n.event;
-  return n.active ? `for ${minutes(clock - e.start)} min, about ${minutes(e.end - clock)} min to go` : `over ${minutes(clock - e.end)} min ago`;
+  const end = eventEnd(e);
+  if (n.endedEarly) return `${e.kind === 'raid' ? 'broken' : 'relieved'} by a pilot ${minutes(clock - end)} min ago`;
+  return n.active ? `for ${minutes(clock - e.start)} min, about ${minutes(e.end - clock)} min to go` : `over ${minutes(clock - end)} min ago`;
 }
 
 function where(n: NewsItem): string {
@@ -70,7 +72,7 @@ export function newsList(systemId: SystemId, clock: number): HTMLElement {
     news.map((n) =>
       h(
         'li',
-        { class: `news-item kind-${n.event.kind}${n.active ? '' : ' over'}`, 'data-testid': `news-${n.event.id}` },
+        { class: `news-item kind-${n.event.kind}${n.active ? '' : ' over'}${n.endedEarly ? ' answered' : ''}`, 'data-testid': `news-${n.event.id}` },
         glyph(eventGlyph(n.event)),
         h(
           'span',

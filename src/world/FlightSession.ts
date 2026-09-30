@@ -22,6 +22,7 @@ import { COMMODITIES } from '../content/economy/goods.ts';
 import { hashString } from '../content/random.ts';
 import { LAW } from '../content/law/rules.ts';
 import type { EscortSetup } from '../economy/jobs.ts';
+import type { Lingering } from '../app/state.ts';
 import { DENS } from '../content/dens/rules.ts';
 import { COMBAT } from '../content/combat/rules.ts';
 import { CHATTER, type ChatterKind } from '../content/combat/chatter.ts';
@@ -189,6 +190,8 @@ export interface TrafficSetup {
   assaults?: readonly { jobId: string; locationId: string; turretsLeft: number; wing?: FactionId | null }[];
   /** Wingmen on the player's pay: they fly alongside wherever the player goes. */
   crew?: readonly { id: string; name: string; model: string; skill: 'steady' | 'sharp' }[];
+  /** What the player left here last time (docs/PROCGEN.md §17): packs still hunting, pods adrift. */
+  lingering?: Pick<Lingering, 'packs' | 'pods'>;
   /** Den defences under way here: the den, and the sweep ships still to destroy. */
   defences?: readonly { jobId: string; locationId: string; count: number }[];
   /** Raider dens here that are knocked out (wrecked, silent and closed). */
@@ -1905,6 +1908,9 @@ export class FlightSession {
       for (const c of t.contractPacks ?? []) this.spawnContractPack(c);
       for (const e of t.escorts ?? []) this.spawnEscort(e);
       for (const w of t.wrecks ?? []) this.spawnWreck(w);
+      for (const p of t.lingering?.packs ?? []) this.spawnLingeringPack(p);
+      for (const pod of t.lingering?.pods ?? []) this.spawnLoot(new THREE.Vector3(...pod.position), pod.value, { ...(pod.cargo ? { cargo: pod.cargo } : {}), ...(pod.gear ? { gear: pod.gear } : {}) });
+      if (t.lingering?.packs.length) this.callbacks.onMessage('Raiders who saw you last time are still hunting here.', 'bad');
       for (const a of t.assaults ?? []) this.spawnAssault(a);
       for (const d of t.defences ?? []) this.startSweep(d);
       this.spawnCrew(t.crew ?? []);
@@ -2127,6 +2133,52 @@ export class FlightSession {
       npc.bounty = bounty;
       npc.patrol = { brain: new PatrolBrain(route, 0), offset: new THREE.Vector3((i - size / 2) * 140, (i % 2) * 60, (i % 3) * 90) };
     }
+  }
+
+  /** A pack the player left behind (docs/PROCGEN.md §17): back where it was, and still hunting. */
+  private spawnLingeringPack(p: Lingering['packs'][number]): void {
+    const pack = ++this.packSerial;
+    const home = new THREE.Vector3(...p.position);
+    this.packHome.set(pack, home);
+    const approaches = this.openDocks()
+      .map((d) => d.dockPoint.clone().addScaledVector(d.approach, 2_500 + this.rand() * 2_000))
+      .sort(() => this.rand() - 0.5)
+      .slice(0, 2);
+    const route = [home.clone(), ...approaches, home.clone()];
+    const pool = RAIDERS[p.level];
+    for (let i = 0; i < p.count; i++) {
+      const model = pool[Math.floor(this.rand() * pool.length)]!;
+      const position = home.clone().add(this.tmp.set(this.rand() - 0.5, this.rand() - 0.5, this.rand() - 0.5).multiplyScalar(500));
+      const bounty = bountyFor(model);
+      const npc = this.makeNpc(model, 'raider', 'hollow-wake', position, this.player.position.clone().sub(position).normalize(), `${FACTIONS['hollow-wake'].name} raider · hostile · bounty ${bounty} cr`);
+      npc.pack = pack;
+      npc.bounty = bounty;
+      npc.patrol = { brain: new PatrolBrain(route, 0), offset: new THREE.Vector3((i - p.count / 2) * 140, (i % 2) * 60, (i % 3) * 90) };
+    }
+  }
+
+  /**
+   * What stays when the player leaves (docs/PROCGEN.md §17): packs that saw the player (their
+   * level, ships left and where they are) and pods still adrift.
+   */
+  lingering(): Pick<Lingering, 'packs' | 'pods'> {
+    const packs = new Map<number, NpcShip[]>();
+    for (const n of this.npcs) {
+      if (n.side !== 'raider' || n.pack === undefined || !this.packAlerted.has(n.pack) || n.contract || n.hunter || n.den || n.encounter) continue;
+      if (n.durability.hull <= 0 || n.brain.state === 'escaped') continue;
+      (packs.get(n.pack) ?? packs.set(n.pack, []).get(n.pack)!).push(n);
+    }
+    const round = (v: THREE.Vector3): [number, number, number] => [Math.round(v.x), Math.round(v.y), Math.round(v.z)];
+    return {
+      packs: [...packs.values()].map((ships) => {
+        const centre = ships.reduce((c, n) => c.add(n.body.position), new THREE.Vector3()).divideScalar(ships.length);
+        return { level: Math.max(...ships.map((n) => this.raiderLevel(n))) as 1 | 2 | 3, count: ships.length, position: round(centre) };
+      }),
+      pods: this.loot
+        .filter((l) => !l.recover && l.target.alive)
+        .slice(0, TRAFFIC.linger.maxPods)
+        .map((l) => ({ position: round(l.position), value: l.value, ...(l.cargo ? { cargo: l.cargo } : {}), ...(l.gear ? { gear: l.gear } : {}) })),
+    };
   }
 
   /** A bounty contract's pack: it lurks at its marked spot until the player comes for it. */

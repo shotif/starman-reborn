@@ -101,6 +101,7 @@ export function makeChoice(state: GameState, jobId: string, optionId: string): {
   state.story.choices[o.choiceId] = option.id;
   if (option.pardon) {
     // A deal with the law: every fine cleared and standing lifted to Wary.
+    state.law.pending = [];
     for (const f of LAWFUL) {
       delete state.law.fines[f];
       const now = state.reputation[f] ?? 0;

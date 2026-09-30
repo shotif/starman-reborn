@@ -5,6 +5,8 @@ import { activeFeeCoverage, advanceJobs, leaveSystem, type JobEvent } from '../e
 import { hullMax } from '../economy/loadout.ts';
 import { recordMarketVisit } from '../economy/trade.ts';
 import { watchOnDock, type WatchNote } from '../economy/tradeComputer.ts';
+import { settleLaw } from '../economy/law.ts';
+import { tidyWorldLog } from '../economy/answers.ts';
 import type { Route } from '../galaxy/routing.ts';
 import type { JumpReadiness } from '../galaxy/types.ts';
 import { applyCredits, markVisited, type GameState } from './state.ts';
@@ -20,6 +22,8 @@ export interface DockOutcome {
   firstVisit: boolean;
   /** Watched prices within reach that moved (docs/PROCGEN.md §16). */
   watchNotes: WatchNote[];
+  /** Fines that lapsed (docs/PROCGEN.md §17). */
+  lawNotes: string[];
 }
 
 export function dockAt(state: GameState, locationId: string): DockOutcome {
@@ -32,6 +36,8 @@ export function dockAt(state: GameState, locationId: string): DockOutcome {
   markVisited(state, loc.systemId, locationId);
   recordMarketVisit(state, locationId);
   const watchNotes = watchOnDock(state, locationId);
+  const lawNotes = settleLaw(state);
+  tidyWorldLog(state);
   rechargeShield(state);
   let clearanceGranted = false;
   if (loc.services.includes('jump-clearance') && !state.flags.clearance) {
@@ -39,7 +45,7 @@ export function dockAt(state: GameState, locationId: string): DockOutcome {
     clearanceGranted = true;
   }
   const jobEvents = advanceJobs(state, { dockedAt: locationId, systemId: loc.systemId });
-  return { jobEvents, clearanceGranted, firstVisit, watchNotes };
+  return { jobEvents, clearanceGranted, firstVisit, watchNotes, lawNotes };
 }
 
 export function undock(state: GameState): void {

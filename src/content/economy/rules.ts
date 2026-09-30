@@ -108,6 +108,12 @@ export const ECONOMY = {
   stockClamp: [0.62, 1.6] as const,
   /** Stock returns to normal with this time constant (game-clock seconds of play). */
   recoverySeconds: 1_800,
+  /**
+   * Goods moving out of sight (docs/PROCGEN.md §17): as a station's stock recovers from what the
+   * player left, this share of the difference drifts to the stations within `jumps` that trade the
+   * good (a glut drains into its neighbours; a hard-worked route flattens around it too).
+   */
+  spill: { share: 0.5, jumps: 1 },
   /** Slow drift of every price: ± amplitude over a period (seconds of play), per station and good. */
   drift: { amplitude: 0.06, period: [2_400, 7_200] as const },
 };

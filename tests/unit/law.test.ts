@@ -11,7 +11,7 @@ import { cargoCount } from '../../src/economy/cargo.ts';
 import { boardFor, postedContracts } from '../../src/economy/contracts.ts';
 import { repairQuote } from '../../src/economy/equipment.ts';
 import { acceptJob, countPiracy, deliverJob, jobLockReason, jobsAt, type JobDef } from '../../src/economy/jobs.ts';
-import { commitCrime, customsScan, dockAccess, huntedBy, lawIn, pardonCost, payFines, scansOnDocking, wakeFriendly } from '../../src/economy/law.ts';
+import { commitCrime, customsScan, dockAccess, fineOnRecord, fineOwed, huntedBy, lawIn, pardonCost, payFines, scansOnDocking, wakeFriendly } from '../../src/economy/law.ts';
 import { validateLaw } from '../../src/economy/lawGuards.ts';
 
 /** The law and the outlaw path (docs/PROCGEN.md §12). */
@@ -46,13 +46,15 @@ describe('the law', () => {
     const wake = s.reputation['hollow-wake'];
     const attack = commitCrime(s, 'attack', 'sta', lawfulSystem);
     expect(attack).toMatchObject({ faction: 'sta', fine: LAW.crimes.attack.fine });
-    expect(s.law.fines.sta).toBe(LAW.crimes.attack.fine);
+    // On the record at once, and known where it was seen (docs/PROCGEN.md §17).
+    expect(fineOnRecord(s, 'sta')).toBe(LAW.crimes.attack.fine);
+    expect(fineOwed(s, 'sta', lawfulSystem)).toBe(LAW.crimes.attack.fine);
     expect(s.reputation.sta).toBe(LAW.crimes.attack.standing);
     commitCrime(s, 'destroy', 'sta', lawfulSystem);
-    expect(s.law.fines.sta).toBe(LAW.crimes.attack.fine + LAW.crimes.destroy.fine);
+    expect(fineOnRecord(s, 'sta')).toBe(LAW.crimes.attack.fine + LAW.crimes.destroy.fine);
     expect(s.reputation['hollow-wake']).toBe(wake + LAW.crimes.destroy.wake);
-    expect(huntedBy(s, 'sta')).toBe(true);
-    expect(huntedBy(s, 'frontier')).toBe(false);
+    expect(huntedBy(s, 'sta', lawfulSystem)).toBe(true);
+    expect(huntedBy(s, 'frontier', lawfulSystem)).toBe(false);
     // An independent hauler's loss in unclaimed space goes unpunished.
     const t = pilot();
     expect(commitCrime(t, 'destroy', 'independent', unclaimed)).toMatchObject({ faction: null, fine: 0 });
@@ -74,7 +76,7 @@ describe('the law', () => {
     expect(r.fine).toBe(5 * COMMODITIES.stims.basePrice * LAW.crimes.contraband.fineFactor);
     expect(cargoCount(s.ship.cargo, 'stims')).toBe(0);
     expect(cargoCount(s.ship.cargo, 'food')).toBe(3);
-    expect(s.law.fines.sta).toBe(r.fine);
+    expect(fineOwed(s, 'sta')).toBe(r.fine);
   });
 
   it('a pardon: paying the fines (and for the bad blood) clears the hunt and lifts standing to Wary at worst', () => {
@@ -202,9 +204,9 @@ describe('law saves', () => {
   it('upgrades a v6 save with a clean record and rejects damaged fines', () => {
     const { law: _drop, ...rest } = createNewGame(8);
     const s = migrateSave({ ...structuredClone(rest), version: 6 });
-    expect(s.law).toEqual({ fines: {} });
+    expect(s.law).toEqual({ fines: {}, pending: [], lastCrimeAt: {} });
     expect(() => migrateSave({ ...s, law: { fines: { sta: -5 } } })).toThrow(SaveFormatError);
     expect(() => migrateSave({ ...s, law: null })).toThrow(SaveFormatError);
-    expect(migrateSave({ ...s, law: { fines: { sta: 400 } } }).law.fines.sta).toBe(400);
+    expect(migrateSave({ ...s, law: { fines: { sta: 400 }, pending: [], lastCrimeAt: {} } }).law.fines.sta).toBe(400);
   });
 });

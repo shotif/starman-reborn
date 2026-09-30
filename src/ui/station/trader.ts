@@ -315,6 +315,10 @@ async function openSellDialog(ctx: StationContext, c: CommodityId, refresh: Refr
   if (r.ok) {
     ctx.sfx('credits');
     toast(`Sold ${r.qty} ${COMMODITIES[c].name} for ${formatCredits(r.total)}`, 'good');
+    if (r.relief) {
+      ctx.sfx('mission-complete');
+      toast(r.relief.text, 'good', 6000);
+    }
   } else {
     toast(r.message, 'bad');
   }

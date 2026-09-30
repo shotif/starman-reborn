@@ -51,6 +51,11 @@ export const TRAFFIC = {
   packIdle: 240,
   /** Catalogue guns are balanced for the player; NPC guns deal this fraction (like the opening raider). */
   npcDamage: 0.25,
+  /**
+   * What the player leaves behind (docs/PROCGEN.md §17): raider packs that saw the player, and
+   * pods adrift, are still there on a return within `seconds` of game time.
+   */
+  linger: { seconds: 1_800, maxPods: 8, maxSystems: 6 },
 };
 
 /** How much traffic a system gets, from its security, owner, stations and remoteness. */

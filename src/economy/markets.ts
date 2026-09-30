@@ -71,14 +71,61 @@ export function normalStock(locationId: string, entry: MarketEntry, clock: numbe
   return entry.target * marketEffect(locationId, entry.commodity, clock).stock;
 }
 
-/** Stock now: what the player (or traffic) left it at, recovering toward normal. */
-export function stockNow(locationId: string, entry: MarketEntry, ctx: MarketContext): number {
+/** The station's own stock: what the player (or traffic) left it at, recovering toward normal. */
+function ownStock(locationId: string, entry: MarketEntry, ctx: MarketContext): number {
   const target = normalStock(locationId, entry, ctx.clock);
   const saved = ctx.markets[locationId];
   const s = saved?.stock[entry.commodity];
   if (!saved || s === undefined) return target;
   const k = Math.exp(-Math.max(0, ctx.clock - saved.t) / ECONOMY.recoverySeconds);
   return target + (s - target) * k;
+}
+
+let neighbourCache: Map<string, Map<CommodityId, string[]>> | null = null;
+
+/** Stations within reach of a dock that trade a good (where its surplus or shortfall drifts). */
+export function spillNeighbours(locationId: string, commodity: CommodityId): string[] {
+  neighbourCache ??= new Map();
+  let byGood = neighbourCache.get(locationId);
+  if (!byGood) {
+    byGood = new Map();
+    const from = getLocation(locationId).systemId;
+    const near = new Set([from, ...(WORLD.links.get(from) ?? [])]);
+    const reach = ECONOMY.spill.jumps >= 1 ? near : new Set([from]);
+    const others = [...marketTables().entries()].filter(([id]) => id !== locationId && reach.has(getLocation(id).systemId));
+    for (const c of COMMODITY_IDS) byGood.set(c, others.filter(([, t]) => t.entries.has(c)).map(([id]) => id));
+    neighbourCache.set(locationId, byGood);
+  }
+  return byGood.get(commodity) ?? [];
+}
+
+/**
+ * What drifts in from neighbours (docs/PROCGEN.md §17): as a neighbour recovers from what the
+ * player left it at, a share of the difference travels on the lanes and arrives here, peaking a
+ * recovery time after the trade and fading after. Negative when the neighbour was drained.
+ */
+function spillIn(locationId: string, entry: MarketEntry, ctx: MarketContext): number {
+  let total = 0;
+  const tau = ECONOMY.recoverySeconds;
+  for (const n of spillNeighbours(locationId, entry.commodity)) {
+    const saved = ctx.markets[n];
+    const s = saved?.stock[entry.commodity];
+    if (!saved || s === undefined) continue;
+    const their = marketTables().get(n)?.entries.get(entry.commodity);
+    if (!their) continue;
+    const dt = Math.max(0, ctx.clock - saved.t) / tau;
+    if (dt <= 0) continue;
+    const left = s - normalStock(n, their, saved.t);
+    total += (ECONOMY.spill.share * left * dt * Math.exp(-dt)) / spillNeighbours(n, entry.commodity).length;
+  }
+  return total;
+}
+
+/** Stock now: the station's own, plus what drifts in from its neighbours. */
+export function stockNow(locationId: string, entry: MarketEntry, ctx: MarketContext): number {
+  const own = ownStock(locationId, entry, ctx);
+  const drift = spillIn(locationId, entry, ctx);
+  return drift === 0 ? own : Math.max(0, own + drift);
 }
 
 function drift(entry: MarketEntry, clock: number): number {
@@ -170,12 +217,13 @@ export function moveStock(markets: MarketState, locationId: string, commodity: C
   if (!table || !entry) return;
   const ctx = { clock, markets };
   // Bring every moved stock up to now, forget what has fully recovered, then apply the order.
+  // (The record keeps the station's own stock; what drifts in from neighbours is added on top.)
   const next: Partial<Record<CommodityId, number>> = {};
   for (const [id, e] of table.entries) {
-    const now = stockNow(locationId, e, ctx);
+    const now = ownStock(locationId, e, ctx);
     if (Math.abs(now - normalStock(locationId, e, clock)) >= 0.5) next[id] = Math.round(now * 100) / 100;
   }
-  next[commodity] = Math.max(0, Math.round((stockNow(locationId, entry, ctx) + delta) * 100) / 100);
+  next[commodity] = Math.max(0, Math.round((ownStock(locationId, entry, ctx) + delta) * 100) / 100);
   markets[locationId] = { t: clock, stock: next };
 }
 

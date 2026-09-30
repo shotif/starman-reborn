@@ -43,6 +43,17 @@ export const EVENTS = {
   newsRecent: 1_800,
   /** A jump through the lanes takes this long on the game clock, per hop. */
   jumpSeconds: 120,
+  /** The world answers (docs/PROCGEN.md §17): what the player does ends events early. */
+  react: {
+    /** A shortage ends once the player has sold the station this share of what it lacks. */
+    relief: 0.6,
+    /** Relieving a shortage pays this share of the goods' base value on top of the sales. */
+    reliefBonus: 0.25,
+    /** Standing with the station's (or system's) faction for relieving a shortage or breaking a raid. */
+    standing: 3,
+    /** A raid breaks after this many raiders are destroyed in its system, plus one per threat level. */
+    raidKills: 3,
+  },
 };
 
 /** Station booms: what a station is suddenly hungry for (`{place}` is the station's name). */

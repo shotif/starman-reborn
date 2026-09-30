@@ -2,7 +2,7 @@ import type { GameState } from '../app/state.ts';
 import { COMMODITIES, COMMODITY_IDS } from '../content/economy/goods.ts';
 import { ALL_LOCATIONS, getLocation, getSystem } from '../data/systems.ts';
 import { cargoCount } from './cargo.ts';
-import { contrabandIn, dockAccess, isLawful, totalFines } from './law.ts';
+import { contrabandIn, dockAccess, fineOwed, isLawful, totalFines } from './law.ts';
 import { codexEntries } from './progress.ts';
 import { CHARACTERS } from '../content/story/arcs.ts';
 import { storyWaiting } from './story.ts';
@@ -19,7 +19,7 @@ export function whatNext(state: GameState): string | null {
   // A pardon first: hunted pilots have little else they can do.
   const fines = totalFines(state);
   if (fines > 0) {
-    const desk = ALL_LOCATIONS.find((l) => l.systemId === here && isLawful(l.factionId) && fines > 0 && state.law.fines[l.factionId as 'sta' | 'frontier']);
+    const desk = ALL_LOCATIONS.find((l) => l.systemId === here && isLawful(l.factionId) && fineOwed(state, l.factionId as 'sta' | 'frontier') > 0);
     return desk ? `You owe ${fines} cr in fines: dock at ${desk.name} and pay at the customs desk (News) for a pardon.` : `You owe ${fines} cr in fines: pay them at any station of the faction you owe for a pardon.`;
   }
   // Goods in the hold that fetch more where you have seen them sold.

@@ -42,6 +42,13 @@ export const LAW = {
   hunters: { fines: 1_500, security: 0.6, delay: 45, count: 2, model: 'ship.light-fighter.2.horizon' },
   /** Standing with the Hollow Wake at which its raiders leave you be and its dens open. */
   wakeFriendly: 10,
+  /**
+   * Witnesses (docs/PROCGEN.md §17): a crime is known where it was seen, and the news travels one
+   * jump in `perJump` seconds of game time; fines lapse after `lapse` seconds without a new crime
+   * against that faction (not for a Hostile pilot).
+   */
+  witness: { perJump: 600 },
+  lapse: 10_800,
 };
 
 export type CrimeKind = keyof typeof LAW.crimes;

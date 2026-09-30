@@ -1,3 +1,7 @@
+import type { Lingering } from './state.ts';
+import { TRAFFIC } from '../world/traffic/plan.ts';
+import { raidKill } from '../economy/answers.ts';
+import { useWorldLog } from '../economy/events.ts';
 import { lastView } from '../ui/station/lastView.ts';
 import { fill, PAYMENT } from '../content/people/lines.ts';
 import * as THREE from 'three';
@@ -37,7 +41,7 @@ import { DENS } from '../content/dens/rules.ts';
 import { showChoice, showDialogue } from '../ui/story.ts';
 import { denBounty, payCrew, stashGear, wingmanLost } from '../economy/combat.ts';
 import { moveStock, traderDelivery } from '../economy/markets.ts';
-import { commitCrime, customsScan, dockAccess, isLawful, scansOnDocking, totalFines } from '../economy/law.ts';
+import { commitCrime, customsScan, dockAccess, finesTravelling, isLawful, scansOnDocking, settleLaw, totalFines } from '../economy/law.ts';
 import { whatNext } from '../economy/advisor.ts';
 import { catalogue, checkMilestones, codexProgress } from '../economy/progress.ts';
 import { CODEX_GRANT } from '../content/progress/rules.ts';
@@ -442,6 +446,8 @@ export class Game {
 
   private enterDocked(locationId: string, opts: { intro?: boolean; room?: RoomView; window?: StationWindow | null; titleCard?: boolean }): void {
     const state = this.state!;
+    // Events the player ended early (docs/PROCGEN.md §17) are in this save's world log.
+    useWorldLog(state.world);
     this.clearScreens();
     if (this.map?.isOpen) this.map.close();
     this.loadSystem(state.location.systemId);
@@ -725,6 +731,7 @@ export class Game {
 
   private enterFlight(spawn: Parameters<FlightSession['start']>[0]): void {
     const state = this.state!;
+    useWorldLog(state.world);
     this.clearScreens();
     this.loadSystem(state.location.systemId);
     this.disposeFlight();
@@ -858,12 +865,40 @@ export class Game {
       defences: defencesIn(state, here),
       downDens,
       crew: state.crew.map((w) => ({ id: w.id, name: w.name, model: w.model, skill: w.skill })),
+      lingering: this.takeLingering(),
     };
+  }
+
+  /** What the player left in this system, if they come back soon enough (docs/PROCGEN.md §17); it is live again now. */
+  private takeLingering(): { packs: Lingering['packs']; pods: Lingering['pods'] } | undefined {
+    const state = this.state!;
+    const l = state.world.lingering[state.location.systemId];
+    if (!l) return undefined;
+    delete state.world.lingering[state.location.systemId];
+    return state.clock - l.at <= TRAFFIC.linger.seconds ? { packs: l.packs, pods: l.pods } : undefined;
+  }
+
+  /** Remembers what the player leaves in this system: packs that saw them, and pods adrift. */
+  private rememberLingering(): void {
+    const state = this.state;
+    const flight = this.flight;
+    if (!state || !flight) return;
+    const l = flight.lingering();
+    const all = state.world.lingering;
+    const here = state.location.systemId;
+    if (!l.packs.length && !l.pods.length) {
+      delete all[here];
+      return;
+    }
+    all[here] = { at: state.clock, ...l };
+    const keys = Object.keys(all);
+    if (keys.length > TRAFFIC.linger.maxSystems) delete all[keys.sort((a, b) => all[a]!.at - all[b]!.at)[0]!];
   }
 
   private onDocked(locationId: string): void {
     const state = this.state!;
     this.flight?.writeBack(state);
+    this.rememberLingering();
     // Customs at depots and military bases scan every ship that docks.
     const customs = scansOnDocking(locationId);
     if (customs) {
@@ -881,6 +916,7 @@ export class Game {
       toast('Interstellar departure clearance granted.', 'good', 4500);
     }
     for (const n of out.watchNotes) toast(n.text, 'info', 6000);
+    for (const n of out.lawNotes) toast(n, 'good', 6000);
     this.announceJobEvents(out.jobEvents, false);
     const deliverable = Object.keys(state.jobs).some((id) => {
       const p = state.jobs[id]!;
@@ -934,6 +970,9 @@ export class Game {
     adjustReputation(state.reputation, 'hollow-wake', -3);
     this.sfx('credits');
     toast(`${name} destroyed. Bounty +${formatCredits(credits)}${change ? ` · ${FACTIONS[payer].shortName} ${signed(change)}` : ''}`, 'good', 4500);
+    // Enough raiders down breaks a raid on the system (docs/PROCGEN.md §17).
+    const broken = raidKill(state, state.location.systemId);
+    if (broken) toast(broken.text, 'good', 6000);
     this.persist();
   }
 
@@ -1159,9 +1198,11 @@ export class Game {
         j.phase = 'tunnel';
         const state = this.state!;
         this.flight?.writeBack(state);
+        this.rememberLingering();
         this.disposeFlight();
         const events = performJump(state, j.route, j.fee);
         this.announceJobEvents(events);
+        for (const n of settleLaw(state)) toast(n, 'good', 6000);
         const wing = payCrew(state, j.route.hops.length);
         if (wing.paid) toast(`Wing fees: ${formatCredits(wing.paid)}`, 'info', 3000);
         for (const note of wing.notes) toast(note, 'bad', 5000);
@@ -1295,6 +1336,7 @@ export class Game {
     if (!ok) return;
     await this.saves.reset();
     this.state = null;
+    useWorldLog(null);
     document.querySelectorAll('.sheet-backdrop').forEach((el) => el.remove());
     this.sheetsOpen = 0;
     this.disposeFlight();
@@ -1443,12 +1485,13 @@ export class Game {
     const hudModel = flight.hud;
     const scan = flight.scanStatus;
     const fines = totalFines(state);
+    const travelling = finesTravelling(state);
     this.hud.update(hudModel, {
       credits: state.credits,
       cargoUsed: cargoUsed(state.ship.cargo),
       cargoCapacity: cargoCapacity(state.ship),
       objective: scan ? `Cargo scan by a ${FACTIONS[scan.faction].shortName} patrol: hold your course (${Math.ceil(scan.left)} s)` : this.objectiveText,
-      wanted: fines > 0 ? `Wanted · fines ${formatCredits(fines)}` : null,
+      wanted: fines > 0 ? `Wanted · fines ${formatCredits(fines)}` : travelling > 0 ? `News of your crime is spreading (${formatCredits(travelling)})` : null,
       systemName: getSystem(state.location.systemId).displayName,
       scaleNote: `Local scale compressed · ${this.system.def.scaleNote}`,
     });
