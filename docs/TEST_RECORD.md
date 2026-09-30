@@ -85,8 +85,8 @@ HTML). The star map (~19 KB) and science notes (~11 KB) load on first use; the b
 
 ## Real-device checklist (pending — please run)
 
-Serve over HTTPS (GitHub Pages, `npm run dev:https`, or a tunnel; see the README), then on an
-actual **Android phone** and an **iPhone/iPad**:
+Open <https://shotif.github.io/starman-reborn/> (or serve over HTTPS with `npm run dev:https` or a
+tunnel; see the README), then on an actual **Android phone** and an **iPhone/iPad**:
 
 1. Open the site; tap **Play**. Sound starts after the first tap (iPhone: Ring/Silent switch set
    to Ring).

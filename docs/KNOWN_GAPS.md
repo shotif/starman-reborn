@@ -14,9 +14,7 @@ This is an honest list of what the prototype does not do yet, or what has not be
 2. **Real-device testing is pending.** Everything was tested in headless Chromium with emulated
    phone and tablet viewports, touch events and multi-touch (see [TEST_RECORD.md](TEST_RECORD.md)).
    Nothing ran on a physical iPhone, iPad or Android device. Please run the hands-on checklist in
-   the test record over HTTPS (GitHub Pages or `npm run dev:https`).
-3. **GitHub Pages must be enabled once** (*Settings → Pages → Source: GitHub Actions*) before the
-   deploy workflow can publish the site. Private repositories need a paid GitHub plan for Pages.
+   the test record over HTTPS, at <https://shotif.github.io/starman-reborn/>.
 
 ## Not verified here
 

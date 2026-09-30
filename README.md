@@ -10,12 +10,14 @@ Star positions, distances and confirmed planets come from astronomical catalogs 
 [docs/ASTRONOMY_SOURCES.md](docs/ASTRONOMY_SOURCES.md)). Stations, factions, jump travel, trade
 lanes and all story text are original fiction and are labelled that way in the game.
 
+**Play now: <https://shotif.github.io/starman-reborn/>**
+
 ![Flight HUD on desktop](docs/screenshots/desktop-1440x900-4-flight.jpg)
 
 ## Play
 
-- **Hosted (HTTPS, works on phones):** once GitHub Pages is enabled (see below), the game is
-  published at `https://<your-github-user>.github.io/starman-reborn/`.
+- **Online (HTTPS, works on phones):** <https://shotif.github.io/starman-reborn/>. Every push to
+  `main` redeploys it.
 - **Locally:** see *Run it* below.
 
 A first playthrough takes about 10–20 minutes. Progress saves automatically in the browser
@@ -40,12 +42,12 @@ npm run preview   # serve dist/ at http://localhost:4173
 Phones cannot open your desktop's `localhost`, and browser features such as audio unlock and
 installability behave best over HTTPS. Pick one:
 
-1. **GitHub Pages (recommended).** In the repository go to *Settings → Pages → Build and
-   deployment* and set *Source* to **GitHub Actions**. Every push to `main` then runs
-   `.github/workflows/pages.yml`, which builds `dist/` and deploys it to
-   `https://<user>.github.io/starman-reborn/`. You can also run the workflow manually from the
-   Actions tab. GitHub Pages is free for public repositories; private repositories need a paid
-   plan.
+1. **GitHub Pages (recommended).** The game is live at <https://shotif.github.io/starman-reborn/>.
+   Every push to `main` runs `.github/workflows/pages.yml`, which builds `dist/` and redeploys it;
+   you can also run the workflow manually from the Actions tab. In a fork, first set *Settings →
+   Pages → Build and deployment → Source* to **GitHub Actions**; the site then appears at
+   `https://<user>.github.io/<repo>/`. GitHub Pages is free for public repositories; private
+   repositories need a paid plan.
 2. **Your local network with a self-signed certificate.** Run `npm run dev:https` (or
    `npm run build && npm run preview:https`). Vite prints a `https://192.168.x.x:5173` address.
    Open it on a phone on the same Wi‑Fi and accept the certificate warning.
