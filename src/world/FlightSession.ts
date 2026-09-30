@@ -2122,9 +2122,10 @@ export class FlightSession {
   private spawnContractPack(c: NonNullable<TrafficSetup['contractPacks']>[number]): void {
     const site = this.system.dock(c.locationId);
     if (!site || c.count <= 0) return;
+    // By a raider den, packs wait well clear of its guns (it wakes for pilots it does not trust).
     const home = site.dockable
       ? site.dockPoint.clone().addScaledVector(site.approach, 2_600).add(this.tmp.set(0, 500, 0))
-      : site.def.position.clone().addScaledVector(site.approach, site.radius + 1_400);
+      : site.def.position.clone().addScaledVector(site.approach, site.radius + DENS.packStandoff);
     const pack = ++this.packSerial;
     this.packHome.set(pack, home);
     const pool = RAIDERS[c.level];

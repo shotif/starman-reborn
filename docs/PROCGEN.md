@@ -872,9 +872,10 @@ balance; every name is invented.
 
 ### 15.5 Raider dens under fire
 
-- Every den defends itself: when a pilot the Wake does not trust comes within 6 km, three turrets,
+- Every den defends itself: when a pilot the Wake does not trust comes within 3 km, three turrets,
   the reactor behind them (shielded while a turret stands) and three mines wake up, with two raiders
-  of the den's crews (§14.3 has the numbers).
+  of the den's crews (§14.3 has the numbers). Aces and bounty packs that lurk by a den wait 3.6 km
+  out from it, clear of its guns, so hunting them does not wake it.
 - Knocking a den out on your own pays: 150 cr a turret, and 2,500 cr from the lawful faction nearest
   the den with 8 standing; the Wake takes 15 off. The den is dark for six hours of game clock: no
   packs in its system, closed to everyone. Station news within two jumps reports it, and arriving in

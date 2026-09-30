@@ -219,6 +219,19 @@ describe('combat depth in flight', () => {
     expect(f.calls.denDestroyed).toEqual([['maw-roost', null]]);
   });
 
+  it('an ace waiting by a den is hunted clear of the den’s guns', () => {
+    const ace = { name: 'Vesk “Ember” Marlowe', model: 'ship.heavy-fighter.2.wake' };
+    const f = flightIn('wolf-1061', { contractPacks: [{ jobId: 'c.test.ace', locationId: 'maw-roost', count: 1, level: 3, ace }] });
+    f.run(3);
+    const target = f.inner.npcs.find((n) => n.name === ace.name)!;
+    expect(target).toBeDefined();
+    const den = f.flight.allTargets().find((t) => t.id === 'station:maw-roost')!;
+    expect(target.body.position.distanceTo(den.position)).toBeGreaterThan(DENS.alert);
+    f.flight.player.position.copy(target.body.position).add(new THREE.Vector3(0, 0, 400));
+    f.run(1);
+    expect(f.inner.npcs.some((n) => n.den)).toBe(false);
+  });
+
   it('a den stays quiet for a pilot the Wake trusts', () => {
     const f = flightIn('wolf-1061', {}, (s) => (s.reputation['hollow-wake'] = 30));
     f.run(1);
