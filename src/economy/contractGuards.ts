@@ -1,13 +1,14 @@
 import { CONTRACTS, type ContractKind } from '../content/contracts/rules.ts';
-import { COMMODITIES } from '../content/economy/goods.ts';
+import { COMMODITIES, PRICE_BAND } from '../content/economy/goods.ts';
+import { beltGoods } from '../content/mining/rules.ts';
 import type { Issue } from '../content/validate.ts';
 import { jumpsFrom } from '../content/world/network.ts';
-import { ALL_LOCATIONS, getLocation, getSystem, WORLD } from '../data/systems.ts';
+import { ALL_LOCATIONS, findBelt, getLocation, getSystem, WORLD } from '../data/systems.ts';
 import { trafficFor } from '../world/traffic/setup.ts';
 import { shipModel } from '../content/catalog.ts';
 import { RECOVERY_ITEMS } from '../content/contracts/rules.ts';
 import { FLEETS } from '../world/traffic/plan.ts';
-import { boardFor, CONTRACT_PREFIX, expectedTrip, followUpFor, routeFeeBetween } from './contracts.ts';
+import { boardFor, CONTRACT_PREFIX, expectedTrip, followUpFor, postsClaims, routeFeeBetween } from './contracts.ts';
 import { LAW } from '../content/law/rules.ts';
 import { baseThreat, priceMultiplier, stationEventAt, systemEventAt } from './events.ts';
 import { lawIn, scansOnDocking } from './law.ts';
@@ -81,6 +82,14 @@ export function validateContracts(epochs = 40): Issue[] {
   return issues;
 }
 
+/** The guardrails' findings for one posted contract (as posted in the time slot of `clock`). */
+export function contractIssues(c: JobDef, clock: number): Issue[] {
+  const issues: Issue[] = [];
+  const from = getLocation(c.giverLocationId).systemId;
+  checkContract(c, from, jumpsFrom(WORLD.links, from), marketTables(), (rule, subject, message) => issues.push({ rule, subject, message }), clock);
+  return issues;
+}
+
 function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, number>, markets: ReturnType<typeof marketTables>, report: Report, clock: number): void {
   const kind = c.contract?.kind;
   if (!kind) return report('kind', c.id, 'generated contract without a kind');
@@ -91,11 +100,11 @@ function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, numbe
   const gated = !!c.requires?.minRep;
   if (gated !== (c.difficulty >= CONTRACTS.gatedDifficulty && c.factionId !== null)) report('standing', c.id, 'standing gate does not match the difficulty');
   const o = c.objectives[0];
-  const expected = kind === 'recovery' ? 2 : 1;
+  const expected = kind === 'recovery' || kind === 'claim' ? 2 : 1;
   if (!o || c.objectives.length !== expected) return report('objectives', c.id, `expected ${expected} objective(s)`);
 
   // Where it sends you, and what the trip costs.
-  const target = o.kind === 'scan' || o.kind === 'bounty' || o.kind === 'recover' || o.kind === 'escort' || o.kind === 'piracy' ? o.systemId : 'locationId' in o ? getLocation(o.locationId).systemId : from;
+  const target = o.kind === 'scan' || o.kind === 'bounty' || o.kind === 'recover' || o.kind === 'escort' || o.kind === 'piracy' || o.kind === 'mine' ? o.systemId : 'locationId' in o ? getLocation(o.locationId).systemId : from;
   const j = jumps.get(target) ?? Infinity;
   if (j > CONTRACTS.maxJumps[kind]) report('reach', c.id, `${j} jumps (at most ${CONTRACTS.maxJumps[kind]})`);
   let tripFrom = from;
@@ -183,6 +192,22 @@ function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, numbe
       if (!trafficFor(o.systemId, 'high').plan.traders) report('piracy', c.id, `no haulers work ${o.systemId}`);
       if (o.count < 2 || o.count > 3) report('piracy', c.id, `count ${o.count}`);
       if (!(c.repReward['hollow-wake']! > 0) || Object.keys(c.repReward).some((f) => f !== 'hollow-wake')) report('piracy', c.id, 'outlaw work earns standing with the Wake only');
+      break;
+    }
+    case 'claim': {
+      // No belt without a citation, and a claim only on what the belt yields (docs/PROCGEN.md §19).
+      const back = c.objectives[1];
+      if (o.kind !== 'mine' || back?.kind !== 'deliver' || back.locationId !== c.giverLocationId) return report('objectives', c.id, 'a claim mines a load and brings it to the station that posts it');
+      const belt = findBelt(o.beltId);
+      if (!belt || belt.systemId !== o.systemId) return report('claim', c.id, `${o.beltId} is not a belt of ${o.systemId}`);
+      if (!belt.sources.length) report('claim', c.id, `${belt.id} cites no source`);
+      if (!(beltGoods(belt.kind) as string[]).includes(o.commodity)) report('claim', c.id, `${belt.id} yields no ${o.commodity}`);
+      if (back.commodity !== o.commodity || back.qty !== o.qty) report('claim', c.id, 'the load delivered differs from the load mined');
+      if (!postsClaims(getLocation(c.giverLocationId))) report('claim', c.id, `${c.giverLocationId} does not post claims`);
+      const units = o.qty * COMMODITIES[o.commodity].unitSize;
+      if (o.qty < 1 || units > CONTRACTS.claim.holdUnits[1]) report('claim', c.id, `${units} hold units`);
+      // The claim pays more than the load could fetch in any market.
+      if (c.reward <= o.qty * COMMODITIES[o.commodity].basePrice * PRICE_BAND[1]) report('claim', c.id, 'pays less than the load could fetch');
       break;
     }
     case 'recovery': {

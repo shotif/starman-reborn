@@ -23,6 +23,7 @@ import {
   advanceJobs,
   assaultsIn,
   contractPacksIn,
+  countMined,
   countPiracy,
   currentObjective,
   defencesIn,
@@ -896,6 +897,13 @@ export class Game {
           this.persist();
         },
         onComm: (speaker, text) => this.comm(speaker, text, 5000),
+        // A unit cut counts for mining claims on its belt (docs/PROCGEN.md §19); the hold itself autosaves.
+        onMined: (beltId, commodity) => {
+          const events = countMined(state, beltId, commodity);
+          if (!events.length) return;
+          this.announceJobEvents(events);
+          this.persist();
+        },
         onHunterDown: () => {
           state.stats.kills += 1;
           toast('Bounty hunter destroyed. Nobody pays for that one.', 'good', 3500);

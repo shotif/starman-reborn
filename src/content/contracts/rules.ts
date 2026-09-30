@@ -6,7 +6,8 @@ import type { StationType } from '../world/types.ts';
  * function of these rules, the world, the market tables and the board's time slot.
  */
 
-export type ContractKind = 'freight' | 'parcel' | 'supply' | 'bounty' | 'survey' | 'escort' | 'ace' | 'recovery' | 'smuggle' | 'piracy' | 'den';
+/** `claim`: mine a load in a belt within reach and bring it in (docs/PROCGEN.md §19). */
+export type ContractKind = 'freight' | 'parcel' | 'supply' | 'bounty' | 'survey' | 'escort' | 'ace' | 'recovery' | 'smuggle' | 'piracy' | 'den' | 'claim';
 
 /** Relative weights of contract kinds on a station's board. */
 export type KindWeights = Partial<Record<ContractKind, number>>;
@@ -15,8 +16,8 @@ export const BOARD_KINDS: Record<Exclude<StationType, 'pirate-den'>, KindWeights
   'trade-port': { freight: 3, parcel: 2, supply: 2, bounty: 1, escort: 1 },
   'customs-depot': { parcel: 2, bounty: 3, freight: 1, ace: 1, recovery: 1, den: 1 },
   shipyard: { supply: 3, freight: 1, parcel: 1, recovery: 1 },
-  'mining-outpost': { freight: 2, supply: 2, bounty: 1, escort: 1 },
-  refinery: { freight: 2, supply: 2, parcel: 1, escort: 1 },
+  'mining-outpost': { freight: 2, supply: 2, bounty: 1, escort: 1, claim: 2 },
+  refinery: { freight: 2, supply: 2, parcel: 1, escort: 1, claim: 2 },
   factory: { freight: 3, supply: 2, escort: 1 },
   'agri-station': { freight: 3, supply: 1, parcel: 1, escort: 1 },
   'research-station': { survey: 3, parcel: 2, supply: 1, recovery: 2 },
@@ -35,7 +36,7 @@ export const CURATED_BOARD_KINDS: Record<string, KindWeights> = {
   'meridian-outpost': BOARD_KINDS['research-station'],
   'barnard-relay': BOARD_KINDS.relay,
   'sirius-platform': { survey: 2, freight: 2, supply: 1, parcel: 1, recovery: 1 },
-  'eridani-hub': { freight: 2, supply: 2, bounty: 1, escort: 1 },
+  'eridani-hub': { freight: 2, supply: 2, bounty: 1, escort: 1, claim: 2 },
 };
 
 export const CONTRACTS = {
@@ -46,7 +47,7 @@ export const CONTRACTS = {
   /** At most this many generated contracts in progress at once. */
   maxActive: 5,
   /** How far contracts send you, in jumps (escorts stay in the posting station's system). */
-  maxJumps: { freight: 3, parcel: 4, supply: 3, bounty: 2, survey: 3, escort: 0, ace: 3, recovery: 3, smuggle: 3, piracy: 2, den: 3 } satisfies Record<ContractKind, number>,
+  maxJumps: { freight: 3, parcel: 4, supply: 3, bounty: 2, survey: 3, escort: 0, ace: 3, recovery: 3, smuggle: 3, piracy: 2, den: 3, claim: 3 } satisfies Record<ContractKind, number>,
   /** Hold units a freight or supply contract asks for (before the good's unit size). */
   cargoUnits: [8, 30] as const,
   /** Most the cargo may be worth at base prices (keeps deposits and purchases within a young pilot's reach). */
@@ -73,6 +74,8 @@ export const CONTRACTS = {
     piracy: { base: 350, perShip: 220 },
     /** Knocking out a raider den (docs/PROCGEN.md §15), with a wing of the poster's. */
     den: { base: 2_400 },
+    /** A mining claim: the goods well above any market's price (`goodsMarkup` times their base), and the belt's danger. */
+    claim: { base: 160, danger: 200, goodsMarkup: 2.4 },
   },
   /** Standing with the Hollow Wake for outlaw work (smuggling, piracy); the law's standing is not touched unless you are caught. */
   outlawWake: { smuggle: 6, piracy: 10 },
@@ -106,6 +109,11 @@ export const CONTRACTS = {
   ace: { model: 'ship.heavy-fighter.2.wake', guards: 2, toughness: 1.8, damage: 1.3, loot: [500, 900] as const },
   /** Escorts: the ambush comes when the escorted ship is this far along its route. */
   escort: { ambushAt: [0.25, 0.45] as const },
+  /**
+   * Mining claims (docs/PROCGEN.md §19): mining outposts and refineries within `maxJumps.claim` of a
+   * cited belt pay for a load mined there, of this many hold units (a young pilot's hold carries it).
+   */
+  claim: { holdUnits: [9, 18] as const },
   /** Difficulty 3 contracts need Friendly standing with the station's owner. */
   gatedDifficulty: 3,
   gateStanding: 10,

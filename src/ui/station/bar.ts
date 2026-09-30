@@ -1,4 +1,4 @@
-import { getLocation, getPlanet, getSystem, WORLD } from '../../data/systems.ts';
+import { getBelt, getLocation, getPlanet, getSystem, WORLD } from '../../data/systems.ts';
 import { CONTRACTS, type ContractKind } from '../../content/contracts/rules.ts';
 import { COMMODITIES } from '../../economy/commodities.ts';
 import { welcomeText } from '../../economy/dockText.ts';
@@ -55,6 +55,7 @@ const CATEGORY: Record<ContractKind, BoardFilter> = {
   piracy: 'combat',
   survey: 'other',
   recovery: 'other',
+  claim: 'other',
 };
 
 /** Jumps from a dock to where a job ends (0 in the same system). */
@@ -161,6 +162,7 @@ const KIND_GLYPH: Record<ContractKind, GlyphName> = {
   smuggle: 'cargopod',
   piracy: 'weapons',
   den: 'missile',
+  claim: 'mining-laser',
 };
 const KIND_LABEL: Record<ContractKind, string> = {
   freight: 'Freight',
@@ -174,6 +176,7 @@ const KIND_LABEL: Record<ContractKind, string> = {
   smuggle: 'Smuggling',
   piracy: 'Piracy',
   den: 'Den assault',
+  claim: 'Mining claim',
 };
 
 /** Where a job sends you, for the card's subtitle. */
@@ -196,6 +199,7 @@ function whereTo(job: JobDef): string {
   }
   if (o?.kind === 'escort') return `to ${getLocation(o.locationId).name}, this system`;
   if (o?.kind === 'piracy') return `in ${getSystem(o.systemId).displayName}`;
+  if (o?.kind === 'mine') return `in the ${getBelt(o.beltId).name}, ${getSystem(o.systemId).displayName}`;
   const near = o?.kind === 'bounty' || o?.kind === 'recover';
   const loc = getLocation(near ? o.locationId : job.destinationLocationId);
   return `${near ? 'near' : 'to'} ${loc.name}, ${getSystem(loc.systemId).displayName}`;

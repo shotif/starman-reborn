@@ -3,10 +3,16 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import type { AudioEngine } from '../../src/audio/AudioEngine.ts';
 import { defaultSettings } from '../../src/app/settings.ts';
 import { createNewGame, type GameState } from '../../src/app/state.ts';
-import { COMPOSITION, MINING } from '../../src/content/mining/rules.ts';
-import { BELTS, beltsOf, componentsOf, findBelt, getBelt, getSystem, SYSTEMS } from '../../src/data/systems.ts';
+import { CONTRACTS } from '../../src/content/contracts/rules.ts';
+import { COMMODITIES } from '../../src/content/economy/goods.ts';
+import { beltGoods, COMPOSITION, MINING } from '../../src/content/mining/rules.ts';
+import { jumpsFrom } from '../../src/content/world/network.ts';
+import { ALL_LOCATIONS, BELTS, beltsOf, componentsOf, findBelt, getBelt, getLocation, getSystem, SYSTEMS, WORLD } from '../../src/data/systems.ts';
 import type { SystemId } from '../../src/data/types.ts';
-import { cargoUsed } from '../../src/economy/cargo.ts';
+import { addCargo, cargoUsed } from '../../src/economy/cargo.ts';
+import { contractIssues } from '../../src/economy/contractGuards.ts';
+import { boardFor, postsClaims } from '../../src/economy/contracts.ts';
+import { acceptJob, countMined, currentObjective, deliverJob, describeObjective, type JobDef } from '../../src/economy/jobs.ts';
 import { cargoCapacity } from '../../src/economy/loadout.ts';
 import { cutRock, minerHunt, rockSpec, rocksInSector, stowUnit } from '../../src/economy/mining.ts';
 import { emptyInput, type FlightAction } from '../../src/flight/input/types.ts';
@@ -201,6 +207,81 @@ describe('raiders who hunt miners', () => {
     // The system's own packs set the threat when it has any; a hunting pack is small.
     expect(minerHunt(0.1, 3).level).toBe(3);
     expect(lawless.size[1]).toBeLessThanOrEqual(2);
+  });
+});
+
+// ---------------------------------------------------------------- claim contracts
+
+const EPOCHS = 40;
+let claimCache: { job: JobDef; epoch: number }[] | null = null;
+/** Every claim posted over forty time slots. */
+function allClaims(): { job: JobDef; epoch: number }[] {
+  claimCache ??= ALL_LOCATIONS.filter((l) => postsClaims(l)).flatMap((l) =>
+    Array.from({ length: EPOCHS }, (_, epoch) => boardFor(l.id, epoch).filter((c) => c.contract?.kind === 'claim').map((job) => ({ job, epoch }))).flat(),
+  );
+  return claimCache;
+}
+
+describe('mining claims', () => {
+  it('are posted by mining outposts, refineries and the Eridani Mining Hub within three jumps of a cited belt, and pass the guardrails', () => {
+    const claims = allClaims();
+    expect(claims.length).toBeGreaterThan(100);
+    expect(new Set(claims.map(({ job }) => (job.objectives[0] as { beltId: string }).beltId)).size).toBeGreaterThanOrEqual(5);
+    for (const { job, epoch } of claims) {
+      const giver = getLocation(job.giverLocationId);
+      expect(giver.stationType === 'mining-outpost' || giver.stationType === 'refinery' || giver.id === 'eridani-hub', giver.id).toBe(true);
+      expect(contractIssues(job, epoch * CONTRACTS.epochSeconds), job.id).toEqual([]);
+      const [mine, deliver] = job.objectives;
+      if (mine?.kind !== 'mine' || deliver?.kind !== 'deliver') throw new Error(`${job.id}: a claim mines, then delivers`);
+      const belt = getBelt(mine.beltId);
+      expect(belt.sources.length).toBeGreaterThan(0);
+      expect(beltGoods(belt.kind)).toContain(mine.commodity);
+      expect(jumpsFrom(WORLD.links, giver.systemId).get(belt.systemId)).toBeLessThanOrEqual(CONTRACTS.maxJumps.claim);
+      expect(mine.text).toBe(`Mine ${mine.qty} ${COMMODITIES[mine.commodity].name.toLowerCase()} in the ${belt.name} (${getSystem(belt.systemId).displayName})`);
+      expect(deliver).toMatchObject({ commodity: mine.commodity, qty: mine.qty, locationId: giver.id });
+      // The load fits a young pilot's hold, and the claim pays more than any market would for it.
+      expect(mine.qty * COMMODITIES[mine.commodity].unitSize).toBeLessThanOrEqual(18);
+      expect(job.reward).toBeGreaterThan(mine.qty * COMMODITIES[mine.commodity].basePrice * 2.2);
+    }
+    // Nobody else posts them.
+    for (const l of ALL_LOCATIONS.filter((x) => !postsClaims(x)).slice(0, 60)) {
+      for (let epoch = 0; epoch < 10; epoch++) expect(boardFor(l.id, epoch).some((c) => c.contract?.kind === 'claim')).toBe(false);
+    }
+  });
+
+  it('count what the laser cuts in their belt, point the map and the flight at it, and pay on delivery', () => {
+    const { job, epoch } = allClaims().find(({ job }) => job.difficulty === 1 && (job.objectives[0] as { beltId: string }).beltId === 'sol-main-belt')!;
+    const mine = job.objectives[0] as Extract<JobDef['objectives'][number], { kind: 'mine' }>;
+    const giver = getLocation(job.giverLocationId);
+    const state = createNewGame(3);
+    state.clock = epoch * CONTRACTS.epochSeconds;
+    state.location = { ...state.location, systemId: giver.systemId, dockedAt: giver.id };
+    expect(acceptJob(state, job.id)).toMatchObject({ ok: true });
+    // Elsewhere, the objective names the belt's system (the star map marks it).
+    const away = describeObjective(state, job.id)!;
+    expect(away.targetSystemId).toBe('sol');
+    if (giver.systemId !== 'sol') expect(away.text).toMatch(/^Jump to Sol/);
+    // In Sol, it points the flight at the belt.
+    state.location = { ...state.location, systemId: 'sol', dockedAt: null };
+    expect(describeObjective(state, job.id)).toMatchObject({ targetSystemId: 'sol', targetId: 'belt:sol-main-belt' });
+    // Only that belt and that good count.
+    const other = beltGoods(MAIN.kind).find((g) => g !== mine.commodity)!;
+    expect(countMined(state, 'sol-kuiper-belt', mine.commodity)).toEqual([]);
+    expect(countMined(state, 'sol-main-belt', other)).toEqual([]);
+    expect(state.jobs[job.id]!.mined).toBeUndefined();
+    for (let i = 1; i < mine.qty; i++) expect(countMined(state, 'sol-main-belt', mine.commodity)).toEqual([]);
+    expect(describeObjective(state, job.id)!.text).toContain(`(${mine.qty - 1}/${mine.qty})`);
+    const done = countMined(state, 'sol-main-belt', mine.commodity);
+    expect(done).toMatchObject([{ jobId: job.id, kind: 'objective', text: mine.text }]);
+    expect(currentObjective(state, job.id)?.kind).toBe('deliver');
+    // Bring the load in.
+    state.location = { ...state.location, systemId: giver.systemId, dockedAt: giver.id };
+    addCargo(state.ship.cargo, mine.commodity, mine.qty, cargoCapacity(state.ship));
+    const credits = state.credits;
+    expect(deliverJob(state, job.id, giver.id)).toMatchObject({ ok: true, reward: job.reward });
+    expect(state.credits).toBe(credits + job.reward);
+    expect(state.ship.cargo[mine.commodity]).toBeUndefined();
+    expect(state.jobs[job.id]!.status).toBe('complete');
   });
 });
 
@@ -450,6 +531,20 @@ describe('mining in flight', () => {
     later.flight.placeNear('belt:sol-main-belt', 0);
     later.run(0.6);
     expect(later.flight.allTargets().some((t) => t.id === rock.id)).toBe(true);
+  });
+
+  it('guides a claim to its belt: the belt is the objective, and Go to flies into it', () => {
+    const f = flightIn('sol', withLaser());
+    f.flight.setObjective(null, null, 'belt:sol-main-belt');
+    f.run(0.1);
+    // The new objective is selected, and the action button flies there.
+    expect(f.flight.selectedTarget?.id).toBe('belt:sol-main-belt');
+    expect(f.flight.contextAction()).toMatchObject({ label: 'Go to', action: 'goto' });
+    expect(f.flight.hud.markers.find((m) => m.id === 'belt:sol-main-belt')?.objective).toBe(true);
+    f.run(0.1, ['goto']);
+    expect(f.run(240, [], () => f.flight.hud.target?.id === 'belt:sol-main-belt' && f.flight.autopilotMode === 'none')).toBe(true);
+    expect(f.flight.hud.target?.distance).toBe(0);
+    expect(f.flight.allTargets().some((t) => t.kind === 'rock')).toBe(true);
   });
 
   it('draws raiders to a miner in a lawless belt', () => {

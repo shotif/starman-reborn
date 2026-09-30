@@ -895,7 +895,8 @@ export class FlightSession {
     if (sel && (sel.kind === 'planet' || sel.kind === 'star') && sel.position.distanceTo(this.player.position) < this.scanRangeFor(sel) * 3) {
       return { label: 'Scan', action: 'scan', icon: 'scan' };
     }
-    if (sel && this.canScanMining(sel)) return { label: 'Scan', action: 'scan', icon: 'scan' };
+    // A rock in scan range that has not been read; a belt once the ship is at it (Go to comes first).
+    if (sel && this.canScanMining(sel) && (sel.kind === 'rock' || this.surfaceDistance(sel) < 1_500)) return { label: 'Scan', action: 'scan', icon: 'scan' };
     const goal = sel ?? this.objectiveTarget();
     const headingTo = this.autopilotTargetId();
     const far = goal ? (goal.kind === 'rock' ? this.surfaceDistance(goal) > MINING.range : goal.position.distanceTo(this.player.position) > (goal.kind === 'belt' ? goal.radius + 1_500 : 1_500)) : false;

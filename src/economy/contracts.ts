@@ -3,10 +3,11 @@ import { shipModel } from '../content/catalog.ts';
 import { ACE_NAMES, BOARD_KINDS, CONTRACTS, CURATED_BOARD_KINDS, DEN_BOARD_KINDS, RECOVERY_ITEMS, type ContractKind, type KindWeights } from '../content/contracts/rules.ts';
 import { LAW } from '../content/law/rules.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
+import { beltGoods } from '../content/mining/rules.ts';
 import { hashString, rng, type Rng } from '../content/random.ts';
 import { jumpsFrom } from '../content/world/network.ts';
 import { WORLD_SEED } from '../content/world/rules.ts';
-import { ALL_LOCATIONS, getLocation, getSystem, isFrontier, SYSTEMS, WORLD } from '../data/systems.ts';
+import { ALL_LOCATIONS, BELTS, getLocation, getSystem, isFrontier, SYSTEMS, WORLD } from '../data/systems.ts';
 import type { FactionId, FictionalLocation, SystemId } from '../data/types.ts';
 import { findRoute } from '../galaxy/routing.ts';
 import { FLEETS } from '../world/traffic/plan.ts';
@@ -77,6 +78,11 @@ function boardKinds(loc: FictionalLocation): KindWeights | null {
   if (loc.stationType === 'pirate-den' && loc.status === 'functional') return DEN_BOARD_KINDS;
   if (!loc.services.includes('contracts') || loc.status !== 'functional' || loc.dockable === false) return null;
   return CURATED_BOARD_KINDS[loc.id] ?? (loc.stationType && loc.stationType !== 'pirate-den' ? BOARD_KINDS[loc.stationType] : null);
+}
+
+/** Stations that post mining claims (mining outposts, refineries and the Eridani Mining Hub). */
+export function postsClaims(loc: FictionalLocation): boolean {
+  return (boardKinds(loc)?.claim ?? 0) > 0;
 }
 
 const place = (loc: FictionalLocation) => `${loc.name} (${getSystem(loc.systemId).displayName})`;
@@ -173,6 +179,8 @@ function makeContract(kind: ContractKind, giver: FictionalLocation, r: Rng, id: 
       return piracy(giver, r, id);
     case 'den':
       return denAssault(giver, r, id);
+    case 'claim':
+      return claim(giver, r, id);
   }
 }
 
@@ -472,6 +480,38 @@ function denAssault(giver: FictionalLocation, r: Rng, id: string): JobDef | null
     difficultyNote: `A raider den, its guns and its mines; ${routeNote(giver.systemId, den.systemId).toLowerCase()}`,
     destinationLocationId: den.id,
     contract: { kind: 'den' },
+  };
+}
+
+/**
+ * Mining claims (docs/PROCGEN.md §19): a mining outpost or refinery holds a claim in a cited belt
+ * within reach and pays for a load mined there: mine it with a mining laser, then bring it in. The
+ * pay beats anything the load could fetch in a market (it is the claim's ore, not the pilot's).
+ */
+function claim(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
+  const belts = BELTS.filter((b) => jumpsBetween(giver.systemId, b.systemId) <= CONTRACTS.maxJumps.claim);
+  if (!belts.length) return null;
+  const belt = r.pick(belts);
+  const commodity = r.pick(beltGoods(belt.kind));
+  const good = COMMODITIES[commodity];
+  const qty = Math.max(1, Math.floor(r.int(CONTRACTS.claim.holdUnits[0], CONTRACTS.claim.holdUnits[1]) / good.unitSize));
+  const rw = CONTRACTS.reward.claim;
+  const reward = pay(r, routeFeeBetween(giver.systemId, belt.systemId), rw.base + rw.danger * (1 - security(belt.systemId)), rw.goodsMarkup * qty * good.basePrice);
+  const difficulty = difficultyFor(giver.systemId, belt.systemId);
+  const name = good.name.toLowerCase();
+  const where = `the ${belt.name} (${getSystem(belt.systemId).displayName})`;
+  return {
+    ...common(giver, id, difficulty),
+    title: `Claim: ${qty} ${name} from the ${belt.name}`,
+    briefing: `${giver.name} holds a mining claim in ${where}. Mine ${qty} ${name} there (${qty * good.unitSize} hold units) and bring the load here: a mining laser cuts it, and a prospecting scanner gets more from each rock. Outfitters sell both.`,
+    objectives: [
+      { kind: 'mine', systemId: belt.systemId, beltId: belt.id, commodity, qty, text: `Mine ${qty} ${name} in ${where}` },
+      { kind: 'deliver', commodity, qty, locationId: giver.id, text: `Deliver ${qty} ${name} to ${giver.name}` },
+    ],
+    reward,
+    difficultyNote: `Needs a mining laser; ${routeNote(giver.systemId, belt.systemId).toLowerCase()}`,
+    destinationLocationId: giver.id,
+    contract: { kind: 'claim' },
   };
 }
 
