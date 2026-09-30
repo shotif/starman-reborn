@@ -350,6 +350,8 @@ describe('contracts II', () => {
     expect(job.difficulty).toBe(3);
     const s = pilotAt(job.giverLocationId, epoch * CONTRACTS.epochSeconds);
     if (job.factionId) s.reputation[job.factionId] = CONTRACTS.gateStanding;
+    expect(acceptJob(s, job.id).ok).toBe(false);
+    s.stats.kills = 25;
     expect(acceptJob(s, job.id)).toMatchObject({ ok: true });
     expect(contractPacksIn(s, o.systemId)).toEqual([{ jobId: job.id, locationId: o.locationId, count: 1, level: 3, ace: o.ace }]);
     expect(describeObjective(s, job.id)!.text).not.toMatch(/\(0\/1\)/);

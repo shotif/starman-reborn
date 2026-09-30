@@ -10,6 +10,7 @@ import { glyph, type GlyphName } from '../glyphs.ts';
 import { icon } from '../icons.ts';
 import { newsList } from '../news.ts';
 import { fineOwed, isLawful, payFines } from '../../economy/law.ts';
+import { buysSurveys, sellSurvey, surveysForSale, surveyValue } from '../../economy/progress.ts';
 import { toast } from '../components.ts';
 import type { StationContext } from './context.ts';
 
@@ -197,6 +198,7 @@ export function newsContent(ctx: StationContext): HTMLElement {
     h('p', { class: 'muted' }, loc.description, ' ', dataBadge('fictional')),
     faction ? h('p', null, h('strong', null, faction.name), ` runs this dock. Your standing: ${TIER_LABEL[standingTier(standing)]} (${signed(standing)}).`) : null,
     customsDesk(ctx),
+    surveyOffice(ctx),
     h('div', { class: 'list-head' }, h('span', null, 'Local news'), h('span', null, 'within two jumps')),
     newsList(loc.systemId, state.clock),
   );
@@ -233,5 +235,42 @@ function customsDesk(ctx: StationContext): HTMLElement | null {
           }),
         )
       : h('p', { class: 'muted small' }, `Your record with the ${name} is clean.`),
+  );
+}
+
+/** Research stations buy completed system surveys (every catalogued body scanned), once each. */
+function surveyOffice(ctx: StationContext): HTMLElement | null {
+  const { state, locationId } = ctx;
+  if (!buysSurveys(locationId) || ctx.access !== 'full') return null;
+  const ready = surveysForSale(state);
+  return h(
+    'section',
+    { class: 'survey-office', 'aria-label': 'Survey office', 'data-testid': 'survey-office' },
+    h('div', { class: 'list-head' }, h('span', null, 'Survey office'), h('span', null, 'complete systems')),
+    ready.length
+      ? h(
+          'ul',
+          { class: 'list' },
+          ready.map((id) =>
+            h(
+              'li',
+              { class: 'trade-row route' },
+              glyph('science'),
+              h('span', { class: 'trade-text' }, h('span', { class: 'row-name' }, getSystem(id).displayName), h('span', { class: 'row-sub' }, 'Every catalogued star and confirmed planet scanned')),
+              button(`Sell · ${formatCredits(surveyValue(id))}`, {
+                size: 'sm',
+                testId: `sell-survey-${id}`,
+                onClick: () => {
+                  const r = sellSurvey(state, id, locationId);
+                  ctx.sfx(r.ok ? 'credits' : 'ui-error');
+                  toast(r.message, r.ok ? 'good' : 'bad');
+                  ctx.save();
+                  ctx.reload();
+                },
+              }),
+            ),
+          ),
+        )
+      : h('p', { class: 'muted small' }, 'Scan every catalogued star and confirmed planet of a system, and the survey office pays for the data.'),
   );
 }

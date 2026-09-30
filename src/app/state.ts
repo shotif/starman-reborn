@@ -1,5 +1,6 @@
 import type { CommodityId } from '../content/economy/goods.ts';
 import { STARTER_SHIP_ID } from '../content/rules/index.ts';
+import type { MilestoneId } from '../content/progress/rules.ts';
 import type { JobDef } from '../economy/jobs.ts';
 import type { FactionId, SystemId, Vec3Tuple } from '../data/types.ts';
 import { newShipState } from '../economy/loadout.ts';
@@ -110,6 +111,12 @@ export interface GameState {
   contracts: Record<string, JobDef>;
   /** The law (docs/PROCGEN.md §12): fines owed to each lawful faction. */
   law: { fines: Partial<Record<FactionId, number>> };
+  /** The codex of the real sky (docs/PROCGEN.md §13): catalogued stars and confirmed planets scanned. */
+  codex: string[];
+  /** Systems whose completed survey was sold to a research station. */
+  surveysSold: SystemId[];
+  /** Milestones earned, with the game clock when they were. */
+  milestones: Partial<Record<MilestoneId, number>>;
   /** Confirmed-planet / body ids the player has scanned. */
   discoveredBodies: string[];
   jobs: Record<string, JobProgress>;
@@ -126,6 +133,9 @@ export interface GameState {
     jumps: number;
     deliveries: number;
     deaths: number;
+    /** Credits taken for goods sold, and contract pay (with bonuses and survey sales): the trade rating. */
+    sales: number;
+    rewards: number;
   };
 }
 
@@ -150,6 +160,9 @@ export function createNewGame(seed: number = Math.floor(Math.random() * 2 ** 31)
     markets: {},
     contracts: {},
     law: { fines: {} },
+    codex: [],
+    surveysSold: [],
+    milestones: {},
     discoveredBodies: [],
     jobs: {},
     pirateOutcome: 'none',
@@ -157,7 +170,7 @@ export function createNewGame(seed: number = Math.floor(Math.random() * 2 ** 31)
     flags: {},
     ledger: [],
     voyageStartClock: 0,
-    stats: { kills: 0, jumps: 0, deliveries: 0, deaths: 0 },
+    stats: { kills: 0, jumps: 0, deliveries: 0, deaths: 0, sales: 0, rewards: 0 },
   };
 }
 

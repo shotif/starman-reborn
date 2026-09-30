@@ -437,3 +437,17 @@
 .security-threat-3 {
   color: var(--hostile);
 }
+
+/* Codex progress per system (docs/PROCGEN.md §13). */
+.enc-codex {
+  margin: 0.3rem 0 0.6rem;
+  padding: 0.35rem 0.55rem;
+  border-left: 3px solid rgba(255, 216, 74, 0.5);
+  background: rgba(10, 20, 46, 0.45);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.enc-codex.complete {
+  border-left-color: rgba(98, 227, 160, 0.7);
+}

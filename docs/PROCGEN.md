@@ -612,3 +612,65 @@ way, keep effects inside the rules, state the change they cause, keep live price
 bands with buy above sell, put raids only below security 0.75 with the threat one above the
 system's, put sweeps only where packs roam in claimed space, happen at a sensible rate (3–25
 station events under way on average) and cover every kind.
+
+## 12. The law and the outlaw path
+
+The Transit Authority and the Frontier Cooperative keep the law in the space they claim; the
+Hollow Wake keeps none, but remembers (`src/economy/law.ts`; rules in `src/content/law/rules.ts`).
+
+### 12.1 Crimes, fines and pardons
+
+- **Crimes** against a lawful faction (the ship's own, or the system's owner for an independent
+  hauler; in unclaimed space an independent's loss goes unpunished):
+  - firing on a lawful ship: 500 cr and −8 standing (reported once per ship);
+  - destroying one: 1,000 cr and −15 standing (and +4 with the Hollow Wake);
+  - leaving a patrol's cargo scan before it finishes: 400 cr and −5 standing;
+  - contraband found: confiscated, fined at twice its base value, −3 standing.
+- The player's guns hit a lawful ship only when it is the selected target, so no crime happens by
+  accident in a crossfire.
+- **Hunted**: while a pilot owes a faction fines, or its standing is Hostile (−30 or worse), its
+  patrols attack on sight within 6 km and its stations give **emergency docking** only: the deck
+  (hull repairs at a 50% surcharge) and the bar's News window, where the **customs desk** takes
+  fines. Paying every fine owed to that faction is a **pardon**: the hunt ends and standing rises
+  to −10 (Wary) if it was lower. A Wary faction offers easy (difficulty 1) contracts only.
+- **Bounty hunters**: two of them come for a pilot owing 1,500 cr or more, 45 seconds after arriving
+  in space with security 0.6 or more. They fight only the player, pay no bounty and wait out lanes
+  and docking. Patrols leave them alone.
+- The HUD shows *Wanted* and the fines owed; the journal lists fines with standing.
+
+### 12.2 Contraband and scans
+
+- **Contraband**: combat stims and transponder spoofers, banned in claimed space. Free ports and
+  raider dens sell them; mining outposts and refineries want stims, trade ports and shipyards want
+  spoofers. Ordinary contracts never carry contraband (or small arms).
+- **Patrol scans** in claimed space at security 0.5 or more: a patrol passing within 1.2 km scans
+  the hold (always with contraband aboard, a quarter of the time otherwise; at most one scan a
+  flight). It keeps station off the player's wing for 5 seconds; flying more than 2.2 km away first
+  is evasion. The HUD counts the scan down.
+- **Customs** at customs depots and military bases of a lawful owner scans every ship that docks.
+
+### 12.3 The outlaw path
+
+- **Piracy**: a destroyed hauler spills one or two pods of its cargo (3–8 units each) to tractor in.
+- **Smuggling runs** (free ports and dens, open to anyone): contraband loaded against a deposit, for
+  a buyer in claimed space within three jumps, never at a dock whose customs scans every ship. Pay:
+  the fees, 300 cr, danger, and 30% of the goods' base value; +6 standing with the Wake, nothing
+  with the law unless caught.
+- **Piracy jobs** (dens only): destroy two or three haulers of a system's lawful owner within two
+  jumps; +10 with the Wake. Every hauler is still a crime.
+- **Trusted by the Wake** (standing 10 or more): its raiders leave you alone until you (or someone
+  in their pack) hit them, and the **raider dens** take you in: a black market (they sell
+  contraband, small arms and salvage, and buy luxuries, fine food, medical supplies, electronics,
+  ship components and consumer goods), repairs, and a board of smuggling, piracy and courier work.
+  Dens are never touched by world events, and never dockable for anyone else.
+
+### 12.4 Law guardrails
+
+`validateLaw` (`src/economy/lawGuards.ts`, run in `tests/unit/law.test.ts`) checks that a pardon
+lifts standing above Hostile, that every system has a station with repairs within one jump, that
+each contraband good is sold somewhere and has a smuggling route into claimed space to a dock
+without customs, that customs scans somewhere, that every den has a black market and posts work,
+and that no story job asks for a crime. The contract guardrails (§10.4) check smuggling runs
+(contraband from its seller to a buyer in claimed space, no customs at the dock, a deposit worth the
+goods, Wake standing only) and piracy jobs (dens only, the system's lawful owner, haulers there).
+`tests/unit/flightLaw.test.ts` flies the law in a real `FlightSession`.

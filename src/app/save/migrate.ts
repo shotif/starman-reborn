@@ -2,6 +2,7 @@ import { findGear, findShip } from '../../content/catalog.ts';
 import { STARTER_SHIP_ID } from '../../content/rules/index.ts';
 import { ALL_LOCATIONS } from '../../data/systems.ts';
 import { SYSTEM_IDS } from '../../data/systems.ts';
+import { codexEntries } from '../../economy/progress.ts';
 import type { SystemId } from '../../data/types.ts';
 import { clampShip, newShipState } from '../../economy/loadout.ts';
 import { COMMODITY_IDS } from '../../content/economy/goods.ts';
@@ -22,8 +23,9 @@ import { createNewGame, SAVE_VERSION, type CommodityId, type GameState } from '.
  * - v6: contracts may be escorts, ace hunts or recoveries, urgent or follow-ups (offered follow-ups
  *   wait in `contracts` without a `jobs` entry); jobs may have failed, and carry escort and
  *   recovery progress. The data of a v5 save is valid v6.
- * - v7 (current): `law` (fines owed to the lawful factions), smuggling and piracy contracts, and two
- *   contraband goods. See GameState in src/app/state.ts.
+ * - v7 (current): `law` (fines owed to the lawful factions), smuggling and piracy contracts, two
+ *   contraband goods; `codex`, `surveysSold`, `milestones`, and `stats.sales` / `stats.rewards`
+ *   (the trade rating). See GameState in src/app/state.ts.
  */
 export interface SaveV1 {
   version: 1;
@@ -109,13 +111,25 @@ function migrateV4(old: Omit<GameState, 'version' | 'contracts'> & { version: 4 
 }
 
 /** v5 → v6: nothing to change (v6 only adds kinds of contract and progress). */
-function migrateV5(old: Omit<GameState, 'version' | 'law'> & { version: 5 }): GameState {
+function migrateV5(old: Parameters<typeof migrateV6>[0] extends infer T ? Omit<T, 'version'> & { version: 5 } : never): GameState {
   return migrateV6({ ...old, version: 6 });
 }
 
-/** v6 → v7: a clean record with the law. */
-function migrateV6(old: Omit<GameState, 'version' | 'law'> & { version: 6 }): GameState {
-  return { ...old, version: SAVE_VERSION, law: { fines: {} } };
+/**
+ * v6 → v7: a clean record with the law; the codex starts from the planets already scanned; no
+ * milestones yet (they are awarded on the next check), no survey sold, the trade record at zero.
+ */
+function migrateV6(old: Omit<GameState, 'version' | 'law' | 'codex' | 'surveysSold' | 'milestones' | 'stats'> & { version: 6; stats: Omit<GameState['stats'], 'sales' | 'rewards'> }): GameState {
+  const known = new Set(codexEntries().map((e) => e.id));
+  return {
+    ...old,
+    version: SAVE_VERSION,
+    law: { fines: {} },
+    codex: old.discoveredBodies.filter((id) => known.has(id)),
+    surveysSold: [],
+    milestones: {},
+    stats: { ...old.stats, sales: 0, rewards: 0 },
+  };
 }
 
 /** Upgrades any known save version to the current GameState. Throws SaveFormatError when unusable. */
@@ -172,6 +186,10 @@ export function assertValidState(s: GameState): void {
   }
   if (!isRecord(s.law) || !isRecord(s.law.fines)) fail('law');
   for (const [f, fine] of Object.entries(s.law.fines)) if (!['sta', 'frontier', 'hollow-wake'].includes(f) || !Number.isFinite(fine) || (fine as number) < 0) fail(`fine ${f}`);
+  if (!Array.isArray(s.codex) || !s.codex.every((id) => typeof id === 'string')) fail('codex');
+  if (!Array.isArray(s.surveysSold) || !s.surveysSold.every((id) => SYSTEM_IDS.includes(id))) fail('surveys');
+  if (!isRecord(s.milestones) || !Object.values(s.milestones).every((t) => Number.isFinite(t))) fail('milestones');
+  if (!Number.isFinite(s.stats?.sales) || !Number.isFinite(s.stats?.rewards)) fail('stats');
   if (!isRecord(s.markets)) fail('markets');
   for (const [id, m] of Object.entries(s.markets)) {
     if (!LOCATION_IDS.has(id) || !isRecord(m) || !Number.isFinite(m.t) || !isRecord(m.stock)) fail(`market ${id}`);

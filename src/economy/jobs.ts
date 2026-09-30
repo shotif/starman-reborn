@@ -1,5 +1,6 @@
 import { applyCredits, type CommodityId, type GameState, type PriceQuote } from '../app/state.ts';
 import { CONTRACTS, type ContractKind } from '../content/contracts/rules.ts';
+import { ACE_COMBAT_RANK, RATINGS } from '../content/progress/rules.ts';
 import { getLocation, getSystem } from '../data/systems.ts';
 import type { FactionId, SystemId } from '../data/types.ts';
 import { addCargo, cargoCount, removeCargo } from './cargo.ts';
@@ -7,6 +8,7 @@ import { COMMODITIES } from './commodities.ts';
 import { CONTRACT_PREFIX, contractBlock, followUpFor, postedContract, postedContracts } from './contracts.ts';
 import { adjustReputation, FACTIONS, standingTier } from './factions.ts';
 import { cargoCapacity } from './loadout.ts';
+import { rating } from './progress.ts';
 
 export type Objective =
   | { kind: 'have-cargo'; commodity: CommodityId; qty: number; text: string }
@@ -164,6 +166,10 @@ export function jobLockReason(state: GameState, job: JobDef): string | null {
   }
   if (req?.minRep && (state.reputation[req.minRep.faction] ?? 0) < req.minRep.value) {
     return `Requires Friendly standing with the ${FACTIONS[req.minRep.faction].name}`;
+  }
+  // Ace hunts are for pilots with a record.
+  if (job.contract?.kind === 'ace' && rating(state, 'combat').index < ACE_COMBAT_RANK) {
+    return `Needs a ${RATINGS.combat.ranks[ACE_COMBAT_RANK]![0]} combat rating`;
   }
   // A lawful faction that is wary of you only trusts you with the easiest work.
   if (job.contract && job.factionId && job.factionId !== 'hollow-wake' && job.difficulty >= 2) {
@@ -393,6 +399,7 @@ function payOut(state: GameState, job: JobDef): Payout {
     note = ' (late: no bonus)';
   }
   state.stats.deliveries += 1;
+  state.stats.rewards += paid;
   // A parcel or haul may lead to a follow-up at its destination.
   let offer: JobEvent | null = null;
   const next = followUpFor(job, state.clock);

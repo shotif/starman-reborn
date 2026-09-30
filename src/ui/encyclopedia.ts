@@ -22,9 +22,12 @@ import {
 } from '../galaxy/scienceBlocks.ts';
 import { button, dataBadge, sourceLink } from './components.ts';
 import { h, type Child } from './dom.ts';
+import { codexEntries } from '../economy/progress.ts';
 
 export interface EncyclopediaOptions {
   discoveredBodies: ReadonlySet<string>;
+  /** The player's codex (docs/PROCGEN.md §13): bodies scanned, shown as progress per system. */
+  catalogued?: ReadonlySet<string>;
   /** Section to open at; the introduction when omitted. */
   initialSystemId?: SystemId;
   /** Runs when the player closes the panel (button or Esc). Not called by the returned close(). */
@@ -117,13 +120,28 @@ function jumpLinkList(system: StarSystemRecord): HTMLElement {
   );
 }
 
-function systemSection(system: StarSystemRecord, id: string, discovered: ReadonlySet<string>): HTMLElement {
+/** Codex progress for a system: which of its catalogued bodies the player has scanned. */
+function codexLine(systemId: SystemId, catalogued: ReadonlySet<string> | undefined): HTMLElement | null {
+  if (!catalogued) return null;
+  const here = codexEntries().filter((e) => e.systemId === systemId);
+  const done = here.filter((e) => catalogued.has(e.id));
+  const complete = done.length === here.length;
+  return h(
+    'p',
+    { class: `enc-codex${complete ? ' complete' : ''}`, 'data-testid': `codex-${systemId}` },
+    h('strong', null, complete ? 'Codex complete: ' : `Codex ${done.length}/${here.length}: `),
+    here.map((e) => `${catalogued.has(e.id) ? '✓' : '·'} ${e.name}`).join('  '),
+  );
+}
+
+function systemSection(system: StarSystemRecord, id: string, discovered: ReadonlySet<string>, catalogued?: ReadonlySet<string>): HTMLElement {
   const isSol = system.id === 'sol';
   return h(
     'section',
     { class: 'enc-section', id, 'aria-labelledby': `${id}-h`, 'data-system-id': system.id },
     h('h3', { id: `${id}-h`, tabindex: '-1' }, isSol ? 'Sol: the Solar System' : system.displayName),
     h('p', { class: 'enc-summary' }, system.summary),
+    codexLine(system.id, catalogued),
     badgeHeading('h4', 'Position and distance', 'observed', undefined, observedMark(system, 'stars')),
     positionList(system, 'full'),
     badgeHeading('h4', isSol ? 'The Sun' : 'Stars', 'observed', undefined, observedMark(system, 'stars')),
@@ -292,7 +310,7 @@ export function openEncyclopedia(root: HTMLElement, opts: EncyclopediaOptions): 
     'div',
     { class: 'enc-body scroll', tabindex: '-1' },
     introSection(ids.intro),
-    SYSTEMS.map((s) => systemSection(s, ids.system(s.id), opts.discoveredBodies)),
+    SYSTEMS.map((s) => systemSection(s, ids.system(s.id), opts.discoveredBodies, opts.catalogued)),
     dataSection(ids.data),
   );
   const navButtons = new Map<string, HTMLButtonElement>();

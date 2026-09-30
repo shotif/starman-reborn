@@ -29,6 +29,9 @@ import {
 } from '../economy/jobs.ts';
 import { moveStock, traderDelivery } from '../economy/markets.ts';
 import { commitCrime, customsScan, dockAccess, isLawful, scansOnDocking, totalFines } from '../economy/law.ts';
+import { whatNext } from '../economy/advisor.ts';
+import { catalogue, checkMilestones, codexProgress } from '../economy/progress.ts';
+import { CODEX_GRANT } from '../content/progress/rules.ts';
 import { welcomeText } from '../economy/dockText.ts';
 import { DesktopInput } from '../flight/input/DesktopInput.ts';
 import { emptyInput, type InputScheme } from '../flight/input/types.ts';
@@ -137,6 +140,8 @@ export class Game {
   private autosaveTimer = 0;
   private objectiveTimer = 0;
   private objectiveText: string | null = null;
+  /** The "what next" suggestion for this flight (worked out once per launch or arrival). */
+  private hint: string | null = null;
   private fpsTimer = 0;
   private sheetsOpen = 0;
   private readonly toastLayer: HTMLElement;
@@ -737,6 +742,7 @@ export class Game {
     this.mode = 'flight';
     this.loop.lowPower = false;
     this.objectiveTimer = 0;
+    this.hint = null;
     this.refreshFlightUi();
     this.audio.setMusic(moodFor(state.location.systemId));
   }
@@ -832,6 +838,7 @@ export class Game {
   private async onDiscovery(bodyId: string): Promise<void> {
     const state = this.state!;
     const { first, jobEvents } = discoverBody(state, bodyId);
+    if (catalogue(state, bodyId)) this.hint = null;
     if (!first) return;
     this.persist();
     this.announceJobEvents(jobEvents);
@@ -854,6 +861,13 @@ export class Game {
 
   private onScanInfo(t: Target): void {
     if (!t.bodyId) return;
+    const state = this.state!;
+    if (catalogue(state, t.bodyId)) {
+      const { done, total } = codexProgress(state);
+      this.hint = null;
+      toast(`Catalogued: ${t.name} · codex ${done}/${total}`, 'good', 3500);
+      this.persist();
+    }
     this.setPaused(true, false);
     const s = sheet(this.screenLayer, t.name, bodyCard(t.bodyId, t.name), () => this.setPaused(false), 'science-sheet');
     void s;
@@ -903,6 +917,7 @@ export class Game {
         ? newsAt(current, state.clock).map((n) => ({ id: n.event.id, systemId: n.event.systemId, kind: n.event.kind, headline: n.event.headline, detail: n.event.detail, active: n.active }))
         : [],
       contractSystems: new Set(state ? activeJobIds(state).flatMap((id) => describeObjective(state, id)?.targetSystemId ?? []) : []),
+      ...(state ? { catalogued: new Set(state.codex) } : {}),
     };
   }
 
@@ -1129,6 +1144,7 @@ export class Game {
     this.sheetsOpen++;
     void import('../ui/encyclopedia.ts').then(({ openEncyclopedia }) => openEncyclopedia(this.screenLayer, {
       discoveredBodies: new Set(this.state?.discoveredBodies ?? []),
+      ...(this.state ? { catalogued: new Set(this.state.codex) } : {}),
       ...(systemId ? { initialSystemId: systemId } : {}),
       onClose: () => {
         this.sheetsOpen--;
@@ -1160,6 +1176,11 @@ export class Game {
   persist(): void {
     const state = this.state;
     if (!state) return;
+    // Milestones are noticed whenever the game saves.
+    for (const m of checkMilestones(state)) {
+      this.sfx('mission-complete');
+      toast(`Milestone: ${m.title}${m.id === 'codex-all' ? ` · Frontier Cooperative grant +${formatCredits(CODEX_GRANT)}` : ''}`, 'good', 5000);
+    }
     if (this.flight && this.mode !== 'jump') {
       this.flight.writeBack(state);
       if (!state.location.dockedAt && this.flight.alive) state.location.flight = this.flight.pose();
@@ -1278,7 +1299,11 @@ export class Game {
     if (this.objectiveTimer <= 0) {
       this.objectiveTimer = 0.4;
       const obj = primaryObjective(state);
-      this.objectiveText = obj ? obj.text : state.jobs[LIFELINE_ID]?.status === 'complete' ? 'Free exploration: open the star map and visit any system.' : 'Accept a contract at a station, or explore.';
+      this.objectiveText = obj
+        ? obj.text
+        : state.jobs[LIFELINE_ID]?.status === 'complete'
+          ? (this.hint ??= whatNext(state) ?? 'Free exploration: open the star map and visit any system.')
+          : 'Accept a contract at a station, or explore.';
       const here = obj && obj.targetSystemId === state.location.systemId;
       flight.setObjective(here ? obj.targetLocationId : null, here ? obj.targetBodyId : null, here ? (obj.targetId ?? null) : null);
     }

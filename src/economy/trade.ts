@@ -76,6 +76,7 @@ export function sellCommodity(state: GameState, locationId: string, commodity: C
   removeCargo(state.ship.cargo, commodity, qty);
   moveStock(state.markets, locationId, commodity, qty, state.clock);
   applyCredits(state, total, 'sell', `Sold ${qty} ${COMMODITIES[commodity].name}`);
+  state.stats.sales += total;
   return { ok: true, qty, unitPrice: Math.round(total / qty), total };
 }
 

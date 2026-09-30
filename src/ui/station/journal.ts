@@ -6,6 +6,8 @@ import { abandonJob, describeObjective, getJob } from '../../economy/jobs.ts';
 import { CONTRACTS } from '../../content/contracts/rules.ts';
 import { button, confirmDialog, dataBadge, toast } from '../components.ts';
 import { formatCredits, h, signed } from '../dom.ts';
+import { MILESTONES, RATINGS, type RatingKind } from '../../content/progress/rules.ts';
+import { codexProgress, rating } from '../../economy/progress.ts';
 import { icon } from '../icons.ts';
 import type { Refresh, StationContext } from './context.ts';
 
@@ -76,8 +78,40 @@ export function journalContent(ctx: StationContext, refresh: Refresh): HTMLEleme
         h('dd', null, `${TIER_LABEL[standingTier(state.reputation[f] ?? 0)]} (${signed(state.reputation[f] ?? 0)})${state.law.fines[f] ? ` · owes ${formatCredits(state.law.fines[f])} in fines` : ''}`),
       ]),
     ),
+    pilotRecord(state),
     voyage ? h('div', { class: 'list-head' }, h('span', null, 'Voyage report'), h('span', null, '')) : null,
     voyage,
+  );
+}
+
+/** Ratings, the codex and milestones (docs/PROCGEN.md §13). */
+function pilotRecord(state: GameState): HTMLElement {
+  const { done, total } = codexProgress(state);
+  const earned = MILESTONES.filter((m) => state.milestones[m.id] !== undefined);
+  return h(
+    'section',
+    { class: 'pilot-record', 'aria-label': 'Pilot record', 'data-testid': 'pilot-record' },
+    h('div', { class: 'list-head' }, h('span', null, 'Pilot ratings'), h('span', null, '')),
+    h(
+      'ul',
+      { class: 'plain ratings' },
+      (Object.keys(RATINGS) as RatingKind[]).map((k) => {
+        const r = rating(state, k);
+        const prev = RATINGS[k].ranks[r.index]![1];
+        const fill = r.next ? (r.score - prev) / (r.next.at - prev) : 1;
+        return h(
+          'li',
+          { class: 'rating', 'data-testid': `rating-${k}` },
+          h('span', { class: 'rating-kind' }, RATINGS[k].label),
+          h('strong', { class: 'rating-rank' }, r.rank),
+          h('span', { class: 'rating-bar', style: `--fill: ${Math.max(0, Math.min(1, fill))}` }),
+          h('span', { class: 'muted small rating-next' }, r.next ? `${r.next.rank} at ${formatCredits(r.next.at).replace(' cr', '')}` : 'Top rank'),
+        );
+      }),
+    ),
+    h('p', { class: 'muted small' }, `Codex of the real sky: ${done} of ${total} catalogued stars and confirmed planets scanned. `, dataBadge('observed')),
+    h('div', { class: 'list-head' }, h('span', null, 'Milestones'), h('span', null, `${earned.length}/${MILESTONES.length}`)),
+    earned.length ? h('ul', { class: 'plain milestones' }, earned.map((m) => h('li', null, icon('objective'), ` ${m.title}`))) : h('p', { class: 'list-empty' }, 'None yet.'),
   );
 }
 

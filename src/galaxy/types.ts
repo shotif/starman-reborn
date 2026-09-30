@@ -28,6 +28,8 @@ export interface MapState {
   news?: readonly MapNewsItem[];
   /** Systems where active contracts send the player (besides the objective). */
   contractSystems?: ReadonlySet<SystemId>;
+  /** The player's codex: bodies scanned (for the science notes). */
+  catalogued?: ReadonlySet<string>;
 }
 
 export interface MapNewsItem {

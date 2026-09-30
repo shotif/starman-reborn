@@ -556,6 +556,7 @@ export class GalaxyMapView {
     this.gestures.reset();
     this.encyclopedia = openEncyclopedia(this.el, {
       discoveredBodies: this.state?.discoveredBodies ?? new Set<string>(),
+      ...(this.state?.catalogued ? { catalogued: this.state.catalogued } : {}),
       ...(systemId ? { initialSystemId: systemId } : {}),
       onClose: () => {
         this.encyclopedia = null;
