@@ -11,10 +11,10 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | --- | --- | --- |
 | TypeScript typecheck (app + scripts/tests) | `npm run typecheck` | Pass |
 | Astronomy data validation | `npm run data:validate` | Pass (2 warnings: data is provisional) |
-| Unit tests | `npm test` | Pass: 165 tests in 8 files |
+| Unit tests | `npm test` | Pass: 227 tests in 10 files |
 | Production build | `npm run build` | Pass |
-| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 8 passed (3 touch-only tests skipped) |
-| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 10 passed (1 desktop-only test skipped) |
+| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 9 passed (3 touch-only tests skipped) |
+| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 11 passed (1 desktop-only test skipped) |
 | Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 72 screenshots, no audit findings |
 
 ### Unit tests (Vitest)
@@ -45,6 +45,12 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   damage and regeneration, damage-type multipliers on shields and hull.
 - `galaxy-map.test.ts`: camera-relative transforms, orbit controller, projection and label layout,
   jump-button rules.
+- `rooms.test.ts`: station interiors: structure per station, camera moves and cuts, reduced
+  motion, omitted rooms, determinism, draw-call and triangle budgets per quality, lights per room,
+  hotspots on desktop and phones, portrait framing and disposal.
+- `shipgen.test.ts`: every catalogue ship builds a mesh, deterministically, facing −Z, with one
+  muzzle per gun mount, filling its class radius, within the triangle budget; shared geometry
+  survives other ships' disposal.
 - `audio.test.ts`: music theory, deterministic seeded patterns, mood definitions, voice limits,
   engine parameter mapping.
 
@@ -76,6 +82,8 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   - **Rotation mid-flight** (390×844 → 844×390) keeps the ship and re-lays out the controls.
   - **Taking over the controls cancels docking**: throttle (desktop) or the steering stick
     (touch) during a dock approach, and the Free flight command, all end the autopilot.
+  - **Buying a ship**: the shipyard sells a freighter, the deck shows it, and after launch the HUD
+    shows its guns, seekers and hold.
   - **Desktop: a hit on a target away from the screen centre during a turn**, with bolts
     following the visible cursor.
 - `screenshots.spec.ts`: title, job board, buy dialog, station deck, shipyard, outfitter, flight

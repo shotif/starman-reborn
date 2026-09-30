@@ -73,8 +73,8 @@ test.describe('platform behaviour', () => {
     expect(s.ship.model).toBe('ship.freighter.2.halden');
     expect(s.ship.ammo['launcher-1']).toBe(6);
     expect(s.credits).toBeLessThan(20_000);
-    await expect(page.getByTestId('ship-status')).toContainText('Halden Shearwater');
     await press(page, 'window-close');
+    await expect(page.getByTestId('ship-status')).toContainText('Halden Shearwater');
     await press(page, 'dock-launch');
     await press(page, 'sheet-close');
     await waitUntil(page, 'undocked', async () => (await api<PlayerInfo | null>(page, 'player'))?.autopilot === 'none');
