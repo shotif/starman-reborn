@@ -133,13 +133,21 @@ export class TouchControls {
     );
     this.bindThrottle();
 
+    // The decoy button sits with the combat buttons in portrait, and with Cruise and Go To in
+    // landscape, where the right-hand column is already full (docs/PROCGEN.md §15).
+    const leftCluster = h('div', { class: 'tcluster left' }, this.cruiseBtn, this.contextBtn);
+    const rightCluster = h('div', { class: 'tcluster right' }, targetBtn, missileBtn, this.boostBtn, repairBtn);
+    const placeDecoy = (landscape: boolean) => (landscape ? leftCluster : rightCluster).appendChild(decoyBtn);
+    const orientation = typeof matchMedia === 'function' ? matchMedia('(orientation: landscape)') : null;
+    placeDecoy(orientation?.matches ?? false);
+    orientation?.addEventListener?.('change', (e) => placeDecoy(e.matches));
     this.root = h(
       'div',
       { class: 'touch-controls', 'data-testid': 'touch-controls' },
       this.steerZone,
       this.aimZone,
-      h('div', { class: 'tcluster left' }, this.cruiseBtn, this.contextBtn),
-      h('div', { class: 'tcluster right' }, targetBtn, missileBtn, this.boostBtn, repairBtn, decoyBtn),
+      leftCluster,
+      rightCluster,
       h('div', { class: 'throttle' }, this.throttleValue, this.throttleTrack, this.driftBtn),
       this.assistChip,
     );

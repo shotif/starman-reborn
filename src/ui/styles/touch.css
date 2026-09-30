@@ -119,15 +119,15 @@
   bottom: var(--cluster-bottom);
 }
 
+/* In landscape the decoy button joins Cruise and Go To, three across (TouchControls moves it). */
 .tcluster.left {
   left: calc(var(--safe-left) + 66px);
-  grid-template-columns: repeat(2, var(--btn));
+  grid-template-columns: repeat(3, var(--btn));
 }
 
-/* Three across in landscape, so the decoy button adds no row (the cluster stays clear of the HUD). */
 .tcluster.right {
   right: calc(var(--safe-right) + 12px);
-  grid-template-columns: repeat(3, var(--btn));
+  grid-template-columns: repeat(2, var(--btn));
 }
 
 .touch-controls.swapped .tcluster.left {
