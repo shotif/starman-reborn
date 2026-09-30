@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { darkMaterial, emissiveMaterial, glassMaterial, hullMaterial, metalMaterial, windowMaterial } from '../art/materials.ts';
+import { darkMaterial, emissiveMaterial, glassMaterial, hullMaterial, metalMaterial, rockMaterial, windowMaterial } from '../art/materials.ts';
 import { panelTexture } from '../art/textures.ts';
 import type { ArtContext } from '../art/types.ts';
 import { withMotion } from './motion.ts';
@@ -259,6 +259,8 @@ export function createRoomMaterials(ctx: ArtContext, opts: RoomMaterialOptions):
     glassWarm: glassMaterial('warm'),
     emissive: emissiveMaterial(),
     windows: windowMaterial(q),
+    // Raw rock (rock-cut walls, rubble, ore): flat-shaded facets, colour from the vertices.
+    rock: rockMaterial(),
     floor: std({ map: deckTexture(q), roughness: opts.floorRough, metalness: opts.floorMetal }),
     paint: std({ map: paintTexture(q), roughness: 0.58, metalness: 0.08, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
     grate: std({ map: grateTexture(q), roughness: 0.5, metalness: 0.6 }),

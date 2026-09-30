@@ -242,6 +242,23 @@ export function addPerson(b: RoomBuilder, spec: PersonSpec, palette: PersonPalet
     case 'coat':
       part(c, new THREE.BoxGeometry(0.05 * H, 0.22 * H, 0.012 * H), [0, chestY - 0.03 * H, 0.062 * H], shade(o.bottom, 1));
       break;
+    case 'armour': {
+      // Chest plate, shoulder pads, and a webbing belt with pouches.
+      part(c, new THREE.BoxGeometry(0.2 * H * build, 0.17 * H, 0.135 * H), [0, chestY + 0.03 * H, 0.004 * H], shade(o.top, 1.15));
+      for (const side of [-1, 1]) {
+        part(c, new THREE.BoxGeometry(0.075 * H, 0.035 * H, 0.1 * H), [side * shoulderX * 0.98, shoulderY + 0.01 * H, 0], shade(o.accent, 1), [0, 0, side * -0.35]);
+      }
+      part(c, new THREE.BoxGeometry(2 * hipX + 0.085 * H, 0.03 * H, 0.115 * H), [0, hipY + 0.07 * H, 0], shade('#2a2c26', 1));
+      for (const side of [-1, 1]) part(c, new THREE.BoxGeometry(0.035 * H, 0.045 * H, 0.03 * H), [side * 0.045 * H, hipY + 0.07 * H, 0.066 * H], shade(o.bottom, 0.8));
+      break;
+    }
+    case 'harness':
+      // Crossed straps over the jacket, a guard on one shoulder, a belt of pouches.
+      for (const side of [-1, 1]) part(c, new THREE.BoxGeometry(0.028 * H, 0.26 * H, 0.012 * H), [0, chestY + 0.01 * H, 0.066 * H], accent, [0, 0, side * 0.6]);
+      part(c, new THREE.BoxGeometry(0.08 * H, 0.04 * H, 0.105 * H), [-shoulderX, shoulderY + 0.012 * H, 0], shade(o.accent, 0.85), [0, 0, 0.4]);
+      part(c, new THREE.BoxGeometry(2 * hipX + 0.08 * H, 0.025 * H, 0.112 * H), [0, hipY + 0.07 * H, 0], shade('#2a2220', 1));
+      part(c, new THREE.BoxGeometry(0.045 * H, 0.05 * H, 0.03 * H), [0.05 * H, hipY + 0.06 * H, 0.065 * H], accent);
+      break;
   }
   // Collar.
   part(c, new THREE.BoxGeometry(0.1 * H, 0.025 * H, 0.08 * H), [0, shoulderY + 0.01 * H, 0.004 * H], accent);
@@ -350,6 +367,19 @@ export function addPerson(b: RoomBuilder, spec: PersonSpec, palette: PersonPalet
     const g = new THREE.SphereGeometry(1, 7, 4, 0, Math.PI * 2, 0, Math.PI * 0.5);
     g.scale(0.054 * H, 0.068 * H, 0.062 * H);
     part(c, g, [0, headY + 0.012 * H, 0.002 * H], shade(o.accent, 0.8), [0, 0, 0], true);
+  } else if (hat === 'hood') {
+    // Deep hood drawn over the head, open at the face.
+    const g = new THREE.SphereGeometry(1, 8, 5, 0, Math.PI * 2, 0, Math.PI * 0.64);
+    g.scale(0.066 * H, 0.074 * H, 0.072 * H);
+    part(c, g, [0, headY + 0.004 * H, -0.012 * H], shade(o.hatColor ?? o.top, 0.9), [-0.35, 0, 0], true);
+    part(c, new THREE.BoxGeometry(0.11 * H, 0.05 * H, 0.05 * H), [0, headY - 0.06 * H, -0.04 * H], shade(o.hatColor ?? o.top, 0.8), [0, 0, 0], true);
+  } else if (hat === 'bandana') {
+    // Cropped hair under a tied band.
+    const g = new THREE.SphereGeometry(1, 8, 4, 0, Math.PI * 2, 0, Math.PI * 0.45);
+    g.scale(0.053 * H, 0.062 * H, 0.061 * H);
+    part(c, g, [0, headY + 0.008 * H, -0.003 * H], hairCol, [-0.25, 0, 0], true);
+    part(c, new THREE.CylinderGeometry(0.056 * H, 0.057 * H, 0.028 * H, seg + 2, 1, true), [0, headY + 0.03 * H, 0], shade(o.hatColor ?? o.accent, 1), [0.18, 0, 0], true);
+    part(c, new THREE.BoxGeometry(0.03 * H, 0.05 * H, 0.012 * H), [0.01 * H, headY + 0.005 * H, -0.062 * H], shade(o.hatColor ?? o.accent, 0.9), [0, 0, 0.4], true);
   } else if (hairStyle > 0.1) {
     const g = new THREE.SphereGeometry(1, 8, 4, 0, Math.PI * 2, 0, Math.PI * 0.52);
     g.scale(0.054 * H, 0.066 * H, 0.063 * H);

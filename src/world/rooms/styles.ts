@@ -1,17 +1,73 @@
 import type { PlanetStyle } from '../art/planets.ts';
 import type { StationKind } from '../art/stations.ts';
+import type { StationType } from './look.ts';
 
 /**
  * Per-station art direction for the docked interiors: palette, light mood, architecture flavour,
  * how busy the place is, and what hangs outside the bay. Colours are sRGB hex strings.
+ *
+ * The six hand-built stations have authored styles (STYLES below); every other station gets one
+ * from `generateInteriorStyle` (stylegen.ts). Optional fields default to the hand-built look.
  */
 
 export type V3 = [number, number, number];
 
-export type PillarKind = 'round' | 'ibeam' | 'modular' | 'lattice' | 'slab' | 'hex';
-export type BayKind = 'open' | 'blast' | 'modular' | 'slot' | 'shielded' | 'market';
-export type OutfitKind = 'coverall' | 'jacket' | 'suit' | 'coat' | 'uniform' | 'vest' | 'apron';
-export type HatKind = 'none' | 'cap' | 'helmet' | 'beanie';
+export type PillarKind = 'round' | 'ibeam' | 'modular' | 'lattice' | 'slab' | 'hex' | 'rock' | 'pipes' | 'armour' | 'scrap';
+export type BayKind = 'open' | 'blast' | 'modular' | 'slot' | 'shielded' | 'market' | 'scanner' | 'rock' | 'scrap' | 'gantry';
+export type OutfitKind = 'coverall' | 'jacket' | 'suit' | 'coat' | 'uniform' | 'vest' | 'apron' | 'armour' | 'harness';
+export type HatKind = 'none' | 'cap' | 'helmet' | 'beanie' | 'hood' | 'bandana';
+/** Finish of the hall's walls: painted panels, raw rock, armour plate, clean lab cladding, mismatched patches, welded scrap. */
+export type WallKind = 'panels' | 'rock' | 'armour' | 'clean' | 'patched' | 'scrap';
+/** Open roof trusses, or a low ceiling of ducts that makes the hall feel cramped. */
+export type CeilingKind = 'truss' | 'ducts';
+/** What the trader's floor is stocked with ('seized': impounded pallets and a scanner; 'bazaar': a market under an awning). */
+export type GoodsKind = 'commodities' | 'seized' | 'bazaar' | 'ore' | 'fuel' | 'crops' | 'samples' | 'munitions' | 'scrap' | 'machinery' | 'hull';
+/** Set-dressing modules for generated stations (dressing.ts), built in order. */
+export type DressingKind =
+  | 'gallery'
+  | 'guide-lights'
+  | 'concourse'
+  | 'carts'
+  | 'scanner-gates'
+  | 'hazard-lanes'
+  | 'inspection'
+  | 'hull-dock'
+  | 'bridge-crane'
+  | 'welders'
+  | 'ore-carts'
+  | 'work-lights'
+  | 'rubble'
+  | 'ore-bins'
+  | 'pipework'
+  | 'tanks'
+  | 'heat'
+  | 'conveyors'
+  | 'robot-arms'
+  | 'planters'
+  | 'grow-lights'
+  | 'hydroponics'
+  | 'lab-benches'
+  | 'sample-racks'
+  | 'floor-seams'
+  | 'relay-racks'
+  | 'red-beacons'
+  | 'livery'
+  | 'banners'
+  | 'pennants'
+  | 'weapon-racks'
+  | 'ordnance'
+  | 'neon'
+  | 'graffiti'
+  | 'stalls'
+  | 'lounge-furniture'
+  | 'scrap-piles'
+  | 'fire-barrels'
+  | 'wreck'
+  | 'chains'
+  | 'clutter';
+export type BarDecor = 'lounge' | 'canteen' | 'mess' | 'spare' | 'clinic' | 'market' | 'cafe' | 'labcafe' | 'messhall' | 'dive' | 'hangout';
+/** Emblems on faction banners (Transit Authority ring, Frontier chevron, Hollow Wake wake, independent star). */
+export type Emblem = 'ring' | 'chevron' | 'wake' | 'star';
 
 export interface Outfit {
   label: string;
@@ -71,6 +127,34 @@ export interface HangarLook {
   /** Pad hover-field glow. */
   padGlow: string;
   workers: number;
+  /** Paints of the shipping containers on the trader's floor. */
+  containers: string[];
+  /** Containers stacked along the trader's wall (default true). */
+  wallStack?: boolean;
+  /** The trader's gantry carries a full container (default: a crate). */
+  heavyCrane?: boolean;
+  /** Only every third ceiling lamp is fitted (dim, spare stations). */
+  sparseLamps?: boolean;
+  /** Light bar over the side doors (default `glow`). */
+  doorGlow?: string;
+  /** Maintenance drones around the ship (default 2; the second only above low quality). */
+  drones?: number;
+  /** Wall finish (default 'panels'). */
+  walls?: WallKind;
+  /** Ceiling (default 'truss'). */
+  ceiling?: CeilingKind;
+  /** What the trader's pallets hold (default: medical supplies, parts and deuterium). */
+  goods?: GoodsKind;
+  /** Extra set dressing, built in order (generated stations; the hand-built ones have their own). */
+  dressing?: DressingKind[];
+  /** Signage colours for banners, neon and stencils (the owner's colours). */
+  signs?: string[];
+  /** The owner's emblem on banners. */
+  emblem?: Emblem;
+  /** 0..1: grime and stains on the floor and walls. */
+  grime?: number;
+  /** 0..1: share of lamps that flicker, and how much the key light stutters. */
+  flicker?: number;
 }
 
 export interface BarLook {
@@ -95,11 +179,13 @@ export interface BarLook {
   fog: string;
   fogDensity: number;
   window: 'panorama' | 'portholes' | 'band' | 'none';
+  /** Share of the bay's spill light that falls in through the window (default 0.3). */
+  spill?: number;
   plants: number;
   patrons: number;
   bartender: Outfit;
-  /** Extra dressing. */
-  decor: 'lounge' | 'canteen' | 'mess' | 'spare' | 'clinic' | 'market';
+  /** Furniture and extra dressing. */
+  decor: BarDecor;
 }
 
 export interface OutsideLook {
@@ -131,18 +217,22 @@ export interface OutsideLook {
 }
 
 export interface InteriorStyle {
-  kind: StationKind;
+  /** The hand-built station, or the station type of a generated style. */
+  kind: StationKind | StationType;
   name: string;
   hangar: HangarLook;
   bar: BarLook;
   crowd: Outfit[];
+  /** Who runs the trader's floor and the workshop (default: the first fitting role in `crowd`). */
+  dealer?: Outfit;
+  mechanic?: Outfit;
   skin: string[];
   hair: string[];
   outside: OutsideLook;
 }
 
-const SKIN = ['#f1c9a8', '#e3b08a', '#c98f66', '#ad7048', '#8d5636', '#6a3f28', '#4a2e20'];
-const HAIR = ['#1b1512', '#3a2a1e', '#5e4128', '#9a7446', '#d6bf94', '#8e8e8e', '#a8462a', '#262626'];
+export const SKIN = ['#f1c9a8', '#e3b08a', '#c98f66', '#ad7048', '#8d5636', '#6a3f28', '#4a2e20'];
+export const HAIR = ['#1b1512', '#3a2a1e', '#5e4128', '#9a7446', '#d6bf94', '#8e8e8e', '#a8462a', '#262626'];
 
 export const STYLES: Record<StationKind, InteriorStyle> = {
   'earth-port': {
@@ -182,6 +272,7 @@ export const STYLES: Record<StationKind, InteriorStyle> = {
       holo: '#5ab8ff',
       padGlow: '#7cc4ff',
       workers: 3,
+      containers: ['#e8ecf0', '#2f64c8', '#9aa4b0', '#dfe4ea', '#3a78d8'],
     },
     bar: {
       floor: '#6a7482',
@@ -270,6 +361,8 @@ export const STYLES: Record<StationKind, InteriorStyle> = {
       holo: '#ffb24a',
       padGlow: '#ffb070',
       workers: 4,
+      containers: ['#a8502a', '#7a4a32', '#c8782e', '#5e4a3c', '#8a3a24'],
+      heavyCrane: true,
     },
     bar: {
       floor: '#4a3a2e',
@@ -358,6 +451,9 @@ export const STYLES: Record<StationKind, InteriorStyle> = {
       holo: '#6affb0',
       padGlow: '#8affc0',
       workers: 3,
+      containers: ['#2e8a78', '#c9d0c6', '#6e7e74', '#3fae6a', '#d8c880'],
+      // Meridian grows food along the trader's wall instead (hydroponic racks).
+      wallStack: false,
     },
     bar: {
       floor: '#5a4a3a',
@@ -445,6 +541,10 @@ export const STYLES: Record<StationKind, InteriorStyle> = {
       holo: '#ff6a4a',
       padGlow: '#ff8a70',
       workers: 1,
+      containers: ['#4a4e55', '#5e2a24', '#3a3d42', '#6a6e75'],
+      sparseLamps: true,
+      doorGlow: '#ff3a2a',
+      drones: 0,
     },
     bar: {
       floor: '#2e3034',
@@ -529,6 +629,7 @@ export const STYLES: Record<StationKind, InteriorStyle> = {
       holo: '#8fd8ff',
       padGlow: '#bfe6ff',
       workers: 2,
+      containers: ['#eef1f5', '#c9d0d8', '#9fb4cc', '#e2e6ec'],
     },
     bar: {
       floor: '#e2e6ec',
@@ -615,6 +716,7 @@ export const STYLES: Record<StationKind, InteriorStyle> = {
       holo: '#ffc05a',
       padGlow: '#ffd08a',
       workers: 5,
+      containers: ['#c8782e', '#2e8a8a', '#a8382a', '#d8a832', '#6a3a7a', '#3a78a8'],
     },
     bar: {
       floor: '#6a4a30',

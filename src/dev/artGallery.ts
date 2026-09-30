@@ -46,8 +46,8 @@ import type {
   StationKind,
   TransientEffect,
 } from '../world/art/index.ts';
-import { ROOM_ORDER, createStationInterior } from '../world/rooms/index.ts';
-import type { RoomView, StationInterior } from '../world/rooms/index.ts';
+import { ROOM_ORDER, STATION_OWNERS, STATION_TYPES, createStationInterior, generateInteriorStyle } from '../world/rooms/index.ts';
+import type { RoomView, StationInterior, StationLook, StationOwner, StationType } from '../world/rooms/index.ts';
 import { SCENE_DEFS } from '../world/systems/index.ts';
 
 const params = new URLSearchParams(location.search);
@@ -325,29 +325,123 @@ const INTERIOR_SYSTEMS: Record<StationKind, { system: keyof typeof SCENE_DEFS; s
   'eridani-hub': { system: 'epsilon-eridani', star: 0, rooms: ['deck', 'trader', 'outfitter', 'bar'] },
 };
 
+/*
+ * Generated interiors: item=interior&gen=1&type=<station type>&owner=sta|frontier|hollow-wake|independent
+ * &seed=<n>&size=0..1&wear=0..1&sky=<system id>&star=<hex, no #>. Keys [ and ] step through the
+ * types, { and } through the owners.
+ */
+const GEN_SKIES = Object.keys(SCENE_DEFS) as (keyof typeof SCENE_DEFS)[];
+
+function generatedLook(): { look: StationLook; system: keyof typeof SCENE_DEFS } {
+  const typeParam = params.get('type') as StationType | null;
+  const type: StationType = typeParam && STATION_TYPES.includes(typeParam) ? typeParam : 'trade-port';
+  const ownerParam = params.get('owner') as StationOwner | null;
+  const owner: StationOwner = ownerParam && STATION_OWNERS.includes(ownerParam) ? ownerParam : 'sta';
+  const seed = Math.floor(num('seed', 1));
+  const skyParam = params.get('sky');
+  const system = skyParam && skyParam in SCENE_DEFS ? (skyParam as keyof typeof SCENE_DEFS) : GEN_SKIES[Math.abs(seed) % GEN_SKIES.length]!;
+  const starParam = params.get('star');
+  const starColor = starParam && /^[0-9a-f]{6}$/i.test(starParam) ? `#${starParam}` : SCENE_DEFS[system].stars[0]!.color;
+  const unit = (key: string, fallback: number): number => Math.max(0, Math.min(1, num(key, fallback)));
+  return { look: { type, owner, seed, starColor, size: unit('size', 0.6), wear: unit('wear', 0.3) }, system };
+}
+
+/** Panel controls for generated interiors: type and owner pickers, stepping, seed/size/wear. */
+function generatedControls(env: Env, look: StationLook): void {
+  const select = (label: string, key: string, values: readonly string[], value: string): void => {
+    const l = document.createElement('label');
+    l.textContent = label;
+    const sel = document.createElement('select');
+    for (const v of values) {
+      const o = document.createElement('option');
+      o.value = v;
+      o.textContent = v;
+      sel.appendChild(o);
+    }
+    sel.value = value;
+    sel.addEventListener('change', () => reloadWith(key, sel.value));
+    env.panel.append(l, sel);
+  };
+  const step = (key: 'type' | 'owner', list: readonly string[], current: string, by: number): void => {
+    reloadWith(key, list[(list.indexOf(current) + by + list.length) % list.length]!);
+  };
+  select('Type', 'type', STATION_TYPES, look.type);
+  select('Owner', 'owner', STATION_OWNERS, look.owner);
+  env.button('◀ Prev type', () => step('type', STATION_TYPES, look.type, -1));
+  env.button('Next type ▶', () => step('type', STATION_TYPES, look.type, 1));
+  env.button('Next owner', () => step('owner', STATION_OWNERS, look.owner, 1));
+  for (const [label, key, min, max, stepSize, value] of [
+    ['Seed', 'seed', 0, 99, 1, look.seed],
+    ['Size', 'size', 0, 1, 0.05, look.size],
+    ['Wear', 'wear', 0, 1, 0.05, look.wear],
+  ] as const) {
+    const l = document.createElement('label');
+    l.textContent = `${label}: ${value}`;
+    const input = document.createElement('input');
+    input.type = 'range';
+    input.min = String(min);
+    input.max = String(max);
+    input.step = String(stepSize);
+    input.value = String(value);
+    input.addEventListener('input', () => (l.textContent = `${label}: ${input.value}`));
+    input.addEventListener('change', () => reloadWith(key, input.value));
+    env.panel.append(l, input);
+  }
+  window.addEventListener('keydown', (e) => {
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
+    if (e.key === '[' || e.key === ']') step('type', STATION_TYPES, look.type, e.key === ']' ? 1 : -1);
+    if (e.key === '{' || e.key === '}') step('owner', STATION_OWNERS, look.owner, e.key === '}' ? 1 : -1);
+  });
+}
+
 function interiorItem(): Item {
   return {
     id: 'interior',
     group: 'Interiors',
     label: 'Station interior',
     build(env) {
+      const gen = flag('gen');
       const stationParam = params.get('station') as StationKind | null;
       const station: StationKind = stationParam && STATION_KINDS.includes(stationParam) ? stationParam : 'earth-port';
       const preset = INTERIOR_SYSTEMS[station];
-      const def = SCENE_DEFS[preset.system];
+      const generated = gen ? generatedLook() : null;
+      const def = SCENE_DEFS[generated ? generated.system : preset.system];
       const star = def.stars[Math.min(preset.star, def.stars.length - 1)]!;
       const roomParam = params.get('rooms');
-      const rooms = roomParam ? (roomParam.split(',').filter((r) => (ROOM_ORDER as string[]).includes(r)) as RoomView[]) : preset.rooms;
+      const rooms = roomParam
+        ? (roomParam.split(',').filter((r) => (ROOM_ORDER as string[]).includes(r)) as RoomView[])
+        : generated
+          ? [...ROOM_ORDER]
+          : preset.rooms;
       const t0 = performance.now();
-      const interior: StationInterior = createStationInterior(
-        { station, skybox: def.skybox, starColor: star.color, seed: num('seed', STATION_KINDS.indexOf(station) * 11 + 5), rooms },
-        ctx,
-      );
+      const interior: StationInterior = generated
+        ? createStationInterior(
+            { style: generateInteriorStyle(generated.look), skybox: def.skybox, starColor: generated.look.starColor, seed: generated.look.seed, rooms },
+            ctx,
+          )
+        : createStationInterior(
+            { station, skybox: def.skybox, starColor: star.color, seed: num('seed', STATION_KINDS.indexOf(station) * 11 + 5), rooms },
+            ctx,
+          );
       const buildMs = performance.now() - t0;
+      const title = generated
+        ? `${generated.look.type} · ${generated.look.owner} · seed ${generated.look.seed} · size ${generated.look.size} · wear ${generated.look.wear}`
+        : station;
       // bench=1: time more builds now that shared caches (noise, textures, sky mesh) are warm, as
       // they are in the game after flying (each is built and disposed right away).
       let warm = '';
-      if (flag('bench')) {
+      if (flag('bench') && generated) {
+        const times: number[] = [];
+        for (const type of STATION_TYPES) {
+          const t1 = performance.now();
+          const look = { ...generated.look, type };
+          const other = createStationInterior({ style: generateInteriorStyle(look), skybox: def.skybox, starColor: look.starColor, seed: look.seed, rooms }, ctx);
+          times.push(performance.now() - t1);
+          other.dispose();
+        }
+        warm = `\nwarm builds ${times.map((t) => t.toFixed(0)).join(' / ')} ms`;
+        console.log(`[bench] cold ${buildMs.toFixed(0)} ms, warm ${times.map((t) => t.toFixed(0)).join(', ')}`);
+      } else if (flag('bench')) {
         const times: number[] = [];
         for (const k of STATION_KINDS) {
           const p = INTERIOR_SYSTEMS[k];
@@ -363,19 +457,27 @@ function interiorItem(): Item {
       interior.resize(window.innerWidth, window.innerHeight);
       const want = params.get('view') as RoomView | null;
       if (want && interior.rooms.includes(want)) interior.setView(want, true);
-      // Station picker and view buttons.
+      // Station picker (hand-built, or generated from a look) and view buttons.
       const l = document.createElement('label');
       l.textContent = 'Station';
       const sel = document.createElement('select');
-      for (const k of STATION_KINDS) {
+      for (const k of [...STATION_KINDS, 'generated']) {
         const o = document.createElement('option');
         o.value = k;
-        o.textContent = k;
+        o.textContent = k === 'generated' ? 'generated (type × owner)' : k;
         sel.appendChild(o);
       }
-      sel.value = station;
-      sel.addEventListener('change', () => reloadWith('station', sel.value));
+      sel.value = generated ? 'generated' : station;
+      sel.addEventListener('change', () => {
+        if (sel.value === 'generated') {
+          reloadWith('gen', '1');
+        } else {
+          setParam('gen', null);
+          reloadWith('station', sel.value);
+        }
+      });
       env.panel.append(l, sel);
+      if (generated) generatedControls(env, generated.look);
       let lastTransition = '';
       for (const v of interior.rooms) {
         env.button(`View: ${v}`, () => {
@@ -424,7 +526,7 @@ function interiorItem(): Item {
         resize(w, h) {
           interior.resize(w, h);
         },
-        stats: () => `${station} · ${interior.view} · build ${buildMs.toFixed(0)} ms${warm}\nrooms ${interior.rooms.join(', ')}${lastTransition ? `\n${lastTransition}` : ''}`,
+        stats: () => `${title} · ${interior.view} · build ${buildMs.toFixed(0)} ms${warm}\nrooms ${interior.rooms.join(', ')}${lastTransition ? `\n${lastTransition}` : ''}`,
       };
     },
   };

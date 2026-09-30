@@ -28,6 +28,8 @@ export const MOTION = {
   hover: 9,
   /** Look around with holds (heads). */
   look: 10,
+  /** Continuous travel along Z that wraps every `amp` metres (conveyor belts); `speed` in m/s. */
+  conveyZ: 11,
 } as const;
 export type MotionType = (typeof MOTION)[keyof typeof MOTION];
 
@@ -95,6 +97,9 @@ void motionEval(vec4 m, out mat3 R, out vec3 T, out float breath) {
   } else if (type < 9.5) {
     T.y = amp * sin(t * w + ph);
     R = mRotY(0.22 * uMotionScale * sin(t * w * 0.31 + ph * 2.0));
+  } else if (type > 10.5) {
+    float len = max(m.z, 0.01);
+    T.z = mod(t * w * mix(0.35, 1.0, uMotionScale) + ph, len) - 0.5 * len;
   } else {
     float u = t * w + ph;
     float k = floor(u);

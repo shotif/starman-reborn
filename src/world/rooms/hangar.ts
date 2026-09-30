@@ -3,8 +3,11 @@ import type { V3 } from '../art/kit.ts';
 import { createPlayerShip } from '../art/ships.ts';
 import type { ShipArt } from '../art/ships.ts';
 import type { ArtContext } from '../art/types.ts';
+import { DUCT_CEILING, ductCeiling, extraBay, extraPillar, noise2, wallFinish } from './architecture.ts';
 import { RoomBuilder, floorDigit, hazardBand, paintRing, paintStrip } from './builder.ts';
 import type { ViewShots } from './camera.ts';
+import { buildDressing, buildGoods } from './dressing.ts';
+import { HALL, PAD } from './layout.ts';
 import { addPerson } from './people.ts';
 import type { PoseKind } from './people.ts';
 import {
@@ -23,7 +26,8 @@ import {
   toolArm,
   turret,
 } from './props.ts';
-import type { Commodity } from './props.ts';
+import type { Commodity, LampState } from './props.ts';
+import { hydroponicRack } from './setpieces.ts';
 import type { Backdrop } from './space.ts';
 import type { HangarLook, InteriorStyle, Outfit } from './styles.ts';
 import type { RoomView, StationInteriorOptions } from './types.ts';
@@ -34,8 +38,7 @@ import type { RoomView, StationInteriorOptions } from './types.ts';
  * outfitter's workshop on the left. The camera moves between the three areas.
  */
 
-export const HALL = { hw: 46, back: -30, front: 46, ceil: 25, wall: 4 };
-export const PAD = { x: 0, z: -6, r: 8, moat: 10.4, depth: 4.5 };
+export { HALL, PAD };
 const SHIP_YAW = (Math.PI * 5) / 6;
 const SHIP_Y = 2.35;
 /** Longest ship the pad shows at full size (metres). */
@@ -86,11 +89,19 @@ const FLOOR_UP: V3 = [-Math.PI / 2, 0, 0];
  * Shell: floor, walls, ceiling, mouth.
  * ---------------------------------------------------------------------------------------------- */
 
+/** Worn stations: roll whether a lamp works, flickers or has died. */
+function lampState(r: number, flicker: number): LampState {
+  return r < flicker * 0.16 ? 'dead' : r < flicker * 0.6 ? 'flicker' : 'on';
+}
+
 function buildFloor(b: RoomBuilder, h: HangarLook): void {
   const T = 4;
   const a = new THREE.Color(h.floor);
   const c2 = new THREE.Color(h.floorAlt);
   const { hw, back, front } = HALL;
+  // Worn stations: patches of grime and oil, thickest along the walls.
+  const grime = h.grime ?? 0;
+  const dirt = new THREE.Color('#1c1610');
   for (let x = -hw; x < hw; x += T) {
     for (let z = back; z < front; z += T) {
       const cx = x + T / 2;
@@ -99,6 +110,10 @@ function buildFloor(b: RoomBuilder, h: HangarLook): void {
       const edge = Math.min(hw - Math.abs(cx), front - cz, cz - back + 8);
       const ao = 0.62 + 0.38 * THREE.MathUtils.smoothstep(edge, 0, 12);
       const col = (b.rand() < 0.55 ? a : c2).clone().multiplyScalar(ao * (0.93 + b.rand() * 0.14));
+      if (grime > 0) {
+        const d = THREE.MathUtils.smoothstep(noise2(cx * 0.07, cz * 0.07, 5), 0.35, 0.85) + 0.5 * (1 - THREE.MathUtils.smoothstep(edge, 2, 10));
+        col.lerp(dirt, Math.min(0.75, grime * 0.6 * d));
+      }
       b.quadUp('floor', cx, 0, cz, T, T, col, 8);
     }
   }
@@ -186,11 +201,10 @@ function buildPad(b: RoomBuilder, h: HangarLook, bayNumber: number): void {
   }
 }
 
-function buildWalls(b: RoomBuilder, h: HangarLook, style: InteriorStyle): void {
+function buildWalls(b: RoomBuilder, h: HangarLook): void {
   const { hw, back, front, ceil } = HALL;
   const len = front - back;
   const zc = (front + back) / 2;
-  const kind = style.kind;
   for (const side of [-1, 1]) {
     const x = side * hw;
     b.box('hull', [1, ceil, len], [x + side * 0.5, ceil / 2, zc], h.wall, { uv: 6 });
@@ -206,9 +220,10 @@ function buildWalls(b: RoomBuilder, h: HangarLook, style: InteriorStyle): void {
       b.box('emissive', [0.14, 1.8, 0.5], [x - side * 1.64, 13.2, z], h.lamp, { intensity: h.lampLevel });
       b.light({ p: [x - side * 1.9, 13.2, z], color: h.lamp, size: 2.4, intensity: 0.9 });
       b.glow('pool', [x - side * 1.02, 12.6, z], 7, 12, [0, (side * Math.PI) / -2, 0], h.lamp, 0.1);
-      // Panels between ribs: a recessed lower panel with a vent, an upper panel.
+      // Panels between ribs: a recessed lower panel with a vent, an upper panel (other finishes
+      // clad the wall in wallFinish).
       const pz = z + 4;
-      if (pz < front - 1) {
+      if (pz < front - 1 && (h.walls ?? 'panels') === 'panels') {
         const tone = new THREE.Color(h.wall).multiplyScalar(0.8 + b.rand() * 0.15);
         b.box('hull', [0.3, 5.6, 6.2], [x - side * 0.16, 4.6, pz], tone, { uv: 3 });
         if (b.rand() < 0.6) b.box('dark', [0.1, 1.2, 3.4], [x - side * 0.34, 2.8, pz]);
@@ -248,18 +263,24 @@ function buildWalls(b: RoomBuilder, h: HangarLook, style: InteriorStyle): void {
       b.box('paint', [0.1, 0.6, (w + 1.4) / 8], [x - side * 0.62, hh + 0.35, z - (w + 1.4) / 2 + ((i + 0.5) * (w + 1.4)) / 8], h.hazard[i % 2]!);
     }
     for (const dz of [-w / 2 - 0.4, w / 2 + 0.4]) b.box('metal', [0.9, hh + 0.8, 0.8], [x - side * 0.45, (hh + 0.8) / 2, z + dz], h.trim);
-    b.box('emissive', [0.12, 0.35, 2.4], [x - side * 0.92, hh + 1.3, z], kind === 'barnard-relay' ? '#ff3a2a' : h.glow, { intensity: h.glowLevel });
+    b.box('emissive', [0.12, 0.35, 2.4], [x - side * 0.92, hh + 1.3, z], h.doorGlow ?? h.glow, { intensity: h.glowLevel });
     b.light({ p: [x - side * 1.1, hh + 1.3, z - 1.4], color: h.hazard[0], size: 0.9, intensity: 2, blink: 0.6, duty: 0.4, min: 0.1 });
     b.light({ p: [x - side * 1.1, hh + 1.3, z + 1.4], color: h.hazard[0], size: 0.9, intensity: 2, blink: 0.6, duty: 0.4, min: 0.1, phase: 0.5 });
   }
   // Front wall (behind the camera; closes reflections).
   b.box('hull', [2 * hw, ceil, 1], [0, ceil / 2, front + 0.5], h.wall, { uv: 6 });
+  wallFinish(b, h);
 }
 
-function buildCeiling(b: RoomBuilder, h: HangarLook, style: InteriorStyle): void {
+function buildCeiling(b: RoomBuilder, h: HangarLook): void {
+  if (h.ceiling === 'ducts') {
+    ductCeiling(b, h);
+    return;
+  }
   const { hw, back, front, ceil } = HALL;
   b.box('dark', [2 * hw + 2, 0.6, front - back + 2], [0, ceil + 0.3, (front + back) / 2]);
-  const spare = style.kind === 'barnard-relay';
+  const spare = h.sparseLamps ?? false;
+  const flicker = h.flicker ?? 0;
   let row = 0;
   for (let z = back + 8; z < front; z += 12, row++) {
     if (b.low) {
@@ -271,7 +292,9 @@ function buildCeiling(b: RoomBuilder, h: HangarLook, style: InteriorStyle): void
     for (const x of [-32, -12, 12, 32]) {
       if (spare && (row + Math.abs(x)) % 3 !== 0) continue;
       const pool = Math.abs(x) === 32 ? row % 2 === 1 : row === 1 || row === 2;
-      ceilingLamp(b, [x, ceil - 3.6, z], 5.5, h.lamp, h.lampLevel, pool && (!spare || x === 12));
+      // Run-down stations: some tubes flicker, a few are dead.
+      const state = flicker > 0 ? lampState(b.rand(), flicker) : 'on';
+      ceilingLamp(b, [x, ceil - 3.6, z], 5.5, h.lamp, h.lampLevel, pool && (!spare || x === 12) && state !== 'dead', 0, 0, state);
       b.rod('metal', [x - 2, ceil - 3.4, z], [x - 2, ceil - 2.6, z], 0.05, h.trim, 4);
       b.rod('metal', [x + 2, ceil - 3.4, z], [x + 2, ceil - 2.6, z], 0.05, h.trim, 4);
     }
@@ -394,6 +417,12 @@ function buildMouth(b: RoomBuilder, h: HangarLook, backdrop: Backdrop): void {
       }
       break;
     }
+    case 'scanner':
+    case 'rock':
+    case 'scrap':
+    case 'gantry':
+      extraBay(b, h);
+      break;
     default:
       break;
   }
@@ -467,6 +496,12 @@ function pillar(b: RoomBuilder, h: HangarLook, x: number, z: number): void {
       }
       break;
     }
+    case 'rock':
+    case 'pipes':
+    case 'armour':
+    case 'scrap':
+      extraPillar(b, h, x, z);
+      break;
   }
 }
 
@@ -474,16 +509,7 @@ function pillar(b: RoomBuilder, h: HangarLook, x: number, z: number): void {
  * Areas.
  * ---------------------------------------------------------------------------------------------- */
 
-const CONTAINER_COLORS: Record<string, string[]> = {
-  'earth-port': ['#e8ecf0', '#2f64c8', '#9aa4b0', '#dfe4ea', '#3a78d8'],
-  'mars-depot': ['#a8502a', '#7a4a32', '#c8782e', '#5e4a3c', '#8a3a24'],
-  'proxima-outpost': ['#2e8a78', '#c9d0c6', '#6e7e74', '#3fae6a', '#d8c880'],
-  'barnard-relay': ['#4a4e55', '#5e2a24', '#3a3d42', '#6a6e75'],
-  'sirius-platform': ['#eef1f5', '#c9d0d8', '#9fb4cc', '#e2e6ec'],
-  'eridani-hub': ['#c8782e', '#2e8a8a', '#a8382a', '#d8a832', '#6a3a7a', '#3a78a8'],
-};
-
-function buildDeckDressing(b: RoomBuilder, h: HangarLook, style: InteriorStyle): void {
+function buildDeckDressing(b: RoomBuilder, h: HangarLook): void {
   const { x: px, z: pz } = PAD;
   // Taxi line from the pad to the mouth, and chevrons pointing out.
   for (let z = pz - PAD.moat - 2; z > HALL.back - 1; z -= 2.2) paintStrip(b, 0, z, 0.3, 1.2, h.marking2);
@@ -531,14 +557,17 @@ function buildDeckDressing(b: RoomBuilder, h: HangarLook, style: InteriorStyle):
   // Maintenance arm reaching in over the pad's rear edge.
   toolArm(b, [px - 9.2, 0, pz - 7.2], 0.85, h.machine, h.trim, h.lamp, { scale: 1.5, sparks: false });
   // Maintenance drones around the ship.
-  if (style.kind !== 'barnard-relay') {
+  const drones = h.drones ?? 2;
+  if (drones >= 1) {
     drone(b, [px - 5.5, 5.2, pz + 2.5], h.pillar, h.glow, 0.3);
-    if (!b.low) drone(b, [px + 6, 6.4, pz - 3.5], h.pillar, h.glow, 2.1);
+    if (drones >= 2 && !b.low) drone(b, [px + 6, 6.4, pz - 3.5], h.pillar, h.glow, 2.1);
+    if (drones >= 3) drone(b, [px + 1.5, 7.4, pz + 6.5], h.pillar, h.glow, 3.7);
+    if (drones >= 4 && !b.low) drone(b, [px - 12, 8.6, pz - 12], h.pillar, h.glow, 5.2);
   }
 }
 
-function buildTrader(b: RoomBuilder, h: HangarLook, style: InteriorStyle, active: boolean): void {
-  const cols = CONTAINER_COLORS[style.kind]!;
+function buildTrader(b: RoomBuilder, h: HangarLook, active: boolean): void {
+  const cols = h.containers;
   const stacks = active ? 1 : 0.6;
   // Containers along the right wall (two rows), stacked.
   const rows: [number, number][] = [
@@ -546,8 +575,8 @@ function buildTrader(b: RoomBuilder, h: HangarLook, style: InteriorStyle, active
     [39.9, 0.6],
   ];
   for (const [x, fill] of rows) {
-    // Meridian grows food along this wall instead (see the station extras).
-    if (style.kind === 'proxima-outpost' && x > 42) continue;
+    // Some stations use this wall for other things (hydroponic racks, tanks).
+    if (h.wallStack === false && x > 42) continue;
     for (let z = HALL.back + 4; z < 14; z += 6.4) {
       if (b.rand() > fill * stacks * (0.35 + 0.65 * h.clutter) + 0.15) continue;
       const levels = 1 + Math.floor(b.rand() * (x > 41 ? 3 : 2));
@@ -561,12 +590,17 @@ function buildTrader(b: RoomBuilder, h: HangarLook, style: InteriorStyle, active
     for (let l = 0; l < levels; l++) container(b, [x, l * 2.62, HALL.back + 3.6], b.pick(cols), Math.PI / 2);
   }
   if (!active) return;
-  // Commodity pallets in a painted zone, colour-coded (medical / fabricator parts / deuterium).
-  const kinds: Commodity[] = ['medical', 'parts', 'deuterium'];
-  for (let i = 0; i < 3; i++) {
-    for (let j = 0; j < 3; j++) {
-      if (b.rand() < 0.5 * (1 - h.clutter)) continue;
-      commodityPallet(b, [25.5 + i * 4, 0, -15 + j * 4.2], kinds[i]!, (b.rand() - 0.5) * 0.1, 1 + Math.floor(b.rand() * 2));
+  if (h.goods && h.goods !== 'commodities') {
+    // The station's own goods (ore bins, fuel tanks, produce, samples, munitions...).
+    buildGoods(b, h);
+  } else {
+    // Commodity pallets in a painted zone, colour-coded (medical / fabricator parts / deuterium).
+    const kinds: Commodity[] = ['medical', 'parts', 'deuterium'];
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        if (b.rand() < 0.5 * (1 - h.clutter)) continue;
+        commodityPallet(b, [25.5 + i * 4, 0, -15 + j * 4.2], kinds[i]!, (b.rand() - 0.5) * 0.1, 1 + Math.floor(b.rand() * 2));
+      }
     }
   }
   const zx0 = 22.8;
@@ -603,11 +637,12 @@ function buildTrader(b: RoomBuilder, h: HangarLook, style: InteriorStyle, active
   b.holo('chart', 7, dp, 1.1, 0.7, h.holo, 1.4, desk.ry - 0.3, -0.25);
   // Wall board above the containers.
   b.holo('board', 9, [HALL.hw - 1.2, 11.5, -8], 8, 4.4, h.holo, 1.3, -Math.PI / 2);
-  // Gantry crane over the containers, carrying a load.
+  // Gantry crane over the containers, carrying a load (no room for it under a low duct ceiling).
+  if (h.ceiling === 'ducts') return;
   const craneZ = -4;
   const craneA = { type: 8 as const, pivot: [0, 0, 0] as V3, speed: 0.07, amp: 5, phase: 0.3 };
   const cf = new Frame([31, HALL.ceil - 3.2, craneZ], 0);
-  const big = style.kind === 'mars-depot';
+  const big = h.heavyCrane ?? false;
   b.addMotion('m:metal', new THREE.BoxGeometry(16, big ? 1.6 : 1.1, big ? 1.8 : 1.2), { position: cf.p([0, -0.9, 0]), color: h.hazard[0], a: craneA });
   b.addMotion('m:metal', new THREE.BoxGeometry(2, 1.2, 2.2), { position: cf.p([2.5, -2.1, 0]), color: h.trim, a: craneA });
   for (const dx of [-0.4, 0.4]) {
@@ -616,7 +651,7 @@ function buildTrader(b: RoomBuilder, h: HangarLook, style: InteriorStyle, active
   b.addMotion('m:metal', new THREE.BoxGeometry(2.6, 0.5, 1.2), { position: cf.p([2.5, -11.3, 0]), color: h.trim, a: craneA });
   if (big) {
     const load = new THREE.BoxGeometry(2.45, 2.6, 6.1);
-    b.addMotion('m:plain', load, { position: cf.p([2.5, -12.9, 0]), rotation: [0, Math.PI / 2, 0], color: '#a8502a', a: craneA });
+    b.addMotion('m:plain', load, { position: cf.p([2.5, -12.9, 0]), rotation: [0, Math.PI / 2, 0], color: cols[0]!, a: craneA });
   } else {
     b.addMotion('m:plain', new THREE.BoxGeometry(1.8, 1.4, 1.8), { position: cf.p([2.5, -12.3, 0]), color: b.pick(cols), a: craneA });
   }
@@ -723,29 +758,11 @@ function buildOutfitter(b: RoomBuilder, h: HangarLook, active: boolean): void {
     coil2.rotateX(Math.PI / 2);
     b.add('metal', coil2, { position: [x, 0.34, z], color: h.hazard[0] });
   }
-  // Hoist chain from the rail.
-  b.box('metal', [1.2, 0.8, 1.6], [-38, HALL.ceil - 3.9, 6], h.trim);
-  b.rod('metal', [-38, HALL.ceil - 4.3, 6], [-38, 4.5, 6], 0.06, '#2a2c30', 4);
+  // Hoist chain from the rail (or from the duct ceiling).
+  const hoist = h.ceiling === 'ducts' ? DUCT_CEILING - 1 : HALL.ceil - 3.9;
+  b.box('metal', [1.2, 0.8, 1.6], [-38, hoist, 6], h.trim);
+  b.rod('metal', [-38, hoist - 0.4, 6], [-38, 4.5, 6], 0.06, '#2a2c30', 4);
   b.box('metal', [0.6, 0.4, 0.3], [-38, 4.3, 6], h.hazard[0]);
-}
-
-/** Shelving of leafy greens under alternating green and magenta grow lights. */
-function hydroponicRack(b: RoomBuilder, h: HangarLook, x: number, z: number, ry: number): void {
-  const f = new Frame([x, 0, z], ry);
-  for (let lvl = 0; lvl < 4; lvl++) {
-    const y = 0.6 + lvl * 1.35;
-    fbox(b, f, 'metal', [5.6, 0.1, 1.2], [0, y, 0], h.trim);
-    fbox(b, f, 'hull', [5.4, 0.25, 1.0], [0, y + 0.15, 0], '#3a3028');
-    for (let p = 0; p < (b.low ? 5 : 7); p++) {
-      const leaf = new THREE.IcosahedronGeometry(0.28 + b.rand() * 0.12, 0);
-      b.add('plain', leaf, { position: f.p([-2.4 + p * (4.8 / (b.low ? 4 : 6)), y + 0.5, (b.rand() - 0.5) * 0.3]), color: b.pick(['#3f8a3a', '#5aa83a', '#2e6a32', '#7ab84a']), scale: [1, 0.8 + b.rand() * 0.6, 1] });
-    }
-    fbox(b, f, 'emissive', [5.4, 0.05, 0.2], [0, y + 1.15, 0], lvl % 2 ? '#e070ff' : '#7dffa6', { intensity: 2.2 });
-  }
-  for (const sx of [-2.8, 2.8]) fbox(b, f, 'metal', [0.12, 5.8, 0.12], [sx, 2.9, 0.55], h.trim);
-  b.glow('pool', f.p([0, 3, 0.9]), 6, 6, f.rot(), '#9aff9a', 0.28);
-  b.floorGlow(f.p([0, 0, 1.6])[0], f.p([0, 0, 1.6])[2], 6, 3, '#9aff9a', 0.3, 0.03, ry);
-  b.light({ p: f.p([0, 3, 0.8]), color: '#b07aff', size: 2.2, intensity: 0.18 });
 }
 
 /* ------------------------------------------------------------------------------------------------
@@ -909,14 +926,15 @@ export function buildHangar(
   let bayHash = Math.abs(seed | 0) * 101;
   for (const ch of style.kind) bayHash = (bayHash * 31 + ch.charCodeAt(0)) % 100_003;
   buildPad(b, h, 1 + (bayHash % 24));
-  buildWalls(b, h, style);
-  buildCeiling(b, h, style);
+  buildWalls(b, h);
+  buildCeiling(b, h);
   buildMouth(b, h, backdrop);
   for (const x of [-19, 19]) for (const z of [-22, 2, 26]) pillar(b, h, x, z);
-  buildDeckDressing(b, h, style);
-  buildTrader(b, h, style, hasTrader);
+  buildDeckDressing(b, h);
+  buildTrader(b, h, hasTrader);
   buildOutfitter(b, h, hasOutfitter);
   buildExtras(b, h, style);
+  buildDressing(b, h);
 
   // Starlight spilling in through the mouth: a soft patch on the apron and a faint wash inside.
   const spill = backdrop.starColor.clone().lerp(new THREE.Color(style.outside.spillTint), style.outside.spillMix);
@@ -964,9 +982,9 @@ export function buildHangar(
   jobs.forEach((w, i) => {
     const outfit =
       w.id === 'dealer'
-        ? (style.crowd.find((o) => /Trader|Merchant|Customs/.test(o.label)) ?? pickOutfit(style, i))
+        ? (style.dealer ?? style.crowd.find((o) => /Trader|Merchant|Customs/.test(o.label)) ?? pickOutfit(style, i))
         : w.id === 'mechanic'
-          ? (style.crowd.find((o) => /Mechanic|Engineer|technician/.test(o.label)) ?? pickOutfit(style, i))
+          ? (style.mechanic ?? style.crowd.find((o) => /Mechanic|Engineer|technician/.test(o.label)) ?? pickOutfit(style, i))
           : pickOutfit(style, i + 1);
     const p = addPerson(b, { id: w.id, label: outfit.label, outfit, pos: w.pos, yaw: w.yaw, pose: w.pose, seed: seed * 13 + i * 101 }, style);
     if (w.view) place(w.view, w.id, w.id === 'dealer' ? 'Dealer' : 'Mechanic', p);
@@ -1013,6 +1031,9 @@ export function buildHangar(
   }
 
   const reduced = ctx.reducedMotion;
+  // Worn stations: the main lights stutter now and then (never with reduced motion).
+  const flicker = reduced ? 0 : (h.flicker ?? 0);
+  const keyLevel = key.intensity;
   return {
     builder: b,
     ship,
@@ -1024,7 +1045,23 @@ export function buildHangar(
       ship.object.rotation.z = Math.sin(time * 0.6 + 1) * (reduced ? 0.001 : 0.008);
       ship.object.rotation.x = Math.sin(time * 0.47) * (reduced ? 0.001 : 0.005);
       ship.update?.(dt, time, camera);
+      if (flicker > 0) key.intensity = keyLevel * stutter(time, flicker);
     },
   };
+}
+
+function hashUnit(n: number): number {
+  let x = Math.imul((n | 0) ^ 0x9e3779b9, 0x85ebca6b);
+  x ^= x >>> 13;
+  x = Math.imul(x, 0xc2b2ae35);
+  x ^= x >>> 16;
+  return (x >>> 0) / 4294967296;
+}
+
+/** A failing ballast: steady most of the time, with occasional bursts of quick dips. */
+function stutter(time: number, amount: number): number {
+  if (hashUnit(Math.floor(time * 0.7) + 7919) > amount * 0.6) return 1;
+  const r = hashUnit(Math.floor(time * 11));
+  return r < 0.5 ? 0.3 + r : 1;
 }
 

@@ -8,12 +8,22 @@ import { buildLounge } from './lounge.ts';
 import { createRoomMaterials } from './materials.ts';
 import { createBackdrop } from './space.ts';
 import { STYLES } from './styles.ts';
+import type { InteriorStyle } from './styles.ts';
 import { environmentCube } from './textures.ts';
 import type { RoomHotspot, RoomView, StationInterior, StationInteriorOptions, ViewTransition } from './types.ts';
 
 export type * from './types.ts';
 export { STYLES } from './styles.ts';
 export type { InteriorStyle } from './styles.ts';
+export { generateInteriorStyle } from './stylegen.ts';
+export { STATION_OWNERS, STATION_TYPES } from './look.ts';
+export type { StationLook, StationOwner, StationType } from './look.ts';
+
+function styleOf(opts: StationInteriorOptions): InteriorStyle {
+  if (opts.style) return opts.style;
+  if (opts.station && STYLES[opts.station]) return STYLES[opts.station];
+  throw new Error('createStationInterior: give a hand-built station or a style');
+}
 
 /** Canonical order of the views; 'deck' is always present. */
 export const ROOM_ORDER: readonly RoomView[] = ['deck', 'trader', 'outfitter', 'bar'];
@@ -28,10 +38,10 @@ const tmpCam = new THREE.Vector3();
  * `update(dt)`; call `resize(w, h)` with the canvas CSS size.
  */
 export function createStationInterior(opts: StationInteriorOptions, ctx: ArtContext): StationInterior {
-  const style = STYLES[opts.station];
+  const style = styleOf(opts);
   const rooms = ROOM_ORDER.filter((v) => v === 'deck' || opts.rooms.includes(v));
   const scene = new THREE.Scene();
-  scene.name = `interior:${opts.station}`;
+  scene.name = `interior:${opts.station ?? style.kind}`;
   const camera = new THREE.PerspectiveCamera(40, 16 / 9, 0.2, 2_000_000);
   camera.name = 'interior-camera';
 

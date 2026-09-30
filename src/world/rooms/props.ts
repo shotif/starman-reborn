@@ -370,15 +370,21 @@ export function drone(b: RoomBuilder, pos: V3, body: string, light: string, phas
  * Fixtures.
  * ---------------------------------------------------------------------------------------------- */
 
+/** A lamp that works, stutters (worn tubes), or has died. */
+export type LampState = 'on' | 'flicker' | 'dead';
+
 /** Hanging ceiling lamp bar with its glow and a pool of light on the floor below. */
-export function ceilingLamp(b: RoomBuilder, pos: V3, len: number, color: string, level: number, pool = true, ry = 0, floorY = 0): void {
+export function ceilingLamp(b: RoomBuilder, pos: V3, len: number, color: string, level: number, pool = true, ry = 0, floorY = 0, state: LampState = 'on'): void {
   const f = new Frame(pos, ry);
   fbox(b, f, 'metal', [len + 0.2, 0.35, 0.9], [0, 0.2, 0], '#2a2c30');
-  fbox(b, f, 'emissive', [len, 0.08, 0.6], [0, 0.0, 0], color, { intensity: level });
+  fbox(b, f, 'emissive', [len, 0.08, 0.6], [0, 0.0, 0], color, { intensity: state === 'dead' ? level * 0.05 : level });
+  if (state === 'dead') return;
   const n = Math.max(1, Math.round(len / 2.5));
   for (let i = 0; i < n; i++) {
     const x = (i - (n - 1) / 2) * (len / n);
-    b.light({ p: f.p([x, -0.15, 0]), color, size: 2.4, intensity: 0.55 });
+    // Flickering tubes drop out briefly at uneven rates (two points per lamp beat against each other).
+    const flick = state === 'flicker' ? { blink: 1.3 + i * 0.9 + b.rand() * 0.8, duty: 0.86, min: 0.12, phase: b.rand() } : {};
+    b.light({ p: f.p([x, -0.15, 0]), color, size: 2.4, intensity: 0.55, ...flick });
   }
   if (pool) {
     const h = pos[1] - floorY;

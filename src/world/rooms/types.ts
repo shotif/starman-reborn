@@ -3,6 +3,7 @@ import type { ShipArt } from '../art/ships.ts';
 import type { SkyboxOptions } from '../art/skybox.ts';
 import type { StationKind } from '../art/stations.ts';
 import type { ArtContext } from '../art/types.ts';
+import type { InteriorStyle } from './styles.ts';
 
 /**
  * Contract for procedural station interiors (the 3D places behind the docked menus). Game code
@@ -20,9 +21,26 @@ export type RoomView = 'deck' | 'trader' | 'outfitter' | 'bar';
 /** How the camera gets to a new view: a smooth move, or a cut the UI covers with a quick fade. */
 export type ViewTransition = 'move' | 'cut';
 
-export interface StationInteriorOptions {
-  /** Which station: drives palette, materials, props and lighting mood. */
-  station: StationKind;
+/**
+ * Options for `createStationInterior`. Give a hand-built `station` (its authored style), or a
+ * `style` for any other station (usually `generateInteriorStyle(look)`); a style wins over the
+ * station's own.
+ */
+export type StationInteriorOptions = StationInteriorBase & (
+  | {
+      /** Which hand-built station: its authored style drives palette, materials, props and lighting mood. */
+      station: StationKind;
+      /** Art direction to build instead of the station's authored one. */
+      style?: InteriorStyle;
+    }
+  | {
+      station?: StationKind;
+      /** Art direction for the rooms, e.g. `generateInteriorStyle(look)` for a generated station. */
+      style: InteriorStyle;
+    }
+);
+
+export interface StationInteriorBase {
   /** The local sky seen through bay doors and windows. */
   skybox: SkyboxOptions;
   /** Colour of the local star's light spilling in through openings. */
