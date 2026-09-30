@@ -440,6 +440,7 @@ export class Game {
       if (!ok) return;
     }
     this.state = createNewGame();
+    this.minedRocks.clear();
     await this.saves.save(this.state);
     this.enterDocked('earth-port', { intro: true, room: 'bar', window: 'jobs' });
   }
@@ -456,6 +457,8 @@ export class Game {
   /** Enters a game where it was saved: docked, or in flight at the saved pose (Continue, and loaded saves). */
   private resume(state: GameState, message = 'Progress restored'): void {
     this.state = state;
+    // Rocks cut in another game are whole in this one.
+    this.minedRocks.clear();
     const loc = state.location;
     if (loc.dockedAt) this.enterDocked(loc.dockedAt, { titleCard: true });
     else if (loc.flight) {

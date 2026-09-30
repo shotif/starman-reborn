@@ -24,7 +24,7 @@ import { LAW } from '../content/law/rules.ts';
 import type { EscortSetup } from '../economy/jobs.ts';
 import type { Lingering } from '../app/state.ts';
 import { DENS } from '../content/dens/rules.ts';
-import { MINING } from '../content/mining/rules.ts';
+import { MINED_GOODS, MINING } from '../content/mining/rules.ts';
 import { cutRock, minerHunt, securityOf, stowUnit } from '../economy/mining.ts';
 import { itemsThatFit } from '../economy/cargo.ts';
 import { COMBAT } from '../content/combat/rules.ts';
@@ -229,8 +229,6 @@ interface LootPod {
   gear?: string;
   /** The item of a recovery contract (its job id). */
   recover?: string;
-  /** Cut by the player's mining laser with the hold full. */
-  mined?: boolean;
   life: number;
   target: Target;
 }
@@ -502,7 +500,13 @@ export class FlightSession {
     this.applySystems();
     this.projectileRenderer = createProjectileRenderer(320, opts.ctx);
     this.system.scene.add(this.projectileRenderer.object);
-    this.mining = new MiningField(this.system.scene, this.system.def.belts, opts.ctx, opts.minedRocks);
+    // Rocks keep clear of stations (the Eridani Mining Hub sits in its belt), planets and stars.
+    const clear = MINING.rocks.clearance;
+    this.mining = new MiningField(this.system.scene, this.system.def.belts, opts.ctx, opts.minedRocks, [
+      ...this.system.docks.map((d) => ({ center: d.def.position, radius: d.radius + clear })),
+      ...this.system.planets.map((p) => ({ center: p.def.position, radius: p.def.radius + clear })),
+      ...this.system.stars.map((s) => ({ center: s.def.position, radius: s.def.radius * 1.3 + clear })),
+    ]);
     this.beamArt = createMiningBeam(opts.ctx);
     this.system.scene.add(this.beamArt.object);
     this.streaks = createSpeedStreaks(opts.ctx);
@@ -1613,7 +1617,7 @@ export class FlightSession {
     this.loot.splice(i, 1);
   }
 
-  private spawnLoot(position: THREE.Vector3, value: number, extra: { cargo?: { commodity: CommodityId; qty: number }; recover?: { jobId: string; item: string }; gear?: string; mined?: boolean } = {}): void {
+  private spawnLoot(position: THREE.Vector3, value: number, extra: { cargo?: { commodity: CommodityId; qty: number }; recover?: { jobId: string; item: string }; gear?: string } = {}): void {
     const art = createCargoPod(this.ctx);
     const pos = position.clone();
     art.object.position.copy(pos);
@@ -1628,7 +1632,6 @@ export class FlightSession {
       ...(cargo ? { cargo } : {}),
       ...(extra.gear ? { gear: extra.gear } : {}),
       ...(extra.recover ? { recover: extra.recover.jobId } : {}),
-      ...(extra.mined ? { mined: true } : {}),
       life: extra.recover ? Infinity : 240,
       target: {
         id,
@@ -3136,6 +3139,11 @@ export class FlightSession {
     return this.mining.bandDistance(t.id, this.player.position) ?? Math.max(0, t.position.distanceTo(this.player.position) - t.radius);
   }
 
+  /** The distance the HUD shows (`centre`: to the target's centre): to a body's surface or a belt's band, else to its centre. */
+  private shownDistance(t: Target, centre: number): number {
+    return t.kind === 'belt' || surfaced(t.kind) ? this.surfaceDistance(t) : centre;
+  }
+
   /** A mining laser is fitted and the selected rock is within the beam's reach. */
   private miningReady(): boolean {
     if (this.perf.miningRate <= 0 || !this.alive || this.busy) return false;
@@ -3210,17 +3218,20 @@ export class FlightSession {
     if (message) this.callbacks.onMessage(message, tone);
   }
 
-  /** Cargo pods of cut rock adrift. */
+  /**
+   * Cargo pods of cut rock adrift: any pod of ore, ice or volatiles (nothing else carries them in a
+   * pod), including those the player left here last time.
+   */
   private minedPods(): number {
     let n = 0;
-    for (const l of this.loot) if (l.mined && l.target.alive) n++;
+    for (const l of this.loot) if (l.target.alive && l.cargo && (MINED_GOODS as readonly CommodityId[]).includes(l.cargo.commodity)) n++;
     return n;
   }
 
-  /** Room for what the beam cuts from this rock: in the hold, or in one more pod. */
+  /** Room for whatever the beam cuts from this rock next: one more pod, or room in the hold for each of its goods. */
   private roomForMining(rock: MinableRock): boolean {
     if (this.minedPods() < MINING.pods) return true;
-    return (Object.keys(rock.spec.composition) as CommodityId[]).some((g) => itemsThatFit(this.state.ship.cargo, g, this.perf.cargo) > 0);
+    return (Object.keys(rock.spec.composition) as CommodityId[]).every((g) => itemsThatFit(this.state.ship.cargo, g, this.perf.cargo) > 0);
   }
 
   private readonly beamFrom = new THREE.Vector3();
@@ -3248,13 +3259,14 @@ export class FlightSession {
         b.cut++;
         this.sfx('pickup', 0.25);
         this.callbacks.onMined?.(rock.spec.beltId, g, 'hold');
-      } else if (this.minedPods() < MINING.pods) {
+      } else {
+        // Nothing cut is ever thrown away: the beam stops before the pods run out (a frame's cut may take one more).
         b.pods++;
         if (!this.holdFullSaid) {
           this.holdFullSaid = true;
           this.callbacks.onMessage('Hold full: what the beam cuts now goes out in cargo pods. Sell, then come back for them.', 'info');
         }
-        this.spawnLoot(surface.clone().addScaledVector(out, 14), 0, { cargo: { commodity: g, qty: 1 }, mined: true });
+        this.spawnLoot(surface.clone().addScaledVector(out, 14), 0, { cargo: { commodity: g, qty: 1 } });
         this.callbacks.onMined?.(rock.spec.beltId, g, 'pod');
       }
     }
@@ -3463,7 +3475,7 @@ export class FlightSession {
         name: sel.name,
         kind: sel.kind,
         subtitle: sel.subtitle,
-        distance: sel.kind === 'belt' ? this.surfaceDistance(sel) : Math.max(0, dist - (surfaced(sel.kind) ? sel.radius : 0)),
+        distance: this.shownDistance(sel, dist),
         hostile: !!sel.hostile,
         ...(sel.faction ? { faction: sel.faction } : {}),
         dataClass: sel.dataClass,
@@ -3507,7 +3519,7 @@ export class FlightSession {
         y: pr.y,
         onScreen: pr.onScreen,
         edgeAngle: pr.angle,
-        distance: t.kind === 'belt' ? this.surfaceDistance(t) : Math.max(0, dist - (surfaced(t.kind) ? t.radius : 0)),
+        distance: this.shownDistance(t, dist),
         hostile: !!t.hostile,
         ...(t.faction ? { faction: t.faction } : {}),
         selected,

@@ -42,6 +42,8 @@ export const MINING = {
     regrowSeconds: 2_700,
     /** Rocks appear when the player is within this distance of the belt, and go when further. */
     spawnReach: 14_000,
+    /** No minable rock within this distance of a station's, planet's or star's surface (metres). */
+    clearance: 1_500,
     /** Where in the ring's width and thickness rocks sit (fractions of the half width and half thickness). */
     spread: { radial: 0.35, height: 0.3 },
   },
@@ -69,7 +71,7 @@ export function beltGoods(kind: BeltKind): MinedGood[] {
   return MINED_GOODS.filter((g) => COMPOSITION[kind][g] !== undefined);
 }
 
-/** Security bands shared with the contract notes and the trade computer. */
+/** Security bands, the same the contract notes and the trade computer use (lawless below 0.35, thinly patrolled below 0.6). */
 export function securityBand(security: number): 'lawless' | 'thin' | 'patrolled' {
   return security < 0.35 ? 'lawless' : security < 0.6 ? 'thin' : 'patrolled';
 }

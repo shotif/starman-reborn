@@ -54,20 +54,33 @@ function lookOf(spec: RockSpec): RockLook {
 
 const key = (spec: RockSpec) => `${spec.id}@${spec.generation}`;
 
+/** Rocks the ledger remembers at most (the oldest cut are forgotten first). */
+const LEDGER_MAX = 400;
+
+/** A sphere no rock may sit in: a station, planet or star with room to spare. */
+export interface KeepClear {
+  center: THREE.Vector3;
+  radius: number;
+}
+
 export class MiningField {
   readonly rings: BeltRing[] = [];
   private readonly rocks = new Map<string, MinableRock>();
   private readonly scene: THREE.Scene;
   private readonly ctx: ArtContext;
   private readonly ledger: MiningLedger;
+  private readonly keepClear: readonly KeepClear[];
   private readonly scanned = new Set<string>();
+  /** The stretches of each ring whose rocks are out, by ring. */
+  private readonly active = new Map<string, Set<number>>();
   private refreshIn = 0;
   private time = 0;
 
-  constructor(scene: THREE.Scene, belts: readonly SceneBeltDef[], ctx: ArtContext, ledger: MiningLedger = new Map()) {
+  constructor(scene: THREE.Scene, belts: readonly SceneBeltDef[], ctx: ArtContext, ledger: MiningLedger = new Map(), keepClear: readonly KeepClear[] = []) {
     this.scene = scene;
     this.ctx = ctx;
     this.ledger = ledger;
+    this.keepClear = keepClear;
     const seen = new Map<string, number>();
     for (const def of belts) {
       const belt = findBelt(def.beltId);
@@ -136,7 +149,8 @@ export class MiningField {
   /**
    * Moves each belt target to the ring's point nearest the player, and (twice a second) brings in
    * the rocks of the stretches nearest the player, lets go of those left behind (never `keep`, the
-   * rock being mined) and regrows spent rocks whose time has come.
+   * rock being mined) and regrows spent rocks whose time has come. A stretch stays out while the
+   * player is over it or next to it, so hovering at a boundary does not bring rocks in and out.
    */
   update(dt: number, player: THREE.Vector3, clock: number, camera: THREE.Camera, keep: string | null = null): void {
     this.time += dt;
@@ -151,20 +165,34 @@ export class MiningField {
     this.refreshIn = 0.5;
     const wanted = new Set<string>();
     for (const ring of this.rings) {
-      if (this.distanceToBand(ring, player) > MINING.rocks.spawnReach) continue;
+      if (this.distanceToBand(ring, player) > MINING.rocks.spawnReach) {
+        this.active.delete(ring.def.id);
+        continue;
+      }
       const c = ring.def.center;
+      const n = ring.sectors;
       const turn = (Math.atan2(player.z - c.z, player.x - c.x) / (2 * Math.PI) + 1) % 1;
-      const s = turn * ring.sectors;
-      const here = Math.floor(s) % ring.sectors;
-      const next = s - Math.floor(s) < 0.5 ? (here - 1 + ring.sectors) % ring.sectors : (here + 1) % ring.sectors;
-      for (const sector of [here, next]) {
+      const s = turn * n;
+      const here = Math.floor(s) % n;
+      const next = s - Math.floor(s) < 0.5 ? (here - 1 + n) % n : (here + 1) % n;
+      const apart = (a: number, b: number) => Math.min((a - b + n) % n, (b - a + n) % n);
+      const sectors = new Set([here, next, ...[...(this.active.get(ring.def.id) ?? [])].filter((x) => apart(x, here) <= 1)]);
+      this.active.set(ring.def.id, sectors);
+      for (const sector of sectors) {
         for (let i = 0; i < MINING.rocks.perSector; i++) {
           const spec = rockSpec(ring.def.id, ring.belt, sector, i, clock);
           const id = `rock:${spec.id}`;
-          wanted.add(id);
           const live = this.rocks.get(id);
-          if (!live) this.spawn(ring, spec);
-          else if (live.spec.generation !== spec.generation) this.regrow(live, spec);
+          if (live) {
+            wanted.add(id);
+            if (live.spec.generation !== spec.generation) this.regrow(live, spec);
+            continue;
+          }
+          const at = this.placeOf(ring, spec);
+          // Never in a station's, planet's or star's way.
+          if (this.keepClear.some((k) => k.center.distanceTo(at) < k.radius + spec.radius)) continue;
+          wanted.add(id);
+          this.spawn(ring, spec, at);
         }
       }
     }
@@ -178,9 +206,12 @@ export class MiningField {
     this.describe(rock);
   }
 
-  /** After the beam has cut: remembers what is left, and marks the rock spent when it is. */
+  /** After the beam has cut: remembers what is left (the latest cut last), and marks the rock spent when it is. */
   recordCut(rock: MinableRock): void {
-    this.ledger.set(key(rock.spec), Math.round(rock.left.left * 1000) / 1000);
+    const k = key(rock.spec);
+    this.ledger.delete(k);
+    this.ledger.set(k, Math.round(rock.left.left * 1000) / 1000);
+    if (this.ledger.size > LEDGER_MAX) this.ledger.delete(this.ledger.keys().next().value!);
     if (rock.left.left <= 0 && rock.target.alive) {
       rock.target.alive = false;
       rock.art.setSpent(true);
@@ -195,16 +226,15 @@ export class MiningField {
       .join(' · ');
   }
 
-  /** The belt ring a rock or belt target belongs to. */
-  ringOf(targetId: string): BeltRing | undefined {
-    return this.rocks.get(targetId)?.ring ?? this.rings.find((r) => r.target.id === targetId);
-  }
-
-  private spawn(ring: BeltRing, spec: RockSpec): void {
+  /** Where a rock sits in its ring. */
+  private placeOf(ring: BeltRing, spec: RockSpec): THREE.Vector3 {
     const c = ring.def.center;
     const angle = ((spec.sector + spec.u) / ring.sectors) * Math.PI * 2;
     const r = ring.mid + spec.radial * ring.halfWidth;
-    const position = new THREE.Vector3(c.x + Math.cos(angle) * r, c.y + (spec.height * ring.def.thickness) / 2, c.z + Math.sin(angle) * r);
+    return new THREE.Vector3(c.x + Math.cos(angle) * r, c.y + (spec.height * ring.def.thickness) / 2, c.z + Math.sin(angle) * r);
+  }
+
+  private spawn(ring: BeltRing, spec: RockSpec, position: THREE.Vector3 = this.placeOf(ring, spec)): void {
     const art = createMinableRock(hashString(spec.id), spec.radius, lookOf(spec), this.ctx);
     art.object.position.copy(position);
     this.scene.add(art.object);

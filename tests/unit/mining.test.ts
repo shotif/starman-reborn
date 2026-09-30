@@ -398,6 +398,25 @@ describe('mining claims', () => {
     expect(state.ship.cargo[mine.commodity]).toBeUndefined();
     expect(state.jobs[job.id]!.status).toBe('complete');
   });
+
+  it('count each unit cut for one claim only: the claim taken first fills first', () => {
+    const { job } = allClaims().find(({ job }) => (job.objectives[0] as { beltId: string }).beltId === 'sol-main-belt')!;
+    const mine = job.objectives[0] as Extract<JobDef['objectives'][number], { kind: 'mine' }>;
+    const state = createNewGame(4);
+    state.location = { ...state.location, systemId: 'sol', dockedAt: null };
+    // Two claims on the same belt and good, taken one after the other.
+    for (const [id, at] of [['c.test.second', 20], ['c.test.first', 10]] as const) {
+      state.contracts[id] = { ...structuredClone(job), id };
+      state.jobs[id] = { status: 'active', objectiveIndex: 0, acceptedAt: at };
+    }
+    for (let i = 0; i < mine.qty; i++) countMined(state, 'sol-main-belt', mine.commodity);
+    expect(state.jobs['c.test.first']!.mined).toBe(mine.qty);
+    expect(state.jobs['c.test.second']!.mined).toBeUndefined();
+    expect(currentObjective(state, 'c.test.first')?.kind).toBe('deliver');
+    expect(currentObjective(state, 'c.test.second')?.kind).toBe('mine');
+    countMined(state, 'sol-main-belt', mine.commodity, 2);
+    expect(state.jobs['c.test.second']!.mined).toBe(Math.min(2, mine.qty));
+  });
 });
 
 // ---------------------------------------------------------------- in flight
@@ -428,7 +447,7 @@ const QUIET: TrafficPlan = { traders: 0, traderInterval: [60, 60], patrolWings: 
 const LASER = 'gear.mining-laser.1.eridani';
 const PROSPECTOR = 'gear.prospector.1.eridani';
 
-function flightIn(systemId: SystemId, setup: (s: GameState) => void = () => {}, ledger?: MiningLedger, clock = 0) {
+function flightIn(systemId: SystemId, setup: (s: GameState) => void = () => {}, ledger?: MiningLedger, clock = 0, extra: Partial<TrafficSetup> = {}) {
   const scene = new SystemScene(sceneDefFor(systemId), { quality: 'low', reducedMotion: true });
   const state = createNewGame(11);
   state.location = { systemId, dockedAt: null, flight: null, lastDockId: state.location.lastDockId };
@@ -452,7 +471,7 @@ function flightIn(systemId: SystemId, setup: (s: GameState) => void = () => {}, 
     onMessage: (text) => log.push(text),
   };
   const audio = { play() {}, setCombatIntensity() {}, setEngine() {} } as unknown as AudioEngine;
-  const traffic: TrafficSetup = { plan: QUIET, owner: null };
+  const traffic: TrafficSetup = { plan: QUIET, owner: null, ...extra };
   const flight = new FlightSession({
     system: scene,
     camera: new THREE.PerspectiveCamera(),
@@ -605,23 +624,44 @@ describe('mining in flight', () => {
     expect(read).toBeGreaterThan(plain);
   });
 
-  it('fills the hold, then releases cargo pods, and stops when the hold and the pods are full', () => {
-    const f = flightIn('sol', withLaser());
-    f.atRock('belt:sol-main-belt');
-    const room = cargoCapacity(f.state.ship);
-    f.run(0.1, ['mine']);
-    expect(f.run(400, [], () => f.flight.debugMining().beam === null)).toBe(true);
-    expect(cargoUsed(f.state.ship.cargo)).toBeGreaterThan(room - 3);
+  it('fills the hold, then releases cargo pods, and stops when the hold and the pods are full, losing nothing', () => {
+    // Main-belt rocks (ore and ice, 3 hold units each) and Kuiper rocks (ice 3, volatiles 2).
+    for (const belt of ['belt:sol-main-belt', 'belt:sol-kuiper-belt']) {
+      const f = flightIn('sol', withLaser());
+      f.atRock(belt);
+      const room = cargoCapacity(f.state.ship);
+      f.run(0.1, ['mine']);
+      expect(f.run(600, [], () => f.flight.debugMining().beam === null), belt).toBe(true);
+      expect(cargoUsed(f.state.ship.cargo)).toBeGreaterThan(room - 3);
+      expect(f.flight.debugMining().pods).toBeGreaterThanOrEqual(MINING.pods);
+      const pods = f.flight.allTargets().filter((t) => t.kind === 'loot');
+      expect(pods.every((p) => p.name === 'Cargo pod')).toBe(true);
+      // Every whole unit cut is in the hold or in a pod.
+      const inHold = Object.values(f.state.ship.cargo).reduce((a, b) => a + (b ?? 0), 0);
+      expect(inHold + pods.length, belt).toBe(f.mined.length);
+      expect(f.mined.filter(([, , into]) => into === 'pod')).toHaveLength(pods.length);
+      expect(f.log.some((m) => m.startsWith('Hold full'))).toBe(true);
+      expect(f.log.at(-1)).toMatch(/the hold is full and 6 pods are adrift/);
+      // The pods wait: the tractor does not pull in what the hold cannot take.
+      f.run(10);
+      expect(f.flight.allTargets().filter((t) => t.kind === 'loot')).toHaveLength(pods.length);
+    }
+  });
+
+  it('counts pods of cut rock left adrift last time, and keeps rocks clear of stations', () => {
+    // Pods left adrift come back a couple of seconds into the next flight, and still count.
+    const pods = Array.from({ length: MINING.pods }, (_, i) => ({ position: [30_000 + i * 30, 0, 0] as [number, number, number], value: 0, cargo: { commodity: 'ore' as const, qty: 1 } }));
+    const f = flightIn('sol', withLaser(), undefined, 0, { lingering: { packs: [], pods } });
+    f.run(3);
     expect(f.flight.debugMining().pods).toBe(MINING.pods);
-    const pods = f.flight.allTargets().filter((t) => t.kind === 'loot');
-    expect(pods).toHaveLength(MINING.pods);
-    expect(pods.every((p) => p.name === 'Cargo pod')).toBe(true);
-    expect(f.mined.filter(([, , into]) => into === 'pod')).toHaveLength(MINING.pods);
-    expect(f.log.some((m) => m.startsWith('Hold full'))).toBe(true);
-    expect(f.log.at(-1)).toMatch(/the hold is full and 6 pods are adrift/);
-    // The pods wait: the tractor does not pull in what the hold cannot take.
-    f.run(10);
-    expect(f.flight.allTargets().filter((t) => t.kind === 'loot')).toHaveLength(MINING.pods);
+    // The Eridani Mining Hub sits in its belt: no rock within 1.5 km of it.
+    const e = flightIn('epsilon-eridani', withLaser());
+    expect(e.flight.placeNear('station:eridani-hub', 400)).toBe(true);
+    e.run(0.6);
+    const hub = e.flight.allTargets().find((t) => t.id === 'station:eridani-hub')!;
+    const rocks = e.flight.allTargets().filter((t) => t.kind === 'rock');
+    expect(rocks.length).toBeGreaterThan(0);
+    for (const r of rocks) expect(r.position.distanceTo(hub.position) - r.radius - hub.radius, r.id).toBeGreaterThanOrEqual(MINING.rocks.clearance);
   });
 
   it('spends a rock, which grows back in its own time (the cut is remembered between flights)', () => {

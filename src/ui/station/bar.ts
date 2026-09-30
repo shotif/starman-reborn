@@ -1,4 +1,4 @@
-import { getBelt, getLocation, getPlanet, getSystem, WORLD } from '../../data/systems.ts';
+import { findBelt, getLocation, getPlanet, getSystem, WORLD } from '../../data/systems.ts';
 import { CONTRACTS, type ContractKind } from '../../content/contracts/rules.ts';
 import { COMMODITIES } from '../../economy/commodities.ts';
 import { welcomeText } from '../../economy/dockText.ts';
@@ -199,7 +199,7 @@ function whereTo(job: JobDef): string {
   }
   if (o?.kind === 'escort') return `to ${getLocation(o.locationId).name}, this system`;
   if (o?.kind === 'piracy') return `in ${getSystem(o.systemId).displayName}`;
-  if (o?.kind === 'mine') return `in the ${getBelt(o.beltId).name}, ${getSystem(o.systemId).displayName}`;
+  if (o?.kind === 'mine') return `in the ${findBelt(o.beltId)?.name ?? 'belt'}, ${getSystem(o.systemId).displayName}`;
   const near = o?.kind === 'bounty' || o?.kind === 'recover';
   const loc = getLocation(near ? o.locationId : job.destinationLocationId);
   return `${near ? 'near' : 'to'} ${loc.name}, ${getSystem(loc.systemId).displayName}`;

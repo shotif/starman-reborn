@@ -706,17 +706,26 @@ export function beltTargetId(beltId: string): string {
   return `belt:${beltId}`;
 }
 
-/** The mining laser cut `qty` units of a good in a belt: count them for claims on that belt and good (docs/PROCGEN.md §19). */
+/**
+ * The mining laser cut `qty` units of a good in a belt: they count for claims on that belt and good
+ * (docs/PROCGEN.md §19), each unit for one claim only, the claim taken first filled first.
+ */
 export function countMined(state: GameState, beltId: string, commodity: CommodityId, qty = 1): JobEvent[] {
-  let counted = false;
-  for (const jobId of activeJobIds(state)) {
-    const o = currentObjective(state, jobId);
-    if (o?.kind !== 'mine' || o.beltId !== beltId || o.commodity !== commodity) continue;
-    const p = state.jobs[jobId]!;
-    p.mined = Math.min(o.qty, (p.mined ?? 0) + qty);
-    counted = true;
+  const claims = activeJobIds(state)
+    .flatMap((id) => {
+      const o = currentObjective(state, id);
+      return o?.kind === 'mine' && o.beltId === beltId && o.commodity === commodity ? [{ id, o, p: state.jobs[id]! }] : [];
+    })
+    .sort((a, b) => a.p.acceptedAt - b.p.acceptedAt || a.id.localeCompare(b.id));
+  let left = qty;
+  for (const c of claims) {
+    const take = Math.min(left, c.o.qty - (c.p.mined ?? 0));
+    if (take <= 0) continue;
+    c.p.mined = (c.p.mined ?? 0) + take;
+    left -= take;
+    if (left <= 0) break;
   }
-  return counted ? advanceJobs(state, { dockedAt: state.location.dockedAt, systemId: state.location.systemId }) : [];
+  return left < qty ? advanceJobs(state, { dockedAt: state.location.dockedAt, systemId: state.location.systemId }) : [];
 }
 
 /** A lawful hauler went down to the player's guns: count it for piracy work in that system. */
