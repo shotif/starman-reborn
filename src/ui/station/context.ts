@@ -9,6 +9,8 @@ export interface StationContext {
   locationId: string;
   /** Persist after any change (also re-evaluates contract objectives). */
   save(): void;
+  /** The player bought a different ship (the hangar shows the new one). */
+  shipChanged(): void;
   sfx(id: SfxId): void;
   launch(): void;
   openMap(): void;

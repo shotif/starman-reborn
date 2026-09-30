@@ -26,7 +26,7 @@ import {
 import type { Commodity } from './props.ts';
 import type { Backdrop } from './space.ts';
 import type { HangarLook, InteriorStyle, Outfit } from './styles.ts';
-import type { RoomView } from './types.ts';
+import type { RoomView, StationInteriorOptions } from './types.ts';
 
 /**
  * The hangar complex: one big hall open to space at the back (the bay mouth), with the player's
@@ -38,6 +38,8 @@ export const HALL = { hw: 46, back: -30, front: 46, ceil: 25, wall: 4 };
 export const PAD = { x: 0, z: -6, r: 8, moat: 10.4, depth: 4.5 };
 const SHIP_YAW = (Math.PI * 5) / 6;
 const SHIP_Y = 2.35;
+/** Longest ship the pad shows at full size (metres). */
+const SHIP_FIT_LENGTH = 17;
 
 export interface HangarBuild {
   readonly builder: RoomBuilder;
@@ -889,7 +891,14 @@ function shotsFor(style: InteriorStyle): Partial<Record<RoomView, ViewShots>> {
   };
 }
 
-export function buildHangar(ctx: ArtContext, style: InteriorStyle, rooms: readonly RoomView[], seed: number, backdrop: Backdrop): HangarBuild {
+export function buildHangar(
+  ctx: ArtContext,
+  style: InteriorStyle,
+  rooms: readonly RoomView[],
+  seed: number,
+  backdrop: Backdrop,
+  makeShip: StationInteriorOptions['ship'] = createPlayerShip,
+): HangarBuild {
   const h = style.hangar;
   const b = new RoomBuilder('hangar', seed * 97 + 13, ctx);
   const hasTrader = rooms.includes('trader');
@@ -963,8 +972,10 @@ export function buildHangar(ctx: ArtContext, style: InteriorStyle, rooms: readon
     if (w.view) place(w.view, w.id, w.id === 'dealer' ? 'Dealer' : 'Mechanic', p);
   });
 
-  // Player ship hovering over the pad, engines idling.
-  const ship = createPlayerShip(ctx);
+  // Player ship hovering over the pad, engines idling. Big hulls are shown scaled to fit the pad.
+  const ship = makeShip(ctx);
+  const fit = Math.min(1, SHIP_FIT_LENGTH / (ship.length ?? SHIP_FIT_LENGTH));
+  ship.object.scale.setScalar(fit);
   ship.object.position.set(PAD.x, SHIP_Y, PAD.z);
   ship.object.rotation.y = SHIP_YAW;
   ship.setThrottle(0);

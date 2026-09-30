@@ -128,5 +128,6 @@ async function confirmShip(ctx: StationContext, o: ShipOffer, refresh: Refresh):
   ctx.sfx(r.ok ? 'ui-confirm' : 'ui-error');
   toast(r.message, r.ok ? 'good' : 'bad');
   ctx.save();
+  if (r.ok) ctx.shipChanged();
   refresh();
 }

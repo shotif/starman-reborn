@@ -40,8 +40,6 @@ This is an honest list of what the prototype does not do yet, or what has not be
   economy is fixed-price, not dynamic.
 - One raider type and one scripted ambush. Other systems are peaceful apart from practice drones in
   Sol.
-- Every ship model still flies the courier's 3D model until the procedural ship models land;
-  their stats, mounts and prices already differ.
 - No subsystem damage, fleet battles, multiplayer, cloud saves or cross-device sync (out of scope
   per the spec).
 - Solar System planet positions are schematic and do not follow an ephemeris.

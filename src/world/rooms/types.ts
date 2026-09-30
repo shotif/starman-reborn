@@ -1,4 +1,5 @@
 import type * as THREE from 'three';
+import type { ShipArt } from '../art/ships.ts';
 import type { SkyboxOptions } from '../art/skybox.ts';
 import type { StationKind } from '../art/stations.ts';
 import type { ArtContext } from '../art/types.ts';
@@ -30,6 +31,11 @@ export interface StationInteriorOptions {
   seed: number;
   /** Rooms this station offers; views not listed may be omitted from the scene. */
   rooms: readonly RoomView[];
+  /**
+   * Builds the player's ship shown on the pad (default: the starting courier). Ships longer than
+   * the pad are shown scaled down to fit.
+   */
+  ship?: (ctx: ArtContext) => ShipArt & { readonly length?: number };
 }
 
 /** A tappable thing in a room (e.g. a person in the bar), in CSS pixels for the current frame. */

@@ -15,6 +15,7 @@ import type { DamageType } from '../content/types.ts';
 import type { ShipPerformance } from '../content/loadout.ts';
 import { FACTIONS } from '../economy/factions.ts';
 import { REPAIR_KIT } from '../economy/equipment.ts';
+import { shipModel } from '../content/catalog.ts';
 import { activeLauncher, fittedGuns, gunSummary, performanceOf, roundsLabel } from '../economy/loadout.ts';
 import { aimErrors, flyTo, steerToward } from '../flight/autopilot.ts';
 import { ChaseCamera } from '../flight/ChaseCamera.ts';
@@ -34,7 +35,8 @@ import {
   type SpeedStreaksArt,
   type TransientEffect,
 } from './art/effects.ts';
-import { createPirateShip, createPlayerShip, type ShipArt } from './art/ships.ts';
+import { clearShipArtCache, createCatalogShipArt } from './art/shipgen/index.ts';
+import type { ShipArt } from './art/ships.ts';
 import type { ArtContext, ArtObject } from './art/types.ts';
 import { seededRandom } from './art/util.ts';
 import type { EncounterDef } from './sceneTypes.ts';
@@ -122,6 +124,10 @@ const DEFAULT_SCAN_RANGE = 9_000;
 const HOSTILE_RADIUS = 3_500;
 const CONVERGENCE = 700;
 const EXOPLANET_IDS = new Set(EXOPLANETS.planets.map((p) => p.id));
+/** Hollow Wake raiders fly Wake Salvage light fighters. */
+const RAIDER_MODEL_ID = 'ship.light-fighter.1.wake';
+/** Nose-to-tail length the chase camera offset was tuned for. */
+const CHASE_REFERENCE_LENGTH = 14;
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
 
 /** Bolt look for a player gun: pulse cannons brighten from class 3 up. */
@@ -220,8 +226,11 @@ export class FlightSession {
 
     this.perf = performanceOf(opts.state.ship);
     this.player = new ShipBody(this.perf.flight);
-    this.playerArt = createPlayerShip(opts.ctx);
-    this.system.scene.add(this.playerArt.object);
+    const art = createCatalogShipArt(shipModel(opts.state.ship.model), opts.ctx);
+    this.playerArt = art;
+    this.system.scene.add(art.object);
+    // Frame bigger hulls from further back.
+    this.chase.offset.multiplyScalar(THREE.MathUtils.clamp(art.length / CHASE_REFERENCE_LENGTH, 0.85, 1.9));
     const shield = this.perf.shield;
     this.playerDurability = {
       hull: Math.min(opts.state.ship.hull, this.perf.hullMax),
@@ -1471,7 +1480,7 @@ export class FlightSession {
       .addScaledVector(right, (this.rand() - 0.5) * 500);
     body.lookAlong(this.tmp.copy(this.player.position).sub(body.position).normalize());
     body.velocity.copy(body.forward(this.tmp)).multiplyScalar(60);
-    const art = createPirateShip(this.ctx);
+    const art = createCatalogShipArt(shipModel(RAIDER_MODEL_ID), this.ctx);
     this.system.scene.add(art.object);
     const id = `raider-${def.id}`;
     const faction: FactionId = 'hollow-wake';
@@ -1765,6 +1774,8 @@ export class FlightSession {
     this.projectileRenderer.dispose();
     this.system.scene.remove(this.playerArt.object);
     this.playerArt.dispose();
+    // Ship models no ship uses any more (the next dock or launch rebuilds what it needs).
+    clearShipArtCache();
     this.projectiles.clear();
   }
 }

@@ -60,6 +60,28 @@ test.describe('platform behaviour', () => {
     expect(await autopilot()).toBe('none');
   });
 
+  test('buys a ship at the shipyard: it waits on the pad and flies with its own loadout', async ({ page }) => {
+    await openFresh(page);
+    await press(page, 'title-play');
+    await press(page, 'intro-ok');
+    await press(page, 'room-deck');
+    await api(page, 'setCredits', 20_000);
+    await press(page, 'station-ships');
+    await press(page, 'buy-ship-ship.freighter.2.halden');
+    await press(page, 'ship-confirm');
+    const s = await api<{ credits: number; ship: { model: string; ammo: Record<string, number> } }>(page, 'state');
+    expect(s.ship.model).toBe('ship.freighter.2.halden');
+    expect(s.ship.ammo['launcher-1']).toBe(6);
+    expect(s.credits).toBeLessThan(20_000);
+    await expect(page.getByTestId('ship-status')).toContainText('Halden Shearwater');
+    await press(page, 'window-close');
+    await press(page, 'dock-launch');
+    await press(page, 'sheet-close');
+    await waitUntil(page, 'undocked', async () => (await api<PlayerInfo | null>(page, 'player'))?.autopilot === 'none');
+    const hud = await api<{ weapon: string; missiles: number; launcher: string | null }>(page, 'hud');
+    expect(hud).toMatchObject({ weapon: '2× Kestrel Mk II', missiles: 6, launcher: 'Seekers' });
+  });
+
   test('starts audio only after a user gesture', async ({ page }) => {
     await openFresh(page);
     expect(await api(page, 'audioState')).toBe('locked');

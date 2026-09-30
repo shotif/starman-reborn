@@ -51,6 +51,8 @@ In progress: 35 buyable ship models across six classes from five makers, and ove
 equipment: four gun families whose damage types counter shield types, rocket pods, seekers and
 torpedoes, three shield types, engines, thrusters, power plants, armour, cargo pods, scanners and
 tractor beams. They come to the game with a shipyard (trade-in at 70%) and an outfitter by slot.
+Every ship has its own procedural 3D model built from its class, maker and tier, in flight and on
+the hangar pad; raiders fly Wake Salvage hulls.
 
 Then: mines and countermeasures, loot to tractor in, pirate packs, patrols, bounty targets with
 escorts, hired wingmen, subsystem damage.

@@ -190,6 +190,12 @@ Other balance guardrails:
 Slots take equipment up to class 3 on a Mk I, 4 on a Mk II and 5 on a Mk III. Each model comes
 with a stock loadout of tier-matched equipment, preferring the maker's own families.
 
+Every model's 3D mesh is generated too (`src/world/art/shipgen/`, gallery at `/dev/ships.html`):
+the class sets the layout (a courier's canopy and belly pod, a freighter's spine of cargo
+sections, a surveyor's dish), the maker's style sets palette, silhouette, wings and surface
+detail, the tier adds fins, stripes and antennae, and the model id seeds small variations. The
+mesh fills the class's collision radius and puts one muzzle on each gun mount.
+
 ### Equipment families
 
 - **Guns** (one per gun mount): pulse cannons (energy), mass drivers (kinetic), plasma cannons

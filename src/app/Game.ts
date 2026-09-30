@@ -4,6 +4,7 @@ import type { MusicMood, SfxId } from '../audio/types.ts';
 import { getLocation, getPlanet, getSystem, SYSTEMS } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { cargoUsed } from '../economy/cargo.ts';
+import { shipModel } from '../content/catalog.ts';
 import { hashString } from '../content/random.ts';
 import { cargoCapacity } from '../economy/loadout.ts';
 import { adjustReputation, FACTIONS, standingTier, TIER_LABEL } from '../economy/factions.ts';
@@ -23,6 +24,7 @@ import { bodyCard, controlsContent, planetCard, settingsContent, sheet } from '.
 import { renderTitle } from '../ui/screens/TitleScreen.ts';
 import { TouchControls } from '../ui/touch/TouchControls.ts';
 import { createJumpTunnel, type JumpTunnelArt } from '../world/art/effects.ts';
+import { createCatalogShipArt } from '../world/art/shipgen/index.ts';
 import type { ArtContext } from '../world/art/types.ts';
 import { DockedView } from '../world/DockedView.ts';
 import { FlightSession, type EncounterOutcome } from '../world/FlightSession.ts';
@@ -296,10 +298,30 @@ export class Game {
     // The light through the bay comes from the nearest star (Meridian orbits Proxima, not A or B).
     const d2 = (p: THREE.Vector3) => p.distanceToSquared(station.position);
     const star = def.stars.reduce((best, s) => (d2(s.position) < d2(best.position) ? s : best));
+    const model = this.state ? shipModel(this.state.ship.model) : null;
     return createStationInterior(
-      { station: station.kind, skybox: def.skybox, starColor: star.color, seed: hashString(locationId) % 10_000, rooms: stationRooms(locationId) },
+      {
+        station: station.kind,
+        skybox: def.skybox,
+        starColor: star.color,
+        seed: hashString(locationId) % 10_000,
+        rooms: stationRooms(locationId),
+        ...(model ? { ship: (ctx: ArtContext) => createCatalogShipArt(model, ctx) } : {}),
+      },
       this.artCtx,
     );
+  }
+
+  /** A new ship from the yard: rebuild the rooms so it sits on the pad. */
+  private onShipChanged(): void {
+    const locationId = this.state?.location.dockedAt;
+    if (this.mode !== 'docked' || !locationId || !this.station) return;
+    this.disposeInterior();
+    this.interior = this.buildInterior(locationId);
+    if (!this.interior) return;
+    const { width, height } = this.renderer.size;
+    this.interior.resize(width, height);
+    this.interior.setView(this.station.currentRoom, true);
   }
 
   private disposeInterior(): void {
@@ -394,6 +416,7 @@ export class Game {
         state,
         locationId,
         save: () => this.onDockStateChanged(),
+        shipChanged: () => this.onShipChanged(),
         sfx: (id) => this.sfx(id),
         launch: () => this.launch(),
         openMap: () => this.openMap(),
@@ -1199,6 +1222,12 @@ export class Game {
         if (!this.state.visitedSystems.includes(systemId)) this.state.visitedSystems.push(systemId);
         this.state.flags.flightSchool = true;
         this.enterFlight({ kind: 'arrival' });
+      },
+      /** Test-only: set the wallet (shipyard and outfitter checks). */
+      setCredits: (credits: number) => {
+        if (!this.state) return;
+        this.state.credits = credits;
+        this.station?.render();
       },
       renderInfo: () => ({ quality: this.renderer.quality, pixelRatio: this.renderer.pixelRatio, fps: this.renderer.fps }),
       flush: () => this.saves.flush(),

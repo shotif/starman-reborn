@@ -39,7 +39,7 @@ export function createStationInterior(opts: StationInteriorOptions, ctx: ArtCont
   const backdrop = createBackdrop(opts, style.outside, ctx);
   scene.add(backdrop.object);
 
-  const hangar = buildHangar(ctx, style, rooms, opts.seed, backdrop);
+  const hangar = buildHangar(ctx, style, rooms, opts.seed, backdrop, opts.ship);
   hangar.builder.finish(mats);
   scene.add(hangar.builder.group);
 
