@@ -572,7 +572,7 @@ function stakeHere(ctx: StationContext, offer: StakeOffer, refresh: Refresh): HT
           f.events.map((e) => h('span', { class: `tag ${FLEET.stakes.events[e.kind] >= 1 ? 'good-tag' : 'news'}` }, `${e.headline}: dividends ×${FLEET.stakes.events[e.kind]}`)),
         )
       : null,
-    offer.room > 0 && !offer.blocked?.startsWith('You hold stakes')
+    offer.room > 0 && (offer.held > 0 || state.fleet.stakes.length < FLEET.stakes.maxStations)
       ? h(
           'div',
           { class: 'qty-row' },
