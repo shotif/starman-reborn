@@ -196,7 +196,7 @@ describe('save summaries', () => {
     expect(playTimeLabel(26 * 3600 + 7 * 60)).toBe('26 h 07 min');
     expect(savedAtLabel(new Date(2026, 0, 2, 9, 5).toISOString())).toBe('2 Jan 2026, 09:05');
     expect(savedAtLabel('not a date')).toBe('unknown');
-    expect(placeLabel({ systemId: 'vega', dockedAt: 'vega-port' })).toBe('vega · vega-port');
+    expect(placeLabel({ systemId: 'andromeda', dockedAt: 'andromeda-port' })).toBe('andromeda · andromeda-port');
     expect(placeLabel({ systemId: 'alpha-centauri', dockedAt: null })).toBe('Alpha Centauri · in flight');
   });
 });
@@ -251,7 +251,7 @@ describe('save files', () => {
       [wrap({ state: [game] }), /holds no game/],
       [wrap({ state: { ...game, version: 99 } }), /newer version of the game/],
       [wrap({ state: { ...game, credits: -5 } }), /damaged and cannot be loaded\. Save data is damaged: credits/],
-      [wrap({ state: { ...game, location: { ...game.location, systemId: 'vega' } } }), /damaged.*unknown system/],
+      [wrap({ state: { ...game, location: { ...game.location, systemId: 'andromeda' } } }), /damaged.*unknown system/],
       [wrap({ state: { version: 6, discoveredBodies: 'none' } }), /damaged and cannot be loaded/],
       [wrap({ state: { ...game, version: 'eight' } }), /damaged and cannot be loaded/],
     ];

@@ -90,7 +90,7 @@ describe('save migration', () => {
     expect(migrateSave(structuredClone(current))).toEqual(current);
     expect(() => migrateSave({ ...current, version: 99 })).toThrow(SaveFormatError);
     expect(() => migrateSave({ ...current, credits: -5 })).toThrow(SaveFormatError);
-    expect(() => migrateSave({ ...current, location: { ...current.location, systemId: 'vega' } })).toThrow(
+    expect(() => migrateSave({ ...current, location: { ...current.location, systemId: 'andromeda' } })).toThrow(
       SaveFormatError,
     );
     expect(() => migrateSave('garbage')).toThrow(SaveFormatError);

@@ -103,10 +103,16 @@ export function boardFor(locationId: string, epoch: number): JobDef[] {
     const placed = new Set<ContractKind>(['parcel', 'freight', 'escort', 'bounty', 'ace', 'smuggle', 'piracy', 'den']);
     const same = (a: JobDef, b: JobDef) =>
       a.title === b.title || (a.contract?.kind === b.contract?.kind && placed.has(a.contract!.kind) && a.destinationLocationId === b.destinationLocationId);
+    // A kind that finds nothing to offer here is not tried again on this board (a den far out in
+    // lawless space has no lawful traffic to raid, but still has parcels to run).
+    const barren = new Set<ContractKind>();
     for (let attempt = 0; out.length < size && attempt < size * 5; attempt++) {
-      const kind = weightedPick(r, kinds, kinds.map((k) => weights[k] ?? 0));
+      const live = kinds.filter((k) => !barren.has(k));
+      if (!live.length) break;
+      const kind = weightedPick(r, live, live.map((k) => weights[k] ?? 0));
       const c = makeContract(kind, loc, r, `${CONTRACT_PREFIX}${locationId}.${epoch}.${out.length}`, clock);
-      if (c && !out.some((o) => same(o, c))) out.push(c);
+      if (!c) barren.add(kind);
+      else if (!out.some((o) => same(o, c))) out.push(c);
     }
     // Work answering a world event, from its own stream so the rest of the board does not move.
     const e = eventContract(loc, rng(WORLD_SEED, 'contracts', 'event', locationId, epoch), `${CONTRACT_PREFIX}${locationId}.${epoch}.${out.length}`, clock);

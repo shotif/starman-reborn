@@ -2,7 +2,7 @@ import { EVENTS, type EventKind } from '../content/events/rules.ts';
 import { COMMODITIES, PRICE_BAND } from '../content/economy/goods.ts';
 import { CURATED_MARKETS } from '../content/economy/rules.ts';
 import type { Issue } from '../content/validate.ts';
-import { getLocation, WORLD } from '../data/systems.ts';
+import { ALL_LOCATIONS, getLocation, WORLD } from '../data/systems.ts';
 import { trafficFor } from '../world/traffic/setup.ts';
 import { baseThreat, eventPriceChange, eventsAt, windowPhase, type WorldEvent } from './events.ts';
 import { marketTables, quote } from './markets.ts';
@@ -14,8 +14,8 @@ import { marketTables, quote } from './markets.ts';
  */
 
 const NEUTRAL_REP = { sta: 0, frontier: 0, 'hollow-wake': 0 };
-/** Station events under way at once across the whole neighbourhood, on average. */
-export const ACTIVE_BAND = [3, 25] as const;
+/** Station events under way at once, on average, per hundred open stations (the neighbourhood grows). */
+export const ACTIVE_BAND = [5, 45] as const;
 
 export function validateEvents(hours = 300, stepSeconds = 600): Issue[] {
   const issues: Issue[] = [];
@@ -42,8 +42,9 @@ export function validateEvents(hours = 300, stepSeconds = 600): Issue[] {
       else checkTraffic(e, clock, report);
     }
   }
-  const average = stationEvents / Math.max(1, samples);
-  if (average < ACTIVE_BAND[0] || average > ACTIVE_BAND[1]) report('density', 'stations', `${average.toFixed(1)} station events under way on average (want ${ACTIVE_BAND[0]}–${ACTIVE_BAND[1]})`);
+  const open = ALL_LOCATIONS.filter((l) => l.status === 'functional' && l.dockable !== false && l.services.includes('market')).length;
+  const average = (stationEvents / Math.max(1, samples)) * (100 / Math.max(1, open));
+  if (average < ACTIVE_BAND[0] || average > ACTIVE_BAND[1]) report('density', 'stations', `${average.toFixed(1)} station events under way per hundred stations on average (want ${ACTIVE_BAND[0]}–${ACTIVE_BAND[1]})`);
   for (const k of ['shortage', 'glut', 'boom', 'strike', 'raid', 'sweep'] as EventKind[]) if (!kinds.has(k)) report('coverage', k, 'never happens');
   return issues;
 }

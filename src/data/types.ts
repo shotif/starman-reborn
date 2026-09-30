@@ -32,11 +32,21 @@ export interface SourceRef {
 
 /**
  * How a record entered the bundled dataset.
- * - snapshot: machine-retrieved from the archive on `retrieved` by scripts/fetch-astro-snapshot.ts
+ * - snapshot: checked against the archives on `retrieved` (scripts/sky-fetch.ts on GitHub's runners,
+ *   then scripts/sky-process.ts)
  * - provisional: transcribed from the cited catalog without machine verification; shown with a
  *   "pending verification" note in the UI until a snapshot replaces it.
  */
 export type Verification = 'snapshot' | 'provisional';
+
+/**
+ * What the archives say about a planet (docs/ASTRONOMY_SOURCES.md). The game never drops a planet:
+ * - confirmed: the NASA Exoplanet Archive lists it as confirmed
+ * - contested: an archive flags it as controversial, or none confirms it any more; this edition of
+ *   the game keeps it (its note says what each archive says)
+ * - candidate: a candidate in the Extrasolar Planets Encyclopaedia, not confirmed; included
+ */
+export type PlanetStatus = 'confirmed' | 'contested' | 'candidate';
 
 /** Astrometry for one star (a component of a stellar system). */
 export interface StellarComponent {
@@ -85,6 +95,21 @@ export interface StellarComponent {
   colorHex: string;
 }
 
+/** A belt of asteroids or ice, or a debris disc, that a cited source reports around a star. */
+export interface BeltRecord {
+  id: string;
+  systemId: SystemId;
+  /** The star it circles. */
+  hostId: string;
+  name: string;
+  kind: 'asteroid-belt' | 'kuiper-belt' | 'debris-disc';
+  /** Extent in au, only when the cited source gives it; otherwise the belt is placed schematically. */
+  innerAu?: number;
+  outerAu?: number;
+  sources: SourceRef[];
+  note: string;
+}
+
 export interface MeasuredValue {
   value: number;
   unit: string;
@@ -94,7 +119,7 @@ export interface MeasuredValue {
   qualifier?: string;
 }
 
-/** A planet that the cited archive snapshot lists as confirmed. */
+/** A planet the game shows: confirmed by the archives, or kept or added with a status that says otherwise. */
 export interface ConfirmedBody {
   id: string;
   /** Name exactly as it appears in the archive, e.g. "Proxima Cen b". */
@@ -102,8 +127,10 @@ export interface ConfirmedBody {
   displayName: string;
   hostId: string;
   kind: 'planet';
-  status: 'confirmed';
-  /** NASA Exoplanet Archive controversy flag (pl_controv_flag). */
+  status: PlanetStatus;
+  /** For a contested planet or a candidate: what each archive says about it. */
+  statusNote?: string;
+  /** True unless the NASA Exoplanet Archive confirms it without a controversy flag. */
   controversial: boolean;
   sourceUrl: string;
   /** Source name when it is not the NASA Exoplanet Archive (e.g. "Open Exoplanet Catalogue"). */

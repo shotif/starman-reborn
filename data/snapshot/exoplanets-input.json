@@ -1,9 +1,7 @@
 {
-  "generatedBy": "scripts/build-dataset.ts",
-  "input": "data/snapshot/exoplanets-input.json + data/provisional/catalog-exoplanets-input.json",
-  "verification": "snapshot",
-  "asOfDate": "2026-09-30",
-  "description": "Planets checked against the NASA Exoplanet Archive (pscomppars, confirmed planets) and the Extrasolar Planets Encyclopaedia on 2026-09-30. Nothing the game had is removed: planets neither archive confirms are kept and marked contested; the Encyclopaedia's candidates are added and marked candidate. Planets on the Open Exoplanet Catalogue's \"Confirmed planets\" list (MIT licence). Extracted by scripts/extract-catalogs.ts; provisional until the archive snapshot verifies it.",
+  "kind": "snapshot",
+  "retrieved": "2026-09-30",
+  "description": "Planets checked against the NASA Exoplanet Archive (pscomppars, confirmed planets) and the Extrasolar Planets Encyclopaedia on 2026-09-30. Nothing the game had is removed: planets neither archive confirms are kept and marked contested; the Encyclopaedia's candidates are added and marked candidate.",
   "source": {
     "label": "NASA Exoplanet Archive (pscomppars)",
     "url": "https://exoplanetarchive.ipac.caltech.edu/"
@@ -12,3618 +10,2959 @@
     {
       "id": "proxima-cen-b",
       "archiveName": "Proxima Cen b",
-      "displayName": "Proxima Cen b",
       "hostId": "proxima-centauri",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "Proxima Cen b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/Proxima%20Cen%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2016,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 11.18465,
-        "unit": "days",
         "error": 0.00053
       },
       "semiMajorAxisAu": {
         "value": 0.04848,
-        "unit": "AU",
         "error": 0.00029
       },
       "massEarth": {
         "value": 1.055,
-        "unit": "Earth masses",
         "error": 0.055,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.02,
-        "unit": "Earth radii"
+        "value": 1.02
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Proxima%20Cen%20b",
+        "recordId": "Proxima Cen b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "proxima-cen-d",
       "archiveName": "Proxima Cen d",
-      "displayName": "Proxima Cen d",
       "hostId": "proxima-centauri",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "Proxima Cen d",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/Proxima%20Cen%20d",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2025,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 5.12338,
-        "unit": "days",
         "error": 0.00035
       },
       "semiMajorAxisAu": {
         "value": 0.02881,
-        "unit": "AU",
         "error": 0.00017
       },
       "massEarth": {
         "value": 0.26,
-        "unit": "Earth masses",
         "error": 0.038,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 0.692,
-        "unit": "Earth radii"
+        "value": 0.692
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Proxima%20Cen%20d",
+        "recordId": "Proxima Cen d",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "barnard-b",
       "archiveName": "Barnard b",
-      "displayName": "Barnard b",
       "hostId": "barnards-star",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "Barnard b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/Barnard%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2024,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 3.1542,
-        "unit": "days",
         "error": 0.0004
       },
       "semiMajorAxisAu": {
         "value": 0.0229,
-        "unit": "AU",
         "error": 0.0003
       },
       "massEarth": {
         "value": 0.299,
-        "unit": "Earth masses",
         "error": 0.026,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 0.72,
-        "unit": "Earth radii"
+        "value": 0.72
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Barnard%20b",
+        "recordId": "Barnard b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "barnard-c",
       "archiveName": "Barnard c",
-      "displayName": "Barnard c",
       "hostId": "barnards-star",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "Barnard c",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/Barnard%20c",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2025,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 4.1244,
-        "unit": "days",
         "error": 0.0006
       },
       "semiMajorAxisAu": {
         "value": 0.0274,
-        "unit": "AU",
         "error": 0.0004
       },
       "massEarth": {
         "value": 0.335,
-        "unit": "Earth masses",
         "error": 0.03,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 0.743,
-        "unit": "Earth radii"
+        "value": 0.743
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Barnard%20c",
+        "recordId": "Barnard c",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "barnard-d",
       "archiveName": "Barnard d",
-      "displayName": "Barnard d",
       "hostId": "barnards-star",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "Barnard d",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/Barnard%20d",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2025,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 2.3402,
-        "unit": "days",
         "error": 0.0003
       },
       "semiMajorAxisAu": {
         "value": 0.0188,
-        "unit": "AU",
         "error": 0.0003
       },
       "massEarth": {
         "value": 0.263,
-        "unit": "Earth masses",
         "error": 0.024,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 0.694,
-        "unit": "Earth radii"
+        "value": 0.694
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Barnard%20d",
+        "recordId": "Barnard d",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "barnard-e",
       "archiveName": "Barnard e",
-      "displayName": "Barnard e",
       "hostId": "barnards-star",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "Barnard e",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/Barnard%20e",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2025,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 6.7392,
-        "unit": "days",
         "error": 0.003
       },
       "semiMajorAxisAu": {
         "value": 0.0381,
-        "unit": "AU",
         "error": 0.0005
       },
       "massEarth": {
         "value": 0.193,
-        "unit": "Earth masses",
         "error": 0.033,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 0.637,
-        "unit": "Earth radii"
+        "value": 0.637
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Barnard%20e",
+        "recordId": "Barnard e",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "eps-eri-b",
       "archiveName": "eps Eri b",
-      "displayName": "eps Eri b",
       "hostId": "epsilon-eridani",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "eps Eri b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/eps%20Eri%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2000,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 2680,
-        "unit": "days",
         "error": 30
       },
       "semiMajorAxisAu": {
         "value": 3.53,
-        "unit": "AU",
         "error": 0.04
       },
       "massEarth": {
         "value": 317.828407,
-        "unit": "Earth masses",
         "error": 31.7828407
       },
       "radiusEarth": {
-        "value": 13.8,
-        "unit": "Earth radii"
+        "value": 13.8
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/eps%20Eri%20b",
+        "recordId": "eps Eri b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-411-b",
       "archiveName": "GJ 411 b",
-      "displayName": "Lalande 21185 b",
       "hostId": "lalande-21185",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "Lalande 21185 b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20411%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2019,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 12.9394,
-        "unit": "days",
         "error": 0.0014
       },
       "semiMajorAxisAu": {
         "value": 0.07879,
-        "unit": "AU",
         "error": 0.00056
       },
       "massEarth": {
         "value": 2.69,
-        "unit": "Earth masses",
         "error": 0.19,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.45,
-        "unit": "Earth radii"
+        "value": 1.45
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20411%20b",
+        "recordId": "GJ 411 b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-411-c",
       "archiveName": "HD 95735 c",
-      "displayName": "Lalande 21185 c",
       "hostId": "lalande-21185",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "Lalande 21185 c",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%2095735%20c",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2021,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 2946,
-        "unit": "days",
         "error": 210
       },
       "semiMajorAxisAu": {
         "value": 2.94,
-        "unit": "AU",
         "error": 0.14
       },
       "massEarth": {
         "value": 13.6,
-        "unit": "Earth masses",
         "error": 2.4,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 3.76,
-        "unit": "Earth radii"
+        "value": 3.76
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%2095735%20c",
+        "recordId": "HD 95735 c",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-887-b",
       "archiveName": "GJ 887 b",
-      "displayName": "Lacaille 9352 b",
       "hostId": "lacaille-9352",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "Lacaille 9352 b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20887%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2020,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 9.2619,
-        "unit": "days",
         "error": 0.0005
       },
       "semiMajorAxisAu": {
         "value": 0.0683,
-        "unit": "AU",
         "error": 0.0022
       },
       "massEarth": {
         "value": 3.9,
-        "unit": "Earth masses",
         "error": 0.5,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.8,
-        "unit": "Earth radii"
+        "value": 1.8
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20887%20b",
+        "recordId": "GJ 887 b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-887-c",
       "archiveName": "GJ 887 c",
-      "displayName": "Lacaille 9352 c",
       "hostId": "lacaille-9352",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "Lacaille 9352 c",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20887%20c",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2020,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 21.784,
-        "unit": "days",
         "error": 0.004
       },
       "semiMajorAxisAu": {
         "value": 0.121,
-        "unit": "AU",
         "error": 0.004
       },
       "massEarth": {
         "value": 6.5,
-        "unit": "Earth masses",
         "error": 1,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 2.43,
-        "unit": "Earth radii"
+        "value": 2.43
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20887%20c",
+        "recordId": "GJ 887 c",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "ross-128-b",
       "archiveName": "Ross 128 b",
-      "displayName": "Ross 128 b",
       "hostId": "ross-128",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "Ross 128 b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/Ross%20128%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2017,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 9.8658,
-        "unit": "days",
         "error": 0.007
       },
       "semiMajorAxisAu": {
         "value": 0.0496,
-        "unit": "AU",
         "error": 0.0017
       },
       "massEarth": {
         "value": 1.4,
-        "unit": "Earth masses",
         "error": 0.21,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.11,
-        "unit": "Earth radii"
+        "value": 1.11
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Ross%20128%20b",
+        "recordId": "Ross 128 b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-15-a-b",
       "archiveName": "GJ 15 A b",
-      "displayName": "Groombridge 34 A b",
       "hostId": "groombridge-34-a",
-      "kind": "planet",
+      "displayName": "Groombridge 34 A b",
+      "controversial": true,
       "status": "contested",
       "statusNote": "The NASA Exoplanet Archive lists GJ 15 A b but flags it as controversial. This edition of the game keeps it.",
-      "controversial": true,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%2015%20A%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
       "discoveryYear": 2014,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 11.4407,
-        "unit": "days",
         "error": 0.0017
       },
       "semiMajorAxisAu": {
         "value": 0.072,
-        "unit": "AU",
         "error": 0.003
       },
       "massEarth": {
         "value": 3.03,
-        "unit": "Earth masses",
         "error": 0.46,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.55,
-        "unit": "Earth radii"
+        "value": 1.55
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%2015%20A%20b",
+        "recordId": "GJ 15 A b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-15-a-c",
       "archiveName": "GJ 15 A c",
-      "displayName": "Groombridge 34 A c",
       "hostId": "groombridge-34-a",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "Groombridge 34 A c",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%2015%20A%20c",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2018,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 7600,
-        "unit": "days",
         "error": 2200
       },
       "semiMajorAxisAu": {
         "value": 5.4,
-        "unit": "AU",
         "error": 1
       },
       "massEarth": {
         "value": 36,
-        "unit": "Earth masses",
         "error": 25,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 6.67,
-        "unit": "Earth radii"
+        "value": 6.67
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%2015%20A%20c",
+        "recordId": "GJ 15 A c",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "epsilon-indi-a-b",
       "archiveName": "eps Ind A b",
-      "displayName": "Epsilon Indi A b",
       "hostId": "epsilon-indi",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "Epsilon Indi A b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/eps%20Ind%20A%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2019,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 25450,
-        "unit": "days",
         "error": 4387
       },
       "semiMajorAxisAu": {
         "value": 15.76,
-        "unit": "AU",
         "error": 1.73
       },
       "massEarth": {
         "value": 2065.8846455,
-        "unit": "Earth masses",
         "error": 228.83645304
       },
       "radiusEarth": {
-        "value": 12.7,
-        "unit": "Earth radii"
+        "value": 12.7
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/eps%20Ind%20A%20b",
+        "recordId": "eps Ind A b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
-      "id": "tau-ceti-e",
       "archiveName": "tau Ceti e",
       "displayName": "Tau Ceti e",
       "hostId": "tau-ceti",
-      "kind": "planet",
-      "status": "contested",
-      "statusNote": "Neither the NASA Exoplanet Archive nor the Encyclopaedia lists it on 2026-09-30. This edition of the game keeps it.",
       "controversial": true,
-      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/tau%20Ceti.xml",
-      "sourceLabel": "Open Exoplanet Catalogue",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
       "discoveryYear": 2012,
       "discoveryMethod": "RV",
       "orbitalPeriodDays": {
         "value": 162.87,
-        "unit": "days",
         "error": 0.77
       },
       "semiMajorAxisAu": {
         "value": 0.538,
-        "unit": "AU",
         "error": 0.006
       },
       "massEarth": {
         "value": 3.941,
-        "unit": "Earth masses",
         "error": 0.731,
         "qualifier": "minimum mass (M sin i)"
       },
-      "unknowns": [
-        "radius",
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/tau%20Ceti.xml"
+      },
+      "id": "tau-ceti-e",
+      "status": "contested",
+      "statusNote": "Neither the NASA Exoplanet Archive nor the Encyclopaedia lists it on 2026-09-30. This edition of the game keeps it."
     },
     {
       "id": "tau-ceti-f",
       "archiveName": "tau Cet f",
-      "displayName": "Tau Ceti f",
       "hostId": "tau-ceti",
-      "kind": "planet",
+      "displayName": "Tau Ceti f",
+      "controversial": true,
       "status": "contested",
       "statusNote": "The NASA Exoplanet Archive lists tau Cet f but flags it as controversial. This edition of the game keeps it.",
-      "controversial": true,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/tau%20Cet%20f",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
       "discoveryYear": 2017,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 636.13,
-        "unit": "days",
         "error": 11.7
       },
       "semiMajorAxisAu": {
         "value": 1.334,
-        "unit": "AU",
         "error": 0.017
       },
       "massEarth": {
         "value": 3.93,
-        "unit": "Earth masses",
         "error": 1.05,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.81,
-        "unit": "Earth radii"
+        "value": 1.81
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/tau%20Cet%20f",
+        "recordId": "tau Cet f",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "tau-ceti-g",
       "archiveName": "tau Cet g",
-      "displayName": "Tau Ceti g",
       "hostId": "tau-ceti",
-      "kind": "planet",
+      "displayName": "Tau Ceti g",
+      "controversial": true,
       "status": "contested",
       "statusNote": "The NASA Exoplanet Archive lists tau Cet g but flags it as controversial. This edition of the game keeps it.",
-      "controversial": true,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/tau%20Cet%20g",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
       "discoveryYear": 2017,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 20,
-        "unit": "days",
         "error": 0.02
       },
       "semiMajorAxisAu": {
         "value": 0.133,
-        "unit": "AU",
         "error": 0.001
       },
       "massEarth": {
         "value": 1.75,
-        "unit": "Earth masses",
         "error": 0.25,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.18,
-        "unit": "Earth radii"
+        "value": 1.18
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/tau%20Cet%20g",
+        "recordId": "tau Cet g",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "tau-ceti-h",
       "archiveName": "tau Cet h",
-      "displayName": "Tau Ceti h",
       "hostId": "tau-ceti",
-      "kind": "planet",
+      "displayName": "Tau Ceti h",
+      "controversial": true,
       "status": "contested",
       "statusNote": "The NASA Exoplanet Archive lists tau Cet h but flags it as controversial. This edition of the game keeps it.",
-      "controversial": true,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/tau%20Cet%20h",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
       "discoveryYear": 2017,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 49.41,
-        "unit": "days",
         "error": 0.08
       },
       "semiMajorAxisAu": {
         "value": 0.243,
-        "unit": "AU",
         "error": 0.003
       },
       "massEarth": {
         "value": 1.83,
-        "unit": "Earth masses",
         "error": 0.68,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.19,
-        "unit": "Earth radii"
+        "value": 1.19
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/tau%20Cet%20h",
+        "recordId": "tau Cet h",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "yz-cet-b",
       "archiveName": "YZ Cet b",
-      "displayName": "YZ Ceti b",
       "hostId": "yz-ceti",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "YZ Ceti b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/YZ%20Cet%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2017,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 2.02087,
-        "unit": "days",
         "error": 0.00007
       },
       "semiMajorAxisAu": {
         "value": 0.01634,
-        "unit": "AU",
         "error": 0.00035
       },
       "massEarth": {
         "value": 0.7,
-        "unit": "Earth masses",
         "error": 0.09,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 0.913,
-        "unit": "Earth radii"
+        "value": 0.913
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/YZ%20Cet%20b",
+        "recordId": "YZ Cet b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "yz-cet-c",
       "archiveName": "YZ Cet c",
-      "displayName": "YZ Ceti c",
       "hostId": "yz-ceti",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "YZ Ceti c",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/YZ%20Cet%20c",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2017,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 3.05989,
-        "unit": "days",
         "error": 0.0001
       },
       "semiMajorAxisAu": {
         "value": 0.02156,
-        "unit": "AU",
         "error": 0.00046
       },
       "massEarth": {
         "value": 1.14,
-        "unit": "Earth masses",
         "error": 0.11,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.05,
-        "unit": "Earth radii"
+        "value": 1.05
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/YZ%20Cet%20c",
+        "recordId": "YZ Cet c",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "yz-cet-d",
       "archiveName": "YZ Cet d",
-      "displayName": "YZ Ceti d",
       "hostId": "yz-ceti",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "YZ Ceti d",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/YZ%20Cet%20d",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2017,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 4.65626,
-        "unit": "days",
         "error": 0.00028
       },
       "semiMajorAxisAu": {
         "value": 0.02851,
-        "unit": "AU",
         "error": 0.00061
       },
       "massEarth": {
         "value": 1.09,
-        "unit": "Earth masses",
         "error": 0.12,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.03,
-        "unit": "Earth radii"
+        "value": 1.03
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/YZ%20Cet%20d",
+        "recordId": "YZ Cet d",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-273-b",
       "archiveName": "GJ 273 b",
-      "displayName": "Luyten's Star b",
       "hostId": "luytens-star",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "Luyten's Star b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20273%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2017,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 18.6498,
-        "unit": "days",
         "error": 0.0059
       },
       "semiMajorAxisAu": {
         "value": 0.091101,
-        "unit": "AU",
         "error": 0.000019
       },
       "massEarth": {
         "value": 2.89,
-        "unit": "Earth masses",
         "error": 0.27,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.51,
-        "unit": "Earth radii"
+        "value": 1.51
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20273%20b",
+        "recordId": "GJ 273 b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-273-c",
       "archiveName": "GJ 273 c",
-      "displayName": "Luyten's Star c",
       "hostId": "luytens-star",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "Luyten's Star c",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20273%20c",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2017,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 4.7234,
-        "unit": "days",
         "error": 0.0004
       },
       "semiMajorAxisAu": {
         "value": 0.036467,
-        "unit": "AU",
         "error": 0.000002
       },
       "massEarth": {
         "value": 1.18,
-        "unit": "Earth masses",
         "error": 0.16,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.06,
-        "unit": "Earth radii"
+        "value": 1.06
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20273%20c",
+        "recordId": "GJ 273 c",
+        "retrieved": "2026-09-30"
+      }
     },
     {
-      "id": "kapteyn-b",
       "archiveName": "Kapteyn b",
       "displayName": "Kapteyn's Star b",
       "hostId": "kapteyns-star",
-      "kind": "planet",
-      "status": "contested",
-      "statusNote": "Neither the NASA Exoplanet Archive nor the Encyclopaedia lists it on 2026-09-30. This edition of the game keeps it.",
       "controversial": true,
-      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/Kapteyn.xml",
-      "sourceLabel": "Open Exoplanet Catalogue",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
       "discoveryYear": 2014,
       "discoveryMethod": "RV",
       "orbitalPeriodDays": {
         "value": 48.616,
-        "unit": "days",
         "error": 0.034
       },
       "semiMajorAxisAu": {
         "value": 0.168,
-        "unit": "AU",
         "error": 0.007
       },
       "massEarth": {
         "value": 4.799,
-        "unit": "Earth masses",
         "error": 0.95,
         "qualifier": "minimum mass (M sin i)"
       },
-      "unknowns": [
-        "radius",
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/Kapteyn.xml"
+      },
+      "id": "kapteyn-b",
+      "status": "contested",
+      "statusNote": "Neither the NASA Exoplanet Archive nor the Encyclopaedia lists it on 2026-09-30. This edition of the game keeps it."
     },
     {
       "id": "kapteyn-c",
       "archiveName": "Kapteyn c",
-      "displayName": "Kapteyn's Star c",
       "hostId": "kapteyns-star",
-      "kind": "planet",
+      "displayName": "Kapteyn's Star c",
+      "controversial": true,
       "status": "contested",
       "statusNote": "The NASA Exoplanet Archive lists Kapteyn c but flags it as controversial. This edition of the game keeps it.",
-      "controversial": true,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/Kapteyn%20c",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
       "discoveryYear": 2014,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 121.54,
-        "unit": "days",
         "error": 0.25
       },
       "semiMajorAxisAu": {
         "value": 0.311,
-        "unit": "AU",
         "error": 0.038
       },
       "massEarth": {
         "value": 7,
-        "unit": "Earth masses",
         "error": 1.2,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 2.54,
-        "unit": "Earth radii"
+        "value": 2.54
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Kapteyn%20c",
+        "recordId": "Kapteyn c",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "wolf-1061-b",
       "archiveName": "Wolf 1061 b",
-      "displayName": "Wolf 1061 b",
       "hostId": "wolf-1061",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "Wolf 1061 b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/Wolf%201061%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2015,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 4.8869,
-        "unit": "days",
         "error": 0.0005
       },
       "semiMajorAxisAu": {
         "value": 0.0375,
-        "unit": "AU",
         "error": 0.0012
       },
       "massEarth": {
         "value": 1.91,
-        "unit": "Earth masses",
         "error": 0.26,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.21,
-        "unit": "Earth radii"
+        "value": 1.21
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Wolf%201061%20b",
+        "recordId": "Wolf 1061 b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "wolf-1061-c",
       "archiveName": "Wolf 1061 c",
-      "displayName": "Wolf 1061 c",
       "hostId": "wolf-1061",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "Wolf 1061 c",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/Wolf%201061%20c",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2015,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 17.8719,
-        "unit": "days",
         "error": 0.0059
       },
       "semiMajorAxisAu": {
         "value": 0.089,
-        "unit": "AU",
         "error": 0.0029
       },
       "massEarth": {
         "value": 3.41,
-        "unit": "Earth masses",
         "error": 0.43,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.66,
-        "unit": "Earth radii"
+        "value": 1.66
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Wolf%201061%20c",
+        "recordId": "Wolf 1061 c",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "wolf-1061-d",
       "archiveName": "Wolf 1061 d",
-      "displayName": "Wolf 1061 d",
       "hostId": "wolf-1061",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "Wolf 1061 d",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/Wolf%201061%20d",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2015,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 217.21,
-        "unit": "days",
         "error": 0.55
       },
       "semiMajorAxisAu": {
         "value": 0.47,
-        "unit": "AU",
         "error": 0.015
       },
       "massEarth": {
         "value": 7.7,
-        "unit": "Earth masses",
         "error": 1.12,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 2.69,
-        "unit": "Earth radii"
+        "value": 2.69
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Wolf%201061%20d",
+        "recordId": "Wolf 1061 d",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-1061-b",
       "archiveName": "GJ 1061 b",
-      "displayName": "GJ 1061 b",
       "hostId": "gj-1061",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 1061 b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%201061%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2020,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 3.2073,
-        "unit": "days",
         "error": 0.0002
       },
       "semiMajorAxisAu": {
         "value": 0.021,
-        "unit": "AU",
         "error": 0.0006
       },
       "massEarth": {
         "value": 1.11,
-        "unit": "Earth masses",
         "error": 0.11
       },
       "radiusEarth": {
-        "value": 1.04,
-        "unit": "Earth radii"
+        "value": 1.04
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%201061%20b",
+        "recordId": "GJ 1061 b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-1061-c",
       "archiveName": "GJ 1061 c",
-      "displayName": "GJ 1061 c",
       "hostId": "gj-1061",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 1061 c",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%201061%20c",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2020,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 6.6821,
-        "unit": "days",
         "error": 0.0008
       },
       "semiMajorAxisAu": {
         "value": 0.0342,
-        "unit": "AU",
         "error": 0.0009
       },
       "massEarth": {
         "value": 1.81,
-        "unit": "Earth masses",
         "error": 0.13
       },
       "radiusEarth": {
-        "value": 1.19,
-        "unit": "Earth radii"
+        "value": 1.19
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%201061%20c",
+        "recordId": "GJ 1061 c",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-1061-d",
       "archiveName": "GJ 1061 d",
-      "displayName": "GJ 1061 d",
       "hostId": "gj-1061",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 1061 d",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%201061%20d",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2020,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 13.066,
-        "unit": "days",
         "error": 0.002
       },
       "semiMajorAxisAu": {
         "value": 0.054,
-        "unit": "AU",
         "error": 0.002
       },
       "massEarth": {
         "value": 1.67,
-        "unit": "Earth masses",
         "error": 0.17
       },
       "radiusEarth": {
-        "value": 1.16,
-        "unit": "Earth radii"
+        "value": 1.16
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%201061%20d",
+        "recordId": "GJ 1061 d",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gliese-876-b",
       "archiveName": "GJ 876 b",
-      "displayName": "Gliese 876 b",
       "hostId": "gliese-876",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "Gliese 876 b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20876%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 1998,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 61.1166,
-        "unit": "days",
         "error": 0.0086
       },
       "semiMajorAxisAu": {
         "value": 0.208317,
-        "unit": "AU",
         "error": 0.00002
       },
       "massEarth": {
         "value": 723.2235,
-        "unit": "Earth masses",
         "error": 1.4302
       },
       "radiusEarth": {
-        "value": 13.3,
-        "unit": "Earth radii"
+        "value": 13.3
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20876%20b",
+        "recordId": "GJ 876 b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gliese-876-c",
       "archiveName": "GJ 876 c",
-      "displayName": "Gliese 876 c",
       "hostId": "gliese-876",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "Gliese 876 c",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20876%20c",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2000,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 30.0881,
-        "unit": "days",
         "error": 0.0082
       },
       "semiMajorAxisAu": {
         "value": 0.12959,
-        "unit": "AU",
         "error": 0.000024
       },
       "massEarth": {
         "value": 226.9846,
-        "unit": "Earth masses",
         "error": 1.2395
       },
       "radiusEarth": {
-        "value": 14,
-        "unit": "Earth radii"
+        "value": 14
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20876%20c",
+        "recordId": "GJ 876 c",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gliese-876-d",
       "archiveName": "GJ 876 d",
-      "displayName": "Gliese 876 d",
       "hostId": "gliese-876",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "Gliese 876 d",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20876%20d",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2005,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 1.93778,
-        "unit": "days",
         "error": 0.00002
       },
       "semiMajorAxisAu": {
         "value": 0.02080665,
-        "unit": "AU",
         "error": 1.5e-7
       },
       "massEarth": {
         "value": 6.83,
-        "unit": "Earth masses",
         "error": 0.4
       },
       "radiusEarth": {
-        "value": 2.51,
-        "unit": "Earth radii"
+        "value": 2.51
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20876%20d",
+        "recordId": "GJ 876 d",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gliese-876-e",
       "archiveName": "GJ 876 e",
-      "displayName": "Gliese 876 e",
       "hostId": "gliese-876",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "Gliese 876 e",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20876%20e",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2010,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 124.26,
-        "unit": "days",
         "error": 0.7
       },
       "semiMajorAxisAu": {
         "value": 0.3343,
-        "unit": "AU",
         "error": 0.0013
       },
       "massEarth": {
         "value": 14.6,
-        "unit": "Earth masses",
         "error": 1.7
       },
       "radiusEarth": {
-        "value": 3.92,
-        "unit": "Earth radii"
+        "value": 3.92
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20876%20e",
+        "recordId": "GJ 876 e",
+        "retrieved": "2026-09-30"
+      }
     },
     {
-      "id": "hd-26965-b",
       "archiveName": "HD 26965 b",
       "displayName": "40 Eridani A b",
       "hostId": "40-eridani-a",
-      "kind": "planet",
-      "status": "contested",
-      "statusNote": "Neither the NASA Exoplanet Archive nor the Encyclopaedia lists it on 2026-09-30. This edition of the game keeps it.",
       "controversial": true,
-      "sourceUrl": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/HD%2026965.xml",
-      "sourceLabel": "Open Exoplanet Catalogue",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
       "discoveryYear": 2018,
       "discoveryMethod": "RV",
       "orbitalPeriodDays": {
         "value": 42.378,
-        "unit": "days",
         "error": 0.01
       },
       "massEarth": {
         "value": 8.47,
-        "unit": "Earth masses",
         "error": 0.47,
         "qualifier": "minimum mass (M sin i)"
       },
-      "unknowns": [
-        "radius",
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "Open Exoplanet Catalogue",
+        "url": "https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue/blob/master/systems/HD%2026965.xml"
+      },
+      "id": "hd-26965-b",
+      "status": "contested",
+      "statusNote": "Neither the NASA Exoplanet Archive nor the Encyclopaedia lists it on 2026-09-30. This edition of the game keeps it."
     },
     {
       "id": "gj-674-b",
       "archiveName": "GJ 674 b",
-      "displayName": "GJ 674 b",
       "hostId": "gj-674",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 674 b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20674%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2007,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 4.6938,
-        "unit": "days",
         "error": 0.007
       },
       "semiMajorAxisAu": {
-        "value": 0.039,
-        "unit": "AU"
+        "value": 0.039
       },
       "massEarth": {
         "value": 11.09,
-        "unit": "Earth masses",
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 3.33,
-        "unit": "Earth radii"
+        "value": 3.33
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20674%20b",
+        "recordId": "GJ 674 b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-1002-b",
       "archiveName": "GJ 1002 b",
-      "displayName": "GJ 1002 b",
       "hostId": "gj-1002",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 1002 b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%201002%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2022,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 10.3465,
-        "unit": "days",
         "error": 0.027
       },
       "semiMajorAxisAu": {
         "value": 0.0457,
-        "unit": "AU",
         "error": 0.0013
       },
       "massEarth": {
         "value": 1.08,
-        "unit": "Earth masses",
         "error": 0.13,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.03,
-        "unit": "Earth radii"
+        "value": 1.03
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%201002%20b",
+        "recordId": "GJ 1002 b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-251-c",
       "archiveName": "GJ 251 c",
-      "displayName": "GJ 251 c",
       "hostId": "gj-251",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 251 c",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20251%20c",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2025,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 53.647,
-        "unit": "days",
         "error": 0.044
       },
       "semiMajorAxisAu": {
         "value": 0.196,
-        "unit": "AU",
         "error": 0.014
       },
       "massEarth": {
         "value": 3.88,
-        "unit": "Earth masses",
         "error": 0.79,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.8,
-        "unit": "Earth radii"
+        "value": 1.8
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20251%20c",
+        "recordId": "GJ 251 c",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "lacaille-9352-e",
       "archiveName": "GJ 887 e",
-      "displayName": "Lacaille 9352 e",
       "hostId": "lacaille-9352",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "Lacaille 9352 e",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20887%20e",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2026,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 4.4249,
-        "unit": "days",
         "error": 0.00014
       },
       "semiMajorAxisAu": {
         "value": 0.0417,
-        "unit": "AU",
         "error": 0.0014
       },
       "massEarth": {
         "value": 1.46,
-        "unit": "Earth masses",
         "error": 0.19,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.12,
-        "unit": "Earth radii"
+        "value": 1.12
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20887%20e",
+        "recordId": "GJ 887 e",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "hd-219134-h",
       "archiveName": "HD 219134 h",
-      "displayName": "HD 219134 h",
       "hostId": "hd-219134",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "HD 219134 h",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%20219134%20h",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2015,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 2247,
-        "unit": "days",
         "error": 43
       },
       "semiMajorAxisAu": {
         "value": 3.11,
-        "unit": "AU",
         "error": 0.04
       },
       "massEarth": {
         "value": 108.0622,
-        "unit": "Earth masses",
         "error": 6.3566,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 12.7,
-        "unit": "Earth radii"
+        "value": 12.7
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%20219134%20h",
+        "recordId": "HD 219134 h",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "ltt-1445-a-b",
       "archiveName": "LTT 1445 A b",
-      "displayName": "LTT 1445 A b",
       "hostId": "ltt-1445-a",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "LTT 1445 A b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/LTT%201445%20A%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2019,
       "discoveryMethod": "Transit",
       "orbitalPeriodDays": {
         "value": 5.3587635,
-        "unit": "days",
         "error": 0.0000044
       },
       "semiMajorAxisAu": {
         "value": 0.0381,
-        "unit": "AU",
         "error": 0.00067
       },
       "massEarth": {
         "value": 2.73,
-        "unit": "Earth masses",
         "error": 0.25
       },
       "radiusEarth": {
         "value": 1.34,
-        "unit": "Earth radii",
         "error": 0.11
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/LTT%201445%20A%20b",
+        "recordId": "LTT 1445 A b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-486-b",
       "archiveName": "GJ 486 b",
-      "displayName": "GJ 486 b",
       "hostId": "gj-486",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 486 b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20486%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2021,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 1.46712127,
-        "unit": "days",
         "error": 3.1e-7
       },
       "semiMajorAxisAu": {
         "value": 0.01714,
-        "unit": "AU",
         "error": 0.00013
       },
       "massEarth": {
         "value": 2.77,
-        "unit": "Earth masses",
         "error": 0.076
       },
       "radiusEarth": {
         "value": 1.289,
-        "unit": "Earth radii",
         "error": 0.019
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20486%20b",
+        "recordId": "GJ 486 b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "ltt-1445-a-c",
       "archiveName": "LTT 1445 A c",
-      "displayName": "LTT 1445 A c",
       "hostId": "ltt-1445-a",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "LTT 1445 A c",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/LTT%201445%20A%20c",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2022,
       "discoveryMethod": "Transit",
       "orbitalPeriodDays": {
         "value": 3.1239035,
-        "unit": "days",
         "error": 0.0000034
       },
       "semiMajorAxisAu": {
         "value": 0.02661,
-        "unit": "AU",
         "error": 0.00047
       },
       "massEarth": {
         "value": 1.54,
-        "unit": "Earth masses",
         "error": 0.2
       },
       "radiusEarth": {
         "value": 1.147,
-        "unit": "Earth radii",
         "error": 0.055
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/LTT%201445%20A%20c",
+        "recordId": "LTT 1445 A c",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "teegardens-star-c",
       "archiveName": "Teegarden's Star c",
-      "displayName": "Teegarden's Star c",
       "hostId": "teegardens-star",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "Teegarden's Star c",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/Teegarden's%20Star%20c",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2019,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 11.416,
-        "unit": "days",
         "error": 0.003
       },
       "semiMajorAxisAu": {
         "value": 0.0455,
-        "unit": "AU",
         "error": 0.0015
       },
       "massEarth": {
         "value": 1.05,
-        "unit": "Earth masses",
         "error": 0.14,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.02,
-        "unit": "Earth radii"
+        "value": 1.02
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Teegarden's%20Star%20c",
+        "recordId": "Teegarden's Star c",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "hd-219134-g",
       "archiveName": "HD 219134 g",
-      "displayName": "HD 219134 g",
       "hostId": "hd-219134",
-      "kind": "planet",
+      "displayName": "HD 219134 g",
+      "controversial": true,
       "status": "contested",
       "statusNote": "The NASA Exoplanet Archive lists HD 219134 g but flags it as controversial. This edition of the game keeps it.",
-      "controversial": true,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%20219134%20g",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
       "discoveryYear": 2015,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 94.2,
-        "unit": "days",
         "error": 0.2
       },
       "semiMajorAxisAu": {
         "value": 0.3753,
-        "unit": "AU",
         "error": 0.0004
       },
       "massEarth": {
         "value": 10.80622,
-        "unit": "Earth masses",
         "error": 1.27132,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 3.28,
-        "unit": "Earth radii"
+        "value": 3.28
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%20219134%20g",
+        "recordId": "HD 219134 g",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-3378-b",
       "archiveName": "GJ 3378 b",
-      "displayName": "GJ 3378 b",
       "hostId": "gj-3378",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 3378 b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%203378%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2026,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 21.45,
-        "unit": "days",
         "error": 0.01
       },
       "semiMajorAxisAu": {
         "value": 0.09673,
-        "unit": "AU",
         "error": 0.0008
       },
       "massEarth": {
         "value": 2.3,
-        "unit": "Earth masses",
         "error": 0.4,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.32,
-        "unit": "Earth radii"
+        "value": 1.32
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%203378%20b",
+        "recordId": "GJ 3378 b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "struve-2398-a-b",
       "archiveName": "Gl 725 A b",
-      "displayName": "Struve 2398 A b",
       "hostId": "struve-2398-a",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "Struve 2398 A b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/Gl%20725%20A%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2025,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 11.2201,
-        "unit": "days",
         "error": 0.0051
       },
       "semiMajorAxisAu": {
         "value": 0.068,
-        "unit": "AU",
         "error": 0.001
       },
       "massEarth": {
         "value": 2.78,
-        "unit": "Earth masses",
         "error": 0.35,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.48,
-        "unit": "Earth radii"
+        "value": 1.48
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Gl%20725%20A%20b",
+        "recordId": "Gl 725 A b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-1151-c",
       "archiveName": "GJ 1151 c",
-      "displayName": "GJ 1151 c",
       "hostId": "gj-1151",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 1151 c",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%201151%20c",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2023,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 389.7,
-        "unit": "days",
         "error": 5.4
       },
       "semiMajorAxisAu": {
         "value": 0.5714,
-        "unit": "AU",
         "error": 0.0053
       },
       "massEarth": {
         "value": 10.62,
-        "unit": "Earth masses",
         "error": 1.31,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 3.25,
-        "unit": "Earth radii"
+        "value": 3.25
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%201151%20c",
+        "recordId": "GJ 1151 c",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "82-eridani-f",
       "archiveName": "HD 20794 f",
-      "displayName": "82 Eridani f",
       "hostId": "82-eridani",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "82 Eridani f",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%2020794%20f",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2025,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 647.6,
-        "unit": "days",
         "error": 2.5
       },
       "semiMajorAxisAu": {
         "value": 1.3541,
-        "unit": "AU",
         "error": 0.0068
       },
       "massEarth": {
         "value": 5.82,
-        "unit": "Earth masses",
         "error": 0.57,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 2.28,
-        "unit": "Earth radii"
+        "value": 2.28
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%2020794%20f",
+        "recordId": "HD 20794 f",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-4274-c",
       "archiveName": "GJ 4274 c",
-      "displayName": "GJ 4274 c",
       "hostId": "gj-4274",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 4274 c",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%204274%20c",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2026,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 69.57,
-        "unit": "days",
         "error": 0.32
       },
       "semiMajorAxisAu": {
         "value": 0.186,
-        "unit": "AU",
         "error": 0.01
       },
       "massEarth": {
         "value": 8.39,
-        "unit": "Earth masses",
         "error": 1.68,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 2.83,
-        "unit": "Earth radii"
+        "value": 2.83
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%204274%20c",
+        "recordId": "GJ 4274 c",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-667-c-f",
       "archiveName": "GJ 667 C f",
-      "displayName": "GJ 667 C f",
       "hostId": "gj-667-c",
-      "kind": "planet",
+      "displayName": "GJ 667 C f",
+      "controversial": true,
       "status": "contested",
       "statusNote": "The NASA Exoplanet Archive lists GJ 667 C f but flags it as controversial. This edition of the game keeps it.",
-      "controversial": true,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20667%20C%20f",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
       "discoveryYear": 2013,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 39.026,
-        "unit": "days",
         "error": 0.194
       },
       "semiMajorAxisAu": {
         "value": 0.156,
-        "unit": "AU",
         "error": 0.014
       },
       "massEarth": {
         "value": 2.7,
-        "unit": "Earth masses",
         "error": 1.4,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.45,
-        "unit": "Earth radii"
+        "value": 1.45
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20667%20C%20f",
+        "recordId": "GJ 667 C f",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-3323-b",
       "archiveName": "GJ 3323 b",
-      "displayName": "GJ 3323 b",
       "hostId": "gj-3323",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 3323 b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%203323%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2017,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 5.3636,
-        "unit": "days",
         "error": 0.0007
       },
       "semiMajorAxisAu": {
         "value": 0.03282,
-        "unit": "AU",
         "error": 0.00054
       },
       "massEarth": {
         "value": 2.02,
-        "unit": "Earth masses",
         "error": 0.26,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.23,
-        "unit": "Earth radii"
+        "value": 1.23
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%203323%20b",
+        "recordId": "GJ 3323 b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-393-b",
       "archiveName": "GJ 393 b",
-      "displayName": "GJ 393 b",
       "hostId": "gj-393",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 393 b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20393%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2021,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 7.02679,
-        "unit": "days",
         "error": 0.00082
       },
       "semiMajorAxisAu": {
         "value": 0.05402,
-        "unit": "AU",
         "error": 0.00072
       },
       "massEarth": {
         "value": 1.71,
-        "unit": "Earth masses",
         "error": 0.24,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.17,
-        "unit": "Earth radii"
+        "value": 1.17
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20393%20b",
+        "recordId": "GJ 393 b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-581-b",
       "archiveName": "GJ 581 b",
-      "displayName": "GJ 581 b",
       "hostId": "gj-581",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 581 b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20581%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2005,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 5.3686,
-        "unit": "days",
         "error": 0.0001
       },
       "semiMajorAxisAu": {
         "value": 0.0399,
-        "unit": "AU",
         "error": 0.0005
       },
       "massEarth": {
         "value": 20.5,
-        "unit": "Earth masses",
         "error": 6.2
       },
       "radiusEarth": {
-        "value": 4.79,
-        "unit": "Earth radii"
+        "value": 4.79
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20581%20b",
+        "recordId": "GJ 581 b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-667-c-b",
       "archiveName": "GJ 667 C b",
-      "displayName": "GJ 667 C b",
       "hostId": "gj-667-c",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 667 C b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20667%20C%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2012,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 7.203,
-        "unit": "days",
         "error": 0.0019
       },
       "semiMajorAxisAu": {
         "value": 0.050431,
-        "unit": "AU",
         "error": 0.000004
       },
       "massEarth": {
         "value": 5.68,
-        "unit": "Earth masses",
         "error": 0.23,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 2.25,
-        "unit": "Earth radii"
+        "value": 2.25
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20667%20C%20b",
+        "recordId": "GJ 667 C b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-667-c-c",
       "archiveName": "GJ 667 C c",
-      "displayName": "GJ 667 C c",
       "hostId": "gj-667-c",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 667 C c",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20667%20C%20c",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2013,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 28.14,
-        "unit": "days",
         "error": 0.053
       },
       "semiMajorAxisAu": {
         "value": 0.125,
-        "unit": "AU",
         "error": 0.012
       },
       "massEarth": {
         "value": 3.8,
-        "unit": "Earth masses",
         "error": 1.5,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.77,
-        "unit": "Earth radii"
+        "value": 1.77
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20667%20C%20c",
+        "recordId": "GJ 667 C c",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-667-c-e",
       "archiveName": "GJ 667 C e",
-      "displayName": "GJ 667 C e",
       "hostId": "gj-667-c",
-      "kind": "planet",
+      "displayName": "GJ 667 C e",
+      "controversial": true,
       "status": "contested",
       "statusNote": "The NASA Exoplanet Archive lists GJ 667 C e but flags it as controversial. This edition of the game keeps it.",
-      "controversial": true,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20667%20C%20e",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
       "discoveryYear": 2013,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 62.24,
-        "unit": "days",
         "error": 0.55
       },
       "semiMajorAxisAu": {
         "value": 0.213,
-        "unit": "AU",
         "error": 0.019
       },
       "massEarth": {
         "value": 2.7,
-        "unit": "Earth masses",
         "error": 1.6,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.45,
-        "unit": "Earth radii"
+        "value": 1.45
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20667%20C%20e",
+        "recordId": "GJ 667 C e",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "struve-2398-b-c",
       "archiveName": "Gl 725 B c",
-      "displayName": "Struve 2398 B c",
       "hostId": "struve-2398-b",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "Struve 2398 B c",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/Gl%20725%20B%20c",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2026,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 37.9,
-        "unit": "days",
         "error": 0.17
       },
       "semiMajorAxisAu": {
         "value": 0.139,
-        "unit": "AU",
         "error": 0.004
       },
       "massEarth": {
         "value": 3.4,
-        "unit": "Earth masses",
         "error": 0.7,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.66,
-        "unit": "Earth radii"
+        "value": 1.66
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Gl%20725%20B%20c",
+        "recordId": "Gl 725 B c",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "hd-219134-b",
       "archiveName": "HD 219134 b",
-      "displayName": "HD 219134 b",
       "hostId": "hd-219134",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "HD 219134 b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%20219134%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2015,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 3.092926,
-        "unit": "days",
         "error": 0.00001
       },
       "semiMajorAxisAu": {
         "value": 0.03876,
-        "unit": "AU",
         "error": 0.00047
       },
       "massEarth": {
         "value": 4.74,
-        "unit": "Earth masses",
         "error": 0.19
       },
       "radiusEarth": {
         "value": 1.602,
-        "unit": "Earth radii",
         "error": 0.055
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%20219134%20b",
+        "recordId": "HD 219134 b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "hd-219134-d",
       "archiveName": "HD 219134 d",
-      "displayName": "HD 219134 d",
       "hostId": "hd-219134",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "HD 219134 d",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%20219134%20d",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2015,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 46.859,
-        "unit": "days",
         "error": 0.028
       },
       "semiMajorAxisAu": {
         "value": 0.237,
-        "unit": "AU",
         "error": 0.003
       },
       "massEarth": {
         "value": 16.17,
-        "unit": "Earth masses",
         "error": 0.64
       },
       "radiusEarth": {
         "value": 1.61,
-        "unit": "Earth radii",
         "error": 0.02
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%20219134%20d",
+        "recordId": "HD 219134 d",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "hd-219134-f",
       "archiveName": "HD 219134 f",
-      "displayName": "HD 219134 f",
       "hostId": "hd-219134",
-      "kind": "planet",
+      "displayName": "HD 219134 f",
+      "controversial": true,
       "status": "contested",
       "statusNote": "The NASA Exoplanet Archive lists HD 219134 f but flags it as controversial. This edition of the game keeps it.",
-      "controversial": true,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%20219134%20f",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
       "discoveryYear": 2015,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 22.717,
-        "unit": "days",
         "error": 0.015
       },
       "semiMajorAxisAu": {
         "value": 0.1463,
-        "unit": "AU",
         "error": 0.0018
       },
       "massEarth": {
         "value": 7.3,
-        "unit": "Earth masses",
         "error": 0.4
       },
       "radiusEarth": {
         "value": 1.31,
-        "unit": "Earth radii",
         "error": 0.02
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%20219134%20f",
+        "recordId": "HD 219134 f",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-625-b",
       "archiveName": "GJ 625 b",
-      "displayName": "GJ 625 b",
       "hostId": "gj-625",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 625 b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20625%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2017,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 14.628,
-        "unit": "days",
         "error": 0.012
       },
       "semiMajorAxisAu": {
         "value": 0.078361,
-        "unit": "AU",
         "error": 0.000044
       },
       "massEarth": {
         "value": 2.82,
-        "unit": "Earth masses",
         "error": 0.51,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.49,
-        "unit": "Earth radii"
+        "value": 1.49
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20625%20b",
+        "recordId": "GJ 625 b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-3323-c",
       "archiveName": "GJ 3323 c",
-      "displayName": "GJ 3323 c",
       "hostId": "gj-3323",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 3323 c",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%203323%20c",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2017,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 40.54,
-        "unit": "days",
         "error": 0.21
       },
       "semiMajorAxisAu": {
         "value": 0.1264,
-        "unit": "AU",
         "error": 0.0021
       },
       "massEarth": {
         "value": 2.31,
-        "unit": "Earth masses",
         "error": 0.5,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.32,
-        "unit": "Earth radii"
+        "value": 1.32
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%203323%20c",
+        "recordId": "GJ 3323 c",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-682-c",
       "archiveName": "GJ 682 c",
-      "displayName": "GJ 682 c",
       "hostId": "gj-682",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 682 c",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20682%20c",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2014,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 57.32,
-        "unit": "days",
         "error": 0.45
       },
       "semiMajorAxisAu": {
         "value": 0.176,
-        "unit": "AU",
         "error": 0.03
       },
       "massEarth": {
         "value": 8.7,
-        "unit": "Earth masses",
         "error": 5.8,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 2.89,
-        "unit": "Earth radii"
+        "value": 2.89
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20682%20c",
+        "recordId": "GJ 682 c",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-686-b",
       "archiveName": "Gl 686 b",
-      "displayName": "GJ 686 b",
       "hostId": "gj-686",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 686 b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/Gl%20686%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2018,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 15.53,
-        "unit": "days",
         "error": 0.0011
       },
       "semiMajorAxisAu": {
         "value": 0.091,
-        "unit": "AU",
         "error": 0.001
       },
       "massEarth": {
         "value": 6.624,
-        "unit": "Earth masses",
         "error": 0.432,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 2.46,
-        "unit": "Earth radii"
+        "value": 2.46
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Gl%20686%20b",
+        "recordId": "Gl 686 b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "hd-180617-a-b",
       "archiveName": "HD 180617 b",
-      "displayName": "HD 180617 A b",
       "hostId": "hd-180617-a",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "HD 180617 A b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%20180617%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2018,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 105.911,
-        "unit": "days",
         "error": 0.109
       },
       "semiMajorAxisAu": {
         "value": 0.343,
-        "unit": "AU",
         "error": 0.004
       },
       "massEarth": {
         "value": 12.214,
-        "unit": "Earth masses",
         "error": 1.05,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 3.53,
-        "unit": "Earth radii"
+        "value": 3.53
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%20180617%20b",
+        "recordId": "HD 180617 b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-687-b",
       "archiveName": "GJ 687 b",
-      "displayName": "GJ 687 b",
       "hostId": "gj-687",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 687 b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20687%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2014,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 38.142,
-        "unit": "days",
         "error": 0.007
       },
       "semiMajorAxisAu": {
         "value": 0.163,
-        "unit": "AU",
         "error": 0.003
       },
       "massEarth": {
         "value": 17.2,
-        "unit": "Earth masses",
         "error": 1,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 4.32,
-        "unit": "Earth radii"
+        "value": 4.32
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20687%20b",
+        "recordId": "GJ 687 b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-896-a-b",
       "archiveName": "GJ 896 A b",
-      "displayName": "GJ 896 A b",
       "hostId": "gj-896-a",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 896 A b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20896%20A%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2022,
       "discoveryMethod": "Astrometry",
       "orbitalPeriodDays": {
         "value": 284.39,
-        "unit": "days",
         "error": 1.47
       },
       "semiMajorAxisAu": {
         "value": 0.63965,
-        "unit": "AU",
         "error": 0.00067
       },
       "massEarth": {
         "value": 718.29219982,
-        "unit": "Earth masses",
         "error": 181.16219199
       },
       "radiusEarth": {
-        "value": 13.3,
-        "unit": "Earth radii"
+        "value": 13.3
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20896%20A%20b",
+        "recordId": "GJ 896 A b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-229-a-c",
       "archiveName": "GJ 229 A c",
-      "displayName": "GJ 229 A c",
       "hostId": "gj-229-a",
-      "kind": "planet",
+      "displayName": "GJ 229 A c",
+      "controversial": true,
       "status": "contested",
       "statusNote": "The NASA Exoplanet Archive lists GJ 229 A c but flags it as controversial. This edition of the game keeps it.",
-      "controversial": true,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20229%20A%20c",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
       "discoveryYear": 2020,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 121.93268,
-        "unit": "days",
         "error": 0.06708
       },
       "semiMajorAxisAu": {
         "value": 0.384,
-        "unit": "AU",
         "error": 0.005
       },
       "massEarth": {
         "value": 8.58136699,
-        "unit": "Earth masses",
         "error": 0.63565681,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 2.87,
-        "unit": "Earth radii"
+        "value": 2.87
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20229%20A%20c",
+        "recordId": "GJ 229 A c",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-338-b-b",
       "archiveName": "GJ 338 B b",
-      "displayName": "GJ 338 B b",
       "hostId": "gj-338-b",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 338 B b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20338%20B%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2020,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 24.422,
-        "unit": "days",
         "error": 0.014
       },
       "semiMajorAxisAu": {
         "value": 0.142,
-        "unit": "AU",
         "error": 0.005
       },
       "massEarth": {
         "value": 10.6,
-        "unit": "Earth masses",
         "error": 1.2,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 3.25,
-        "unit": "Earth radii"
+        "value": 3.25
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20338%20B%20b",
+        "recordId": "GJ 338 B b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-832-b",
       "archiveName": "GJ 832 b",
-      "displayName": "GJ 832 b",
       "hostId": "gj-832",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 832 b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20832%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2008,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 3853,
-        "unit": "days",
         "error": 51
       },
       "semiMajorAxisAu": {
         "value": 3.7,
-        "unit": "AU",
         "error": 0.1
       },
       "massEarth": {
         "value": 314.65012293,
-        "unit": "Earth masses",
         "error": 28.60455663
       },
       "radiusEarth": {
-        "value": 13.8,
-        "unit": "Earth radii"
+        "value": 13.8
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20832%20b",
+        "recordId": "GJ 832 b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "teegardens-star-d",
       "archiveName": "Teegarden's Star d",
-      "displayName": "Teegarden's Star d",
       "hostId": "teegardens-star",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "Teegarden's Star d",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/Teegarden's%20Star%20d",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2024,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 26.13,
-        "unit": "days",
         "error": 0.03
       },
       "semiMajorAxisAu": {
         "value": 0.0791,
-        "unit": "AU",
         "error": 0.0025
       },
       "massEarth": {
         "value": 0.82,
-        "unit": "Earth masses",
         "error": 0.17,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 0.954,
-        "unit": "Earth radii"
+        "value": 0.954
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Teegarden's%20Star%20d",
+        "recordId": "Teegarden's Star d",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "82-eridani-d",
       "archiveName": "HD 20794 d",
-      "displayName": "82 Eridani d",
       "hostId": "82-eridani",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "82 Eridani d",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%2020794%20d",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2011,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 89.68,
-        "unit": "days",
         "error": 0.1
       },
       "semiMajorAxisAu": {
         "value": 0.3625,
-        "unit": "AU",
         "error": 0.0015
       },
       "massEarth": {
         "value": 4.8,
-        "unit": "Earth masses",
         "error": 0.6,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 2.04,
-        "unit": "Earth radii"
+        "value": 2.04
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%2020794%20d",
+        "recordId": "HD 20794 d",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-581-c",
       "archiveName": "GJ 581 c",
-      "displayName": "GJ 581 c",
       "hostId": "gj-581",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 581 c",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20581%20c",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2007,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 12.9211,
-        "unit": "days",
         "error": 0.0008
       },
       "semiMajorAxisAu": {
         "value": 0.0718,
-        "unit": "AU",
         "error": 0.0008
       },
       "massEarth": {
         "value": 6.81,
-        "unit": "Earth masses",
         "error": 0.21
       },
       "radiusEarth": {
-        "value": 2.5,
-        "unit": "Earth radii"
+        "value": 2.5
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20581%20c",
+        "recordId": "GJ 581 c",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-251-b",
       "archiveName": "GJ 251 b",
-      "displayName": "GJ 251 b",
       "hostId": "gj-251",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 251 b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20251%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2020,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 14.237,
-        "unit": "days",
         "error": 0.0015
       },
       "semiMajorAxisAu": {
         "value": 0.0808,
-        "unit": "AU",
         "error": 0.0042
       },
       "massEarth": {
         "value": 3.85,
-        "unit": "Earth masses",
         "error": 0.35,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.79,
-        "unit": "Earth radii"
+        "value": 1.79
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20251%20b",
+        "recordId": "GJ 251 b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-4274-b",
       "archiveName": "GJ 4274 b",
-      "displayName": "GJ 4274 b",
       "hostId": "gj-4274",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 4274 b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%204274%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2026,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 1.6339,
-        "unit": "days",
         "error": 0.0001
       },
       "semiMajorAxisAu": {
         "value": 0.0153,
-        "unit": "AU",
         "error": 0.0008
       },
       "massEarth": {
         "value": 2.97,
-        "unit": "Earth masses",
         "error": 0.54,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.53,
-        "unit": "Earth radii"
+        "value": 1.53
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%204274%20b",
+        "recordId": "GJ 4274 b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-581-e",
       "archiveName": "GJ 581 e",
-      "displayName": "GJ 581 e",
       "hostId": "gj-581",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 581 e",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20581%20e",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2009,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 3.1481,
-        "unit": "days",
         "error": 0.0004
       },
       "semiMajorAxisAu": {
         "value": 0.02799,
-        "unit": "AU",
         "error": 0.0003
       },
       "massEarth": {
         "value": 2.48,
-        "unit": "Earth masses",
         "error": 0.7
       },
       "radiusEarth": {
-        "value": 1.38,
-        "unit": "Earth radii"
+        "value": 1.38
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20581%20e",
+        "recordId": "GJ 581 e",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "82-eridani-b",
       "archiveName": "HD 20794 b",
-      "displayName": "82 Eridani b",
       "hostId": "82-eridani",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "82 Eridani b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%2020794%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2011,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 18.314,
-        "unit": "days",
         "error": 0.0022
       },
       "semiMajorAxisAu": {
         "value": 0.1257,
-        "unit": "AU",
         "error": 0.00052
       },
       "massEarth": {
         "value": 2.7,
-        "unit": "Earth masses",
         "error": 0.3,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.45,
-        "unit": "Earth radii"
+        "value": 1.45
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%2020794%20b",
+        "recordId": "HD 20794 b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "82-eridani-e",
       "archiveName": "HD 20794 e",
-      "displayName": "82 Eridani e",
       "hostId": "82-eridani",
-      "kind": "planet",
+      "displayName": "82 Eridani e",
+      "controversial": true,
       "status": "contested",
       "statusNote": "The NASA Exoplanet Archive lists HD 20794 e but flags it as controversial. This edition of the game keeps it.",
-      "controversial": true,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%2020794%20e",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
       "discoveryYear": 2017,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 147.02,
-        "unit": "days",
         "error": 1.43
       },
       "semiMajorAxisAu": {
         "value": 0.509,
-        "unit": "AU",
         "error": 0.006
       },
       "massEarth": {
         "value": 4.77,
-        "unit": "Earth masses",
         "error": 0.96,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 2.03,
-        "unit": "Earth radii"
+        "value": 2.03
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%2020794%20e",
+        "recordId": "HD 20794 e",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-667-c-g",
       "archiveName": "GJ 667 C g",
-      "displayName": "GJ 667 C g",
       "hostId": "gj-667-c",
-      "kind": "planet",
+      "displayName": "GJ 667 C g",
+      "controversial": true,
       "status": "contested",
       "statusNote": "The NASA Exoplanet Archive lists GJ 667 C g but flags it as controversial. This edition of the game keeps it.",
-      "controversial": true,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20667%20C%20g",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
       "discoveryYear": 2013,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 256.2,
-        "unit": "days",
         "error": 13.8
       },
       "semiMajorAxisAu": {
         "value": 0.549,
-        "unit": "AU",
         "error": 0.052
       },
       "massEarth": {
         "value": 4.6,
-        "unit": "Earth masses",
         "error": 2.6,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.99,
-        "unit": "Earth radii"
+        "value": 1.99
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20667%20C%20g",
+        "recordId": "GJ 667 C g",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gliese-48-b",
       "archiveName": "Gliese 48 b",
-      "displayName": "Gliese 48 b",
       "hostId": "gliese-48",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "Gliese 48 b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/Gliese%2048%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2026,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 39.6299,
-        "unit": "days",
         "error": 0.29
       },
       "semiMajorAxisAu": {
         "value": 0.1752,
-        "unit": "AU",
         "error": 0.0011
       },
       "massEarth": {
         "value": 8.11,
-        "unit": "Earth masses",
         "error": 1.63,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 2.77,
-        "unit": "Earth radii"
+        "value": 2.77
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Gliese%2048%20b",
+        "recordId": "Gliese 48 b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "lacaille-9352-d",
       "archiveName": "GJ 887 d",
-      "displayName": "Lacaille 9352 d",
       "hostId": "lacaille-9352",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "Lacaille 9352 d",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20887%20d",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2026,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 50.77,
-        "unit": "days",
         "error": 0.05
       },
       "semiMajorAxisAu": {
         "value": 0.212,
-        "unit": "AU",
         "error": 0.007
       },
       "massEarth": {
         "value": 6.1,
-        "unit": "Earth masses",
         "error": 1.4,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 2.34,
-        "unit": "Earth radii"
+        "value": 2.34
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20887%20d",
+        "recordId": "GJ 887 d",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-1002-c",
       "archiveName": "GJ 1002 c",
-      "displayName": "GJ 1002 c",
       "hostId": "gj-1002",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 1002 c",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%201002%20c",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2022,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 21.202,
-        "unit": "days",
         "error": 0.013
       },
       "semiMajorAxisAu": {
         "value": 0.0738,
-        "unit": "AU",
         "error": 0.0021
       },
       "massEarth": {
         "value": 1.36,
-        "unit": "Earth masses",
         "error": 0.17,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.1,
-        "unit": "Earth radii"
+        "value": 1.1
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%201002%20c",
+        "recordId": "GJ 1002 c",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "hn-lib-b",
       "archiveName": "HN Lib b",
-      "displayName": "HN Lib b",
       "hostId": "hn-lib",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "HN Lib b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/HN%20Lib%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2023,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 36.116,
-        "unit": "days",
         "error": 0.027
       },
       "semiMajorAxisAu": {
         "value": 0.1417,
-        "unit": "AU",
         "error": 0.0023
       },
       "massEarth": {
         "value": 5.46,
-        "unit": "Earth masses",
         "error": 0.75,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 2.2,
-        "unit": "Earth radii"
+        "value": 2.2
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/HN%20Lib%20b",
+        "recordId": "HN Lib b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "hd-219134-c",
       "archiveName": "HD 219134 c",
-      "displayName": "HD 219134 c",
       "hostId": "hd-219134",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "HD 219134 c",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%20219134%20c",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2015,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 6.76458,
-        "unit": "days",
         "error": 0.00033
       },
       "semiMajorAxisAu": {
         "value": 0.0653,
-        "unit": "AU",
         "error": 0.0008
       },
       "massEarth": {
         "value": 4.36,
-        "unit": "Earth masses",
         "error": 0.22
       },
       "radiusEarth": {
         "value": 1.511,
-        "unit": "Earth radii",
         "error": 0.047
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%20219134%20c",
+        "recordId": "HD 219134 c",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "teegardens-star-b",
       "archiveName": "Teegarden's Star b",
-      "displayName": "Teegarden's Star b",
       "hostId": "teegardens-star",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "Teegarden's Star b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/Teegarden's%20Star%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2019,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 4.90634,
-        "unit": "days",
         "error": 0.00041
       },
       "semiMajorAxisAu": {
         "value": 0.0259,
-        "unit": "AU",
         "error": 0.0008
       },
       "massEarth": {
         "value": 1.16,
-        "unit": "Earth masses",
         "error": 0.12,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.05,
-        "unit": "Earth radii"
+        "value": 1.05
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Teegarden's%20Star%20b",
+        "recordId": "Teegarden's Star b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-514-b",
       "archiveName": "GJ 514 b",
-      "displayName": "GJ 514 b",
       "hostId": "gj-514",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 514 b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20514%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2022,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 140.43,
-        "unit": "days",
         "error": 0.41
       },
       "semiMajorAxisAu": {
         "value": 0.422,
-        "unit": "AU",
         "error": 0.014
       },
       "massEarth": {
         "value": 5.2,
-        "unit": "Earth masses",
         "error": 0.9,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 2.13,
-        "unit": "Earth radii"
+        "value": 2.13
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20514%20b",
+        "recordId": "GJ 514 b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-687-c",
       "archiveName": "GJ 687 c",
-      "displayName": "GJ 687 c",
       "hostId": "gj-687",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 687 c",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20687%20c",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2020,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 727.562,
-        "unit": "days",
         "error": 12.198
       },
       "semiMajorAxisAu": {
         "value": 1.165,
-        "unit": "AU",
         "error": 0.023
       },
       "massEarth": {
         "value": 16,
-        "unit": "Earth masses",
         "error": 4.1,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 4.14,
-        "unit": "Earth radii"
+        "value": 4.14
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20687%20c",
+        "recordId": "GJ 687 c",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-9066-c",
       "archiveName": "GJ 9066 c",
-      "displayName": "GJ 9066 c",
       "hostId": "gj-9066",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 9066 c",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%209066%20c",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2020,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 771.36,
-        "unit": "days",
         "error": 1.34
       },
       "semiMajorAxisAu": {
         "value": 0.88,
-        "unit": "AU",
         "error": 0.02
       },
       "massEarth": {
         "value": 66.74396547,
-        "unit": "Earth masses",
         "error": 6.35656814,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 9.6,
-        "unit": "Earth radii"
+        "value": 9.6
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%209066%20c",
+        "recordId": "GJ 9066 c",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-682-b",
       "archiveName": "GJ 682 b",
-      "displayName": "GJ 682 b",
       "hostId": "gj-682",
-      "kind": "planet",
-      "status": "confirmed",
+      "displayName": "GJ 682 b",
       "controversial": false,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20682%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
+      "status": "confirmed",
       "discoveryYear": 2014,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 17.478,
-        "unit": "days",
         "error": 0.062
       },
       "semiMajorAxisAu": {
         "value": 0.08,
-        "unit": "AU",
         "error": 0.014
       },
       "massEarth": {
         "value": 4.4,
-        "unit": "Earth masses",
         "error": 3.7,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 1.93,
-        "unit": "Earth radii"
+        "value": 1.93
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20682%20b",
+        "recordId": "GJ 682 b",
+        "retrieved": "2026-09-30"
+      }
     },
     {
       "id": "gj-229-a-b",
       "archiveName": "GJ 229 b",
-      "displayName": "GJ 229 A b",
       "hostId": "gj-229-a",
-      "kind": "planet",
+      "displayName": "GJ 229 A b",
+      "controversial": true,
       "status": "contested",
       "statusNote": "The NASA Exoplanet Archive lists GJ 229 b but flags it as controversial. This edition of the game keeps it.",
-      "controversial": true,
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20229%20b",
-      "asOfDate": "2026-09-30",
-      "verification": "snapshot",
       "discoveryYear": 2014,
       "discoveryMethod": "Radial Velocity",
       "orbitalPeriodDays": {
         "value": 579.47495,
-        "unit": "days",
         "error": 1.67942
       },
       "semiMajorAxisAu": {
         "value": 1.086,
-        "unit": "AU",
         "error": 0.015
       },
       "massEarth": {
         "value": 14.93793513,
-        "unit": "Earth masses",
         "error": 0.95348522,
         "qualifier": "minimum mass (M sin i)"
       },
       "radiusEarth": {
-        "value": 3.97,
-        "unit": "Earth radii"
+        "value": 3.97
       },
-      "unknowns": [
-        "surface",
-        "atmosphere",
-        "habitability"
-      ]
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20229%20b",
+        "recordId": "GJ 229 b",
+        "retrieved": "2026-09-30"
+      }
     }
   ]
 }

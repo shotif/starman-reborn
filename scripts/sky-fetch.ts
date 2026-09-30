@@ -42,6 +42,8 @@ const TAP = {
   vizier: 'https://tapvizier.cds.unistra.fr/TAPVizieR/tap',
   nasa: 'https://exoplanetarchive.ipac.caltech.edu/TAP',
   exoplaneteu: 'https://voparis-tap-planeto.obspm.fr/tap',
+  /** The same service over plain HTTP, for when its HTTPS endpoint does not answer. */
+  exoplaneteuHttp: 'http://voparis-tap-planeto.obspm.fr/tap',
 } as const;
 
 /** Parallax floor for the neighbourhood (mas): 120 mas is about 27.2 light-years. */
@@ -313,7 +315,8 @@ async function main(): Promise<void> {
   if (!planets.length) await tap('nasa', `select * from pscomppars where sy_dist < ${PLANET_DIST_PC}`, 'nasa-pscomppars-neighbourhood-all', { nasa: true });
 
   // The Extrasolar Planets Encyclopaedia: every planet it lists nearby, whatever its status.
-  await tap('exoplaneteu', `SELECT * FROM exoplanet.epn_core WHERE star_distance < ${ENCYCLOPAEDIA_DIST_PC}`, 'exoplanet-eu-neighbourhood');
+  const eu = `SELECT * FROM exoplanet.epn_core WHERE star_distance < ${ENCYCLOPAEDIA_DIST_PC}`;
+  if (!(await tap('exoplaneteu', eu, 'exoplanet-eu-neighbourhood')).length) await tap('exoplaneteuHttp', eu, 'exoplanet-eu-neighbourhood-http');
 
   // SIMBAD's bibliography: papers on discs, belts and infrared excesses around the neighbourhood's stars.
   const stellar = [...oids];

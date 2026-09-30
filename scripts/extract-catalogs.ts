@@ -8,7 +8,7 @@
  *
  * Nothing is invented: every value comes from these files, and every record keeps its source.
  * The output is flagged "provisional" in the game until the archive snapshot
- * (scripts/fetch-astro-snapshot.ts) can verify it against Gaia DR3, SIMBAD and the NASA
+ * (scripts/sky-fetch.ts, then scripts/sky-process.ts) can verify it against Gaia DR3, SIMBAD and the NASA
  * Exoplanet Archive.
  *
  * Inputs (not committed; download once):

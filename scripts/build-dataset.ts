@@ -2,11 +2,12 @@
  * Builds the bundled astronomy dataset (src/data/generated/*.json) from a normalized input.
  *
  * Input priority:
- *   1. data/snapshot/astrometry-input.json + exoplanets-input.json  (written by fetch-astro-snapshot.ts)
+ *   1. data/snapshot/*-input.json  (written by scripts/sky-process.ts from an archive snapshot)
  *   2. data/provisional/*.json  (stopgap transcriptions, flagged "provisional" in the game)
  * plus the extra systems extracted from the HYG and Open Exoplanet catalogues
  * (data/provisional/catalog-*.json, written by scripts/extract-catalogs.ts), always provisional,
- * for any star or planet the primary input does not already cover.
+ * for any star or planet the primary input does not already cover. The snapshot's new systems
+ * (data/snapshot/systems-input.json), belts and the Solar System's elements are added when present.
  *
  * The derived fields (epoch-propagated RA/Dec, distance, Cartesian light-year position) are computed
  * here in double precision so runtime code never has to redo astrometry.
@@ -22,7 +23,7 @@ import {
   parallaxToLightYears,
   propagatePosition,
 } from '../src/data/coords.ts';
-import type { ConfirmedBody, SourceRef, StellarComponent, Verification } from '../src/data/types.ts';
+import type { BeltRecord, ConfirmedBody, PlanetStatus, SourceRef, StellarComponent, Verification } from '../src/data/types.ts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -64,6 +65,10 @@ interface MeasuredInput {
 }
 
 interface PlanetInput {
+  /** Kept from the record it replaces, so saves and stations that name the planet keep working. */
+  id?: string;
+  status?: PlanetStatus;
+  statusNote?: string;
   archiveName: string;
   hostId: string;
   displayName?: string;
@@ -193,10 +198,12 @@ function buildExoplanets() {
   const { path, kind: primaryKind } = pickInput('exoplanets-input.json');
   const input = readJson<ExoplanetInput>(path);
   const extra = extraInput<ExoplanetInput>('catalog-exoplanets-input.json');
-  const known = new Set(input.planets.map((p) => p.archiveName));
+  const known = new Set(input.planets.flatMap((p) => [p.archiveName, p.id ?? slug(p.archiveName)]));
   const all = [
     ...input.planets.map((p) => ({ p, kind: primaryKind, asOfDate: input.retrieved ?? 'pending snapshot' })),
-    ...(extra?.input.planets ?? []).filter((p) => !known.has(p.archiveName)).map((p) => ({ p, kind: 'provisional' as Verification, asOfDate: 'pending snapshot' })),
+    ...(extra?.input.planets ?? [])
+      .filter((p) => !known.has(p.archiveName) && !known.has(p.id ?? slug(p.archiveName)))
+      .map((p) => ({ p, kind: 'provisional' as Verification, asOfDate: 'pending snapshot' })),
   ];
   const planets: ConfirmedBody[] = all.map(({ p, kind, asOfDate }) => {
     const orbitalPeriodDays = measured(p.orbitalPeriodDays, 'days');
@@ -208,12 +215,13 @@ function buildExoplanets() {
     if (kind === 'snapshot' && !radiusEarth) unknowns.unshift('radius');
     if (kind === 'snapshot' && !massEarth) unknowns.unshift('mass');
     return {
-      id: slug(p.archiveName),
+      id: p.id ?? slug(p.archiveName),
       archiveName: p.archiveName,
       displayName: p.displayName ?? displayNameFor(p.archiveName),
       hostId: p.hostId,
       kind: 'planet',
-      status: 'confirmed',
+      status: p.status ?? 'confirmed',
+      ...(p.statusNote ? { statusNote: p.statusNote } : {}),
       controversial: p.controversial,
       sourceUrl: p.source?.url ?? `https://exoplanetarchive.ipac.caltech.edu/overview/${encodeURIComponent(p.archiveName)}`,
       ...(p.source && p.source.label !== 'NASA Exoplanet Archive' ? { sourceLabel: p.source.label } : {}),
@@ -245,11 +253,47 @@ const astrometry = buildAstrometry();
 const exoplanets = buildExoplanets();
 writeFileSync(resolve(outDir, 'astrometry.json'), JSON.stringify(astrometry, null, 2) + '\n');
 writeFileSync(resolve(outDir, 'exoplanets.json'), JSON.stringify(exoplanets, null, 2) + '\n');
-const catalogSystems = extraInput<{ systems: unknown[] }>('catalog-systems.json');
+interface SystemEntry {
+  id: string;
+  displayName: string;
+  referenceComponentId: string;
+  componentIds: string[];
+  addedBy?: string;
+}
+const catalogSystems = extraInput<{ systems: SystemEntry[] }>('catalog-systems.json');
+const snapshotSystems = existsSync(resolve(root, 'data/snapshot/systems-input.json'))
+  ? readJson<{ systems: SystemEntry[]; additions: Record<string, string[]> }>(resolve(root, 'data/snapshot/systems-input.json'))
+  : { systems: [], additions: {} };
+// Stars that join a system the game had are appended to it; for the hand-made systems, systems.ts reads `additions`.
+const systems = [
+  ...(catalogSystems?.input.systems ?? []).map((e) => ({ ...e, componentIds: [...e.componentIds, ...(snapshotSystems.additions[e.id] ?? [])] })),
+  ...snapshotSystems.systems,
+];
+const catalogIds = new Set((catalogSystems?.input.systems ?? []).map((e) => e.id));
 writeFileSync(
   resolve(outDir, 'catalog-systems.json'),
-  JSON.stringify({ generatedBy: 'scripts/build-dataset.ts', systems: catalogSystems?.input.systems ?? [] }, null, 2) + '\n',
+  JSON.stringify(
+    {
+      generatedBy: 'scripts/build-dataset.ts',
+      systems,
+      additions: Object.fromEntries(Object.entries(snapshotSystems.additions).filter(([id]) => !catalogIds.has(id))),
+    },
+    null,
+    2,
+  ) + '\n',
 );
+
+// Belts and debris discs, and the Solar System's elements, when the snapshot has them.
+const belts = existsSync(resolve(root, 'data/snapshot/belts-input.json'))
+  ? readJson<{ retrieved: string; belts: BeltRecord[] }>(resolve(root, 'data/snapshot/belts-input.json'))
+  : { retrieved: null, belts: [] };
+writeFileSync(resolve(outDir, 'belts.json'), JSON.stringify({ generatedBy: 'scripts/build-dataset.ts', ...belts }, null, 2) + '\n');
+const solarPath = resolve(root, 'data/snapshot/solar-elements.json');
+writeFileSync(
+  resolve(outDir, 'solar-elements.json'),
+  JSON.stringify({ generatedBy: 'scripts/build-dataset.ts', ...(existsSync(solarPath) ? readJson<object>(solarPath) : { elements: null }) }, null, 2) + '\n',
+);
+console.log(`systems: ${systems.length} catalogue systems (${snapshotSystems.systems.length} from the sky snapshot); belts: ${belts.belts.length}`);
 
 console.log(`astrometry: ${astrometry.stars.length} stars (${astrometry.verification}) from ${astrometry.input}`);
 for (const s of astrometry.stars) {

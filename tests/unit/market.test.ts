@@ -19,7 +19,7 @@ const REPS = [-100, -30, 0, 12, 30, 100].map((v) => ({ sta: v, frontier: v, 'hol
 
 describe('economy guardrails', () => {
   it('pass for the world every player flies', () => {
-    expect(formatIssues(validateEconomy(marketTables(), WORLD.links))).toBe('');
+    expect(formatIssues(validateEconomy(marketTables(), WORLD.links, 'earth-port', (id) => WORLD.profiles.get(id)?.security ?? 1))).toBe('');
   });
 
   it('pass for other world seeds too', () => {
@@ -40,7 +40,7 @@ describe('economy guardrails', () => {
           .map((s) => ({ id: s.id, systemId: s.systemId, type: s.type, size: s.look.size, security: world.profiles.get(s.systemId)!.security })),
       ];
       const markets = buildMarkets(stations, world.links, seed);
-      expect(formatIssues(validateEconomy(markets, world.links)), `seed ${seed}`).toBe('');
+      expect(formatIssues(validateEconomy(markets, world.links, 'earth-port', (id) => world.profiles.get(id)?.security ?? 1)), `seed ${seed}`).toBe('');
     }
   });
 

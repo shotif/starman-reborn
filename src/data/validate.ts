@@ -173,13 +173,16 @@ export function validateDataset({ systems, astrometry, exoplanets }: ValidationI
   }
   for (const p of exoplanets.planets) {
     const where = `planet ${p.archiveName}`;
-    if (p.status !== 'confirmed') error('planet-status', `${where}: only confirmed planets may be bundled`);
+    // Nothing is dropped (docs/ASTRONOMY_SOURCES.md): a planet no archive confirms is kept, marked and explained.
+    if (!['confirmed', 'contested', 'candidate'].includes(p.status)) error('planet-status', `${where}: unknown status ${String(p.status)}`);
+    else if (p.status !== 'confirmed' && !p.statusNote?.trim()) error('planet-status', `${where}: a ${p.status} planet needs a note saying what the archives say`);
+    else if (p.status === 'confirmed' && p.controversial) error('planet-status', `${where}: flagged controversial yet marked confirmed`);
     if (!componentById.has(p.hostId)) error('planet-host', `${where}: host ${p.hostId} not found`);
     if (!isHttpsUrl(p.sourceUrl)) error('source-url', `${where}: source URL invalid`);
     if (p.verification === 'snapshot' && !ISO_DATE.test(p.asOfDate)) {
       error('planet-date', `${where}: asOfDate must be YYYY-MM-DD`);
     }
-    if (p.controversial) warn('planet-controversial', `${where}: archive flags this planet as controversial`);
+    if (p.status !== 'confirmed') warn('planet-contested', `${where}: ${p.status} (${p.statusNote})`);
   }
 
   if (astrometry.verification === 'provisional') {

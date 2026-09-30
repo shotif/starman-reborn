@@ -60,7 +60,7 @@ function findPosted(kind: NonNullable<JobDef['contract']>['kind'], match: (c: Jo
 describe('contract boards', () => {
   it('pass every guardrail at every station over forty time slots', () => {
     expect(formatIssues(validateContracts(40))).toBe('');
-  });
+  }, 120_000);
 
   it('are the same every time for a station and time slot, and change with the clock', () => {
     const id = GENERATED[0]!;

@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   equatorialToCartesian,
@@ -48,17 +49,23 @@ describe('bundled dataset', () => {
     expect(reachableSystems(SYSTEMS, 'sol').size).toBe(SYSTEMS.length);
   });
 
-  it('takes catalogue systems from HYG and the Open Exoplanet Catalogue, flagged provisional', () => {
+  it('checks every star and planet against the archives, and grows the map with the systems they add', () => {
+    expect(ASTROMETRY.verification).toBe('snapshot');
+    expect(ASTROMETRY.stars.every((s) => s.verification === 'snapshot' && s.astrometrySource.retrieved)).toBe(true);
     const tauCeti = getSystem('tau-ceti');
     expect(tauCeti.distanceLightYears).toBeCloseTo(11.9, 1);
     expect(tauCeti.confirmedBodies.length).toBeGreaterThanOrEqual(2);
-    expect(tauCeti.confirmedBodies.every((p) => p.status === 'confirmed' && p.sourceUrl.startsWith('https://'))).toBe(true);
+    expect(tauCeti.confirmedBodies.every((p) => p.sourceUrl.startsWith('https://'))).toBe(true);
     const gliese876 = getSystem('gliese-876');
     expect(gliese876.confirmedBodies.map((p) => p.displayName)).toEqual(expect.arrayContaining(['Gliese 876 b', 'Gliese 876 c']));
     expect(getSystem('altair').confirmedBodies).toEqual([]);
     const van = ASTROMETRY.stars.find((s) => s.id === 'van-maanens-star')!;
     expect(van.spectralType).toMatch(/^D/);
-    expect(van.catalogIds.hip ?? van.catalogIds.gliese).toBeTruthy();
+    expect(van.catalogIds.gaiaDr3 ?? van.catalogIds.hip).toBeTruthy();
+    // The sky snapshot adds real systems the first catalogue missed, near and far.
+    for (const id of ['teegardens-star', 'luhman-16', 'gj-581', 'hd-219134', 'vega', 'fomalhaut']) expect(SYSTEMS.some((s) => s.id === id), id).toBe(true);
+    expect(SYSTEMS.length).toBeGreaterThan(150);
+    expect(Math.max(...SYSTEMS.map((s) => s.distanceLightYears))).toBeLessThan(27.5);
   });
 
   it('keeps distances within the familiar published approximations', () => {
@@ -83,11 +90,18 @@ describe('bundled dataset', () => {
     expect(proxima.parentId).toBe('alpha-centauri-a');
   });
 
-  it('bundles only confirmed planets, including Proxima b', () => {
-    expect(EXOPLANETS.planets.every((p) => p.status === 'confirmed')).toBe(true);
-    expect(EXOPLANETS.planets.some((p) => p.archiveName === 'Proxima Cen b')).toBe(true);
+  it('keeps every planet it had, marks contested ones, and confirms Proxima b', () => {
+    const provisional = [
+      ...(JSON.parse(readFileSync('data/provisional/exoplanets-input.json', 'utf8')) as { planets: { archiveName: string }[] }).planets,
+      ...(JSON.parse(readFileSync('data/provisional/catalog-exoplanets-input.json', 'utf8')) as { planets: { archiveName: string }[] }).planets,
+    ];
+    const ids = new Set(EXOPLANETS.planets.map((p) => p.id));
+    for (const p of provisional) expect(ids.has(p.archiveName.toLowerCase().replace(/'/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')), p.archiveName).toBe(true);
+    expect(EXOPLANETS.planets.find((p) => p.archiveName === 'Proxima Cen b')?.status).toBe('confirmed');
+    for (const p of EXOPLANETS.planets.filter((x) => x.status !== 'confirmed')) expect(p.statusNote, p.archiveName).toMatch(/archive|Encyclopaedia/i);
+    expect(EXOPLANETS.planets.find((p) => p.id === 'tau-ceti-e')?.status).toBe('contested');
     const alphaCen = getSystem('alpha-centauri');
-    expect(alphaCen.confirmedBodies.every((p) => p.hostId === 'proxima-centauri')).toBe(true);
+    expect(alphaCen.confirmedBodies.filter((p) => p.status === 'confirmed').every((p) => p.hostId === 'proxima-centauri')).toBe(true);
     expect(getSystem('sirius').confirmedBodies).toEqual([]);
   });
 
@@ -110,6 +124,7 @@ describe('validation catches broken data', () => {
     const codes = validateDataset({ systems, astrometry: ASTROMETRY, exoplanets: EXOPLANETS }).map((i) => i.code);
     expect(codes).toContain('jump-asymmetric');
     eps.jumpLinks = [];
+    for (const s of systems) s.jumpLinks = s.jumpLinks.filter((l) => l !== 'epsilon-eridani');
     const codes2 = validateDataset({ systems, astrometry: ASTROMETRY, exoplanets: EXOPLANETS }).map((i) => i.code);
     expect(codes2).toContain('unreachable');
   });
@@ -120,7 +135,8 @@ describe('validation catches broken data', () => {
     astrometry.stars[2]!.parentId = 'nope';
     astrometry.stars.push({ ...astrometry.stars[1]! });
     const exoplanets = clone(EXOPLANETS);
-    (exoplanets.planets[0] as { status: string }).status = 'candidate';
+    (exoplanets.planets[0] as { status: string; statusNote?: string }).status = 'candidate';
+    delete (exoplanets.planets[0] as { statusNote?: string }).statusNote;
     exoplanets.planets[1]!.sourceUrl = 'http://insecure.example';
     const codes = validateDataset({ systems: SYSTEMS, astrometry, exoplanets }).map((i) => i.code);
     expect(codes).toEqual(

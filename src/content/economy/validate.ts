@@ -3,7 +3,7 @@ import type { Issue } from '../validate.ts';
 import { jumpsFrom } from '../world/network.ts';
 import { COMMODITIES, COMMODITY_IDS, PRICE_BAND, type CommodityId } from './goods.ts';
 import type { StationMarket } from './markets.ts';
-import { CURATED_MARKETS } from './rules.ts';
+import { CURATED_MARKETS, ECONOMY } from './rules.ts';
 
 /**
  * Economy guardrails (docs/PROCGEN.md §8.4), checked on the equilibrium tables: every good is made
@@ -64,7 +64,16 @@ export function equilibriumRoutes(markets: ReadonlyMap<string, StationMarket>, l
   return out.sort((a, b) => b.margin - a.margin);
 }
 
-export function validateEconomy(markets: ReadonlyMap<string, StationMarket>, links: ReadonlyMap<SystemId, readonly SystemId[]>, startLocation = 'earth-port'): Issue[] {
+/**
+ * `security` (a system's, 0–1) lets the margin cap leave out the danger money lawless stations pay
+ * (ECONOMY.riskPremium): a run into lawless frontier space may pay more than the cap, for the risk.
+ */
+export function validateEconomy(
+  markets: ReadonlyMap<string, StationMarket>,
+  links: ReadonlyMap<SystemId, readonly SystemId[]>,
+  startLocation = 'earth-port',
+  security: (systemId: SystemId) => number = () => 1,
+): Issue[] {
   const issues: Issue[] = [];
   const report: Report = (rule, subject, message) => issues.push({ rule, subject, message });
 
@@ -110,12 +119,17 @@ export function validateEconomy(markets: ReadonlyMap<string, StationMarket>, lin
 
   // Trade is worth it everywhere, and nowhere absurd.
   const routes = equilibriumRoutes(markets, links);
+  // Out on the thin frontier lanes are long and stations few: three more jumps of reach there.
+  let far: EquilibriumRoute[] | null = null;
   for (const m of markets.values()) {
     const buys = [...m.entries.values()].some((e) => e.role !== 'consume');
-    if (buys && !routes.some((r) => r.from === m.locationId && r.margin >= VIABLE_MARGIN)) report('routes', m.locationId, `nothing bought here sells for ${Math.round((VIABLE_MARGIN - 1) * 100)}% more within ${ROUTE_JUMPS} jumps`);
+    if (!buys || routes.some((r) => r.from === m.locationId && r.margin >= VIABLE_MARGIN)) continue;
+    far ??= equilibriumRoutes(markets, links, ROUTE_JUMPS + 3);
+    if (!far.some((r) => r.from === m.locationId && r.margin >= VIABLE_MARGIN)) report('routes', m.locationId, `nothing bought here sells for ${Math.round((VIABLE_MARGIN - 1) * 100)}% more within ${ROUTE_JUMPS + 3} jumps`);
   }
   for (const r of routes) {
-    if (r.margin > MAX_MARGIN) report('routes', `${r.commodity} ${r.from}→${r.to}`, `pays ×${r.margin.toFixed(2)} (at most ×${MAX_MARGIN})`);
+    const danger = 1 + ECONOMY.riskPremium * (1 - security(markets.get(r.to)!.systemId));
+    if (r.margin / danger > MAX_MARGIN) report('routes', `${r.commodity} ${r.from}→${r.to}`, `pays ×${r.margin.toFixed(2)}, ×${(r.margin / danger).toFixed(2)} before danger money (at most ×${MAX_MARGIN})`);
   }
   const opening = new Set(routes.filter((r) => r.from === startLocation && r.jumps <= 2 && r.margin >= VIABLE_MARGIN).map((r) => r.commodity));
   if (opening.size < 3) report('routes', startLocation, `only ${opening.size} good(s) worth hauling within two jumps of the start`);

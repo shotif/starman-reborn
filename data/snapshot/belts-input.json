@@ -1,0 +1,184 @@
+{
+  "retrieved": "2026-09-30",
+  "description": "Belts and debris discs: the Solar System's from NASA; elsewhere, stars SIMBAD links to papers about their dust (2026-09-30). Extents only where the cited source gives them; otherwise the belt's place in the game is schematic.",
+  "belts": [
+    {
+      "id": "sol-main-belt",
+      "systemId": "sol",
+      "hostId": "sun",
+      "name": "Main asteroid belt",
+      "kind": "asteroid-belt",
+      "innerAu": 2.2,
+      "outerAu": 3.2,
+      "sources": [
+        {
+          "label": "NASA: Asteroids",
+          "url": "https://science.nasa.gov/solar-system/asteroids/"
+        }
+      ],
+      "note": "The main asteroid belt lies between the orbits of Mars and Jupiter."
+    },
+    {
+      "id": "sol-kuiper-belt",
+      "systemId": "sol",
+      "hostId": "sun",
+      "name": "Kuiper Belt",
+      "kind": "kuiper-belt",
+      "innerAu": 30,
+      "outerAu": 50,
+      "sources": [
+        {
+          "label": "NASA: Kuiper Belt",
+          "url": "https://science.nasa.gov/solar-system/kuiper-belt/"
+        }
+      ],
+      "note": "A ring of icy bodies beyond the orbit of Neptune."
+    },
+    {
+      "id": "alpha-centauri-debris-disc",
+      "systemId": "alpha-centauri",
+      "hostId": "proxima-centauri",
+      "name": "Proxima Centauri debris disc",
+      "kind": "debris-disc",
+      "sources": [
+        {
+          "label": "ALMA discovery of dust belts around Proxima Centauri (2017)",
+          "url": "https://ui.adsabs.harvard.edu/abs/2017ApJ...850L...6A",
+          "bibcode": "2017ApJ...850L...6A",
+          "retrieved": "2026-09-30"
+        }
+      ],
+      "note": "1 paper linked to this star in SIMBAD reports dust around it; the belt's place in the game is schematic."
+    },
+    {
+      "id": "epsilon-eridani-debris-disc",
+      "systemId": "epsilon-eridani",
+      "hostId": "epsilon-eridani",
+      "name": "Epsilon Eridani belts",
+      "kind": "debris-disc",
+      "sources": [
+        {
+          "label": "NASA: SOFIA observations of Epsilon Eridani",
+          "url": "https://science.nasa.gov/universe/exoplanets/sofia-confirms-nearby-planetary-system-is-similar-to-our-own/"
+        },
+        {
+          "label": "A dust ring around {epsilon} Eridani: analog to the young solar system (1998)",
+          "url": "https://ui.adsabs.harvard.edu/abs/1998ApJ...506L.133G",
+          "bibcode": "1998ApJ...506L.133G",
+          "retrieved": "2026-09-30"
+        },
+        {
+          "label": "The Northern arc of {epsilon} Eridani's Debris Ring as seen by ALMA (2017)",
+          "url": "https://ui.adsabs.harvard.edu/abs/2017MNRAS.469.3200B",
+          "bibcode": "2017MNRAS.469.3200B",
+          "retrieved": "2026-09-30"
+        }
+      ],
+      "note": "8 papers linked to this star in SIMBAD report dust around it; the belt's place in the game is schematic."
+    },
+    {
+      "id": "tau-ceti-debris-disc",
+      "systemId": "tau-ceti",
+      "hostId": "tau-ceti",
+      "name": "Tau Ceti debris disc",
+      "kind": "debris-disc",
+      "sources": [
+        {
+          "label": "The debris disc around {tau} Ceti: a massive analogue to the Kuiper Belt (2004)",
+          "url": "https://ui.adsabs.harvard.edu/abs/2004MNRAS.351L..54G",
+          "bibcode": "2004MNRAS.351L..54G",
+          "retrieved": "2026-09-30"
+        },
+        {
+          "label": "ALMA observations of the debris disk of solar analog {tau} Ceti (2016)",
+          "url": "https://ui.adsabs.harvard.edu/abs/2016ApJ...828..113M",
+          "bibcode": "2016ApJ...828..113M",
+          "retrieved": "2026-09-30"
+        }
+      ],
+      "note": "3 papers linked to this star in SIMBAD report dust around it; the belt's place in the game is schematic."
+    },
+    {
+      "id": "fomalhaut-debris-disc",
+      "systemId": "fomalhaut",
+      "hostId": "fomalhaut",
+      "name": "Fomalhaut debris disc",
+      "kind": "debris-disc",
+      "sources": [
+        {
+          "label": "A map of a collisionally evolving dust disk around Fomalhaut (1994)",
+          "url": "https://ui.adsabs.harvard.edu/abs/1994Natur.368..312S",
+          "bibcode": "1994Natur.368..312S",
+          "retrieved": "2026-09-30"
+        },
+        {
+          "label": "Fomalhaut's debris disc is not dominated by primordial Plutos (2025)",
+          "url": "https://ui.adsabs.harvard.edu/abs/2025MNRAS.544.1447P",
+          "bibcode": "2025MNRAS.544.1447P",
+          "retrieved": "2026-09-30"
+        }
+      ],
+      "note": "28 papers linked to this star in SIMBAD report dust around it; the belt's place in the game is schematic."
+    },
+    {
+      "id": "fomalhaut-c-debris-disc",
+      "systemId": "fomalhaut-c",
+      "hostId": "fomalhaut-c",
+      "name": "Fomalhaut C debris disc",
+      "kind": "debris-disc",
+      "sources": [
+        {
+          "label": "Discovery of the Fomalhaut C debris disc (2014)",
+          "url": "https://ui.adsabs.harvard.edu/abs/2014MNRAS.438L..96K",
+          "bibcode": "2014MNRAS.438L..96K",
+          "retrieved": "2026-09-30"
+        },
+        {
+          "label": "JWST/NIRCam Detection of the Fomalhaut C Debris Disk in Scattered Light (2024)",
+          "url": "https://ui.adsabs.harvard.edu/abs/2024ApJ...967L...8L",
+          "bibcode": "2024ApJ...967L...8L",
+          "retrieved": "2026-09-30"
+        }
+      ],
+      "note": "3 papers linked to this star in SIMBAD report dust around it; the belt's place in the game is schematic."
+    },
+    {
+      "id": "vega-debris-disc",
+      "systemId": "vega",
+      "hostId": "vega",
+      "name": "Vega debris disc",
+      "kind": "debris-disc",
+      "sources": [
+        {
+          "label": "On the far-infrared excess of Vega (1984)",
+          "url": "https://ui.adsabs.harvard.edu/abs/1984Natur.307..441H",
+          "bibcode": "1984Natur.307..441H",
+          "retrieved": "2026-09-30"
+        },
+        {
+          "label": "Clearing residual planetesimals by sweeping secular resonances in transitional disks: a lone-planet scenario for the wide gaps in debris disks around Vega and Fomalhaut (2017)",
+          "url": "https://ui.adsabs.harvard.edu/abs/2017ApJ...849...98Z",
+          "bibcode": "2017ApJ...849...98Z",
+          "retrieved": "2026-09-30"
+        }
+      ],
+      "note": "16 papers linked to this star in SIMBAD report dust around it; the belt's place in the game is schematic."
+    },
+    {
+      "id": "gj-581-debris-disc",
+      "systemId": "gj-581",
+      "hostId": "gj-581",
+      "name": "GJ 581 debris disc",
+      "kind": "debris-disc",
+      "sources": [
+        {
+          "label": "A DEBRIS disk around the planet hosting M-star GJ 581 spatially resolved with Herschel (2012)",
+          "url": "https://ui.adsabs.harvard.edu/abs/2012A%26A...548A..86L",
+          "bibcode": "2012A&A...548A..86L",
+          "retrieved": "2026-09-30"
+        }
+      ],
+      "note": "1 paper linked to this star in SIMBAD reports dust around it; the belt's place in the game is schematic."
+    }
+  ]
+}
