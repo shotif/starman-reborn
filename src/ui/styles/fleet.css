@@ -55,7 +55,8 @@
   text-transform: none;
 }
 
-.fleet .tag.news {
+/* Event tags can be long (a boom's name and the station's): let them wrap on narrow phones. */
+.fleet .tag {
   white-space: normal;
 }
 
