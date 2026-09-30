@@ -779,6 +779,22 @@ function capPath(t: PortraitTraits, up: number, out: number, sideY: number, hl: 
   ]);
 }
 
+/**
+ * A cap of textured hair: a scalloped outline `out` beyond the skull at the sides and `up` above
+ * it, with `count` bumps `depth` deep, down to `sideY` in front of the ears.
+ */
+function tuftedCap(t: PortraitTraits, out: number, up: number, sideY: number, count: number, depth: number, r: Rng): string {
+  const { top: T, eye: E, hw, hairline: hl } = t;
+  const o = hw + out;
+  const cy = T + (E - T) * 0.5;
+  const start: P = [48 + hw - 0.8, sideY];
+  return (
+    `M${pt(start)}L${pt([48 + o, sideY])}${bumps(48, cy, o, cy - T + up, -0.12, Math.PI + 0.12, count, depth, r)}L${pt([48 - hw + 0.8, sideY])}` +
+    `C${pt([48 - hw + 1.3, E - 8])} ${pt([48 - hw + 2.6, hl + 3])} ${pt([48 - hw * 0.56, hl + 0.9])}C${pt([44, hl - 0.3])} ${pt([52, hl - 0.3])} ${pt([48 + hw * 0.56, hl + 0.9])}` +
+    `C${pt([48 + hw - 2.6, hl + 3])} ${pt([48 + hw - 1.3, E - 8])} ${pt(start)}Z`
+  );
+}
+
 /** Hair in front: the cap, fringes and locks that frame the face. */
 function hairFront(t: PortraitTraits, c: Tones, r: Rng): string {
   const { top: T, eye: E, hw, jawY } = t;
@@ -792,32 +808,16 @@ function hairFront(t: PortraitTraits, c: Tones, r: Rng): string {
   const cropped = (hlAt: number): string => shape(capPath(t, 0.8, 0.5, E - 3, hlAt, 1), mix(c.hair, c.skin, 0.4));
   switch (t.style) {
     case 'crop':
-      return shape(capPath(t, v * 0.75, 0.9, E - 2.5, hl), c.hair) + combed([-6, -1.5, 3, 7.5], c.hairShade, 0.45) + shine();
+      return shape(tuftedCap(t, 0.9, v * 0.75, E - 2.5, 15, 0.55, r), c.hair) + combed([-6, -1.5, 3, 7.5], c.hairShade, 0.45) + shine();
     case 'buzz':
       return cropped(hl + 0.5);
-    case 'coily': {
-      const o = hw + v * 0.55;
-      const cy = T + (E - T) * 0.5;
-      const ry = cy - T + v;
-      const start: P = [48 + hw - 0.8, E - 2.6];
-      return shape(
-        `M${pt(start)}L${pt([48 + o, E - 2.6])}${bumps(48, cy, o, ry, -0.12, Math.PI + 0.12, 11, 1.3, r)}L${pt([48 - hw + 0.8, E - 2.6])}` +
-          `C${pt([48 - hw + 1.3, E - 8])} ${pt([48 - hw + 2.6, hl + 3])} ${pt([48 - hw * 0.56, hl + 0.9])}C${pt([48 - 4, hl - 0.3])} ${pt([48 + 4, hl - 0.3])} ${pt([48 + hw * 0.56, hl + 0.9])}` +
-          `C${pt([48 + hw - 2.6, hl + 3])} ${pt([48 + hw - 1.3, E - 8])} ${pt(start)}Z`,
-        c.hair,
-      );
-    }
+    case 'coily':
+      return shape(tuftedCap(t, v * 0.55, v, E - 2.6, 11, 1.3, r), c.hair);
     case 'afro':
       return shape(capPath(t, 1, 1, E - 1, hl, 2), c.hair) + shine(2);
     case 'locs': {
       // Textured roots, then two locs each side falling past the ears.
-      const o = hw + 1.4;
-      const cy = T + (E - T) * 0.5;
-      const start: P = [48 + hw - 0.8, E - 2.2];
-      const cap =
-        `M${pt(start)}L${pt([48 + o, E - 2.2])}${bumps(48, cy, o, cy - T + 2.2, -0.1, Math.PI + 0.1, 12, 1, r)}L${pt([48 - hw + 0.8, E - 2.2])}` +
-        `C${pt([48 - hw + 1.3, E - 8])} ${pt([48 - hw + 2.6, hl + 3])} ${pt([48 - hw * 0.56, hl + 0.9])}C${pt([48 - 4, hl - 0.3])} ${pt([48 + 4, hl - 0.3])} ${pt([48 + hw * 0.56, hl + 0.9])}` +
-        `C${pt([48 + hw - 2.6, hl + 3])} ${pt([48 + hw - 1.3, E - 8])} ${pt(start)}Z`;
+      const cap = tuftedCap(t, 1.4, 2.2, E - 2.2, 12, 1, r);
       let d = '';
       for (const side of [-1, 1]) {
         for (const k of [0, 1]) {
@@ -883,15 +883,24 @@ function hairFront(t: PortraitTraits, c: Tones, r: Rng): string {
         shape(
           path([48 + side * (hw * 0.25), hl - 0.6], [
             [[48 + side * (hw * 0.75), hl + 0.2], [48 + side * (hw - 1.6), hl + 5], [48 + side * (hw - 1.3), E]],
-            [[48 + side * (hw - 0.8), E + 10], [48 + side * (hw - 0.2), jawY - 2], [48 + side * (hw + 1.8), low]],
-            [[48 + side * (hw + v + 3), low]],
+            [[48 + side * (hw - 0.8), E + 10], [48 + side * (hw - 0.2), jawY - 2], [48 + side * (hw + 1.2), low - 1.4]],
+            // Rounded ends.
+            [[48 + side * (hw + 1.6), low + 0.6], [48 + side * (hw + 3.4), low + 0.4]],
+            [[48 + side * (hw + v + 3.2), low + 0.2], [48 + side * (hw + v + 3), low - 2.4]],
             [[48 + side * (hw + v + 1), E - 6]],
             [[48 + side * (hw * 0.4), T - v + 1]],
           ]),
           c.hair,
         );
+      const strand = (side: number): string => `M${n(48 + side * (hw - 0.6))} ${n(E - 5)}Q${n(48 + side * (hw + 0.8))} ${n(E + 9)} ${n(48 + side * (hw + 2.4))} ${n(low - 2.4)}`;
       const partX = 48 + s * r.range(0, 5);
-      return cap + lock(-1) + lock(1) + stroke(`M${n(partX)} ${n(hl - 0.5)}Q${n(partX - s)} ${n(T + 2)} ${n(partX - s * 2)} ${n(T - v + 1)}`, c.hairShade, 0.8, { opacity: 0.7 }) + shine();
+      return (
+        cap +
+        lock(-1) +
+        lock(1) +
+        stroke(`M${n(partX)} ${n(hl - 0.5)}Q${n(partX - s)} ${n(T + 2)} ${n(partX - s * 2)} ${n(T - v + 1)}${strand(-1)}${strand(1)}`, c.hairShade, 0.8, { opacity: 0.6 }) +
+        shine()
+      );
     }
     case 'bun':
     case 'ponytail':
