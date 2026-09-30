@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { AudioEngine } from '../audio/AudioEngine.ts';
 import type { MusicMood, SfxId } from '../audio/types.ts';
-import { getComponent, getLocation, getPlanet, getSystem, SYSTEMS } from '../data/systems.ts';
+import { getComponent, getLocation, getPlanet, getSystem, SYSTEMS, WORLD } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { cargoUsed } from '../economy/cargo.ts';
 import { shipModel } from '../content/catalog.ts';
@@ -32,6 +32,7 @@ import { createStationInterior, type RoomView, type StationInterior } from '../w
 import type { EncounterDef } from '../world/sceneTypes.ts';
 import { spectralClass } from '../content/world/generate.ts';
 import { sceneDefFor } from '../world/systems/index.ts';
+import { trafficFor } from '../world/traffic/setup.ts';
 import { SystemScene } from '../world/SystemScene.ts';
 import type { Target } from '../world/targets.ts';
 import { GameRenderer, isTouchDevice, resolveQuality } from './GameRenderer.ts';
@@ -624,8 +625,10 @@ export class Game {
           toast(`Salvage collected: +${formatCredits(credits)}`, 'good');
           this.persist();
         },
+        onBounty: (credits, name) => this.onBounty(credits, name),
         onMessage: (text, tone) => toast(text, tone, 2600),
       },
+      traffic: trafficFor(state.location.systemId, this.renderer.quality),
     });
     const { width, height } = this.renderer.size;
     this.flight.setViewport(width, height);
@@ -656,6 +659,20 @@ export class Game {
   }
 
   // ------------------------------------------------------------------ flight events
+
+  /** A raider from a pack destroyed by the player: the system's owner pays the bounty. */
+  private onBounty(credits: number, name: string): void {
+    const state = this.state!;
+    const owner = WORLD.profiles.get(state.location.systemId)?.owner ?? null;
+    const payer = owner && owner !== 'hollow-wake' ? owner : 'sta';
+    state.stats.kills += 1;
+    applyCredits(state, credits, 'bounty', `${name} bounty (${FACTIONS[payer].shortName})`);
+    const change = adjustReputation(state.reputation, payer, 2);
+    adjustReputation(state.reputation, 'hollow-wake', -3);
+    this.sfx('credits');
+    toast(`${name} destroyed. Bounty +${formatCredits(credits)}${change ? ` · ${FACTIONS[payer].shortName} ${signed(change)}` : ''}`, 'good', 4500);
+    this.persist();
+  }
 
   private onEncounterStart(def: EncounterDef): void {
     void def;

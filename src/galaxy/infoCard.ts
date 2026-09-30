@@ -11,7 +11,7 @@ import { icon } from '../ui/icons.ts';
 import { evaluateJump, type JumpEvaluation } from './jumpRules.ts';
 import { mapIcon } from './mapIcons.ts';
 import { formatLy } from './mapData.ts';
-import { badgeHeading, componentList, factList, locationList, observedMark, planetBlock, positionList } from './scienceBlocks.ts';
+import { badgeHeading, componentList, factList, locationList, observedMark, planetBlock, positionList, securityNote } from './scienceBlocks.ts';
 import type { MapState } from './types.ts';
 
 export interface InfoCardHandlers {
@@ -172,6 +172,7 @@ export class InfoCard {
       { class: 'gmap-sec gmap-sec-fiction', 'aria-labelledby': `${this.ids.title}-fic` },
       badgeHeading('h3', 'Fiction', 'fictional', `${this.ids.title}-fic`),
       h('p', { class: 'gmap-summary' }, system.fiction),
+      securityNote(systemId),
       system.fictionalLocations.length ? locationList(system.fictionalLocations, 'compact') : null,
     );
     const links = h(

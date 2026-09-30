@@ -353,3 +353,33 @@ world and for other world seeds; the unit tests also check live prices over many
 - at least three goods are worth hauling within two jumps of the starting station;
 - live prices stay in their bands, buy stays above sell at every standing, a buy-and-sell-back
   round trip always loses money, stock recovers and drift stays gentle.
+
+## 9. Traffic and raider packs
+
+Every system has traffic that fits it (`src/world/traffic/plan.ts`, flown by `FlightSession`):
+
+- **Traders** fly between the system's open stations, or arrive through the jump beacon, in
+  haulers of the owner's makers (independents in unclaimed space). About one per station, fewer
+  where security is low, at most six; half the traffic is already under way when you arrive.
+  They fly around planets and stations, and when shot at they call a mayday and run for the
+  nearest station. A lost freighter spills salvage.
+- **Patrols** (wings of two fighters of the owner's makers) fly between the stations and the jump
+  beacon in claimed space with security 0.4 or more (two wings in the core). They engage raiders
+  within 4 km. They leave the scripted opening raid near Mars to the player.
+- **Raider packs** appear below security 0.6 and never in Sol: after a 35-second grace period,
+  then every one to two minutes (sooner in lawless space) while fewer than the maximum are about
+  (two in lawless systems with a den). Threat level 1 (one or two Wake light fighters) at the
+  border, 2 (two or three, some heavier) in low-security space, 3 (two to four, mostly heavy
+  fighters) in lawless space; one level more five or more jumps from Sol. They come out of a den
+  or out of the dark, sweep toward where the player was, then prowl the station approaches and
+  the jump beacon. They attack the player within 4.5 km and hunt traders and patrols within 9 km;
+  after four minutes with nothing to hunt they leave.
+- **Fights**: bolts only hit ships of the other side (no friendly fire among lawful ships or
+  among raiders). NPC ships fly their catalogue loadouts, but their guns deal a quarter of the
+  damage (the opening raider's level), scaled by the difficulty setting when aimed at the player.
+- **Bounties**: a raider the player destroys (hit by the player within the last 30 seconds) pays
+  150 cr plus 110 cr per tier above Mk I, 80 cr more for heavy fighters, from the system's owner
+  (the Transit Authority in unclaimed space), with a little standing with that owner.
+- **Warnings**: the star map and encyclopedia show each system's security, owner and raider
+  threat; the HUD shows *Hostile contact* while a pack is on you, and jumping needs clear space.
+- Fewer ships on the Medium and Low quality presets (phones).

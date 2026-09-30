@@ -5,7 +5,8 @@
  */
 import '../ui/styles/encyclopedia.css';
 import { formatDec, formatRa } from '../data/coords.ts';
-import { EXOPLANETS, SOLAR_BODIES, componentsOf, getComponent } from '../data/systems.ts';
+import { EXOPLANETS, SOLAR_BODIES, WORLD, componentsOf, getComponent } from '../data/systems.ts';
+import { trafficFor } from '../world/traffic/setup.ts';
 import { COMMODITIES } from '../economy/commodities.ts';
 import { marketTables } from '../economy/markets.ts';
 import type {
@@ -327,6 +328,17 @@ export function locationList(locations: readonly FictionalLocation[], detail: De
       ),
     ),
   );
+}
+
+/** How safe a system is: patrol level, owner and the raider threat (fiction, from the world generator). */
+export function securityNote(systemId: string): HTMLElement | null {
+  const p = WORLD.profiles.get(systemId);
+  if (!p) return null;
+  const packs = trafficFor(systemId, 'high').plan.packs;
+  const label = p.security >= 0.75 ? 'Secure' : p.security >= 0.55 ? 'Patrolled' : p.security >= 0.35 ? 'Thinly patrolled' : 'Lawless';
+  const owner = p.owner ? FACTION_NAMES[p.owner] : 'Unclaimed';
+  const threat = packs ? `raider packs, threat ${packs.level} of 3` : 'no raider packs';
+  return h('p', { class: `sci-item-text security security-${packs ? `threat-${packs.level}` : 'safe'}`, 'data-testid': 'security-note' }, `${label} · ${owner} · ${threat}`);
 }
 
 /** "Makes metals, deuterium · wants ore, water" from the station's market (public knowledge, no prices). */

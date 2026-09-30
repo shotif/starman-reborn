@@ -418,3 +418,22 @@
   max-width: 100%;
   overflow-wrap: anywhere;
 }
+
+/* Security of a system (fiction): patrol level, owner and raider threat. */
+.security {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.security-safe {
+  color: var(--friendly);
+}
+
+.security-threat-1 {
+  color: var(--amber);
+}
+
+.security-threat-2,
+.security-threat-3 {
+  color: var(--hostile);
+}

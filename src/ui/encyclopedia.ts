@@ -18,6 +18,7 @@ import {
   planetBlock,
   positionList,
   observedMark,
+  securityNote,
 } from '../galaxy/scienceBlocks.ts';
 import { button, dataBadge, sourceLink } from './components.ts';
 import { h, type Child } from './dom.ts';
@@ -133,6 +134,7 @@ function systemSection(system: StarSystemRecord, id: string, discovered: Readonl
     factList(system),
     badgeHeading('h4', 'In the game', 'fictional'),
     h('p', null, system.fiction),
+    securityNote(system.id),
     locationList(system.fictionalLocations, 'full'),
     jumpLinkList(system),
   );

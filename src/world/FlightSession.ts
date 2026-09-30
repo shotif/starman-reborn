@@ -8,6 +8,7 @@ import { applyDamage, regenerate, type Durability } from '../combat/damage.ts';
 import { leadPoint } from '../combat/lead.ts';
 import { MISSILE_LOCK_CONE, MISSILE_LOCK_RANGE, updateMissile, type Missile, type MissileTarget } from '../combat/missiles.ts';
 import { PirateBrain } from '../combat/PirateAI.ts';
+import { PatrolBrain, TraderBrain } from '../combat/TrafficAI.ts';
 import { Gun, ProjectileSystem, segmentHitsSphere, withinArc } from '../combat/weapons.ts';
 import { EXOPLANETS } from '../data/systems.ts';
 import type { FactionId } from '../data/types.ts';
@@ -17,7 +18,7 @@ import { FACTIONS } from '../economy/factions.ts';
 import { REPAIR_KIT } from '../economy/equipment.ts';
 import { shipModel } from '../content/catalog.ts';
 import { activeLauncher, fittedGuns, gunSummary, performanceOf, roundsLabel } from '../economy/loadout.ts';
-import { aimErrors, avoidObstacles, flyTo, steerToward } from '../flight/autopilot.ts';
+import { aimErrors, avoidObstacles, flyTo, steerToward, type Obstacle } from '../flight/autopilot.ts';
 import { ChaseCamera } from '../flight/ChaseCamera.ts';
 import type { FlightAction, FlightInput } from '../flight/input/types.ts';
 import { lookRotation, neutralControls, RAIDER_SHIP, ShipBody, stepBounded, type ShipControls } from '../flight/ShipBody.ts';
@@ -37,6 +38,8 @@ import {
 } from './art/effects.ts';
 import { clearShipArtCache, createCatalogShipArt } from './art/shipgen/index.ts';
 import type { ShipArt } from './art/ships.ts';
+import { bountyFor, FLEETS, RAIDERS, TRAFFIC, type TrafficPlan } from './traffic/plan.ts';
+import type { StationOwner } from '../content/world/types.ts';
 import type { ArtContext, ArtObject } from './art/types.ts';
 import { seededRandom } from './art/util.ts';
 import type { EncounterDef } from './sceneTypes.ts';
@@ -55,6 +58,8 @@ export interface FlightCallbacks {
   onEncounterStart(def: EncounterDef): void;
   onEncounterEnd(def: EncounterDef, outcome: EncounterOutcome): void;
   onLoot(credits: number): void;
+  /** The player destroyed a raider from a pack (the opening raid reports through onEncounterEnd). */
+  onBounty(credits: number, name: string): void;
   onMessage(text: string, tone: 'good' | 'bad' | 'info'): void;
 }
 
@@ -63,18 +68,44 @@ export type SpawnSpec =
   | { kind: 'arrival' }
   | { kind: 'restore'; position: THREE.Vector3; quaternion: THREE.Quaternion };
 
+type NpcRole = 'raider' | 'trader' | 'patrol';
+
 interface NpcShip {
   id: string;
   name: string;
-  faction: FactionId;
+  faction: FactionId | 'independent';
+  role: NpcRole;
+  /** Raiders fight everyone else; lawful ships (and the player) fight raiders. */
+  side: 'lawful' | 'raider';
   body: ShipBody;
   art: ShipArt;
   durability: Durability;
-  gun: Gun;
+  guns: Gun[];
+  /** Combat behaviour (raiders, and patrols when they engage). */
   brain: PirateBrain;
+  trader?: TraderBrain;
+  patrol?: { brain: PatrolBrain; offset: THREE.Vector3 };
   controls: ShipControls;
   target: Target;
-  encounter: EncounterDef;
+  /** The scripted encounter this raider belongs to (the opening raid). */
+  encounter?: EncounterDef;
+  /** Raider pack number. */
+  pack?: number;
+  /** Who it is fighting. */
+  foe: NpcShip | 'player' | null;
+  /** Bounty paid when the player destroys it. */
+  bounty: number;
+  /** Session time the player last hit it. */
+  playerHitAt: number;
+  /** Seconds a raider has had nothing to hunt. */
+  idle: number;
+  maydaySent: boolean;
+}
+
+/** What the traffic system needs to know about the current system (Game builds it from the world). */
+export interface TrafficSetup {
+  plan: TrafficPlan;
+  owner: StationOwner | null;
 }
 
 interface Drone {
@@ -206,6 +237,8 @@ export class FlightSession {
   private readonly asteroidHits: AsteroidHit[] = [];
   private readonly missileTargetCache = new Map<string, MissileTarget>();
   private readonly npcShots = new Map<string, number>();
+  private readonly traffic: TrafficSetup | null;
+  private trafficTimers = { trader: 3, pack: 0, patrolsLaunched: false, populated: false, serial: 0 };
 
   constructor(opts: {
     system: SystemScene;
@@ -215,6 +248,7 @@ export class FlightSession {
     ctx: ArtContext;
     audio: AudioEngine;
     callbacks: FlightCallbacks;
+    traffic?: TrafficSetup | null;
   }) {
     this.system = opts.system;
     this.camera = opts.camera;
@@ -223,6 +257,8 @@ export class FlightSession {
     this.ctx = opts.ctx;
     this.audio = opts.audio;
     this.callbacks = opts.callbacks;
+    this.traffic = opts.traffic ?? null;
+    this.trafficTimers.pack = this.traffic?.plan.packs?.firstDelay ?? 0;
     this.rand = seededRandom((opts.state.seed ^ (opts.state.stats.jumps * 7919) ^ Math.floor(opts.state.clock)) >>> 0);
     this.chase = new ChaseCamera(opts.camera);
     this.applyCameraSettings();
@@ -350,11 +386,11 @@ export class FlightSession {
   }
 
   hostilesNearby(radius = HOSTILE_RADIUS): boolean {
-    return this.npcs.some((n) => n.durability.hull > 0 && n.body.position.distanceTo(this.player.position) < radius && n.brain.state !== 'escaped');
+    return this.npcs.some((n) => n.side === 'raider' && n.durability.hull > 0 && n.body.position.distanceTo(this.player.position) < radius && n.brain.state !== 'escaped');
   }
 
   get encounterActive(): boolean {
-    return this.activeEncounter !== null;
+    return this.activeEncounter !== null || this.packEngaged();
   }
 
   /** Current pose for mid-flight saves. */
@@ -842,6 +878,7 @@ export class FlightSession {
     regenerate(this.playerDurability, dt);
     for (const n of this.npcs) regenerate(n.durability, dt);
     this.updateEncounters(dt);
+    this.updateTraffic(dt);
     this.scanTimer -= dt;
     if (this.scanTimer <= 0) {
       this.scanTimer = 0.5;
@@ -884,7 +921,7 @@ export class FlightSession {
     this.camera.updateMatrixWorld();
     this.system.update(dt, this.camera, this.player.position);
     this.audio.setEngine(this.engineSound());
-    this.audio.setCombatIntensity(this.activeEncounter ? 1 : 0);
+    this.audio.setCombatIntensity(this.activeEncounter || this.packEngaged() ? 1 : 0);
     this.buildHud();
   }
 
@@ -1206,21 +1243,24 @@ export class FlightSession {
 
   private updateProjectiles(dt: number): void {
     this.projectiles.update(dt, (p, from, to) => {
-      if (p.ownerId === PLAYER_ID) {
-        for (const n of this.npcs) {
-          if (n.durability.hull <= 0) continue;
-          if (segmentHitsSphere(from, to, n.body.position, n.art.radius)) {
-            this.damageNpc(n, p.damage, to, p.damageType);
-            return true;
-          }
+      const byPlayer = p.ownerId === PLAYER_ID;
+      const side = byPlayer ? 'lawful' : (this.npcs.find((n) => n.id === p.ownerId)?.side ?? 'raider');
+      // Bolts hit ships of the other side only: no friendly fire among lawful ships or among raiders.
+      for (const n of this.npcs) {
+        if (n.durability.hull <= 0 || n.side === side) continue;
+        if (segmentHitsSphere(from, to, n.body.position, n.art.radius)) {
+          this.damageNpc(n, p.damage, to, p.damageType, byPlayer);
+          return true;
         }
+      }
+      if (byPlayer) {
         for (const d of this.drones) {
           if (d.target.alive && segmentHitsSphere(from, to, d.position, d.target.radius)) {
             this.hitDrone(d, p.damage, to);
             return true;
           }
         }
-      } else if (this.alive && segmentHitsSphere(from, to, this.player.position, this.playerArt.radius)) {
+      } else if (side === 'raider' && this.alive && segmentHitsSphere(from, to, this.player.position, this.playerArt.radius)) {
         this.damagePlayer(p.damage, to, p.damageType);
         return true;
       }
@@ -1239,11 +1279,11 @@ export class FlightSession {
       // Unguided rounds hit whatever they fly into.
       let struck = m.target ? this.npcs.find((n) => n.id === m.target!.id) : undefined;
       if (!result && !m.target) {
-        struck = this.npcs.find((n) => n.durability.hull > 0 && n.body.position.distanceTo(m.position) < n.art.radius + 5);
+        struck = this.npcs.find((n) => n.side === 'raider' && n.durability.hull > 0 && n.body.position.distanceTo(m.position) < n.art.radius + 5);
         if (struck) result = 'hit';
       }
       if (!result) continue;
-      if (result === 'hit' && struck) this.damageNpc(struck, m.damage, m.position);
+      if (result === 'hit' && struck) this.damageNpc(struck, m.damage, m.position, undefined, true);
       this.spawnEffect(createExplosion(m.position.clone(), result === 'hit' ? 5 : 3, this.ctx));
       this.sfx('explosion-small', 0.6);
       this.system.scene.remove(m.art.object);
@@ -1346,12 +1386,15 @@ export class FlightSession {
     this.deathTimer = 0;
   }
 
-  private damageNpc(n: NpcShip, amount: number, at: THREE.Vector3, type?: DamageType): void {
+  private damageNpc(n: NpcShip, amount: number, at: THREE.Vector3, type?: DamageType, byPlayer = false): void {
+    if (byPlayer) n.playerHitAt = this.time;
     const r = applyDamage(n.durability, amount, type);
     const shieldHit = r.absorbedByShield > 0;
     n.art.flashShield(shieldHit ? 0.8 : 0.2);
-    this.spawnEffect(createImpactSpark(at.clone(), shieldHit ? '#7fd8ff' : '#ffb070', this.ctx));
-    this.sfx(shieldHit ? 'hit-shield' : 'hit-hull', 0.55);
+    // Fights between other ships far away stay quiet and cheap.
+    const near = byPlayer || at.distanceTo(this.player.position) < 2_500;
+    if (near || at.distanceTo(this.player.position) < 8_000) this.spawnEffect(createImpactSpark(at.clone(), shieldHit ? '#7fd8ff' : '#ffb070', this.ctx));
+    if (near) this.sfx(shieldHit ? 'hit-shield' : 'hit-hull', 0.55);
     if (r.destroyed) this.destroyNpc(n);
   }
 
@@ -1359,9 +1402,14 @@ export class FlightSession {
     n.target.alive = false;
     const cached = this.missileTargetCache.get(n.id);
     if (cached) cached.alive = false;
+    const near = n.body.position.distanceTo(this.player.position) < 6_000;
     this.spawnEffect(createExplosion(n.body.position.clone(), 8, this.ctx));
-    this.sfx('explosion-large', 0.8);
-    this.spawnLoot(n.body.position, 120);
+    if (near) this.sfx('explosion-large', 0.8);
+    // Raiders leave salvage; a lost freighter spills part of its cargo.
+    this.spawnLoot(n.body.position, n.role === 'trader' ? 90 + Math.round(this.rand() * 160) : n.role === 'raider' ? 60 + Math.round(n.bounty * 0.25) : 40);
+    if (n.role === 'trader') this.callbacks.onMessage(`${n.name} was destroyed.`, 'bad');
+    const byPlayer = this.time - n.playerHitAt < 30;
+    if (n.side === 'raider' && !n.encounter && byPlayer) this.callbacks.onBounty(n.bounty, n.name);
     this.removeNpc(n);
     if (this.activeEncounter && this.activeEncounter.npcId === n.id) {
       const def = this.activeEncounter.def;
@@ -1373,6 +1421,7 @@ export class FlightSession {
   private removeNpc(n: NpcShip): void {
     const i = this.npcs.indexOf(n);
     if (i >= 0) this.npcs.splice(i, 1);
+    for (const x of this.npcs) if (x.foe === n) x.foe = null;
     if (this.selectedId === n.target.id) this.selectedId = null;
     n.target.alive = false;
     this.system.scene.remove(n.art.object);
@@ -1429,13 +1478,13 @@ export class FlightSession {
       }
       const tuning = {
         accuracy: DIFFICULTY[this.settings.difficulty].enemyAccuracy,
-        projectileSpeed: npc.gun.profile.projectileSpeed,
-        gunRange: npc.gun.profile.range,
+        projectileSpeed: npc.guns[0]!.profile.projectileSpeed,
+        gunRange: npc.guns[0]!.profile.range,
       };
-      npc.gun.tick(dt);
+      for (const g of npc.guns) g.tick(dt);
       const out = npc.brain.update(dt, npc.body, npc.durability, this.player, tuning, npc.controls);
       if (out.fire && this.alive && !enc.bypassed && withinArc(npc.body, out.aimPoint)) {
-        const fired = npc.gun.fire(npc.body, npc.art.muzzles, out.aimPoint, this.projectiles, npc.id, DIFFICULTY[this.settings.difficulty].enemyDamage);
+        const fired = npc.guns[0]!.fire(npc.body, npc.art.muzzles, out.aimPoint, this.projectiles, npc.id, DIFFICULTY[this.settings.difficulty].enemyDamage);
         if (fired.fired) {
           this.sfx('laser-enemy', 0.35);
           this.npcShots.set(npc.id, (this.npcShots.get(npc.id) ?? 0) + 1);
@@ -1500,8 +1549,15 @@ export class FlightSession {
       art,
       // Wake Salvage kit: a deflector shield and plasma guns.
       durability: { hull: hullMax, hullMax, shield: 60, shieldMax: 60, shieldRegen: 6, shieldDelay: 3, shieldType: 'deflector', sinceHit: 99 },
-      gun: new Gun({ damage: 4, shotsPerSecond: 3.2, projectileSpeed: 760, range: 900, energyPerShot: 3, kind: 'enemy-pulse', damageType: 'plasma' }),
+      guns: [new Gun({ damage: 4, shotsPerSecond: 3.2, projectileSpeed: 760, range: 900, energyPerShot: 3, kind: 'enemy-pulse', damageType: 'plasma' })],
       brain: new PirateBrain(this.rand),
+      role: 'raider',
+      side: 'raider',
+      foe: 'player',
+      bounty: 0,
+      playerHitAt: -Infinity,
+      idle: 0,
+      maydaySent: false,
       controls: neutralControls(),
       target: {
         id: `ship:${id}`,
@@ -1526,6 +1582,315 @@ export class FlightSession {
     if (this.autopilot.mode === 'goto') this.autopilot = { mode: 'none' };
     this.sfx('alert');
     this.callbacks.onEncounterStart(def);
+  }
+
+  // ---------------------------------------------------------------- traffic (docs/PROCGEN.md §9)
+
+  private readonly packHome = new Map<number, THREE.Vector3>();
+  private readonly packAlerted = new Set<number>();
+  private packSerial = 0;
+  private frameObstacles: Obstacle[] = [];
+
+  /** A raider pack is fighting the player. */
+  private packEngaged(): boolean {
+    return this.npcs.some((n) => n.pack !== undefined && n.foe === 'player' && n.durability.hull > 0 && n.brain.state !== 'flee' && n.brain.state !== 'escaped');
+  }
+
+  private updateTraffic(dt: number): void {
+    const t = this.traffic;
+    if (!t) return;
+    const { plan } = t;
+    const timers = this.trafficTimers;
+    if (!timers.populated) {
+      timers.populated = true;
+      for (let i = 0; i < Math.ceil(plan.traders / 2); i++) this.spawnTrader(t, true);
+    }
+    timers.trader -= dt;
+    if (timers.trader <= 0 && this.npcs.filter((n) => n.role === 'trader').length < plan.traders) {
+      this.spawnTrader(t);
+      timers.trader = THREE.MathUtils.lerp(plan.traderInterval[0], plan.traderInterval[1], this.rand());
+    }
+    if (!timers.patrolsLaunched && plan.patrolWings > 0 && this.time > 2) {
+      timers.patrolsLaunched = true;
+      for (let w = 0; w < plan.patrolWings; w++) this.spawnPatrolWing(t, w);
+    }
+    if (plan.packs) {
+      timers.pack -= dt;
+      const packs = new Set(this.npcs.flatMap((n) => (n.pack === undefined ? [] : [n.pack]))).size;
+      if (timers.pack <= 0 && packs < plan.packs.max && this.alive && !this.busy && this.autopilot.mode !== 'lane') {
+        this.spawnPack(plan.packs);
+        timers.pack = THREE.MathUtils.lerp(plan.packs.interval[0], plan.packs.interval[1], this.rand());
+      }
+    }
+    this.frameObstacles = this.system.obstacles(null);
+    for (const n of [...this.npcs]) {
+      if (n.encounter || n.durability.hull <= 0) continue;
+      if (n.role === 'trader') this.flyTrader(n);
+      else if (n.role === 'patrol') this.flyPatrol(n, dt);
+      else this.flyRaider(n, dt);
+    }
+  }
+
+  /** A traffic ship from the catalogue, flying its stock loadout (NPC guns are scaled down in fights). */
+  private makeNpc(modelId: string, role: NpcRole, faction: FactionId | 'independent', position: THREE.Vector3, forward: THREE.Vector3, subtitle: string): NpcShip {
+    const model = shipModel(modelId);
+    const perf = performanceOf({ model: modelId, fittings: model.stock });
+    const body = new ShipBody(perf.flight);
+    body.position.copy(position);
+    body.lookAlong(forward);
+    body.velocity.copy(forward).multiplyScalar(80);
+    const art = createCatalogShipArt(model, this.ctx);
+    art.object.position.copy(position);
+    this.system.scene.add(art.object);
+    const side = role === 'raider' ? 'raider' : 'lawful';
+    const health = side === 'raider' ? DIFFICULTY[this.settings.difficulty].enemyHealth : 1;
+    const id = `${role}-${++this.trafficTimers.serial}`;
+    const name = model.name;
+    const lawfulFaction = faction !== 'independent' ? faction : undefined;
+    const npc: NpcShip = {
+      id,
+      name,
+      faction,
+      role,
+      side,
+      body,
+      art,
+      durability: {
+        hull: perf.hullMax * health,
+        hullMax: perf.hullMax * health,
+        shield: perf.shield?.capacity ?? 0,
+        shieldMax: perf.shield?.capacity ?? 0,
+        shieldRegen: perf.shield?.regenPerSecond ?? 0,
+        shieldDelay: perf.shield?.regenDelay ?? 3,
+        shieldType: perf.shield?.shieldType ?? 'balanced',
+        sinceHit: 99,
+      },
+      guns: perf.guns.map(
+        (g, i) =>
+          new Gun({
+            damage: g.damage,
+            shotsPerSecond: g.shotsPerSecond,
+            projectileSpeed: g.projectileSpeed,
+            range: g.range,
+            energyPerShot: g.energyPerShot,
+            kind: side === 'raider' ? 'enemy-pulse' : boltKind(g.damageType, 1 + (i % 2)),
+            damageType: g.damageType,
+          }),
+      ),
+      brain: new PirateBrain(this.rand),
+      controls: neutralControls(),
+      target: {
+        id: `ship:${id}`,
+        name,
+        kind: 'ship',
+        position: body.position,
+        velocity: body.velocity,
+        radius: art.radius,
+        subtitle,
+        dataClass: 'fictional',
+        ...(lawfulFaction ? { faction: lawfulFaction } : {}),
+        hostile: side === 'raider',
+        alive: true,
+        cycle: side === 'raider',
+      },
+      foe: null,
+      bounty: 0,
+      playerHitAt: -Infinity,
+      idle: 0,
+      maydaySent: false,
+    };
+    this.npcs.push(npc);
+    return npc;
+  }
+
+  private openDocks(): DockSite[] {
+    return this.system.docks.filter((d) => d.dockable);
+  }
+
+  private jumpPoint(): THREE.Vector3 {
+    return (this.system.def.beacons.find((b) => b.kind === 'jump') ?? { position: this.system.def.arrival.position }).position;
+  }
+
+  private spawnTrader(t: TrafficSetup, midRoute = false): void {
+    const docks = this.openDocks();
+    if (!docks.length) return;
+    const owner: StationOwner = t.owner ?? 'independent';
+    const fleet = FLEETS[owner].traders.length ? FLEETS[owner].traders : FLEETS.independent.traders;
+    const model = fleet[Math.floor(this.rand() * fleet.length)]!;
+    // Some arrive through the jump beacon, the rest launch from a station.
+    const fromBeacon = docks.length < 2 || this.rand() < 0.4;
+    const from = fromBeacon ? null : docks[Math.floor(this.rand() * docks.length)]!;
+    const choices = docks.filter((d) => d !== from);
+    const dest = choices[Math.floor(this.rand() * choices.length)]!;
+    let position = from
+      ? from.dockPoint.clone().addScaledVector(from.approach, 320)
+      : this.jumpPoint().clone().add(this.tmp.set(this.rand() - 0.5, (this.rand() - 0.5) * 0.3, this.rand() - 0.5).multiplyScalar(1_400));
+    // The traffic already under way when the player arrives: somewhere along its route.
+    if (midRoute) position = position.lerp(dest.dockPoint, 0.15 + this.rand() * 0.6).add(this.tmp.set(0, (this.rand() - 0.5) * 800, 0));
+    // Never pop in right next to the player.
+    if (position.distanceTo(this.player.position) < 1_200) return;
+    const forward = from && !midRoute ? from.approach.clone() : dest.dockPoint.clone().sub(position).normalize();
+    const faction = owner === 'hollow-wake' ? 'independent' : owner;
+    const npc = this.makeNpc(model, 'trader', faction, position, forward, `${faction === 'independent' ? 'Independent' : FACTIONS[faction].shortName} hauler · bound for ${dest.name}`);
+    npc.trader = new TraderBrain({ id: dest.def.locationId, point: dest.dockPoint }, npc.durability);
+  }
+
+  private spawnPatrolWing(t: TrafficSetup, wing: number): void {
+    const owner = t.owner;
+    if (!owner || owner === 'independent' || owner === 'hollow-wake') return;
+    const models = FLEETS[owner].patrols;
+    const points = [...this.openDocks().map((d) => d.dockPoint.clone().addScaledVector(d.approach, 1_600)), this.jumpPoint().clone()];
+    if (!models.length || points.length < 2) return;
+    const start = (wing * 2) % points.length;
+    for (let i = 0; i < t.plan.wingSize; i++) {
+      const model = models[(wing + i) % models.length]!;
+      const offset = new THREE.Vector3((i - 0.5) * 180, i * 50, i * 90);
+      const position = points[start]!.clone().add(offset);
+      if (position.distanceTo(this.player.position) < 600) position.add(this.tmp.set(0, 700, 0));
+      const forward = points[(start + 1) % points.length]!.clone().sub(position).normalize();
+      const npc = this.makeNpc(model, 'patrol', owner, position, forward, `${FACTIONS[owner].shortName} patrol`);
+      npc.patrol = { brain: new PatrolBrain(points, start + 1), offset };
+    }
+  }
+
+  private spawnPack(spec: NonNullable<TrafficPlan['packs']>): void {
+    const pack = ++this.packSerial;
+    const den = this.system.docks.find((d) => !d.dockable);
+    let home: THREE.Vector3;
+    const fromDen = !!den && this.rand() < 0.6;
+    if (fromDen) {
+      home = den!.def.position.clone().addScaledVector(den!.approach, den!.radius + 1_200);
+    } else {
+      // Out of the dark, a few kilometres from the player.
+      const a = this.rand() * Math.PI * 2;
+      home = this.player.position.clone().add(this.tmp.set(Math.cos(a), (this.rand() - 0.5) * 0.4, Math.sin(a)).normalize().multiplyScalar(6_000 + this.rand() * 2_500));
+    }
+    this.packHome.set(pack, home);
+    // They prowl the approaches: off a few stations, the jump beacon, and back home.
+    const approaches = this.openDocks()
+      .map((d) => d.dockPoint.clone().addScaledVector(d.approach, 2_500 + this.rand() * 2_000).add(this.tmp.set(0, (this.rand() - 0.5) * 1_200, 0)))
+      .sort(() => this.rand() - 0.5)
+      .slice(0, 3);
+    // A pack out of the dark first sweeps toward where the player was seen.
+    const route = [...(fromDen ? [] : [this.player.position.clone()]), ...approaches, this.jumpPoint().clone().add(this.tmp.set(1_500, 400, -1_200)), home.clone()];
+    const size = spec.size[0] + Math.floor(this.rand() * (spec.size[1] - spec.size[0] + 1));
+    const pool = RAIDERS[spec.level];
+    for (let i = 0; i < size; i++) {
+      const model = pool[Math.floor(this.rand() * pool.length)]!;
+      const position = home.clone().add(this.tmp.set(this.rand() - 0.5, this.rand() - 0.5, this.rand() - 0.5).multiplyScalar(500));
+      const forward = this.player.position.clone().sub(position).normalize();
+      const bounty = bountyFor(model);
+      const npc = this.makeNpc(model, 'raider', 'hollow-wake', position, forward, `${FACTIONS['hollow-wake'].name} raider · hostile · bounty ${bounty} cr`);
+      npc.pack = pack;
+      npc.bounty = bounty;
+      npc.patrol = { brain: new PatrolBrain(route, 0), offset: new THREE.Vector3((i - size / 2) * 140, (i % 2) * 60, (i % 3) * 90) };
+    }
+  }
+
+  private flyTrader(n: NpcShip): void {
+    const brain = n.trader!;
+    const cruise = brain.update(n.body, n.durability, n.controls, this.frameObstacles, () => {
+      let best: DockSite | null = null;
+      for (const d of this.openDocks()) if (!best || d.dockPoint.distanceTo(n.body.position) < best.dockPoint.distanceTo(n.body.position)) best = d;
+      return best ? { id: best.def.locationId, point: best.dockPoint } : null;
+    });
+    n.body.requestCruise(cruise);
+    if (brain.attacked && !n.maydaySent) {
+      n.maydaySent = true;
+      if (n.body.position.distanceTo(this.player.position) < 15_000) this.callbacks.onMessage(`Mayday from the ${n.name}: raiders attacking!`, 'bad');
+    }
+    // Docked at its destination: it leaves the scene.
+    if (brain.state === 'arrived') this.removeNpc(n);
+  }
+
+  private flyPatrol(n: NpcShip, dt: number): void {
+    // The opening raid near Mars is the player's fight; patrols leave scripted raiders alone.
+    const foe = this.nearestShip(n.body.position, 4_000, (x) => x.side === 'raider' && !x.encounter);
+    n.foe = foe;
+    if (foe) {
+      this.fightNpc(n, foe.body, dt, TRAFFIC.npcDamage);
+    } else {
+      for (const g of n.guns) g.tick(dt);
+      n.body.requestCruise(n.patrol!.brain.update(n.body, n.controls, this.frameObstacles, n.patrol!.offset));
+    }
+    // A badly damaged patrol breaks off and heads home.
+    if (n.brain.state === 'escaped') this.removeNpc(n);
+  }
+
+  private flyRaider(n: NpcShip, dt: number): void {
+    const pack = this.npcs.filter((x) => x.pack === n.pack && x.durability.hull > 0);
+    const sees = (x: NpcShip) => x.body.position.distanceTo(this.player.position) < TRAFFIC.detectRange;
+    const playerFair = this.alive && !this.busy && this.autopilot.mode !== 'lane';
+    if (playerFair && (n.foe === 'player' || pack.some(sees))) {
+      n.foe = 'player';
+    } else {
+      const prey = n.foe && n.foe !== 'player' && n.foe.durability.hull > 0 ? n.foe : this.nearestShip(n.body.position, TRAFFIC.huntRange, (x) => x.side === 'lawful');
+      n.foe = prey;
+    }
+    // Raiders give up on a player who is out of reach.
+    if (n.foe === 'player' && n.body.position.distanceTo(this.player.position) > TRAFFIC.huntRange) n.foe = null;
+    if (n.foe) {
+      n.idle = 0;
+      const toPlayer = n.foe === 'player';
+      if (toPlayer && n.pack !== undefined && !this.packAlerted.has(n.pack)) {
+        this.packAlerted.add(n.pack);
+        this.sfx('alert');
+        this.callbacks.onMessage(pack.length > 1 ? `${pack.length} Hollow Wake raiders closing in!` : 'A Hollow Wake raider is closing in!', 'bad');
+        if (this.autopilot.mode === 'goto') this.autopilot = { mode: 'none' };
+        this.player.requestCruise(false);
+      }
+      const scale = TRAFFIC.npcDamage * (toPlayer ? DIFFICULTY[this.settings.difficulty].enemyDamage : 1);
+      this.fightNpc(n, toPlayer ? this.player : (n.foe as NpcShip).body, dt, scale);
+    } else {
+      n.idle += dt;
+      for (const g of n.guns) g.tick(dt);
+      if (n.patrol) {
+        n.body.requestCruise(n.patrol.brain.update(n.body, n.controls, this.frameObstacles, n.patrol.offset));
+      } else {
+        flyTo(n.body, this.packHome.get(n.pack ?? -1) ?? n.body.position, { arriveDistance: 400, allowCruise: false, maxThrottle: 0.5 }, n.controls);
+        n.body.requestCruise(false);
+      }
+      if (n.idle > TRAFFIC.packIdle) this.removeNpc(n);
+    }
+    if (n.brain.state === 'escaped' && n.body.position.distanceTo(this.player.position) > 3_200) this.removeNpc(n);
+  }
+
+  /** Runs a ship's combat brain against a target and fires its guns. */
+  private fightNpc(n: NpcShip, foe: ShipBody, dt: number, damageScale: number): void {
+    const g0 = n.guns[0];
+    for (const g of n.guns) g.tick(dt);
+    // Close long distances in cruise, then drop out to fight.
+    n.body.requestCruise(n.brain.state === 'approach' && n.body.position.distanceTo(foe.position) > 3_500 && aimErrors(n.body, foe.position).angle < 0.3);
+    const tuning = {
+      accuracy: n.side === 'raider' ? DIFFICULTY[this.settings.difficulty].enemyAccuracy : 0.6,
+      projectileSpeed: g0?.profile.projectileSpeed ?? 800,
+      gunRange: g0?.profile.range ?? 900,
+    };
+    const out = n.brain.update(dt, n.body, n.durability, foe, tuning, n.controls);
+    if (!g0 || !out.fire || !withinArc(n.body, out.aimPoint)) return;
+    const muzzles = n.art.muzzles;
+    let fired = false;
+    n.guns.forEach((g, i) => {
+      if (g.fire(n.body, muzzles.length ? [muzzles[i % muzzles.length]!] : [], out.aimPoint, this.projectiles, n.id, damageScale).fired) fired = true;
+    });
+    if (fired) {
+      this.npcShots.set(n.id, (this.npcShots.get(n.id) ?? 0) + 1);
+      if (n.body.position.distanceTo(this.player.position) < 2_500) this.sfx(n.side === 'raider' ? 'laser-enemy' : 'laser', 0.3);
+    }
+  }
+
+  private nearestShip(from: THREE.Vector3, range: number, match: (n: NpcShip) => boolean): NpcShip | null {
+    let best: NpcShip | null = null;
+    let bestD = range;
+    for (const x of this.npcs) {
+      if (x.durability.hull <= 0 || !match(x)) continue;
+      const d = x.body.position.distanceTo(from);
+      if (d < bestD) {
+        best = x;
+        bestD = d;
+      }
+    }
+    return best;
   }
 
   private autoScan(): void {
@@ -1611,7 +1976,7 @@ export class FlightSession {
     hud.launcher = launcher ? roundsLabel(launcher.stats.kind) : null;
     hud.repairKits = this.state.ship.repairKits;
     hud.inLane = this.autopilot.mode === 'lane' && this.autopilot.phase === 'travel';
-    hud.encounterActive = this.activeEncounter !== null && !this.activeEncounter.bypassed;
+    hud.encounterActive = (this.activeEncounter !== null && !this.activeEncounter.bypassed) || this.packEngaged();
     const ap = this.autopilot;
     hud.autopilotMode = ap.mode;
     hud.weapon = gunSummary(this.state.ship);
@@ -1713,10 +2078,11 @@ export class FlightSession {
   }
 
   /** Debug snapshot of NPC state for automated tests. */
-  debugNpcs(): { id: string; state: string; hull: number; shield: number; energy: number; distance: number; shotsFired: number }[] {
+  debugNpcs(): { id: string; role: NpcRole; state: string; hull: number; shield: number; energy: number; distance: number; shotsFired: number }[] {
     return this.npcs.map((n) => ({
       id: n.id,
-      state: n.brain.state,
+      role: n.role,
+      state: n.trader?.state ?? (n.patrol && n.foe === null ? n.patrol.brain.state : n.brain.state),
       hull: n.durability.hull,
       shield: n.durability.shield,
       energy: n.body.energy,

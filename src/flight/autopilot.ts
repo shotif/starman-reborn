@@ -86,6 +86,7 @@ export function avoidObstacles(
   obstacles: readonly Obstacle[],
   margin: number,
   out: THREE.Vector3,
+  ignoreId?: string,
 ): { point: THREE.Vector3; detour: boolean } {
   tmpDir.copy(goal).sub(from);
   const length = tmpDir.length();
@@ -94,6 +95,7 @@ export function avoidObstacles(
   let best: Obstacle | null = null;
   let bestT = Infinity;
   for (const o of obstacles) {
+    if (o.id === ignoreId) continue;
     tmpRel.copy(o.center).sub(from);
     const t = tmpRel.dot(tmpDir);
     if (t <= 0 || t >= length) continue;
