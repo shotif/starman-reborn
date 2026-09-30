@@ -13,10 +13,10 @@ increments 1–6 below have added world events and news, escorts, deadlines, ace
 recoveries, the law and the outlaw path, ratings, a codex and milestones, three faction story
 arcs, and combat depth (seekers and decoys, mines, system damage, loot, wingmen, dens under fire).
 
-What it lacks is mostly **reasons and consequences**: the world only changes when you trade,
-nothing after the opening tells a story, standing barely bites, and there is no long-term goal
-beyond a bigger ship. The proposals below go after that, in the order I would build them. Sizes
-are relative: S, M, L.
+When this plan was written, what the game lacked was mostly **reasons and consequences**: the
+world only changed when you traded, nothing after the opening told a story, standing barely bit,
+and there was no long-term goal beyond a bigger ship. Increments 1–6 went after that, in the
+order below; the parallel tracks and quick wins are still open. Sizes are relative: S, M, L.
 
 ## Proposed next increments
 

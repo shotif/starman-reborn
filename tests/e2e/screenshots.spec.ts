@@ -119,7 +119,20 @@ async function audit(page: Page, touch: boolean): Promise<AuditResult> {
   }, touch);
 }
 
+/** Waits for smooth scrolling to come to rest (selecting a mount scrolls its offers into view). */
+async function scrollsSettled(page: Page): Promise<void> {
+  const read = () => page.evaluate(() => [...document.querySelectorAll('.scroll')].map((el) => el.scrollTop).join(','));
+  let last = await read();
+  for (let i = 0; i < 50; i++) {
+    await page.waitForTimeout(100);
+    const now = await read();
+    if (now === last) return;
+    last = now;
+  }
+}
+
 async function shot(page: Page, name: string, touch: boolean, results: Record<string, AuditResult>): Promise<void> {
+  await scrollsSettled(page);
   await page.waitForTimeout(500);
   await page.screenshot({ path: `${OUT}/${name}.jpg`, type: 'jpeg', quality: 62 });
   results[name] = await audit(page, touch);

@@ -11,7 +11,7 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | --- | --- | --- |
 | TypeScript typecheck (app + scripts/tests) | `npm run typecheck` | Pass |
 | Astronomy data validation | `npm run data:validate` | Pass (2 warnings: data is provisional) |
-| Unit tests | `npm test` | Pass: 370 tests in 21 files |
+| Unit tests | `npm test` | Pass: 408 tests in 25 files |
 | Production build | `npm run build` | Pass |
 | Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 10 passed (3 touch-only tests skipped) |
 | Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 12 passed (1 desktop-only test skipped) |
@@ -128,12 +128,14 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   standing and a Hardened record, and are not offered against a dark den; v7 saves gain decoys,
   intact systems, an empty stash and no wing, damaged combat data rejected.
 - `flightCombat.test.ts`: a real `FlightSession` in node: hull hits damage systems, which slow the
-  ship (and the HUD says so) until a repair kit patches them up; heavy raiders fire seekers at the
-  player and a decoy draws them off; a mine arms, goes off near the player and hurts; hired
+  ship (and the HUD says so) until a repair kit patches them up; a hull hit flashes the screen's
+  edges and the flash fades in under half a second at any frame rate; heavy raiders fire seekers
+  at the player and a decoy draws them off; a mine arms, goes off near the player and hurts; hired
   wingmen launch with the player, catch up and are reported when lost; a den wakes when an
   untrusted pilot comes near (turrets, mines, no wing), pays turret bounties and reports its
   reactor down on the player's own account; a den stays quiet for a Wake friend; raiders talk when
-  they find you.
+  they find you, and a patrol taking on raiders within radio range calls it (from across the
+  system, nobody hears).
 - `save.test.ts`: v1, v2 and v3 migrations (the v2 courier and its upgrades become catalogue
   items; v3 saves gain untouched markets),
   unknown ships, fittings and rounds rejected, future/damaged save rejection, IndexedDB round trip with
@@ -200,13 +202,17 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 - `story.spec.ts`: the first step of Clean Manifests flown for real (the relay's words, the debrief
   and pay at Halcyon Ring), then the choice about Oren Vail made in its dialogue, and the journal's
   record of the arc.
+- `combat.spec.ts`: salvaged equipment fitted from the stash, damaged systems repaired and a decoy
+  bought at the outfitter, then a wingman hired in the bar who launches with the player and forms
+  up alongside.
 - `screenshots.spec.ts`: title, job board, buy dialog, station deck, shipyard, outfitter, flight
   HUD and star map at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
-  zoom). Saved in `docs/screenshots/`. Each is audited for page scroll overflow, clipped controls
-  (controls inside a scrolling panel count only if the panel itself is off-screen), content cut
-  off inside any box that is not meant to scroll, text under 10 px, touch targets under 40 px, and
-  overlaps between HUD panels, touch clusters and toasts.
+  zoom). Saved in `docs/screenshots/` once any smooth scrolling has come to rest. Each is audited
+  for page scroll overflow, clipped controls (controls inside a scrolling panel count only if the
+  panel itself is off-screen), content cut off inside any box that is not meant to scroll, text
+  under 10 px, touch targets under 40 px, and overlaps between HUD panels, touch clusters and
+  toasts.
 
 ## Performance notes (not representative)
 
