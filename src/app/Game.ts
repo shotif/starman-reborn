@@ -124,6 +124,7 @@ export class Game {
       onAvoidCombat: () => this.flight?.avoidCombat(),
       onContextAction: () => this.desktop.trigger('interact'),
       onSelectMarker: (id) => this.flight?.selectTarget(id),
+      onCommand: (action) => this.desktop.trigger(action),
     });
     this.touch = new TouchControls(ui, {
       onAction: (a) => {

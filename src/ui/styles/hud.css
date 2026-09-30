@@ -1,4 +1,5 @@
-/* Flight HUD. Only panels and buttons take pointer events; the rest passes through to the canvas. */
+/* Flight HUD (see Hud.ts for the two layouts). Only panels and buttons take pointer events; the
+   rest passes through to the canvas. Panels use the framed-glass system from frame.css. */
 
 .hud {
   position: absolute;
@@ -13,77 +14,34 @@
 }
 
 .hud button,
-.hud .hud-panel {
+.hud .hud-panel,
+.hud .rail {
   pointer-events: auto;
+}
+
+.hud .hud-status,
+.hud .hud-wallet,
+.hud .hud-loadout {
+  pointer-events: none;
 }
 
 .hud-top {
   position: absolute;
-  top: calc(var(--safe-top) + 8px);
+  top: 0;
   left: calc(var(--safe-left) + 8px);
-  right: calc(var(--safe-right) + 8px);
+  right: 0;
   display: grid;
   grid-template-columns: minmax(0, 15rem) minmax(0, 1fr) auto;
   gap: 8px;
   align-items: start;
 }
 
-.hud-panel {
-  background: rgba(6, 12, 24, 0.62);
-  border: 1px solid rgba(126, 170, 255, 0.22);
-  border-radius: 10px;
-  padding: 0.45rem 0.6rem;
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-}
-
-.hud-status {
-  display: grid;
-  gap: 4px;
-  pointer-events: none !important;
-}
-
-.hud-bar {
-  display: grid;
-  grid-template-columns: 3.6rem 1fr 2rem;
-  align-items: center;
+.hud-left {
+  display: flex;
+  flex-direction: column;
   gap: 6px;
-  font-size: 0.72rem;
-}
-
-.hud-bar-label {
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.hud-bar .num {
-  text-align: right;
-  font-size: 0.72rem;
-}
-
-.hud-speed {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
-.hud-speed .speed {
-  font-size: 1.05rem;
-  color: var(--text);
-  font-weight: 700;
-}
-
-.hud-speed .unit {
-  margin-left: 2px;
-}
-
-.hud-speed .mode {
-  color: var(--accent-strong);
-  font-weight: 700;
-}
-
-.hud[data-cruise='on'] .hud-speed .speed {
-  color: var(--accent-strong);
+  padding-top: calc(var(--safe-top) + 8px);
+  min-width: 0;
 }
 
 .hud-center {
@@ -94,21 +52,131 @@
   min-width: 0;
 }
 
+.hud-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.hud-panel {
+  padding: 0.45rem 0.7rem;
+}
+
+/* ---------- Gauges ---------- */
+
+.hud-status {
+  --cut: 10px;
+  display: grid;
+  grid-template-areas:
+    'bars bars'
+    'spd thr';
+  grid-template-columns: 1fr auto;
+  gap: 4px 10px;
+  align-items: center;
+}
+
+.gauge-bars {
+  grid-area: bars;
+  display: grid;
+  gap: 4px;
+}
+
+.gauge-row {
+  display: grid;
+  grid-template-columns: 3.4rem minmax(0, 1fr) 2rem;
+  align-items: center;
+  gap: 6px;
+}
+
+.gauge-label {
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.gauge-row .num {
+  text-align: right;
+  font-size: 0.78rem;
+}
+
+.gauge-row .segbar {
+  height: 0.55rem;
+}
+
+.gauge-thr {
+  grid-area: thr;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 0.85rem;
+}
+
+.gauge-spd {
+  grid-area: spd;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.gauge-spd .speed {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.gauge-spd .mode {
+  margin-left: 4px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.hud[data-cruise='on'] .gauge-spd .speed {
+  color: var(--amber);
+}
+
+/* ---------- Command rail, objective, alerts ---------- */
+
+.hud-commands {
+  --cut: 14px;
+  padding: calc(var(--safe-top) + 0.15rem) 1rem 0.3rem;
+}
+
+.hud-commands .rail-btn {
+  min-width: 4.2rem;
+}
+
+.hud-commands .rail-btn[disabled] {
+  opacity: 0.38;
+  cursor: default;
+}
+
 .hud-objective {
+  --cut: 8px;
   display: flex;
   align-items: flex-start;
   gap: 6px;
   max-width: 34rem;
+  border: 0;
   color: var(--text);
   font: inherit;
-  font-size: 0.86rem;
+  font-size: 0.88rem;
   text-align: left;
   cursor: pointer;
-  border-color: rgba(255, 180, 92, 0.45);
+  --edge: rgba(255, 196, 92, 0.75);
+  --edge-hi: #ffe7b0;
 }
 
 .hud-objective .icon {
-  color: var(--warm);
+  color: var(--amber);
   margin-top: 2px;
 }
 
@@ -120,58 +188,66 @@
 }
 
 .hud-autopilot {
-  font-size: 0.8rem;
-  color: var(--accent-strong);
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--edge-hi);
   text-shadow: 0 1px 3px #000;
 }
 
 .hud-warning {
-  font-size: 0.82rem;
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
   font-weight: 700;
+  letter-spacing: 0.06em;
   color: var(--danger);
   text-shadow: 0 1px 3px #000;
 }
 
-.hud-right {
+.encounter-banner {
+  --edge: rgba(255, 95, 95, 0.9);
+  --edge-hi: #ffd0d0;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem 0.5rem;
+  max-width: 24rem;
+  padding: 0.3rem 0.5rem 0.3rem 0.8rem;
+  background: linear-gradient(180deg, rgba(110, 18, 26, 0.85), rgba(46, 6, 12, 0.9));
+  text-align: center;
+  pointer-events: auto;
+  font-size: 0.86rem;
 }
+
+.encounter-banner strong {
+  color: #ffb3b3;
+  font-family: var(--font-ui);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.encounter-banner[hidden] {
+  display: none;
+}
+
+/* ---------- Menus and wallet ---------- */
 
 .hud-buttons {
-  display: flex;
-  gap: 6px;
+  padding: calc(var(--safe-top) + 0.15rem) calc(var(--safe-right) + 0.4rem) 0.3rem 0.9rem;
 }
 
-.hud-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  min-width: 44px;
-  min-height: 44px;
-  padding: 0 0.7rem;
-  justify-content: center;
-  border-radius: 10px;
-  border: 1px solid rgba(126, 170, 255, 0.35);
-  background: rgba(6, 12, 24, 0.66);
-  color: var(--text);
-  font: inherit;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  touch-action: manipulation;
-}
-
-.hud-btn:hover {
-  border-color: var(--accent);
+.hud-buttons .rail-btn {
+  min-width: 2.9rem;
+  min-height: 2.8rem;
 }
 
 .hud-wallet {
+  --cut: 8px;
   display: grid;
   gap: 2px;
-  font-size: 0.8rem;
-  pointer-events: none !important;
+  font-size: 0.85rem;
   text-align: right;
 }
 
@@ -179,62 +255,99 @@
   justify-content: flex-end;
 }
 
+.hud-wallet .icon {
+  color: var(--amber);
+}
+
 .hud-system {
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   color: var(--text-muted);
-  max-width: 11rem;
+  max-width: 13rem;
   margin-left: auto;
 }
 
+/* ---------- Bottom: target window, gauges and context action, loadout ---------- */
+
 .hud-bottom {
   position: absolute;
-  bottom: calc(var(--safe-bottom) + 12px);
+  bottom: calc(var(--safe-bottom) + 10px);
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  width: min(26rem, calc(100% - 2rem));
+}
+
+.hud-bottom-left {
+  position: absolute;
+  left: calc(var(--safe-left) + 10px);
+  bottom: calc(var(--safe-bottom) + 10px);
+  width: min(22rem, calc(50% - 15rem));
+}
+
+.hud-bottom-right {
+  position: absolute;
+  right: calc(var(--safe-right) + 10px);
+  bottom: calc(var(--safe-bottom) + 10px);
+  width: min(17rem, calc(50% - 15rem));
 }
 
 .hud-target {
-  width: 100%;
+  --cut: 12px;
   display: grid;
-  gap: 3px;
+  gap: 4px;
+  padding: 0.55rem 0.8rem 0.65rem;
 }
 
 .hud-target[hidden] {
   display: none;
 }
 
+.hud-target.hostile {
+  --edge: rgba(255, 95, 95, 0.9);
+  --edge-hi: #ffd0d0;
+}
+
+.target-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.target-head .glyph {
+  width: 1.9rem;
+  height: 1.9rem;
+}
+
 .target-name {
-  font-size: 0.95rem;
+  font-family: var(--font-ui);
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .target-sub {
-  font-size: 0.75rem;
+  font-size: 0.78rem;
 }
 
 .target-dist {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
 }
 
 .target-bars {
   display: grid;
-  gap: 3px;
+  gap: 4px;
+}
+
+.target-bars .segbar {
+  height: 0.5rem;
 }
 
 .hud-context {
-  min-height: 44px;
-  padding: 0.35rem 1rem;
-  border-radius: 999px;
-  border: 1px solid var(--success);
-  background: rgba(10, 50, 34, 0.75);
-  color: #d9ffec;
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
   pointer-events: auto;
 }
 
@@ -242,34 +355,106 @@
   display: none;
 }
 
+.hud-loadout {
+  --cut: 12px;
+  display: grid;
+  gap: 4px;
+  padding: 0.5rem 0.7rem;
+}
+
+.load-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.86rem;
+}
+
+.load-row .glyph {
+  width: 1.6rem;
+  height: 1.6rem;
+}
+
+.load-name {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.load-row .kbd {
+  font-size: 0.72rem;
+}
+
 .hud-scale {
-  position: absolute;
-  left: calc(var(--safe-left) + 10px);
-  bottom: calc(var(--safe-bottom) + 6px);
-  font-size: 0.66rem;
-  color: rgba(200, 214, 236, 0.55);
-  max-width: 40%;
+  font-size: 0.68rem;
+  line-height: 1.3;
+  color: rgba(200, 214, 236, 0.6);
+  text-shadow: 0 1px 2px #000;
   pointer-events: none;
 }
 
-.encounter-banner {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 0.3rem 0.5rem;
-  max-width: 24rem;
-  padding: 0.3rem 0.4rem 0.3rem 0.7rem;
-  border-radius: 10px;
-  background: rgba(60, 10, 14, 0.82);
-  border: 1px solid var(--hostile);
-  text-align: center;
-  pointer-events: auto;
-  font-size: 0.84rem;
+/* Desktop: the gauges become a wide cluster at the bottom centre. */
+.hud:not(.touch-mode) .hud-status {
+  grid-template-areas: 'thr bars spd';
+  grid-template-columns: auto minmax(13rem, 18rem) auto;
+  gap: 14px;
+  padding: 0.5rem 1rem;
+  --cut: 12px;
 }
 
-.encounter-banner[hidden] {
+.hud:not(.touch-mode) .gauge-thr,
+.hud:not(.touch-mode) .gauge-spd {
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  min-width: 3.4rem;
+}
+
+.hud:not(.touch-mode) .gauge-thr .num {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.hud:not(.touch-mode) .gauge-spd .mode:empty {
   display: none;
+}
+
+.hud:not(.touch-mode) .hud-left {
+  max-width: 15rem;
+}
+
+.hud:not(.touch-mode) .hud-wallet {
+  text-align: left;
+}
+
+.hud:not(.touch-mode) .hud-wallet .row {
+  justify-content: flex-start;
+}
+
+.hud:not(.touch-mode) .hud-system {
+  margin-left: 0;
+}
+
+.hud:not(.touch-mode) .hud-objective {
+  margin-top: -1px;
+  --ctl: 0px;
+  --ctr: 0px;
+}
+
+/* Narrow desktop windows: drop the side panels' width so the gauges keep the middle. */
+@media (max-width: 1100px) {
+  .hud:not(.touch-mode) .hud-bottom-left,
+  .hud:not(.touch-mode) .hud-bottom-right {
+    width: calc(50% - 14.5rem);
+  }
+
+  .hud:not(.touch-mode) .load-row .kbd,
+  .hud:not(.touch-mode) .target-sub {
+    display: none;
+  }
 }
 
 /* ---------- Markers ---------- */
@@ -411,10 +596,30 @@
   color: var(--warm);
 }
 
-.marker.selected .marker-shape {
-  border-width: 3px;
+/* Selected: corner brackets around the target (off-screen keeps its edge arrow). */
+.marker.selected:not(.offscreen) .marker-shape {
+  left: -24px;
+  top: -24px;
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: 0;
+  transform: none;
   opacity: 1;
-  box-shadow: 0 0 10px currentColor;
+  background:
+    linear-gradient(currentColor, currentColor) 0 0 / 13px 2.5px no-repeat,
+    linear-gradient(currentColor, currentColor) 0 0 / 2.5px 13px no-repeat,
+    linear-gradient(currentColor, currentColor) 100% 0 / 13px 2.5px no-repeat,
+    linear-gradient(currentColor, currentColor) 100% 0 / 2.5px 13px no-repeat,
+    linear-gradient(currentColor, currentColor) 0 100% / 13px 2.5px no-repeat,
+    linear-gradient(currentColor, currentColor) 0 100% / 2.5px 13px no-repeat,
+    linear-gradient(currentColor, currentColor) 100% 100% / 13px 2.5px no-repeat,
+    linear-gradient(currentColor, currentColor) 100% 100% / 2.5px 13px no-repeat;
+  filter: drop-shadow(0 0 4px currentColor);
+}
+
+.marker.selected:not(.offscreen) .marker-label {
+  left: 30px;
 }
 
 .marker.selected .marker-name {
@@ -543,15 +748,23 @@
   display: none;
 }
 
-/* ---------- Touch layout adjustments ---------- */
+/* ---------- Touch layout ---------- */
 
 .hud.touch-mode .hud-context {
   display: none;
 }
 
+.hud.touch-mode .hud-left {
+  padding-top: calc(var(--safe-top) + 8px);
+}
+
+.hud.touch-mode .hud-center {
+  padding-top: calc(var(--safe-top) + 8px);
+}
+
 .hud.touch-mode .hud-target {
   width: min(20rem, 100%);
-  padding: 0.3rem 0.5rem;
+  padding: 0.35rem 0.6rem 0.45rem;
 }
 
 .hud.touch-mode .hud-scale {
@@ -567,21 +780,20 @@
     grid-template-columns: minmax(0, 11rem) minmax(0, 1fr) auto;
   }
 
-  .hud-bar {
-    grid-template-columns: 2.9rem 1fr 1.7rem;
-    font-size: 0.64rem;
+  .gauge-row {
+    grid-template-columns: 2.9rem minmax(0, 1fr) 1.7rem;
+  }
+
+  .gauge-label {
+    font-size: 0.66rem;
   }
 
   .hud-objective {
-    font-size: 0.76rem;
-  }
-
-  .hud-btn span {
-    display: none;
+    font-size: 0.78rem;
   }
 
   .hud-wallet {
-    font-size: 0.72rem;
+    font-size: 0.74rem;
   }
 }
 
@@ -625,7 +837,7 @@
       'center center';
   }
 
-  .hud-status {
+  .hud-left {
     grid-area: status;
   }
 
@@ -637,4 +849,7 @@
     grid-area: center;
   }
 
+  .hud.touch-mode .hud-center {
+    padding-top: 0;
+  }
 }
