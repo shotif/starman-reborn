@@ -357,6 +357,10 @@
   border-left-color: rgba(98, 227, 160, 0.7);
 }
 
+.gmap-news-item.kind-border {
+  border-left-color: rgba(255, 140, 90, 0.8);
+}
+
 .gmap-news-item.over {
   opacity: 0.6;
 }

@@ -777,8 +777,15 @@
 }
 
 .news-item.kind-sweep,
-.news-item.kind-glut {
+.news-item.kind-glut,
+.news-item.kind-border.phase-pushed-back,
+.news-item.kind-border.phase-truce {
   border-left-color: rgba(98, 227, 160, 0.6);
+}
+
+.news-item.kind-border.phase-blockade,
+.news-item.kind-border.phase-fallen {
+  border-left-color: rgba(255, 110, 110, 0.7);
 }
 
 .news-item.over {

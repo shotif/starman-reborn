@@ -37,7 +37,8 @@ export interface MapState {
 export interface MapNewsItem {
   id: string;
   systemId: SystemId;
-  kind: EventKind;
+  /** A world event, or a border front that is fighting (docs/PROCGEN.md §20). */
+  kind: EventKind | 'border';
   headline: string;
   detail: string;
   active: boolean;

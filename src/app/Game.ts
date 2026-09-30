@@ -1,5 +1,5 @@
 import { BORDER } from '../content/border/rules.ts';
-import { occupied, recordDeed } from '../economy/border.ts';
+import { atWar, borderNews, occupied, recordDeed } from '../economy/border.ts';
 import { gameJulianDate } from '../data/solar.ts';
 import type { Lingering } from './state.ts';
 import { TRAFFIC } from '../world/traffic/plan.ts';
@@ -1180,7 +1180,15 @@ export class Game {
       discoveredBodies: new Set(state?.discoveredBodies ?? []),
       feeCoverage: state ? this.feeCoverage() : null,
       news: state
-        ? newsAt(current, state.clock).map((n) => ({ id: n.event.id, systemId: n.event.systemId, kind: n.event.kind, headline: n.event.headline, detail: n.event.detail, active: n.active }))
+        ? [
+            ...newsAt(current, state.clock).map((n) => ({ id: n.event.id, systemId: n.event.systemId, kind: n.event.kind, headline: n.event.headline, detail: n.event.detail, active: n.active })),
+            // Border fronts within reach that are fighting, on both of their systems.
+            ...borderNews(current, state.clock)
+              .filter((n) => atWar(n.state, 'law'))
+              .flatMap((n) =>
+                [n.state.front.lawSystem, n.state.front.wakeSystem].map((systemId) => ({ id: `border:${n.state.front.id}:${systemId}`, systemId, kind: 'border' as const, headline: n.headline, detail: n.detail, active: true })),
+              ),
+          ]
         : [],
       contractSystems: new Set(state ? activeJobIds(state).flatMap((id) => describeObjective(state, id)?.targetSystemId ?? []) : []),
       ...(state ? { catalogued: new Set(state.codex) } : {}),
