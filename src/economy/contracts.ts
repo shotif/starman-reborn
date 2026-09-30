@@ -69,8 +69,9 @@ export function routeFeeBetween(a: SystemId, b: SystemId): number {
 const security = (systemId: SystemId) => WORLD.profiles.get(systemId)?.security ?? 1;
 
 /** Stations a pilot can dock at and do business with. */
+let open: FictionalLocation[] | null = null;
 function openStations(): FictionalLocation[] {
-  return ALL_LOCATIONS.filter((l) => l.status === 'functional' && l.dockable !== false && l.services.length > 0);
+  return (open ??= ALL_LOCATIONS.filter((l) => l.status === 'functional' && l.dockable !== false && l.services.length > 0));
 }
 
 function boardKinds(loc: FictionalLocation): KindWeights | null {
@@ -123,7 +124,7 @@ export function boardFor(locationId: string, epoch: number): JobDef[] {
     const e = eventContract(loc, rng(WORLD_SEED, 'contracts', 'event', locationId, epoch), `${CONTRACT_PREFIX}${locationId}.${epoch}.${out.length}`, clock);
     if (e && !out.some((o) => same(o, e))) out.push(e);
   }
-  if (boardCache.size > 400) boardCache.clear();
+  if (boardCache.size > 4_000) boardCache.clear();
   boardCache.set(key, out);
   return out;
 }

@@ -552,7 +552,7 @@ function resolveHost(names: readonly (string | null | undefined)[]): number | un
   for (const raw of names) {
     const name = raw?.replace(/\s+/g, ' ').trim();
     if (!name) continue;
-    const forms = [name, `NAME ${name}`, name.replace(/^Gl /, 'GJ '), name.replace(/^Gliese /, 'GJ '), name.replace(/ ([A-C])$/, '$1'), name.replace(/^(HIP \d+) [A-C]$/, '$1')];
+    const forms = [name, `NAME ${name}`, `* ${name}`, `V* ${name}`, name.replace(/^Gl /, 'GJ '), name.replace(/^Gliese /, 'GJ '), name.replace(/ ([A-C])$/, '$1'), name.replace(/^(HIP \d+) [A-C]$/, '$1')];
     for (const f of forms) {
       const hits = [...(byIdent.get(norm(f)) ?? [])];
       const pick = hits.find((o) => otypeOf(o) !== '**') ?? hits[0];
@@ -874,7 +874,10 @@ const euRows = worked('exoplanet-eu-neighbourhood') ? load('exoplanet-eu-neighbo
 const pick = (r: Row, keys: readonly string[]) => keys.map((k) => r[k]).find((v) => v !== null && v !== undefined && v !== '');
 interface EuPlanet {
   name: string;
+  /** Its status when the service gives one (the EPN-TAP table lists only the planets it accepts). */
   status: string;
+  /** Jupiter masses (true or minimum), to tell brown dwarfs from planets. */
+  jupiterMasses?: number;
   hostStarId?: string;
   period?: number;
   sma?: number;
@@ -909,6 +912,7 @@ const euPlanets: EuPlanet[] = euRows.map((r) => {
   return {
     name: String(pick(r, ['target_name', 'planet_name', 'name']) ?? '').trim(),
     status: String(pick(r, ['planet_status', 'status']) ?? '').trim(),
+    ...(mass !== null || msini !== null ? { jupiterMasses: (mass ?? msini)! } : {}),
     ...(oid !== undefined && starOfOid.has(oid) ? { hostStarId: starOfOid.get(oid)! } : {}),
     ...(num(pick(r, ['period', 'orbital_period'])) !== null ? { period: num(pick(r, ['period', 'orbital_period']))! } : {}),
     ...(num(pick(r, ['semi_major_axis'])) !== null ? { sma: num(pick(r, ['semi_major_axis']))! } : {}),
@@ -916,7 +920,8 @@ const euPlanets: EuPlanet[] = euRows.map((r) => {
     ...(radius !== null ? { radiusEarth: radius * JUPITER_EARTH_RADII } : {}),
     ...(num(pick(r, ['discovered', 'discovery_year'])) !== null ? { year: num(pick(r, ['discovered', 'discovery_year']))! } : {}),
     ...(str(pick(r, ['detection_type', 'detection_method'])) ? { method: str(pick(r, ['detection_type', 'detection_method']))! } : {}),
-    ...(str(pick(r, ['external_link', 'url'])) ? { url: str(pick(r, ['external_link', 'url']))! } : {}),
+    // The Encyclopaedia serves its pages over HTTPS too.
+    ...(str(pick(r, ['external_link', 'url'])) ? { url: str(pick(r, ['external_link', 'url']))!.replace(/^http:\/\/exoplanet\.eu/, 'https://exoplanet.eu') } : {}),
   };
 });
 
@@ -1015,7 +1020,7 @@ for (const p of gamePlanets) {
   const note = eu
     ? /retract/i.test(eu.status)
       ? `The NASA Exoplanet Archive does not list it, and the Encyclopaedia marks ${eu.name} as retracted: later work found no planet. This edition of the game keeps it.`
-      : `The NASA Exoplanet Archive does not list it; the Encyclopaedia calls ${eu.name} ${euWords(eu.status) || 'listed'}. This edition of the game keeps it.`
+      : `The NASA Exoplanet Archive does not list it; the Extrasolar Planets Encyclopaedia lists it as ${eu.name}${eu.status ? ` (${euWords(eu.status)})` : ''}. This edition of the game keeps it.`
     : `Neither the NASA Exoplanet Archive nor the Encyclopaedia lists it on ${retrieved}. This edition of the game keeps it.`;
   planets.push({ ...p, id, controversial: true, status: 'contested', statusNote: note });
   planetChanges.push({ name: displayName, host: p.hostId, what: `contested: ${note}` });
@@ -1049,8 +1054,14 @@ for (const n of nasaPlanets) {
 }
 
 // 3. The Encyclopaedia's planets neither the game nor NASA has: candidates and its own confirmations.
+/** Above this many Jupiter masses a companion burns deuterium: a brown dwarf, not a planet. */
+const BROWN_DWARF_MJ = 13;
 for (const e of euPlanets) {
   if (usedEu.has(e) || !e.name) continue;
+  if ((e.jupiterMasses ?? 0) > BROWN_DWARF_MJ) {
+    planetChanges.push({ name: e.name, host: e.hostStarId ?? '?', what: `not added as a planet: ${e.jupiterMasses!.toFixed(0)} Jupiter masses is a brown dwarf (the game shows brown dwarfs as stars)` });
+    continue;
+  }
   if (/retract/i.test(e.status)) {
     planetChanges.push({ name: e.name, host: e.hostStarId ?? '?', what: 'not added: retracted' });
     continue;
@@ -1067,7 +1078,7 @@ for (const e of euPlanets) {
   const candidate = /candidate|unconfirmed/i.test(e.status);
   const statusNote = candidate
     ? `A candidate planet in the Encyclopaedia (${e.name}); not confirmed. This edition of the game includes it.`
-    : `The Encyclopaedia lists ${e.name} as ${euWords(e.status) || 'a planet'}; the NASA Exoplanet Archive does not. This edition of the game includes it.`;
+    : `The Extrasolar Planets Encyclopaedia lists ${e.name}${e.status ? ` (${euWords(e.status)})` : ''}; the NASA Exoplanet Archive does not confirm it. This edition of the game includes it.`;
   planets.push({
     id,
     archiveName: e.name,
@@ -1084,7 +1095,7 @@ for (const e of euPlanets) {
     ...(e.radiusEarth !== undefined ? { radiusEarth: { value: Math.round(e.radiusEarth * 1000) / 1000 } } : {}),
     source: euSource(e),
   });
-  planetChanges.push({ name: displayName, host: e.hostStarId, what: `new ${candidate ? 'candidate' : 'contested planet'} from the Encyclopaedia (${e.name}, ${e.status})` });
+  planetChanges.push({ name: displayName, host: e.hostStarId, what: `new ${candidate ? 'candidate' : 'contested planet'} from the Encyclopaedia (${e.name}${e.status ? `, ${e.status}` : ''})` });
 }
 
 // ---------------------------------------------------------------- belts and debris discs

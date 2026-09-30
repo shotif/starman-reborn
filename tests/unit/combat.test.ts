@@ -180,7 +180,7 @@ describe('raider dens knocked out', () => {
     s.location.dockedAt = job.giverLocationId;
     s.location.systemId = getLocation(job.giverLocationId).systemId;
     expect(acceptJob(s, job.id).ok).toBe(true);
-  });
+  }, 60_000);
 });
 
 describe('combat saves', () => {

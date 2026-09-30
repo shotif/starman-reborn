@@ -4,7 +4,7 @@ Processed by `scripts/sky-process.ts` from `data/snapshot/raw/2026-09-30/`. Noth
 
 ## Queries
 
-44 of 45 archive queries worked. Failed:
+45 of 46 archive queries worked. Failed:
 
 - `exoplanet-eu-neighbourhood`: fetch failed
 
@@ -63,7 +63,7 @@ Moved by more than 0.25 ly: BL Ceti (0.30 ly), GJ 1061 (2.01 ly). The frozen cor
 
 ## Planets
 
-93 planets: 77 confirmed, 16 contested (kept), 0 candidates.
+99 planets: 77 confirmed, 22 contested (kept), 0 candidates.
 
 - **Proxima Cen b** (proxima-centauri): confirmed by NASA as Proxima Cen b
 - **Proxima Cen d** (proxima-centauri): confirmed by NASA as Proxima Cen d
@@ -158,6 +158,19 @@ Moved by more than 0.25 ly: BL Ceti (0.30 ly), GJ 1061 (2.01 ly). The frozen cor
 - **GJ 9066 c** (gj-9066): new: confirmed by NASA as GJ 9066 c
 - **GJ 682 b** (gj-682): new: confirmed by NASA as GJ 682 b
 - **GJ 229 A b** (gj-229-a): new: listed (controversial) by NASA as GJ 229 b
+- **eps Ind Bb** (epsilon-indi-bb): not added as a planet: 53 Jupiter masses is a brown dwarf (the game shows brown dwarfs as stars)
+- **GJ 1245 Ab** (gj-1245-a): not added as a planet: 34 Jupiter masses is a brown dwarf (the game shows brown dwarfs as stars)
+- **GJ 229 Ba** (gj-229-a): not added as a planet: 33 Jupiter masses is a brown dwarf (the game shows brown dwarfs as stars)
+- **GJ 229 Bb** (gj-229-a): not added as a planet: 33 Jupiter masses is a brown dwarf (the game shows brown dwarfs as stars)
+- **GJ 229 A d** (gj-229-a): new contested planet from the Encyclopaedia (GJ 229 d)
+- **GJ 570 D** (kx-librae-a): not added as a planet: 43 Jupiter masses is a brown dwarf (the game shows brown dwarfs as stars)
+- **HD 219134 e** (hd-219134): new contested planet from the Encyclopaedia (HD 219134 e)
+- **Lalande 21185 d** (lalande-21185): new contested planet from the Encyclopaedia (Lalande 21185 d)
+- **Luyten's Star d** (luytens-star): new contested planet from the Encyclopaedia (Luyten's Star d)
+- **Luyten's Star e** (luytens-star): new contested planet from the Encyclopaedia (Luyten's Star e)
+- **Scholz's Star b** (scholzs-star-b): not added as a planet: 36 Jupiter masses is a brown dwarf (the game shows brown dwarfs as stars)
+- **SCR J1845-6357 b** (scr-1845-6357-a): not added as a planet: 45 Jupiter masses is a brown dwarf (the game shows brown dwarfs as stars)
+- **Wolf 359 c** (wolf-359): new contested planet from the Encyclopaedia (Wolf 359 c)
 
 ## New systems
 
@@ -212,7 +225,7 @@ Moved by more than 0.25 ly: BL Ceti (0.30 ly), GJ 1061 (2.01 ly). The frozen cor
 | Wolf 1453 | 18.60 | Wolf 1453 (M1.5Ve) | – |
 | 2MASS 0415−0935 | 18.71 | 2MASS 0415−0935 (T8.0) | – |
 | Gaia DR3 6305165514134625024 | 18.74 | Gaia DR3 6305165514134625024 (unknown) | – |
-| GJ 229 | 18.79 | GJ 229 A (M1V), GJ 229 B (T6.5) | GJ 229 A c (contested), GJ 229 A b (contested) |
+| GJ 229 | 18.79 | GJ 229 A (M1V), GJ 229 B (T6.5) | GJ 229 A c (contested), GJ 229 A b (contested), GJ 229 A d (contested) |
 | Alsafi | 18.80 | Alsafi (K0V) | – |
 | Ross 47 | 18.89 | Ross 47 (M4V) | – |
 | KX Librae | 19.20 | KX Librae A (K4V), KX Librae B (M1.5V), KX Librae C (T8) | – |
@@ -249,7 +262,7 @@ Moved by more than 0.25 ly: BL Ceti (0.30 ly), GJ 1061 (2.01 ly). The frozen cor
 | GJ 625 | 21.13 | GJ 625 (M1.5V) | GJ 625 b |
 | Wolf 629 | 21.20 | Wolf 629 C (M3.5V), Wolf 629 A (M7Ve) | – |
 | GJ 1128 | 21.21 | GJ 1128 (M4.0V) | – |
-| HD 219134 | 21.34 | HD 219134 (K3V) | HD 219134 h, HD 219134 g (contested), HD 219134 b, HD 219134 d, HD 219134 f (contested), HD 219134 c |
+| HD 219134 | 21.34 | HD 219134 (K3V) | HD 219134 h, HD 219134 g (contested), HD 219134 b, HD 219134 d, HD 219134 f (contested), HD 219134 c, HD 219134 e (contested) |
 | WISE 0825+2805 | 21.37 | WISE 0825+2805 (Y0.5) | – |
 | WISE 0410+1502 | 21.56 | WISE 0410+1502 (Y0) | – |
 | GJ 3737 | 21.73 | GJ 3737 (M4.5V) | – |

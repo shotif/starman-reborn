@@ -483,7 +483,7 @@
       "hostId": "groombridge-34-a",
       "kind": "planet",
       "status": "contested",
-      "statusNote": "The NASA Exoplanet Archive lists GJ 15 A b but flags it as controversial. This edition of the game keeps it.",
+      "statusNote": "The NASA Exoplanet Archive lists GJ 15 A b but flags it as controversial; the Encyclopaedia calls it . This edition of the game keeps it.",
       "controversial": true,
       "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%2015%20A%20b",
       "asOfDate": "2026-09-30",
@@ -638,7 +638,7 @@
       "hostId": "tau-ceti",
       "kind": "planet",
       "status": "contested",
-      "statusNote": "The NASA Exoplanet Archive lists tau Cet f but flags it as controversial. This edition of the game keeps it.",
+      "statusNote": "The NASA Exoplanet Archive lists tau Cet f but flags it as controversial; the Encyclopaedia calls it . This edition of the game keeps it.",
       "controversial": true,
       "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/tau%20Cet%20f",
       "asOfDate": "2026-09-30",
@@ -678,7 +678,7 @@
       "hostId": "tau-ceti",
       "kind": "planet",
       "status": "contested",
-      "statusNote": "The NASA Exoplanet Archive lists tau Cet g but flags it as controversial. This edition of the game keeps it.",
+      "statusNote": "The NASA Exoplanet Archive lists tau Cet g but flags it as controversial; the Encyclopaedia calls it . This edition of the game keeps it.",
       "controversial": true,
       "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/tau%20Cet%20g",
       "asOfDate": "2026-09-30",
@@ -718,7 +718,7 @@
       "hostId": "tau-ceti",
       "kind": "planet",
       "status": "contested",
-      "statusNote": "The NASA Exoplanet Archive lists tau Cet h but flags it as controversial. This edition of the game keeps it.",
+      "statusNote": "The NASA Exoplanet Archive lists tau Cet h but flags it as controversial; the Encyclopaedia calls it . This edition of the game keeps it.",
       "controversial": true,
       "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/overview/tau%20Cet%20h",
       "asOfDate": "2026-09-30",
@@ -3620,6 +3620,214 @@
         "unit": "Earth radii"
       },
       "unknowns": [
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "gj-229-a-d",
+      "archiveName": "GJ 229 d",
+      "displayName": "GJ 229 A d",
+      "hostId": "gj-229-a",
+      "kind": "planet",
+      "status": "contested",
+      "statusNote": "The Extrasolar Planets Encyclopaedia lists GJ 229 d; the NASA Exoplanet Archive does not confirm it. This edition of the game includes it.",
+      "controversial": true,
+      "sourceUrl": "https://exoplanet.eu/catalog/gj_229_d--7263",
+      "sourceLabel": "The Extrasolar Planets Encyclopaedia",
+      "asOfDate": "2026-09-30",
+      "verification": "snapshot",
+      "discoveryYear": 2020,
+      "discoveryMethod": "Radial Velocity",
+      "orbitalPeriodDays": {
+        "value": 122.005,
+        "unit": "days"
+      },
+      "semiMajorAxisAu": {
+        "value": 0.339,
+        "unit": "AU"
+      },
+      "massEarth": {
+        "value": 7.93,
+        "unit": "Earth masses",
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "unknowns": [
+        "radius",
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "hd-219134-e",
+      "archiveName": "HD 219134 e",
+      "displayName": "HD 219134 e",
+      "hostId": "hd-219134",
+      "kind": "planet",
+      "status": "contested",
+      "statusNote": "The Extrasolar Planets Encyclopaedia lists HD 219134 e; the NASA Exoplanet Archive does not confirm it. This edition of the game includes it.",
+      "controversial": true,
+      "sourceUrl": "https://exoplanet.eu/catalog/hd_219134_e--2418",
+      "sourceLabel": "The Extrasolar Planets Encyclopaedia",
+      "asOfDate": "2026-09-30",
+      "verification": "snapshot",
+      "discoveryYear": 2015,
+      "discoveryMethod": "Radial Velocity",
+      "orbitalPeriodDays": {
+        "value": 1842,
+        "unit": "days"
+      },
+      "semiMajorAxisAu": {
+        "value": 2.56,
+        "unit": "AU"
+      },
+      "massEarth": {
+        "value": 70.876,
+        "unit": "Earth masses",
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "unknowns": [
+        "radius",
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "lalande-21185-d",
+      "archiveName": "Lalande 21185 d",
+      "displayName": "Lalande 21185 d",
+      "hostId": "lalande-21185",
+      "kind": "planet",
+      "status": "contested",
+      "statusNote": "The Extrasolar Planets Encyclopaedia lists Lalande 21185 d; the NASA Exoplanet Archive does not confirm it. This edition of the game includes it.",
+      "controversial": true,
+      "sourceUrl": "https://exoplanet.eu/catalog/lalande_21185_d--8602",
+      "sourceLabel": "The Extrasolar Planets Encyclopaedia",
+      "asOfDate": "2026-09-30",
+      "verification": "snapshot",
+      "discoveryYear": 2022,
+      "discoveryMethod": "Other",
+      "orbitalPeriodDays": {
+        "value": 215,
+        "unit": "days"
+      },
+      "semiMajorAxisAu": {
+        "value": 0.5142,
+        "unit": "AU"
+      },
+      "massEarth": {
+        "value": 3.89,
+        "unit": "Earth masses",
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "unknowns": [
+        "radius",
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "luytens-star-d",
+      "archiveName": "Luyten's Star d",
+      "displayName": "Luyten's Star d",
+      "hostId": "luytens-star",
+      "kind": "planet",
+      "status": "contested",
+      "statusNote": "The Extrasolar Planets Encyclopaedia lists Luyten's Star d; the NASA Exoplanet Archive does not confirm it. This edition of the game includes it.",
+      "controversial": true,
+      "sourceUrl": "https://exoplanet.eu/catalog/luyten's_star_d--7135",
+      "sourceLabel": "The Extrasolar Planets Encyclopaedia",
+      "asOfDate": "2026-09-30",
+      "verification": "snapshot",
+      "discoveryYear": 2019,
+      "discoveryMethod": "Radial Velocity",
+      "orbitalPeriodDays": {
+        "value": 413.9,
+        "unit": "days"
+      },
+      "semiMajorAxisAu": {
+        "value": 0.712,
+        "unit": "AU"
+      },
+      "massEarth": {
+        "value": 10.959,
+        "unit": "Earth masses"
+      },
+      "unknowns": [
+        "radius",
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "luytens-star-e",
+      "archiveName": "Luyten's Star e",
+      "displayName": "Luyten's Star e",
+      "hostId": "luytens-star",
+      "kind": "planet",
+      "status": "contested",
+      "statusNote": "The Extrasolar Planets Encyclopaedia lists Luyten's Star e; the NASA Exoplanet Archive does not confirm it. This edition of the game includes it.",
+      "controversial": true,
+      "sourceUrl": "https://exoplanet.eu/catalog/luyten's_star_e--7136",
+      "sourceLabel": "The Extrasolar Planets Encyclopaedia",
+      "asOfDate": "2026-09-30",
+      "verification": "snapshot",
+      "discoveryYear": 2019,
+      "discoveryMethod": "Radial Velocity",
+      "orbitalPeriodDays": {
+        "value": 542,
+        "unit": "days"
+      },
+      "semiMajorAxisAu": {
+        "value": 0.849,
+        "unit": "AU"
+      },
+      "massEarth": {
+        "value": 9.44,
+        "unit": "Earth masses"
+      },
+      "unknowns": [
+        "radius",
+        "surface",
+        "atmosphere",
+        "habitability"
+      ]
+    },
+    {
+      "id": "wolf-359-c",
+      "archiveName": "Wolf 359 c",
+      "displayName": "Wolf 359 c",
+      "hostId": "wolf-359",
+      "kind": "planet",
+      "status": "contested",
+      "statusNote": "The Extrasolar Planets Encyclopaedia lists Wolf 359 c; the NASA Exoplanet Archive does not confirm it. This edition of the game includes it.",
+      "controversial": true,
+      "sourceUrl": "https://exoplanet.eu/catalog/wolf_359_c--7134",
+      "sourceLabel": "The Extrasolar Planets Encyclopaedia",
+      "asOfDate": "2026-09-30",
+      "verification": "snapshot",
+      "discoveryYear": 2019,
+      "discoveryMethod": "Radial Velocity",
+      "orbitalPeriodDays": {
+        "value": 2.68687,
+        "unit": "days"
+      },
+      "semiMajorAxisAu": {
+        "value": 0.018,
+        "unit": "AU"
+      },
+      "massEarth": {
+        "value": 3.814,
+        "unit": "Earth masses",
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "unknowns": [
+        "radius",
         "surface",
         "atmosphere",
         "habitability"

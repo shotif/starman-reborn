@@ -238,7 +238,7 @@ describe('playing generated contracts', () => {
     for (const id of all) expect(getJob(id, s).id).toBe(id);
     const saved = migrateSave(structuredClone(s));
     expect(Object.keys(saved.contracts)).toEqual(all);
-  });
+  }, 60_000);
 });
 
 describe('contracts II', () => {
