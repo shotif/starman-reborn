@@ -8,7 +8,7 @@ import { getLocation, SYSTEMS } from '../../src/data/systems.ts';
 import { boardFor } from '../../src/economy/contracts.ts';
 import { validateEvents } from '../../src/economy/eventGuards.ts';
 import { baseThreat, eventsAt, eventStations, marketEffect, newsAt, stationEventAt, systemEventAt, type WorldEvent } from '../../src/economy/events.ts';
-import { marketEntry, moveStock, quote, stockNow } from '../../src/economy/markets.ts';
+import { marketEntry, marketTables, moveStock, normalStock, quote, stockNow, traderDelivery } from '../../src/economy/markets.ts';
 import { findRoute } from '../../src/galaxy/routing.ts';
 import { trafficFor } from '../../src/world/traffic/setup.ts';
 
@@ -121,6 +121,29 @@ describe('world events', () => {
       }
     }
     expect([...found].sort()).toEqual(['bounty', 'freight', 'supply']);
+  });
+
+  it('have traders top short stock up without flooding a market or emptying a maker', () => {
+    const tables = marketTables();
+    const [to, table] = [...tables].find(([, t]) => [...t.entries.values()].some((e) => e.role === 'consume'))!;
+    const markets = {};
+    let delivered = 0;
+    for (let i = 0; i < 40; i++) {
+      const flow = traderDelivery(null, to, `ship-${i}`, markets, 100 + i);
+      if (!flow) continue;
+      const e = table.entries.get(flow.commodity)!;
+      expect(e.role).not.toBe('produce');
+      moveStock(markets, to, flow.commodity, flow.qty, 100 + i);
+      expect(stockNow(to, e, { clock: 100 + i, markets })).toBeLessThanOrEqual(normalStock(to, e, 100 + i) * 1.2 + 0.01);
+      delivered++;
+    }
+    expect(delivered).toBeGreaterThan(0);
+    // From a station, only what it makes, and never below most of its normal stock.
+    const pair = [...tables].flatMap(([from, t]) =>
+      [...tables].filter(([dest]) => dest !== from).map(([dest, d]) => ({ from, dest, ok: [...d.entries.values()].some((e) => e.role !== 'produce' && t.entries.get(e.commodity)?.role === 'produce') })),
+    ).find((x) => x.ok)!;
+    const flow = traderDelivery(pair.from, pair.dest, 'ship-x', {}, 50)!;
+    expect(tables.get(pair.from)!.entries.get(flow.commodity)!.role).toBe('produce');
   });
 
   it('let time pass in the lanes: each jump moves the clock on', () => {
