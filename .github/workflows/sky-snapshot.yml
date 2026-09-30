@@ -1,0 +1,53 @@
+name: Sky snapshot
+
+# Takes a dated snapshot of the real sky from the archives (docs/ASTRONOMY_SOURCES.md) on GitHub's
+# runners, which can reach them, and pushes it to the sky-snapshot branch for review before anything
+# is merged. Runs when the fetch script or this workflow changes on a development branch, by hand,
+# and once a month.
+on:
+  push:
+    branches: ['claude/**']
+    paths:
+      - scripts/sky-fetch.ts
+      - .github/workflows/sky-snapshot.yml
+  workflow_dispatch:
+  schedule:
+    - cron: '17 4 3 * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sky-snapshot
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    name: Fetch, process and check the snapshot
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Fetch from the archives
+        run: npm run data:fetch
+      - name: Process the snapshot
+        if: hashFiles('scripts/sky-process.ts') != ''
+        continue-on-error: true
+        run: npm run data:process
+      - name: Build and check the dataset
+        if: hashFiles('scripts/sky-process.ts') != ''
+        continue-on-error: true
+        run: npm run data:build && npm run data:validate && npm test
+      - name: Push the snapshot to the sky-snapshot branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B sky-snapshot
+          git add -A data/snapshot src/data/generated
+          git commit -m "Sky snapshot $(date -u +%F) from ${GITHUB_SHA::7} (run ${GITHUB_RUN_ID})" || echo "Nothing changed"
+          git push --force origin sky-snapshot
