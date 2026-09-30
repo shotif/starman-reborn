@@ -1,8 +1,9 @@
 import { AudioEngine } from '../audio/AudioEngine.ts';
-import type { AudioVolumes, EngineSoundState, MusicMood, SfxId, SfxOptions } from '../audio/types.ts';
+import type { AmbienceRoom, AudioVolumes, EngineSoundState, MusicMood, SfxId, SfxOptions } from '../audio/types.ts';
+import { AMBIENCE, AMBIENCE_ROOMS } from '../audio/ambienceSpecs.ts';
 import { MOODS, MUSIC_MOODS } from '../audio/moods.ts';
 import { SFX_IDS, SFX_SPECS } from '../audio/sfxSpecs.ts';
-import { measure, renderBurst, renderEngine, renderMood, renderSfx } from '../audio/offline.ts';
+import { measure, renderAmbience, renderBurst, renderEngine, renderMood, renderSfx } from '../audio/offline.ts';
 import type { LevelReport } from '../audio/offline.ts';
 
 /** Dev-only audition page for the procedural audio engine (served at /dev/audio.html). */
@@ -101,6 +102,31 @@ root.append(
     moodGrid,
     moodNote,
     h('div', { class: 'row', style: 'margin-top:10px' }, slider('Combat', 0, 0, 1, 0.01, (v) => audio.setCombatIntensity(v))),
+  ),
+);
+
+// ---- station ambience and local radio ----
+const roomButtons = new Map<AmbienceRoom | null, HTMLButtonElement>();
+const roomNote = h('p', { class: 'note' }, 'Room beds crossfade over ~1.5 s, as when walking between rooms while docked.');
+const roomGrid = h('div', { class: 'grid' });
+for (const room of [null, ...AMBIENCE_ROOMS] as const) {
+  const b = h('button', { type: 'button', 'data-room': room ?? 'off' }, room ?? 'off', h('small', {}, room ? `${AMBIENCE[room].events.length} event kinds` : 'no ambience'));
+  b.addEventListener('click', () => {
+    audio.setAmbience(room);
+    roomNote.textContent = room ? AMBIENCE[room].character : 'Ambience off (as in flight).';
+  });
+  roomButtons.set(room, b);
+  roomGrid.append(b);
+}
+root.append(
+  h(
+    'section',
+    {},
+    h('h2', {}, 'Station ambience and radio'),
+    roomGrid,
+    roomNote,
+    h('div', { class: 'row', style: 'margin-top:10px' }, slider('Radio traffic', 0, 0, 1, 0.01, (v) => audio.setRadio(v))),
+    h('p', { class: 'note' }, 'Local radio: silent below 0.30; a core system (Sol) is 1.00. The comm blip is radio-blip under Sound effects.'),
   ),
 );
 
@@ -215,6 +241,13 @@ async function analyseEngine(): Promise<Report> {
   return out;
 }
 
+async function analyseAmbience(seconds = 20): Promise<Report> {
+  const out: Report = {};
+  for (const room of AMBIENCE_ROOMS) out[room] = measure(await renderAmbience(room, { seconds }), 3);
+  out['radio (busy) 60 s'] = measure(await renderAmbience(null, { seconds: 60, radio: 1 }), 1);
+  return out;
+}
+
 async function run(title: string, job: () => Promise<Report>): Promise<void> {
   status.textContent = `Rendering ${title}…`;
   const t0 = performance.now();
@@ -228,6 +261,7 @@ const jobs: [string, () => Promise<Report>][] = [
   ['SFX', analyseSfx],
   ['Bursts', analyseBursts],
   ['Engine', analyseEngine],
+  ['Ambience', () => analyseAmbience()],
 ];
 const jobRow = h('div', { class: 'row' });
 for (const [title, job] of jobs) {
@@ -269,10 +303,12 @@ const frame = (now: number): void => {
     badge.className = `badge ${audio.state}`;
     unlockBtn.hidden = audio.state === 'running';
     for (const [mood, b] of moodButtons) b.classList.toggle('on', audio.currentMood === mood);
+    for (const [room, b] of roomButtons) b.classList.toggle('on', audio.currentAmbience === room);
     stats.textContent =
       `context ${s.contextState} · ${s.sampleRate} Hz · base latency ${(s.baseLatency * 1000).toFixed(1)} ms · ` +
       `scheduler ${s.schedulerRunning ? 'on' : 'off'} · music voices ${s.musicVoices} · sfx voices ${s.sfxVoices} · ` +
-      `engine ${s.engineActive ? 'on' : 'off'} · combat ${s.combatIntensity.toFixed(2)}`;
+      `engine ${s.engineActive ? 'on' : 'off'} · combat ${s.combatIntensity.toFixed(2)} · ` +
+      `ambience ${s.ambienceRoom ?? 'off'} (${s.ambienceVoices} voices) · radio ${s.radio.toFixed(2)}`;
   }
   requestAnimationFrame(frame);
 };
@@ -287,6 +323,7 @@ const api = {
   analyseSfx,
   analyseBursts,
   analyseEngine,
+  analyseAmbience,
   play: (id: SfxId, opts?: SfxOptions) => audio.play(id, opts),
 };
 (window as unknown as { __audioLab: typeof api }).__audioLab = api;

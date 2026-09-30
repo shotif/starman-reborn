@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { EngineSoundState, MusicMood, SfxId } from '../../src/audio/types.ts';
 import { AudioEngine } from '../../src/audio/AudioEngine.ts';
+import { AmbiencePlayer } from '../../src/audio/ambience.ts';
+import { AMBIENCE, AMBIENCE_LIMITS, bedNodeCount } from '../../src/audio/ambienceSpecs.ts';
 import { Composer, combatBar, swingBeat } from '../../src/audio/composer.ts';
 import type { BarPlan } from '../../src/audio/composer.ts';
 import { safetyCurve, softClipCurve, waveHarmonics, whiteNoise } from '../../src/audio/dsp.ts';
@@ -39,7 +41,7 @@ const ALL_SFX: SfxId[] = [
   'hit-shield', 'hit-hull', 'player-hit-shield', 'player-hit-hull', 'shield-down', 'explosion-small',
   'explosion-large', 'boost-start', 'cruise-charge', 'cruise-engage', 'cruise-exit', 'lane-enter', 'lane-exit',
   'dock-clamp', 'undock', 'jump-charge', 'jump-exit', 'pickup', 'alert', 'scan', 'credits', 'mission-complete',
-  'repair', 'target-lock',
+  'repair', 'target-lock', 'radio-blip',
 ];
 
 function bars(mood: MusicMood, seed: number, count: number): BarPlan[] {
@@ -891,6 +893,139 @@ describe('runtime graph on a fake AudioContext', () => {
     music.dispose();
     ctx.advance(t + 5);
     expect(ctx.sources.size).toBe(0);
+  });
+
+  it('builds each room bed from exactly its budgeted nodes, plays its events and cleans up', () => {
+    const created = (ctx: FakeContext): number => [...ctx.created.values()].reduce((a, b) => a + b, 0);
+    for (const room of ['deck', 'bar', 'trader', 'outfitter'] as const) {
+      const ctx = new FakeContext();
+      const scape = new AmbiencePlayer(asContext(ctx), fakeBus(ctx), 11);
+      const before = created(ctx);
+      scape.setRoom(room, 0);
+      expect(created(ctx) - before).toBe(bedNodeCount(AMBIENCE[room]));
+      expect(scape.room).toBe(room);
+      let t = 0;
+      let max = 0;
+      for (; t < 120; t += 0.1) {
+        ctx.advance(t);
+        scape.scheduleUntil(t + 0.3);
+        max = Math.max(max, scape.voiceCount);
+      }
+      // The bed itself, and some sparse events, never more than the cap at once.
+      expect(max).toBeGreaterThan(1);
+      expect(max).toBeLessThanOrEqual(1 + AMBIENCE_LIMITS.maxEventVoices);
+      scape.setRoom(null, t);
+      expect(scape.room).toBeNull();
+      for (const end = t + 4; t < end; t += 0.1) {
+        ctx.advance(t);
+        scape.scheduleUntil(t + 0.3);
+      }
+      ctx.advance(t + 30);
+      expect(scape.bedCount).toBe(0);
+      expect(ctx.sources.size).toBe(0);
+      expect(ctx.disconnected).toBeGreaterThan(0);
+    }
+  });
+
+  it('crossfades between rooms, revives a room left a moment ago and keeps at most two beds', () => {
+    const ctx = new FakeContext();
+    const scape = new AmbiencePlayer(asContext(ctx), fakeBus(ctx), 2);
+    let t = 0;
+    let maxBeds = 0;
+    const run = (seconds: number): void => {
+      for (const end = t + seconds; t < end; t += 0.1) {
+        ctx.advance(t);
+        scape.scheduleUntil(t + 0.3);
+        maxBeds = Math.max(maxBeds, scape.bedCount);
+      }
+    };
+    scape.setRoom('deck', 0);
+    run(5);
+    scape.setRoom('bar', t);
+    expect(scape.bedCount).toBe(2);
+    run(4);
+    expect(scape.bedCount).toBe(1);
+    expect(scape.room).toBe('bar');
+    const nodes = ctx.count('biquad');
+    scape.setRoom('deck', t);
+    run(0.3);
+    scape.setRoom('bar', t);
+    // The bar was still fading out: it comes back instead of being rebuilt.
+    expect(ctx.count('biquad') - nodes).toBe(3);
+    for (const room of ['trader', 'outfitter', 'deck', 'bar', 'trader'] as const) {
+      scape.setRoom(room, t);
+      run(0.2);
+    }
+    run(5);
+    expect(maxBeds).toBeLessThanOrEqual(2);
+    expect(scape.bedCount).toBe(1);
+    expect(scape.room).toBe('trader');
+    scape.dispose();
+    ctx.advance(t + 30);
+    expect(ctx.sources.size).toBe(0);
+  });
+
+  it('keeps the local radio silent in quiet systems and sends faint bursts in busy ones', () => {
+    const ctx = new FakeContext();
+    const scape = new AmbiencePlayer(asContext(ctx), fakeBus(ctx), 4);
+    let t = 0;
+    let maxVoices = 0;
+    const run = (seconds: number): void => {
+      for (const end = t + seconds; t < end; t += 0.1) {
+        ctx.advance(t);
+        scape.scheduleUntil(t + 0.3);
+        maxVoices = Math.max(maxVoices, scape.voiceCount);
+      }
+    };
+    scape.setRadio(0.2, 0);
+    run(120);
+    expect(ctx.count('shaper')).toBe(0);
+    scape.setRadio(1, t);
+    expect(scape.radioLevel).toBe(1);
+    run(120);
+    // One burst at a time (each drives its own grit stage), every 9 to 20 s after the first.
+    const bursts = ctx.count('shaper');
+    expect(bursts).toBeGreaterThanOrEqual(5);
+    expect(bursts).toBeLessThanOrEqual(14);
+    expect(maxVoices).toBe(1);
+    scape.setRadio(0, t);
+    run(60);
+    expect(ctx.count('shaper')).toBe(bursts);
+    ctx.advance(t + 30);
+    expect(ctx.sources.size).toBe(0);
+  });
+
+  it('starts ambience and radio only after unlock and follows them afterwards', async () => {
+    await withFakeWindow('AudioContext', async (made) => {
+      const audio = new AudioEngine();
+      audio.setAmbience('bar');
+      audio.setRadio(0.8);
+      audio.setRadio(Number.NaN);
+      expect(audio.radioLevel).toBe(0);
+      audio.setRadio(0.8);
+      expect(made).toHaveLength(0);
+      expect([audio.currentAmbience, audio.radioLevel]).toEqual(['bar', 0.8]);
+      await audio.unlock();
+      const stats = audio.debugStats();
+      expect(stats.ambienceRoom).toBe('bar');
+      expect(stats.ambienceVoices).toBeGreaterThan(0);
+      expect(stats.radio).toBe(0.8);
+      audio.setAmbience('deck');
+      expect(audio.debugStats().ambienceRoom).toBe('deck');
+      audio.setAmbience(null);
+      expect(audio.debugStats().ambienceRoom).toBeNull();
+      audio.play('radio-blip');
+      expect(audio.debugStats().sfxVoices).toBe(1);
+      audio.setSuspended(true);
+      await flush();
+      audio.setAmbience('outfitter');
+      expect(audio.debugStats().ambienceRoom).toBeNull();
+      audio.setSuspended(false);
+      await flush();
+      expect(audio.debugStats().ambienceRoom).toBe('outfitter');
+      audio.setSuspended(true);
+      await flush();
+    });
   });
 
   /** Runs `body` with a fake `window` exposing a context constructor under `name`. */

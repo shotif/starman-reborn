@@ -1,4 +1,5 @@
-import type { AudioVolumes, EngineSoundState, MusicMood, SfxId, SfxOptions } from './types.ts';
+import type { AmbienceRoom, AudioVolumes, EngineSoundState, MusicMood, SfxId, SfxOptions } from './types.ts';
+import { AMBIENCE_LOOKAHEAD, AmbiencePlayer } from './ambience.ts';
 import { EngineSound } from './engineSound.ts';
 import { DEFAULT_VOLUMES, MixGraph } from './graph.ts';
 import { LOOKAHEAD, MusicPlayer } from './music.ts';
@@ -92,6 +93,24 @@ export function renderMood(mood: MusicMood, o: RenderOptions & { intensity?: num
     const at = t;
     void ctx.suspend(at).then(() => {
       music.scheduleUntil(at + LOOKAHEAD);
+      void ctx.resume();
+    });
+  }
+  return ctx.startRendering();
+}
+
+/** Renders a room's ambience (or none) and, with `radio`, the local radio, the way they play live. */
+export function renderAmbience(room: AmbienceRoom | null, o: RenderOptions & { radio?: number }): Promise<AudioBuffer> {
+  const { ctx, graph } = offline(o.seconds, o.sampleRate ?? 44100, o.volumes ?? DEFAULT_VOLUMES);
+  const scape = new AmbiencePlayer(ctx, graph.sfx, o.seed ?? 1);
+  scape.setRoom(room, 0);
+  if (o.radio) scape.setRadio(o.radio, 0);
+  scape.scheduleUntil(AMBIENCE_LOOKAHEAD);
+  const step = 0.1;
+  for (let t = step; t < o.seconds; t += step) {
+    const at = t;
+    void ctx.suspend(at).then(() => {
+      scape.scheduleUntil(at + AMBIENCE_LOOKAHEAD);
       void ctx.resume();
     });
   }
