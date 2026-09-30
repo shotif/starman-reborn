@@ -7,7 +7,7 @@ import { NAME_WORDS, NETWORK, PIRATE_DEN, STATION_COUNT, STATION_TYPES as TYPE_R
 import { STATION_TYPES, type GeneratedStation, type StationOwner, type SystemSeed, type WorldResult } from './types.ts';
 
 /**
- * World guardrails (docs/PROCGEN.md §7.4). The generated world must pass all of them; the unit
+ * World guardrails (docs/PROCGEN.md §7.5). The generated world must pass all of them; the unit
  * tests run them for the real catalogue and for other seeds, so a rule change that breaks one fails
  * CI with a readable list.
  */
