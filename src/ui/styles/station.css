@@ -923,3 +923,27 @@
     text-align: left;
   }
 }
+
+.job-tag.story {
+  border-color: rgba(207, 168, 255, 0.6);
+  color: var(--fiction);
+}
+
+/* ---------- Journal: stories (docs/PROCGEN.md §14) ---------- */
+
+.story-arcs > li p {
+  margin: 0.15rem 0;
+}
+
+.story-arc.complete strong {
+  color: var(--success);
+}
+
+.story-arc.ended {
+  opacity: 0.8;
+}
+
+.story-choices {
+  gap: 0.2rem;
+  margin: 0.2rem 0 0.2rem 1rem;
+}

@@ -90,7 +90,8 @@ export function setModalRoot(el: HTMLElement): void {
 
 export interface ModalOptions {
   title: string;
-  body: Child;
+  /** The content, or a builder given `close` so controls in the body can answer the modal. */
+  body: Child | ((close: (value: string) => void) => Child);
   actions: { label: string; variant?: ButtonOptions['variant']; value: string; testId?: string }[];
   dismissValue?: string;
   testId?: string;
@@ -118,7 +119,7 @@ export function showModal(opts: ModalOptions): Promise<string> {
     const dialog = h(
       'div',
       { class: 'panel modal', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': titleId, 'data-testid': opts.testId },
-      h('div', { class: 'modal-body scroll' }, h('h2', { id: titleId }, opts.title), opts.body),
+      h('div', { class: 'modal-body scroll' }, h('h2', { id: titleId }, opts.title), typeof opts.body === 'function' ? opts.body(close) : opts.body),
       h('div', { class: 'modal-actions' }, actionButtons),
     );
     const backdrop = h('div', { class: 'modal-backdrop' }, dialog);
@@ -178,6 +179,15 @@ export function setToastRoot(el: HTMLElement): void {
 export function toast(message: string, tone: 'good' | 'bad' | 'info' = 'info', ms = 3200): void {
   if (!toastRoot) return;
   const el = h('div', { class: `toast ${tone}`, role: 'status' }, message);
+  toastRoot.appendChild(el);
+  while (toastRoot.children.length > 4) toastRoot.firstElementChild?.remove();
+  window.setTimeout(() => el.remove(), ms);
+}
+
+/** A comm message in flight: who is speaking, and what they say. */
+export function commToast(speaker: string, text: string, ms = 7000): void {
+  if (!toastRoot) return;
+  const el = h('div', { class: 'toast comm', role: 'status' }, speaker ? h('strong', { class: 'comm-from' }, speaker) : null, h('span', null, text));
   toastRoot.appendChild(el);
   while (toastRoot.children.length > 4) toastRoot.firstElementChild?.remove();
   window.setTimeout(() => el.remove(), ms);

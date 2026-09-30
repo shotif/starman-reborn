@@ -98,12 +98,15 @@ describe('ratings and milestones', () => {
 });
 
 describe('what next', () => {
-  it('suggests one thing to do: fines first, then the hold, the codex, a route, a job board', () => {
+  it('suggests one thing to do: fines first, then the hold, a story, the codex, a route, a job board', () => {
     const s = pilot();
     s.location = { systemId: 'tau-ceti', dockedAt: null, flight: null, lastDockId: 'earth-port' };
     s.law.fines.frontier = 300;
     expect(whatNext(s)).toMatch(/fines/);
     delete s.law.fines.frontier;
+    expect(whatNext(s)).toMatch(/Rhea Castell at Halcyon Ring \(Sol\) has work for you: “Clean Manifests”/);
+    // With a story mission under way, the hint moves on.
+    s.jobs['arc.frontier.1'] = { status: 'active', objectiveIndex: 0, acceptedAt: 0 };
     expect(whatNext(s)).toMatch(/^Catalogue /);
     for (const e of codexEntries().filter((x) => x.systemId === 'tau-ceti')) catalogue(s, e.id);
     expect(whatNext(s)).toMatch(/job board|Trade idea/);

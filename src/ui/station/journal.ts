@@ -1,4 +1,5 @@
 import { voyageTotals, type GameState } from '../../app/state.ts';
+import { storyRecord } from '../story.ts';
 import { cargoCount } from '../../economy/cargo.ts';
 import { COMMODITIES, COMMODITY_IDS } from '../../economy/commodities.ts';
 import { FACTIONS, standingTier, TIER_LABEL } from '../../economy/factions.ts';
@@ -78,6 +79,7 @@ export function journalContent(ctx: StationContext, refresh: Refresh): HTMLEleme
         h('dd', null, `${TIER_LABEL[standingTier(state.reputation[f] ?? 0)]} (${signed(state.reputation[f] ?? 0)})${state.law.fines[f] ? ` · owes ${formatCredits(state.law.fines[f])} in fines` : ''}`),
       ]),
     ),
+    storyRecord(state),
     pilotRecord(state),
     voyage ? h('div', { class: 'list-head' }, h('span', null, 'Voyage report'), h('span', null, '')) : null,
     voyage,

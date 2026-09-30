@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { AudioEngine } from '../audio/AudioEngine.ts';
 import type { MusicMood, SfxId } from '../audio/types.ts';
-import { getComponent, getLocation, getPlanet, getSystem, SYSTEMS, WORLD } from '../data/systems.ts';
+import { ALL_LOCATIONS, getComponent, getLocation, getPlanet, getSystem, SYSTEMS, WORLD } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { addCargo, cargoUsed, itemsThatFit } from '../economy/cargo.ts';
 import { COMMODITIES } from '../economy/commodities.ts';
@@ -14,19 +14,25 @@ import {
   acceptJob,
   activeJobIds,
   advanceJobs,
+  assaultsIn,
   contractPacksIn,
   countPiracy,
   currentObjective,
+  defencesIn,
   deliverJob,
   describeObjective,
+  escortArrived,
+  escortLost,
   escortsIn,
-  failJob,
   getJob,
   LIFELINE_ID,
   primaryObjective,
   wrecksIn,
   type JobEvent,
 } from '../economy/jobs.ts';
+import { briefingFor, choiceHere, denDown, isStoryJob, knockOutDen, makeChoice, markSeen, pendingBeats, speakerName } from '../economy/story.ts';
+import { DENS } from '../content/dens/rules.ts';
+import { showChoice, showDialogue } from '../ui/story.ts';
 import { moveStock, traderDelivery } from '../economy/markets.ts';
 import { commitCrime, customsScan, dockAccess, isLawful, scansOnDocking, totalFines } from '../economy/law.ts';
 import { whatNext } from '../economy/advisor.ts';
@@ -38,7 +44,7 @@ import { emptyInput, type InputScheme } from '../flight/input/types.ts';
 import type { GalaxyMapView } from '../galaxy/GalaxyMapView.ts';
 import { findRoute, type Route } from '../galaxy/routing.ts';
 import type { MapState } from '../galaxy/types.ts';
-import { button, clearToasts, confirmDialog, dataBadge, setModalRoot, setToastRoot, showModal, sourceLink, toast } from '../ui/components.ts';
+import { button, clearToasts, commToast, confirmDialog, dataBadge, setModalRoot, setToastRoot, showModal, sourceLink, toast } from '../ui/components.ts';
 import { formatCredits, h, signed } from '../ui/dom.ts';
 import { Hud } from '../ui/hud/Hud.ts';
 import { hasVoyage } from '../ui/station/journal.ts';
@@ -465,6 +471,7 @@ export class Game {
         openControls: () => this.openControls(),
         quitToTitle: () => void this.quitToTitle(),
         acceptJob: (id) => this.acceptJob(id),
+        decide: () => void this.offerChoice(),
         reload: () => this.enterDocked(locationId, { room: this.station?.currentRoom ?? 'deck', window: 'news' }),
         deliverJob: (id) => void this.deliver(id),
         travelCost: (from, to) => this.travelCost(from, to),
@@ -521,6 +528,9 @@ export class Game {
         const events = dockAt(state, state.location.dockedAt).jobEvents;
         this.announceJobEvents(events);
       }
+      const cargo = isStoryJob(jobId) ? getJob(jobId).story?.cargo : undefined;
+      if (cargo) toast(`Loaded ${cargo.qty} ${COMMODITIES[cargo.commodity].name.toLowerCase()} for the job.`, 'info', 4000);
+      if (isStoryJob(jobId)) this.tellStory();
       if (jobId === LIFELINE_ID) {
         // The voyage report counts everything from accepting the first delivery onward.
         state.voyageStartClock = state.clock;
@@ -576,6 +586,7 @@ export class Game {
       dismissValue: 'ok',
       testId: 'delivery-dialog',
     });
+    this.tellStory();
   }
 
   private voyageSummary(): HTMLElement {
@@ -604,13 +615,15 @@ export class Game {
     );
   }
 
-  private announceJobEvents(events: JobEvent[]): void {
+  private announceJobEvents(events: JobEvent[], tell = true): void {
+    if (tell && events.length) this.tellStory();
     for (const e of events) {
       if (e.kind === 'complete') {
         const job = getJob(e.jobId, this.state!);
         const bonus = e.text.includes('on-time bonus') ? job.contract?.urgent?.bonus ?? 0 : 0;
         this.sfx('mission-complete');
-        toast(`${job.title} complete: +${formatCredits(job.reward + bonus)}${bonus ? ' with the on-time bonus' : e.text.includes('(late') ? ' (late: no bonus)' : ''}`, 'good', 5000);
+        if (job.reward + bonus === 0) toast(`${job.title} complete`, 'good', 5000);
+        else toast(`${job.title} complete: +${formatCredits(job.reward + bonus)}${bonus ? ' with the on-time bonus' : e.text.includes('(late') ? ' (late: no bonus)' : ''}`, 'good', 5000);
       } else if (e.kind === 'failed') {
         this.sfx('ui-error');
         toast(e.text, 'bad', 5000);
@@ -620,6 +633,59 @@ export class Game {
         toast(`Objective complete: ${e.text}`, 'good');
       }
     }
+  }
+
+  // ------------------------------------------------------------------ story
+
+  private storyQueue: Promise<void> = Promise.resolve();
+
+  /**
+   * Tells the story beats not yet told (docs/PROCGEN.md §14): as dialogue at a dock (then any choice
+   * waiting there), as comms in flight. Queued, so dialogues never stack.
+   */
+  private tellStory(): void {
+    this.storyQueue = this.storyQueue.then(() => this.tellStoryNow()).catch((err) => console.error(err));
+  }
+
+  private async tellStoryNow(): Promise<void> {
+    const state = this.state;
+    if (!state || (this.mode !== 'docked' && this.mode !== 'flight')) return;
+    const docked = this.mode === 'docked';
+    const beats = pendingBeats(state, !docked);
+    if (beats.length) {
+      markSeen(state, beats);
+      this.persist();
+    }
+    if (!docked) {
+      for (const b of beats) for (const l of b.lines) commToast(speakerName(l.who), l.text, 9000);
+      return;
+    }
+    for (const b of beats) await showDialogue(b.kind === 'debrief' ? `${b.title}: complete` : b.title, b.lines);
+    await this.offerChoice();
+  }
+
+  /** A story choice waiting at this dock: ask, and if the player decides, make it happen. */
+  private async offerChoice(): Promise<void> {
+    const state = this.state;
+    const here = state?.location.dockedAt;
+    if (!state || !here || this.mode !== 'docked') return;
+    const c = choiceHere(state, here);
+    if (!c) return;
+    const pick = await showChoice(c.job, c.objective, briefingFor(state, c.job));
+    if (!pick) return;
+    const r = makeChoice(state, c.job.id, pick);
+    if (!r.ok) {
+      toast(r.message, 'bad');
+      return;
+    }
+    this.sfx('ui-confirm');
+    this.persist();
+    this.station?.render();
+    await showDialogue(c.job.title, [{ who: 'comm', text: r.message }]);
+    this.announceJobEvents(r.events, false);
+    this.persist();
+    this.station?.render();
+    this.tellStory();
   }
 
   /** Warns about a raid (or tells of a sweep) under way in the system the player is flying in. */
@@ -680,16 +746,19 @@ export class Game {
           this.persist();
         },
         onEscortArrived: (jobId) => {
-          const progress = state.jobs[jobId];
-          if (!progress || progress.status !== 'active') return;
-          progress.escort = 'arrived';
-          this.announceJobEvents(advanceJobs(state, { dockedAt: state.location.dockedAt, systemId: state.location.systemId }));
+          this.announceJobEvents(escortArrived(state, jobId));
           this.persist();
         },
         onEscortLost: (jobId) => {
-          const o = currentObjective(state, jobId);
-          const ev = failJob(state, jobId, o?.kind === 'escort' ? `the ${o.shipName} was destroyed` : 'the escorted ship was destroyed');
-          if (ev) this.announceJobEvents([ev]);
+          this.announceJobEvents(escortLost(state, jobId));
+          this.persist();
+        },
+        onDenDestroyed: (locationId, jobId) => {
+          knockOutDen(state, locationId);
+          const progress = state.jobs[jobId];
+          if (progress?.status === 'active') progress.assault = 'done';
+          this.sfx('mission-complete');
+          this.announceJobEvents(advanceJobs(state, { dockedAt: state.location.dockedAt, systemId: state.location.systemId }));
           this.persist();
         },
         onCrime: (kind, faction, name, role) => {
@@ -734,12 +803,7 @@ export class Game {
         },
         onMessage: (text, tone) => toast(text, tone, 2600),
       },
-      traffic: {
-        ...trafficFor(state.location.systemId, this.renderer.quality, state.clock),
-        contractPacks: contractPacksIn(state, state.location.systemId),
-        escorts: escortsIn(state, state.location.systemId),
-        wrecks: wrecksIn(state, state.location.systemId),
-      },
+      traffic: this.trafficHere(),
     });
     const { width, height } = this.renderer.size;
     this.flight.setViewport(width, height);
@@ -750,6 +814,26 @@ export class Game {
     this.hint = null;
     this.refreshFlightUi();
     this.audio.setMusic(moodFor(state.location.systemId));
+    this.tellStory();
+  }
+
+  /** Traffic for the system the player flies in: the plan, and everything their contracts and story put there. */
+  private trafficHere(): NonNullable<ConstructorParameters<typeof FlightSession>[0]['traffic']> {
+    const state = this.state!;
+    const here = state.location.systemId;
+    const base = trafficFor(here, this.renderer.quality, state.clock);
+    // A knocked-out den sends no packs until it is rebuilt.
+    const downDens = ALL_LOCATIONS.filter((l) => l.systemId === here && l.stationType === 'pirate-den' && denDown(state, l.id)).map((l) => l.id);
+    return {
+      ...base,
+      plan: downDens.length ? { ...base.plan, packs: null } : base.plan,
+      contractPacks: contractPacksIn(state, here),
+      escorts: escortsIn(state, here),
+      wrecks: wrecksIn(state, here),
+      assaults: assaultsIn(state, here),
+      defences: defencesIn(state, here),
+      downDens,
+    };
   }
 
   private onDocked(locationId: string): void {
@@ -771,17 +855,23 @@ export class Game {
       this.sfx('ui-confirm');
       toast('Interstellar departure clearance granted.', 'good', 4500);
     }
-    this.announceJobEvents(out.jobEvents);
+    this.announceJobEvents(out.jobEvents, false);
     const deliverable = Object.keys(state.jobs).some((id) => {
       const p = state.jobs[id]!;
       return p.status === 'active' && getJob(id, state).destinationLocationId === locationId;
     });
     const news = out.clearanceGranted || hasVoyage(state);
     const emergency = dockAccess(state, locationId) === 'emergency';
+    const decision = !!choiceHere(state, locationId);
     this.enterDocked(
       locationId,
-      emergency ? { room: 'bar', window: 'news', titleCard: true } : deliverable ? { room: 'bar', window: 'jobs', titleCard: true } : { room: 'deck', window: news ? 'arrival' : null, titleCard: true },
+      emergency
+        ? { room: 'bar', window: 'news', titleCard: true }
+        : deliverable || decision
+          ? { room: 'bar', window: 'jobs', titleCard: true }
+          : { room: 'deck', window: news ? 'arrival' : null, titleCard: true },
     );
+    this.tellStory();
   }
 
   // ------------------------------------------------------------------ flight events
@@ -795,6 +885,11 @@ export class Game {
     state.stats.kills += 1;
     const o = currentObjective(state, jobId);
     if (o?.kind === 'bounty' && progress.kills < o.count) toast(`Contract target destroyed (${progress.kills}/${o.count})`, 'good', 3000);
+    if (o?.kind === 'assault') {
+      const n = Math.min(progress.kills, DENS.turrets);
+      toast(n < DENS.turrets ? `Den turret destroyed (${n}/${DENS.turrets})` : 'The last turret is down: the reactor’s shield has failed!', 'good', 4000);
+    }
+    if (o?.kind === 'defend' && progress.kills < o.count) toast(`Sweep ship down (${progress.kills}/${o.count})`, 'good', 3000);
     this.announceJobEvents(advanceJobs(state, { dockedAt: state.location.dockedAt, systemId: state.location.systemId }));
     this.persist();
   }
@@ -1420,6 +1515,16 @@ export class Game {
       setReputation: (faction: 'sta' | 'frontier' | 'hollow-wake', value: number) => {
         if (!this.state) return;
         this.state.reputation[faction] = value;
+      },
+      /** Test-only: mark jobs complete (to start a story arc part-way through). */
+      completeJobs: (ids: string[]) => {
+        if (!this.state) return;
+        for (const id of ids) {
+          const job = getJob(id, this.state);
+          this.state.jobs[id] = { status: 'complete', objectiveIndex: job.objectives.length, acceptedAt: this.state.clock, completedAt: this.state.clock };
+        }
+        this.state.flags.clearance = true;
+        this.station?.render();
       },
       /** Test-only: set the fines owed to a faction. */
       setFines: (faction: 'sta' | 'frontier', amount: number) => {

@@ -71,7 +71,7 @@ describe('story arcs', () => {
     expect(broken((jobs) => delete job(jobs, 'arc.wake.1').requires)).toContain('law');
   });
 
-  it('show only the first step of each arc, and the next one once a step is done', () => {
+  it('show only the step in hand of each arc: the first, then each next one once the step before is done', () => {
     const s = createNewGame(3);
     const ids = (loc: string) => jobsAt(s, loc).map((o) => o.job.id).filter((id) => id.startsWith('arc.'));
     expect(ids('earth-port')).toEqual(['arc.sta.1']);
@@ -80,8 +80,11 @@ describe('story arcs', () => {
     expect(jobsAt(s, 'earth-port').find((o) => o.job.id === 'arc.sta.1')!.status).toBe('available');
     expect(ids('meridian-outpost')).toEqual(['arc.frontier.1']);
     expect(ids('dawnfield-institute')).toEqual([]);
+    s.jobs['arc.sta.1'] = { status: 'active', objectiveIndex: 0, acceptedAt: 0 };
+    expect(ids('earth-port')).toEqual(['arc.sta.1']);
+    // Done, a step leaves the board (the journal keeps it) and the next one shows.
     s.jobs['arc.sta.1'] = { status: 'complete', objectiveIndex: 2, acceptedAt: 0 };
-    expect(ids('earth-port')).toEqual(['arc.sta.1', 'arc.sta.2']);
+    expect(ids('earth-port')).toEqual(['arc.sta.2']);
   });
 
   it('Clean Manifests: an audit, a wreck, a witness, a choice and a den assault', () => {

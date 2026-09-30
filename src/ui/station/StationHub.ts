@@ -14,6 +14,7 @@ import { icon } from '../icons.ts';
 import '../styles/dock.css';
 import '../styles/station.css';
 import { acceptLabel, jobBoardContent, jobsNeedAttention, newsContent } from './bar.ts';
+import { choiceHere } from '../../economy/story.ts';
 import type { StationContext } from './context.ts';
 import { hasVoyage, journalContent, voyageReport } from './journal.ts';
 import { outfitterContent, shipStatus } from './outfitter.ts';
@@ -320,6 +321,9 @@ export class StationHub {
     const offers = jobsAt(state, locationId);
     const open = this.selectedJob ?? offers.find((o) => o.status === 'available')?.job.id ?? null;
     const offer = offers.find((o) => o.job.id === open && o.status === 'available');
+    // A story choice waiting here (docs/PROCGEN.md §14).
+    const choice = choiceHere(state, locationId);
+    if (choice && (!offer || this.selectedJob === choice.job.id)) return button('Decide', { variant: 'primary', testId: 'story-decide', onClick: () => this.ctx.decide() });
     if (!offer) return null;
     return button(acceptLabel(offer.job), { variant: 'primary', testId: `accept-${offer.job.id}`, onClick: () => this.ctx.acceptJob(offer.job.id) });
   }

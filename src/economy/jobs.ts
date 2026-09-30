@@ -1,5 +1,6 @@
 import { applyCredits, type CommodityId, type GameState, type PriceQuote } from '../app/state.ts';
 import { CONTRACTS, type ContractKind } from '../content/contracts/rules.ts';
+import { DENS } from '../content/dens/rules.ts';
 import { ACE_COMBAT_RANK, RATINGS } from '../content/progress/rules.ts';
 import { ARC_JOBS, CHARACTERS } from '../content/story/arcs.ts';
 import type { StoryMeta, StoryOption } from '../content/story/types.ts';
@@ -246,7 +247,8 @@ export function jobsAt(state: GameState, locationId: string): JobOffer[] {
     .filter((c): c is JobDef => !!c && c.giverLocationId === locationId);
   const posted = [
     ...JOBS.filter((j) => j.giverLocationId === locationId),
-    ...ARC_JOBS.filter((j) => j.giverLocationId === locationId && storyVisible(state, j)),
+    // Finished story missions live on in the journal, not on the board.
+    ...ARC_JOBS.filter((j) => j.giverLocationId === locationId && storyVisible(state, j) && state.jobs[j.id]?.status !== 'complete'),
     ...offers,
     ...postedContracts(state, locationId).map((c) => state.contracts[c.id] ?? c),
   ];
@@ -575,8 +577,12 @@ function describeCurrent(state: GameState, jobId: string): ObjectiveSummary | nu
       const text = state.location.dockedAt === o.locationId ? `${o.text}: open the Jobs window` : `Dock at ${loc.name}: ${o.text.charAt(0).toLowerCase()}${o.text.slice(1)}`;
       return { ...base, text: inOtherSystem(loc.systemId, text), targetSystemId: loc.systemId, targetLocationId: loc.id };
     }
-    case 'assault':
-      return { ...base, text: inOtherSystem(o.systemId, o.text), targetSystemId: o.systemId, targetLocationId: o.locationId };
+    case 'assault': {
+      const turrets = state.jobs[jobId]?.kills ?? 0;
+      const den = getLocation(o.locationId).name;
+      const text = turrets < DENS.turrets ? `Destroy ${den}’s turrets (${turrets}/${DENS.turrets}), then its reactor` : `Destroy ${den}’s reactor: its shield is down`;
+      return { ...base, text: o.systemId === here ? text : inOtherSystem(o.systemId, o.text), targetSystemId: o.systemId, targetLocationId: o.locationId };
+    }
     case 'defend': {
       const kills = state.jobs[jobId]?.kills ?? 0;
       return { ...base, text: inOtherSystem(o.systemId, `${o.text} (${kills}/${o.count})`), targetSystemId: o.systemId, targetLocationId: o.locationId };
@@ -645,11 +651,12 @@ export function escortsIn(state: GameState, systemId: SystemId): EscortSetup[] {
   });
 }
 
-/** Den assaults under way in a system (the den to knock out). */
-export function assaultsIn(state: GameState, systemId: SystemId): { jobId: string; locationId: string }[] {
+/** Den assaults under way in a system (the den to knock out, and its turrets still standing). */
+export function assaultsIn(state: GameState, systemId: SystemId): { jobId: string; locationId: string; turretsLeft: number }[] {
   return activeJobIds(state).flatMap((jobId) => {
     const o = currentObjective(state, jobId);
-    return o?.kind === 'assault' && o.systemId === systemId ? [{ jobId, locationId: o.locationId }] : [];
+    const turretsLeft = Math.max(0, DENS.turrets - (state.jobs[jobId]?.kills ?? 0));
+    return o?.kind === 'assault' && o.systemId === systemId ? [{ jobId, locationId: o.locationId, turretsLeft }] : [];
   });
 }
 

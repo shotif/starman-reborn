@@ -21,6 +21,9 @@ import { CONTRACTS } from '../content/contracts/rules.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
 import { hashString } from '../content/random.ts';
 import { LAW } from '../content/law/rules.ts';
+import type { EscortSetup } from '../economy/jobs.ts';
+import { DENS } from '../content/dens/rules.ts';
+import { createReactorArt, createTurretArt } from './art/denDefences.ts';
 import { contrabandIn, huntedBy, huntersIn, patrolsScanIn, wakeFriendly } from '../economy/law.ts';
 import { activeLauncher, fittedGuns, gunSummary, performanceOf, roundsLabel } from '../economy/loadout.ts';
 import { aimErrors, avoidObstacles, flyTo, steerToward, type Obstacle } from '../flight/autopilot.ts';
@@ -82,6 +85,8 @@ export interface FlightCallbacks {
   onScan?(result: 'complete' | 'evaded', faction: FactionId): void;
   /** The player destroyed a bounty hunter (nobody pays for that). */
   onHunterDown?(): void;
+  /** A den's reactor went down: the den assault `jobId` is done. */
+  onDenDestroyed?(locationId: string, jobId: string): void;
   onMessage(text: string, tone: 'good' | 'bad' | 'info'): void;
 }
 
@@ -127,10 +132,16 @@ interface NpcShip {
   crimeReported?: boolean;
   /** A bounty hunter after the player's fines: it fights only the player and never gives up. */
   hunter?: boolean;
+  /** Part of a raider den under assault: a gun turret, or the reactor. Den parts never move. */
+  den?: { locationId: string; part: 'turret' | 'reactor' };
+  /** Flies with the player: the lawful wing of a den assault (where it keeps station). */
+  wingman?: { offset: THREE.Vector3 };
+  /** A ship of the sweep coming for a den (a den defence): it fights the player and the den's crews. */
+  sweep?: { locationId: string };
   /** This patrol has decided whether to scan the player. */
   scanRolled?: boolean;
-  /** The ship of an escort contract: where it set off and when the ambush comes. */
-  escort?: { jobId: string; start: THREE.Vector3; ambushAt: number; ambushed: boolean; level: 1 | 2 | 3; waiting?: boolean };
+  /** The ship of an escort contract: where it set off and when the ambush comes (a convoy's ambushes come for the convoy). */
+  escort?: { jobId: string; start: THREE.Vector3; ambushAt: number; ambushed: boolean; level: 1 | 2 | 3; waiting?: boolean; convoy?: boolean };
   /** Who it is fighting. */
   foe: NpcShip | 'player' | null;
   /** Bounty paid when the player destroys it. */
@@ -148,10 +159,16 @@ export interface TrafficSetup {
   owner: StationOwner | null;
   /** Packs to spawn for the player's bounty contracts in this system: raiders left, threat level and where they lurk (or an ace). */
   contractPacks?: readonly { jobId: string; locationId: string; count: number; level: 1 | 2 | 3; ace?: { name: string; model: string } }[];
-  /** Ships the player escorts in this system: they set off alongside the player. */
-  escorts?: readonly { jobId: string; from: string; to: string; model: string; name: string; level: 1 | 2 | 3 }[];
+  /** Ships the player escorts in this system: they set off alongside the player (a convoy, several). */
+  escorts?: readonly EscortSetup[];
   /** Wrecks the player's recovery contracts send them to in this system. */
   wrecks?: readonly { jobId: string; locationId: string; item: string; guard: 1 | 2 | 3 | null }[];
+  /** Den assaults under way here: the den, and its turrets still standing. */
+  assaults?: readonly { jobId: string; locationId: string; turretsLeft: number }[];
+  /** Den defences under way here: the den, and the sweep ships still to destroy. */
+  defences?: readonly { jobId: string; locationId: string; count: number }[];
+  /** Raider dens here that are knocked out (wrecked, silent and closed). */
+  downDens?: readonly string[];
 }
 
 interface Drone {
@@ -219,11 +236,11 @@ const Z_AXIS = new THREE.Vector3(0, 0, 1);
 
 /**
  * Whether a bolt may hit a ship: ships of the other side only (no friendly fire among lawful ships
- * or among raiders), and the player's bolts hit a lawful ship only when it is the selected target,
- * so attacking one is always a choice (docs/PROCGEN.md §12).
+ * or among raiders), and the player's bolts hit a lawful ship only when it is the selected target
+ * or it is attacking the player, so attacking one is always a choice (docs/PROCGEN.md §12).
  */
-export function boltMayHit(shooter: 'player' | 'lawful' | 'raider', target: 'lawful' | 'raider', selected: boolean): boolean {
-  if (shooter === 'player') return target === 'raider' || selected;
+export function boltMayHit(shooter: 'player' | 'lawful' | 'raider', target: 'lawful' | 'raider', selected: boolean, attackingPlayer = false): boolean {
+  if (shooter === 'player') return target === 'raider' || selected || attackingPlayer;
   return target !== shooter;
 }
 
@@ -311,6 +328,13 @@ export class FlightSession {
   }
   /** Station targets of raider dens, shown friendly or hostile as the Wake's trust changes. */
   private readonly denTargets: Target[] = [];
+  private reactorWarned = -99;
+  /** Raider dens knocked out (before this flight or during it): wrecked, silent, closed. */
+  private readonly downDens = new Set<string>();
+  /** Den defences under way: the sweep ships still to come, wave by wave. */
+  private readonly sweeps: { jobId: string; locationId: string; waves: number[]; next: number; t: number }[] = [];
+  /** Convoys under way: when each ambush comes (fractions of the route) and how many have come. */
+  private readonly convoys = new Map<string, { waves: number[]; next: number; level: 1 | 2 | 3; name: string }>();
   /** A patrol's cargo scan under way, and whether one has run this session. */
   private scan: { npc: NpcShip; t: number } | null = null;
   private scanned = false;
@@ -335,10 +359,11 @@ export class FlightSession {
     this.traffic = opts.traffic ?? null;
     this.trafficTimers.pack = this.traffic?.plan.packs?.firstDelay ?? 0;
     // Dens show as friendly places to a pilot the Wake trusts.
+    for (const id of this.traffic?.downDens ?? []) this.downDens.add(id);
     for (const t of this.system.targets) {
       if (t.kind === 'station' && t.locationId && getLocation(t.locationId).stationType === 'pirate-den') this.denTargets.push(t);
     }
-    for (const t of this.denTargets) t.hostile = !this.denOpen;
+    this.refreshDenTargets();
     this.rand = seededRandom((opts.state.seed ^ (opts.state.stats.jumps * 7919) ^ Math.floor(opts.state.clock)) >>> 0);
     this.chase = new ChaseCamera(opts.camera);
     this.applyCameraSettings();
@@ -962,7 +987,7 @@ export class FlightSession {
     this.updateLoot(dt);
     this.updateDrones(dt);
     if (this.alive) this.collide(this.player, this.playerDurability, true);
-    for (const n of this.npcs) this.collide(n.body, n.durability, false);
+    for (const n of this.npcs) if (!n.den) this.collide(n.body, n.durability, false);
     regenerate(this.playerDurability, dt);
     for (const n of this.npcs) regenerate(n.durability, dt);
     this.updateEncounters(dt);
@@ -1232,7 +1257,7 @@ export class FlightSession {
   }
 
   private stepNpc(n: NpcShip, h: number): void {
-    if (n.durability.hull <= 0) return;
+    if (n.durability.hull <= 0 || n.den) return;
     n.body.step(n.controls, h);
   }
 
@@ -1338,7 +1363,7 @@ export class FlightSession {
       // Bolts hit ships of the other side only: no friendly fire among lawful ships or among raiders.
       // The player's bolts hit a lawful ship only when it is the selected target: attacking one is a choice.
       for (const n of this.npcs) {
-        if (n.durability.hull <= 0 || !boltMayHit(byPlayer ? 'player' : side, n.side, n.target.id === this.selectedId)) continue;
+        if (n.durability.hull <= 0 || !boltMayHit(byPlayer ? 'player' : side, n.side, n.target.id === this.selectedId, n.foe === 'player')) continue;
         if (segmentHitsSphere(from, to, n.body.position, n.art.radius)) {
           this.damageNpc(n, p.damage, to, p.damageType, byPlayer);
           return true;
@@ -1483,7 +1508,17 @@ export class FlightSession {
 
   private damageNpc(n: NpcShip, amount: number, at: THREE.Vector3, type?: DamageType, byPlayer = false): void {
     if (byPlayer) n.playerHitAt = this.time;
-    if (byPlayer && n.side === 'lawful' && !n.crimeReported && n.role !== 'raider') {
+    if (n.den?.part === 'reactor' && this.turretsStanding(n.den.locationId)) {
+      // The reactor's shield holds while any turret stands.
+      n.art.flashShield(1);
+      if (byPlayer && this.time - this.reactorWarned > 6) {
+        this.reactorWarned = this.time;
+        this.callbacks.onMessage('The reactor is shielded while the den’s turrets stand. Take them out first.', 'info');
+      }
+      return;
+    }
+    // Firing back at a lawful ship that is attacking you is self-defence; destroying it is still a crime.
+    if (byPlayer && n.side === 'lawful' && !n.crimeReported && n.role !== 'raider' && n.foe !== 'player') {
       n.crimeReported = true;
       // A patrol fired on fights back at once; the law hears of it either way.
       if (n.role === 'patrol') n.foe = 'player';
@@ -1529,7 +1564,8 @@ export class FlightSession {
       }
       this.callbacks.onCrime?.('destroy', n.faction, n.name, n.role === 'patrol' ? 'patrol' : 'trader');
     }
-    if (n.contract) this.callbacks.onContractKill(n.contract);
+    if (n.den?.part === 'reactor') this.knockOutDen(n);
+    else if (n.contract) this.callbacks.onContractKill(n.contract);
     else if (n.hunter) {
       if (byPlayer) this.callbacks.onHunterDown?.();
     } else if (n.side === 'raider' && !n.encounter && byPlayer) this.callbacks.onBounty(n.bounty, n.name);
@@ -1738,15 +1774,27 @@ export class FlightSession {
       for (const c of t.contractPacks ?? []) this.spawnContractPack(c);
       for (const e of t.escorts ?? []) this.spawnEscort(e);
       for (const w of t.wrecks ?? []) this.spawnWreck(w);
+      for (const a of t.assaults ?? []) this.spawnAssault(a);
+      for (const d of t.defences ?? []) this.startSweep(d);
     }
     // Escorted ships: the ambush comes part-way along the route.
+    const along = (n: NpcShip) => 1 - n.body.position.distanceTo(n.trader!.destination.point) / Math.max(1, n.escort!.start.distanceTo(n.trader!.destination.point));
     for (const n of this.npcs) {
       const e = n.escort;
-      if (!e || e.ambushed || !n.trader || n.durability.hull <= 0) continue;
-      const total = Math.max(1, e.start.distanceTo(n.trader.destination.point));
-      if (1 - n.body.position.distanceTo(n.trader.destination.point) / total >= e.ambushAt) {
+      if (!e || e.convoy || e.ambushed || !n.trader || n.durability.hull <= 0) continue;
+      if (along(n) >= e.ambushAt) {
         e.ambushed = true;
         this.spawnAmbush(n, e.level);
+      }
+    }
+    // Convoys: each wave comes when the leading ship reaches its mark, for one of the ships still flying.
+    for (const [jobId, c] of this.convoys) {
+      const ships = this.npcs.filter((n) => n.escort?.jobId === jobId && n.trader && n.durability.hull > 0);
+      if (!ships.length || c.next >= c.waves.length) continue;
+      const lead = Math.max(...ships.map(along));
+      if (lead >= c.waves[c.next]!) {
+        c.next += 1;
+        this.spawnAmbush(ships[Math.floor(this.rand() * ships.length)]!, c.level, c.name);
       }
     }
     for (const w of this.wreckHulls) w.art.object.rotation.x += w.spin.x * dt;
@@ -1762,7 +1810,8 @@ export class FlightSession {
         timers.pack = THREE.MathUtils.lerp(plan.packs.interval[0], plan.packs.interval[1], this.rand());
       }
     }
-    for (const d of this.denTargets) d.hostile = !this.denOpen;
+    this.refreshDenTargets();
+    this.updateSweeps(dt);
     if (!timers.huntersSpawned && this.time > LAW.hunters.delay && this.alive && huntersIn(this.state, this.state.location.systemId)) {
       timers.huntersSpawned = true;
       this.spawnHunters();
@@ -1772,8 +1821,11 @@ export class FlightSession {
     for (const n of [...this.npcs]) {
       if (n.encounter || n.durability.hull <= 0) continue;
       // Who shows as hostile: raiders (unless the Wake trusts you), hunters, and lawful ships after you.
-      n.target.hostile = n.side === 'raider' ? !this.raiderSparesPlayer(n) : n.foe === 'player';
-      if (n.role === 'trader') this.flyTrader(n);
+      n.target.hostile = n.side === 'raider' ? !this.raiderSparesPlayer(n) : n.foe === 'player' || !!n.sweep;
+      if (n.den) this.flyDenPart(n, dt);
+      else if (n.wingman) this.flyWingman(n, dt);
+      else if (n.sweep) this.flySweep(n, dt);
+      else if (n.role === 'trader') this.flyTrader(n);
       else if (n.role === 'patrol') this.flyPatrol(n, dt);
       else this.flyRaider(n, dt);
     }
@@ -1981,28 +2033,41 @@ export class FlightSession {
     return npc;
   }
 
-  /** The ship of an escort contract: it sets off alongside the player toward its destination. */
-  private spawnEscort(e: NonNullable<TrafficSetup['escorts']>[number]): void {
+  /** The ship (or ships, for a convoy) of an escort contract: it sets off alongside the player toward its destination. */
+  private spawnEscort(e: EscortSetup): void {
     const dest = this.system.dock(e.to);
     if (!dest) return;
+    const names = e.convoy?.names ?? [e.name];
+    if (!names.length) return;
     const forward = this.player.forward(new THREE.Vector3());
     const side = new THREE.Vector3(1, 0, 0).applyQuaternion(this.player.quaternion);
-    const position = this.player.position.clone().addScaledVector(forward, 220).addScaledVector(side, 180);
-    const heading = dest.dockPoint.clone().sub(position).normalize();
     const owner = this.traffic?.owner;
     const faction = owner === 'sta' || owner === 'frontier' ? owner : 'independent';
-    const npc = this.makeNpc(e.model, 'trader', faction, position, heading, `Your escort · bound for ${dest.name}`);
-    npc.name = e.name;
-    npc.target.name = `${e.name} (escort)`;
-    npc.trader = new TraderBrain({ id: e.to, point: dest.dockPoint }, npc.durability);
-    npc.origin = null;
     const [a, b] = CONTRACTS.escort.ambushAt;
-    npc.escort = { jobId: e.jobId, start: position.clone(), ambushAt: a + this.rand() * (b - a), ambushed: false, level: e.level };
-    this.callbacks.onMessage(`The ${e.name} is setting off for ${dest.name}. Stay close.`, 'info');
+    names.forEach((name, i) => {
+      // A convoy flies in line abreast, alternating either side of the player.
+      const lateral = e.convoy ? (i % 2 === 0 ? 1 : -1) * (180 + Math.floor(i / 2) * 220) : 180;
+      const position = this.player.position.clone().addScaledVector(forward, 220 + i * 60).addScaledVector(side, lateral);
+      const heading = dest.dockPoint.clone().sub(position).normalize();
+      const npc = this.makeNpc(e.model, 'trader', faction, position, heading, `${e.convoy ? `The ${e.name}` : 'Your escort'} · bound for ${dest.name}`);
+      npc.name = name;
+      npc.target.name = `${name} (${e.convoy ? 'convoy' : 'escort'})`;
+      npc.trader = new TraderBrain({ id: e.to, point: dest.dockPoint }, npc.durability);
+      npc.origin = null;
+      npc.escort = { jobId: e.jobId, start: position.clone(), ambushAt: a + this.rand() * (b - a), ambushed: false, level: e.level, ...(e.convoy ? { convoy: true } : {}) };
+    });
+    if (e.convoy) {
+      // Waves spread along the route, the first a fifth of the way in.
+      const n = e.convoy.waves;
+      this.convoys.set(e.jobId, { waves: Array.from({ length: n }, (_, i) => 0.2 + (0.55 * i) / Math.max(1, n - 1)), next: 0, level: e.level, name: e.name });
+      this.callbacks.onMessage(`The ${e.name} (${names.length} ships) is setting off for ${dest.name}. Stay close.`, 'info');
+    } else {
+      this.callbacks.onMessage(`The ${e.name} is setting off for ${dest.name}. Stay close.`, 'info');
+    }
   }
 
   /** Raiders jump the escorted ship: they come from ahead of it and go for it first. */
-  private spawnAmbush(target: NpcShip, level: 1 | 2 | 3): void {
+  private spawnAmbush(target: NpcShip, level: 1 | 2 | 3, convoy?: string): void {
     const pack = ++this.packSerial;
     const ahead = target.trader!.destination.point.clone().sub(target.body.position).normalize();
     const side = new THREE.Vector3().crossVectors(ahead, new THREE.Vector3(0, 1, 0)).normalize();
@@ -2021,7 +2086,7 @@ export class FlightSession {
       if (i % 2 === 0) npc.prey = target;
     }
     this.sfx('alert');
-    this.callbacks.onMessage(`Ambush! Raiders are closing on the ${target.name}.`, 'bad');
+    this.callbacks.onMessage(convoy ? `Ambush! Raiders are closing on the ${convoy}.` : `Ambush! Raiders are closing on the ${target.name}.`, 'bad');
   }
 
   /** A recovery contract's wreck: a dead hull a few kilometres off a station, and the item to tractor in. */
@@ -2063,7 +2128,9 @@ export class FlightSession {
       const far = n.body.position.distanceTo(this.player.position) > ESCORT_WAIT;
       if (far && brain.state === 'travel') {
         n.controls.throttle = 0;
-        if (!n.escort.waiting) this.callbacks.onMessage(`The ${n.name} is holding position until you catch up.`, 'info');
+        // One word for a convoy, not one per ship.
+        const others = this.npcs.some((x) => x !== n && x.escort?.jobId === n.escort!.jobId && x.escort.waiting);
+        if (!n.escort.waiting && !others) this.callbacks.onMessage(n.escort.convoy ? 'The convoy is holding position until you catch up.' : `The ${n.name} is holding position until you catch up.`, 'info');
       }
       n.escort.waiting = far;
     } else n.body.requestCruise(cruise);
@@ -2170,7 +2237,227 @@ export class FlightSession {
   }
 
   /** Can the player dock here? Open stations, and the raider dens for pilots the Wake trusts. */
+  // ---------------------------------------------------------------- dens under fire
+
+  /** Den markers: friendly to a pilot the Wake trusts, hostile to others, and silent once knocked out. */
+  private refreshDenTargets(): void {
+    for (const d of this.denTargets) {
+      const id = d.locationId!;
+      const down = this.downDens.has(id);
+      d.hostile = !this.denOpen && !down;
+      d.name = down ? `${getLocation(id).name} (wrecked)` : getLocation(id).name;
+    }
+  }
+
+  private turretsStanding(locationId: string): boolean {
+    return this.npcs.some((n) => n.den?.locationId === locationId && n.den.part === 'turret' && n.durability.hull > 0);
+  }
+
+  /**
+   * A den under assault: gun turrets on a ring around it, the reactor on its far side (shielded
+   * while a turret stands), raiders defending it, and a lawful wing flying with the player.
+   */
+  private spawnAssault(a: NonNullable<TrafficSetup['assaults']>[number]): void {
+    const site = this.system.dock(a.locationId);
+    if (!site || this.downDens.has(a.locationId)) return;
+    const centre = site.def.position;
+    const out = site.approach.clone().normalize();
+    const side = new THREE.Vector3().crossVectors(out, new THREE.Vector3(0, 1, 0));
+    if (side.lengthSq() < 1e-6) side.set(1, 0, 0);
+    side.normalize();
+    const lift = new THREE.Vector3().crossVectors(side, out).normalize();
+    for (let i = 0; i < a.turretsLeft; i++) {
+      const angle = (i / DENS.turrets) * Math.PI * 2 + 0.5;
+      const dir = out.clone().multiplyScalar(Math.cos(angle)).addScaledVector(side, Math.sin(angle)).addScaledVector(lift, 0.15).normalize();
+      this.makeDenPart('turret', a, centre.clone().addScaledVector(dir, site.radius + DENS.turretStandoff), dir);
+    }
+    this.makeDenPart('reactor', a, centre.clone().addScaledVector(out, -(site.radius * 0.75 + 70)), out.clone().negate());
+    // The den's crews.
+    const pack = ++this.packSerial;
+    const home = site.def.position.clone().addScaledVector(out, site.radius + 1_200);
+    this.packHome.set(pack, home);
+    const pool = RAIDERS[DENS.guards.level];
+    for (let i = 0; i < DENS.guards.count; i++) this.spawnGuard(pool[i % pool.length]!, pack, home.clone().add(this.tmp.set(this.rand() - 0.5, this.rand() - 0.5, this.rand() - 0.5).multiplyScalar(600)));
+    // The wing, alongside the player.
+    for (let i = 0; i < DENS.wing.count; i++) {
+      const offset = new THREE.Vector3(i % 2 === 0 ? 70 : -70, 12, 60 + i * 30);
+      const position = offset.clone().applyQuaternion(this.player.quaternion).add(this.player.position);
+      const npc = this.makeNpc(DENS.wing.model, 'patrol', 'sta', position, this.player.forward(new THREE.Vector3()), `${FACTIONS.sta.shortName} wing · with you`);
+      npc.name = `Wing ${i + 1}`;
+      npc.target.name = `Wing ${i + 1}`;
+      npc.wingman = { offset };
+    }
+  }
+
+  private makeDenPart(part: 'turret' | 'reactor', a: { jobId: string; locationId: string }, position: THREE.Vector3, facing: THREE.Vector3): NpcShip {
+    const art = part === 'turret' ? createTurretArt(this.ctx) : createReactorArt(this.ctx);
+    this.system.scene.add(art.object);
+    const body = new ShipBody({ ...RAIDER_SHIP, maxSpeed: 0, boostSpeed: 0, strafeSpeed: 0, reverseSpeed: 0, cruiseSpeed: 0, radius: art.radius });
+    body.position.copy(position);
+    body.lookAlong(facing);
+    art.object.position.copy(position);
+    art.object.quaternion.copy(body.quaternion);
+    const t = DENS.turret;
+    const hull = part === 'turret' ? t.hull : DENS.reactor.hull;
+    const shield = part === 'turret' ? t.shield : 0;
+    const id = `den-${part}-${++this.trafficTimers.serial}`;
+    const name = part === 'turret' ? 'Den turret' : `${getLocation(a.locationId).name} reactor`;
+    const npc: NpcShip = {
+      id,
+      name,
+      faction: 'hollow-wake',
+      role: 'raider',
+      side: 'raider',
+      body,
+      art,
+      durability: { hull, hullMax: hull, shield, shieldMax: shield, shieldRegen: shield ? 5 : 0, shieldDelay: 4, shieldType: 'deflector', sinceHit: 99 },
+      guns:
+        part === 'turret'
+          ? [new Gun({ damage: t.damage, shotsPerSecond: t.shotsPerSecond, projectileSpeed: t.projectileSpeed, range: t.range, energyPerShot: 0, kind: 'enemy-pulse', damageType: 'plasma' })]
+          : [],
+      brain: new PirateBrain(this.rand),
+      controls: neutralControls(),
+      target: {
+        id: `ship:${id}`,
+        name,
+        kind: 'ship',
+        position: body.position,
+        velocity: body.velocity,
+        radius: art.radius,
+        subtitle: part === 'turret' ? 'Den defence · hostile' : 'Den reactor · shielded while the turrets stand',
+        dataClass: 'fictional',
+        faction: 'hollow-wake',
+        hostile: true,
+        alive: true,
+        cycle: true,
+      },
+      foe: null,
+      bounty: 0,
+      playerHitAt: -Infinity,
+      idle: 0,
+      maydaySent: false,
+      contract: a.jobId,
+      den: { locationId: a.locationId, part },
+    };
+    this.npcs.push(npc);
+    return npc;
+  }
+
+  /** Turrets turn to the nearest foe in range (the player first) and fire with a lead; the reactor glows hotter as it is hit. */
+  private flyDenPart(n: NpcShip, dt: number): void {
+    const den = n.den!;
+    if (den.part === 'reactor') {
+      (n.art as ReturnType<typeof createReactorArt>).setHeat(1 - n.durability.hull / n.durability.hullMax);
+      n.target.subtitle = this.turretsStanding(den.locationId) ? 'Den reactor · shielded while the turrets stand' : 'Den reactor · exposed';
+      return;
+    }
+    const gun = n.guns[0]!;
+    gun.tick(dt);
+    n.body.energy = n.body.params.energyMax;
+    const range = DENS.turret.range;
+    const playerIn = this.alive && !this.busy && !this.raiderSparesPlayer(n) && n.body.position.distanceTo(this.player.position) < range + 300;
+    const foe: ShipBody | null = playerIn ? this.player : (this.nearestShip(n.body.position, range, (x) => x.side === 'lawful')?.body ?? null);
+    n.foe = playerIn ? 'player' : null;
+    if (!foe) return;
+    leadPoint(n.body.position, n.body.velocity, foe.position, foe.velocity, DENS.turret.projectileSpeed, this.aimPoint);
+    // Turn the head toward the aim point at a turret's pace.
+    this.tmpQ.setFromUnitVectors(new THREE.Vector3(0, 0, -1), this.tmp.copy(this.aimPoint).sub(n.body.position).normalize());
+    n.body.quaternion.rotateTowards(this.tmpQ, 1.2 * dt);
+    if (n.body.position.distanceTo(foe.position) > range || !withinArc(n.body, this.aimPoint)) return;
+    const scale = playerIn ? DIFFICULTY[this.settings.difficulty].enemyDamage : 1;
+    if (gun.fire(n.body, n.art.muzzles, this.aimPoint, this.projectiles, n.id, scale).fired) {
+      this.npcShots.set(n.id, (this.npcShots.get(n.id) ?? 0) + 1);
+      if (n.body.position.distanceTo(this.player.position) < 2_500) this.sfx('laser-enemy', 0.3);
+    }
+  }
+
+  /** The reactor goes: a big blast, the den falls silent, and the assault is done. */
+  private knockOutDen(n: NpcShip): void {
+    const { locationId } = n.den!;
+    this.downDens.add(locationId);
+    this.spawnEffect(createExplosion(n.body.position.clone(), 40, this.ctx));
+    this.sfx('explosion-large', 1);
+    for (const x of [...this.npcs]) if (x.den?.locationId === locationId && x !== n) this.removeNpc(x);
+    this.refreshDenTargets();
+    this.callbacks.onMessage(`${getLocation(locationId).name}’s reactor is down. The den is dark.`, 'good');
+    this.callbacks.onDenDestroyed?.(locationId, n.contract!);
+  }
+
+  /** A wingman keeps station off the player's wing and goes for raiders (and den turrets) near the player. */
+  private flyWingman(n: NpcShip, dt: number): void {
+    const w = n.wingman!;
+    const foe = this.alive && !this.busy ? this.nearestShip(this.player.position, 3_000, (x) => x.side === 'raider' && !x.hunter && !(x.den?.part === 'reactor' && this.turretsStanding(x.den.locationId))) : null;
+    n.foe = foe;
+    if (foe) {
+      this.fightNpc(n, foe.body, dt, TRAFFIC.npcDamage);
+      return;
+    }
+    for (const g of n.guns) g.tick(dt);
+    const slot = this.tmp2.copy(w.offset).applyQuaternion(this.player.quaternion).add(this.player.position);
+    flyTo(n.body, slot, { arriveDistance: 60, allowCruise: false, maxThrottle: 1 }, n.controls);
+    n.body.requestCruise(this.player.cruise === 'on' && n.body.position.distanceTo(slot) > 400);
+  }
+
+  /** A sweep comes for a den: waves of lawful ships from the jump beacon, and the den's crews turn out. */
+  private startSweep(d: NonNullable<TrafficSetup['defences']>[number]): void {
+    const site = this.system.dock(d.locationId);
+    if (!site || this.downDens.has(d.locationId)) return;
+    // One ship more than must be downed, spread over the waves.
+    const total = d.count + 1;
+    const waves = Array.from({ length: DENS.sweep.waves }, (_, i) => Math.ceil((total - i) / DENS.sweep.waves));
+    this.sweeps.push({ jobId: d.jobId, locationId: d.locationId, waves, next: 0, t: 6 });
+    const pack = ++this.packSerial;
+    const home = site.def.position.clone().addScaledVector(site.approach, site.radius + 900);
+    this.packHome.set(pack, home);
+    const pool = RAIDERS[2];
+    for (let i = 0; i < DENS.sweep.defenders; i++) this.spawnGuard(pool[i % pool.length]!, pack, home.clone().add(this.tmp.set(this.rand() - 0.5, this.rand() - 0.5, this.rand() - 0.5).multiplyScalar(500)));
+  }
+
+  private updateSweeps(dt: number): void {
+    for (const sw of this.sweeps) {
+      if (sw.next >= sw.waves.length) continue;
+      const flying = this.npcs.filter((n) => n.sweep && n.contract === sw.jobId && n.durability.hull > 0).length;
+      // The next wave comes when the last is nearly spent.
+      if (sw.next > 0 && flying > 1) continue;
+      sw.t -= dt;
+      if (sw.t > 0) continue;
+      const count = sw.waves[sw.next]!;
+      sw.next += 1;
+      sw.t = 8;
+      const site = this.system.dock(sw.locationId)!;
+      const from = this.jumpPoint();
+      const heading = site.def.position.clone().sub(from).normalize();
+      for (let i = 0; i < count; i++) {
+        const model = DENS.sweep.models[i % DENS.sweep.models.length]!;
+        const position = from.clone().addScaledVector(heading, 800 + i * 60).add(this.tmp.set(this.rand() - 0.5, this.rand() - 0.5, this.rand() - 0.5).multiplyScalar(400));
+        const npc = this.makeNpc(model, 'patrol', 'sta', position, heading, `${FACTIONS.sta.shortName} sweep · hostile`);
+        npc.name = `${FACTIONS.sta.shortName} sweep`;
+        npc.target.name = npc.name;
+        npc.sweep = { locationId: sw.locationId };
+        npc.contract = sw.jobId;
+        npc.foe = 'player';
+      }
+      this.sfx('alert');
+      this.callbacks.onMessage(sw.next === 1 ? `${count} Transit Authority sweep ships inbound for ${getLocation(sw.locationId).name}!` : `A second wave: ${count} more sweep ships inbound!`, 'bad');
+    }
+  }
+
+  /** Sweep ships make for the den, fighting the player and the den's crews on the way. */
+  private flySweep(n: NpcShip, dt: number): void {
+    const site = this.system.dock(n.sweep!.locationId);
+    const onPlayer = this.alive && !this.busy && this.autopilot.mode !== 'lane' && n.body.position.distanceTo(this.player.position) < 4_000;
+    const raider = onPlayer ? null : this.nearestShip(n.body.position, 4_000, (x) => x.side === 'raider' && !x.den);
+    n.foe = onPlayer ? 'player' : raider;
+    if (onPlayer) this.fightNpc(n, this.player, dt, TRAFFIC.npcDamage * DIFFICULTY[this.settings.difficulty].enemyDamage);
+    else if (raider) this.fightNpc(n, raider.body, dt, TRAFFIC.npcDamage);
+    else {
+      for (const g of n.guns) g.tick(dt);
+      if (site) flyTo(n.body, site.def.position.clone().addScaledVector(site.approach, site.radius + 700), { arriveDistance: 400, allowCruise: true, maxThrottle: 1 }, n.controls);
+    }
+  }
+
   private canDock(site: DockSite): boolean {
+    if (this.downDens.has(site.def.locationId)) return false;
     return site.dockable || (this.denOpen && getLocation(site.def.locationId).stationType === 'pirate-den');
   }
 

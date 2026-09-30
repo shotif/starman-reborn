@@ -622,3 +622,87 @@ input[type='checkbox'] {
 :where(.screen-layer > *, .modal-layer > *) {
   pointer-events: auto;
 }
+
+/* ---------- Story: dialogue, choices and comms (docs/PROCGEN.md §14) ---------- */
+
+.dialogue {
+  max-width: 38rem;
+}
+
+.dialogue-line {
+  border-left: 2px solid var(--accent);
+  padding-left: 0.75rem;
+}
+
+.dialogue-who {
+  margin: 0;
+  font-family: var(--font-ui);
+  letter-spacing: 0.04em;
+}
+
+.dialogue-text {
+  margin: 0.2rem 0 0;
+  line-height: 1.45;
+}
+
+.dialogue-scene {
+  margin: 0;
+  font-style: italic;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.choice-options {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.choice-option {
+  display: grid;
+  gap: 0.15rem;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0.55rem 0.8rem;
+  text-align: left;
+  font: inherit;
+  color: var(--text);
+  background: var(--panel-raised);
+  border: 1px solid var(--panel-border-strong);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.choice-option:hover,
+.choice-option:focus-visible {
+  border-color: var(--amber, #ffd84a);
+  background: rgba(40, 56, 92, 0.95);
+}
+
+.choice-option.ends {
+  border-color: rgba(255, 107, 107, 0.55);
+}
+
+.choice-label {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.choice-effects {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.toast.comm {
+  border-color: rgba(207, 168, 255, 0.6);
+  text-align: left;
+}
+
+.toast.comm .comm-from {
+  display: block;
+  font-family: var(--font-ui);
+  font-size: 0.78em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fiction);
+}

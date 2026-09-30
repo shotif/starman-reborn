@@ -21,6 +21,8 @@ export interface StationContext {
   openControls(): void;
   quitToTitle(): void;
   acceptJob(jobId: string): void;
+  /** Opens the story choice waiting at this dock (docs/PROCGEN.md §14). */
+  decide(): void;
   /** Rebuilds the station screen (after a pardon, the whole station opens up). */
   reload(): void;
   deliverJob(jobId: string): void;

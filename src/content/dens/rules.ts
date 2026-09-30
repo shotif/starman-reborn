@@ -13,9 +13,9 @@ export const DENS = {
   turretStandoff: 260,
   reactor: { hull: 900 },
   /** Raiders defending a den under assault (pack threat level and size). */
-  guards: { level: 2 as const, count: 3 },
+  guards: { level: 2 as const, count: 2 },
   /** Lawful ships flying with the player on an assault (the Transit Authority's wing). */
-  wing: { count: 2, model: 'ship.light-fighter.1.halden' },
+  wing: { count: 3, model: 'ship.light-fighter.1.halden' },
   /** A sweep coming for a den: waves of lawful ships from the jump beacon. */
   sweep: { waves: 2, models: ['ship.light-fighter.1.halden', 'ship.heavy-fighter.1.ares'], defenders: 2 },
 } as const;

@@ -4,6 +4,8 @@ import { COMMODITIES } from '../../economy/commodities.ts';
 import { welcomeText } from '../../economy/dockText.ts';
 import { FACTIONS, standingTier, TIER_LABEL } from '../../economy/factions.ts';
 import { canDeliver, describeObjective, jobsAt, type JobDef, type JobOffer } from '../../economy/jobs.ts';
+import { ARCS, CHARACTERS } from '../../content/story/arcs.ts';
+import { arcMissions, briefingFor, choiceHere } from '../../economy/story.ts';
 import { button, dataBadge } from '../components.ts';
 import { formatCredits, h, signed } from '../dom.ts';
 import { glyph, type GlyphName } from '../glyphs.ts';
@@ -18,10 +20,12 @@ export function pips(level: number, of = 3): HTMLElement {
   return h('span', { class: 'pips', role: 'img', 'aria-label': `Difficulty ${level} of ${of}` }, Array.from({ length: of }, (_, i) => h('span', { class: i < level ? 'on' : '' })));
 }
 
-/** True when this dock has contracts to accept or cargo to deliver. */
+/** True when this dock has contracts to accept, cargo to deliver or a story choice waiting. */
 export function jobsNeedAttention(ctx: StationContext): boolean {
   const { state, locationId } = ctx;
-  return jobsAt(state, locationId).some((o) => o.status === 'available') || Object.keys(state.jobs).some((id) => canDeliver(state, id, locationId));
+  return (
+    jobsAt(state, locationId).some((o) => o.status === 'available') || Object.keys(state.jobs).some((id) => canDeliver(state, id, locationId)) || !!choiceHere(state, locationId)
+  );
 }
 
 export function deliverableJobs(ctx: StationContext): string[] {
@@ -52,7 +56,7 @@ export function jobBoardContent(ctx: StationContext, selected: string | null, on
         )
       : null,
     h('div', { class: 'list-head' }, h('span', null, 'Contracts posted here'), h('span', null, 'Reward')),
-    offers.length ? h('ul', { class: 'list' }, offers.map((o) => jobCard(o, o.job.id === open, onSelect))) : h('p', { class: 'list-empty' }, 'No contracts posted at this dock.'),
+    offers.length ? h('ul', { class: 'list' }, offers.map((o) => jobCard(ctx, o, o.job.id === open, onSelect))) : h('p', { class: 'list-empty' }, 'No contracts posted at this dock.'),
     active.length
       ? h(
           'section',
@@ -92,6 +96,13 @@ const KIND_LABEL: Record<ContractKind, string> = {
 /** Where a job sends you, for the card's subtitle. */
 function whereTo(job: JobDef): string {
   const o = job.objectives[0];
+  if (o?.kind === 'choice') return 'a decision, here';
+  // A story mission names its first stop.
+  if (job.story && o && (o.kind === 'visit' || o.kind === 'dock')) {
+    const first = getLocation(o.locationId);
+    return `to ${first.name}, ${getSystem(first.systemId).displayName}`;
+  }
+  if (o?.kind === 'assault' || o?.kind === 'defend') return `at ${getLocation(o.locationId).name}, ${getSystem(o.systemId).displayName}`;
   if (o?.kind === 'scan' && job.contract) {
     const planet = getPlanet(o.bodyId);
     return `${planet?.displayName ?? o.bodyId}, ${getSystem(o.systemId).displayName}`;
@@ -110,18 +121,21 @@ function whereTo(job: JobDef): string {
 /** The accept button's label: the reward, and the deposit when there is one. */
 export function acceptLabel(job: JobDef): string {
   const deposit = job.contract?.deposit;
+  if (!job.reward && !deposit) return 'Accept';
   return `Accept · ${formatCredits(job.reward)}${deposit ? ` (deposit ${formatCredits(deposit)})` : ''}`;
 }
 
-function jobCard(o: JobOffer, expanded: boolean, onSelect: (id: string) => void): HTMLElement {
+function jobCard(ctx: StationContext, o: JobOffer, expanded: boolean, onSelect: (id: string) => void): HTMLElement {
   const job = o.job;
-  const who = job.factionId ? FACTIONS[job.factionId].shortName : 'Independent';
+  const story = job.story;
+  const who = story ? CHARACTERS[story.speaker].name : job.factionId ? FACTIONS[job.factionId].shortName : 'Independent';
   const kind = job.contract?.kind;
   const cargo = job.contract?.cargo;
   const deliver = job.objectives.find((x) => x.kind === 'deliver');
   const urgent = job.contract?.urgent;
   const chain = job.contract?.chain;
   const tags = [
+    story ? h('span', { class: 'job-tag story' }, `${ARCS[story.arc].title} · ${story.step}/${arcMissions(story.arc).length}`) : null,
     chain ? h('span', { class: 'job-tag chain' }, `Follow-up ${chain.step}/${CONTRACTS.chain.maxSteps}`) : null,
     urgent ? h('span', { class: 'job-tag urgent' }, `Urgent · ${urgent.seconds / 60} min`) : null,
     job.contract?.event ? h('span', { class: 'job-tag event' }, 'In the news') : null,
@@ -140,10 +154,10 @@ function jobCard(o: JobOffer, expanded: boolean, onSelect: (id: string) => void)
       'span',
       null,
       h('span', { class: 'row-name' }, job.title),
-      h('span', { class: 'row-sub' }, `${kind ? `${KIND_LABEL[kind]} · ` : ''}${who} · ${whereTo(job)}`),
+      h('span', { class: 'row-sub' }, `${kind ? `${KIND_LABEL[kind]} · ` : story ? 'Story · ' : ''}${who} · ${whereTo(job)}`),
       tags.length ? h('span', { class: 'job-tags' }, tags) : null,
     ),
-    h('span', { class: 'job-meta' }, h('span', { class: 'row-value num reward' }, formatCredits(job.reward)), pips(job.difficulty)),
+    h('span', { class: 'job-meta' }, h('span', { class: 'row-value num reward' }, job.reward ? formatCredits(job.reward) : 'Your call'), pips(job.difficulty)),
   );
   const status =
     o.status === 'available'
@@ -159,7 +173,8 @@ function jobCard(o: JobOffer, expanded: boolean, onSelect: (id: string) => void)
       ? h(
           'div',
           { class: 'job-detail stack' },
-          h('p', { class: 'job-brief' }, job.briefing, ' ', dataBadge('fictional')),
+          story ? h('p', { class: 'dialogue-who' }, h('strong', null, CHARACTERS[story.speaker].name), h('span', { class: 'muted small' }, ` · ${CHARACTERS[story.speaker].role}`)) : null,
+          h('p', { class: 'job-brief' }, briefingFor(ctx.state, job), ' ', dataBadge('fictional')),
           h(
             'dl',
             { class: 'kv' },
