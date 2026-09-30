@@ -13,8 +13,12 @@ import { addCargo, cargoUsed } from '../../src/economy/cargo.ts';
 import { contractIssues } from '../../src/economy/contractGuards.ts';
 import { boardFor, postsClaims } from '../../src/economy/contracts.ts';
 import { acceptJob, countMined, currentObjective, deliverJob, describeObjective, type JobDef } from '../../src/economy/jobs.ts';
-import { cargoCapacity } from '../../src/economy/loadout.ts';
-import { cutRock, minerHunt, rockSpec, rocksInSector, stowUnit } from '../../src/economy/mining.ts';
+import { cargoCapacity, newShipState, performanceOf } from '../../src/economy/loadout.ts';
+import { allQuotes, marketTables } from '../../src/economy/markets.ts';
+import { bestMiningIncome, cutRock, miningEstimates, minerHunt, rockSpec, rocksInSector, stowUnit } from '../../src/economy/mining.ts';
+import { liveQuote, sellCommodity } from '../../src/economy/trade.ts';
+import { tradeRoutes } from '../../src/economy/tradeComputer.ts';
+import { PRICE_BAND } from '../../src/content/economy/goods.ts';
 import { emptyInput, type FlightAction } from '../../src/flight/input/types.ts';
 import { FlightSession, type FlightCallbacks, type TrafficSetup } from '../../src/world/FlightSession.ts';
 import type { MiningLedger } from '../../src/world/MiningField.ts';
@@ -207,6 +211,117 @@ describe('raiders who hunt miners', () => {
     // The system's own packs set the threat when it has any; a hunting pack is small.
     expect(minerHunt(0.1, 3).level).toBe(3);
     expect(lawless.size[1]).toBeLessThanOrEqual(2);
+  });
+});
+
+// ---------------------------------------------------------------- the economy's guardrails
+
+describe('mined goods in the markets', () => {
+  beforeAll(installCanvasStub);
+
+  it('sell through the normal markets, stock and all, and prices stay inside their bands', () => {
+    let checked = 0;
+    for (const belt of BELTS) {
+      const near = jumpsFrom(WORLD.links, belt.systemId);
+      for (const good of beltGoods(belt.kind)) {
+        const lo = Math.ceil(COMMODITIES[good].basePrice * PRICE_BAND[0]);
+        const hi = Math.floor(COMMODITIES[good].basePrice * PRICE_BAND[1]);
+        const buyers = [...marketTables().values()].filter((m) => (near.get(m.systemId) ?? 99) <= 1 && m.entries.get(good) && m.entries.get(good)!.role !== 'produce' && getLocation(m.locationId).stationType !== 'pirate-den');
+        for (const m of buyers.slice(0, 3)) {
+          // A miner who never stops: load after load into one dock.
+          const state = createNewGame(5);
+          state.location = { ...state.location, systemId: m.systemId, dockedAt: m.locationId };
+          const before = liveQuote(state, m.locationId, good).sell!;
+          for (let load = 0; load < 30; load++) {
+            state.ship.cargo = { [good]: 20 };
+            const r = sellCommodity(state, m.locationId, good, 20);
+            expect(r.ok).toBe(true);
+            if (r.ok) {
+              expect(r.unitPrice).toBeGreaterThanOrEqual(lo);
+              expect(r.unitPrice).toBeLessThanOrEqual(hi);
+            }
+            const q = liveQuote(state, m.locationId, good).sell!;
+            expect(q).toBeGreaterThanOrEqual(lo);
+            expect(q).toBeLessThanOrEqual(hi);
+            state.clock += 60;
+          }
+          // The dock felt it: stock recorded through the market, and a lower price.
+          expect(state.markets[m.locationId]?.stock[good]).toBeGreaterThan(m.entries.get(good)!.target);
+          expect(liveQuote(state, m.locationId, good).sell!).toBeLessThan(before);
+          checked++;
+        }
+      }
+    }
+    expect(checked).toBeGreaterThan(10);
+  });
+
+  it('come from the hold, never from thin air: mining leaves the markets alone', () => {
+    const f = flightIn('sol', withLaser());
+    f.atRock('belt:sol-main-belt');
+    f.run(0.1, ['mine']);
+    f.run(60);
+    expect(held(f.state)).toBeGreaterThan(0);
+    expect(f.state.markets).toEqual({});
+  });
+});
+
+/** What hauling pays a ship: the trade computer's routes between every market within three jumps of `around`, per hour. */
+function haulingPerHour(model: string, around: SystemId): number[] {
+  const state = createNewGame(1);
+  state.ship = newShipState(model);
+  state.credits = 1_000_000;
+  const jumps = jumpsFrom(WORLD.links, around);
+  const rep = { sta: 0, frontier: 0, 'hollow-wake': 0 };
+  for (const [id, m] of marketTables()) {
+    if ((jumps.get(m.systemId) ?? 99) <= 3 && getLocation(id).stationType !== 'pirate-den') state.knownMarkets[id] = { source: 'visited', observedAt: 0, prices: allQuotes(id, rep) };
+  }
+  return tradeRoutes(state, null, { limit: 100_000 })
+    .map((r) => r.perMinute * 60)
+    .sort((a, b) => a - b);
+}
+
+const quantile = (sorted: readonly number[], p: number) => sorted[Math.floor(p * (sorted.length - 1))]!;
+
+describe('what a miner earns', () => {
+  const rigs = [
+    { name: 'the starter courier with a class 1 laser', model: 'ship.courier.1.halden', fittings: { 'utility-1': LASER } },
+    { name: 'a class 1 freighter with a class 1 laser and prospector', model: 'ship.freighter.1.eridani', fittings: { 'utility-1': LASER, 'utility-2': PROSPECTOR } },
+  ];
+
+  it('is in the range of a modest trade route with a class 1 laser, and never above the best hauling route', { timeout: 60_000 }, () => {
+    for (const rig of rigs) {
+      const ship = { ...newShipState(rig.model), fittings: { ...newShipState(rig.model).fittings, ...rig.fittings } };
+      const perf = performanceOf(ship);
+      expect(perf.miningRate).toBe(6);
+      const hauling = haulingPerHour(rig.model, 'sol');
+      const best = hauling.at(-1)!;
+      const incomes = BELTS.map((b) => ({ belt: b, perHour: bestMiningIncome(b, perf) }));
+      // Never above the best hauling route, anywhere.
+      for (const { belt, perHour } of incomes) expect(perHour, `${rig.name} in ${belt.id}`).toBeLessThan(best);
+      // A modest trade route: the typical belt of the core pays within the middle half of the routes a hauler flies.
+      const core = incomes.filter(({ belt }) => ['sol', 'alpha-centauri', 'epsilon-eridani', 'tau-ceti'].includes(belt.systemId)).map((x) => x.perHour).sort((a, b) => a - b);
+      const typical = quantile(core, 0.5);
+      expect(typical, rig.name).toBeGreaterThanOrEqual(quantile(hauling, 0.25));
+      expect(typical, rig.name).toBeLessThanOrEqual(quantile(hauling, 0.75));
+      // Mining pays something in every core belt.
+      for (const x of core) expect(x).toBeGreaterThan(0);
+    }
+  });
+
+  it('stays below the best hauling route near each belt, even with two class 3 lasers', { timeout: 60_000 }, () => {
+    const model = 'ship.freighter.1.eridani';
+    const perf = performanceOf({ model, fittings: { ...newShipState(model).fittings, 'utility-1': 'gear.mining-laser.3.eridani', 'utility-2': 'gear.mining-laser.3.eridani' } });
+    expect(perf.miningRate).toBe(20);
+    const bestNearSol = haulingPerHour(model, 'sol').at(-1)!;
+    for (const belt of BELTS) {
+      const mining = bestMiningIncome(belt, perf);
+      expect(mining, belt.id).toBeLessThan(bestNearSol);
+      if (belt.systemId === 'tau-ceti' || belt.systemId === 'epsilon-eridani') expect(mining, belt.id).toBeLessThan(haulingPerHour(model, belt.systemId).at(-1)!);
+    }
+    // The estimate is a round of cutting a full hold, flying to the buyer and back.
+    const est = miningEstimates(getBelt('tau-ceti-debris-disc'), perf)[0]!;
+    expect(est.buyer).toBe('larkspur-stillworks');
+    expect(est.seconds).toBeGreaterThan(est.items / (perf.miningRate / 60));
   });
 });
 
