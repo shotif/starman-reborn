@@ -49,6 +49,10 @@ import type {
 import { ROOM_ORDER, STATION_OWNERS, STATION_TYPES, createStationInterior, generateInteriorStyle } from '../world/rooms/index.ts';
 import type { RoomView, StationInterior, StationLook, StationOwner, StationType } from '../world/rooms/index.ts';
 import { SCENE_DEFS } from '../world/systems/index.ts';
+import { CHARACTERS } from '../content/story/arcs.ts';
+import type { CharacterId } from '../content/story/types.ts';
+import { PORTRAIT_AGES, PORTRAIT_FACTIONS, PORTRAIT_ROLES, STORY_PORTRAITS, portraitElement } from '../ui/portraits.ts';
+import type { PortraitLook } from '../ui/portraits.ts';
 
 const params = new URLSearchParams(location.search);
 const num = (key: string, fallback: number): number => {
@@ -532,6 +536,88 @@ function interiorItem(): Item {
   };
 }
 
+/*
+ * Portraits of the people in the bars (src/ui/portraits.ts): item=portraits&seed=<first seed>.
+ * The six story characters, then 24 regulars across factions, roles and ages at 96 px, and the
+ * same 24 at 56 px to check they still read small. The page is HTML over the (empty) canvas.
+ */
+const FACTION_SHORT: Record<PortraitLook['faction'], string> = { sta: 'Authority', frontier: 'Frontier', 'hollow-wake': 'Wake', independent: 'Independent' };
+
+/** 24 looks: every faction six times, every role three or four times, every age eight times. */
+function regularLooks(): PortraitLook[] {
+  return Array.from({ length: 24 }, (_, i) => ({
+    faction: PORTRAIT_FACTIONS[i % 4]!,
+    role: PORTRAIT_ROLES[(i + Math.floor(i / 4)) % 7]!,
+    age: PORTRAIT_AGES[Math.floor(i / 2) % 3]!,
+  }));
+}
+
+function portraitItem(): Item {
+  return {
+    id: 'portraits',
+    group: 'Portraits',
+    label: 'Bar portraits',
+    build(env) {
+      // Portrait sizes are rem, as in the game (1rem = 16 px at 100% text size); this page uses 13 px.
+      document.documentElement.style.fontSize = '16px';
+      const layer = document.createElement('div');
+      const left = params.get('panel') === '0' ? 16 : 276;
+      layer.style.cssText = `position:fixed;inset:0;overflow:auto;background:#04060b;padding:10px 16px 24px ${left}px;box-sizing:border-box`;
+      document.body.insertBefore(layer, panel);
+      const heading = (text: string): HTMLElement => {
+        const el = document.createElement('h2');
+        el.textContent = text;
+        el.style.cssText = 'font:600 13px/1.2 system-ui;letter-spacing:.06em;text-transform:uppercase;color:#a3b3cb;margin:14px 0 8px';
+        return el;
+      };
+      const grid = (cards: HTMLElement[], gap: number): HTMLElement => {
+        const el = document.createElement('div');
+        el.style.cssText = `display:flex;flex-wrap:wrap;gap:${gap}px`;
+        el.append(...cards);
+        return el;
+      };
+      const card = (seed: number, look: PortraitLook, title: string, sub: string | null, size: 'sm' | 'lg'): HTMLElement => {
+        const fig = document.createElement('figure');
+        fig.style.cssText = `margin:0;width:${size === 'lg' ? 104 : 56}px;font:11px/1.25 system-ui;color:#7485a0`;
+        fig.append(portraitElement(seed, look, { size, label: title }));
+        if (sub !== null) {
+          const cap = document.createElement('figcaption');
+          cap.style.cssText = 'margin-top:4px';
+          const name = document.createElement('strong');
+          name.style.cssText = 'display:block;color:#e8eef8;font-weight:600';
+          name.textContent = title;
+          cap.append(name, sub);
+          fig.append(cap);
+        }
+        return fig;
+      };
+      const draw = (first: number): void => {
+        const looks = regularLooks();
+        layer.replaceChildren(
+          heading('Story characters'),
+          grid(
+            (Object.keys(STORY_PORTRAITS) as CharacterId[]).map((id) => {
+              const p = STORY_PORTRAITS[id];
+              return card(p.seed, p.look, CHARACTERS[id].name, `${FACTION_SHORT[p.look.faction]} · ${p.look.role} · ${p.look.age ?? '?'}`, 'lg');
+            }),
+            12,
+          ),
+          heading(`Regulars · seeds ${first}–${first + looks.length - 1}`),
+          grid(looks.map((look, i) => card(first + i, look, `#${first + i}`, `${FACTION_SHORT[look.faction]} · ${look.role} · ${look.age}`, 'lg')), 12),
+          heading('The same at 56 px'),
+          grid(looks.map((look, i) => card(first + i, look, `#${first + i}`, null, 'sm')), 10),
+        );
+      };
+      // The frame and sizes come from the game's stylesheets (frame.css, station.css).
+      void Promise.all([import('../ui/styles/frame.css'), import('../ui/styles/station.css')]).then(() => draw(Math.floor(num('seed', 1))));
+      env.slider('First seed', 'seed', 1, 1000, 1, num('seed', 1), (v) => draw(v));
+      env.button('Next 24', () => reloadWith('seed', String(Math.floor(num('seed', 1)) + 24)));
+      env.note('Every portrait is a pure function of its seed and look (faction, role, age).');
+      return { dist: 1, sky: null };
+    },
+  };
+}
+
 const ITEMS: Item[] = [
   interiorItem(),
   shipItem('ship-player', 'Kite courier (player)', createPlayerShip, 24),
@@ -822,6 +908,7 @@ const ITEMS: Item[] = [
       };
     },
   },
+  portraitItem(),
 ];
 
 /* ---------------------------------------------------------------------------------------------- */
