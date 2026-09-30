@@ -1,4 +1,6 @@
+import coreSeedsFile from '../content/world/core-seeds.json' with { type: 'json' };
 import { generateWorld } from '../content/world/generate.ts';
+import { GROWTH, WORLD_SEED } from '../content/world/rules.ts';
 import type { GeneratedStation, StationType, SystemSeed, WorldResult } from '../content/world/types.ts';
 import astrometryFile from './generated/astrometry.json' with { type: 'json' };
 import catalogSystemsFile from './generated/catalog-systems.json' with { type: 'json' };
@@ -7,7 +9,6 @@ import { distance3 } from './coords.ts';
 import { SOURCES } from './sources.ts';
 import type {
   ConfirmedBody,
-  FactionId,
   FictionalLocation,
   LocationKind,
   ScienceFact,
@@ -314,13 +315,12 @@ interface CatalogSystemEntry {
   displayName: string;
   referenceComponentId: string;
   componentIds: string[];
+  /** How the system entered the game: the first catalogue (HYG), or the sky snapshot that added it. */
+  addedBy?: string;
 }
 
 /** Systems extracted from the HYG and Open Exoplanet catalogues (scripts/extract-catalogs.ts). */
 const CATALOG_SYSTEMS = (catalogSystemsFile as unknown as { systems: CatalogSystemEntry[] }).systems;
-
-/** Who runs the hand-authored systems (their stations belong to these factions). */
-const CURATED_OWNER: Record<string, FactionId> = { sol: 'sta', barnard: 'sta', 'alpha-centauri': 'frontier', sirius: 'frontier', 'epsilon-eridani': 'frontier' };
 
 function seedFor(id: SystemId, name: string, componentIds: readonly string[], referenceId: string | null, curated: SystemSeed['curated']): SystemSeed {
   const ref = referenceId ? componentIndex.get(referenceId) : undefined;
@@ -342,14 +342,42 @@ function seedFor(id: SystemId, name: string, componentIds: readonly string[], re
   return { id, name, positionLy: ref ? ref.positionLy : [0, 0, 0], stars, planets, ...(curated ? { curated } : {}) };
 }
 
-/** What the world generator is given: every system's observed stars and confirmed planets. */
-export const WORLD_SEEDS: readonly SystemSeed[] = [
-  ...CURATED.map((c) => seedFor(c.id, c.displayName, c.componentIds, c.referenceComponentId, { links: c.jumpLinks, owner: CURATED_OWNER[c.id] ?? null })),
-  ...CATALOG_SYSTEMS.map((e) => seedFor(e.id, e.displayName, e.componentIds, e.referenceComponentId, undefined)),
-];
+/**
+ * The frozen core (docs/PROCGEN.md §7.6): the 32 systems as the first catalogue gave them. The core
+ * world is generated from these, never from the current dataset, so better astronomy never moves a
+ * station, lane or owner.
+ */
+export const CORE_SEEDS: readonly SystemSeed[] = (coreSeedsFile as unknown as { systems: SystemSeed[] }).systems;
+
+const CORE_IDS = new Set(CORE_SEEDS.map((s) => s.id));
+
+/** Systems added since, from the verified dataset: the world grows around the core. */
+export const GROWTH_SEEDS: readonly SystemSeed[] = CATALOG_SYSTEMS.filter((e) => !CORE_IDS.has(e.id)).map((e) =>
+  seedFor(e.id, e.displayName, e.componentIds, e.referenceComponentId, undefined),
+);
+
+/** What the world generator is given, for the guardrails: every system's stars and planets. */
+export const WORLD_SEEDS: readonly SystemSeed[] = [...CORE_SEEDS, ...GROWTH_SEEDS];
 
 /** The generated world: jump lanes, stations, owners and security (src/content/world/). */
-export const WORLD: WorldResult = generateWorld(WORLD_SEEDS);
+export const WORLD: WorldResult = generateWorld(CORE_SEEDS, WORLD_SEED, GROWTH_SEEDS);
+
+const FRONTIER = new Set(GROWTH_SEEDS.filter((s) => Math.hypot(...s.positionLy) > GROWTH.frontierLy).map((s) => s.id));
+
+/** Systems of the frontier (new systems beyond GROWTH.frontierLy): lanes to them need a long-range jump drive. */
+export function isFrontier(systemId: SystemId): boolean {
+  return FRONTIER.has(systemId);
+}
+
+/** True when a lane needs the long-range jump drive (either end is in the frontier). */
+export function laneNeedsDrive(a: SystemId, b: SystemId): boolean {
+  return FRONTIER.has(a) || FRONTIER.has(b);
+}
+
+/** Systems the sky snapshot added (not in the first catalogue). */
+export function isNewSystem(systemId: SystemId): boolean {
+  return !CORE_IDS.has(systemId);
+}
 
 const KIND_OF: Record<StationType, LocationKind> = {
   'trade-port': 'port',

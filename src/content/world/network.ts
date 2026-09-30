@@ -1,5 +1,5 @@
 import type { SystemId, Vec3Tuple } from '../../data/types.ts';
-import { NETWORK } from './rules.ts';
+import { GROWTH, NETWORK } from './rules.ts';
 import type { SystemSeed } from './types.ts';
 
 /**
@@ -55,6 +55,61 @@ export function generateJumpNetwork(seeds: readonly SystemSeed[]): Map<SystemId,
     if (d > NETWORK.shortcutLy) break;
     if (!links.get(a)!.has(b) && links.get(a)!.size < NETWORK.maxLinks - 1 && links.get(b)!.size < NETWORK.maxLinks - 1) link(a, b);
   }
+
+  return new Map([...links].map(([id, set]) => [id, [...set].sort()]));
+}
+
+/**
+ * Lanes for systems added around a finished core (docs/PROCGEN.md §7.6). Every new lane touches a
+ * new system, so the core's lanes stay exactly as they were. New systems join nearest first
+ * (outward from Sol), each linked to its nearest placed system that has room; then the same
+ * no-dead-end and short-hop passes as the core, over the new systems only. Deterministic.
+ */
+export function growJumpNetwork(
+  core: ReadonlyMap<SystemId, readonly SystemId[]>,
+  coreSeeds: readonly SystemSeed[],
+  growth: readonly SystemSeed[],
+): Map<SystemId, SystemId[]> {
+  const links = new Map<SystemId, Set<SystemId>>([...core].map(([id, to]) => [id, new Set(to)]));
+  const pos = new Map([...coreSeeds, ...growth].map((s) => [s.id, s.positionLy]));
+  const dist = (a: SystemId, b: SystemId) => distance(pos.get(a)!, pos.get(b)!);
+  const link = (a: SystemId, b: SystemId) => {
+    links.get(a)!.add(b);
+    links.get(b)!.add(a);
+  };
+  const room = (id: SystemId, spare = 0) => links.get(id)!.size < NETWORK.maxLinks - spare;
+  const order = [...growth].sort((a, b) => distance(a.positionLy, [0, 0, 0]) - distance(b.positionLy, [0, 0, 0]) || (a.id < b.id ? -1 : 1)).map((s) => s.id);
+  const placed = coreSeeds.map((s) => s.id);
+  const nearest = (id: SystemId, among: readonly SystemId[]) => among.filter((o) => o !== id).sort((x, y) => dist(id, x) - dist(id, y) || (x < y ? -1 : 1));
+
+  // 1. Join, nearest first: the nearest placed system with room (the nearest at all if none has).
+  for (const id of order) {
+    links.set(id, new Set());
+    const near = nearest(id, placed);
+    link(id, near.find((o) => room(o)) ?? near[0]!);
+    placed.push(id);
+  }
+  // 2. No dead ends: new systems link to anything, core dead ends to new systems only.
+  for (const id of order) {
+    for (const other of nearest(id, placed)) {
+      if (links.get(id)!.size >= NETWORK.minLinks) break;
+      if (links.get(id)!.has(other) || !room(other) || dist(id, other) > GROWTH.maxExtraLinkLy) continue;
+      link(id, other);
+    }
+  }
+  for (const s of coreSeeds) {
+    for (const other of nearest(s.id, order)) {
+      if (links.get(s.id)!.size >= NETWORK.minLinks) break;
+      if (links.get(s.id)!.has(other) || !room(other) || dist(s.id, other) > GROWTH.maxExtraLinkLy) continue;
+      link(s.id, other);
+    }
+  }
+  // 3. Short hops for loops, where one end is new.
+  const fresh = new Set(order);
+  const pairs: [SystemId, SystemId, number][] = [];
+  for (const a of order) for (const b of placed) if (a !== b && (!fresh.has(b) || a < b) && dist(a, b) <= NETWORK.shortcutLy) pairs.push([a, b, dist(a, b)]);
+  pairs.sort((x, y) => x[2] - y[2] || (x[0] < y[0] ? -1 : x[0] > y[0] ? 1 : x[1] < y[1] ? -1 : 1));
+  for (const [a, b] of pairs) if (!links.get(a)!.has(b) && room(a, 1) && room(b, 1)) link(a, b);
 
   return new Map([...links].map(([id, set]) => [id, [...set].sort()]));
 }

@@ -2,8 +2,10 @@ import type { FactionId, SystemId } from '../../data/types.ts';
 import { hashString, rng, type Rng } from '../random.ts';
 import { MANUFACTURERS } from '../rules/manufacturers.ts';
 import type { ManufacturerId } from '../types.ts';
-import { distance, generateJumpNetwork, jumpsFrom } from './network.ts';
+import { distance, generateJumpNetwork, growJumpNetwork, jumpsFrom } from './network.ts';
 import {
+  GROWTH,
+  GROWTH_NAME_WORDS,
   NAME_WORDS,
   OWNER_MAKERS,
   PIRATE_DEN,
@@ -21,13 +23,21 @@ import type { GeneratedStation, StationOwner, StationShop, SystemProfile, System
  * The world generator (docs/PROCGEN.md §7): a pure function of the observed catalogue (seeds), the
  * world rules and a seed. Hand-authored systems keep their stations; every other system gets
  * stations attached to its real stars and planets, an owner, a security level and a line of fiction.
+ *
+ * `growth` are systems added after the core was frozen (§7.6): the core is generated exactly as
+ * before from `seeds`, then the new systems are placed around it without changing it.
  */
-export function generateWorld(seeds: readonly SystemSeed[], seed = WORLD_SEED): WorldResult {
+export function generateWorld(seeds: readonly SystemSeed[], seed = WORLD_SEED, growth: readonly SystemSeed[] = []): WorldResult {
+  const core = generateCore(seeds, seed);
+  return growth.length ? growWorld(core, seeds, growth, seed) : core;
+}
+
+function generateCore(seeds: readonly SystemSeed[], seed: number): WorldResult {
   const links = generateJumpNetwork(seeds);
   const profiles = new Map<SystemId, SystemProfile>();
   for (const s of seeds) profiles.set(s.id, territoryOf(s, seeds));
   const jumps = jumpsFrom(links, 'sol');
-  const names = new NamePicker(seed);
+  const names = new NamePicker(seed, NAME_WORDS);
   // Nearest systems first, so names and ids are stable as the catalogue grows outward.
   const order = seeds
     .filter((s) => !s.curated)
@@ -58,6 +68,41 @@ export function generateWorld(seeds: readonly SystemSeed[], seed = WORLD_SEED): 
     profiles.set(s.id, { ...p, fiction: fictionFor(p, own) });
   }
   return { links, stations, profiles };
+}
+
+// ---------------------------------------------------------------- growth
+
+/** New systems around a finished core: lanes that always touch a new system, their own names. */
+function growWorld(core: WorldResult, seeds: readonly SystemSeed[], growth: readonly SystemSeed[], seed: number): WorldResult {
+  const all = [...seeds, ...growth];
+  const links = growJumpNetwork(core.links, seeds, growth);
+  const profiles = new Map(core.profiles);
+  for (const s of growth) profiles.set(s.id, colonyOf(s, territoryOf(s, all), seed));
+  const jumps = jumpsFrom(links, 'sol');
+  const names = new NamePicker(seed, GROWTH_NAME_WORDS, 'growth');
+  const order = [...growth].sort((a, b) => distance(a.positionLy, [0, 0, 0]) - distance(b.positionLy, [0, 0, 0]) || (a.id < b.id ? -1 : 1));
+  const stations = [...core.stations];
+  for (const s of order) {
+    const own = stationsFor(viewOf(s, profiles.get(s.id)!), jumps.get(s.id) ?? 99, names, seed, GROWTH.denChance);
+    stations.push(...own);
+    const p = profiles.get(s.id)!;
+    profiles.set(s.id, { ...p, fiction: fictionFor(p, own) });
+  }
+  return { links, stations, profiles };
+}
+
+/** Unclaimed systems worth settling keep an independent militia (GROWTH.colonySecurity). */
+function colonyOf(s: SystemSeed, p: SystemProfile, seed: number): SystemProfile {
+  const settled = s.planets.length > 0 || ['F', 'G', 'K'].includes(spectralClass(s.stars[0]?.spectralType ?? ''));
+  if (p.owner || !settled) return p;
+  const [lo, hi] = GROWTH.colonySecurity;
+  const floor = Math.round((lo + rng(seed, 'colony', s.id).next() * (hi - lo)) * 100) / 100;
+  return { ...p, security: Math.max(p.security, floor) };
+}
+
+/** True for systems of the frontier: new systems beyond GROWTH.frontierLy (their lanes need a long-range drive). */
+export function isFrontier(s: SystemSeed, growth: ReadonlySet<SystemId>): boolean {
+  return growth.has(s.id) && distance(s.positionLy, [0, 0, 0]) > GROWTH.frontierLy;
 }
 
 // ---------------------------------------------------------------- territory
@@ -154,7 +199,7 @@ function weightOf(rule: StationTypeRule, v: SystemView): number {
   );
 }
 
-function stationsFor(v: SystemView, jumpsFromSol: number, names: NamePicker, seed: number): GeneratedStation[] {
+function stationsFor(v: SystemView, jumpsFromSol: number, names: NamePicker, seed: number, denChance = PIRATE_DEN.chance): GeneratedStation[] {
   const r = rng(seed, 'stations', v.s.id);
   const count = Math.min(
     STATION_COUNT.max,
@@ -178,7 +223,7 @@ function stationsFor(v: SystemView, jumpsFromSol: number, names: NamePicker, see
   }
 
   // Raiders hide in lawless space, away from the core.
-  if (v.profile.security < TERRITORY.lawlessBelow && jumpsFromSol >= PIRATE_DEN.minJumpsFromSol && r.next() < PIRATE_DEN.chance) {
+  if (v.profile.security < TERRITORY.lawlessBelow && jumpsFromSol >= PIRATE_DEN.minJumpsFromSol && r.next() < denChance) {
     const rule: StationTypeRule = {
       type: PIRATE_DEN.type,
       nouns: PIRATE_DEN.nouns,
@@ -295,9 +340,9 @@ class NamePicker {
   private readonly pools = new Map<StationOwner, string[]>();
   private readonly used = new Set<string>();
 
-  constructor(seed: number) {
-    for (const [owner, words] of Object.entries(NAME_WORDS) as [StationOwner, readonly string[]][]) {
-      this.pools.set(owner, rng(seed, 'station-names', owner).shuffle(words));
+  constructor(seed: number, pools: Record<StationOwner, readonly string[]>, stream = 'station-names') {
+    for (const [owner, words] of Object.entries(pools) as [StationOwner, readonly string[]][]) {
+      this.pools.set(owner, rng(seed, stream, owner).shuffle(words));
     }
   }
 

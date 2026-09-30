@@ -1,0 +1,954 @@
+{
+ "about": "The seeds the core world (the 32 systems of the first catalogue) was generated from: positions, stars and planets as the HYG and Open Exoplanet catalogues gave them. Frozen so that the stations, lanes, owners and names never move when the sky data improves (docs/PROCGEN.md §7.6). Astronomy shown to the player comes from src/data/generated/, not from here.",
+ "frozen": "2026-09-30",
+ "systems": [
+  {
+   "id": "sol",
+   "name": "Sol",
+   "positionLy": [
+    0,
+    0,
+    0
+   ],
+   "stars": [
+    {
+     "id": "sun",
+     "name": "Sun",
+     "spectralType": "G2V",
+     "colorHex": "#fff4e0"
+    }
+   ],
+   "planets": [],
+   "curated": {
+    "links": [
+     "alpha-centauri",
+     "barnard",
+     "sirius"
+    ],
+    "owner": "sta"
+   }
+  },
+  {
+   "id": "alpha-centauri",
+   "name": "Alpha Centauri",
+   "positionLy": [
+    -1.624974,
+    -1.357172,
+    -3.793205
+   ],
+   "stars": [
+    {
+     "id": "alpha-centauri-a",
+     "name": "Alpha Centauri A",
+     "spectralType": "G2V",
+     "colorHex": "#fff3e2"
+    },
+    {
+     "id": "alpha-centauri-b",
+     "name": "Alpha Centauri B",
+     "spectralType": "K1V",
+     "colorHex": "#ffd6a8"
+    },
+    {
+     "id": "proxima-centauri",
+     "name": "Proxima Centauri",
+     "spectralType": "M5.5Ve",
+     "colorHex": "#ff8f66"
+    }
+   ],
+   "planets": [
+    {
+     "id": "proxima-cen-b",
+     "name": "Proxima Centauri b",
+     "hostId": "proxima-centauri"
+    },
+    {
+     "id": "proxima-cen-d",
+     "name": "Proxima Centauri d",
+     "hostId": "proxima-centauri"
+    }
+   ],
+   "curated": {
+    "links": [
+     "sol",
+     "barnard"
+    ],
+    "owner": "frontier"
+   }
+  },
+  {
+   "id": "barnard",
+   "name": "Barnard’s Star",
+   "positionLy": [
+    -0.057198,
+    -5.942238,
+    0.49268
+   ],
+   "stars": [
+    {
+     "id": "barnards-star",
+     "name": "Barnard's Star",
+     "spectralType": "M4V",
+     "colorHex": "#ff9a6b"
+    }
+   ],
+   "planets": [
+    {
+     "id": "barnard-b",
+     "name": "Barnard's Star b",
+     "hostId": "barnards-star"
+    },
+    {
+     "id": "barnard-c",
+     "name": "Barnard's Star c",
+     "hostId": "barnards-star"
+    },
+    {
+     "id": "barnard-d",
+     "name": "Barnard's Star d",
+     "hostId": "barnards-star"
+    },
+    {
+     "id": "barnard-e",
+     "name": "Barnard's Star e",
+     "hostId": "barnards-star"
+    }
+   ],
+   "curated": {
+    "links": [
+     "sol",
+     "alpha-centauri"
+    ],
+    "owner": "sta"
+   }
+  },
+  {
+   "id": "sirius",
+   "name": "Sirius",
+   "positionLy": [
+    -1.611889,
+    8.077998,
+    -2.47467
+   ],
+   "stars": [
+    {
+     "id": "sirius-a",
+     "name": "Sirius A",
+     "spectralType": "A1V",
+     "colorHex": "#d4e0ff"
+    },
+    {
+     "id": "sirius-b",
+     "name": "Sirius B",
+     "spectralType": "DA2",
+     "colorHex": "#eef2ff"
+    }
+   ],
+   "planets": [],
+   "curated": {
+    "links": [
+     "sol",
+     "epsilon-eridani"
+    ],
+    "owner": "frontier"
+   }
+  },
+  {
+   "id": "epsilon-eridani",
+   "name": "Epsilon Eridani",
+   "positionLy": [
+    6.201106,
+    8.297722,
+    -1.725703
+   ],
+   "stars": [
+    {
+     "id": "epsilon-eridani",
+     "name": "Epsilon Eridani",
+     "spectralType": "K2V",
+     "colorHex": "#ffcb94"
+    }
+   ],
+   "planets": [
+    {
+     "id": "eps-eri-b",
+     "name": "Epsilon Eridani b",
+     "hostId": "epsilon-eridani"
+    }
+   ],
+   "curated": {
+    "links": [
+     "sirius"
+    ],
+    "owner": "frontier"
+   }
+  },
+  {
+   "id": "wolf-359",
+   "name": "Wolf 359",
+   "positionLy": [
+    -7.443031,
+    2.119481,
+    0.950665
+   ],
+   "stars": [
+    {
+     "id": "wolf-359",
+     "name": "Wolf 359",
+     "spectralType": "M6",
+     "colorHex": "#ffb27a"
+    }
+   ],
+   "planets": []
+  },
+  {
+   "id": "lalande-21185",
+   "name": "Lalande 21185",
+   "positionLy": [
+    -6.520201,
+    1.646076,
+    4.876639
+   ],
+   "stars": [
+    {
+     "id": "lalande-21185",
+     "name": "Lalande 21185",
+     "spectralType": "M2V",
+     "colorHex": "#ffb27a"
+    }
+   ],
+   "planets": [
+    {
+     "id": "gj-411-b",
+     "name": "Lalande 21185 b",
+     "hostId": "lalande-21185",
+     "massEarth": 2.689,
+     "semiMajorAxisAu": 0.0789
+    },
+    {
+     "id": "gj-411-c",
+     "name": "Lalande 21185 c",
+     "hostId": "lalande-21185",
+     "massEarth": 18.05,
+     "semiMajorAxisAu": 3.1
+    }
+   ]
+  },
+  {
+   "id": "luyten-726-8",
+   "name": "Luyten 726-8",
+   "positionLy": [
+    7.400517,
+    3.414577,
+    -2.639898
+   ],
+   "stars": [
+    {
+     "id": "bl-ceti",
+     "name": "BL Ceti",
+     "spectralType": "dM5.5e",
+     "colorHex": "#ffb27a"
+    },
+    {
+     "id": "uv-ceti",
+     "name": "UV Ceti",
+     "spectralType": "dM5.5e",
+     "colorHex": "#ffb27a"
+    }
+   ],
+   "planets": []
+  },
+  {
+   "id": "ross-154",
+   "name": "Ross 154",
+   "positionLy": [
+    1.911397,
+    -8.651309,
+    -3.914553
+   ],
+   "stars": [
+    {
+     "id": "ross-154",
+     "name": "Ross 154",
+     "spectralType": "M3.5Ve",
+     "colorHex": "#ffb27a"
+    }
+   ],
+   "planets": []
+  },
+  {
+   "id": "ross-248",
+   "name": "Ross 248",
+   "positionLy": [
+    7.389935,
+    -0.584688,
+    7.200748
+   ],
+   "stars": [
+    {
+     "id": "ross-248",
+     "name": "Ross 248",
+     "spectralType": "dM6  e",
+     "colorHex": "#ffb27a"
+    }
+   ],
+   "planets": []
+  },
+  {
+   "id": "lacaille-9352",
+   "name": "Lacaille 9352",
+   "positionLy": [
+    8.421415,
+    -2.021792,
+    -6.257147
+   ],
+   "stars": [
+    {
+     "id": "lacaille-9352",
+     "name": "Lacaille 9352",
+     "spectralType": "M2/M3V",
+     "colorHex": "#ffb27a"
+    }
+   ],
+   "planets": [
+    {
+     "id": "gj-887-b",
+     "name": "Lacaille 9352 b",
+     "hostId": "lacaille-9352",
+     "massEarth": 4.199,
+     "semiMajorAxisAu": 0.068
+    },
+    {
+     "id": "gj-887-c",
+     "name": "Lacaille 9352 c",
+     "hostId": "lacaille-9352",
+     "massEarth": 7.599,
+     "semiMajorAxisAu": 0.12
+    }
+   ]
+  },
+  {
+   "id": "ross-128",
+   "name": "Ross 128",
+   "positionLy": [
+    -10.926835,
+    0.584569,
+    0.152632
+   ],
+   "stars": [
+    {
+     "id": "ross-128",
+     "name": "Ross 128",
+     "spectralType": "M4.5V",
+     "colorHex": "#ffb27a"
+    }
+   ],
+   "planets": [
+    {
+     "id": "ross-128-b",
+     "name": "Ross 128 b",
+     "hostId": "ross-128",
+     "massEarth": 1.4,
+     "semiMajorAxisAu": 0.0496
+    }
+   ]
+  },
+  {
+   "id": "ez-aquarii",
+   "name": "EZ Aquarii",
+   "positionLy": [
+    10.022797,
+    -3.717629,
+    -2.922987
+   ],
+   "stars": [
+    {
+     "id": "ez-aquarii",
+     "name": "EZ Aquarii A",
+     "spectralType": "M5  e",
+     "colorHex": "#ffb27a"
+    }
+   ],
+   "planets": []
+  },
+  {
+   "id": "61-cygni",
+   "name": "61 Cygni",
+   "positionLy": [
+    6.457768,
+    -6.075798,
+    7.119804
+   ],
+   "stars": [
+    {
+     "id": "61-cygni-a",
+     "name": "61 Cygni A",
+     "spectralType": "K5V",
+     "colorHex": "#ffd9a8"
+    },
+    {
+     "id": "61-cygni-b",
+     "name": "61 Cygni B",
+     "spectralType": "K7V",
+     "colorHex": "#ffd9a8"
+    }
+   ],
+   "planets": []
+  },
+  {
+   "id": "procyon",
+   "name": "Procyon",
+   "positionLy": [
+    -4.791761,
+    10.35973,
+    1.042874
+   ],
+   "stars": [
+    {
+     "id": "procyon-a",
+     "name": "Procyon A",
+     "spectralType": "F5IV-V",
+     "colorHex": "#fff6e6"
+    },
+    {
+     "id": "procyon-b",
+     "name": "Procyon B",
+     "spectralType": "DA",
+     "colorHex": "#e8efff"
+    }
+   ],
+   "planets": []
+  },
+  {
+   "id": "struve-2398",
+   "name": "Struve 2398",
+   "positionLy": [
+    1.091039,
+    -5.781892,
+    10.044336
+   ],
+   "stars": [
+    {
+     "id": "struve-2398-a",
+     "name": "Struve 2398 A",
+     "spectralType": "K5",
+     "colorHex": "#ffd9a8"
+    },
+    {
+     "id": "struve-2398-b",
+     "name": "Struve 2398 B",
+     "spectralType": "K5",
+     "colorHex": "#ffd9a8"
+    }
+   ],
+   "planets": []
+  },
+  {
+   "id": "groombridge-34",
+   "name": "Groombridge 34",
+   "positionLy": [
+    8.385687,
+    0.676238,
+    8.131286
+   ],
+   "stars": [
+    {
+     "id": "groombridge-34-a",
+     "name": "Groombridge 34 A",
+     "spectralType": "M1V",
+     "colorHex": "#ffb27a"
+    },
+    {
+     "id": "groombridge-34-b",
+     "name": "Groombridge 34 B",
+     "spectralType": "M6 Ve",
+     "colorHex": "#ffb27a"
+    }
+   ],
+   "planets": [
+    {
+     "id": "gj-15-a-b",
+     "name": "Groombridge 34 A b",
+     "hostId": "groombridge-34-a",
+     "massEarth": 3.029,
+     "semiMajorAxisAu": 0.072
+    },
+    {
+     "id": "gj-15-a-c",
+     "name": "Groombridge 34 A c",
+     "hostId": "groombridge-34-a",
+     "massEarth": 36,
+     "semiMajorAxisAu": 5.4
+    }
+   ]
+  },
+  {
+   "id": "epsilon-indi",
+   "name": "Epsilon Indi",
+   "positionLy": [
+    5.651143,
+    -3.149983,
+    -9.885801
+   ],
+   "stars": [
+    {
+     "id": "epsilon-indi",
+     "name": "Epsilon Indi A",
+     "spectralType": "K5V",
+     "colorHex": "#ffd9a8"
+    }
+   ],
+   "planets": [
+    {
+     "id": "epsilon-indi-a-b",
+     "name": "Epsilon Indi A b",
+     "hostId": "epsilon-indi",
+     "massEarth": 861.3,
+     "semiMajorAxisAu": 12.82
+    }
+   ]
+  },
+  {
+   "id": "tau-ceti",
+   "name": "Tau Ceti",
+   "positionLy": [
+    10.288547,
+    5.020111,
+    -3.268314
+   ],
+   "stars": [
+    {
+     "id": "tau-ceti",
+     "name": "Tau Ceti",
+     "spectralType": "G8V",
+     "colorHex": "#fff1d6"
+    }
+   ],
+   "planets": [
+    {
+     "id": "tau-ceti-e",
+     "name": "Tau Ceti e",
+     "hostId": "tau-ceti",
+     "massEarth": 3.941,
+     "semiMajorAxisAu": 0.538
+    },
+    {
+     "id": "tau-ceti-f",
+     "name": "Tau Ceti f",
+     "hostId": "tau-ceti",
+     "massEarth": 3.941,
+     "semiMajorAxisAu": 1.334
+    },
+    {
+     "id": "tau-ceti-g",
+     "name": "Tau Ceti g",
+     "hostId": "tau-ceti",
+     "massEarth": 1.751
+    },
+    {
+     "id": "tau-ceti-h",
+     "name": "Tau Ceti h",
+     "hostId": "tau-ceti",
+     "massEarth": 1.831,
+     "semiMajorAxisAu": 0.243
+    }
+   ]
+  },
+  {
+   "id": "yz-ceti",
+   "name": "YZ Ceti",
+   "positionLy": [
+    10.937623,
+    3.581973,
+    -3.517863
+   ],
+   "stars": [
+    {
+     "id": "yz-ceti",
+     "name": "YZ Ceti",
+     "spectralType": "M5.5Ve",
+     "colorHex": "#ffb27a"
+    }
+   ],
+   "planets": [
+    {
+     "id": "yz-cet-b",
+     "name": "YZ Ceti b",
+     "hostId": "yz-ceti",
+     "massEarth": 0.7501,
+     "semiMajorAxisAu": 0.01557
+    },
+    {
+     "id": "yz-cet-c",
+     "name": "YZ Ceti c",
+     "hostId": "yz-ceti",
+     "massEarth": 0.9789,
+     "semiMajorAxisAu": 0.0209
+    },
+    {
+     "id": "yz-cet-d",
+     "name": "YZ Ceti d",
+     "hostId": "yz-ceti",
+     "massEarth": 1.141,
+     "semiMajorAxisAu": 0.02764
+    }
+   ]
+  },
+  {
+   "id": "luytens-star",
+   "name": "Luyten's Star",
+   "positionLy": [
+    -4.597768,
+    11.463531,
+    1.126083
+   ],
+   "stars": [
+    {
+     "id": "luytens-star",
+     "name": "Luyten's Star",
+     "spectralType": "M5",
+     "colorHex": "#ffb27a"
+    }
+   ],
+   "planets": [
+    {
+     "id": "gj-273-b",
+     "name": "Luyten's Star b",
+     "hostId": "luytens-star",
+     "massEarth": 2.889,
+     "semiMajorAxisAu": 0.091101
+    },
+    {
+     "id": "gj-273-c",
+     "name": "Luyten's Star c",
+     "hostId": "luytens-star",
+     "massEarth": 1.179,
+     "semiMajorAxisAu": 0.036467
+    }
+   ]
+  },
+  {
+   "id": "kapteyns-star",
+   "name": "Kapteyn's Star",
+   "positionLy": [
+    1.881247,
+    8.815347,
+    -9.027667
+   ],
+   "stars": [
+    {
+     "id": "kapteyns-star",
+     "name": "Kapteyn's Star",
+     "spectralType": "M0V",
+     "colorHex": "#ffb27a"
+    }
+   ],
+   "planets": [
+    {
+     "id": "kapteyn-b",
+     "name": "Kapteyn's Star b",
+     "hostId": "kapteyns-star",
+     "massEarth": 4.799,
+     "semiMajorAxisAu": 0.168
+    },
+    {
+     "id": "kapteyn-c",
+     "name": "Kapteyn's Star c",
+     "hostId": "kapteyns-star",
+     "massEarth": 6.999,
+     "semiMajorAxisAu": 0.311
+    }
+   ]
+  },
+  {
+   "id": "lacaille-8760",
+   "name": "Lacaille 8760",
+   "positionLy": [
+    7.596561,
+    -6.534702,
+    -8.077561
+   ],
+   "stars": [
+    {
+     "id": "lacaille-8760",
+     "name": "Lacaille 8760",
+     "spectralType": "M1/M2V",
+     "colorHex": "#ffb27a"
+    }
+   ],
+   "planets": []
+  },
+  {
+   "id": "kruger-60",
+   "name": "Kruger 60",
+   "positionLy": [
+    6.419457,
+    -2.725904,
+    11.029501
+   ],
+   "stars": [
+    {
+     "id": "kruger-60-a",
+     "name": "Kruger 60 A",
+     "spectralType": "M2V",
+     "colorHex": "#ffb27a"
+    },
+    {
+     "id": "kruger-60-b",
+     "name": "Kruger 60 B",
+     "spectralType": "M6 V",
+     "colorHex": "#ffb27a"
+    }
+   ],
+   "planets": []
+  },
+  {
+   "id": "ross-614",
+   "name": "Ross 614",
+   "positionLy": [
+    -1.719973,
+    13.333079,
+    -0.661434
+   ],
+   "stars": [
+    {
+     "id": "ross-614-a",
+     "name": "Ross 614 A",
+     "spectralType": "M4.5Ve",
+     "colorHex": "#ffb27a"
+    },
+    {
+     "id": "ross-614-b",
+     "name": "Ross 614 B",
+     "spectralType": "unknown",
+     "colorHex": "#ffb27a"
+    }
+   ],
+   "planets": []
+  },
+  {
+   "id": "van-maanens-star",
+   "name": "Van Maanen's Star",
+   "positionLy": [
+    13.524017,
+    2.947908,
+    1.302702
+   ],
+   "stars": [
+    {
+     "id": "van-maanens-star",
+     "name": "Van Maanen's Star",
+     "spectralType": "DG",
+     "colorHex": "#e8efff"
+    }
+   ],
+   "planets": []
+  },
+  {
+   "id": "wolf-1061",
+   "name": "Wolf 1061",
+   "positionLy": [
+    -5.210401,
+    -12.625633,
+    -3.070028
+   ],
+   "stars": [
+    {
+     "id": "wolf-1061",
+     "name": "Wolf 1061",
+     "spectralType": "M4",
+     "colorHex": "#ffb27a"
+    }
+   ],
+   "planets": [
+    {
+     "id": "wolf-1061-b",
+     "name": "Wolf 1061 b",
+     "hostId": "wolf-1061",
+     "massEarth": 1.36,
+     "semiMajorAxisAu": 0.035509
+    },
+    {
+     "id": "wolf-1061-c",
+     "name": "Wolf 1061 c",
+     "hostId": "wolf-1061",
+     "massEarth": 4.259,
+     "semiMajorAxisAu": 0.08427
+    },
+    {
+     "id": "wolf-1061-d",
+     "name": "Wolf 1061 d",
+     "hostId": "wolf-1061",
+     "massEarth": 5.212,
+     "semiMajorAxisAu": 0.2039
+    }
+   ]
+  },
+  {
+   "id": "gj-1061",
+   "name": "GJ 1061",
+   "positionLy": [
+    5.867097,
+    8.075393,
+    -9.813696
+   ],
+   "stars": [
+    {
+     "id": "gj-1061",
+     "name": "GJ 1061",
+     "spectralType": "M4.5",
+     "colorHex": "#ffb27a"
+    }
+   ],
+   "planets": [
+    {
+     "id": "gj-1061-b",
+     "name": "GJ 1061 b",
+     "hostId": "gj-1061",
+     "massEarth": 1.37,
+     "semiMajorAxisAu": 0.021
+    },
+    {
+     "id": "gj-1061-c",
+     "name": "GJ 1061 c",
+     "hostId": "gj-1061",
+     "massEarth": 1.739,
+     "semiMajorAxisAu": 0.035
+    },
+    {
+     "id": "gj-1061-d",
+     "name": "GJ 1061 d",
+     "hostId": "gj-1061",
+     "massEarth": 1.64,
+     "semiMajorAxisAu": 0.054
+    }
+   ]
+  },
+  {
+   "id": "gliese-876",
+   "name": "Gliese 876",
+   "positionLy": [
+    14.19754,
+    -4.252969,
+    -3.768619
+   ],
+   "stars": [
+    {
+     "id": "gliese-876",
+     "name": "Gliese 876",
+     "spectralType": "M5",
+     "colorHex": "#ffb27a"
+    }
+   ],
+   "planets": [
+    {
+     "id": "gliese-876-b",
+     "name": "Gliese 876 b",
+     "hostId": "gliese-876",
+     "massEarth": 848.5,
+     "semiMajorAxisAu": 0.218589
+    },
+    {
+     "id": "gliese-876-c",
+     "name": "Gliese 876 c",
+     "hostId": "gliese-876",
+     "massEarth": 267.9,
+     "semiMajorAxisAu": 0.135985
+    },
+    {
+     "id": "gliese-876-d",
+     "name": "Gliese 876 d",
+     "hostId": "gliese-876",
+     "massEarth": 6.897,
+     "semiMajorAxisAu": 0.0218393
+    },
+    {
+     "id": "gliese-876-e",
+     "name": "Gliese 876 e",
+     "hostId": "gliese-876",
+     "massEarth": 17.16,
+     "semiMajorAxisAu": 0.3343
+    }
+   ]
+  },
+  {
+   "id": "40-eridani",
+   "name": "40 Eridani",
+   "positionLy": [
+    7.111471,
+    14.457521,
+    -2.16927
+   ],
+   "stars": [
+    {
+     "id": "40-eridani-a",
+     "name": "40 Eridani A",
+     "spectralType": "K1V",
+     "colorHex": "#ffd9a8"
+    },
+    {
+     "id": "40-eridani-b",
+     "name": "40 Eridani B",
+     "spectralType": "DA4",
+     "colorHex": "#e8efff"
+    },
+    {
+     "id": "40-eridani-c",
+     "name": "40 Eridani C",
+     "spectralType": "dM4.5e",
+     "colorHex": "#ffb27a"
+    }
+   ],
+   "planets": [
+    {
+     "id": "hd-26965-b",
+     "name": "40 Eridani A b",
+     "hostId": "40-eridani-a",
+     "massEarth": 8.47
+    }
+   ]
+  },
+  {
+   "id": "70-ophiuchi",
+   "name": "70 Ophiuchi",
+   "positionLy": [
+    0.394365,
+    -16.55941,
+    0.721994
+   ],
+   "stars": [
+    {
+     "id": "70-ophiuchi-a",
+     "name": "70 Ophiuchi A",
+     "spectralType": "K0V SB",
+     "colorHex": "#ffd9a8"
+    },
+    {
+     "id": "70-ophiuchi-b",
+     "name": "70 Ophiuchi B",
+     "spectralType": "K5 Ve",
+     "colorHex": "#ffd9a8"
+    }
+   ],
+   "planets": []
+  },
+  {
+   "id": "altair",
+   "name": "Altair",
+   "positionLy": [
+    7.683439,
+    -14.63589,
+    2.57969
+   ],
+   "stars": [
+    {
+     "id": "altair",
+     "name": "Altair",
+     "spectralType": "A7IV-V",
+     "colorHex": "#eef2ff"
+    }
+   ],
+   "planets": []
+  }
+ ]
+}

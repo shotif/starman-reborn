@@ -49,6 +49,28 @@ export const NETWORK = {
   shortcutLy: 3.2,
 };
 
+// ---------------------------------------------------------------- growth
+
+/**
+ * The world grows (docs/PROCGEN.md §7.6): systems the sky snapshot adds are placed after the frozen
+ * core (content/world/core-seeds.json), which never changes. They get lanes of their own (a lane
+ * always touches a new system, so no lane between two core systems is added), territory from the
+ * same anchors, and stations named from their own pools.
+ */
+export const GROWTH = {
+  /** New systems farther than this from Sol are the frontier: their lanes need a long-range jump drive. */
+  frontierLy: 17.5,
+  /** Longest lane into or across the frontier (the long-range drive's reach), and the longest extra lane. */
+  maxLinkLy: 12,
+  maxExtraLinkLy: 10,
+  /** Unclaimed systems with a listed planet, or an F, G or K star, are settled by independent colonies
+   * that keep a militia: their security is drawn from this range (at least), so farms, labs and free
+   * ports can open there. */
+  colonySecurity: [0.3, 0.42] as const,
+  /** Chance of a raider den in a lawless new system: the frontier is thinner than the core's edge. */
+  denChance: 0.4,
+};
+
 // ---------------------------------------------------------------- stations
 
 export type AnchorKind = 'star' | 'planet' | 'giant' | 'small-planet';
@@ -298,5 +320,42 @@ export const NAME_WORDS: Record<StationOwner, readonly string[]> = {
     'Ashfall', 'Blackwater', 'Carrion', 'Gallows', 'Graveyard', 'Hollowpoint', 'Murk', 'Rustheap', 'Soot', 'Wrack', 'Bonepile', 'Deadlight',
     'Gloom', 'Mire', 'Scrapheap', 'Vulture', 'Blight', 'Charnel', 'Cutthroat', 'Dregs', 'Gibbet', 'Grimhold', 'Hulkyard', 'Maw',
     'Nightshade', 'Ossuary', 'Ratline', 'Razorback', 'Sepulchre', 'Shipbreaker', 'Slag', 'Sump', 'Wormwood',
+  ],
+};
+
+/**
+ * First words for the stations of systems the world grows into (§7.6): a separate pool, so the
+ * core's names never shift. Independents get the most (the frontier is theirs): shore birds, sky and
+ * weather. When a pool runs out, a station is named after its system ("Luhman 16 Relay").
+ */
+export const GROWTH_NAME_WORDS: Record<StationOwner, readonly string[]> = {
+  sta: [
+    'Outrider', 'Picket', 'Sentry', 'Watchtower', 'Vigil', 'Garrison', 
+    'Convoy', 'Courier', 'Dispatch', 'Semaphore', 'Heliograph', 'Registry', 'Magistrate', 'Chancellor', 'Envoy', 'Consul', 'Legate', 'Herald',
+    'Surveyor', 'Pilotage', 'Lamplighter', 'Harbourmaster', 'Tollgate', 'Crossing', 'Gatehouse', 'Checkpoint', 'Watchfire', 'Roundhouse', 'Boundary',
+  ],
+  frontier: [
+    'Orchard', 'Vineyard', 'Harvest', 'Haystack', 'Furrow', 'Paddock', 'Pasture', 'Meadowsweet', 'Clearwater', 'Springwell', 'Ploughshare', 'Seedbank',
+    'Rootstock', 'Sapling', 'Saffron', 'Cardamom', 'Rosehip', 'Blackthorn', 'Birch', 
+    'Hornbeam', 'Sycamore', 'Chestnut', 'Walnut', 'Almond', 'Apricot', 'Quince', 'Damson', 'Bilberry', 'Cloudberry', 'Lingonberry', 'Samphire',
+    'Marram', 'Cattail', 'Watercress', 'Rosemary', 'Lavender', 'Primrose', 'Cowslip', 'Oxlip', 'Beechnut', 'Hayloft', 'Cornflower', 'Poppyfield', 'Dewpond',
+  ],
+  independent: [
+    'Farhaven', 'Cairn', 'Driftwood', 'Harrow', 'Sable', 'Hollyhock', 'Firefly',
+    'Glimmer', 'Homestead', 'Waypoint', 'Lastlight', 'Farthing', 'Rambler', 'Tumbleweed', 'Longshot', 'Goodwill', 'Serendipity', 'Solace', 'Respite',
+    'Freehold', 'Landfall', 'Starfall', 'Skylark', 'Swallow', 'Sparrow', 'Wren', 'Plover', 'Curlew', 'Heron', 'Egret', 'Osprey',
+    'Puffin', 'Jackdaw', 'Starling', 'Linnet', 'Siskin',
+    'Bunting', 'Pipit', 'Dunlin', 'Sanderling', 'Whimbrel', 'Godwit', 'Avocet', 'Lapwing', 'Dotterel', 'Redshank', 'Greenshank', 'Turnstone',
+    'Oystercatcher', 'Cobblestone', 'Hopscotch', 'Lamplight', 'Moonrise', 'Daybreak', 'Evensong', 'Twilight', 
+    'Redshift', 'Doppler', 'Nimbus', 'Cirrus', 'Stratus', 'Cumulus', 'Zephyr', 'Mistral', 'Sirocco', 'Monsoon', 'Chinook', 'Squall',
+    'Drizzle', 'Thunderhead', 'Rainbow', 'Moonbow', 'Sundog', 'Afterglow', 'Starlit', 'Lodestar', 'Polestar', 'Sunward', 'Outbound', 'Homebound',
+    'Tinderbox', 'Kettle', 'Teapot', 'Lanyard', 'Bollard', 'Capstan', 'Windlass', 'Gangway', 'Porthole', 'Hammock', 'Lighthouse', 
+    'Seawall', 'Jetty', 'Slipway', 'Mooring', 'Tideline', 'Saltpan', 'Sandbar', 'Shingle', 'Rockpool', 'Seaglass', 'Cowrie', 'Conch',
+    'Flintlock', 'Tinsmith', 'Candlewick', 'Paperkite', 'Hobnail', 'Stovepipe', 'Rushlight', 'Wagonwheel', 'Crossroads', 'Signpost', 'Milepost', 'Hitching',
+  ],
+  'hollow-wake': [
+    'Cutlass', 'Scuttle', 'Plunder', 'Marauder', 'Corsair', 'Buccaneer', 'Freebooter', 'Brigand', 'Reaver', 'Crossbones', 'Deadweight', 'Keelhaul',
+    'Bilge', 'Barnacle', 'Jetsam', 'Maelstrom', 'Whirlpool', 'Darkwater', 'Coldiron', 'Rustbucket', 'Scrapyard', 'Junkheap',
+    'Tombstone', 'Cenotaph', 'Barrow', 'Crypt', 'Deadfall', 'Gutter', 'Cinderblock', 'Shiv', 'Rotgut', 'Ransom', 'Blackflag', 'Lowtide', 'Sinkhole',
   ],
 };

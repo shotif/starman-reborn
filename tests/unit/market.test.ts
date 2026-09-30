@@ -6,7 +6,7 @@ import { validateEconomy } from '../../src/content/economy/validate.ts';
 import { rng } from '../../src/content/random.ts';
 import { formatIssues } from '../../src/content/validate.ts';
 import { generateWorld } from '../../src/content/world/generate.ts';
-import { ALL_LOCATIONS, WORLD, WORLD_SEEDS } from '../../src/data/systems.ts';
+import { ALL_LOCATIONS, CORE_SEEDS, GROWTH_SEEDS, WORLD } from '../../src/data/systems.ts';
 import { baseQuote, marketTables, quote, stockNow } from '../../src/economy/markets.ts';
 import { buyCommodity, liveQuote, maxBuyable, sellCommodity } from '../../src/economy/trade.ts';
 
@@ -32,7 +32,7 @@ describe('economy guardrails', () => {
       security: 1,
     }));
     for (const seed of [11, 4242, 90_001, 123_457]) {
-      const world = generateWorld(WORLD_SEEDS, seed);
+      const world = generateWorld(CORE_SEEDS, seed, GROWTH_SEEDS);
       const stations: MarketStationInput[] = [
         ...curated,
         ...world.stations

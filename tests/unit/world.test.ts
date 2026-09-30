@@ -7,7 +7,7 @@ import { NETWORK, TERRITORY, WORLD_SEED } from '../../src/content/world/rules.ts
 import type { WorldResult } from '../../src/content/world/types.ts';
 import { validateWorld } from '../../src/content/world/validate.ts';
 import { formatIssues } from '../../src/content/validate.ts';
-import { getLocation, getSystem, SYSTEMS, WORLD, WORLD_SEEDS } from '../../src/data/systems.ts';
+import { CORE_SEEDS, getLocation, getSystem, GROWTH_SEEDS, SYSTEMS, WORLD, WORLD_SEEDS } from '../../src/data/systems.ts';
 
 const rulesOf = (issues: { rule: string }[]) => [...new Set(issues.map((i) => i.rule))];
 
@@ -18,7 +18,7 @@ describe('world generator', () => {
   });
 
   it('is a pure function of the catalogue and the seed', () => {
-    const again = generateWorld(WORLD_SEEDS, WORLD_SEED);
+    const again = generateWorld(CORE_SEEDS, WORLD_SEED, GROWTH_SEEDS);
     expect(JSON.stringify(again.stations)).toBe(JSON.stringify(WORLD.stations));
     expect([...again.links]).toEqual([...WORLD.links]);
     expect([...again.profiles]).toEqual([...WORLD.profiles]);
@@ -27,7 +27,7 @@ describe('world generator', () => {
   it('passes every guardrail for other seeds too', () => {
     const ctx = bundledWorldContext();
     for (let seed = 1; seed <= 12; seed++) {
-      const world = generateWorld(WORLD_SEEDS, seed * 7919);
+      const world = generateWorld(CORE_SEEDS, seed * 7919, GROWTH_SEEDS);
       const issues = validateWorld(WORLD_SEEDS, world, { ...ctx, curated: ctx.curated });
       expect(formatIssues(issues), `seed ${seed * 7919}`).toBe('');
     }

@@ -3,7 +3,7 @@ import { RULES } from '../rules/index.ts';
 import type { ContentRules } from '../types.ts';
 import type { Issue } from '../validate.ts';
 import { distance, jumpsFrom } from './network.ts';
-import { NAME_WORDS, NETWORK, PIRATE_DEN, STATION_COUNT, STATION_TYPES as TYPE_RULES, TERRITORY } from './rules.ts';
+import { GROWTH, GROWTH_NAME_WORDS, NAME_WORDS, NETWORK, PIRATE_DEN, STATION_COUNT, STATION_TYPES as TYPE_RULES, TERRITORY } from './rules.ts';
 import { STATION_TYPES, type GeneratedStation, type StationOwner, type SystemSeed, type WorldResult } from './types.ts';
 
 /**
@@ -26,6 +26,8 @@ export interface WorldContext {
   /** Names of systems, factions and anything else a station word must not repeat. */
   reservedNames: readonly string[];
   rules?: ContentRules;
+  /** Systems the world grew into after the core (§7.6): their lanes may reach farther, their names come from the growth pools. */
+  growth?: ReadonlySet<SystemId>;
 }
 
 type Report = (rule: string, subject: string, message: string) => void;
@@ -33,17 +35,18 @@ type Report = (rule: string, subject: string, message: string) => void;
 export function validateWorld(seeds: readonly SystemSeed[], world: WorldResult, ctx: WorldContext): Issue[] {
   const issues: Issue[] = [];
   const report: Report = (rule, subject, message) => issues.push({ rule, subject, message });
-  checkNetwork(seeds, world, report);
+  const growth = ctx.growth ?? new Set<SystemId>();
+  checkNetwork(seeds, world, growth, report);
   checkTerritory(seeds, world, report);
   checkStations(seeds, world, ctx, report);
-  checkNames(world, ctx, report);
+  checkNames(seeds, world, ctx, growth, report);
   checkShops(world, ctx.rules ?? RULES, report);
   return issues;
 }
 
 // ---------------------------------------------------------------- jump network
 
-function checkNetwork(seeds: readonly SystemSeed[], world: WorldResult, report: Report): void {
+function checkNetwork(seeds: readonly SystemSeed[], world: WorldResult, growth: ReadonlySet<SystemId>, report: Report): void {
   const byId = new Map(seeds.map((s) => [s.id, s]));
   for (const s of seeds) {
     const links = world.links.get(s.id);
@@ -62,17 +65,19 @@ function checkNetwork(seeds: readonly SystemSeed[], world: WorldResult, report: 
       if (!world.links.get(to)?.includes(s.id)) report('network', `${s.id}→${to}`, 'link is one-way');
       const d = distance(s.positionLy, other.positionLy);
       const handAuthored = !!s.curated?.links.includes(to) || !!other.curated?.links.includes(s.id);
-      if (!handAuthored && d > NETWORK.maxLinkLy) report('network', `${s.id}→${to}`, `${d.toFixed(1)} ly is longer than ${NETWORK.maxLinkLy} ly`);
+      const grown = growth.has(s.id) || growth.has(to);
+      const limit = grown ? GROWTH.maxLinkLy : NETWORK.maxLinkLy;
+      if (!handAuthored && d > limit) report('network', `${s.id}→${to}`, `${d.toFixed(1)} ly is longer than ${limit} ly`);
     }
     // A dead end is fine only when no neighbour within reach has room for another lane.
     if (links.length < NETWORK.minLinks) {
-      const spare = seeds.find(
-        (o) =>
-          o.id !== s.id &&
-          !links.includes(o.id) &&
-          (world.links.get(o.id)?.length ?? 0) < NETWORK.maxLinks &&
-          distance(s.positionLy, o.positionLy) <= NETWORK.maxExtraLinkLy,
-      );
+      const spare = seeds.find((o) => {
+        if (o.id === s.id || links.includes(o.id) || (world.links.get(o.id)?.length ?? 0) >= NETWORK.maxLinks) return false;
+        const grown = growth.has(s.id) || growth.has(o.id);
+        // Once the world has grown, core systems gain lanes only to new systems.
+        if (!grown && growth.size) return false;
+        return distance(s.positionLy, o.positionLy) <= (grown ? GROWTH.maxExtraLinkLy : NETWORK.maxExtraLinkLy);
+      });
       if (spare) report('network', s.id, `only ${links.length} link(s) although ${spare.id} is in reach`);
     }
   }
@@ -163,7 +168,7 @@ function checkStations(seeds: readonly SystemSeed[], world: WorldResult, ctx: Wo
 const DENYLIST = ['nazi', 'slave', 'rape', 'terror', 'jihad', 'genocide', 'holocaust', 'lynch', 'suicide'];
 const FILLER = new Set(['of', 'the', 'and', 'a', 'star', 'b', 'c']);
 
-function checkNames(world: WorldResult, ctx: WorldContext, report: Report): void {
+function checkNames(seeds: readonly SystemSeed[], world: WorldResult, ctx: WorldContext, growth: ReadonlySet<SystemId>, report: Report): void {
   const rules = ctx.rules ?? RULES;
   const words = (text: string) => text.toLowerCase().split(/[\s'-]+/).filter((w) => w && !FILLER.has(w));
   const reserved = new Set([
@@ -171,23 +176,32 @@ function checkNames(world: WorldResult, ctx: WorldContext, report: Report): void
     ...ctx.reservedNames.flatMap(words),
     ...ctx.curated.flatMap((c) => words(c.name)),
   ]);
-  // The pools themselves.
-  const seen = new Map<string, StationOwner>();
-  for (const [owner, pool] of Object.entries(NAME_WORDS) as [StationOwner, readonly string[]][]) {
-    for (const word of pool) {
-      const key = word.toLowerCase();
-      if (seen.has(key)) report('names', word, `in both the ${seen.get(key)} and ${owner} pools`);
-      seen.set(key, owner);
-      if (reserved.has(key)) report('names', word, 'already a ship, equipment, maker, faction or place name');
-      if (DENYLIST.some((bad) => key.includes(bad))) report('names', word, 'not allowed');
+  // The pools themselves (the core's and the growth pools: no word in two of them).
+  const seen = new Map<string, string>();
+  for (const [kind, pools] of [
+    ['', NAME_WORDS],
+    ['growth ', GROWTH_NAME_WORDS],
+  ] as const) {
+    for (const [owner, pool] of Object.entries(pools) as [StationOwner, readonly string[]][]) {
+      for (const word of pool) {
+        const key = word.toLowerCase();
+        if (seen.has(key)) report('names', word, `in both the ${seen.get(key)} and ${kind}${owner} pools`);
+        seen.set(key, `${kind}${owner}`);
+        if (reserved.has(key)) report('names', word, 'already a ship, equipment, maker, faction or place name');
+        if (DENYLIST.some((bad) => key.includes(bad))) report('names', word, 'not allowed');
+      }
     }
   }
+  const systemName = new Map(seeds.map((s) => [s.id, s.name]));
   const names = new Map<string, GeneratedStation[]>();
   for (const st of world.stations) {
     const key = st.name.toLowerCase();
     names.set(key, [...(names.get(key) ?? []), st]);
     const first = st.name.split(' ')[0]!;
-    if (!NAME_WORDS[st.owner].includes(first)) report('names', st.id, `"${st.name}" is not from the ${st.owner} pool (pool exhausted?)`);
+    const grown = growth.has(st.systemId);
+    // A grown system's station may be named after its system once its pool has run out.
+    const ok = grown ? GROWTH_NAME_WORDS[st.owner].includes(first) || st.name.startsWith(`${systemName.get(st.systemId)} `) : NAME_WORDS[st.owner].includes(first);
+    if (!ok) report('names', st.id, `"${st.name}" is not from the ${grown ? 'growth ' : ''}${st.owner} pool (pool exhausted?)`);
   }
   for (const c of ctx.curated) {
     const key = c.name.toLowerCase();
