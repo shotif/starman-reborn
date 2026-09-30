@@ -6,12 +6,13 @@
 import './styles/encyclopedia.css';
 import { LY_PER_PARSEC } from '../data/coords.ts';
 import { SOURCES } from '../data/sources.ts';
-import { ASTROMETRY, EXOPLANETS, SYSTEMS, getSystem, hasProvisionalData } from '../data/systems.ts';
+import { ASTROMETRY, BELTS, EXOPLANETS, SYSTEMS, beltsOf, getSystem, hasProvisionalData } from '../data/systems.ts';
 import type { SourceRef, StarSystemRecord, SystemId } from '../data/types.ts';
 import { MAP_LINKS, formatLy } from '../galaxy/mapData.ts';
 import { MAP_LEGEND_TEXT, formatEpoch } from '../galaxy/mapText.ts';
 import {
   badgeHeading,
+  beltBlock,
   componentList,
   factList,
   locationList,
@@ -148,6 +149,7 @@ function systemSection(system: StarSystemRecord, id: string, discovered: Readonl
     componentList(system.id, 'full'),
     badgeHeading('h4', isSol ? 'Planets' : 'Confirmed planets', 'observed', undefined, observedMark(system, 'planets')),
     planetBlock(system, discovered, 'full'),
+    beltsOf(system.id).length ? [badgeHeading('h4', 'Belts and debris discs', 'observed'), beltBlock(system.id, 'full')] : null,
     h('h4', { class: 'sci-heading' }, 'Science notes'),
     factList(system),
     badgeHeading('h4', 'In the game', 'fictional'),
@@ -173,6 +175,7 @@ function uniqueSources(): SourceRef[] {
     add(c.parallaxSource);
     add(c.astrometrySource);
   }
+  for (const b of BELTS) for (const s of b.sources) add(s);
   return out;
 }
 

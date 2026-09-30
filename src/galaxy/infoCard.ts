@@ -3,7 +3,7 @@
  * the fictional route with the Jump button. Desktop/landscape: side panel. Portrait: bottom sheet
  * whose details collapse; the header and the jump footer stay visible.
  */
-import { getSystem } from '../data/systems.ts';
+import { beltsOf, getSystem } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { dataBadge } from '../ui/components.ts';
 import { formatCredits, h, replaceChildren } from '../ui/dom.ts';
@@ -11,7 +11,7 @@ import { icon } from '../ui/icons.ts';
 import { evaluateJump, type JumpEvaluation } from './jumpRules.ts';
 import { mapIcon } from './mapIcons.ts';
 import { formatLy } from './mapData.ts';
-import { badgeHeading, componentList, factList, locationList, observedMark, planetBlock, positionList, securityNote } from './scienceBlocks.ts';
+import { badgeHeading, beltBlock, componentList, factList, locationList, observedMark, planetBlock, positionList, securityNote } from './scienceBlocks.ts';
 import type { MapState } from './types.ts';
 
 export interface InfoCardHandlers {
@@ -180,6 +180,7 @@ export class InfoCard {
       componentList(systemId, 'compact'),
       h('h4', null, systemId === 'sol' ? 'Planets' : 'Confirmed planets'),
       planetBlock(system, state.discoveredBodies, 'compact'),
+      beltsOf(systemId).length ? [h('h4', null, 'Belts and debris discs'), beltBlock(systemId, 'compact')] : null,
       h('h4', null, 'Facts'),
       factList(system),
     );

@@ -52,12 +52,30 @@ export const ALPHA_CENTAURI_SCENE: SystemSceneDef = {
   planets,
   stations: [{ locationId: 'meridian-outpost', kind: 'proxima-outpost', position: meridian, approach: toProxima.clone().negate() }],
   lanes: [{ id: 'ac-proxima', name: 'Proxima transfer lane', fromName: 'Lane to Proxima', toName: 'Lane to Alpha Centauri A/B', from: laneFrom, to: laneTo, ringSpacing: 12_000, speed: 9_500 }],
-  belts: [],
-  dust: [],
+  // The dust ALMA found round Proxima (the belt record's paper). The record gives no extent, so the
+  // ring sits schematically beyond the compressed orbit of c, where the lane crosses it in transit
+  // and the lane's exit near Meridian stays clear of rock.
+  belts: [
+    {
+      id: 'proxima-belt',
+      beltId: 'alpha-centauri-debris-disc',
+      center: PROXIMA,
+      shape: 'ring',
+      innerRadius: 29_000,
+      outerRadius: 35_000,
+      thickness: 1_400,
+      count: { low: 250, medium: 500, high: 800 },
+      sizeMin: 12,
+      sizeMax: 90,
+      color: '#8e7a6a',
+      seed: 13,
+    },
+  ],
+  dust: [{ center: PROXIMA, innerRadius: 28_000, outerRadius: 36_000, color: '#b0806a', opacity: 0.12, seed: 6 }],
   beacons: [{ id: 'ac-jump', name: 'Rigil arrival beacon', position: arrival.clone().add(v(250, -120, -400)), kind: 'jump' }],
   scanZones: [],
   encounters: [],
   arrival: { position: arrival, lookAt: A },
   orbitLines: true,
-  scaleNote: 'A/B separation and the distance to Proxima are compressed; Proxima really lies ~13,000 AU from the pair.',
+  scaleNote: 'A/B separation and the distance to Proxima are compressed; Proxima really lies ~13,000 AU from the pair. Its dust belt is placed schematically.',
 };

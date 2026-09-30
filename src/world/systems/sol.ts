@@ -104,6 +104,19 @@ const PLANETS: SolPlanet[] = [
   },
 ];
 
+const orbitOf = (id: string): number => PLANETS.find((p) => p.id === id)!.orbit;
+
+/**
+ * NASA's two belts (src/data/generated/belts.json): the main belt between the orbits of Mars and
+ * Jupiter, and the Kuiper Belt beyond Neptune. Their extents in au only order them; in flight they
+ * sit schematically between the compressed orbits (circles round the Sun, so any date keeps them).
+ */
+const MAIN_BELT = {
+  inner: orbitOf("mars") + (orbitOf("jupiter") - orbitOf("mars")) * 0.25,
+  outer: orbitOf("mars") + (orbitOf("jupiter") - orbitOf("mars")) * 0.75,
+};
+const KUIPER_BELT = { inner: orbitOf("neptune") + 14_000, outer: orbitOf("neptune") + 58_000 };
+
 /** Mars is drawn at most this far round from Earth, so the Earth–Mars lane never runs through the Sun. */
 const MARS_MAX_APART = 140;
 
@@ -238,8 +251,54 @@ function buildSolScene(
         speed: 2_600,
       },
     ],
-    belts: [],
-    dust: [],
+    belts: [
+      {
+        id: "sol-main-belt",
+        beltId: "sol-main-belt",
+        center: SUN,
+        shape: "ring",
+        innerRadius: MAIN_BELT.inner,
+        outerRadius: MAIN_BELT.outer,
+        thickness: 2_400,
+        count: { low: 500, medium: 1_000, high: 1_600 },
+        sizeMin: 16,
+        sizeMax: 130,
+        color: "#8c8174",
+        seed: 21,
+      },
+      {
+        id: "sol-kuiper-belt",
+        beltId: "sol-kuiper-belt",
+        center: SUN,
+        shape: "ring",
+        innerRadius: KUIPER_BELT.inner,
+        outerRadius: KUIPER_BELT.outer,
+        thickness: 6_000,
+        count: { low: 300, medium: 600, high: 1_000 },
+        sizeMin: 30,
+        sizeMax: 220,
+        color: "#a9bccb",
+        seed: 23,
+      },
+    ],
+    dust: [
+      {
+        center: SUN,
+        innerRadius: MAIN_BELT.inner - 2_000,
+        outerRadius: MAIN_BELT.outer + 2_000,
+        color: "#a09482",
+        opacity: 0.1,
+        seed: 7,
+      },
+      {
+        center: SUN,
+        innerRadius: KUIPER_BELT.inner - 4_000,
+        outerRadius: KUIPER_BELT.outer + 4_000,
+        color: "#9fb0c2",
+        opacity: 0.08,
+        seed: 8,
+      },
+    ],
     beacons: [
       {
         id: "sol-jump",
@@ -270,8 +329,8 @@ function buildSolScene(
     orbitLines: true,
     scaleNote:
       layout === "schematic"
-        ? "Planet sizes, spacing and positions are schematic, not today’s sky."
-        : `Planets sit in their real directions from the Sun on the game date (JPL's elements); sizes and spacing are compressed.${layout === "real-nudged" ? " Mars, behind the Sun, is drawn a little off its true place." : ""}`,
+        ? "Planet sizes, spacing and positions are schematic, not today’s sky; the belts are placed schematically."
+        : `Planets sit in their real directions from the Sun on the game date (JPL's elements); sizes and spacing are compressed, and the belts are placed schematically.${layout === "real-nudged" ? " Mars, behind the Sun, is drawn a little off its true place." : ""}`,
   };
 }
 

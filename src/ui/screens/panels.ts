@@ -1,8 +1,9 @@
 import type { Settings, SteeringMode } from '../../app/settings.ts';
 import { TEXT_SCALES } from '../../app/settings.ts';
-import { getComponent, getPlanet, SOLAR_BODIES } from '../../data/systems.ts';
+import { findBelt, getComponent, getPlanet, SOLAR_BODIES } from '../../data/systems.ts';
 import { formatDec, formatRa } from '../../data/coords.ts';
 import type { ConfirmedBody } from '../../data/types.ts';
+import { beltCard } from '../../galaxy/scienceBlocks.ts';
 import { KEY_BINDINGS, keyLabel } from '../../flight/input/DesktopInput.ts';
 import { PAD_FOR, PAD_HOLDS, padLabel, type PadButton } from '../../flight/input/GamepadInput.ts';
 import type { InputScheme } from '../../flight/input/types.ts';
@@ -352,5 +353,7 @@ export function bodyCard(bodyId: string, name: string): HTMLElement {
   }
   const planet = getPlanet(bodyId);
   if (planet) return planetCard(planet, true);
+  const belt = findBelt(bodyId);
+  if (belt) return beltCard(belt);
   return h('p', null, `${name}: no catalogue data bundled.`);
 }

@@ -75,8 +75,16 @@ export interface SceneLaneDef {
   speed: number;
 }
 
+/**
+ * A ring of rocks drawn for a belt a cited source reports (docs/PROCGEN.md §19): no ring without a
+ * belt record. Where it lies in the scene is schematic; the record says what is observed.
+ */
 export interface SceneBeltDef {
   id: string;
+  /** The belt record (src/data/generated/belts.json) this ring draws. */
+  beltId: string;
+  /** Which of the belt's rings this is, when it has more than one ("inner ring"). */
+  label?: string;
   center: THREE.Vector3;
   shape: 'ring' | 'cluster';
   innerRadius: number;
