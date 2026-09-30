@@ -18,7 +18,10 @@ real sky to fill by scanning, milestones and a hint of what to do next give the 
 three hand-written faction story arcs, with choices and finales (a den assault, a convoy defence
 and a den under siege), give it a spine. Fights have seekers and decoy flares, mines, damage to a
 ship's systems, loot crates of salvaged equipment, wingmen for hire, and raider dens that defend
-themselves and can be knocked out.
+themselves and can be knocked out. A fleet of your own comes after the biggest ship: keep ships
+parked at stations, hire captains to haul your routes out of sight (worked out from the game clock,
+for well under what flying them earns, with raids and insurance), lease storage and buy a share of a
+station's trade.
 Ships, equipment, the world, the economy, events, contracts and the law are generated from rule
 files and checked by automated guardrails ([docs/PROCGEN.md](docs/PROCGEN.md)).
 

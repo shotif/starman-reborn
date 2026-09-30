@@ -894,3 +894,106 @@ balance; every name is invented.
   taking fire; only from ships within 4 km of the player, at most one line every seven seconds,
   from small phrase pools.
 
+
+## 18. A fleet of your own
+
+Something to build after the biggest ship: more ships, captains to fly them, a hold at a station and
+a share in its trade (`src/economy/fleet.ts`; rules in `src/content/fleet/rules.ts`; the Fleet
+window on every dock's deck, `src/ui/station/fleet.ts`). Nothing runs in the background: the fleet
+is worked out from the game clock when the player docks, jumps or loads a save, the same on every
+device.
+
+### 18.1 The hangar
+
+- **Buy and keep**: the shipyard's purchase dialog offers the trade-in as before, or the full price
+  with the ship you fly parked at that station as it is: its fittings, rounds, repair kits, decoys
+  and damage. Your cargo moves across when it fits the new hold (otherwise it stays aboard the
+  parked ship). You can own four ships besides the one you fly, and a second of the model you fly.
+- **Switch** at any station where one of your ships is parked: the ship you flew is parked in its
+  place. Each ship keeps its own hold and gear; the one you take has its shields charged, and the
+  save checks it like any flown ship. Ships are only ever parked where you bought them or where a
+  captain brought them home.
+- **Sell** a parked ship at a shipyard for the trade-in the yard pays for the ship you fly (70% of
+  the hull and fittings, less repairs), once its hold is empty.
+
+### 18.2 Haulers
+
+- **Hiring**: a parked ship with an empty hold gets a captain (a name from the bars' pools, seeded
+  by the ship and the clock) and a route: from the station where it is parked, which is where you
+  hire, to a dock **you have docked at yourself**, with prices you know there (the captain flies on
+  your charts and your contacts, so a route you have never seen cannot be handed over). The cargo
+  is one lawful good (no contraband, no small arms) sold at the home dock and bought at the other
+  end; raider dens are never on a route. The dialog shows each good's run at the live price at home
+  and the last price you had at the far end, sliding as the load is sold (the slide at the far
+  end's normal stock): the goods, the sale, jump fees both ways, the captain's cut, the time and the
+  risk. No captain takes a run that pays under 50 cr.
+- **A run**, on the game clock: 180 s loading, then 1.5 × the expected trip (45 s out, 165 s a
+  jump, 30 s in) each way: about 7 minutes in a system, 15 for one jump, 23 for two. It buys 90%
+  of the ship's hold (as much as the stock allows) at the home dock's price when it sets out and
+  sells at the far end's price when it arrives, both at the list price without your standing.
+  Everything the run needs is paid when it sets out: the goods, the jump fees there and back, and
+  the captain's 40 cr. On arrival the captain takes 30% of the run's profit (sale less those
+  costs, nothing on a loss), and insurance 8% of it; the rest is yours.
+- **Stock moves**: every purchase drains the home dock's stock and every sale fills the far end's,
+  in time order (`moveStock`), exactly as your own trades do, and the neighbours feel it through the
+  spill of §17. A route worked hard flattens: the price at home climbs and the price at the far end
+  falls, and the captain waits for them to recover. Hauled sales do not relieve shortages, count
+  toward the trade rating or go in the ledger (the voyage report counts your own flying).
+- **Waiting**: when it is time to load, the captain prices the run with the real prices at both
+  ends. A run that would pay under 50 cr after every cut is refused, and one you cannot pay for
+  waits too; the captain looks again every 15 minutes. A wait for credits is reported at once, a
+  wait for prices once it has lasted an hour (a route worked hard often needs a look or two), and
+  each wait only once. Credits never go below zero.
+- **Raids**: each run meets raiders with a chance set by the route's worst security (every system
+  on the shortest route): 8% lawless (below 0.35), 3% thin (below 0.6), 0.8% patrolled; one level
+  worse while a raid (§11) is under way in a system on the route when it sets out. Raiders take the
+  cargo; a quarter of the time they destroy the ship too (the captain escapes). Insured, a lost ship
+  pays back 60% of its model's price. The luck of each run is drawn from a stream keyed by the
+  save's seed, the ship, the hire and the run.
+- **Recall**: a captain at home parks the ship at once; one on a run finishes it, flies home and
+  parks. Insurance can be taken or dropped at any time (it counts when a run arrives).
+- **Reports**: every sale, raid, lost ship, reported wait and captain signing off is a report with
+  its game-clock time; the save keeps the newest 20. Docking, a jump or loading shows the new ones
+  as toasts: a lost ship always, two or fewer as they are, more as one summary line, and the
+  dividends paid.
+
+### 18.3 Storage and stakes
+
+- **Storage**: a 60-unit hold at a station, leased once for 400 cr and kept. While docked there,
+  cargo moves between your ship and the hold (item sizes count, as in a ship's hold).
+- **Stakes**: 1–10% of a station's trade, at most five stations, bought where you are docked, by the
+  per-cent: a trade port 900 cr for each 1%, a shipyard 1,000, a factory 800, a free port 750, a
+  refinery 700, a research station 650, a customs depot 600, an agri-station 550, a mining outpost
+  500, a relay 400; military bases and raider dens sell none (the hand-made stations count as the
+  type they are closest to, as their bars do, §16). A stake pays 1.2% of its price an hour of game
+  time, whole hours from the purchase, each hour moved by the station's fortunes at its middle: a
+  boom × 1.5, a glut × 0.9, a shortage × 0.7, a strike × 0.4, and a raid in its system × 0.6 (a
+  sweep × 1). 10% of a trade port (9,000 cr) pays 108 cr an hour in quiet times. The station buys a
+  stake back at 85% of its price, from any dock. Stakes and leases go in the ledger (`fleet`), and
+  the voyage report shows them.
+
+### 18.4 Settling from the clock
+
+`settleFleet` works out everything due since the last settle, up to the clock: every hauler step
+(set out, arrive, get home) and every hour of dividends, merged in time order, so a dividend can pay
+for the next load and one hauler's purchase can raise the next one's price. Each step depends only
+on the save and its own time, so settling once, twice or every few minutes comes out the same
+(tested), and so does every device. A save left very long works out at most 200 runs a hauler at
+once (after that the captain rests until the clock) and pays stakes' hours older than 30 days at the
+plain rate in one sum, so a settle never loops for long.
+
+### 18.5 Fleet guardrails
+
+- **A hauler earns well below flying yourself.** A run takes 3.5–5.4 times the trip the trade
+  computer counts for you (both ways, at 1.5 × the time, plus loading), carries 90% of the hold, gives up
+  30% of its profit, 40 cr and both ways' fees, and flattens its own route. On the best route from
+  every dock with a shipyard, a Petrel hauler earns 1–5% of the trade computer's estimate for flying
+  the route yourself (about 600–4,000 cr an hour of game time); the unit tests hold every one of
+  them under a fifth.
+- **Losses are bounded and can be insured.** The worst a run can do is lose what it set out with
+  (the goods, the fees and the captain's fee, all paid up front, so never more than the player had)
+  and one ship; insurance pays back 60% of the ship's price. The tests find a run that loses both
+  and check the books, with and without insurance.
+- **Nothing runs in the background**: see §18.4. The fleet in the save is checked in full: owned
+  ships like the flown one, at most four, a hauler's route starting where its ship is parked,
+  storage within 60 units, stakes of 1–10% at no more than five stations, reports of known kinds.
