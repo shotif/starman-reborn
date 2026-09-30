@@ -1,5 +1,7 @@
 import type { EventKind } from '../content/events/rules.ts';
-import { getSystem } from '../data/systems.ts';
+import { getLocation, getSystem } from '../data/systems.ts';
+import type { GameState } from '../app/state.ts';
+import { densDownNear } from '../economy/dens.ts';
 import type { SystemId } from '../data/types.ts';
 import { minutes, newsAt, type NewsItem, type WorldEvent } from '../economy/events.ts';
 import { h } from './dom.ts';
@@ -30,6 +32,32 @@ function when(n: NewsItem, clock: number): string {
 
 function where(n: NewsItem): string {
   return n.jumps === 0 ? 'this system' : `${getSystem(n.event.systemId).displayName}, ${n.jumps} jump${n.jumps > 1 ? 's' : ''}`;
+}
+
+/** Raider dens knocked out within reach: dark for now, and their systems quiet (docs/PROCGEN.md §15). */
+export function denNews(state: GameState, systemId: SystemId): HTMLElement | null {
+  const down = densDownNear(state, systemId);
+  if (!down.length) return null;
+  return h(
+    'ul',
+    { class: 'list news-list', 'data-testid': 'den-news' },
+    down.map((d) => {
+      const loc = getLocation(d.locationId);
+      const hours = Math.max(1, Math.round(d.left / 3600));
+      return h(
+        'li',
+        { class: 'news-item kind-sweep' },
+        glyph('shieldgen'),
+        h(
+          'span',
+          { class: 'news-text' },
+          h('span', { class: 'row-name' }, `${loc.name} knocked out`),
+          h('span', { class: 'row-sub' }, `Raider den · ${d.jumps === 0 ? 'this system' : `${getSystem(loc.systemId).displayName}, ${d.jumps} jump${d.jumps > 1 ? 's' : ''}`} · dark for about ${hours} h more`),
+          h('span', { class: 'news-detail' }, `Its reactor is down: no raider packs at ${getSystem(loc.systemId).displayName} until the Wake rebuilds it.`),
+        ),
+      );
+    }),
+  );
 }
 
 /** The news within reach of a system, nearest first (events under way, then recently over). */

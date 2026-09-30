@@ -346,10 +346,15 @@ export class StationHub {
       case 'shipyard':
         return shipyardContent(ctx, refresh);
       case 'jobs':
-        return jobBoardContent(ctx, this.selectedJob, (id) => {
-          this.selectedJob = id;
-          this.render();
-        });
+        return jobBoardContent(
+          ctx,
+          this.selectedJob,
+          (id) => {
+            this.selectedJob = id;
+            this.render();
+          },
+          refresh,
+        );
       case 'news':
         return newsContent(ctx);
       case 'journal':

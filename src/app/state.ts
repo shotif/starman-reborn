@@ -22,8 +22,29 @@ export interface ShipState {
   /** Launcher slot id → rounds carried. */
   ammo: Record<string, number>;
   repairKits: number;
+  /** Decoy flares against seekers (docs/PROCGEN.md §15). */
+  decoys: number;
+  /** Damage to the ship's systems, 0 (intact) to 1 (wrecked); dock repairs and repair kits clear it. */
+  systems: ShipSystems;
   /** Items held per commodity (each item occupies the commodity's unit size in the hold). */
   cargo: Cargo;
+}
+
+export interface ShipSystems {
+  engines: number;
+  guns: number;
+  shields: number;
+}
+
+/** A pilot flying on the player's wing for a fee per jump (docs/PROCGEN.md §15). */
+export interface Wingman {
+  id: string;
+  name: string;
+  /** Catalogue ship model. */
+  model: string;
+  /** Credits per jump. */
+  fee: number;
+  skill: 'steady' | 'sharp';
 }
 
 /** Where the player is when the game is saved. */
@@ -126,6 +147,10 @@ export interface GameState {
   story: { choices: Record<string, string>; seen: string[] };
   /** Raider dens knocked out: den id → game clock when its reactor went down. */
   dens: Record<string, number>;
+  /** Salvaged equipment aboard, not fitted (catalogue gear ids). */
+  stash: string[];
+  /** Wingmen on the player's pay. */
+  crew: Wingman[];
   /** Confirmed-planet / body ids the player has scanned. */
   discoveredBodies: string[];
   jobs: Record<string, JobProgress>;
@@ -174,6 +199,8 @@ export function createNewGame(seed: number = Math.floor(Math.random() * 2 ** 31)
     milestones: {},
     story: { choices: {}, seen: [] },
     dens: {},
+    stash: [],
+    crew: [],
     discoveredBodies: [],
     jobs: {},
     pirateOutcome: 'none',

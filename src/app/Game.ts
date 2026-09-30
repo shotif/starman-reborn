@@ -33,6 +33,7 @@ import {
 import { briefingFor, choiceHere, denDown, isStoryJob, knockOutDen, makeChoice, markSeen, pendingBeats, speakerName } from '../economy/story.ts';
 import { DENS } from '../content/dens/rules.ts';
 import { showChoice, showDialogue } from '../ui/story.ts';
+import { denBounty, payCrew, stashGear, wingmanLost } from '../economy/combat.ts';
 import { moveStock, traderDelivery } from '../economy/markets.ts';
 import { commitCrime, customsScan, dockAccess, isLawful, scansOnDocking, totalFines } from '../economy/law.ts';
 import { whatNext } from '../economy/advisor.ts';
@@ -688,9 +689,11 @@ export class Game {
     this.tellStory();
   }
 
-  /** Warns about a raid (or tells of a sweep) under way in the system the player is flying in. */
+  /** Warns about a raid (or tells of a sweep) under way in the system the player is flying in, or a den knocked out here. */
   private announceSystemEvent(): void {
     const state = this.state!;
+    const dark = ALL_LOCATIONS.find((l) => l.systemId === state.location.systemId && l.stationType === 'pirate-den' && denDown(state, l.id));
+    if (dark) toast(`${dark.name} is dark: no raider packs here for now.`, 'good', 4500);
     const e = systemEventAt(state.location.systemId, state.clock);
     if (!e) return;
     if (e.kind === 'raid') toast(`${e.headline}: raider threat ${e.level} of 3. Watch the approaches.`, 'bad', 5000);
@@ -732,7 +735,11 @@ export class Game {
         onScanInfo: (t) => this.onScanInfo(t),
         onEncounterStart: (def) => this.onEncounterStart(def),
         onEncounterEnd: (def, outcome) => this.onEncounterEnd(def, outcome),
-        onLoot: (credits, cargo) => {
+        onLoot: (credits, cargo, gear) => {
+          if (gear) {
+            const r = stashGear(state, gear);
+            toast(r.stored ? `Equipment crate: ${r.name}, in your stash (fit or sell it at an outfitter).` : `Equipment crate: ${r.name}. No room in the stash: sold for ${formatCredits(r.credits)}.`, 'good', 5000);
+          }
           if (credits > 0) {
             applyCredits(state, credits, 'loot', 'Salvaged components');
             toast(`Salvage collected: +${formatCredits(credits)}`, 'good');
@@ -754,9 +761,13 @@ export class Game {
           this.persist();
         },
         onDenDestroyed: (locationId, jobId) => {
-          knockOutDen(state, locationId);
-          const progress = state.jobs[jobId];
-          if (progress?.status === 'active') progress.assault = 'done';
+          if (jobId) {
+            knockOutDen(state, locationId);
+            const progress = state.jobs[jobId];
+            if (progress?.status === 'active') progress.assault = 'done';
+          } else {
+            toast(denBounty(state, locationId).text, 'good', 6000);
+          }
           this.sfx('mission-complete');
           this.announceJobEvents(advanceJobs(state, { dockedAt: state.location.dockedAt, systemId: state.location.systemId }));
           this.persist();
@@ -788,6 +799,11 @@ export class Game {
           this.announceJobEvents(advanceJobs(state, { dockedAt: state.location.dockedAt, systemId: state.location.systemId }));
           this.persist();
         },
+        onWingmanLost: (id) => {
+          wingmanLost(state, id);
+          this.persist();
+        },
+        onComm: (speaker, text) => commToast(speaker, text, 5000),
         onHunterDown: () => {
           state.stats.kills += 1;
           toast('Bounty hunter destroyed. Nobody pays for that one.', 'good', 3500);
@@ -833,6 +849,7 @@ export class Game {
       assaults: assaultsIn(state, here),
       defences: defencesIn(state, here),
       downDens,
+      crew: state.crew.map((w) => ({ id: w.id, name: w.name, model: w.model, skill: w.skill })),
     };
   }
 
@@ -1133,6 +1150,9 @@ export class Game {
         this.disposeFlight();
         const events = performJump(state, j.route, j.fee);
         this.announceJobEvents(events);
+        const wing = payCrew(state, j.route.hops.length);
+        if (wing.paid) toast(`Wing fees: ${formatCredits(wing.paid)}`, 'info', 3000);
+        for (const note of wing.notes) toast(note, 'bad', 5000);
         void this.saves.save(state);
         // Build the tunnel scene, then load the destination while the tunnel plays.
         j.tunnelScene = new THREE.Scene();
@@ -1424,7 +1444,7 @@ export class Game {
       const ctx = hudModel.context;
       this.touch.setContextAction(ctx?.label ?? null, ctx?.action ?? null, ctx?.icon);
       this.touch.setCruiseState(hudModel.cruise);
-      this.touch.setCounts(hudModel.missiles, hudModel.repairKits);
+      this.touch.setCounts(hudModel.missiles, hudModel.repairKits, hudModel.decoys);
       this.touch.setThrottle(hudModel.throttle);
       this.touch.setDrift(hudModel.drift);
     }

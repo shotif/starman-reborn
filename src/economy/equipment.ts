@@ -285,6 +285,7 @@ export function buyShip(state: GameState, locationId: string, modelId: string): 
   state.ship.ammo = fresh.ammo;
   state.ship.hull = fresh.hull;
   state.ship.shield = fresh.shield;
+  state.ship.systems = fresh.systems;
   return { ok: true, message: `The ${offer.model.name} is yours.` };
 }
 

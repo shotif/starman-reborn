@@ -6,6 +6,7 @@ import { codexEntries } from '../../economy/progress.ts';
 import type { SystemId } from '../../data/types.ts';
 import { clampShip, newShipState } from '../../economy/loadout.ts';
 import { COMMODITY_IDS } from '../../content/economy/goods.ts';
+import { COMBAT } from '../../content/combat/rules.ts';
 import { createNewGame, SAVE_VERSION, type CommodityId, type GameState } from '../state.ts';
 
 /**
@@ -27,8 +28,9 @@ import { createNewGame, SAVE_VERSION, type CommodityId, type GameState } from '.
  *   goods; `codex`, `surveysSold`, `milestones`, and `stats.sales` / `stats.rewards` (the trade
  *   rating).
  * - v8 (current): `story` (choices made in the faction arcs, beats already told) and `dens` (raider
- *   dens knocked out, and when); jobs may carry convoy and den assault progress. See GameState in
- *   src/app/state.ts.
+ *   dens knocked out, and when); jobs may carry convoy and den assault progress; `stash` (salvaged
+ *   equipment aboard) and `crew` (wingmen for hire); the ship's `decoys` and `systems` damage. See
+ *   GameState in src/app/state.ts.
  */
 export interface SaveV1 {
   version: 1;
@@ -137,9 +139,15 @@ function migrateV6(
   });
 }
 
-/** v7 → v8: no story choices made and no den knocked out yet. */
-function migrateV7(old: Omit<GameState, 'version' | 'story' | 'dens'> & { version: 7 }): GameState {
-  return { ...old, version: SAVE_VERSION, story: { choices: {}, seen: [] }, dens: {} };
+/**
+ * v7 → v8: no story choices made and no den knocked out yet; nothing in the stash and nobody on the
+ * wing; the ship gets its starting decoys and intact systems.
+ */
+function migrateV7(
+  old: Omit<GameState, 'version' | 'story' | 'dens' | 'stash' | 'crew' | 'ship'> & { version: 7; ship: Omit<GameState['ship'], 'decoys' | 'systems'> & Partial<Pick<GameState['ship'], 'decoys' | 'systems'>> },
+): GameState {
+  const ship = { ...old.ship, decoys: old.ship.decoys ?? COMBAT.decoys.starting, systems: old.ship.systems ?? { engines: 0, guns: 0, shields: 0 } };
+  return { ...old, ship, version: SAVE_VERSION, story: { choices: {}, seen: [] }, dens: {}, stash: [], crew: [] };
 }
 
 /** Upgrades any known save version to the current GameState. Throws SaveFormatError when unusable. */
@@ -204,6 +212,12 @@ export function assertValidState(s: GameState): void {
   if (!isRecord(s.story) || !isRecord(s.story.choices) || !Array.isArray(s.story.seen)) fail('story');
   if (!Object.values(s.story.choices).every((v) => typeof v === 'string') || !s.story.seen.every((v) => typeof v === 'string')) fail('story');
   if (!isRecord(s.dens) || !Object.entries(s.dens).every(([id, t]) => LOCATION_IDS.has(id) && Number.isFinite(t))) fail('dens');
+  if (!Array.isArray(s.stash) || s.stash.length > COMBAT.loot.stash || !s.stash.every((id) => typeof id === 'string' && !!findGear(id))) fail('stash');
+  if (!Array.isArray(s.crew) || s.crew.length > COMBAT.wingmen.max) fail('crew');
+  for (const w of s.crew) if (!isRecord(w) || typeof w.name !== 'string' || !findShip(w.model) || !Number.isFinite(w.fee) || w.fee < 0) fail('crew');
+  if (!Number.isInteger(s.ship.decoys) || s.ship.decoys < 0 || s.ship.decoys > COMBAT.decoys.max) fail('decoys');
+  const sys = s.ship.systems;
+  if (!isRecord(sys) || !(['engines', 'guns', 'shields'] as const).every((k) => Number.isFinite(sys[k]) && sys[k] >= 0 && sys[k] <= 1)) fail('systems');
   if (!isRecord(s.markets)) fail('markets');
   for (const [id, m] of Object.entries(s.markets)) {
     if (!LOCATION_IDS.has(id) || !isRecord(m) || !Number.isFinite(m.t) || !isRecord(m.stock)) fail(`market ${id}`);

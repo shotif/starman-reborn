@@ -12,6 +12,7 @@ import { CONTRACT_PREFIX, contractBlock, followUpFor, postedContract, postedCont
 import { adjustReputation, FACTIONS, standingTier, TIER_LABEL } from './factions.ts';
 import { cargoCapacity } from './loadout.ts';
 import { rating } from './progress.ts';
+import { denDown } from './dens.ts';
 
 export type Objective =
   | { kind: 'have-cargo'; commodity: CommodityId; qty: number; text: string }
@@ -202,10 +203,12 @@ export function jobLockReason(state: GameState, job: JobDef): string | null {
   if (cargo && itemsThatFit(state.ship.cargo, cargo.commodity, cargoCapacity(state.ship)) < cargo.qty) {
     return `Needs ${cargo.qty * COMMODITIES[cargo.commodity].unitSize} free hold units`;
   }
-  // Ace hunts are for pilots with a record.
-  if (job.contract?.kind === 'ace' && rating(state, 'combat').index < ACE_COMBAT_RANK) {
+  // Ace hunts and den assaults are for pilots with a record.
+  if ((job.contract?.kind === 'ace' || job.contract?.kind === 'den') && rating(state, 'combat').index < ACE_COMBAT_RANK) {
     return `Needs a ${RATINGS.combat.ranks[ACE_COMBAT_RANK]![0]} combat rating`;
   }
+  const assault = job.objectives[0];
+  if (job.contract?.kind === 'den' && assault?.kind === 'assault' && !state.jobs[job.id] && denDown(state, assault.locationId)) return `${getLocation(assault.locationId).name} is already dark`;
   // A lawful faction that is wary of you only trusts you with the easiest work.
   if (job.contract && job.factionId && job.factionId !== 'hollow-wake' && job.difficulty >= 2) {
     const tier = standingTier(state.reputation[job.factionId] ?? 0);
@@ -651,12 +654,14 @@ export function escortsIn(state: GameState, systemId: SystemId): EscortSetup[] {
   });
 }
 
-/** Den assaults under way in a system (the den to knock out, and its turrets still standing). */
-export function assaultsIn(state: GameState, systemId: SystemId): { jobId: string; locationId: string; turretsLeft: number }[] {
+/** Den assaults under way in a system (the den to knock out, its turrets still standing, and the lawful wing that flies with the player). */
+export function assaultsIn(state: GameState, systemId: SystemId): { jobId: string; locationId: string; turretsLeft: number; wing: FactionId | null }[] {
   return activeJobIds(state).flatMap((jobId) => {
     const o = currentObjective(state, jobId);
     const turretsLeft = Math.max(0, DENS.turrets - (state.jobs[jobId]?.kills ?? 0));
-    return o?.kind === 'assault' && o.systemId === systemId ? [{ jobId, locationId: o.locationId, turretsLeft }] : [];
+    const faction = getJob(jobId, state).factionId;
+    const wing = faction === 'sta' || faction === 'frontier' ? faction : null;
+    return o?.kind === 'assault' && o.systemId === systemId ? [{ jobId, locationId: o.locationId, turretsLeft, wing }] : [];
   });
 }
 

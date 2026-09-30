@@ -106,6 +106,8 @@ export class Hud {
   private readonly missileText: HTMLElement;
   private readonly launcherText: HTMLElement;
   private readonly kitText: HTMLElement;
+  private readonly decoyText: HTMLElement;
+  private readonly flashEl: HTMLElement;
   private readonly left: HTMLElement;
   private readonly centerColumn: HTMLElement;
   private readonly right: HTMLElement;
@@ -224,6 +226,7 @@ export class Hud {
     this.missileText = h('span', { class: 'num' });
     this.launcherText = h('span', { class: 'load-name' }, 'Missiles');
     this.kitText = h('span', { class: 'num' });
+    this.decoyText = h('span', { class: 'num' });
     const loadRow = (g: GlyphName, name: HTMLElement | string, value: HTMLElement | null, key: string) =>
       h('div', { class: 'load-row' }, glyph(g), typeof name === 'string' ? h('span', { class: 'load-name' }, name) : name, value ?? h('span'), h('kbd', { class: 'kbd' }, key));
     this.loadout = h(
@@ -232,7 +235,10 @@ export class Hud {
       loadRow('gun', this.weaponText, null, 'RMB'),
       loadRow('missile', this.launcherText, this.missileText, 'F'),
       loadRow('repair', 'Repair kits', this.kitText, 'R'),
+      loadRow('scanner', 'Decoys', this.decoyText, 'C'),
     );
+    // Hit flashes around the screen's edges.
+    this.flashEl = h('div', { class: 'hud-flash', 'aria-hidden': 'true' });
 
     this.left = h('div', { class: 'hud-left' });
     this.centerColumn = h('div', { class: 'hud-center' });
@@ -243,6 +249,7 @@ export class Hud {
     this.root = h(
       'div',
       { class: 'hud', 'data-testid': 'hud' },
+      this.flashEl,
       this.markerLayer,
       this.lead,
       this.reticle,
@@ -346,6 +353,15 @@ export class Hud {
     setText(this.missileText, String(model.missiles));
     setText(this.launcherText, model.launcher ?? 'No launcher');
     setText(this.kitText, String(model.repairKits));
+    setText(this.decoyText, String(model.decoys));
+    const hull = Math.round(model.flash.hull * 100) / 100;
+    const shield = Math.round(model.flash.shield * 100) / 100;
+    if (this.flashEl.dataset.v !== `${hull},${shield}`) {
+      this.flashEl.dataset.v = `${hull},${shield}`;
+      this.flashEl.style.setProperty('--hull', String(hull));
+      this.flashEl.style.setProperty('--shield', String(shield));
+    }
+    this.flashEl.classList.toggle('seeker', model.incoming > 0);
 
     this.updateTarget(model);
     this.updateMarkers(model.markers);

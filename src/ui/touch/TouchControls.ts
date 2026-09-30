@@ -39,6 +39,7 @@ export class TouchControls {
   private readonly boostBtn: HTMLButtonElement;
   private readonly missileCount: HTMLElement;
   private readonly repairCount: HTMLElement;
+  private readonly decoyCount: HTMLElement;
   private readonly driftBtn: HTMLButtonElement;
   private readonly assistChip: HTMLButtonElement;
   private readonly throttleTrack: HTMLElement;
@@ -89,6 +90,10 @@ export class TouchControls {
     this.repairCount = h('span', { class: 'tcount' }, '0');
     repairBtn.appendChild(this.repairCount);
     this.bindTap(repairBtn, 'repair');
+    const decoyBtn = mk('decoy', 'Decoy', 'touch-decoy', 'decoy small');
+    this.decoyCount = h('span', { class: 'tcount' }, '0');
+    decoyBtn.appendChild(this.decoyCount);
+    this.bindTap(decoyBtn, 'decoy');
     this.contextLabel = h('span', { class: 'tlabel' }, 'Dock');
     this.contextBtn = h(
       'button',
@@ -134,7 +139,7 @@ export class TouchControls {
       this.steerZone,
       this.aimZone,
       h('div', { class: 'tcluster left' }, this.cruiseBtn, this.contextBtn),
-      h('div', { class: 'tcluster right' }, targetBtn, missileBtn, this.boostBtn, repairBtn),
+      h('div', { class: 'tcluster right' }, targetBtn, missileBtn, this.boostBtn, repairBtn, decoyBtn),
       h('div', { class: 'throttle' }, this.throttleValue, this.throttleTrack, this.driftBtn),
       this.assistChip,
     );
@@ -185,9 +190,10 @@ export class TouchControls {
     this.cruiseBtn.dataset.state = state;
   }
 
-  setCounts(missiles: number, repairKits: number): void {
+  setCounts(missiles: number, repairKits: number, decoys = 0): void {
     this.missileCount.textContent = String(missiles);
     this.repairCount.textContent = String(repairKits);
+    this.decoyCount.textContent = String(decoys);
   }
 
   setDrift(on: boolean): void {

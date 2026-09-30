@@ -35,6 +35,7 @@ const PATHS = {
   list: ['M8 6h13', 'M8 12h13', 'M8 18h13', 'M3 6h.01', 'M3 12h.01', 'M3 18h.01'],
   shield: ['M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'],
   kill: ['M6 6h12v12H6z'],
+  decoy: ['M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z', 'M12 2v4', 'M12 18v4', 'M2 12h4', 'M18 12h4', 'M5 5l2.5 2.5', 'M16.5 16.5L19 19', 'M19 5l-2.5 2.5', 'M7.5 16.5L5 19'],
 } as const;
 
 export type IconName = keyof typeof PATHS;

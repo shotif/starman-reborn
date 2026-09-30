@@ -166,6 +166,16 @@ function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, numbe
       if (!(c.repReward['hollow-wake']! > 0) || Object.keys(c.repReward).some((f) => f !== 'hollow-wake')) report('smuggle', c.id, 'outlaw work earns standing with the Wake only');
       break;
     }
+    case 'den': {
+      if (o.kind !== 'assault') return report('objectives', c.id, `unexpected objective ${o.kind}`);
+      const den = getLocation(o.locationId);
+      if (den.stationType !== 'pirate-den' || den.status !== 'functional' || den.systemId !== o.systemId) report('den', c.id, `${o.locationId} is not a raider den in ${o.systemId}`);
+      const giver = getLocation(c.giverLocationId);
+      if (giver.factionId !== 'sta' && giver.factionId !== 'frontier') report('den', c.id, 'only the law posts den assaults');
+      if (c.difficulty !== 3) report('den', c.id, 'a den assault is top difficulty');
+      if (!(c.repReward['hollow-wake']! < 0)) report('den', c.id, 'the Wake takes a den assault badly');
+      break;
+    }
     case 'piracy': {
       if (o.kind !== 'piracy') return report('objectives', c.id, `unexpected objective ${o.kind}`);
       if (getLocation(c.giverLocationId).stationType !== 'pirate-den') report('piracy', c.id, 'only raider dens post piracy');

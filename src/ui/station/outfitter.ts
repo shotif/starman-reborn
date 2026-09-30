@@ -1,5 +1,5 @@
 import { getLocation } from '../../data/systems.ts';
-import { shipModel } from '../../content/catalog.ts';
+import { gearItem, shipModel } from '../../content/catalog.ts';
 import { cargoUsed } from '../../economy/cargo.ts';
 import {
   ammoOffers,
@@ -18,6 +18,8 @@ import {
   type GearOffer,
 } from '../../economy/equipment.ts';
 import { fittedItem, fittedLaunchers, gunSummary, performanceOf, roundsLabel, shipSlots } from '../../economy/loadout.ts';
+import { buyDecoy, decoyOffer, fitFromStash, repairSystems, sellFromStash, stashOffers, systemsQuote } from '../../economy/combat.ts';
+import { COMBAT } from '../../content/combat/rules.ts';
 import { button, showModal, toast } from '../components.ts';
 import { formatCredits, h } from '../dom.ts';
 import { glyph } from '../glyphs.ts';
@@ -54,14 +56,34 @@ export function shipStatus(ctx: StationContext, refresh: Refresh, opts: { repair
           h(
             'span',
             { class: 'ship-guns' },
-            [...fittedLaunchers(ship).map((l) => `${l.ammo}/${l.stats.maxAmmo} ${roundsLabel(l.stats.kind).toLowerCase()}`), `${ship.repairKits}/${REPAIR_KIT.max} kits`].join(' · '),
+            [
+              ...fittedLaunchers(ship).map((l) => `${l.ammo}/${l.stats.maxAmmo} ${roundsLabel(l.stats.kind).toLowerCase()}`),
+              `${ship.repairKits}/${REPAIR_KIT.max} kits`,
+              `${ship.decoys}/${COMBAT.decoys.max} decoys`,
+            ].join(' · '),
           ),
         )
       : [
           fittedLaunchers(ship).map((l) => bar(roundsLabel(l.stats.kind), l.ammo, l.stats.maxAmmo, 'var(--amber)', `${l.ammo}/${l.stats.maxAmmo}`)),
           bar('Repair kits', ship.repairKits, REPAIR_KIT.max, 'var(--friendly)', `${ship.repairKits}/${REPAIR_KIT.max}`),
+          bar('Decoys', ship.decoys, COMBAT.decoys.max, 'var(--warm)', `${ship.decoys}/${COMBAT.decoys.max}`),
           bar('Cargo', cargoUsed(ship.cargo), perf.cargo, 'var(--amber)', `${cargoUsed(ship.cargo)}/${perf.cargo}`),
         ],
+    systemsLine(ship),
+    opts.repair && canRepair && systemsQuote(state, locationId) > 0
+      ? button(`Repair systems · ${formatCredits(systemsQuote(state, locationId))}`, {
+          icon: 'repair',
+          testId: 'dock-repair-systems',
+          disabled: state.credits < systemsQuote(state, locationId),
+          onClick: () => {
+            const r = repairSystems(state, locationId);
+            ctx.sfx(r.ok ? 'repair' : 'ui-error');
+            toast(r.ok ? `Systems repaired for ${formatCredits(r.cost)}` : 'Not enough credits', r.ok ? 'good' : 'bad');
+            ctx.save();
+            refresh();
+          },
+        })
+      : null,
     opts.repair && canRepair && repair.points > 0
       ? button(`Repair hull · ${formatCredits(repair.cost)}${repair.discount > 0 ? ` (−${Math.round(repair.discount * 100)}%)` : repair.discount < 0 ? ` (+${Math.round(-repair.discount * 100)}%)` : ''}`, {
           icon: 'repair',
@@ -95,6 +117,9 @@ export function outfitterContent(ctx: StationContext, refresh: Refresh, selected
   const supplies: ConsumableOffer[] = [...ammoOffers(state, locationId)];
   const kit = repairKitOffer(state, locationId);
   if (kit) supplies.push(kit);
+  const decoy = decoyOffer(state, locationId);
+  if (decoy) supplies.push({ id: 'decoy', name: COMBAT.decoys.name, price: decoy.price, have: decoy.have, max: decoy.max, blocked: decoy.blocked });
+  const stash = stashOffers(state, locationId);
 
   const mounts = h(
     'ul',
@@ -156,6 +181,50 @@ export function outfitterContent(ctx: StationContext, refresh: Refresh, selected
         : null,
       supplies.length ? h('div', { class: 'list-head supplies-head' }, h('span', null, 'Supplies'), h('span', null, 'Each')) : null,
       supplies.length ? h('ul', { class: 'list' }, supplies.map((o) => supplyRow(ctx, o, refresh))) : null,
+      stash.length ? h('div', { class: 'list-head supplies-head' }, h('span', null, 'Salvaged equipment'), h('span', null, `${stash.length}/${COMBAT.loot.stash}`)) : null,
+      stash.length ? h('ul', { class: 'list', 'data-testid': 'stash' }, stash.map((o) => stashRow(ctx, o, slot.id, refresh))) : null,
+    ),
+  );
+}
+
+/** Damage to the ship's systems, when there is any. */
+function systemsLine(ship: StationContext['state']['ship']): HTMLElement | null {
+  const s = ship.systems;
+  const hurt = (['engines', 'guns', 'shields'] as const).filter((k) => s[k] > 0).map((k) => `${k === 'shields' ? 'shield' : k} ${Math.round(s[k] * 100)}%`);
+  return hurt.length ? h('p', { class: 'callout warn small', 'data-testid': 'systems-damage' }, `Damaged systems: ${hurt.join(', ')}.`) : null;
+}
+
+/** A salvaged item: fit it (into the selected mount when it fits there) or sell it. */
+function stashRow(ctx: StationContext, o: ReturnType<typeof stashOffers>[number], selectedSlot: string, refresh: Refresh): HTMLElement {
+  const item = gearItem(o.gearId);
+  const into = o.slots.find((s) => s.id === selectedSlot) ?? o.slots[0];
+  const act = (r: { ok: boolean; message: string }) => {
+    ctx.sfx(r.ok ? 'ui-confirm' : 'ui-error');
+    toast(r.message, r.ok ? 'good' : 'bad');
+    ctx.save();
+    refresh();
+  };
+  return h(
+    'li',
+    { class: 'trade-row', 'data-testid': `stash-${o.index}` },
+    glyph(gearGlyph(item)),
+    h(
+      'span',
+      { class: 'trade-text' },
+      h('span', { class: 'row-name' }, o.name),
+      h('span', { class: 'row-sub' }, into ? `Fits ${into.id}${into.replaces ? ` (replaces ${into.replaces})` : ''}` : gearLine(item)),
+      o.blocked ? h('span', { class: 'row-note' }, o.blocked) : null,
+    ),
+    h(
+      'span',
+      { class: 'row wrap stash-actions' },
+      into && !o.blocked ? button('Fit', { size: 'sm', testId: `stash-fit-${o.index}`, onClick: () => act(fitFromStash(ctx.state, ctx.locationId, o.index, into.id)) }) : null,
+      button(`Sell · ${formatCredits(o.value)}`, {
+        size: 'sm',
+        disabled: o.blocked === 'An equipment dealer fits and buys salvage',
+        testId: `stash-sell-${o.index}`,
+        onClick: () => act(sellFromStash(ctx.state, ctx.locationId, o.index)),
+      }),
     ),
   );
 }
@@ -187,19 +256,25 @@ function offerRow(ctx: StationContext, o: GearOffer, slotId: string, refresh: Re
 
 function supplyRow(ctx: StationContext, o: ConsumableOffer, refresh: Refresh): HTMLElement {
   const isKit = o.id === 'repair-kit';
+  const isDecoy = o.id === 'decoy';
   return h(
     'li',
     { class: 'trade-row', 'data-testid': isKit ? 'supply-repair-kit' : `supply-${o.id}` },
-    glyph(isKit ? 'repair' : 'missile'),
-    h('span', { class: 'trade-text' }, h('span', { class: 'row-name' }, o.name), h('span', { class: 'row-sub' }, o.blocked && o.blocked !== 'Rack full' && o.blocked !== 'Kit storage full' ? o.blocked : `${o.have}/${o.max} carried`)),
+    glyph(isKit ? 'repair' : isDecoy ? 'scanner' : 'missile'),
+    h(
+      'span',
+      { class: 'trade-text' },
+      h('span', { class: 'row-name' }, o.name),
+      h('span', { class: 'row-sub' }, o.blocked && o.blocked !== 'Rack full' && o.blocked !== 'Kit storage full' && o.blocked !== 'Launcher full' ? o.blocked : `${o.have}/${o.max} carried`),
+    ),
     h('span', { class: 'row-value num' }, formatCredits(o.price)),
     button('Buy', {
       size: 'sm',
       disabled: !!o.blocked,
       title: o.blocked ?? undefined,
-      testId: isKit ? 'buy-repair-kit' : `buy-ammo-${o.id}`,
+      testId: isKit ? 'buy-repair-kit' : isDecoy ? 'buy-decoy' : `buy-ammo-${o.id}`,
       onClick: () => {
-        const r = isKit ? buyRepairKit(ctx.state, ctx.locationId) : buyAmmo(ctx.state, ctx.locationId, o.id);
+        const r = isKit ? buyRepairKit(ctx.state, ctx.locationId) : isDecoy ? buyDecoy(ctx.state, ctx.locationId) : buyAmmo(ctx.state, ctx.locationId, o.id);
         ctx.sfx(r.ok ? 'ui-confirm' : 'ui-error');
         if (!r.ok) toast(r.message, 'bad');
         ctx.save();

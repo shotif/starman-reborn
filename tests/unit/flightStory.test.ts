@@ -159,7 +159,7 @@ describe('the finales in flight', () => {
   });
 
   it('a den assault: turrets first, then the reactor; a wing flies alongside', () => {
-    const f = flightIn('wolf-1061', { assaults: [{ jobId: 'arc.sta.5', locationId: 'maw-roost', turretsLeft: DENS.turrets }] });
+    const f = flightIn('wolf-1061', { assaults: [{ jobId: 'arc.sta.5', locationId: 'maw-roost', turretsLeft: DENS.turrets, wing: 'sta' }] });
     f.run(3);
     const turrets = f.npcs().filter((n) => n.den?.part === 'turret');
     const reactor = f.npcs().find((n) => n.den?.part === 'reactor')!;

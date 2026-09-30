@@ -10,10 +10,14 @@ import { button, dataBadge } from '../components.ts';
 import { formatCredits, h, signed } from '../dom.ts';
 import { glyph, type GlyphName } from '../glyphs.ts';
 import { icon } from '../icons.ts';
-import { newsList } from '../news.ts';
+import { denNews, newsList } from '../news.ts';
 import { fineOwed, isLawful, pardonCost, payFines } from '../../economy/law.ts';
 import { buysSurveys, sellSurvey, surveysForSale, surveyValue } from '../../economy/progress.ts';
 import { toast } from '../components.ts';
+import { dismissWingman, hireWingman, pilotsFor } from '../../economy/combat.ts';
+import { COMBAT } from '../../content/combat/rules.ts';
+import { shipModel } from '../../content/catalog.ts';
+import type { Wingman } from '../../app/state.ts';
 import type { StationContext } from './context.ts';
 
 export function pips(level: number, of = 3): HTMLElement {
@@ -33,8 +37,8 @@ export function deliverableJobs(ctx: StationContext): string[] {
   return Object.keys(state.jobs).filter((id) => canDeliver(state, id, locationId));
 }
 
-/** The job board: deliveries due here, posted contracts (one expanded), your active contracts. */
-export function jobBoardContent(ctx: StationContext, selected: string | null, onSelect: (id: string) => void): HTMLElement {
+/** The job board: deliveries due here, posted contracts (one expanded), your active contracts, and pilots for hire. */
+export function jobBoardContent(ctx: StationContext, selected: string | null, onSelect: (id: string) => void, refresh: () => void = () => {}): HTMLElement {
   const { state, locationId } = ctx;
   const offers = jobsAt(state, locationId);
   const deliverable = deliverableJobs(ctx);
@@ -65,6 +69,63 @@ export function jobBoardContent(ctx: StationContext, selected: string | null, on
           h('ul', { class: 'plain active-jobs' }, active.map((o) => h('li', null, icon('objective'), h('strong', null, ` ${o.jobTitle}: `), o.text))),
         )
       : null,
+    wingSection(ctx, refresh),
+  );
+}
+
+/** Pilots for hire at this dock, and the wing you already pay (docs/PROCGEN.md §15). */
+function wingSection(ctx: StationContext, refresh: () => void): HTMLElement | null {
+  const { state, locationId } = ctx;
+  const pilots = ctx.access === 'full' ? pilotsFor(locationId, state.clock).filter((p) => !state.crew.some((w) => w.id === p.id)) : [];
+  if (!pilots.length && !state.crew.length) return null;
+  const act = (r: { ok: boolean; message: string }) => {
+    ctx.sfx(r.ok ? 'ui-confirm' : 'ui-error');
+    toast(r.message, r.ok ? 'good' : 'bad');
+    ctx.save();
+    refresh();
+  };
+  const row = (w: Wingman, action: HTMLElement) =>
+    h(
+      'li',
+      { class: 'trade-row', 'data-testid': `pilot-${w.id}` },
+      glyph('gun'),
+      h(
+        'span',
+        { class: 'trade-text' },
+        h('span', { class: 'row-name' }, w.name),
+        h('span', { class: 'row-sub' }, `${shipModel(w.model).name} · ${w.skill === 'sharp' ? 'sharp shot' : 'steady hand'} · ${formatCredits(w.fee)} a jump`),
+      ),
+      action,
+    );
+  return h(
+    'section',
+    { class: 'wing-section', 'aria-label': 'Wingmen' },
+    h('div', { class: 'list-head' }, h('span', null, 'Pilots for hire'), h('span', null, `Your wing ${state.crew.length}/${COMBAT.wingmen.max}`)),
+    state.crew.length
+      ? h(
+          'ul',
+          { class: 'list', 'data-testid': 'your-wing' },
+          state.crew.map((w) => row(w, button('Dismiss', { size: 'sm', testId: `dismiss-${w.id}`, onClick: () => act(dismissWingman(state, w.id)) }))),
+        )
+      : null,
+    pilots.length
+      ? h(
+          'ul',
+          { class: 'list' },
+          pilots.map((w) =>
+            row(
+              w,
+              button(`Hire · ${formatCredits(w.fee)}`, {
+                size: 'sm',
+                testId: `hire-${w.id}`,
+                disabled: state.crew.length >= COMBAT.wingmen.max || state.credits < w.fee,
+                onClick: () => act(hireWingman(state, locationId, w.id)),
+              }),
+            ),
+          ),
+        )
+      : null,
+    h('p', { class: 'muted small' }, 'A wingman flies with you and fights raiders at your side, for a fee at every jump. Lose their ship and they leave.'),
   );
 }
 
@@ -79,6 +140,7 @@ const KIND_GLYPH: Record<ContractKind, GlyphName> = {
   recovery: 'tractor',
   smuggle: 'cargopod',
   piracy: 'weapons',
+  den: 'missile',
 };
 const KIND_LABEL: Record<ContractKind, string> = {
   freight: 'Freight',
@@ -91,6 +153,7 @@ const KIND_LABEL: Record<ContractKind, string> = {
   recovery: 'Recovery',
   smuggle: 'Smuggling',
   piracy: 'Piracy',
+  den: 'Den assault',
 };
 
 /** Where a job sends you, for the card's subtitle. */
@@ -215,6 +278,7 @@ export function newsContent(ctx: StationContext): HTMLElement {
     customsDesk(ctx),
     surveyOffice(ctx),
     h('div', { class: 'list-head' }, h('span', null, 'Local news'), h('span', null, 'within two jumps')),
+    denNews(state, loc.systemId),
     newsList(loc.systemId, state.clock),
   );
 }

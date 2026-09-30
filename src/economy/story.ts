@@ -1,5 +1,4 @@
 import { applyCredits, type GameState } from '../app/state.ts';
-import { DENS } from '../content/dens/rules.ts';
 import { LAW } from '../content/law/rules.ts';
 import { ARC_JOBS, ARC_ORDER, ARCS, CHARACTERS } from '../content/story/arcs.ts';
 import type { Arc, ArcId, Line, StoryOption } from '../content/story/types.ts';
@@ -186,17 +185,7 @@ export function markSeen(state: GameState, beats: readonly Beat[]): void {
   for (const b of beats) if (!state.story.seen.includes(b.key)) state.story.seen.push(b.key);
 }
 
-// ---------------------------------------------------------------- dens
-
-/** A raider den knocked out and not yet rebuilt. */
-export function denDown(state: GameState, locationId: string): boolean {
-  const t = state.dens[locationId];
-  return t !== undefined && state.clock < t + DENS.downSeconds;
-}
-
-export function knockOutDen(state: GameState, locationId: string): void {
-  state.dens[locationId] = state.clock;
-}
+export { denDown, knockOutDen } from './dens.ts';
 
 /** A story mission waiting for the player somewhere (for the what-next hint), or null. */
 export function storyWaiting(state: GameState): { arc: Arc; job: JobDef } | null {

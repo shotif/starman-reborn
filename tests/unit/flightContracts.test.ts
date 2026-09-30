@@ -109,7 +109,7 @@ describe('contracts in flight', () => {
     expect([...(calls.escortArrived ?? []), ...(calls.escortLost ?? [])]).toEqual([['c.test.0.0']]);
   });
 
-  it('an ace flies with guards, is tougher than its hull, and drops credits and a cargo pod', () => {
+  it('an ace flies with guards, is tougher than its hull, and drops credits, a cargo pod and an equipment crate', () => {
     const [near] = stationsIn('altair');
     const ace = { name: 'Rook “Old Teeth” Draygo', model: CONTRACTS.ace.model };
     const { flight, calls, run } = flightIn('altair', { contractPacks: [{ jobId: 'c.ace.0.0', locationId: near!.id, count: 1, level: 3, ace }] });
@@ -127,7 +127,11 @@ describe('contracts in flight', () => {
     (flight as unknown as { destroyNpc(n: unknown): void }).destroyNpc(npc);
     expect(calls.contractKill).toEqual([['c.ace.0.0']]);
     const loot = flight.allTargets().filter((t) => t.kind === 'loot');
-    expect(loot.map((t) => t.name).sort()).toEqual(['Cargo pod', 'Salvage pod', 'Salvage pod']);
+    // Salvage, the ace's own credits, its hold, and (since combat depth) always an equipment crate.
+    const names = loot.map((t) => t.name);
+    expect(names.filter((n) => n === 'Salvage pod')).toHaveLength(2);
+    expect(names).toContain('Cargo pod');
+    expect(names).toContain('Equipment crate');
   });
 
   it('a wreck lies off a station, sometimes guarded, and its item is tractored in', () => {

@@ -23,18 +23,23 @@ import { hashString } from '../content/random.ts';
 import { LAW } from '../content/law/rules.ts';
 import type { EscortSetup } from '../economy/jobs.ts';
 import { DENS } from '../content/dens/rules.ts';
+import { COMBAT } from '../content/combat/rules.ts';
+import { CHATTER, type ChatterKind } from '../content/combat/chatter.ts';
+import { getCatalog } from '../content/catalog.ts';
 import { createReactorArt, createTurretArt } from './art/denDefences.ts';
 import { contrabandIn, huntedBy, huntersIn, patrolsScanIn, wakeFriendly } from '../economy/law.ts';
 import { activeLauncher, fittedGuns, gunSummary, performanceOf, roundsLabel } from '../economy/loadout.ts';
 import { aimErrors, avoidObstacles, flyTo, steerToward, type Obstacle } from '../flight/autopilot.ts';
 import { ChaseCamera } from '../flight/ChaseCamera.ts';
 import type { FlightAction, FlightInput } from '../flight/input/types.ts';
-import { lookRotation, neutralControls, RAIDER_SHIP, ShipBody, stepBounded, type ShipControls } from '../flight/ShipBody.ts';
+import { lookRotation, neutralControls, RAIDER_SHIP, ShipBody, stepBounded, type ShipControls, type ShipParams } from '../flight/ShipBody.ts';
 import { emptyHudModel, type HudContextAction, type HudMarker, type HudModel } from '../ui/hud/hudModel.ts';
 import type { AsteroidHit } from './art/asteroids.ts';
 import {
   createCargoPod,
   createExplosion,
+  createFlareArt,
+  createMineArt,
   createImpactSpark,
   createMissileArt,
   createProjectileRenderer,
@@ -65,8 +70,8 @@ export interface FlightCallbacks {
   onScanInfo(target: Target): void;
   onEncounterStart(def: EncounterDef): void;
   onEncounterEnd(def: EncounterDef, outcome: EncounterOutcome): void;
-  /** Loot collected: credits, and cargo when the pod held some (an ace's hold). */
-  onLoot(credits: number, cargo?: { commodity: CommodityId; qty: number }): void;
+  /** Loot collected: credits, cargo when the pod held some, or a piece of salvaged equipment (a catalogue gear id). */
+  onLoot(credits: number, cargo?: { commodity: CommodityId; qty: number }, gear?: string): void;
   /** The player destroyed a raider from a pack (the opening raid reports through onEncounterEnd). */
   onBounty(credits: number, name: string): void;
   /** A raider of a bounty contract's pack was destroyed. */
@@ -85,8 +90,12 @@ export interface FlightCallbacks {
   onScan?(result: 'complete' | 'evaded', faction: FactionId): void;
   /** The player destroyed a bounty hunter (nobody pays for that). */
   onHunterDown?(): void;
-  /** A den's reactor went down: the den assault `jobId` is done. */
-  onDenDestroyed?(locationId: string, jobId: string): void;
+  /** A den's reactor went down: the den assault `jobId` is done (null: the player knocked it out on their own). */
+  onDenDestroyed?(locationId: string, jobId: string | null): void;
+  /** A hired wingman's ship was destroyed (they bail out and leave the player's pay). */
+  onWingmanLost?(crewId: string): void;
+  /** Radio chatter: who speaks, and the line. */
+  onComm?(speaker: string, text: string): void;
   onMessage(text: string, tone: 'good' | 'bad' | 'info'): void;
 }
 
@@ -99,6 +108,8 @@ type NpcRole = 'raider' | 'trader' | 'patrol';
 
 interface NpcShip {
   id: string;
+  /** Catalogue ship model (den parts: their own kind). */
+  modelId: string;
   name: string;
   faction: FactionId | 'independent';
   role: NpcRole;
@@ -134,8 +145,14 @@ interface NpcShip {
   hunter?: boolean;
   /** Part of a raider den under assault: a gun turret, or the reactor. Den parts never move. */
   den?: { locationId: string; part: 'turret' | 'reactor' };
-  /** Flies with the player: the lawful wing of a den assault (where it keeps station). */
-  wingman?: { offset: THREE.Vector3 };
+  /** Flies with the player: a den assault's lawful wing, or a hired wingman (`crewId`), and where it keeps station. */
+  wingman?: { offset: THREE.Vector3; crewId?: string; damage?: number; hurtAt?: number };
+  /** Seconds until this raider can fire its next seeker at the player (seeker carriers only). */
+  seekerIn?: number;
+  /** A raider breaking off has had its chance to drop a mine. */
+  mineRolled?: boolean;
+  /** The ship whose fire last hit this one (for who gets the credit). */
+  lastHitBy?: string;
   /** A ship of the sweep coming for a den (a den defence): it fights the player and the den's crews. */
   sweep?: { locationId: string };
   /** This patrol has decided whether to scan the player. */
@@ -163,8 +180,10 @@ export interface TrafficSetup {
   escorts?: readonly EscortSetup[];
   /** Wrecks the player's recovery contracts send them to in this system. */
   wrecks?: readonly { jobId: string; locationId: string; item: string; guard: 1 | 2 | 3 | null }[];
-  /** Den assaults under way here: the den, and its turrets still standing. */
-  assaults?: readonly { jobId: string; locationId: string; turretsLeft: number }[];
+  /** Den assaults under way here: the den, its turrets still standing, and whose wing flies with the player. */
+  assaults?: readonly { jobId: string; locationId: string; turretsLeft: number; wing?: FactionId | null }[];
+  /** Wingmen on the player's pay: they fly alongside wherever the player goes. */
+  crew?: readonly { id: string; name: string; model: string; skill: 'steady' | 'sharp' }[];
   /** Den defences under way here: the den, and the sweep ships still to destroy. */
   defences?: readonly { jobId: string; locationId: string; count: number }[];
   /** Raider dens here that are knocked out (wrecked, silent and closed). */
@@ -191,10 +210,31 @@ interface LootPod {
   value: number;
   /** Cargo in the pod (an ace's hold). */
   cargo?: { commodity: CommodityId; qty: number };
+  /** Salvaged equipment in a crate (a catalogue gear id). */
+  gear?: string;
   /** The item of a recovery contract (its job id). */
   recover?: string;
   life: number;
   target: Target;
+}
+
+/** A proximity mine (docs/PROCGEN.md §15). */
+interface Mine {
+  art: ReturnType<typeof createMineArt>;
+  position: THREE.Vector3;
+  armIn: number;
+  life: number;
+  hull: number;
+  target: Target;
+}
+
+/** A decoy flare burning behind the player: seekers it fools chase it instead. */
+interface Decoy {
+  art: ReturnType<typeof createFlareArt>;
+  position: THREE.Vector3;
+  velocity: THREE.Vector3;
+  life: number;
+  target: MissileTarget;
 }
 
 type Leg = { kind: 'point'; targetId: string } | { kind: 'lane'; laneId: string; reverse: boolean };
@@ -329,6 +369,23 @@ export class FlightSession {
   /** Station targets of raider dens, shown friendly or hostile as the Wake's trust changes. */
   private readonly denTargets: Target[] = [];
   private reactorWarned = -99;
+  /** Screen-edge flashes after hits (0–1, fading). */
+  private hullFlash = 0;
+  private shieldFlash = 0;
+  /** Mines drifting in the system, and decoy flares burning behind the player. */
+  private readonly mines: Mine[] = [];
+  private readonly decoys: Decoy[] = [];
+  private decoyCooldown = 0;
+  /** The player as a seeker's target (live position and velocity). */
+  private readonly playerMissileTarget: MissileTarget;
+  /** The ship's flight, gun rates and shield as fitted, before damage to its systems. */
+  private readonly baseFlight: ShipParams;
+  private readonly baseGunRates: number[] = [];
+  private readonly baseShield: { regen: number; capacity: number };
+  /** Session time of the last chatter line (rate limit), and dens whose defences are awake. */
+  private chatterAt = -99;
+  private readonly denAlerted = new Set<string>();
+  private lootSerial = 0;
   /** Raider dens knocked out (before this flight or during it): wrecked, silent, closed. */
   private readonly downDens = new Set<string>();
   /** Den defences under way: the sweep ships still to come, wave by wave. */
@@ -405,6 +462,12 @@ export class FlightSession {
     });
     this.leadSpeed = fitted[0]?.stats.projectileSpeed ?? 800;
     this.gunRange = fitted.reduce((max, g) => Math.max(max, g.stats.range), 0);
+    // Damage to the ship's systems scales these (docs/PROCGEN.md §15).
+    this.baseFlight = { ...this.player.params };
+    for (const g of this.guns) this.baseGunRates.push(g.profile.shotsPerSecond);
+    this.baseShield = { regen: this.playerDurability.shieldRegen, capacity: this.playerDurability.shieldMax };
+    this.playerMissileTarget = { id: PLAYER_ID, position: this.player.position, velocity: this.player.velocity, radius: Math.max(6, art.radius), alive: true };
+    this.applySystems();
     this.projectileRenderer = createProjectileRenderer(320, opts.ctx);
     this.system.scene.add(this.projectileRenderer.object);
     this.streaks = createSpeedStreaks(opts.ctx);
@@ -525,6 +588,7 @@ export class FlightSession {
     for (const n of this.npcs) if (n.target.alive) list.push(n.target);
     for (const l of this.loot) if (l.target.alive) list.push(l.target);
     for (const d of this.drones) if (d.target.alive) list.push(d.target);
+    for (const m of this.mines) if (m.target.alive) list.push(m.target);
     return list;
   }
 
@@ -688,6 +752,9 @@ export class FlightSession {
         break;
       case 'repair':
         this.useRepairKit();
+        break;
+      case 'decoy':
+        this.launchDecoy();
         break;
       case 'engine-kill':
         if (this.busy) return;
@@ -955,14 +1022,19 @@ export class FlightSession {
       this.callbacks.onMessage('No repair kits left.', 'bad');
       return;
     }
-    if (d.hull >= d.hullMax) {
-      this.callbacks.onMessage('Hull is already intact.', 'info');
+    const sys = this.state.ship.systems;
+    const damaged = sys.engines + sys.guns + sys.shields > 0;
+    if (d.hull >= d.hullMax && !damaged) {
+      this.callbacks.onMessage('Hull and systems are already intact.', 'info');
       return;
     }
     this.state.ship.repairKits -= 1;
     d.hull = Math.min(d.hullMax, d.hull + REPAIR_KIT.restore);
+    // A kit also patches up damaged systems.
+    sys.engines = sys.guns = sys.shields = 0;
+    this.applySystems();
     this.sfx('repair');
-    this.callbacks.onMessage(`Repair kit used: +${REPAIR_KIT.restore} hull`, 'good');
+    this.callbacks.onMessage(`Repair kit used: +${REPAIR_KIT.restore} hull${damaged ? ', systems patched up' : ''}`, 'good');
   }
 
   // ---------------------------------------------------------------- update
@@ -984,6 +1056,8 @@ export class FlightSession {
     for (const gun of this.guns) gun.tick(dt);
     this.updateProjectiles(dt);
     this.updateMissiles(dt);
+    this.updateDecoys(dt);
+    this.updateMines(dt);
     this.updateLoot(dt);
     this.updateDrones(dt);
     if (this.alive) this.collide(this.player, this.playerDurability, true);
@@ -1371,7 +1445,18 @@ export class FlightSession {
       for (const n of this.npcs) {
         if (n.durability.hull <= 0 || !boltMayHit(byPlayer ? 'player' : side, n.side, n.target.id === this.selectedId, n.foe === 'player')) continue;
         if (segmentHitsSphere(from, to, n.body.position, n.art.radius)) {
+          if (owner) n.lastHitBy = owner.id;
           this.damageNpc(n, p.damage, to, p.damageType, byPlayer);
+          return true;
+        }
+      }
+      // Bolts set mines off (anyone's but the raiders').
+      if (side !== 'raider') {
+        for (let i = 0; i < this.mines.length; i++) {
+          const mine = this.mines[i]!;
+          if (!segmentHitsSphere(from, to, mine.position, 8)) continue;
+          mine.hull -= p.damage;
+          if (mine.hull <= 0) this.detonateMine(i);
           return true;
         }
       }
@@ -1396,7 +1481,9 @@ export class FlightSession {
   private updateMissiles(dt: number): void {
     for (let i = this.missiles.length - 1; i >= 0; i--) {
       const m = this.missiles[i]!;
-      if (m.target) m.target.alive = this.npcs.some((n) => n.id === m.target!.id && n.durability.hull > 0);
+      const onPlayer = m.target === this.playerMissileTarget;
+      if (onPlayer) m.target!.alive = this.alive;
+      else if (m.target && !m.target.id.startsWith('decoy:')) m.target.alive = this.npcs.some((n) => n.id === m.target!.id && n.durability.hull > 0);
       let result = updateMissile(m, dt, m.maxSpeed, m.turnRate);
       // Unguided rounds hit whatever they fly into.
       let struck = m.target ? this.npcs.find((n) => n.id === m.target!.id) : undefined;
@@ -1405,7 +1492,8 @@ export class FlightSession {
         if (struck) result = 'hit';
       }
       if (!result) continue;
-      if (result === 'hit' && struck) this.damageNpc(struck, m.damage, m.position, undefined, true);
+      if (result === 'hit' && onPlayer) this.damagePlayer(m.damage, m.position.clone(), 'kinetic');
+      else if (result === 'hit' && struck) this.damageNpc(struck, m.damage, m.position, undefined, m.ownerId === PLAYER_ID);
       this.spawnEffect(createExplosion(m.position.clone(), result === 'hit' ? 5 : 3, this.ctx));
       this.sfx('explosion-small', 0.6);
       this.system.scene.remove(m.art.object);
@@ -1431,7 +1519,7 @@ export class FlightSession {
       l.art.object.position.copy(l.position);
       if (this.alive && d < 30) {
         if (l.recover) this.callbacks.onRecovered?.(l.recover);
-        else this.callbacks.onLoot(l.value, l.cargo);
+        else this.callbacks.onLoot(l.value, l.cargo, l.gear);
         this.sfx('pickup');
         this.removeLoot(i);
       } else if (l.life <= 0) {
@@ -1449,7 +1537,7 @@ export class FlightSession {
     this.loot.splice(i, 1);
   }
 
-  private spawnLoot(position: THREE.Vector3, value: number, extra: { cargo?: { commodity: CommodityId; qty: number }; recover?: { jobId: string; item: string } } = {}): void {
+  private spawnLoot(position: THREE.Vector3, value: number, extra: { cargo?: { commodity: CommodityId; qty: number }; recover?: { jobId: string; item: string }; gear?: string } = {}): void {
     const art = createCargoPod(this.ctx);
     const pos = position.clone();
     art.object.position.copy(pos);
@@ -1462,15 +1550,22 @@ export class FlightSession {
       velocity: extra.recover ? new THREE.Vector3() : new THREE.Vector3(this.rand() - 0.5, this.rand() - 0.5, this.rand() - 0.5).multiplyScalar(20),
       value,
       ...(cargo ? { cargo } : {}),
+      ...(extra.gear ? { gear: extra.gear } : {}),
       ...(extra.recover ? { recover: extra.recover.jobId } : {}),
       life: extra.recover ? Infinity : 240,
       target: {
         id,
-        name: extra.recover ? `${extra.recover.item.charAt(0).toUpperCase()}${extra.recover.item.slice(1)}` : cargo ? 'Cargo pod' : 'Salvage pod',
+        name: extra.recover ? `${extra.recover.item.charAt(0).toUpperCase()}${extra.recover.item.slice(1)}` : extra.gear ? 'Equipment crate' : cargo ? 'Cargo pod' : 'Salvage pod',
         kind: 'loot',
         position: pos,
         radius: 4,
-        subtitle: extra.recover ? 'In the wreckage · fly close to tractor it in' : cargo ? `${cargo.qty} × ${COMMODITIES[cargo.commodity].name.toLowerCase()} · fly close to collect` : 'Salvaged components · fly close to collect',
+        subtitle: extra.recover
+          ? 'In the wreckage · fly close to tractor it in'
+          : extra.gear
+            ? `${getCatalog().gearById.get(extra.gear)?.name ?? 'Salvaged equipment'} · fly close to collect`
+            : cargo
+              ? `${cargo.qty} × ${COMMODITIES[cargo.commodity].name.toLowerCase()} · fly close to collect`
+              : 'Salvaged components · fly close to collect',
         dataClass: 'fictional',
         alive: true,
         cycle: true,
@@ -1490,6 +1585,11 @@ export class FlightSession {
     const r = applyDamage(this.playerDurability, amount, type);
     const shieldHit = r.absorbedByShield > 0;
     this.playerArt.flashShield(shieldHit ? 0.8 : 0.2);
+    // Hull hits flash the screen's edges, and may damage a system.
+    if (r.hullDamage > 0) {
+      this.hullFlash = Math.min(1, this.hullFlash + 0.35 + r.hullDamage / 40);
+      if (!r.destroyed) this.maybeHitSystem(r.hullDamage);
+    } else this.shieldFlash = Math.min(1, this.shieldFlash + 0.3);
     this.spawnEffect(createImpactSpark(at.clone(), shieldHit ? '#7fd8ff' : '#ffb070', this.ctx));
     this.sfx(shieldHit ? 'player-hit-shield' : 'player-hit-hull', 0.8);
     this.chase.addShake(shieldHit ? 0.25 : 0.6);
@@ -1557,6 +1657,14 @@ export class FlightSession {
     }
     if (n.escort) this.callbacks.onEscortLost?.(n.escort.jobId);
     else if (n.role === 'trader') this.callbacks.onMessage(`${n.name} was destroyed.`, 'bad');
+    if (n.side === 'raider' && !n.den && !n.hunter && !n.encounter) this.dropLoot(n);
+    if (n.wingman?.crewId) {
+      this.callbacks.onMessage(`${n.name}’s ship is gone; ${n.name} ejected and leaves your wing.`, 'bad');
+      this.callbacks.onWingmanLost?.(n.wingman.crewId);
+    }
+    const killer = n.lastHitBy ? this.npcs.find((x) => x.id === n.lastHitBy) : undefined;
+    if (killer?.wingman?.crewId && n.side === 'raider') this.chatter('wing-kill', killer.name);
+    else if (n.side === 'raider' && !n.den && this.rand() < 0.35) this.chatter('raider-down', 'Wake raider');
     const byPlayer = this.time - n.playerHitAt < 30;
     if (byPlayer && n.side === 'lawful' && n.role !== 'raider') {
       // Piracy: a hauler's hold spills a pod or two of its cargo.
@@ -1708,6 +1816,7 @@ export class FlightSession {
     const hullMax = 140 * diff.enemyHealth;
     const npc: NpcShip = {
       id,
+      modelId: RAIDER_MODEL_ID,
       name: 'Hollow Wake raider',
       faction,
       body,
@@ -1782,6 +1891,7 @@ export class FlightSession {
       for (const w of t.wrecks ?? []) this.spawnWreck(w);
       for (const a of t.assaults ?? []) this.spawnAssault(a);
       for (const d of t.defences ?? []) this.startSweep(d);
+      this.spawnCrew(t.crew ?? []);
     }
     // Escorted ships: the ambush comes part-way along the route.
     const along = (n: NpcShip) => 1 - n.body.position.distanceTo(n.trader!.destination.point) / Math.max(1, n.escort!.start.distanceTo(n.trader!.destination.point));
@@ -1818,6 +1928,7 @@ export class FlightSession {
     }
     this.refreshDenTargets();
     this.updateSweeps(dt);
+    this.watchDens();
     if (!timers.huntersSpawned && this.time > LAW.hunters.delay && this.alive && huntersIn(this.state, this.state.location.systemId)) {
       timers.huntersSpawned = true;
       this.spawnHunters();
@@ -1855,6 +1966,7 @@ export class FlightSession {
     const lawfulFaction = faction !== 'independent' ? faction : undefined;
     const npc: NpcShip = {
       id,
+      modelId,
       name,
       faction,
       role,
@@ -1905,8 +2017,15 @@ export class FlightSession {
       idle: 0,
       maydaySent: false,
     };
+    // Heavy raiders carry seekers (docs/PROCGEN.md §15).
+    if (side === 'raider' && COMBAT.seekers.classes.includes(model.class)) npc.seekerIn = this.seekerDelay();
     this.npcs.push(npc);
     return npc;
+  }
+
+  private seekerDelay(): number {
+    const [a, b] = COMBAT.seekers.first;
+    return a + this.rand() * (b - a);
   }
 
   private openDocks(): DockSite[] {
@@ -2014,6 +2133,7 @@ export class FlightSession {
       ace.pack = pack;
       ace.contract = c.jobId;
       ace.ace = true;
+      ace.seekerIn = this.seekerDelay();
       const d = ace.durability;
       d.hull = d.hullMax = d.hullMax * CONTRACTS.ace.toughness;
       d.shield = d.shieldMax = d.shieldMax * CONTRACTS.ace.toughness;
@@ -2227,6 +2347,7 @@ export class FlightSession {
       const position = home.clone().add(new THREE.Vector3(i * 160, i * 40, i * 90));
       const npc = this.makeNpc(LAW.hunters.model, 'raider', 'independent', position, this.player.position.clone().sub(position).normalize(), 'Bounty hunter · after your fines');
       npc.hunter = true;
+      npc.seekerIn = this.seekerDelay();
       npc.name = 'Bounty hunter';
       npc.target.name = 'Bounty hunter';
       npc.foe = 'player';
@@ -2265,9 +2386,10 @@ export class FlightSession {
    * A den under assault: gun turrets on a ring around it, the reactor on its far side (shielded
    * while a turret stands), raiders defending it, and a lawful wing flying with the player.
    */
-  private spawnAssault(a: NonNullable<TrafficSetup['assaults']>[number]): void {
+  private spawnAssault(a: { jobId: string | null; locationId: string; turretsLeft: number; wing?: FactionId | null }): void {
     const site = this.system.dock(a.locationId);
     if (!site || this.downDens.has(a.locationId)) return;
+    this.denAlerted.add(a.locationId);
     const centre = site.def.position;
     const out = site.approach.clone().normalize();
     const side = new THREE.Vector3().crossVectors(out, new THREE.Vector3(0, 1, 0));
@@ -2279,25 +2401,32 @@ export class FlightSession {
       const dir = out.clone().multiplyScalar(Math.cos(angle)).addScaledVector(side, Math.sin(angle)).addScaledVector(lift, 0.15).normalize();
       this.makeDenPart('turret', a, centre.clone().addScaledVector(dir, site.radius + DENS.turretStandoff), dir);
     }
-    this.makeDenPart('reactor', a, centre.clone().addScaledVector(out, -(site.radius * 0.75 + 70)), out.clone().negate());
+    const reactorAt = centre.clone().addScaledVector(out, -(site.radius * 0.75 + 70));
+    this.makeDenPart('reactor', a, reactorAt, out.clone().negate());
+    // Mines on the way round to the reactor.
+    for (let i = 0; i < COMBAT.mines.atDens; i++) {
+      const dir = side.clone().multiplyScalar(Math.cos(i * 2.1)).addScaledVector(lift, Math.sin(i * 2.1) * 0.6).addScaledVector(out, -0.6).normalize();
+      this.spawnMine(reactorAt.clone().addScaledVector(dir, 220 + i * 40), Infinity);
+    }
     // The den's crews.
     const pack = ++this.packSerial;
     const home = site.def.position.clone().addScaledVector(out, site.radius + 1_200);
     this.packHome.set(pack, home);
     const pool = RAIDERS[DENS.guards.level];
     for (let i = 0; i < DENS.guards.count; i++) this.spawnGuard(pool[i % pool.length]!, pack, home.clone().add(this.tmp.set(this.rand() - 0.5, this.rand() - 0.5, this.rand() - 0.5).multiplyScalar(600)));
-    // The wing, alongside the player.
-    for (let i = 0; i < DENS.wing.count; i++) {
+    // The wing, alongside the player (on an assault a lawful faction asked for).
+    const wing = a.wing;
+    for (let i = 0; wing && (wing === 'sta' || wing === 'frontier') && i < DENS.wing.count; i++) {
       const offset = new THREE.Vector3(i % 2 === 0 ? 70 : -70, 12, 60 + i * 30);
       const position = offset.clone().applyQuaternion(this.player.quaternion).add(this.player.position);
-      const npc = this.makeNpc(DENS.wing.model, 'patrol', 'sta', position, this.player.forward(new THREE.Vector3()), `${FACTIONS.sta.shortName} wing · with you`);
+      const npc = this.makeNpc(FLEETS[wing].patrols[0] ?? DENS.wing.model, 'patrol', wing, position, this.player.forward(new THREE.Vector3()), `${FACTIONS[wing].shortName} wing · with you`);
       npc.name = `Wing ${i + 1}`;
       npc.target.name = `Wing ${i + 1}`;
       npc.wingman = { offset };
     }
   }
 
-  private makeDenPart(part: 'turret' | 'reactor', a: { jobId: string; locationId: string }, position: THREE.Vector3, facing: THREE.Vector3): NpcShip {
+  private makeDenPart(part: 'turret' | 'reactor', a: { jobId: string | null; locationId: string }, position: THREE.Vector3, facing: THREE.Vector3): NpcShip {
     const art = part === 'turret' ? createTurretArt(this.ctx) : createReactorArt(this.ctx);
     this.system.scene.add(art.object);
     const body = new ShipBody({ ...RAIDER_SHIP, maxSpeed: 0, boostSpeed: 0, strafeSpeed: 0, reverseSpeed: 0, cruiseSpeed: 0, radius: art.radius });
@@ -2312,6 +2441,7 @@ export class FlightSession {
     const name = part === 'turret' ? 'Den turret' : `${getLocation(a.locationId).name} reactor`;
     const npc: NpcShip = {
       id,
+      modelId: `den.${part}`,
       name,
       faction: 'hollow-wake',
       role: 'raider',
@@ -2340,11 +2470,12 @@ export class FlightSession {
         cycle: true,
       },
       foe: null,
-      bounty: 0,
+      // Turrets knocked out on the player's own account pay a bounty; a contract's pay covers them otherwise.
+      bounty: part === 'turret' && !a.jobId ? DENS.turretBounty : 0,
       playerHitAt: -Infinity,
       idle: 0,
       maydaySent: false,
-      contract: a.jobId,
+      ...(a.jobId ? { contract: a.jobId } : {}),
       den: { locationId: a.locationId, part },
     };
     this.npcs.push(npc);
@@ -2388,16 +2519,26 @@ export class FlightSession {
     for (const x of [...this.npcs]) if (x.den?.locationId === locationId && x !== n) this.removeNpc(x);
     this.refreshDenTargets();
     this.callbacks.onMessage(`${getLocation(locationId).name}’s reactor is down. The den is dark.`, 'good');
-    this.callbacks.onDenDestroyed?.(locationId, n.contract!);
+    for (let i = this.mines.length - 1; i >= 0; i--) if (this.mines[i]!.position.distanceTo(n.body.position) < 1_500) this.removeMine(i);
+    this.callbacks.onDenDestroyed?.(locationId, n.contract ?? null);
   }
 
   /** A wingman keeps station off the player's wing and goes for raiders (and den turrets) near the player. */
   private flyWingman(n: NpcShip, dt: number): void {
     const w = n.wingman!;
-    const foe = this.alive && !this.busy ? this.nearestShip(this.player.position, 3_000, (x) => x.side === 'raider' && !x.hunter && !(x.den?.part === 'reactor' && this.turretsStanding(x.den.locationId))) : null;
+    // Left far behind (a lane, a long cruise), a wingman catches up.
+    if (!this.busy && n.body.position.distanceTo(this.player.position) > 6_000) {
+      n.body.position.copy(w.offset).applyQuaternion(this.player.quaternion).add(this.player.position);
+      n.body.velocity.copy(this.player.velocity);
+    }
+    if (w.crewId && n.durability.shield <= 0 && this.time - (w.hurtAt ?? -99) > 20) {
+      w.hurtAt = this.time;
+      this.chatter('wing-hurt', n.name);
+    }
+    const foe = this.alive && !this.busy ? this.nearestShip(this.player.position, 3_000, (x) => x.side === 'raider' && !x.hunter && !this.raiderSparesPlayer(x) && !(x.den?.part === 'reactor' && this.turretsStanding(x.den.locationId))) : null;
     n.foe = foe;
     if (foe) {
-      this.fightNpc(n, foe.body, dt, TRAFFIC.npcDamage);
+      this.fightNpc(n, foe.body, dt, w.damage ?? TRAFFIC.npcDamage);
       return;
     }
     for (const g of n.guns) g.tick(dt);
@@ -2464,6 +2605,248 @@ export class FlightSession {
     }
   }
 
+  // ---------------------------------------------------------------- combat depth (docs/PROCGEN.md §15)
+
+  /** Damage to the ship's systems slows the engines, the guns' fire and the shield. */
+  private applySystems(): void {
+    const sys = this.state.ship.systems;
+    const r = COMBAT.systems;
+    const e = 1 - r.engines * sys.engines;
+    const b = this.baseFlight;
+    this.player.params = { ...b, maxSpeed: b.maxSpeed * e, boostSpeed: b.boostSpeed * e, cruiseSpeed: b.cruiseSpeed * e, strafeSpeed: b.strafeSpeed * e };
+    this.guns.forEach((g, i) => (g.profile = { ...g.profile, shotsPerSecond: this.baseGunRates[i]! * (1 - r.guns * sys.guns) }));
+    const d = this.playerDurability;
+    d.shieldRegen = this.baseShield.regen * (1 - r.shields.regen * sys.shields);
+    d.shieldMax = this.baseShield.capacity * (1 - r.shields.capacity * sys.shields);
+    d.shield = Math.min(d.shield, d.shieldMax);
+  }
+
+  /** A hull hit may damage a system: engines, guns or shields. */
+  private maybeHitSystem(hullDamage: number): void {
+    if (this.rand() >= Math.min(0.6, hullDamage * COMBAT.systems.chancePerPoint)) return;
+    const kinds = ['engines', 'guns', 'shields'] as const;
+    const k = kinds[Math.floor(this.rand() * kinds.length)]!;
+    const [lo, hi] = COMBAT.systems.severity;
+    const sys = this.state.ship.systems;
+    sys[k] = Math.min(1, sys[k] + lo + this.rand() * (hi - lo));
+    this.applySystems();
+    this.sfx('alert', 0.7);
+    this.callbacks.onMessage(`${k === 'engines' ? 'Engines' : k === 'guns' ? 'Guns' : 'Shield generator'} damaged (${Math.round(sys[k] * 100)}%)! A repair kit or a dock will fix it.`, 'bad');
+  }
+
+  /** Raiders who carry seekers fire one at the player now and then, when in range and roughly facing. */
+  private tickSeeker(n: NpcShip, dt: number): void {
+    if (n.seekerIn === undefined || !this.alive || this.busy) return;
+    n.seekerIn -= dt;
+    if (n.seekerIn > 0) return;
+    const to = this.tmp.copy(this.player.position).sub(n.body.position);
+    const d = to.length();
+    const [lo, hi] = COMBAT.seekers.range;
+    if (d < lo || d > hi || n.body.forward(this.tmp2).angleTo(to) > COMBAT.seekers.cone) return;
+    const [a, b] = COMBAT.seekers.every;
+    n.seekerIn = a + this.rand() * (b - a);
+    const art = createMissileArt(this.ctx);
+    this.system.scene.add(art.object);
+    const dir = n.body.forward(new THREE.Vector3());
+    const pos = n.body.position.clone().addScaledVector(dir, n.art.radius + 4);
+    this.missiles.push({
+      art,
+      position: pos,
+      direction: dir,
+      speed: Math.max(60, n.body.velocity.length()),
+      target: this.playerMissileTarget,
+      ownerId: n.id,
+      damage: COMBAT.seekers.damage * DIFFICULTY[this.settings.difficulty].enemyDamage,
+      life: COMBAT.seekers.lifetime,
+      alive: true,
+      maxSpeed: COMBAT.seekers.speed,
+      turnRate: COMBAT.seekers.turnRate,
+    });
+    this.sfx('missile-launch', 0.7);
+    this.sfx('alert', 0.8);
+    this.callbacks.onMessage(`Seeker inbound! Turn hard or drop a decoy (${this.state.ship.decoys} left).`, 'bad');
+    this.chatter('missile', n.name);
+  }
+
+  /** Seekers homing on the player right now. */
+  private get incomingSeekers(): number {
+    return this.missiles.filter((m) => m.target === this.playerMissileTarget).length;
+  }
+
+  /** A decoy flare: seekers homing on the player nearby may go for it instead. */
+  private launchDecoy(): void {
+    if (!this.alive || this.busy) return;
+    if (this.state.ship.decoys <= 0) {
+      this.callbacks.onMessage('No decoys left.', 'bad');
+      return;
+    }
+    if (this.decoyCooldown > 0) return;
+    this.state.ship.decoys -= 1;
+    this.decoyCooldown = COMBAT.decoys.cooldown;
+    const position = this.player.position.clone().addScaledVector(this.player.up(this.tmp), -3).addScaledVector(this.player.forward(this.tmp2), -10);
+    const velocity = this.player.velocity.clone().multiplyScalar(0.4).add(new THREE.Vector3(this.rand() - 0.5, this.rand() - 0.5, this.rand() - 0.5).multiplyScalar(60));
+    const art = createFlareArt(this.ctx);
+    art.object.position.copy(position);
+    this.system.scene.add(art.object);
+    const target: MissileTarget = { id: `decoy:${++this.lootSerial}`, position, velocity, radius: 30, alive: true };
+    this.decoys.push({ art, position, velocity, life: COMBAT.decoys.lifetime, target });
+    let fooled = 0;
+    for (const m of this.missiles) {
+      if (m.target !== this.playerMissileTarget || m.position.distanceTo(this.player.position) > COMBAT.decoys.range) continue;
+      if (this.rand() < COMBAT.decoys.chance) {
+        m.target = target;
+        fooled++;
+      }
+    }
+    this.sfx('missile-launch', 0.35);
+    this.callbacks.onMessage(fooled ? `Decoy away: ${fooled === 1 ? 'the seeker is' : `${fooled} seekers are`} chasing it.` : 'Decoy away.', fooled ? 'good' : 'info');
+  }
+
+  private updateDecoys(dt: number): void {
+    this.decoyCooldown = Math.max(0, this.decoyCooldown - dt);
+    for (let i = this.decoys.length - 1; i >= 0; i--) {
+      const d = this.decoys[i]!;
+      d.life -= dt;
+      d.velocity.multiplyScalar(Math.exp(-0.6 * dt));
+      d.position.addScaledVector(d.velocity, dt);
+      d.art.object.position.copy(d.position);
+      d.art.setLife(d.life / COMBAT.decoys.lifetime);
+      d.art.update?.(dt, this.time, this.camera);
+      if (d.life > 0) continue;
+      d.target.alive = false;
+      this.system.scene.remove(d.art.object);
+      d.art.dispose();
+      this.decoys.splice(i, 1);
+    }
+  }
+
+  /** A mine: it arms after a moment and goes off when a ship comes close, or when shot. */
+  private spawnMine(at: THREE.Vector3, life: number = COMBAT.mines.life): void {
+    const art = createMineArt(this.ctx);
+    art.object.position.copy(at);
+    this.system.scene.add(art.object);
+    const position = at.clone();
+    this.mines.push({
+      art,
+      position,
+      armIn: COMBAT.mines.arm,
+      life,
+      hull: COMBAT.mines.hull,
+      target: { id: `mine:${++this.lootSerial}`, name: 'Mine', kind: 'ship', position, radius: 6, subtitle: 'Proximity mine · shoot it or keep clear', dataClass: 'fictional', hostile: true, alive: true, cycle: false },
+    });
+  }
+
+  private updateMines(dt: number): void {
+    const m = COMBAT.mines;
+    for (let i = this.mines.length - 1; i >= 0; i--) {
+      const mine = this.mines[i]!;
+      mine.life -= dt;
+      const wasArmed = mine.armIn <= 0;
+      mine.armIn -= dt;
+      if (!wasArmed && mine.armIn <= 0) mine.art.setArmed(true);
+      mine.art.update?.(dt, this.time, this.camera);
+      if (mine.life <= 0) {
+        this.removeMine(i);
+        continue;
+      }
+      if (mine.armIn > 0) continue;
+      const near =
+        (this.alive && !this.busy && mine.position.distanceTo(this.player.position) < m.trigger) ||
+        this.npcs.some((n) => !n.den && n.durability.hull > 0 && n.body.position.distanceTo(mine.position) < m.trigger);
+      if (near) this.detonateMine(i);
+    }
+  }
+
+  /** The blast hurts every ship within reach, less at the edge. */
+  private detonateMine(i: number): void {
+    const mine = this.mines[i]!;
+    const m = COMBAT.mines;
+    const at = mine.position.clone();
+    this.removeMine(i);
+    this.spawnEffect(createExplosion(at, 7, this.ctx));
+    if (at.distanceTo(this.player.position) < 3_000) this.sfx('explosion-small', 0.8);
+    const falloff = (d: number) => Math.max(0, 1 - d / m.blast);
+    const dp = at.distanceTo(this.player.position);
+    if (this.alive && dp < m.blast) this.damagePlayer(m.damage * falloff(dp) * DIFFICULTY[this.settings.difficulty].enemyDamage, this.player.position.clone(), 'kinetic');
+    for (const n of [...this.npcs]) {
+      const d = n.body.position.distanceTo(at);
+      if (!n.den && n.durability.hull > 0 && d < m.blast) this.damageNpc(n, m.damage * falloff(d), n.body.position.clone(), 'kinetic');
+    }
+  }
+
+  private removeMine(i: number): void {
+    const mine = this.mines[i]!;
+    mine.target.alive = false;
+    if (this.selectedId === mine.target.id) this.selectedId = null;
+    this.system.scene.remove(mine.art.object);
+    mine.art.dispose();
+    this.mines.splice(i, 1);
+  }
+
+  /** A raider's threat level, from its ship: 1 for a light fighter, up to 3 for a heavy one of a higher class. */
+  private raiderLevel(n: NpcShip): 1 | 2 | 3 {
+    const model = shipModel(n.modelId);
+    return Math.max(1, Math.min(3, model.tier + (model.class === 'heavy-fighter' ? 1 : 0))) as 1 | 2 | 3;
+  }
+
+  /** Salvaged equipment a raider of this level might carry: a catalogue item up to a class above its own. */
+  private pickGear(level: 1 | 2 | 3): string | null {
+    const pool = getCatalog().gear.filter((g) => g.tier <= Math.min(3, level + 1) && g.tier >= Math.max(1, level - 1));
+    return pool.length ? pool[Math.floor(this.rand() * pool.length)]!.id : null;
+  }
+
+  /** Beyond salvage: a cargo pod now and then, and rarely an equipment crate (aces always carry one). */
+  private dropLoot(n: NpcShip): void {
+    const L = COMBAT.loot;
+    const spill = () => n.body.position.clone().add(this.tmp.set((this.rand() - 0.5) * 50, (this.rand() - 0.5) * 20, (this.rand() - 0.5) * 50));
+    if (this.rand() < L.podChance) {
+      const [lo, hi] = L.podQty;
+      this.spawnLoot(spill(), 0, { cargo: { commodity: L.podGoods[Math.floor(this.rand() * L.podGoods.length)] as CommodityId, qty: lo + Math.floor(this.rand() * (hi - lo + 1)) } });
+    }
+    const level = n.ace ? 3 : this.raiderLevel(n);
+    if (n.ace || this.rand() < L.gearChance[level]) {
+      const gear = this.pickGear(level);
+      if (gear) this.spawnLoot(spill(), 0, { gear });
+    }
+  }
+
+  /** Hired wingmen: they launch with the player and keep station off their wing. */
+  private spawnCrew(crew: NonNullable<TrafficSetup['crew']>): void {
+    crew.forEach((w, i) => {
+      const offset = new THREE.Vector3(i % 2 === 0 ? -80 : 80, 14, 70 + i * 20);
+      const position = offset.clone().applyQuaternion(this.player.quaternion).add(this.player.position);
+      const npc = this.makeNpc(w.model, 'patrol', 'independent', position, this.player.forward(new THREE.Vector3()), 'Your wingman');
+      npc.name = w.name;
+      npc.target.name = w.name;
+      npc.target.hostile = false;
+      npc.wingman = { offset, crewId: w.id, damage: COMBAT.wingmen.skill[w.skill] };
+    });
+    if (crew.length) this.chatter('wing-join', crew[0]!.name, true);
+  }
+
+  /** A raider den wakes when a pilot it does not trust comes near: turrets, the reactor, mines and its crews. */
+  private watchDens(): void {
+    if (this.denOpen || !this.alive) return;
+    for (const d of this.denTargets) {
+      const id = d.locationId!;
+      if (this.denAlerted.has(id) || this.downDens.has(id)) continue;
+      if (d.position.distanceTo(this.player.position) > DENS.alert) continue;
+      this.denAlerted.add(id);
+      this.spawnAssault({ jobId: null, locationId: id, turretsLeft: DENS.turrets, wing: null });
+      this.sfx('alert');
+      this.callbacks.onMessage(`${getLocation(id).name}’s defences are live: turrets, mines and the reactor behind them.`, 'bad');
+      this.chatter('den-alert', 'Wake den', true);
+    }
+  }
+
+  /** Radio chatter, at most one line every few seconds. */
+  private chatter(kind: ChatterKind, speaker: string, force = false): void {
+    if (!force && this.time - this.chatterAt < COMBAT.chatterEvery) return;
+    this.chatterAt = this.time;
+    const lines = CHATTER[kind];
+    this.callbacks.onComm?.(speaker, lines[Math.floor(this.rand() * lines.length)]!);
+  }
+
   private canDock(site: DockSite): boolean {
     if (this.downDens.has(site.def.locationId)) return false;
     return site.dockable || (this.denOpen && getLocation(site.def.locationId).stationType === 'pirate-den');
@@ -2473,8 +2856,10 @@ export class FlightSession {
     if (n.hunter) {
       // Hunters want the player and nobody else; they wait out lanes and docking.
       n.foe = this.alive && !this.busy ? 'player' : null;
-      if (n.foe) this.fightNpc(n, this.player, dt, TRAFFIC.npcDamage * DIFFICULTY[this.settings.difficulty].enemyDamage);
-      else for (const g of n.guns) g.tick(dt);
+      if (n.foe) {
+        this.fightNpc(n, this.player, dt, TRAFFIC.npcDamage * DIFFICULTY[this.settings.difficulty].enemyDamage);
+        this.tickSeeker(n, dt);
+      } else for (const g of n.guns) g.tick(dt);
       return;
     }
     const pack = this.npcs.filter((x) => x.pack === n.pack && x.durability.hull > 0);
@@ -2498,11 +2883,13 @@ export class FlightSession {
         this.packAlerted.add(n.pack);
         this.sfx('alert');
         this.callbacks.onMessage(pack.length > 1 ? `${pack.length} Hollow Wake raiders closing in!` : 'A Hollow Wake raider is closing in!', 'bad');
+        this.chatter('raider-spot', 'Wake raider');
         if (this.autopilot.mode === 'goto') this.autopilot = { mode: 'none' };
         this.player.requestCruise(false);
       }
       const scale = TRAFFIC.npcDamage * (toPlayer ? DIFFICULTY[this.settings.difficulty].enemyDamage : 1) * (n.ace ? CONTRACTS.ace.damage : 1);
       this.fightNpc(n, toPlayer ? this.player : (n.foe as NpcShip).body, dt, scale);
+      if (toPlayer) this.tickSeeker(n, dt);
     } else {
       n.idle += dt;
       for (const g of n.guns) g.tick(dt);
@@ -2519,6 +2906,14 @@ export class FlightSession {
         n.body.requestCruise(false);
       }
       if (n.idle > TRAFFIC.packIdle) this.removeNpc(n);
+    }
+    // Breaking off, a raider may dump a mine behind it.
+    if (n.brain.state === 'escaped' && !n.mineRolled) {
+      n.mineRolled = true;
+      if (n.body.position.distanceTo(this.player.position) < 4_000) {
+        this.chatter('raider-flee', n.name);
+        if (this.rand() < COMBAT.mines.dropChance) this.spawnMine(n.body.position.clone().addScaledVector(n.body.forward(this.tmp), -40));
+      }
     }
     if (n.brain.state === 'escaped' && n.body.position.distanceTo(this.player.position) > 3_200) this.removeNpc(n);
   }
@@ -2643,6 +3038,13 @@ export class FlightSession {
     hud.missiles = launcher?.ammo ?? 0;
     hud.launcher = launcher ? roundsLabel(launcher.stats.kind) : null;
     hud.repairKits = this.state.ship.repairKits;
+    hud.decoys = this.state.ship.decoys;
+    hud.incoming = this.incomingSeekers;
+    hud.systems = { ...this.state.ship.systems };
+    // Hit flashes fade over about half a second.
+    this.hullFlash = Math.max(0, this.hullFlash - 0.05);
+    this.shieldFlash = Math.max(0, this.shieldFlash - 0.06);
+    hud.flash = { hull: this.settings.reducedMotion ? Math.min(0.4, this.hullFlash) : this.hullFlash, shield: this.settings.reducedMotion ? Math.min(0.3, this.shieldFlash) : this.shieldFlash };
     hud.inLane = this.autopilot.mode === 'lane' && this.autopilot.phase === 'travel';
     hud.encounterActive = (this.activeEncounter !== null && !this.activeEncounter.bypassed) || this.packEngaged();
     const ap = this.autopilot;
@@ -2739,7 +3141,11 @@ export class FlightSession {
     hud.nearestDock = near ? { name: near.site.name, distance: Math.max(0, near.distance - near.site.radius) } : null;
 
     const warnings: string[] = [];
+    if (hud.incoming && this.alive) warnings.push(`Seeker inbound${hud.incoming > 1 ? ` ×${hud.incoming}` : ''}: decoy [C]`);
     if (d.hull / d.hullMax < 0.3 && this.alive) warnings.push('Hull critical');
+    const sys = this.state.ship.systems;
+    const hurt = (['engines', 'guns', 'shields'] as const).filter((k) => sys[k] >= 0.05).map((k) => `${k === 'shields' ? 'shield' : k} ${Math.round(sys[k] * 100)}%`);
+    if (hurt.length && this.alive) warnings.push(`Damaged: ${hurt.join(', ')}`);
     if (this.drift) warnings.push('Engines off (drift)');
     if (hud.encounterActive) warnings.push('Hostile contact');
     hud.warnings = warnings;

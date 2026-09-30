@@ -100,7 +100,7 @@ export function boardFor(locationId: string, epoch: number): JobDef[] {
     const size = Math.min(b.max, b.base + ((loc.look?.size ?? 0.8) > b.largeAbove ? 1 : 0) + (loc.stationType && b.busy.includes(loc.stationType) ? 1 : 0));
     const kinds = Object.keys(weights) as ContractKind[];
     // No two contracts of a kind sending you to the same place on one board.
-    const placed = new Set<ContractKind>(['parcel', 'freight', 'escort', 'bounty', 'ace', 'smuggle', 'piracy']);
+    const placed = new Set<ContractKind>(['parcel', 'freight', 'escort', 'bounty', 'ace', 'smuggle', 'piracy', 'den']);
     const same = (a: JobDef, b: JobDef) =>
       a.title === b.title || (a.contract?.kind === b.contract?.kind && placed.has(a.contract!.kind) && a.destinationLocationId === b.destinationLocationId);
     for (let attempt = 0; out.length < size && attempt < size * 5; attempt++) {
@@ -160,6 +160,8 @@ function makeContract(kind: ContractKind, giver: FictionalLocation, r: Rng, id: 
       return smuggle(giver, r, id, clock);
     case 'piracy':
       return piracy(giver, r, id);
+    case 'den':
+      return denAssault(giver, r, id);
   }
 }
 
@@ -434,6 +436,31 @@ function ace(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
     difficultyNote: `An ace with two guards; ${routeNote(giver.systemId, system.id).toLowerCase()}`,
     destinationLocationId: near.id,
     contract: { kind: 'ace' },
+  };
+}
+
+/**
+ * A den assault (docs/PROCGEN.md §15): knock out a raider den within reach, its turrets and then
+ * its reactor, with a wing of the posting faction; the Wake does not forget it.
+ */
+function denAssault(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
+  if (giver.factionId !== 'sta' && giver.factionId !== 'frontier') return null;
+  const dens = ALL_LOCATIONS.filter((l) => l.stationType === 'pirate-den' && l.status === 'functional' && jumpsBetween(giver.systemId, l.systemId) <= CONTRACTS.maxJumps.den);
+  if (!dens.length) return null;
+  const den = r.pick(dens);
+  const faction = FACTIONS[giver.factionId];
+  const reward = pay(r, routeFeeBetween(giver.systemId, den.systemId), CONTRACTS.reward.den.base);
+  const common_ = common(giver, id, 3);
+  return {
+    ...common_,
+    repReward: { ...common_.repReward, 'hollow-wake': -15 },
+    title: `Knock out ${den.name}`,
+    briefing: `${den.name}, the raider den at ${getSystem(den.systemId).displayName}, keeps sending packs onto the lanes. Knock out its turrets, then its reactor; a ${faction.shortName} wing flies with you. A den knocked out stays dark for hours, and its system is quiet while it does.`,
+    objectives: [{ kind: 'assault', systemId: den.systemId, locationId: den.id, text: `Knock out ${den.name}: its turrets, then its reactor` }],
+    reward,
+    difficultyNote: `A raider den, its guns and its mines; ${routeNote(giver.systemId, den.systemId).toLowerCase()}`,
+    destinationLocationId: den.id,
+    contract: { kind: 'den' },
   };
 }
 

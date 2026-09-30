@@ -1,7 +1,7 @@
 import { maker, shipClass, shipModel } from '../../content/catalog.ts';
 import type { ShipPerformance } from '../../content/loadout.ts';
 import { buyShip, shipOffers, tradeInValue, type ShipOffer } from '../../economy/equipment.ts';
-import { gunSummary, performanceOf } from '../../economy/loadout.ts';
+import { gunSummary, newShipState, performanceOf } from '../../economy/loadout.ts';
 import { button, showModal, toast } from '../components.ts';
 import { formatCredits, h } from '../dom.ts';
 import { glyph } from '../glyphs.ts';
@@ -100,7 +100,7 @@ function comparison(now: ShipPerformance, next: ShipPerformance, nowGuns: string
 async function confirmShip(ctx: StationContext, o: ShipOffer, refresh: Refresh): Promise<void> {
   const { state, locationId } = ctx;
   const current = shipModel(state.ship.model);
-  const nextShip = { model: o.model.id, fittings: { ...o.model.stock }, hull: 0, shield: 0, ammo: {}, repairKits: 0, cargo: {} };
+  const nextShip = newShipState(o.model.id);
   const choice = await showModal({
     title: `Buy the ${o.model.name}?`,
     testId: 'ship-dialog',

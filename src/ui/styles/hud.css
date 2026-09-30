@@ -863,3 +863,39 @@
 .hud-wallet .row.hud-wanted[hidden] {
   display: none;
 }
+
+/* Hit flashes around the screen's edges (docs/PROCGEN.md §15): red for the hull, blue for the shield,
+   and an amber pulse while a seeker is homing in. */
+.hud-flash {
+  --hull: 0;
+  --shield: 0;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 calc(12vmin * var(--hull)) calc(3vmin * var(--hull)) rgba(255, 60, 40, calc(0.55 * var(--hull))),
+    inset 0 0 calc(10vmin * var(--shield)) calc(2vmin * var(--shield)) rgba(92, 200, 255, calc(0.35 * var(--shield)));
+}
+
+.hud-flash.seeker {
+  animation: seeker-pulse 0.8s ease-in-out infinite;
+}
+
+@keyframes seeker-pulse {
+  0%,
+  100% {
+    outline: 0 solid transparent;
+  }
+  50% {
+    outline: 3px solid rgba(255, 184, 64, 0.55);
+    outline-offset: -3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hud-flash.seeker {
+    animation: none;
+    outline: 2px solid rgba(255, 184, 64, 0.5);
+    outline-offset: -2px;
+  }
+}

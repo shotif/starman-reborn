@@ -1048,3 +1048,70 @@ export function createJumpTunnel(ctx: ArtContext): JumpTunnelArt {
     dispose: () => disposeObject(group),
   };
 }
+
+/* ------------------------------------------------------------------------------------------------
+ * Mines and decoy flares (docs/PROCGEN.md §15).
+ * ---------------------------------------------------------------------------------------------- */
+
+/** A proximity mine: a dark spiked ball with a slow red blink (faster once armed). */
+export function createMineArt(ctx: ArtContext): ArtObject<THREE.Group> & { setArmed(on: boolean): void } {
+  const group = new THREE.Group();
+  group.name = 'mine';
+  const kit = new Kit(1);
+  const seg = byQuality(ctx.quality, 8, 10, 12);
+  kit.add('metal', new THREE.SphereGeometry(3.2, seg, Math.max(6, seg - 2)), { color: '#2d2a28' });
+  const dirs: [number, number, number][] = [
+    [1, 0, 0],
+    [-1, 0, 0],
+    [0, 1, 0],
+    [0, -1, 0],
+    [0, 0, 1],
+    [0, 0, -1],
+  ];
+  for (const [x, y, z] of dirs) {
+    const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(x, y, z));
+    kit.add('hull', new THREE.ConeGeometry(0.7, 2.6, 6), { position: [x * 3.8, y * 3.8, z * 3.8], quaternion: q, color: '#6d2f28' });
+  }
+  kit.build(group, standardSet(ctx.quality));
+  const light = createLightPoints([{ p: [0, 3.4, 0], color: '#ff3a2a', size: 5, intensity: 2.2, blink: 0.8, duty: 0.25, min: 0.05 }], ctx, 3);
+  group.add(light.points);
+  return {
+    object: group,
+    setArmed(on) {
+      light.uniforms.uIntensity.value = on ? 1.4 : 0.6;
+    },
+    update(_dt, time) {
+      light.uniforms.uTime.value = time;
+      group.rotation.y = time * 0.3;
+    },
+    dispose: () => disposeObject(group),
+  };
+}
+
+/** A decoy flare: a hot white-orange burn that flickers and fades. */
+export function createFlareArt(ctx: ArtContext): ArtObject<THREE.Group> & { setLife(v: number): void } {
+  const group = new THREE.Group();
+  group.name = 'decoy-flare';
+  const glow = createLightPoints(
+    [
+      { p: [0, 0, 0], color: '#fff2c4', size: 26, intensity: 2.6 },
+      { p: [0, 0, 0], color: '#ff9a3a', size: 60, intensity: 1.2 },
+    ],
+    ctx,
+    6,
+  );
+  group.add(glow.points);
+  let life = 1;
+  return {
+    object: group,
+    setLife(v) {
+      life = Math.max(0, Math.min(1, v));
+    },
+    update(_dt, time) {
+      const flicker = ctx.reducedMotion ? 1 : 0.8 + 0.2 * Math.sin(time * 40) * Math.sin(time * 23);
+      glow.uniforms.uIntensity.value = life * flicker;
+      glow.uniforms.uTime.value = time;
+    },
+    dispose: () => disposeObject(group),
+  };
+}

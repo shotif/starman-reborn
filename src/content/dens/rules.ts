@@ -16,6 +16,14 @@ export const DENS = {
   guards: { level: 2 as const, count: 2 },
   /** Lawful ships flying with the player on an assault (the Transit Authority's wing). */
   wing: { count: 3, model: 'ship.light-fighter.1.halden' },
+  /** A den wakes its defences when a pilot it does not trust comes this close (m). */
+  alert: 6_000,
+  /** Knocking a den out on your own: the nearest lawful faction pays this and thinks better of you; the Wake does not. */
+  bounty: 2_500,
+  bountyStanding: 8,
+  wakeStanding: -15,
+  /** Each turret destroyed pays a bounty too. */
+  turretBounty: 150,
   /** A sweep coming for a den: waves of lawful ships from the jump beacon. */
   sweep: { waves: 2, models: ['ship.light-fighter.1.halden', 'ship.heavy-fighter.1.ares'], defenders: 2 },
 } as const;

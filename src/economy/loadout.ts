@@ -1,4 +1,5 @@
 import type { ShipState } from '../app/state.ts';
+import { COMBAT } from '../content/combat/rules.ts';
 import { findGear, getCatalog, shipModel } from '../content/catalog.ts';
 import { shipPerformance, type ShipPerformance } from '../content/loadout.ts';
 import type { GearItem, GunStats, LauncherKind, LauncherStats, ShipSlot } from '../content/types.ts';
@@ -110,7 +111,17 @@ export function gunSummary(ship: ShipState): string {
 /** A fresh ship from the yard: stock fittings, full hull and shield, launchers loaded. */
 export function newShipState(modelId: string): ShipState {
   const model = shipModel(modelId);
-  const ship: ShipState = { model: modelId, fittings: { ...model.stock }, hull: 0, shield: 0, ammo: {}, repairKits: 0, cargo: {} };
+  const ship: ShipState = {
+    model: modelId,
+    fittings: { ...model.stock },
+    hull: 0,
+    shield: 0,
+    ammo: {},
+    repairKits: 0,
+    decoys: COMBAT.decoys.starting,
+    systems: { engines: 0, guns: 0, shields: 0 },
+    cargo: {},
+  };
   const perf = performanceOf(ship);
   ship.hull = perf.hullMax;
   ship.shield = perf.shield?.capacity ?? 0;

@@ -73,6 +73,13 @@ export interface HudModel {
   missiles: number;
   launcher: string | null;
   repairKits: number;
+  /** Decoy flares left, and seekers homing on the player now (docs/PROCGEN.md §15). */
+  decoys: number;
+  incoming: number;
+  /** Damage to the ship's systems, 0–1. */
+  systems: { engines: number; guns: number; shields: number };
+  /** Screen-edge flashes after hits, 0–1 (hull red, shield blue). */
+  flash: { hull: number; shield: number };
   encounterActive: boolean;
   /** Closest dock in this system (name and distance), for the HUD. */
   nearestDock: { name: string; distance: number } | null;
@@ -104,6 +111,10 @@ export function emptyHudModel(): HudModel {
     missiles: 0,
     launcher: null,
     repairKits: 0,
+    decoys: 0,
+    incoming: 0,
+    systems: { engines: 0, guns: 0, shields: 0 },
+    flash: { hull: 0, shield: 0 },
     encounterActive: false,
     nearestDock: null,
   };
