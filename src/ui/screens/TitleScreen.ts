@@ -1,4 +1,4 @@
-import { hasProvisionalData } from '../../data/systems.ts';
+import { hasProvisionalData, SYSTEMS } from '../../data/systems.ts';
 import { button, dataBadge } from '../components.ts';
 import { h } from '../dom.ts';
 import '../styles/screens.css';
@@ -27,7 +27,7 @@ export function renderTitle(parent: HTMLElement, opts: TitleOptions): HTMLElemen
       h(
         'p',
         { class: 'title-tagline' },
-        'Fly, trade and fight across Sol, Alpha Centauri, Barnard’s Star, Sirius and Epsilon Eridani.',
+        `Fly, trade, mine and fight across ${SYSTEMS.length} real star systems, from Sol out to the frontier.`,
       ),
       h(
         'div',
