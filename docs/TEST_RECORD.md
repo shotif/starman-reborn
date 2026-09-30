@@ -13,8 +13,8 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | Astronomy data validation | `npm run data:validate` | Pass (2 warnings: data is provisional) |
 | Unit tests | `npm test` | Pass: 408 tests in 25 files |
 | Production build | `npm run build` | Pass |
-| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 10 passed (3 touch-only tests skipped) |
-| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 12 passed (1 desktop-only test skipped) |
+| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 12 passed (3 touch-only tests skipped) |
+| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 14 passed (1 desktop-only test skipped) |
 | Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 72 screenshots, no audit findings |
 
 ### Unit tests (Vitest)
