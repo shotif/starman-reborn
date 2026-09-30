@@ -1,10 +1,12 @@
-import { getLocation, getSystem } from '../../data/systems.ts';
+import { getLocation, getPlanet, getSystem } from '../../data/systems.ts';
+import type { ContractKind } from '../../content/contracts/rules.ts';
+import { COMMODITIES } from '../../economy/commodities.ts';
 import { welcomeText } from '../../economy/dockText.ts';
 import { FACTIONS, standingTier, TIER_LABEL } from '../../economy/factions.ts';
-import { canDeliver, describeObjective, jobsAt, type JobOffer } from '../../economy/jobs.ts';
+import { canDeliver, describeObjective, jobsAt, type JobDef, type JobOffer } from '../../economy/jobs.ts';
 import { button, dataBadge } from '../components.ts';
 import { formatCredits, h, signed } from '../dom.ts';
-import { glyph } from '../glyphs.ts';
+import { glyph, type GlyphName } from '../glyphs.ts';
 import { icon } from '../icons.ts';
 import type { StationContext } from './context.ts';
 
@@ -58,10 +60,36 @@ export function jobBoardContent(ctx: StationContext, selected: string | null, on
   );
 }
 
+const KIND_GLYPH: Record<ContractKind, GlyphName> = { freight: 'trader', supply: 'trader', parcel: 'jobs', bounty: 'gun', survey: 'science' };
+const KIND_LABEL: Record<ContractKind, string> = { freight: 'Freight', supply: 'Supply run', parcel: 'Courier', bounty: 'Bounty', survey: 'Survey' };
+
+/** Where a job sends you, for the card's subtitle. */
+function whereTo(job: JobDef): string {
+  const o = job.objectives[0];
+  if (o?.kind === 'scan' && job.contract) {
+    const planet = getPlanet(o.bodyId);
+    return `${planet?.displayName ?? o.bodyId}, ${getSystem(o.systemId).displayName}`;
+  }
+  if (job.contract?.kind === 'supply' && job.briefingPrices) {
+    const source = getLocation(job.briefingPrices.locationId);
+    return `buy at ${source.name}, ${getSystem(source.systemId).displayName}`;
+  }
+  const loc = getLocation(o?.kind === 'bounty' ? o.locationId : job.destinationLocationId);
+  return `${o?.kind === 'bounty' ? 'near' : 'to'} ${loc.name}, ${getSystem(loc.systemId).displayName}`;
+}
+
+/** The accept button's label: the reward, and the deposit when there is one. */
+export function acceptLabel(job: JobDef): string {
+  const deposit = job.contract?.deposit;
+  return `Accept · ${formatCredits(job.reward)}${deposit ? ` (deposit ${formatCredits(deposit)})` : ''}`;
+}
+
 function jobCard(o: JobOffer, expanded: boolean, onSelect: (id: string) => void): HTMLElement {
   const job = o.job;
-  const dest = getLocation(job.destinationLocationId);
-  const faction = FACTIONS[job.factionId];
+  const who = job.factionId ? FACTIONS[job.factionId].shortName : 'Independent';
+  const kind = job.contract?.kind;
+  const cargo = job.contract?.cargo;
+  const deliver = job.objectives.find((x) => x.kind === 'deliver');
   const head = h(
     'button',
     {
@@ -71,8 +99,8 @@ function jobCard(o: JobOffer, expanded: boolean, onSelect: (id: string) => void)
       'aria-selected': String(expanded),
       onClick: () => onSelect(job.id),
     },
-    glyph('jobs'),
-    h('span', null, h('span', { class: 'row-name' }, job.title), h('span', { class: 'row-sub' }, `${faction.shortName} · to ${dest.name}, ${getSystem(dest.systemId).displayName}`)),
+    glyph(kind ? KIND_GLYPH[kind] : 'jobs'),
+    h('span', null, h('span', { class: 'row-name' }, job.title), h('span', { class: 'row-sub' }, `${kind ? `${KIND_LABEL[kind]} · ` : ''}${who} · ${whereTo(job)}`)),
     h('span', { class: 'job-meta' }, h('span', { class: 'row-value num reward' }, formatCredits(job.reward)), pips(job.difficulty)),
   );
   const status =
@@ -95,6 +123,12 @@ function jobCard(o: JobOffer, expanded: boolean, onSelect: (id: string) => void)
             { class: 'kv' },
             h('dt', null, 'Difficulty'),
             h('dd', null, job.difficultyNote),
+            deliver && deliver.kind === 'deliver' ? h('dt', null, 'Cargo') : null,
+            deliver && deliver.kind === 'deliver'
+              ? h('dd', null, `${deliver.qty} ${COMMODITIES[deliver.commodity].name.toLowerCase()} · ${deliver.qty * COMMODITIES[deliver.commodity].unitSize} hold units${cargo ? ', loaded here' : ''}`)
+              : null,
+            job.contract?.deposit ? h('dt', null, 'Deposit') : null,
+            job.contract?.deposit ? h('dd', null, `${formatCredits(job.contract.deposit)}, returned with the reward`) : null,
             h('dt', null, 'Objectives'),
             h('dd', null, h('ol', { class: 'objectives' }, job.objectives.map((x) => h('li', null, x.text)))),
           ),

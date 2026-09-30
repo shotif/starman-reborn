@@ -8,7 +8,7 @@ import { shipModel } from '../content/catalog.ts';
 import { hashString } from '../content/random.ts';
 import { cargoCapacity } from '../economy/loadout.ts';
 import { adjustReputation, FACTIONS, standingTier, TIER_LABEL } from '../economy/factions.ts';
-import { acceptJob, advanceJobs, deliverJob, getJob, LIFELINE_ID, primaryObjective, type JobEvent } from '../economy/jobs.ts';
+import { acceptJob, advanceJobs, contractPacksIn, currentObjective, deliverJob, getJob, LIFELINE_ID, primaryObjective, type JobEvent } from '../economy/jobs.ts';
 import { welcomeText } from '../economy/dockText.ts';
 import { DesktopInput } from '../flight/input/DesktopInput.ts';
 import { emptyInput, type InputScheme } from '../flight/input/types.ts';
@@ -510,7 +510,7 @@ export class Game {
     const state = this.state!;
     const locationId = state.location.dockedAt;
     if (!locationId) return;
-    const job = getJob(jobId);
+    const job = getJob(jobId, state);
     const repBefore = { ...state.reputation };
     const welcomeBefore = welcomeText(state, locationId).text;
     const r = deliverJob(state, jobId, locationId);
@@ -580,7 +580,7 @@ export class Game {
   private announceJobEvents(events: JobEvent[]): void {
     for (const e of events) {
       if (e.kind === 'complete') {
-        const job = getJob(e.jobId);
+        const job = getJob(e.jobId, this.state!);
         this.sfx('mission-complete');
         toast(`${job.title} complete: +${formatCredits(job.reward)}`, 'good', 5000);
       } else {
@@ -629,9 +629,10 @@ export class Game {
           this.persist();
         },
         onBounty: (credits, name) => this.onBounty(credits, name),
+        onContractKill: (jobId) => this.onContractKill(jobId),
         onMessage: (text, tone) => toast(text, tone, 2600),
       },
-      traffic: trafficFor(state.location.systemId, this.renderer.quality),
+      traffic: { ...trafficFor(state.location.systemId, this.renderer.quality), contractPacks: contractPacksIn(state, state.location.systemId) },
     });
     const { width, height } = this.renderer.size;
     this.flight.setViewport(width, height);
@@ -655,13 +656,25 @@ export class Game {
     this.announceJobEvents(out.jobEvents);
     const deliverable = Object.keys(state.jobs).some((id) => {
       const p = state.jobs[id]!;
-      return p.status === 'active' && getJob(id).destinationLocationId === locationId;
+      return p.status === 'active' && getJob(id, state).destinationLocationId === locationId;
     });
     const news = out.clearanceGranted || hasVoyage(state);
     this.enterDocked(locationId, deliverable ? { room: 'bar', window: 'jobs', titleCard: true } : { room: 'deck', window: news ? 'arrival' : null, titleCard: true });
   }
 
   // ------------------------------------------------------------------ flight events
+
+  /** A raider of a bounty contract's pack went down: count it, and pay out when the pack is gone. */
+  private onContractKill(jobId: string): void {
+    const state = this.state!;
+    const progress = state.jobs[jobId];
+    if (!progress || progress.status !== 'active') return;
+    progress.kills = (progress.kills ?? 0) + 1;
+    const o = currentObjective(state, jobId);
+    if (o?.kind === 'bounty' && progress.kills < o.count) toast(`Contract target destroyed (${progress.kills}/${o.count})`, 'good', 3000);
+    this.announceJobEvents(advanceJobs(state, { dockedAt: state.location.dockedAt, systemId: state.location.systemId }));
+    this.persist();
+  }
 
   /** A raider from a pack destroyed by the player: the system's owner pays the bounty. */
   private onBounty(credits: number, name: string): void {
@@ -781,7 +794,7 @@ export class Game {
     const s = this.state!;
     for (const [id, p] of Object.entries(s.jobs)) {
       if (p.status !== 'active') continue;
-      const job = getJob(id);
+      const job = getJob(id, s);
       if (job.coversJumpFeesTo) return { systemId: job.coversJumpFeesTo, note: `Fee covered by contract: ${job.title}` };
     }
     return null;

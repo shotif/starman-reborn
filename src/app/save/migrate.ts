@@ -15,8 +15,10 @@ import { createNewGame, SAVE_VERSION, type CommodityId, type GameState } from '.
  *   ('shield-mk1' | 'shield-mk2'), gun ('pulse-mk1' | 'pulse-mk2'), missiles, repairKits, cargo }.
  * - v3: ships and equipment from the catalogue (src/content): ship { model, fittings, hull,
  *   shield, ammo, repairKits, cargo }.
- * - v4 (current): 21 goods instead of 3, and `markets` (stock the player's trades have moved at
- *   each station). See GameState in src/app/state.ts.
+ * - v4: 21 goods instead of 3, and `markets` (stock the player's trades have moved at each
+ *   station).
+ * - v5 (current): `contracts` (generated contracts the player accepted, as posted) and bounty
+ *   progress in `jobs`. See GameState in src/app/state.ts.
  */
 export interface SaveV1 {
   version: 1;
@@ -92,8 +94,13 @@ function migrateV2(old: Omit<GameState, 'version' | 'ship'> & { version: 2; ship
 }
 
 /** v3 → v4: markets start untouched (the three v3 goods keep their ids). */
-function migrateV3(old: Omit<GameState, 'version' | 'markets'> & { version: 3 }): GameState {
-  return { ...old, version: SAVE_VERSION, markets: {} };
+function migrateV3(old: Omit<GameState, 'version' | 'markets' | 'contracts'> & { version: 3 }): GameState {
+  return migrateV4({ ...old, version: 4, markets: {} });
+}
+
+/** v4 → v5: no generated contracts accepted yet. */
+function migrateV4(old: Omit<GameState, 'version' | 'contracts'> & { version: 4 }): GameState {
+  return { ...old, version: SAVE_VERSION, contracts: {} };
 }
 
 /** Upgrades any known save version to the current GameState. Throws SaveFormatError when unusable. */
@@ -108,6 +115,7 @@ export function migrateSave(raw: unknown): GameState {
     if (!isRecord(raw.ship)) throw new SaveFormatError('Save data is damaged: ship');
     data = migrateV2(raw as unknown as Parameters<typeof migrateV2>[0]);
   } else if (raw.version === 3) data = migrateV3(raw as unknown as Parameters<typeof migrateV3>[0]);
+  else if (raw.version === 4) data = migrateV4(raw as unknown as Parameters<typeof migrateV4>[0]);
   const state = data as GameState;
   assertValidState(state);
   return state;
@@ -141,6 +149,10 @@ export function assertValidState(s: GameState): void {
     if (!COMMODITY_IDS.includes(id as CommodityId) || !Number.isInteger(qty) || (qty as number) < 0) fail('cargo entry');
   }
   if (!Array.isArray(s.visitedSystems) || !Array.isArray(s.discoveredBodies)) fail('lists');
+  if (!isRecord(s.contracts)) fail('contracts');
+  for (const [id, c] of Object.entries(s.contracts)) {
+    if (!isRecord(c) || c.id !== id || !Array.isArray(c.objectives) || !c.objectives.length || !Number.isFinite(c.reward) || typeof c.title !== 'string') fail(`contract ${id}`);
+  }
   if (!isRecord(s.markets)) fail('markets');
   for (const [id, m] of Object.entries(s.markets)) {
     if (!LOCATION_IDS.has(id) || !isRecord(m) || !Number.isFinite(m.t) || !isRecord(m.stock)) fail(`market ${id}`);

@@ -54,11 +54,11 @@ export function journalContent(state: GameState): HTMLElement {
           { class: 'plain active-jobs' },
           active.map(([id]) => {
             const o = describeObjective(state, id);
-            return h('li', null, icon('objective'), h('strong', null, ` ${getJob(id).title}`), o ? h('div', { class: 'muted small' }, o.text) : null);
+            return h('li', null, icon('objective'), h('strong', null, ` ${getJob(id, state).title}`), o ? h('div', { class: 'muted small' }, o.text) : null);
           }),
         )
       : h('p', { class: 'list-empty' }, 'No active contracts. Check the job board in a station bar.'),
-    done.length ? h('p', { class: 'muted small' }, `Completed: ${done.map(([id]) => getJob(id).title).join(', ')}.`) : null,
+    done.length ? h('p', { class: 'muted small' }, `Completed: ${done.map(([id]) => getJob(id, state).title).join(', ')}.`) : null,
     h('div', { class: 'list-head' }, h('span', null, 'Standing'), dataBadge('fictional')),
     h(
       'dl',

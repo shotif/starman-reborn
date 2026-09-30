@@ -1,10 +1,11 @@
 import type { CommodityId } from '../content/economy/goods.ts';
 import { STARTER_SHIP_ID } from '../content/rules/index.ts';
+import type { JobDef } from '../economy/jobs.ts';
 import type { FactionId, SystemId, Vec3Tuple } from '../data/types.ts';
 import { newShipState } from '../economy/loadout.ts';
 
 /** Current save format version. Older saves are upgraded by src/app/save/migrate.ts. */
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 export type { CommodityId };
 
@@ -67,6 +68,8 @@ export interface JobProgress {
   objectiveIndex: number;
   acceptedAt: number;
   completedAt?: number;
+  /** Bounty contracts: raiders of the contract pack destroyed so far. */
+  kills?: number;
 }
 
 export type PirateOutcome = 'none' | 'destroyed' | 'bypassed' | 'escaped';
@@ -95,6 +98,8 @@ export interface GameState {
   knownMarkets: Record<string, MarketObservation>;
   /** Stock the player's trades have moved (economy/markets.ts). */
   markets: MarketState;
+  /** Generated contracts the player accepted, as posted (economy/contracts.ts). */
+  contracts: Record<string, JobDef>;
   /** Confirmed-planet / body ids the player has scanned. */
   discoveredBodies: string[];
   jobs: Record<string, JobProgress>;
@@ -133,6 +138,7 @@ export function createNewGame(seed: number = Math.floor(Math.random() * 2 ** 31)
     visitedLocations: [START_DOCK_ID],
     knownMarkets: {},
     markets: {},
+    contracts: {},
     discoveredBodies: [],
     jobs: {},
     pirateOutcome: 'none',

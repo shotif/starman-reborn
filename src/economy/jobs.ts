@@ -1,22 +1,28 @@
 import { applyCredits, type CommodityId, type GameState, type PriceQuote } from '../app/state.ts';
+import type { ContractKind } from '../content/contracts/rules.ts';
 import { getLocation, getSystem } from '../data/systems.ts';
 import type { FactionId, SystemId } from '../data/types.ts';
-import { cargoCount, removeCargo } from './cargo.ts';
+import { addCargo, cargoCount, removeCargo } from './cargo.ts';
 import { COMMODITIES } from './commodities.ts';
+import { CONTRACT_PREFIX, contractBlock, postedContract, postedContracts } from './contracts.ts';
 import { adjustReputation, FACTIONS } from './factions.ts';
+import { cargoCapacity } from './loadout.ts';
 
 export type Objective =
   | { kind: 'have-cargo'; commodity: CommodityId; qty: number; text: string }
   | { kind: 'dock'; locationId: string; text: string }
   | { kind: 'scan'; bodyId: string; systemId: SystemId; text: string }
   | { kind: 'deliver'; commodity: CommodityId; qty: number; locationId: string; text: string }
-  | { kind: 'visit'; locationId: string; text: string };
+  | { kind: 'visit'; locationId: string; text: string }
+  /** Destroy `count` raiders of a contract pack lurking near a location (progress in JobProgress.kills). */
+  | { kind: 'bounty'; systemId: SystemId; locationId: string; count: number; level: 1 | 2 | 3; text: string };
 
 export interface JobDef {
   id: string;
   title: string;
   giverLocationId: string;
-  factionId: FactionId;
+  /** Who posts it (null: an independent station). */
+  factionId: FactionId | null;
   /** Short original narrative hook (fiction). */
   briefing: string;
   objectives: Objective[];
@@ -30,6 +36,8 @@ export interface JobDef {
   coversJumpFeesTo?: SystemId;
   /** Prices the giver tells you about (shown as "posted in briefing"). */
   briefingPrices?: { locationId: string; prices: Partial<Record<CommodityId, PriceQuote>> };
+  /** Generated contracts (economy/contracts.ts): their kind, cargo loaded on acceptance and deposit. */
+  contract?: { kind: ContractKind; cargo?: { commodity: CommodityId; qty: number }; deposit?: number };
 }
 
 export const LIFELINE_ID = 'lifeline';
@@ -120,8 +128,9 @@ export const JOBS: readonly JobDef[] = [
   },
 ];
 
-export function getJob(id: string): JobDef {
-  const job = JOBS.find((j) => j.id === id);
+/** A hand-made job, or a generated contract the player has accepted (kept in the save). */
+export function getJob(id: string, state?: Pick<GameState, 'contracts'>): JobDef {
+  const job = JOBS.find((j) => j.id === id) ?? state?.contracts[id];
   if (!job) throw new Error(`Unknown job ${id}`);
   return job;
 }
@@ -135,7 +144,7 @@ export function jobLockReason(state: GameState, job: JobDef): string | null {
   if (req?.minRep && (state.reputation[req.minRep.faction] ?? 0) < req.minRep.value) {
     return `Requires Friendly standing with the ${FACTIONS[req.minRep.faction].name}`;
   }
-  return null;
+  return contractBlock(state, job);
 }
 
 export interface JobOffer {
@@ -144,9 +153,10 @@ export interface JobOffer {
   lockReason: string | null;
 }
 
-/** Jobs posted at a dock, with their availability. */
+/** Jobs posted at a dock (hand-made first, then the generated board), with their availability. */
 export function jobsAt(state: GameState, locationId: string): JobOffer[] {
-  return JOBS.filter((j) => j.giverLocationId === locationId).map((job) => {
+  const posted = [...JOBS.filter((j) => j.giverLocationId === locationId), ...postedContracts(state, locationId).map((c) => state.contracts[c.id] ?? c)];
+  return posted.map((job) => {
     const progress = state.jobs[job.id];
     if (progress) return { job, status: progress.status, lockReason: null };
     const lockReason = jobLockReason(state, job);
@@ -154,11 +164,23 @@ export function jobsAt(state: GameState, locationId: string): JobOffer[] {
   });
 }
 
+/** Completed generated contracts kept for the journal; older ones are forgotten. */
+const KEEP_COMPLETED_CONTRACTS = 30;
+
 export function acceptJob(state: GameState, jobId: string): { ok: boolean; message: string } {
-  const job = getJob(jobId);
+  const job = JOBS.find((j) => j.id === jobId) ?? postedContract(jobId);
+  if (!job) return { ok: false, message: 'That contract is no longer posted.' };
   if (state.jobs[jobId]) return { ok: false, message: 'Already accepted.' };
   const lock = jobLockReason(state, job);
   if (lock) return { ok: false, message: lock };
+  if (job.contract) {
+    // Generated contracts are copied into the save, so they never change under the player.
+    state.contracts[jobId] = structuredClone(job);
+    const { cargo, deposit } = job.contract;
+    if (deposit) applyCredits(state, -deposit, 'fee', `Deposit: ${job.title}`);
+    if (cargo) addCargo(state.ship.cargo, cargo.commodity, cargo.qty, cargoCapacity(state.ship));
+    forgetOldContracts(state);
+  }
   state.jobs[jobId] = { status: 'active', objectiveIndex: 0, acceptedAt: state.clock };
   if (job.briefingPrices) {
     const existing = state.knownMarkets[job.briefingPrices.locationId];
@@ -173,6 +195,16 @@ export function acceptJob(state: GameState, jobId: string): { ok: boolean; messa
   return { ok: true, message: `Accepted: ${job.title}` };
 }
 
+function forgetOldContracts(state: GameState): void {
+  const done = Object.entries(state.jobs)
+    .filter(([id, p]) => id.startsWith(CONTRACT_PREFIX) && p.status === 'complete')
+    .sort((a, b) => (b[1].completedAt ?? 0) - (a[1].completedAt ?? 0));
+  for (const [id] of done.slice(KEEP_COMPLETED_CONTRACTS)) {
+    delete state.jobs[id];
+    delete state.contracts[id];
+  }
+}
+
 export function activeJobIds(state: GameState): string[] {
   return Object.entries(state.jobs)
     .filter(([, p]) => p.status === 'active')
@@ -182,7 +214,7 @@ export function activeJobIds(state: GameState): string[] {
 export function currentObjective(state: GameState, jobId: string): Objective | null {
   const progress = state.jobs[jobId];
   if (!progress || progress.status !== 'active') return null;
-  return getJob(jobId).objectives[progress.objectiveIndex] ?? null;
+  return getJob(jobId, state).objectives[progress.objectiveIndex] ?? null;
 }
 
 export interface JobContext {
@@ -190,8 +222,10 @@ export interface JobContext {
   systemId: SystemId;
 }
 
-function objectiveSatisfied(state: GameState, o: Objective, ctx: JobContext): boolean {
+function objectiveSatisfied(state: GameState, jobId: string, o: Objective, ctx: JobContext): boolean {
   switch (o.kind) {
+    case 'bounty':
+      return (state.jobs[jobId]?.kills ?? 0) >= o.count;
     case 'have-cargo':
       return cargoCount(state.ship.cargo, o.commodity) >= o.qty;
     case 'dock':
@@ -219,11 +253,11 @@ export interface JobEvent {
 export function advanceJobs(state: GameState, ctx: JobContext): JobEvent[] {
   const events: JobEvent[] = [];
   for (const jobId of activeJobIds(state)) {
-    const job = getJob(jobId);
+    const job = getJob(jobId, state);
     const progress = state.jobs[jobId]!;
     while (progress.status === 'active') {
       const o = job.objectives[progress.objectiveIndex];
-      if (!o || !objectiveSatisfied(state, o, ctx)) break;
+      if (!o || !objectiveSatisfied(state, jobId, o, ctx)) break;
       progress.objectiveIndex += 1;
       if (progress.objectiveIndex >= job.objectives.length) {
         payOut(state, job);
@@ -241,6 +275,7 @@ function payOut(state: GameState, job: JobDef): { repChanges: Partial<Record<Fac
   progress.status = 'complete';
   progress.completedAt = state.clock;
   applyCredits(state, job.reward, 'reward', `${job.title} reward`);
+  if (job.contract?.deposit) applyCredits(state, job.contract.deposit, 'reward', `Deposit returned: ${job.title}`);
   const repChanges: Partial<Record<FactionId, number>> = {};
   for (const [faction, delta] of Object.entries(job.repReward) as [FactionId, number][]) {
     repChanges[faction] = adjustReputation(state.reputation, faction, delta);
@@ -261,7 +296,7 @@ export function deliverJob(
   locationId: string,
 ): { ok: false; message: string } | { ok: true; reward: number; repChanges: Partial<Record<FactionId, number>> } {
   if (!canDeliver(state, jobId, locationId)) return { ok: false, message: 'Nothing to deliver here.' };
-  const job = getJob(jobId);
+  const job = getJob(jobId, state);
   const o = currentObjective(state, jobId) as Extract<Objective, { kind: 'deliver' }>;
   removeCargo(state.ship.cargo, o.commodity, o.qty);
   const progress = state.jobs[jobId]!;
@@ -291,7 +326,7 @@ export interface ObjectiveSummary {
 export function describeObjective(state: GameState, jobId: string): ObjectiveSummary | null {
   const o = currentObjective(state, jobId);
   if (!o) return null;
-  const job = getJob(jobId);
+  const job = getJob(jobId, state);
   const here = state.location.systemId;
   const base = { jobId, jobTitle: job.title, targetBodyId: null as string | null };
   const inOtherSystem = (systemId: SystemId, then: string) =>
@@ -319,6 +354,10 @@ export function describeObjective(state: GameState, jobId: string): ObjectiveSum
         targetLocationId: null,
         targetBodyId: o.bodyId,
       };
+    case 'bounty': {
+      const kills = state.jobs[jobId]?.kills ?? 0;
+      return { ...base, text: inOtherSystem(o.systemId, `${o.text} (${kills}/${o.count})`), targetSystemId: o.systemId, targetLocationId: o.locationId };
+    }
     case 'deliver': {
       const loc = getLocation(o.locationId);
       const have = cargoCount(state.ship.cargo, o.commodity);
@@ -335,6 +374,18 @@ export function describeObjective(state: GameState, jobId: string): ObjectiveSum
   }
 }
 
+/** Raider packs the player's bounty contracts send them after in a system (raiders still to destroy). */
+export function contractPacksIn(state: GameState, systemId: SystemId): { jobId: string; locationId: string; count: number; level: 1 | 2 | 3 }[] {
+  const out: { jobId: string; locationId: string; count: number; level: 1 | 2 | 3 }[] = [];
+  for (const jobId of activeJobIds(state)) {
+    const o = currentObjective(state, jobId);
+    if (o?.kind !== 'bounty' || o.systemId !== systemId) continue;
+    const left = o.count - (state.jobs[jobId]?.kills ?? 0);
+    if (left > 0) out.push({ jobId, locationId: o.locationId, count: left, level: o.level });
+  }
+  return out;
+}
+
 /** The objective to show in the HUD: the first delivery chain first, then other jobs. */
 export function primaryObjective(state: GameState): ObjectiveSummary | null {
   const ids = activeJobIds(state).sort((a, b) => (a === LIFELINE_ID ? -1 : b === LIFELINE_ID ? 1 : 0));
@@ -348,7 +399,7 @@ export function primaryObjective(state: GameState): ObjectiveSummary | null {
 /** Contract fee coverage for the map (the first delivery pays the jump to Alpha Centauri). */
 export function activeFeeCoverage(state: GameState): { systemId: SystemId; note: string } | null {
   for (const id of activeJobIds(state)) {
-    const job = getJob(id);
+    const job = getJob(id, state);
     if (job.coversJumpFeesTo) {
       return { systemId: job.coversJumpFeesTo, note: `Fee covered by contract: ${job.title}` };
     }

@@ -13,7 +13,7 @@ import { glyph, type GlyphName } from '../glyphs.ts';
 import { icon } from '../icons.ts';
 import '../styles/dock.css';
 import '../styles/station.css';
-import { jobBoardContent, jobsNeedAttention, newsContent } from './bar.ts';
+import { acceptLabel, jobBoardContent, jobsNeedAttention, newsContent } from './bar.ts';
 import type { StationContext } from './context.ts';
 import { hasVoyage, journalContent, voyageReport } from './journal.ts';
 import { outfitterContent, shipStatus } from './outfitter.ts';
@@ -318,7 +318,7 @@ export class StationHub {
     const open = this.selectedJob ?? offers.find((o) => o.status === 'available')?.job.id ?? null;
     const offer = offers.find((o) => o.job.id === open && o.status === 'available');
     if (!offer) return null;
-    return button(`Accept · ${formatCredits(offer.job.reward)}`, { variant: 'primary', testId: `accept-${offer.job.id}`, onClick: () => this.ctx.acceptJob(offer.job.id) });
+    return button(acceptLabel(offer.job), { variant: 'primary', testId: `accept-${offer.job.id}`, onClick: () => this.ctx.acceptJob(offer.job.id) });
   }
 
   private windowContent(win: StationWindow): HTMLElement {

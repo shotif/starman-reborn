@@ -60,6 +60,8 @@ export interface FlightCallbacks {
   onLoot(credits: number): void;
   /** The player destroyed a raider from a pack (the opening raid reports through onEncounterEnd). */
   onBounty(credits: number, name: string): void;
+  /** A raider of a bounty contract's pack was destroyed. */
+  onContractKill(jobId: string): void;
   onMessage(text: string, tone: 'good' | 'bad' | 'info'): void;
 }
 
@@ -91,6 +93,8 @@ interface NpcShip {
   encounter?: EncounterDef;
   /** Raider pack number. */
   pack?: number;
+  /** Bounty contract this raider belongs to (its pack guards a marked spot and is never replaced). */
+  contract?: string;
   /** Who it is fighting. */
   foe: NpcShip | 'player' | null;
   /** Bounty paid when the player destroys it. */
@@ -106,6 +110,8 @@ interface NpcShip {
 export interface TrafficSetup {
   plan: TrafficPlan;
   owner: StationOwner | null;
+  /** Packs to spawn for the player's bounty contracts in this system: raiders left, threat level and where they lurk. */
+  contractPacks?: readonly { jobId: string; locationId: string; count: number; level: 1 | 2 | 3 }[];
 }
 
 interface Drone {
@@ -238,7 +244,7 @@ export class FlightSession {
   private readonly missileTargetCache = new Map<string, MissileTarget>();
   private readonly npcShots = new Map<string, number>();
   private readonly traffic: TrafficSetup | null;
-  private trafficTimers = { trader: 3, pack: 0, patrolsLaunched: false, populated: false, serial: 0 };
+  private trafficTimers = { trader: 3, pack: 0, patrolsLaunched: false, populated: false, contractsSpawned: false, serial: 0 };
 
   constructor(opts: {
     system: SystemScene;
@@ -1409,7 +1415,8 @@ export class FlightSession {
     this.spawnLoot(n.body.position, n.role === 'trader' ? 90 + Math.round(this.rand() * 160) : n.role === 'raider' ? 60 + Math.round(n.bounty * 0.25) : 40);
     if (n.role === 'trader') this.callbacks.onMessage(`${n.name} was destroyed.`, 'bad');
     const byPlayer = this.time - n.playerHitAt < 30;
-    if (n.side === 'raider' && !n.encounter && byPlayer) this.callbacks.onBounty(n.bounty, n.name);
+    if (n.contract) this.callbacks.onContractKill(n.contract);
+    else if (n.side === 'raider' && !n.encounter && byPlayer) this.callbacks.onBounty(n.bounty, n.name);
     this.removeNpc(n);
     if (this.activeEncounter && this.activeEncounter.npcId === n.id) {
       const def = this.activeEncounter.def;
@@ -1610,13 +1617,17 @@ export class FlightSession {
       this.spawnTrader(t);
       timers.trader = THREE.MathUtils.lerp(plan.traderInterval[0], plan.traderInterval[1], this.rand());
     }
+    if (!timers.contractsSpawned && this.time > 2) {
+      timers.contractsSpawned = true;
+      for (const c of t.contractPacks ?? []) this.spawnContractPack(c);
+    }
     if (!timers.patrolsLaunched && plan.patrolWings > 0 && this.time > 2) {
       timers.patrolsLaunched = true;
       for (let w = 0; w < plan.patrolWings; w++) this.spawnPatrolWing(t, w);
     }
     if (plan.packs) {
       timers.pack -= dt;
-      const packs = new Set(this.npcs.flatMap((n) => (n.pack === undefined ? [] : [n.pack]))).size;
+      const packs = new Set(this.npcs.flatMap((n) => (n.pack === undefined || n.contract ? [] : [n.pack]))).size;
       if (timers.pack <= 0 && packs < plan.packs.max && this.alive && !this.busy && this.autopilot.mode !== 'lane') {
         this.spawnPack(plan.packs);
         timers.pack = THREE.MathUtils.lerp(plan.packs.interval[0], plan.packs.interval[1], this.rand());
@@ -1787,6 +1798,26 @@ export class FlightSession {
     }
   }
 
+  /** A bounty contract's pack: it lurks at its marked spot until the player comes for it. */
+  private spawnContractPack(c: NonNullable<TrafficSetup['contractPacks']>[number]): void {
+    const site = this.system.dock(c.locationId);
+    if (!site || c.count <= 0) return;
+    const home = site.dockable
+      ? site.dockPoint.clone().addScaledVector(site.approach, 2_600).add(this.tmp.set(0, 500, 0))
+      : site.def.position.clone().addScaledVector(site.approach, site.radius + 1_400);
+    const pack = ++this.packSerial;
+    this.packHome.set(pack, home);
+    const pool = RAIDERS[c.level];
+    for (let i = 0; i < c.count; i++) {
+      const model = pool[i % pool.length]!;
+      const position = home.clone().add(this.tmp.set(this.rand() - 0.5, this.rand() - 0.5, this.rand() - 0.5).multiplyScalar(600));
+      const forward = this.tmp.set(this.rand() - 0.5, 0, this.rand() - 0.5).normalize().clone();
+      const npc = this.makeNpc(model, 'raider', 'hollow-wake', position, forward, `${FACTIONS['hollow-wake'].name} raider · contract target`);
+      npc.pack = pack;
+      npc.contract = c.jobId;
+    }
+  }
+
   private flyTrader(n: NpcShip): void {
     const brain = n.trader!;
     const cruise = brain.update(n.body, n.durability, n.controls, this.frameObstacles, () => {
@@ -1804,8 +1835,8 @@ export class FlightSession {
   }
 
   private flyPatrol(n: NpcShip, dt: number): void {
-    // The opening raid near Mars is the player's fight; patrols leave scripted raiders alone.
-    const foe = this.nearestShip(n.body.position, 4_000, (x) => x.side === 'raider' && !x.encounter);
+    // The opening raid and bounty-contract packs are the player's fights; patrols leave them alone.
+    const foe = this.nearestShip(n.body.position, 4_000, (x) => x.side === 'raider' && !x.encounter && !x.contract);
     n.foe = foe;
     if (foe) {
       this.fightNpc(n, foe.body, dt, TRAFFIC.npcDamage);
@@ -1844,6 +1875,12 @@ export class FlightSession {
     } else {
       n.idle += dt;
       for (const g of n.guns) g.tick(dt);
+      if (n.contract) {
+        // A contract pack holds its spot until someone comes for it.
+        flyTo(n.body, this.packHome.get(n.pack ?? -1) ?? n.body.position, { arriveDistance: 500, allowCruise: false, maxThrottle: 0.35 }, n.controls);
+        n.body.requestCruise(false);
+        return;
+      }
       if (n.patrol) {
         n.body.requestCruise(n.patrol.brain.update(n.body, n.controls, this.frameObstacles, n.patrol.offset));
       } else {
