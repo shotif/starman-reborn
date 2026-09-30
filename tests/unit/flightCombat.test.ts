@@ -259,4 +259,26 @@ describe('combat depth in flight', () => {
     f.run(1);
     expect(f.comms.some((c) => c.startsWith('Wake raider:'))).toBe(true);
   });
+
+  it('a patrol taking on raiders within radio range calls it; far away, nobody hears', () => {
+    const packs = { max: 1, level: 1 as const, size: [1, 1] as const, firstDelay: 1, interval: [999, 999] as const };
+    const setup = (gap: number) => {
+      const f = flightIn('altair', { plan: { ...QUIET, patrolWings: 1, packs }, owner: 'sta' });
+      f.run(3);
+      const patrols = f.inner.npcs.filter((n) => n.role === 'patrol');
+      const raider = f.inner.npcs.find((n) => n.side === 'raider')!;
+      expect(patrols.length).toBeGreaterThan(0);
+      // The raider is out of its own sight of the player; the patrol, not yet engaged, is between them.
+      const p = f.flight.player.position;
+      for (const n of patrols) {
+        n.body.position.copy(p).add(new THREE.Vector3(gap, 0, 0));
+        n.foe = null;
+      }
+      raider.body.position.copy(p).add(new THREE.Vector3(gap + 1_500, 0, 0));
+      f.run(0.5);
+      return f;
+    };
+    expect(setup(3_200).comms.some((c) => c.startsWith('Transit Authority patrol:'))).toBe(true);
+    expect(setup(12_000).comms.some((c) => c.includes('patrol:'))).toBe(false);
+  });
 });

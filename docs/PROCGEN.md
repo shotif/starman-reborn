@@ -890,6 +890,7 @@ balance; every name is invented.
 - Hull hits flash the screen's edges red and shield hits blue (gentler with reduced motion); badly
   hurt ships still show their sparks.
 - Radio chatter: raiders spotting the player, breaking off or losing one of theirs, patrols
-  engaging, a den's guns waking, a wingman joining, scoring a kill or taking fire; at most one line
-  every seven seconds, from small phrase pools.
+  engaging raiders, a den warning an untrusted pilot off, a wingman joining, scoring a kill or
+  taking fire; only from ships within 4 km of the player, at most one line every seven seconds,
+  from small phrase pools.
 

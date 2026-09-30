@@ -1672,7 +1672,7 @@ export class FlightSession {
     }
     const killer = n.lastHitBy ? this.npcs.find((x) => x.id === n.lastHitBy) : undefined;
     if (killer?.wingman?.crewId && n.side === 'raider') this.chatter('wing-kill', killer.name);
-    else if (n.side === 'raider' && !n.den && this.rand() < 0.35) this.chatter('raider-down', 'Wake raider');
+    else if (n.side === 'raider' && !n.den && this.inRadioRange(n) && this.rand() < 0.35) this.chatter('raider-down', 'Wake raider');
     const byPlayer = this.time - n.playerHitAt < 30;
     if (byPlayer && n.side === 'lawful' && n.role !== 'raider') {
       // Piracy: a hauler's hold spills a pod or two of its cargo.
@@ -2287,6 +2287,10 @@ export class FlightSession {
     const onPlayer = playerFair && (n.foe === 'player' || huntedBy(this.state, n.faction)) && n.body.position.distanceTo(this.player.position) < PATROL_HUNT;
     // The opening raid, bounty-contract packs and bounty hunters are the player's fights; patrols leave them alone.
     const foe = onPlayer ? 'player' : this.nearestShip(n.body.position, 4_000, (x) => x.side === 'raider' && !x.encounter && !x.contract && !x.hunter);
+    // Taking on raiders within radio range of the player, a patrol says so.
+    if (foe && foe !== 'player' && (n.foe === null || n.foe === 'player') && n.faction !== 'independent' && this.inRadioRange(n)) {
+      this.chatter('patrol-engage', `${FACTIONS[n.faction].shortName} patrol`);
+    }
     n.foe = foe;
     if (foe === 'player') {
       this.fightNpc(n, this.player, dt, TRAFFIC.npcDamage * DIFFICULTY[this.settings.difficulty].enemyDamage);
@@ -2848,6 +2852,11 @@ export class FlightSession {
     }
   }
 
+  /** Close enough to the player for its radio chatter to be heard. */
+  private inRadioRange(n: NpcShip): boolean {
+    return n.body.position.distanceTo(this.player.position) < COMBAT.chatterRange;
+  }
+
   /** Radio chatter, at most one line every few seconds. */
   private chatter(kind: ChatterKind, speaker: string, force = false): void {
     if (!force && this.time - this.chatterAt < COMBAT.chatterEvery) return;
@@ -2919,7 +2928,7 @@ export class FlightSession {
     // Breaking off, a raider may dump a mine behind it.
     if (n.brain.state === 'escaped' && !n.mineRolled) {
       n.mineRolled = true;
-      if (n.body.position.distanceTo(this.player.position) < 4_000) {
+      if (this.inRadioRange(n)) {
         this.chatter('raider-flee', n.name);
         if (this.rand() < COMBAT.mines.dropChance) this.spawnMine(n.body.position.clone().addScaledVector(n.body.forward(this.tmp), -40));
       }

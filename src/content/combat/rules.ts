@@ -79,6 +79,7 @@ export const COMBAT = {
     /** Their guns hit this hard (like other NPCs), by skill. */
     skill: { steady: 0.3, sharp: 0.38 } as Record<'steady' | 'sharp', number>,
   },
-  /** Radio chatter: at most one line this often (seconds). */
+  /** Radio chatter: at most one line this often (seconds), from ships within this range of the player (m). */
   chatterEvery: 7,
+  chatterRange: 4_000,
 } as const;

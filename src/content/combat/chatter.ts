@@ -12,6 +12,6 @@ export const CHATTER: Record<ChatterKind, readonly string[]> = {
   'wing-kill': ['Target down.', 'Splash one.', 'That one won’t be back.', 'Got it. Next?'],
   'wing-hurt': ['Taking fire, shields gone!', 'I’m hit! Still with you.', 'Hull breach, I can hold.'],
   'wing-join': ['On your wing.', 'Formed up. Lead the way.', 'With you, boss.'],
-  'den-alert': ['Den guns are awake. Watch the turrets.', 'The den has seen us. Here come the turrets.'],
+  'den-alert': ['Unmarked ship, you are on our guns. Turn back or burn.', 'Nobody invited you. Turrets are live.'],
   missile: ['Seeker away!', 'Missile launched. Let’s see you dance.'],
 };
