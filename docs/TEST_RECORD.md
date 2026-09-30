@@ -11,7 +11,7 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | --- | --- | --- |
 | TypeScript typecheck (app + scripts/tests) | `npm run typecheck` | Pass |
 | Astronomy data validation | `npm run data:validate` | Pass (2 warnings: data is provisional) |
-| Unit tests | `npm test` | Pass: 227 tests in 10 files |
+| Unit tests | `npm test` | Pass: 272 tests in 15 files |
 | Production build | `npm run build` | Pass |
 | Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 9 passed (3 touch-only tests skipped) |
 | Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 11 passed (1 desktop-only test skipped) |
@@ -67,6 +67,9 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 - `rooms.test.ts`: station interiors: structure per station, camera moves and cuts, reduced
   motion, omitted rooms, determinism, draw-call and triangle budgets per quality, lights per room,
   hotspots on desktop and phones, portrait framing and disposal.
+- `stationgen.test.ts`: every station type builds in every owner palette with one lit docking bay,
+  a clear approach corridor at every animated pose, a radius that encloses every vertex and light,
+  identical geometry for the same look, mesh and triangle budgets per quality, and clean disposal.
 - `shipgen.test.ts`: every catalogue ship builds a mesh, deterministically, facing −Z, with one
   muzzle per gun mount, filling its class radius, within the triangle budget; shared geometry
   survives other ships' disposal.
