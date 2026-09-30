@@ -215,6 +215,16 @@ const RAIDER_MODEL_ID = 'ship.light-fighter.1.wake';
 const CHASE_REFERENCE_LENGTH = 14;
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
 
+/**
+ * Whether a bolt may hit a ship: ships of the other side only (no friendly fire among lawful ships
+ * or among raiders), and the player's bolts hit a lawful ship only when it is the selected target,
+ * so attacking one is always a choice (docs/PROCGEN.md §12).
+ */
+export function boltMayHit(shooter: 'player' | 'lawful' | 'raider', target: 'lawful' | 'raider', selected: boolean): boolean {
+  if (shooter === 'player') return target === 'raider' || selected;
+  return target !== shooter;
+}
+
 /** Bolt look for a player gun: pulse cannons brighten from class 3 up. */
 function boltKind(type: DamageType, tier: number): ProjectileKind {
   if (type === 'kinetic') return 'player-kinetic';
@@ -1315,8 +1325,7 @@ export class FlightSession {
       // Bolts hit ships of the other side only: no friendly fire among lawful ships or among raiders.
       // The player's bolts hit a lawful ship only when it is the selected target: attacking one is a choice.
       for (const n of this.npcs) {
-        if (n.durability.hull <= 0) continue;
-        if (byPlayer ? n.side === 'lawful' && n.target.id !== this.selectedId : n.side === side) continue;
+        if (n.durability.hull <= 0 || !boltMayHit(byPlayer ? 'player' : side, n.side, n.target.id === this.selectedId)) continue;
         if (segmentHitsSphere(from, to, n.body.position, n.art.radius)) {
           this.damageNpc(n, p.damage, to, p.damageType, byPlayer);
           return true;
