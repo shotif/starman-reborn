@@ -53,14 +53,19 @@ This is an honest list of what the prototype does not do yet, or what has not be
 - The law is simple: a crime is seen by everyone at once (no witnesses, no reports that travel),
   fines never lapse, a patrol scans at most once a flight, and the raider dens cannot be attacked.
   Selling contraband at a station is not a crime; only having it in the hold at a scan is.
-- Ratings change nothing in the world except the combat rank that ace hunts ask for; milestones
-  are a record, with one grant (the whole codex). The what-next hint looks only at fines, the
-  hold, the codex, known prices and job boards, not at ships, equipment or standing.
+- Wingmen fly and fight but do not talk back beyond a few lines, cannot be given orders, and
+  their kills earn no bounty; the player's decoys and the raiders' seekers are the only missiles
+  aimed at the player.
+- Ratings change nothing in the world except the combat rank that ace hunts and den assaults ask
+  for; milestones are a record, with one grant (the whole codex). The what-next hint looks only at
+  fines, the hold, stories waiting, the codex, known prices and job boards, not at ships, equipment
+  or standing.
 - Generated stations have generated exteriors and interiors (twelve kinds in four owner
   palettes). Known rough edges: the half-built hull outside a shipyard bay reads as a flat block
   on the phone deck view, some white crates on factory conveyors bloom under the lamps, and mining
   hall rock walls are dark away from the floodlights.
-- No subsystem damage, fleet battles, multiplayer, cloud saves or cross-device sync (out of scope
+- Damage to systems is modelled for the player only (other ships just lose shield and hull); no
+  fleet battles, multiplayer, cloud saves or cross-device sync (out of scope
   per the spec).
 - Solar System planet positions are schematic and do not follow an ephemeris.
 - Stations and ships do not collide with each other in detail (spheres only).

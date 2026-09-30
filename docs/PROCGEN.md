@@ -820,3 +820,75 @@ it broken arcs to prove it catches them) checks that:
 - Short plain lines: a briefing under 520 characters, a line under 300. British spelling. The giver
   speaks the briefing; scene lines are in the third person.
 - No real people, organisations or other games' names, places or plots.
+
+## 15. Combat depth
+
+What a fight is made of beyond guns and shields (`src/content/combat/rules.ts`, the phrase pools in
+`src/content/combat/chatter.ts`, the economy side in `src/economy/combat.ts`). The numbers are game
+balance; every name is invented.
+
+### 15.1 Seekers, decoys and mines
+
+- **Seekers**: raiders flying heavy fighters, aces and bounty hunters fire a seeker at the player
+  every 16–26 seconds (the first after 6–12) when the player is 450–1,700 m away and roughly ahead
+  of them: 24 damage (scaled by the difficulty setting), 330 m/s, a turn rate the player can
+  out-turn, nine seconds of fuel. The HUD warns of seekers inbound and the screen's edges pulse.
+- **Decoy flares** (C, or the Decoy button): each seeker homing on the player within 2.2 km goes
+  for the flare with a chance of 80%; a flare burns for four seconds. New ships carry two; the
+  outfitter sells them (45 cr, six at most).
+- **Mines**: a raider breaking off drops one half of the time; three guard each den's reactor.
+  A mine arms after two seconds, goes off when any ship comes within 90 m, and hurts every ship
+  within 150 m (55 damage at the centre, less at the edge). One or two bolts set it off.
+
+### 15.2 Damage to systems
+
+- A hull hit may damage one of the player's systems (a chance of 1.2% per point of hull damage, at
+  most 60% a hit), by 30–60% at a time up to 100%. At full damage the engines lose 40% of their
+  speed, the guns half their rate of fire, and the shield generator 70% of its recharge and 40% of
+  its capacity.
+- A repair kit patches every system up (and restores 40 hull); a dock with repairs fixes them for
+  180 cr per whole system, standing discounts applied. The HUD lists damaged systems.
+
+### 15.3 Loot
+
+- Raiders drop salvage credits as before; a third of them also drop a cargo pod (salvage, small
+  arms, combat stims, ship components or electronics, 2–5 units) and a few an **equipment crate**
+  (4%, 8% or 14% by the raider's threat; aces always): a catalogue item within a class of the
+  raider's own.
+- Crates go into a stash of four aboard the ship (with no room, the crate is sold on the spot at the
+  dealer's price). An outfitter with an equipment dealer fits a stashed item (selling what it
+  replaces) or buys it.
+
+### 15.4 Wingmen for hire
+
+- Military bases (two pilots), trade ports, free ports, shipyards and Sol's two stations (one each)
+  have pilots looking for work, the same for everyone in a time slot, flying their faction's patrol
+  fighters. A steady hand costs 180 cr a jump in a Mk I fighter and 320 cr in a Mk II; a sharp shot
+  a quarter more, and hits harder.
+- Hiring costs the first fee; every jump pays the wing. A pilot the player cannot pay leaves, and so
+  does one whose ship is destroyed. At most two fly at once. They launch with the player, keep
+  station off the player's wing (catching up after a lane), and go for raiders near the player that
+  are not sparing them. Nobody flies with a pilot the law is hunting.
+
+### 15.5 Raider dens under fire
+
+- Every den defends itself: when a pilot the Wake does not trust comes within 6 km, three turrets,
+  the reactor behind them (shielded while a turret stands) and three mines wake up, with two raiders
+  of the den's crews (§14.3 has the numbers).
+- Knocking a den out on your own pays: 150 cr a turret, and 2,500 cr from the lawful faction nearest
+  the den with 8 standing; the Wake takes 15 off. The den is dark for six hours of game clock: no
+  packs in its system, closed to everyone. Station news within two jumps reports it, and arriving in
+  its system says so.
+- **Den assaults**: customs depots, military bases and Deimos Depot post them against dens within
+  three jumps (about 2,400 cr and the route's fees, top difficulty, a Hardened combat rating, and
+  never against a den already dark); a wing of three of the poster's fighters flies with the player.
+  The contract guardrails check them (§10.4).
+
+### 15.6 The feel of a fight
+
+- Hull hits flash the screen's edges red and shield hits blue (gentler with reduced motion); badly
+  hurt ships still show their sparks.
+- Radio chatter: raiders spotting the player, breaking off or losing one of theirs, patrols
+  engaging, a den's guns waking, a wingman joining, scoring a kill or taking fire; at most one line
+  every seven seconds, from small phrase pools.
+

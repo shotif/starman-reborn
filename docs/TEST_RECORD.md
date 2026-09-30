@@ -118,6 +118,22 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   and silent; an assault with turrets already destroyed bringing only the rest; a knocked-out den
   closed even to Wake friends; and a sweep coming for a den in waves, whose ships can be hit
   without selecting them, each kill counted (and a crime), the second wave when the first is spent.
+- `combat.test.ts`: salvaged equipment goes into the stash, and is sold on the spot once it is
+  full; stashed items are fitted (the old item sold) or sold at an equipment dealer only; new ships
+  carry decoys and the outfitter sells more up to capacity; damaged systems cost more to repair the
+  worse they are; pilots for hire are posted where they should be, the same for everyone; hiring
+  costs one fee, every jump pays the wing, an unpaid or shot-down pilot leaves, nobody flies with a
+  wanted pilot; a den knocked out on the player's own account is dark for six hours, paid by the
+  nearest law and resented by the Wake; den assault contracts come from the law, need Friendly
+  standing and a Hardened record, and are not offered against a dark den; v7 saves gain decoys,
+  intact systems, an empty stash and no wing, damaged combat data rejected.
+- `flightCombat.test.ts`: a real `FlightSession` in node: hull hits damage systems, which slow the
+  ship (and the HUD says so) until a repair kit patches them up; heavy raiders fire seekers at the
+  player and a decoy draws them off; a mine arms, goes off near the player and hurts; hired
+  wingmen launch with the player, catch up and are reported when lost; a den wakes when an
+  untrusted pilot comes near (turrets, mines, no wing), pays turret bounties and reports its
+  reactor down on the player's own account; a den stays quiet for a Wake friend; raiders talk when
+  they find you.
 - `save.test.ts`: v1, v2 and v3 migrations (the v2 courier and its upgrades become catalogue
   items; v3 saves gain untouched markets),
   unknown ships, fittings and rounds rejected, future/damaged save rejection, IndexedDB round trip with

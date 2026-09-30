@@ -16,7 +16,9 @@ The law has teeth: fines, cargo scans, contraband, bounty hunters and pardons, a
 of piracy and smuggling that opens the raider dens' black markets. Pilot ratings, a codex of the
 real sky to fill by scanning, milestones and a hint of what to do next give the sandbox goals, and
 three hand-written faction story arcs, with choices and finales (a den assault, a convoy defence
-and a den under siege), give it a spine.
+and a den under siege), give it a spine. Fights have seekers and decoy flares, mines, damage to a
+ship's systems, loot crates of salvaged equipment, wingmen for hire, and raider dens that defend
+themselves and can be knocked out.
 Ships, equipment, the world, the economy, events, contracts and the law are generated from rule
 files and checked by automated guardrails ([docs/PROCGEN.md](docs/PROCGEN.md)).
 
@@ -83,6 +85,7 @@ installability behave best over HTTPS. Pick one:
 | Go to selected target / objective | **G** | Green action button ("Go to") |
 | Missile, rocket or torpedo | **F** or middle mouse | Missile button |
 | Repair kit | **R** | Repair button |
+| Decoy flare against seekers | **C** | Decoy button |
 | Scan | **X** | Action button ("Scan") |
 | Engines off (drift) | **Z** | Drift button (landscape) |
 | Star map | **Tab** or **M** | Map button |
@@ -107,8 +110,8 @@ src/content/   rule-driven generators and guardrails (docs/PROCGEN.md): ships an
                the world (src/content/world: lanes, territory, stations) and the economy
                (src/content/economy: goods, market profiles), contract rules (src/content/contracts),
                event rules (src/content/events), the law (src/content/law), progress
-               (src/content/progress), the story arcs (src/content/story) and dens under fire
-               (src/content/dens)
+               (src/content/progress), the story arcs (src/content/story), dens under fire
+               (src/content/dens) and combat depth (src/content/combat)
 src/economy/   live markets, world events, trade, cargo, outfitter and shipyard, factions, jobs and
                generated contracts, the law, ratings, the codex, milestones and the story
 src/audio/     procedural Web Audio music and sound effects

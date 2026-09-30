@@ -131,7 +131,7 @@ in holding a den against an Authority sweep); five missions each, with dialogue 
 in flight and a choice each, two of which can end their arc early. Den turrets, a reactor and a
 lawful wing came with it, ahead of increment 6.
 
-### 6. Combat depth ⏳ (L)
+### 6. Combat depth ✅
 
 - Countermeasures against seekers and torpedoes, and mines.
 - Subsystem damage (engines, guns, shields), repaired at docks or with kits.
@@ -140,6 +140,13 @@ lawful wing came with it, ahead of increment 6.
   event from increment 1).
 - Loot beyond credits: cargo pods and rare equipment to tractor in.
 - Hit and damage effects, radio chatter in fights.
+
+Shipped ([PROCGEN.md §15](PROCGEN.md#15-combat-depth)): seekers fired by heavy raiders, aces and
+hunters, and decoy flares against them; mines dropped by raiders breaking off and guarding dens;
+damage to the engines, guns and shield generator; cargo pods and equipment crates kept in a stash;
+wingmen for hire, paid per jump; every den defends itself and can be knocked out (paid by the law,
+reported in the news, dark for six hours), with den assault contracts on lawful boards; hit
+flashes and radio chatter.
 
 ### Parallel track: the real sky, verified ⏳ (S)
 
@@ -213,13 +220,14 @@ Done: prices that move with stock and drift, traders and patrols on the lanes, r
 reputation that changes prices, welcome text and contract access, world events with news and
 restocking (increment 1), and the law (increment 3).
 
-### Ships and combat 🔨
+### Ships and combat ✅
 
 Done: 35 buyable ship models across six classes from five makers, and over 100 pieces of
 equipment: four gun families whose damage types counter shield types, rocket pods, seekers and
 torpedoes, three shield types, engines, thrusters, power plants, armour, cargo pods, scanners and
 tractor beams, sold by a shipyard (trade-in at 70%) and an outfitter by slot. Every ship has its
-own procedural 3D model. Raider packs, patrols, bounties and bounty contracts. Next: increment 6.
+own procedural 3D model. Raider packs, patrols, bounties and bounty contracts, and the combat depth
+of increment 6.
 
 ### More real stars ✅
 
