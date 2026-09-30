@@ -33,6 +33,7 @@ import type { EncounterDef } from '../world/sceneTypes.ts';
 import { spectralClass } from '../content/world/generate.ts';
 import { sceneDefFor } from '../world/systems/index.ts';
 import { trafficFor } from '../world/traffic/setup.ts';
+import { generatedInteriorStyle } from '../world/systems/interiors.ts';
 import { SystemScene } from '../world/SystemScene.ts';
 import type { Target } from '../world/targets.ts';
 import { GameRenderer, isTouchDevice, resolveQuality } from './GameRenderer.ts';
@@ -310,9 +311,11 @@ export class Game {
     const d2 = (p: THREE.Vector3) => p.distanceToSquared(station.position);
     const star = def.stars.reduce((best, s) => (d2(s.position) < d2(best.position) ? s : best));
     const model = this.state ? shipModel(this.state.ship.model) : null;
+    // Generated stations get a generated interior; the hand-made ones keep their authored rooms.
+    const style = generatedInteriorStyle(def, station);
     return createStationInterior(
       {
-        station: station.kind,
+        ...(style ? { style } : { station: station.kind }),
         skybox: def.skybox,
         starColor: star.color,
         seed: hashString(locationId) % 10_000,

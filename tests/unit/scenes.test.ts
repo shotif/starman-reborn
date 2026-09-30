@@ -4,6 +4,7 @@ import { getComponent, getLocation, SYSTEMS, WORLD } from '../../src/data/system
 import { SystemScene } from '../../src/world/SystemScene.ts';
 import { catalogSceneDef, starLook } from '../../src/world/systems/generated.ts';
 import { SCENE_DEFS, sceneDefFor } from '../../src/world/systems/index.ts';
+import { generatedInteriorStyle } from '../../src/world/systems/interiors.ts';
 
 /**
  * Generated scenes for the catalogue systems: every catalogued star and confirmed planet is drawn,
@@ -90,4 +91,21 @@ describe('generated system scenes', () => {
       scene.dispose();
     }
   });
+
+  it('keeps the view out of a generated station bay true to the catalogue', () => {
+    for (const s of CATALOG) {
+      const def = sceneDefFor(s.id);
+      for (const st of def.stations) {
+        const style = generatedInteriorStyle(def, st)!;
+        const orbits = def.planets.find((p) => p.id === getLocation(st.locationId).nearBodyId);
+        // Only the confirmed planet it orbits hangs outside; around a star there is none.
+        if (orbits) expect(style.outside.planet?.style).toBe(orbits.style);
+        else expect(style.outside.planet).toBeUndefined();
+        expect(!!style.outside.companion).toBe(def.stars.length > 1);
+        expect(style.kind).toBe(st.look!.type);
+      }
+    }
+    expect(generatedInteriorStyle(SCENE_DEFS.sol, SCENE_DEFS.sol.stations[0]!)).toBeNull();
+  });
 });
+
