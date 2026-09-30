@@ -8,7 +8,7 @@
  */
 import '../ui/styles/map.css';
 import type * as THREE from 'three';
-import { SYSTEMS, getSystem } from '../data/systems.ts';
+import { SYSTEMS, getSystem, isNewSystem } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { formatCredits, h, replaceChildren } from '../ui/dom.ts';
 import { openEncyclopedia } from '../ui/encyclopedia.ts';
@@ -66,7 +66,8 @@ interface ViewLabel {
 const PICK_RADIUS_TOUCH = 28;
 const PICK_RADIUS_MOUSE = 18;
 const MAP_BOUNDS = mapBounds();
-const STAR_POSITIONS = MAP_STARS.map((s) => s.pos);
+/** The overview frames the familiar neighbourhood (the first catalogue's systems); zoom out for the far shell. */
+const STAR_POSITIONS = MAP_STARS.filter((s) => !isNewSystem(s.systemId)).map((s) => s.pos);
 
 let instances = 0;
 
@@ -704,7 +705,9 @@ export class GalaxyMapView {
         h('span', { class: 'gmap-label-name' }, def.name),
         def.distanceLy !== null ? h('span', { class: 'gmap-label-dist' }, ` · ${formatLy(def.distanceLy)}`) : null,
       );
-      l.box.priority = (def.primary ? 50 : 40) + (sel ? 100 : 0) + (cur ? 60 : 0) + (obj ? 40 : 0) + (contract ? 25 : 0) + (news ? 15 : 0) + (onRoute ? 20 : 0);
+      // The first catalogue's systems and those you have been to win space over the far shell.
+      const known = !isNewSystem(id) || state.visited.has(id);
+      l.box.priority = (def.primary ? 50 : 30) + (known ? 8 : 0) + (sel ? 100 : 0) + (cur ? 60 : 0) + (obj ? 40 : 0) + (contract ? 25 : 0) + (news ? 15 : 0) + (onRoute ? 20 : 0);
     }
     this.labelSizeDirty = true;
     this.viewDirty = true;

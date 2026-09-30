@@ -4,7 +4,7 @@
  * coincide at map scale (Alpha Centauri A/B, Sirius A/B) but keep Proxima Centauri separate.
  */
 import { distance3 } from '../data/coords.ts';
-import { ASTROMETRY, SYSTEMS, getSystem } from '../data/systems.ts';
+import { ASTROMETRY, SYSTEMS, getSystem, isNewSystem } from '../data/systems.ts';
 import type { SystemId, Vec3Tuple } from '../data/types.ts';
 import { equatorialToMap, type Vec3 } from './mapMath.ts';
 
@@ -136,10 +136,12 @@ function buildLabels(stars: MapStar[]): MapLabel[] {
       const key = index === 0 ? system.id : `${system.id}:${lead.key}`;
       for (const s of group) s.labelKey = key;
       const component = ASTROMETRY.stars.find((c) => c.id === lead.key);
+      // A system's main label is the system's name, unless it groups several stars (Alpha Centauri A/B).
+      const alone = group.length === 1 && index === 0 && lead.name.startsWith(`${system.displayName} `);
       labels.push({
         key,
         systemId: system.id,
-        name: groups.length === 1 ? system.displayName : groupName(group.map((s) => s.name)),
+        name: groups.length === 1 || alone ? system.displayName : groupName(group.map((s) => s.name)),
         distanceLy: system.id === 'sol' ? null : (component?.distanceLightYears ?? system.distanceLightYears),
         heightLy: lead.eq[2],
         eq: lead.eq,
@@ -202,11 +204,12 @@ export function systemFocus(id: SystemId): { target: Vec3; distance: number } {
   return { target, distance: spread > 0 ? Math.max(0.6, spread * 5) : 3.2 };
 }
 
-/** Centre and radius of a sphere holding every plotted star. */
+/** Centre and radius of a sphere holding every plotted star of the first catalogue (the far shell lies beyond). */
 export function mapBounds(): { center: Vec3; radius: number } {
   const lo: Vec3 = [Infinity, Infinity, Infinity];
   const hi: Vec3 = [-Infinity, -Infinity, -Infinity];
-  for (const s of MAP_STARS) {
+  const core = MAP_STARS.filter((s) => !isNewSystem(s.systemId));
+  for (const s of core) {
     for (let i = 0; i < 3; i++) {
       lo[i] = Math.min(lo[i]!, s.pos[i]!);
       hi[i] = Math.max(hi[i]!, s.pos[i]!);
@@ -214,7 +217,7 @@ export function mapBounds(): { center: Vec3; radius: number } {
   }
   const center: Vec3 = [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, (lo[2] + hi[2]) / 2];
   let radius = 0;
-  for (const s of MAP_STARS) radius = Math.max(radius, distance3(s.pos, center));
+  for (const s of core) radius = Math.max(radius, distance3(s.pos, center));
   return { center, radius };
 }
 

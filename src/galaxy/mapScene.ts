@@ -12,7 +12,7 @@ import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js';
 import type { SystemId } from '../data/types.ts';
-import { SYSTEM_IDS } from '../data/systems.ts';
+import { isNewSystem, SYSTEM_IDS } from '../data/systems.ts';
 import { MAP_LABELS, MAP_LINKS, MAP_STARS, RING_RADII_LY, systemAnchor } from './mapData.ts';
 import {
   clamp,
@@ -223,12 +223,14 @@ export class MapScene {
     const tint = new THREE.Color();
     for (const label of MAP_LABELS) {
       const [x, y, z] = label.pos;
-      if (Math.abs(y) < 1e-6) continue;
+      // One line per system; the far shell's are fainter so the neighbourhood reads first.
+      if (Math.abs(y) < 1e-6 || !label.primary) continue;
       drops.push(x, y, z, x, 0, z);
       const star = MAP_STARS.find((s) => s.key === label.starKeys[0])!;
       tint.set(star.colorHex);
+      if (isNewSystem(label.systemId)) tint.multiplyScalar(0.45);
       dropColors.push(tint.r, tint.g, tint.b, tint.r, tint.g, tint.b);
-      this.addSprite(dot, star.colorHex, [x, 0, z], 7, 5, 0.75);
+      this.addSprite(dot, star.colorHex, [x, 0, z], 7, 5, isNewSystem(label.systemId) ? 0.4 : 0.75);
     }
     this.addLines(drops, { color: '#ffffff', opacity: 0.5, width: 1.25, order: 1, colors: dropColors }, [0, 0, 0]);
 
