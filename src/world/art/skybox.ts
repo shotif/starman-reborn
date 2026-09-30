@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { ArtContext, ArtObject } from './types.ts';
 import { NOISE_GLSL, OUTPUT_GLSL, getNoiseVolume } from './noise.ts';
-import { byQuality, disposeObject, seededRandom, trackViewport, viewportUniform } from './util.ts';
+import { byQuality, disposeObject, markShared, seededRandom, trackViewport, viewportUniform } from './util.ts';
 
 export interface SkyboxOptions {
   seed: number;
@@ -111,6 +111,22 @@ void main() {
 }
 `;
 
+const skyGeometries = new Map<number, THREE.BufferGeometry>();
+
+/** The welded sky icosphere is the same for every skybox at a detail level: build it once (shared). */
+function skyGeometry(detail: number): THREE.BufferGeometry {
+  let geo = skyGeometries.get(detail);
+  if (!geo) {
+    const ico = new THREE.IcosahedronGeometry(SKY_RADIUS, detail);
+    ico.deleteAttribute('normal');
+    ico.deleteAttribute('uv');
+    geo = markShared(mergeVertices(ico));
+    ico.dispose();
+    skyGeometries.set(detail, geo);
+  }
+  return geo;
+}
+
 const STAR_TINTS: [number, string][] = [
   [0.14, '#a9c1ff'],
   [0.36, '#eef2ff'],
@@ -143,11 +159,7 @@ export function createSkybox(opts: SkyboxOptions, ctx: ArtContext): ArtObject {
   const base = new THREE.Color(opts.baseColor);
   const bandColor = base.clone().lerp(new THREE.Color(0.72, 0.7, 0.66), 0.6).multiplyScalar(0.028 + 0.03 * opts.starDensity);
 
-  const detail = byQuality(ctx.quality, 20, 30, 42);
-  let geo: THREE.BufferGeometry = new THREE.IcosahedronGeometry(SKY_RADIUS, detail);
-  geo.deleteAttribute('normal');
-  geo.deleteAttribute('uv');
-  geo = mergeVertices(geo);
+  const geo = skyGeometry(byQuality(ctx.quality, 20, 30, 42));
   const skyMat = new THREE.ShaderMaterial({
     uniforms: {
       uNoise: { value: noise },

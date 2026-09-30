@@ -46,6 +46,9 @@ import type {
   StationKind,
   TransientEffect,
 } from '../world/art/index.ts';
+import { ROOM_ORDER, createStationInterior } from '../world/rooms/index.ts';
+import type { RoomView, StationInterior } from '../world/rooms/index.ts';
+import { SCENE_DEFS } from '../world/systems/index.ts';
 
 const params = new URLSearchParams(location.search);
 const num = (key: string, fallback: number): number => {
@@ -160,6 +163,10 @@ interface Setup {
   lightColor?: string;
   tick?(dt: number, t: number): void;
   stats?(): string;
+  /** Items that bring their own scene and camera (station interiors) render those instead. */
+  scene?: THREE.Scene;
+  camera?: THREE.PerspectiveCamera;
+  resize?(width: number, height: number): void;
 }
 
 interface Item {
@@ -307,7 +314,124 @@ function skyItem(id: string): Item {
   };
 }
 
+
+/* Station interiors: item=interior&station=<kind>&view=deck|trader|outfitter|bar&rooms=deck,bar&hotspots=1 */
+const INTERIOR_SYSTEMS: Record<StationKind, { system: keyof typeof SCENE_DEFS; star: number; rooms: RoomView[] }> = {
+  'earth-port': { system: 'sol', star: 0, rooms: ['deck', 'trader', 'outfitter', 'bar'] },
+  'mars-depot': { system: 'sol', star: 0, rooms: ['deck', 'trader', 'outfitter', 'bar'] },
+  'proxima-outpost': { system: 'alpha-centauri', star: 2, rooms: ['deck', 'trader', 'outfitter', 'bar'] },
+  'barnard-relay': { system: 'barnard', star: 0, rooms: ['deck', 'trader', 'bar'] },
+  'sirius-platform': { system: 'sirius', star: 0, rooms: ['deck', 'trader', 'outfitter', 'bar'] },
+  'eridani-hub': { system: 'epsilon-eridani', star: 0, rooms: ['deck', 'trader', 'outfitter', 'bar'] },
+};
+
+function interiorItem(): Item {
+  return {
+    id: 'interior',
+    group: 'Interiors',
+    label: 'Station interior',
+    build(env) {
+      const stationParam = params.get('station') as StationKind | null;
+      const station: StationKind = stationParam && STATION_KINDS.includes(stationParam) ? stationParam : 'earth-port';
+      const preset = INTERIOR_SYSTEMS[station];
+      const def = SCENE_DEFS[preset.system];
+      const star = def.stars[Math.min(preset.star, def.stars.length - 1)]!;
+      const roomParam = params.get('rooms');
+      const rooms = roomParam ? (roomParam.split(',').filter((r) => (ROOM_ORDER as string[]).includes(r)) as RoomView[]) : preset.rooms;
+      const t0 = performance.now();
+      const interior: StationInterior = createStationInterior(
+        { station, skybox: def.skybox, starColor: star.color, seed: num('seed', STATION_KINDS.indexOf(station) * 11 + 5), rooms },
+        ctx,
+      );
+      const buildMs = performance.now() - t0;
+      // bench=1: time more builds now that shared caches (noise, textures, sky mesh) are warm, as
+      // they are in the game after flying (each is built and disposed right away).
+      let warm = '';
+      if (flag('bench')) {
+        const times: number[] = [];
+        for (const k of STATION_KINDS) {
+          const p = INTERIOR_SYSTEMS[k];
+          const d = SCENE_DEFS[p.system];
+          const t1 = performance.now();
+          const other = createStationInterior({ station: k, skybox: d.skybox, starColor: d.stars[0]!.color, seed: 3, rooms: p.rooms }, ctx);
+          times.push(performance.now() - t1);
+          other.dispose();
+        }
+        warm = `\nwarm builds ${times.map((t) => t.toFixed(0)).join(' / ')} ms`;
+        console.log(`[bench] cold ${buildMs.toFixed(0)} ms, warm ${times.map((t) => t.toFixed(0)).join(', ')}`);
+      }
+      interior.resize(window.innerWidth, window.innerHeight);
+      const want = params.get('view') as RoomView | null;
+      if (want && interior.rooms.includes(want)) interior.setView(want, true);
+      // Station picker and view buttons.
+      const l = document.createElement('label');
+      l.textContent = 'Station';
+      const sel = document.createElement('select');
+      for (const k of STATION_KINDS) {
+        const o = document.createElement('option');
+        o.value = k;
+        o.textContent = k;
+        sel.appendChild(o);
+      }
+      sel.value = station;
+      sel.addEventListener('change', () => reloadWith('station', sel.value));
+      env.panel.append(l, sel);
+      let lastTransition = '';
+      for (const v of interior.rooms) {
+        env.button(`View: ${v}`, () => {
+          lastTransition = `${interior.view} → ${v}: ${interior.setView(v)}`;
+          setParam('view', v);
+        });
+      }
+      // Hotspot overlay (dots with labels) for checking the projection.
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;pointer-events:none;font:11px system-ui;color:#fff';
+      if (flag('hotspots')) document.body.appendChild(overlay);
+      const drawHotspots = (): void => {
+        if (!overlay.isConnected) return;
+        overlay.replaceChildren(
+          ...interior.hotspots().map((h) => {
+            const d = document.createElement('div');
+            d.style.cssText = `position:absolute;left:${h.x}px;top:${h.y}px;transform:translate(-50%,-50%);padding:1px 5px;border-radius:8px;background:${h.visible ? 'rgba(0,160,255,0.75)' : 'rgba(255,0,0,0.6)'}`;
+            d.textContent = `${h.label}`;
+            return d;
+          }),
+        );
+      };
+      // Debug: cam=x,y,z&look=x,y,z&fov=deg overrides the composed shot (to inspect details).
+      const vec = (key: string): THREE.Vector3 | null => {
+        const v = params.get(key)?.split(',').map(Number);
+        return v && v.length === 3 && v.every(Number.isFinite) ? new THREE.Vector3(v[0], v[1], v[2]) : null;
+      };
+      const camOverride = vec('cam');
+      const lookOverride = vec('look');
+      return {
+        dist: 1,
+        sky: null,
+        scene: interior.scene,
+        camera: interior.camera,
+        tick(dt) {
+          interior.update(dt);
+          if (camOverride && lookOverride) {
+            interior.camera.position.copy(camOverride);
+            interior.camera.lookAt(lookOverride);
+            interior.camera.fov = num('fov', interior.camera.fov);
+            interior.camera.updateProjectionMatrix();
+            interior.camera.updateMatrixWorld();
+          }
+          drawHotspots();
+        },
+        resize(w, h) {
+          interior.resize(w, h);
+        },
+        stats: () => `${station} · ${interior.view} · build ${buildMs.toFixed(0)} ms${warm}\nrooms ${interior.rooms.join(', ')}${lastTransition ? `\n${lastTransition}` : ''}`,
+      };
+    },
+  };
+}
+
 const ITEMS: Item[] = [
+  interiorItem(),
   shipItem('ship-player', 'Kite courier (player)', createPlayerShip, 24),
   shipItem('ship-pirate', 'Pirate raider', createPirateShip, 20),
   shipItem('ship-hauler', 'Hauler', createHaulerShip, 70),
@@ -629,9 +753,11 @@ scene.add(hemi);
 
 const useBloom = params.has('bloom') ? flag('bloom') : quality === 'high';
 let composer: EffectComposer | null = null;
+let renderPass: RenderPass | null = null;
 if (useBloom) {
   composer = new EffectComposer(renderer);
-  composer.addPass(new RenderPass(scene, camera));
+  renderPass = new RenderPass(scene, camera);
+  composer.addPass(renderPass);
   composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.55, 0.45, 0.85));
   composer.addPass(new OutputPass());
 }
@@ -762,6 +888,13 @@ const env: Env = {
 };
 
 const setup = item.build(env);
+// Items with their own scene and camera (interiors) render those; the orbit camera is unused then.
+const renderScene: THREE.Scene = setup.scene ?? scene;
+const renderCamera: THREE.PerspectiveCamera = setup.camera ?? camera;
+if (renderPass) {
+  renderPass.scene = renderScene;
+  renderPass.camera = renderCamera;
+}
 
 const skyId = setup.sky === undefined ? 'sol' : setup.sky;
 if (skyId) env.add(createSkybox(SKIES[skyId]!, ctx));
@@ -782,7 +915,7 @@ controls.update();
 
 // Debug: hide named sub-objects, e.g. hide=corona,far-glow
 const hidden = (params.get('hide') ?? '').split(',').filter(Boolean);
-if (hidden.length) scene.traverse((o) => {
+if (hidden.length) renderScene.traverse((o) => {
   if (hidden.includes(o.name)) o.visible = false;
 });
 
@@ -795,6 +928,7 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight, false);
   composer?.setSize(window.innerWidth, window.innerHeight);
+  setup.resize?.(window.innerWidth, window.innerHeight);
 });
 
 let time = 0;
@@ -821,7 +955,7 @@ function frame(now: number): void {
   controls.update();
   simulate(freeze ? 0 : dt);
   if (composer) composer.render();
-  else renderer.render(scene, camera);
+  else renderer.render(renderScene, renderCamera);
   frames++;
   fpsAcc += dt;
   if (fpsAcc > 0.5) {
@@ -841,5 +975,5 @@ function frame(now: number): void {
 }
 let renderedFrames = 0;
 // Debug handle for scripted captures.
-(window as unknown as { __art: unknown }).__art = { renderer, scene, camera, objects };
+(window as unknown as { __art: unknown }).__art = { renderer, scene: renderScene, camera: renderCamera, objects };
 requestAnimationFrame(frame);
