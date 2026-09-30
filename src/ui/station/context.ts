@@ -19,6 +19,8 @@ export interface StationContext {
   openEncyclopedia(): void;
   openSettings(): void;
   openControls(): void;
+  /** The Saves sheet: save slots, export and import. */
+  openSaves(): void;
   quitToTitle(): void;
   acceptJob(jobId: string): void;
   /** Opens the story choice waiting at this dock (docs/PROCGEN.md §14). */

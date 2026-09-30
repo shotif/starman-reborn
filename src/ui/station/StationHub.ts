@@ -380,6 +380,7 @@ export class StationHub {
         return h(
           'div',
           { class: 'stack menu-list' },
+          button('Saves', { icon: 'save', testId: 'saves-open', onClick: () => ctx.openSaves() }),
           button('Settings', { icon: 'settings', testId: 'menu-settings', onClick: () => ctx.openSettings() }),
           button('Controls', { icon: 'help', testId: 'menu-controls', onClick: () => ctx.openControls() }),
           button('Save and quit to title', { icon: 'back', testId: 'menu-quit', onClick: () => ctx.quitToTitle() }),

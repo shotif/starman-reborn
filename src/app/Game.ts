@@ -59,6 +59,7 @@ import { Hud } from '../ui/hud/Hud.ts';
 import { hasVoyage } from '../ui/station/journal.ts';
 import { StationHub, stationRooms, type StationWindow } from '../ui/station/StationHub.ts';
 import { bodyCard, controlsContent, planetCard, settingsContent, sheet } from '../ui/screens/panels.ts';
+import { openSaves } from '../ui/screens/saves.ts';
 import { renderTitle } from '../ui/screens/TitleScreen.ts';
 import { TouchControls } from '../ui/touch/TouchControls.ts';
 import { createJumpTunnel, type JumpTunnelArt } from '../world/art/effects.ts';
@@ -355,6 +356,7 @@ export class Game {
       saveSummary: summary,
       onPlay: () => void this.newGame(!!s),
       onContinue: () => void this.continueGame(),
+      onSaves: () => this.openSaves(),
       onControls: () => this.openControls(),
       onAbout: () => this.openAbout(),
       onSettings: () => this.openSettings(),
@@ -419,7 +421,7 @@ export class Game {
     if (hasSave) {
       const ok = await confirmDialog(
         'Start a new game?',
-        'This replaces your saved progress in this browser. It cannot be undone.',
+        'This replaces the game in this browser’s autosave, and cannot be undone. Games in your save slots are kept.',
         'Start new game',
         { danger: true },
       );
@@ -436,8 +438,13 @@ export class Game {
       toast(loaded.warning ?? 'No saved game found.', 'bad');
       return;
     }
-    this.state = loaded.state;
-    const loc = this.state.location;
+    this.resume(loaded.state);
+  }
+
+  /** Enters a game where it was saved: docked, or in flight at the saved pose (Continue, and loaded saves). */
+  private resume(state: GameState, message = 'Progress restored'): void {
+    this.state = state;
+    const loc = state.location;
     if (loc.dockedAt) this.enterDocked(loc.dockedAt, { titleCard: true });
     else if (loc.flight) {
       this.enterFlight({
@@ -446,7 +453,20 @@ export class Game {
         quaternion: new THREE.Quaternion(...loc.flight.quaternion),
       });
     } else this.enterFlight({ kind: 'arrival' });
-    toast('Progress restored', 'good', 2000);
+    toast(message, 'good', 2000);
+  }
+
+  /**
+   * Replaces the running game (or the title) with a loaded one: a save slot or an imported file.
+   * The autosave follows it from now on, so a refresh continues the loaded game.
+   */
+  private async playLoaded(state: GameState, message: string): Promise<void> {
+    // The running game was saved when its menu opened; drop its flight so nothing writes it back.
+    this.disposeFlight();
+    this.hud.setEncounterBanner(false);
+    this.state = state;
+    await this.saves.save(state);
+    this.resume(state, message);
   }
 
   // ------------------------------------------------------------------ scenes
@@ -511,6 +531,7 @@ export class Game {
         openEncyclopedia: () => this.openAbout(state.location.systemId),
         openSettings: () => this.openSettings(),
         openControls: () => this.openControls(),
+        openSaves: () => this.openSaves(),
         quitToTitle: () => void this.quitToTitle(),
         acceptJob: (id) => this.acceptJob(id),
         decide: () => void this.offerChoice(),
@@ -1306,6 +1327,7 @@ export class Game {
             this.setPaused(false);
             this.openMap();
           } }),
+          button('Saves', { icon: 'save', testId: 'saves-open', onClick: () => this.openSaves() }),
           button('Controls', { icon: 'help', onClick: () => this.openControls() }),
           button('Settings', { icon: 'settings', testId: 'pause-settings', onClick: () => this.openSettings() }),
           button('About the science', { icon: 'source', onClick: () => this.openAbout(this.state?.location.systemId) }),
@@ -1352,6 +1374,28 @@ export class Game {
     );
   }
 
+  /** The autosave and the save slots, with export and import: from the title, the pause menu or the station menu. */
+  private openSaves(): void {
+    const inGame = this.mode !== 'title' && this.state !== null;
+    const wasPaused = this.paused;
+    if (this.mode === 'flight' && !wasPaused) this.setPaused(true, false);
+    this.sheetsOpen++;
+    openSaves(this.screenLayer, {
+      saves: this.saves,
+      current: inGame
+        ? () => {
+            this.persist();
+            return this.state;
+          }
+        : null,
+      play: (state, message) => void this.playLoaded(state, message),
+      onClose: () => {
+        this.sheetsOpen--;
+        if (this.mode === 'flight' && !wasPaused) this.setPaused(false);
+      },
+    });
+  }
+
   private openAbout(systemId?: SystemId): void {
     const wasPaused = this.paused;
     if (this.mode === 'flight' && !wasPaused) this.setPaused(true, false);
@@ -1370,7 +1414,7 @@ export class Game {
   private async resetSave(): Promise<void> {
     const ok = await confirmDialog(
       'Reset saved game?',
-      'This deletes your saved progress in this browser. Settings are kept.',
+      'This deletes the autosave in this browser. Save slots and settings are kept.',
       'Delete save',
       { danger: true },
     );

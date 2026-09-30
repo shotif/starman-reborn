@@ -40,6 +40,13 @@ A first playthrough takes about 10–20 minutes. Progress saves automatically in
 (IndexedDB) after docking, trading, rewards and jumps, and when the tab is hidden. Refresh at any
 time and press **Continue**.
 
+**Saves.** The autosave always follows the game you are playing. **Saves** (on the title screen,
+in the pause menu and in the station menu) also keeps three save slots in the browser, and exports
+any save as a `.json` file: a download on desktops and Android, the share sheet (for example *Save
+to Files*) on iPhone and iPad. **Import file** reads a save file back, into a slot or straight into
+play, on this or another device. Browsers can clear their storage, so export a file to keep a game
+safe.
+
 ## Run it
 
 Requirements: **Node.js 22.18 or newer** (the data scripts run TypeScript directly) and npm.

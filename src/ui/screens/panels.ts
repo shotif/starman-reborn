@@ -32,7 +32,8 @@ export function sheet(
     ),
   );
   const onKey = (e: KeyboardEvent) => {
-    if (e.key === 'Escape') {
+    // A dialog opened from the sheet (a confirmation) takes Escape for itself.
+    if (e.key === 'Escape' && !document.querySelector('.modal-backdrop')) {
       e.preventDefault();
       e.stopPropagation();
       close();

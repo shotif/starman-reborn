@@ -38,6 +38,10 @@ const PATHS = {
   eye: ['M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z', 'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z'],
   decoy: ['M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z', 'M12 2v4', 'M12 18v4', 'M2 12h4', 'M18 12h4', 'M5 5l2.5 2.5', 'M16.5 16.5L19 19', 'M19 5l-2.5 2.5', 'M7.5 16.5L5 19'],
   gamepad: ['M7 7h10a5 5 0 0 1 5 5v2a3 3 0 0 1-5.4 1.8L15 14H9l-1.6 1.8A3 3 0 0 1 2 14v-2a5 5 0 0 1 5-5z', 'M7 9.5v4', 'M5 11.5h4', 'M15.5 10.5h.01', 'M18 12.5h.01'],
+  /** A data card with a cut corner: saves. */
+  save: ['M5 3h11l3 3v15H5z', 'M8 3v4h6V3', 'M8 12h8', 'M8 16h5'],
+  /** An arrow up out of a tray: import a file. */
+  upload: ['M12 15V3', 'M7 8l5-5 5 5', 'M4 17v3h16v-3'],
 } as const;
 
 export type IconName = keyof typeof PATHS;

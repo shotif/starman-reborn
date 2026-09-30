@@ -141,6 +141,16 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   unknown ships, fittings and rounds rejected, future/damaged save rejection, IndexedDB round trip with
   backup rotation, fallback to the backup, coalesced writes, **save after jump** survives a fresh
   load, reset keeps settings, settings sanitising.
+- `saveSlots.test.ts`: three save slots beside the autosave, in IndexedDB: empty at first, then
+  stored, listed with their summaries, loaded, overwritten and deleted; a slot keeps a copy, not
+  the running game; slot writes queue in order with pending autosaves; the autosave keeps its key,
+  is never touched by slot writes, and resetting it keeps the slots; an older game in a slot is
+  listed from its stored summary and migrated only when loaded; damaged slots are listed as such,
+  fail to load cleanly and can be deleted; an imported game keeps the time it was saved. Summaries
+  read the place, credits, play time and save time (ids from a newer game shown as they are). Save
+  files are named by date and slot, round-trip through export, import and `migrateSave` (an older
+  game inside is migrated), and unreadable, foreign, newer, damaged and oversized files are refused
+  with a clear message.
 - `flight.test.ts`: **pointer ownership for the two touch sticks** (third finger, wrong-pointer
   moves, cancel, hold button), frame-rate independence (30 Hz vs 120 Hz), drift, boost/cruise,
   bounded sub-steps, ship orientation, autopilot arrival, the portrait camera field of view,
