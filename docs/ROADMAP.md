@@ -9,8 +9,9 @@ After the scripted opening (10–20 minutes), the neighbourhood is an open sandb
 systems, 58 generated stations of twelve kinds, 23 goods with stock-based prices (two of them
 contraband), traders and patrols on the lanes, raider packs in lawless space, 35 ships with over
 100 pieces of equipment, and generated contracts on every job board. Since this plan was written,
-increments 1–4 below have added world events and news, escorts, deadlines, aces, chains and
-recoveries, the law and the outlaw path, and ratings, a codex and milestones.
+increments 1–6 below have added world events and news, escorts, deadlines, aces, chains and
+recoveries, the law and the outlaw path, ratings, a codex and milestones, three faction story
+arcs, and combat depth (seekers and decoys, mines, system damage, loot, wingmen, dens under fire).
 
 What it lacks is mostly **reasons and consequences**: the world only changes when you trade,
 nothing after the opening tells a story, standing barely bites, and there is no long-term goal
