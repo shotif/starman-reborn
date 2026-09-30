@@ -69,7 +69,7 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   - **Rotation mid-flight** (390×844 → 844×390) keeps the ship and re-lays out the controls.
   - **Desktop: a hit on a target away from the screen centre during a turn**, with bolts
     following the visible cursor.
-- `screenshots.spec.ts`: title, contract board, buy dialog, station overview, flight HUD and star
+- `screenshots.spec.ts`: title, job board, buy dialog, station deck, flight HUD and star
   map at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
   zoom). Saved in `docs/screenshots/`. Each is audited for page scroll overflow, clipped controls
