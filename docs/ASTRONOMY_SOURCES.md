@@ -8,32 +8,32 @@ what is uncertain.
 
 | Dataset | File | Status |
 | --- | --- | --- |
-| Star astrometry (44 components in 32 systems) | `src/data/generated/astrometry.json` | **Provisional** until a dated archive snapshot is captured |
-| Confirmed planets (37) | `src/data/generated/exoplanets.json` | **Provisional** until a dated archive snapshot is captured |
-| Catalogue systems (27 beyond the hand-authored five) | `src/data/generated/catalog-systems.json` | **Provisional**, extracted from HYG v4.0 and the Open Exoplanet Catalogue (below) |
+| Star astrometry (252 stars in the 206 systems beyond Sol) | `src/data/generated/astrometry.json` | **Snapshot** of 2026-09-30: Gaia DR3 for 141 stars, SIMBAD's adopted values (cited by bibcode) for the rest |
+| Planets (99: 77 confirmed, 22 contested, no candidates) | `src/data/generated/exoplanets.json` | **Snapshot** of 2026-09-30: NASA Exoplanet Archive and the Extrasolar Planets Encyclopaedia |
+| Catalogue systems (202 beyond the hand-authored five: 27 from HYG and the Open Exoplanet Catalogue, 175 added by the snapshot) | `src/data/generated/catalog-systems.json` | **Snapshot** of 2026-09-30 |
+| Belts and debris discs (9) | `src/data/generated/belts.json` | **Snapshot** of 2026-09-30, each citing its source |
+| The Solar System's orbital elements (8 planets) | `src/data/generated/solar-elements.json` | JPL, retrieved 2026-09-30 and checked against Horizons |
 
-The development environment could not reach the archives when the prototype was built: the ESA
-Gaia archive, NASA Exoplanet Archive, SIMBAD and VizieR hosts were blocked by the network policy.
-Until a snapshot replaces them:
+The development container cannot reach the archives: the ESA Gaia archive, NASA Exoplanet Archive,
+SIMBAD and VizieR hosts are blocked by its network policy. The snapshot is therefore fetched on
+GitHub's runners and processed offline (see *Pipeline: the sky snapshot*). Before the first
+snapshot the game ran on stopgap values in `data/provisional/`: transcriptions of the cited
+catalogs, not machine-verified retrievals, flagged `verification: "provisional"` and shown with a
+**Pending verification** badge (title screen, star map, encyclopedia, discovery cards). Those files
+remain the game's own record of its stars and planets, which every snapshot checks; a record a
+snapshot does not cover is still flagged and badged (none is today).
 
-- the stopgap values in `data/provisional/` are transcriptions of the cited catalogs, not
-  machine-verified retrievals;
-- every provisional record carries `verification: "provisional"`, and the game shows a
-  **Pending verification** badge wherever these values appear (title screen, star map,
-  encyclopedia, discovery cards);
-- planets list only names, hosts, discovery year and method. Orbital and mass values are
-  left blank ("pending archive snapshot") rather than typed in from memory.
-
-To replace them with a dated snapshot on a machine that can reach the archives:
+To take a new snapshot:
 
 ```bash
-npm run data:snapshot   # writes data/snapshot/*.json and raw responses under data/snapshot/raw/<date>/
+npm run data:fetch      # needs the archives: raw answers under data/snapshot/raw/<date>/
+npm run data:process    # offline: data/snapshot/*-input.json and data/snapshot/REPORT.md
 npm run data:build      # regenerates src/data/generated/*.json from the snapshot
 npm run data:validate   # must pass before committing
 ```
 
-`data:build` prefers `data/snapshot/*` when present. After a successful snapshot the badges
-disappear automatically and the as-of dates shown in game become the retrieval date.
+`npm run data:snapshot` runs the first two. `data:build` prefers `data/snapshot/*` when present,
+and the as-of dates shown in game are the retrieval date.
 
 ## Catalogue systems: HYG and the Open Exoplanet Catalogue
 
@@ -56,13 +56,16 @@ What this means for the data:
 - The systems are picked by name in the script (a fixed list, so the world does not shift when a
   catalogue is updated). Components are matched by HIP or Gliese number and every record keeps the
   URL of the catalogue it came from.
-- Distances are HYG's (from Hipparcos parallaxes, or Gliese distances where Hipparcos has none).
-  HYG does not carry parallax errors, so these systems show a distance without an error bar.
-- Planet masses are the catalogue's values; where the catalogue marks a mass as a minimum
-  (M sin i) the record says so. Values the catalogue does not give stay blank.
-- Everything from these catalogues is flagged **provisional** and shows the *Pending verification*
-  badge, exactly like the stopgap values, until an archive snapshot verifies it against Gaia DR3,
-  SIMBAD and the NASA Exoplanet Archive.
+- Distances were HYG's (from Hipparcos parallaxes, or Gliese distances where Hipparcos has none),
+  without parallax errors. The snapshot has since replaced every position and distance with archive
+  values, each with its error: GJ 1061 moved from 14.0 to 12.0 ly and BL Ceti by 0.3 ly, and no
+  other star moved more than 0.25 ly (`data/snapshot/REPORT.md`).
+- Planet masses were the catalogue's values; the snapshot replaced them with the NASA Exoplanet
+  Archive's wherever it lists the planet. The three planets it does not list (Tau Ceti e,
+  Kapteyn's Star b, 40 Eridani A b) keep the catalogue's values and are marked contested.
+- Everything from these catalogues was flagged **provisional** until the snapshot of 2026-09-30
+  checked it against SIMBAD, Gaia DR3, the NASA Exoplanet Archive and the Extrasolar Planets
+  Encyclopaedia.
 - **Licences of the derived files.** The positions, distances and spectral types derived from HYG
   in `data/provisional/catalog-astrometry-input.json` and `src/data/generated/astrometry.json` are
   shared under CC BY-SA 4.0 (the rest of the project keeps its own licence). The planet values
@@ -80,56 +83,162 @@ node scripts/extract-catalogs.ts && npm run data:build && npm run data:validate
 
 Stations, owners, security levels and jump lanes in these systems are **fiction** made by the world
 generator ([PROCGEN.md §7](PROCGEN.md#7-the-world-generator)); they attach only to the catalogued
-stars and confirmed planets and never add a body that is not in the catalogues.
+stars and confirmed planets and never add a body that is not in the catalogues. These 32 systems
+are the world's core, generated from frozen seeds, so a better value for a star moves it on the map
+but never moves a station, lane or owner (PROCGEN.md §7.6).
 
-## Pipeline
+## Pipeline: the sky snapshot
 
-1. **Snapshot** (`scripts/fetch-astro-snapshot.ts`) queries archives by catalog identifier, never
-   by a bare common name:
-   - **ESA Gaia DR3** `gaiadr3.gaia_source` by `source_id` for Proxima Centauri
-     (5853498713190525696), Barnard's Star (4472832130942575872) and Epsilon Eridani
-     (5164707970261890560). A Gaia solution is accepted only when it is five-parameter with
-     RUWE < 1.4 and parallax/error > 100.
-   - **Cone searches** around Alpha Centauri A/B and Sirius A/B record what Gaia DR3 holds for
-     those very bright stars (entries are missing or lack usable astrometry at their brightness).
-     The raw responses are kept as evidence.
-   - **SIMBAD** (`basic` joined with `ident`, by HIP number or Gaia identifier) supplies the
-     adopted position, parallax and proper motion for the bright stars. SIMBAD records a bibcode
-     per value, and the game cites that primary publication. SIMBAD's cross-identifiers are also
-     checked against the Gaia DR3 id used for each star; a mismatch aborts the snapshot.
-   - **VizieR I/311/hip2** (Hipparcos new reduction, van Leeuwen 2007) is queried as a
-     cross-check. Its parallaxes are printed alongside the adopted values.
-   - **NASA Exoplanet Archive** `pscomppars` lists confirmed planets only. For each planet the
-     snapshot keeps the archive name, host, controversy flag (`pl_controv_flag`), discovery
-     year/method, orbital period, semi-major axis, mass (with the minimum-mass `M sin i`
-     qualifier when the archive gives one), radius and the row-update date.
-2. **Build** (`scripts/build-dataset.ts`) propagates every position to one epoch (**ICRS,
-   J2016.0**) using linear proper motion, converts parallax to distance and computes Sol-centred
-   Cartesian coordinates in light-years:
+1. **Fetch** (`scripts/sky-fetch.ts`) is the only step that needs the network. It saves raw
+   answers only: one file per query under `data/snapshot/raw/<date>/`, exactly as the archive sent
+   it, and a `manifest.json` of what was asked, of whom, and whether it worked. A busy archive is
+   asked again before the query becomes an asynchronous job. It asks:
+   - **SIMBAD** (TAP): every star in the game by its HIP, Gliese and Gaia DR3 identifiers and its
+     names; everything with a parallax of at least 120 mas (about 27 ly), with identifiers, fluxes
+     and multiple-star links (`h_link`, following only parents that are multiple stars, not
+     clusters or moving groups); and, from its bibliography, papers on debris discs, dust belts and
+     infrared excesses for every star in the neighbourhood.
+   - **ESA Gaia DR3** `gaiadr3.gaia_source`: astrometry by `source_id` for every Gaia DR3
+     identifier the game or SIMBAD gives, and cone searches around Alpha Centauri A and B and
+     Sirius, which record what Gaia DR3 holds for those very bright stars.
+   - **VizieR I/311/hip2** (Hipparcos, new reduction, van Leeuwen 2007): by HIP number, and every
+     star it measured with a parallax of at least 120 mas.
+   - **NASA Exoplanet Archive** `pscomppars`: every confirmed planet within 8.3 pc, with the archive
+     name, host, controversy flag (`pl_controv_flag`), discovery year and method, orbital period,
+     semi-major axis, mass (with the minimum-mass `M sin i` qualifier when the archive gives one)
+     and radius.
+   - **The Extrasolar Planets Encyclopaedia** (exoplanet.eu, the Paris Observatory's EPN-TAP
+     service): every planet it lists within 8.4 pc, with its status, so a planet the NASA archive
+     does not confirm can be named and dated rather than silently dropped. When its HTTPS endpoint
+     does not answer, the fetch asks over plain HTTP.
+   - **JPL**: the Keplerian elements for approximate planet positions (1800–2050), and Horizons
+     heliocentric vectors for the eight planets at three dates, to test the elements against.
+
+   The Gaia DR3 cone searches and the Hipparcos answers are kept as evidence; the processing below
+   does not read them.
+
+   The workflow `.github/workflows/sky-snapshot.yml` runs the fetch on GitHub's runners, which can
+   reach the archives: when the fetch script or the workflow changes on a `claude/**` branch, by
+   hand, and on the 3rd of every month. It then processes, builds, validates and tests what it
+   fetched (a failure there does not stop it), commits `data/snapshot` and `src/data/generated`,
+   and force-pushes them to the `sky-snapshot` branch for review before anything is merged. What
+   was fetched is pushed even when a query failed, so the raw answers can be read.
+2. **Process** (`scripts/sky-process.ts`) runs offline and deterministically on the latest raw
+   snapshot (or the date given). It reads the game's own records in `data/provisional/` and writes
+   `data/snapshot/astrometry-input.json`, `systems-input.json`, `exoplanets-input.json`,
+   `belts-input.json` and `solar-elements.json`, and `data/snapshot/REPORT.md`, which lists every
+   change star by star and planet by planet. The rules:
+   - **Nothing already in the game is removed.** Stars keep their ids, names and colours.
+   - **The game's stars**: each is matched to one SIMBAD object (a star without a match stops the
+     run). Its astrometry comes from Gaia DR3 when the solution passes the quality cuts: five or six
+     parameters, a positive parallax, RUWE < 1.4 and parallax/error > 100. Otherwise it takes
+     SIMBAD's adopted values, each cited by bibcode, and the report says why Gaia DR3 was not used.
+   - **Companions**: one with no parallax of its own, a less precise one (an error over 2%, and
+     larger than its primary's), one more than 15% from its primary's, or a Gaia DR3 solution that
+     fails the cuts beside a sound primary, is plotted at its primary's distance, with a position
+     note.
+   - **New systems**: everything SIMBAD lists with a parallax of at least 120 mas that the game
+     lacks (stars, white dwarfs and brown dwarfs; not planets, objects of uncertain type, or the
+     entries that stand for a whole multiple system), plus the other members of a multiple system
+     with one in the neighbourhood. Objects are grouped into one system when they share a
+     multiple-star parent in SIMBAD, or when they sit close together on the sky at the same
+     distance: less than 0.25 ly apart across the line of sight and less than 0.4 ly apart along it
+     (1.5 ly when they are within an arcminute of each other, where one parallax may be poor). A
+     group that holds a game star joins that star's system; a group in which no star has a parallax
+     is left out. A new system is named the way astronomers know it: a proper name, else a Bayer or
+     Flamsteed name, the planet archive's host name, a variable-star name, an old catalogue name
+     (Wolf, Ross, Groombridge and the like), or a designation.
+   - **Planets**: see *Planets: confirmed, contested and candidate* below.
+   - **Belts and debris discs**: the Solar System's main belt and Kuiper Belt from NASA; elsewhere a
+     disc wherever SIMBAD links a star to papers reporting dust around it, citing the earliest and
+     the latest. Extents are given only where the cited source gives them; otherwise the belt's
+     place in the game is schematic.
+   - **The Solar System**: JPL's elements for the eight planets, the accuracy JPL states for them,
+     and the Horizons positions to test them (see *The Solar System on the real date*).
+3. **Build** (`scripts/build-dataset.ts`) writes `src/data/generated/astrometry.json`,
+   `exoplanets.json`, `catalog-systems.json`, `belts.json` and `solar-elements.json`. It takes
+   `data/snapshot/*-input.json` when present, else `data/provisional/`, plus the catalogue extras
+   (always provisional) for any star or planet the primary input does not cover. It propagates
+   every position to one epoch (**ICRS, J2016.0**) using linear proper motion, converts parallax to
+   distance and computes Sol-centred Cartesian coordinates in light-years:
    - `d [ly] = (1000 / parallax [mas]) × 3.261563777` (IAU parsec, Julian-year light-year)
    - `x = d cos δ cos α`, `y = d cos δ sin α`, `z = d sin δ` (double precision)
    - the 1-sigma distance error is propagated from the parallax error.
-3. **Validate** (`scripts/validate-data.ts`, also run by the unit tests) checks unique ids,
+4. **Validate** (`scripts/validate-data.ts`, also run by the unit tests) checks unique ids,
    RA/Dec ranges, positive parallax, distance/position consistency with RA/Dec/parallax, a single
-   frame and epoch, companion parents in the same system, one primary per system, confirmed-only
-   planets with existing hosts, https source URLs, dated snapshots, a functional dock in every
-   system, symmetric jump links and a jump graph where every system is reachable from Sol.
-   Familiar distance bands (Alpha Centauri ~4.2–4.4 ly, Barnard ~6, Sirius ~8.6,
-   Epsilon Eridani ~10.5) produce warnings if a value strays.
-4. **Runtime** uses only the bundled JSON. No archive or NASA API is contacted while playing.
+   frame and epoch, companion parents in the same system, one primary per system, planets with
+   existing hosts and a known status (a contested or candidate planet must carry a note saying what
+   the archives say, and a planet flagged controversial is never marked confirmed), https source
+   URLs, dated snapshots, a functional dock in every system, symmetric jump links and a jump graph
+   where every system is reachable from Sol. Familiar distance bands (Alpha Centauri ~4.2–4.4 ly,
+   Barnard ~6, Sirius ~8.6, Epsilon Eridani ~10.5) produce warnings if a value strays, and so does
+   every planet that is not confirmed. It also runs the world guardrails (PROCGEN.md §7.5).
+5. **Runtime** uses only the bundled JSON. No archive or NASA API is contacted while playing.
+
+The snapshot of 2026-09-30: 45 of 46 queries worked (the Encyclopaedia's HTTPS endpoint did not
+answer; plain HTTP did). All 44 of the game's stars matched a SIMBAD object, and 24 of them take
+Gaia DR3 astrometry. The snapshot added 175 systems and 3 stars joining systems the game had
+(Luyten 726-8 C, and Epsilon Indi Ba and Bb).
+
+## Planets: confirmed, contested and candidate
+
+Every planet has a status (`PlanetStatus` in `src/data/types.ts`), and the game never drops one:
+
+- **confirmed**: the NASA Exoplanet Archive lists it as confirmed, without a controversy flag;
+- **contested**: the NASA archive flags it as controversial or does not list it (candidates aside);
+- **candidate**: a planet the game did not have that only the Extrasolar Planets Encyclopaedia
+  lists, as a candidate.
+
+Keeping contested planets is a choice of this fictional edition of the game: nothing the archives
+dispute is removed, and each planet that is not confirmed carries a note saying what each archive
+says about it. `scripts/sky-process.ts` decides the status in three passes:
+
+1. Every planet the game had stays. One the NASA archive lists is confirmed, or contested when the
+   archive flags it; one it does not list is contested, whatever the Encyclopaedia says (listed,
+   retracted or absent).
+2. Confirmed planets the game lacked come from the NASA archive (contested when flagged), when
+   their host is among the stars within reach.
+3. Planets only the Encyclopaedia lists come in as candidates when it calls them candidates (or
+   unconfirmed), and as contested otherwise, when their host is among the stars within reach.
+   Retracted planets are never added, and a companion of more than 13 Jupiter masses is a brown
+   dwarf, not a planet: the game shows brown dwarfs as stars, from SIMBAD (Epsilon Indi Ba and Bb,
+   for one).
+
+The snapshot of 2026-09-30 holds 99 planets: 77 confirmed and 22 contested, among them the game's
+Tau Ceti e, Kapteyn's Star b and 40 Eridani A b, which neither archive lists any more. It holds no
+candidates. The planet card and the system's science notes show the status with its note and name
+the source of the values; the labels in flight show the status.
+
+## The Solar System on the real date
+
+Sol's eight planets sit in their real directions from the Sun on the game date: when the save
+began, plus the time played on the game clock (`src/data/solar.ts`). The positions come from JPL's
+Keplerian elements for 1800–2050 ("Approximate Positions of the Planets", Standish & Williams,
+<https://ssd.jpl.nasa.gov/planets/approx_pos.html>), fetched with the snapshot and solved with
+Kepler's equation in the J2000 ecliptic frame. Sizes and distances stay compressed, and Mars is
+drawn at most 140° round from Earth so the Earth–Mars lane never runs through the Sun; the scale
+note says when that happens. Outside 1800–2050, or without the elements, Sol keeps its schematic
+layout.
+
+`tests/unit/solar.test.ts` holds the elements to JPL Horizons. For the 24 bundled Horizons
+positions (the eight planets on 1 January 2000, 2025 and 2030), the heliocentric longitude agrees
+within twice the accuracy JPL states for that planet (Horizons is geometric and the elements are
+fitted) plus 60 arcseconds for light time, and the distance within twice the stated error plus 1.5
+million km (the Sun's wobble about the barycentre; the game uses only the directions). The test
+also reads the game date from when a save began and the time played, and checks that the planets go
+the right way round, faster nearer the Sun.
 
 ## Exceptions and special handling
 
 - **Alpha Centauri A and B.** Too bright for usable Gaia DR3 astrometry, so the adopted values come
-  from SIMBAD with bibcodes. The provisional set uses the joint A/B parallax of Akeson et al. 2021
-  (2021AJ....162...14A) for both stars. If a component's own parallax is much less precise than
-  its primary's, the snapshot plots it at the primary's parallax (they are a bound pair about 23 AU
-  apart) and records a position note.
+  from SIMBAD with bibcodes: in the snapshot of 2026-09-30, the Hipparcos parallax of Perryman et
+  al. 1997 (1997A&A...323L..49P) for both stars. The provisional set had used the joint A/B
+  parallax of Akeson et al. 2021 (2021AJ....162...14A).
 - **Proxima Centauri** is stored as a companion of Alpha Centauri A. On the map it sits about
-  0.2 ly (~13,000 AU) from the A/B pair and is never merged with it.
-- **Sirius A and B.** Sirius A uses SIMBAD/Hipparcos values. Sirius B lies about 10 arcseconds
-  from A, so at map scale it is plotted at Sirius A's position and parallax (position note in the
-  data).
+  0.2 ly (some 14,000 AU at the adopted distances) from the A/B pair and is never merged with it.
+- **Sirius A and B.** Sirius A uses SIMBAD's Hipparcos value (van Leeuwen 2007). Sirius B lies
+  about 10 arcseconds from A, and its own Gaia DR3 parallax fails the quality cuts beside its bright
+  primary, so it is plotted at Sirius A's distance (position note in the data).
 - **b Centauri** is a different star and is not part of this dataset.
 
 ## Uncertainty and what is not claimed
@@ -139,12 +248,14 @@ stars and confirmed planets and never add a body that is not in the catalogues.
   by far less than 0.001 ly, below map resolution.
 - Gaia DR3's small parallax zero-point offset (~0.02 mas) is negligible for these stars (relative
   effect ~10⁻⁵) and is not applied.
-- No planet around Alpha Centauri A or B is shown: none is listed as confirmed. Candidate or
-  retracted planets are never bundled.
+- No planet around Alpha Centauri A or B is shown: the snapshot of 2026-09-30 brings none. A planet
+  the archives do not confirm is shown only with its status and note (see *Planets*), and
+  retracted planets are never added.
 - Planet surfaces, atmospheres and habitability are shown as **Unknown**. In-game globes, star
   colours, glows and nebula backgrounds are artist's impressions, not observations.
-- Solar System planet names and types follow NASA's planet reference. Their in-flight sizes,
-  spacing and positions are schematic and do not match today's sky.
+- Solar System planet names and types follow NASA's planet reference. In flight their directions
+  from the Sun are real on the game date (see *The Solar System on the real date*); their sizes and
+  spacing are compressed.
 
 ## Science facts shown in the encyclopedia
 

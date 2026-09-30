@@ -228,11 +228,12 @@ refused until you sell the excess).
 
 ## 7. The world generator
 
-The second application builds the world around the real stars: `generateWorld(seeds, seed)` in
-`src/content/world/generate.ts`, a pure function of the catalogued systems (`WORLD_SEEDS` in
-`src/data/systems.ts`), the world rules (`src/content/world/rules.ts`) and a fixed seed
-(`WORLD_SEED`), so every player flies the same world. The five hand-authored systems keep their
-stations, owners and lanes; the generator only builds around them.
+The second application builds the world around the real stars: `generateWorld(seeds, seed, growth)`
+in `src/content/world/generate.ts`, a pure function of the catalogued systems (the frozen core's
+`CORE_SEEDS` and the verified sky's `GROWTH_SEEDS` in `src/data/systems.ts`, §7.6–7.7), the world
+rules (`src/content/world/rules.ts`) and a fixed seed (`WORLD_SEED`), so every player flies the same
+world. The five hand-authored systems keep their stations, owners and lanes; the generator only
+builds around them.
 
 ### 7.1 Jump lanes
 
@@ -242,8 +243,8 @@ stations, owners and lanes; the generator only builds around them.
    8.5 ly and has room; at most five lanes per system).
 4. Very short hops (under 3.2 ly) become lanes too, which makes loops.
 
-A system far from everything (Altair, 40 Eridani) stays a dead end: the lane would be longer than
-the rules allow.
+A system far from everything stays a dead end: the lane would be longer than the rules allow. In the
+core, Altair and 40 Eridani were; both have since gained lanes to new systems (§7.7).
 
 ### 7.2 Territory and security
 
@@ -299,8 +300,8 @@ hand-made stations keep their authored models and rooms (their rooms are fingerp
 `validateWorld` (`src/content/world/validate.ts`) checks, and the unit tests run it for the real
 world and for twelve other seeds:
 
-- lanes are two-way, reach every system from Sol, stay under 9.5 ly (hand-authored lanes aside)
-  and leave no avoidable dead end;
+- lanes are two-way, reach every system from Sol, stay under 9.5 ly (hand-authored lanes aside;
+  12 ly for a lane that touches a new system, §7.7) and leave no avoidable dead end;
 - security stays in range, claimed space is never lawless, hand-authored owners are kept and Sol is
   Transit Authority core space;
 - every station orbits a catalogued star or confirmed planet of its system, has a sane orbit and
@@ -313,12 +314,89 @@ world and for twelve other seeds:
 
 ### 7.6 Adding to the world
 
-- **More systems**: add them to the pick list in `scripts/extract-catalogs.ts`, rerun it and
-  `npm run data:build`. If a name pool runs out, the guardrails say so; add words.
+- **The core is locked.** The world's first 32 systems (the five hand-authored ones and 27 from the
+  HYG and Open Exoplanet catalogues) are generated from frozen seeds
+  (`src/content/world/core-seeds.json`: their positions, stars and planets as that first catalogue
+  gave them), never from the live dataset. Better astronomy moves a star on the map, never a
+  station, lane, owner or name, so saves keep working. The core is built with the same rules as
+  everything else (station types with their weights and bands, the core's name pools `NAME_WORDS`,
+  the territory and lane rules), so changing them can move it; the lock test then fails (§7.7), and
+  the change would need a save migration.
+- **More systems** come from the verified sky (`docs/ASTRONOMY_SOURCES.md`): a new snapshot and
+  `npm run data:build` put them in `src/data/generated/catalog-systems.json`, and the world grows
+  around the core (§7.7). There is no pick list to edit.
 - **A new station type**: add it to `StationType` (`src/content/world/types.ts`) and a rule to
   `STATION_TYPES` in `rules.ts`; give it a shop entry if it sells equipment and a market profile in
   `src/content/economy/rules.ts`. The coverage guardrail makes sure it appears somewhere; add an
-  archetype to the exterior generator and a character to the interior generator.
+  archetype to the exterior generator and a character to the interior generator. The core draws
+  from the same list, so a type its systems qualify for can move the core: run the lock test.
+
+### 7.7 Growth and the frontier
+
+The sky snapshot of 2026-09-30 (`docs/ASTRONOMY_SOURCES.md`) added 175 systems within about 27 ly
+to the 32 of the core: 207 in all. `growWorld` (`src/content/world/generate.ts`) places them around
+the finished core without changing it, nearest to Sol first, by the rules in `GROWTH`
+(`src/content/world/rules.ts`):
+
+- **Lanes** (`growJumpNetwork` in `src/content/world/network.ts`): each new system joins the nearest
+  placed system with room (fewer than five lanes), or the nearest at all if none has room. Then a
+  new system with fewer than two lanes links to its nearest placed systems within 10 ly
+  (`GROWTH.maxExtraLinkLy`) that have room, a core dead end gains lanes to new systems only, and
+  hops under 3.2 ly with a new system at one end become lanes too. Every growth lane touches a new
+  system, so no lane is ever added between two core systems. Today 21 core systems have gained a
+  lane.
+- **Territory**: the same anchors decide who claims a new system (§7.2); today the Frontier
+  Cooperative claims five and the rest are unclaimed. An unclaimed system with a catalogued planet,
+  or an F, G or K primary star, is settled by independent colonies that keep a militia: its
+  security is at least a value drawn for it from 0.3–0.42 (`GROWTH.colonySecurity`), so farms, labs
+  and free ports can open there.
+- **Stations** follow §7.3, named from pools of their own (`GROWTH_NAME_WORDS`; independents have
+  the most) so the core's names never shift. When a pool runs out, a station is named after its
+  system ("GJ 393 Bazaar"); 105 of the 264 new stations are. A lawless new system two or more jumps
+  from Sol gets a raider den with a chance of 0.4 (`GROWTH.denChance`), against 0.75 in the core:
+  the frontier is thinner than the core's edge.
+- **The frontier** is the far shell: new systems farther than 17.5 ly from Sol
+  (`GROWTH.frontierLy`), 141 of the 175 today (`isFrontier` in `src/data/systems.ts`). A lane with a
+  frontier system at either end (`laneNeedsDrive`) needs a long-range jump drive whose reach is at
+  least the lane's length. `laneTaker(reach)` (`src/galaxy/jumpRules.ts`) answers that for each
+  lane, and route finding takes it as `RouteOptions.canTake` (`src/galaxy/routing.ts`), so routes
+  skip the lanes a ship cannot take. The drive is a utility fitting (the `jump-drive` family): 11 ly
+  at class 1, 11.7 at class 2 and 12.4 at class 3. Horizon Dynamics makes classes 1–3 and Wake
+  Salvage classes 1–2; outfitters that stock either sell them. From Sol, a class 1 or 2 drive
+  reaches 138 of the 141 frontier systems and a class 3 drive all of them. Without a drive, the star
+  map's jump panel says what reach the frontier lane needs and who sells drives; with one too
+  short, how long the lane is.
+- **Work**: a board outside the frontier never sends a pilot into it (for a contract, a frontier
+  system is out of reach from outside); frontier boards send anywhere. Every frontier board except
+  a den's adds 2 to the weight of surveys (`FRONTIER_SURVEY_WEIGHT`), and a survey of a frontier
+  planet pays half as much again on its varying part (`CONTRACTS.reward.survey.frontier`, §10.3). A
+  survey of a contested or candidate planet says the readings could settle it.
+- **The star map** frames the core's systems (zoom out for the far shell), draws frontier lanes in
+  dashed amber on the 3D map with a line in the key, gives the labels of the core's systems and of
+  systems visited priority over the far shell's, and draws new systems' drop lines fainter.
+- **Milestones** (§13.3): *Into the frontier*, for a first frontier system visited, and
+  *Twenty-five frontier systems visited*.
+
+Guardrails:
+
+- `tests/unit/worldLock.test.ts` generates the core from its frozen seeds and holds it to
+  `tests/unit/fixtures/core-world.json`: every station's id, name, system, type, owner and anchor,
+  every lane, and every system's owner and security. In the grown world the core's stations come
+  first and unchanged, every core system keeps its owner, security and lanes and gains lanes to new
+  systems only, no new system takes a core id, and every body a core station orbits is still in the
+  dataset.
+- `tests/unit/frontier.test.ts`: there are more than 50 frontier systems, each a new system more
+  than 17 ly out, and every lane of theirs needs the drive (Sol to Alpha Centauri does not). A pilot
+  without a drive is refused a frontier system with a reason naming the long-range jump drive; one
+  with a 12.4 ly drive gets a route through a frontier lane; one whose drive falls short of that
+  lane, if refused, is told it lies beyond the drive. Every system outside the frontier is reachable
+  from Sol without a drive, and every frontier system with a 12.4 ly one. Drives are sold outside
+  the frontier, somewhere a pilot without one can reach. No board at sixty stations outside the
+  frontier, over six time slots, sends a pilot into it, and frontier boards have work.
+- The world guardrails (§7.5) run on the grown world, with lanes that touch a new system allowed
+  12 ly (`GROWTH.maxLinkLy`), core systems gaining lanes to new systems only, no word in both the
+  core's and the growth name pools, and a new system's station allowed its system's name once its
+  pool has run out.
 
 ## 8. The economy
 
@@ -900,6 +978,269 @@ balance; every name is invented.
   taking fire; only from ships within 4 km of the player, at most one line every seven seconds,
   from small phrase pools.
 
+## 16. People and information
+
+Who sits in a station's bar, what they know, and what the player does with it
+(`src/economy/people.ts`, `src/economy/tradeComputer.ts` and `src/economy/trade.ts`; rules in
+`src/content/people/rules.ts`, words in `src/content/people/lines.ts`). The People window is in
+every bar (`src/ui/station/people.ts`) and the trade computer on every dock's menu rail
+(`src/ui/station/computer.ts`). The rules decide every fact; the phrase pools only vary the wording.
+Nothing runs in the background: who sits where and what they know is worked out from the clock and
+the save when the player asks.
+
+### 16.1 Who sits in the bar
+
+- **Story characters** (§14) sit in their own bars. Sitting down with one gives a line from where
+  their arc stands: work on offer (with a button to the job), the work in hand, what they are
+  waiting for, or how it ended.
+- **Regulars**: two or three a bar, drawn from a fixed seed, the station and the shift, so every
+  player meets the same people at the same clock. A shift is two job-board time slots (50 minutes of
+  game clock); then new people take the seats. The station type sets who is likely to sit there (a
+  role listed twice is twice as likely):
+
+  | Station | Regulars drawn from |
+  | --- | --- |
+  | Trade port | trader (twice), fixer, colonist |
+  | Customs depot | officer, trader, fixer |
+  | Shipyard | pilot, trader, miner |
+  | Mining outpost | miner (twice), trader |
+  | Refinery | miner, trader, colonist |
+  | Factory | trader, colonist, miner |
+  | Agri station (farm) | colonist (twice), trader |
+  | Research station | scientist (twice), trader |
+  | Relay | pilot, trader, officer |
+  | Military base | officer (twice), pilot |
+  | Free port | fixer (twice), trader, pilot |
+  | Raider den | fixer (twice), pilot |
+
+  The hand-made stations' bars are like the type closest to them: Halcyon Ring and Eridani Mining
+  Hub are trade ports, Deimos Depot a customs depot, Meridian Outpost and Horizon Platform research
+  stations, Barnard Transit Relay a relay.
+- A regular has a name from invented pools, a title for the role ("Freight broker", "Rig
+  foreman"), a greeting and an age. Officers, miners and scientists belong to the station's owner;
+  traders, pilots, fixers and colonists are independents two times in five.
+- **Pilots for hire** (§15.4) sit at the tables too while the station gives the player full service.
+  The People window hires them, and lists the wing already on the player's pay with a way to
+  dismiss each.
+- **Faces** (`src/ui/portraits.ts`): everyone has a small SVG portrait, a pure function of a seed
+  and a look. The faction sets the clothes, palette and insignia; the role the kit (a pilot's
+  headset, a miner's goggles or visor, an officer's collar tabs, a trader's or scientist's data
+  slate, a fixer's hood); age greys the hair and lines the face; the seed decides the rest. The
+  story characters have faces chosen for them (`STORY_PORTRAITS`), and a regular's seed is moved
+  clear of theirs (`src/ui/station/personPortrait.ts`), so no regular wears a story face.
+
+### 16.2 Rumours
+
+- **A round** for the table costs 30 cr and buys one thing the person knows this shift. With nothing
+  worth telling, the round is on the house; a person who has told this shift's thing says so and
+  charges nothing; a round needs 30 cr in hand. Story characters sell no rumours.
+- **What people know**, within two jumps of the bar unless noted:
+  - **price**: the best sale within reach for a good the bar's own dock sells, or a bargain (a dock
+    selling a good at 80% or less of its usual price). It is only told when a full hold of the
+    player's ship on it is worth at least four rounds (120 cr). The price goes into what the player
+    knows, as heard, for the trade computer to use.
+  - **event**: a world event (§11) that starts within the next 45 minutes: news before it is news.
+  - **den**: the nearest raider den within three jumps, with its guns awake or how long it has been
+    dark (§15.5).
+  - **ace** and **wreck**: an ace hunt or a recovery posted on this board or one within reach:
+    where it is, who pays, and the reward (an ace) or the item still aboard (a wreck).
+  - **story**: a story mission waiting for the player, anywhere, and where to go.
+  - **front**: how a border front within reach stands, and where its tide takes it in the next four
+    hours when that is a different phase (§20).
+- **Talk order**: each role has its subjects in order. A person starts at a place in the list set by
+  their seed and goes round it, and tells the first subject with something true to tell. Officers
+  list the front first and pilots last.
+
+  | Role | Subjects |
+  | --- | --- |
+  | Trader | price, event, wreck |
+  | Pilot | den, ace, event, front |
+  | Fixer | ace, story, wreck, price |
+  | Officer | front, den, event, ace |
+  | Miner | event, price, wreck |
+  | Scientist | event, story, price |
+  | Colonist | event, price, story |
+
+- **Rumours are true.** Every rumour is read from the game's own state at the moment it is told
+  (live prices, the event schedule, the dens, the posted boards, the story, the fronts) and its
+  numbers are printed from that state. Nothing is invented.
+- The journal keeps the last 12 things heard, newest first, with the bar and when. Save version 9
+  adds what was heard and the price watch (`GameState.rumours`, `GameState.priceWatch`).
+
+### 16.3 The price watch
+
+- Up to six prices can be watched: a good at a station, from the buy dialog at a trader (*Watch
+  this price*) or from a route's destination in the trade computer.
+- Docking within two jumps of a watched station brings its price up to date (the station docked at
+  is recorded by the visit itself). A move of 5% or more in what it pays or asks is reported as a
+  toast.
+- Word of one good, heard or watched, keeps its own time, so the rest of what the player knows
+  about that market keeps its age. The trade computer lists the watched prices with how and when
+  each was had (seen, briefed, heard or watched), and stops a watch.
+
+### 16.4 The trade computer
+
+- It knows only prices the player has had: seen at a dock (docking records the whole market), read
+  in a briefing, heard in a bar or relayed by the watch. Never the hidden market. The price where
+  the player is docked is the live one.
+- A route buys a good at one known market and sells it at another that pays more. The load is a
+  full hold, as far as the credits in hand pay for it. The fees are the jump fees from the buyer to
+  the seller, plus from here to the buyer when the route starts elsewhere. The time is the expected
+  trip (§10.2: 45 s out, 165 s a jump with lane transit, 30 s in) from the buyer to the seller, plus
+  the trip to the buyer, in whole minutes (at least one). Profit is the load times the margin, less
+  the fees; only profitable routes are listed, by profit per minute and then profit, eight at most.
+- When docked at a market it shows routes from anywhere known, or only those that buy here; the
+  trader window shows the best four that buy here, with a button for the rest.
+- Each route shows both prices with their age (*live* where the player is docked), the load, the
+  fees, the profit, the minutes and the credits a minute; a risk tag from the lower security of its
+  two ends (*Patrolled*, *Thin patrols* below 0.6, *Lawless* below 0.35); and news within the
+  player's reach that bears on it (an event moving the good at either end, a raid in either end's
+  system). A route whose older price is more than an hour old (game clock) is dimmed and marked
+  *Old prices*. A *Watch* button on each route watches its destination's price.
+
+### 16.5 Small conveniences
+
+- **The job board** filters (all, hauling, combat, other) and sorts (as posted, by reward, by reward
+  per jump) once it lists more than three jobs; the choice lasts the session.
+- **Payment**: when a contract pays, the poster's dispatcher confirms it on the radio, in words that
+  fit the poster's faction (story missions have their own words).
+- **Where you left off**: after the opening, docking with nothing more pressing opens the room and
+  window last open at that station (kept on the device, not in the save).
+- **Wing orders**: V (or the Wing chip on touch) cycles the wing's standing order: engage at will
+  (the default), attack my target (the player's selected target when it is fair game, otherwise as
+  at will), or form up (no fighting). The wing acknowledges on the radio.
+
+### 16.6 People guardrails
+
+`tests/unit/people.test.ts` checks that:
+
+- every open bar seats two or three regulars, the same when drawn again at the same clock, with
+  roles from its station type's list, two-word names and real greetings; a trade port's regulars
+  change with the shift;
+- every story character sits in their own bar, and a military base has pilots for hire;
+- rumours are true: at three moments of the clock, everything every regular in every bar would say
+  has its words filled in; a price names the station, the good and one of that good's live prices
+  there; an event is one that starts within 45 minutes; a den is a real raider den; an ace or a
+  wreck names a real station; more than twenty things are told in all;
+- every price tip is worth at least four rounds for a full hold;
+- a round is charged once and puts the live price in what the player knows and the tip in the
+  journal; a second round that shift is refused at no cost, and a round with nothing to tell costs
+  nothing;
+- the trade computer knows nothing it has not been told: a new game has no route, even docked in
+  Sol. From twelve markets seen ten minutes apart it ranks routes by profit per minute, with the
+  prices the player saw, fees at least the jump fees between the ends, times at least the expected
+  trip, and profit equal to the load's margin less the fees; docked, routes that buy here start at
+  the live price;
+- a watched price at a Sol station, moved by a big sale there, comes up to date with one report
+  when the player docks at Halcyon Ring, and not when docking more than 12 ly from Sol; a seventh
+  watch is refused;
+- a version 8 save gets an empty watch and nothing heard; a watch on an unknown station or a rumour
+  of an unknown kind is rejected.
+
+`tests/unit/portraits.test.ts` holds the portraits to a pure function of seed and look: a different
+face for each seed, the same face whatever the clothes, well-formed SVG under 10,000 characters for
+every faction, role and age, the kit each role wears, grey hair and lines with age, and the six
+story characters' faces with the traits that make them. `tests/e2e/people.spec.ts` buys rounds in
+Halcyon Ring's bar until someone tells something, finds it in the journal, and watches a price at
+the trader that then shows in the trade computer.
+
+## 17. A world that answers
+
+The world keeps what the player does to it (`src/economy/answers.ts`, `src/economy/markets.ts`,
+`src/economy/law.ts`; rules in `EVENTS.react` in `src/content/events/rules.ts`, `ECONOMY.spill` in
+`src/content/economy/rules.ts`, `LAW.witness` and `LAW.lapse` in `src/content/law/rules.ts`, and
+`TRAFFIC.linger` in `src/world/traffic/plan.ts`). Events, markets and traffic are still worked out
+from the seed and the game clock (§8, §9, §11). What the player changes is written to the save's
+world log (§17.5) and read back from it, so another save's world is untouched.
+
+### 17.1 Shortages relieved and raids broken
+
+- **Relief**: every unit the player sells into a shortage (§11.1) while it lasts counts toward its
+  relief. A shortage leaves the station short of 40% of its normal stock of the good; once the
+  player has sold 60% of that shortfall (`EVENTS.react.relief`), the shortage ends at once. The
+  station pays a relief bonus on top of the sales, 25% of the base value of every unit sold into
+  it (`reliefBonus`), and standing with its owner rises by 3.
+- **A raid broken**: every raider the player destroys for a bounty in a raided system counts. At
+  three plus the raid's threat level (`raidKills`) the raid ends at once, and standing with the
+  system's lawful owner rises by 3 (none in unclaimed space).
+- A toast says so, and the news within reach reports the event as relieved or broken by a pilot,
+  and how long ago (§11.3). Markets and the traffic plan follow the new end, and an event ended
+  early cannot be ended again.
+
+### 17.2 Goods on the move
+
+- As a station's stock recovers from what the player (or one of the player's captains, §18) left it
+  at, a share of the difference (`ECONOMY.spill.share`, a half) drifts along the lanes to the other
+  stations that trade the good in its system and the systems one jump away (`spill.jumps`), split
+  evenly between them. It rises to a peak one recovery time (30 minutes of game clock) after the
+  trade and fades after that.
+- A glut the player sells into one dock therefore fills its neighbours a little and lowers their
+  prices; a dock the player drains draws stock from its neighbours, and their prices rise too.
+- Nothing more is saved for it: the drift is worked out from the moved stock already in the save
+  (§8.2) and the clock, and added to each neighbour's own stock (never below zero).
+
+### 17.3 Encounters that persist
+
+- When the player leaves a system or docks, raider packs that saw the player are remembered with
+  their threat level, the ships left and where they were, and so are pods still adrift (salvage,
+  cargo or an equipment crate; at most eight). A bounty contract's pack, an ace, bounty hunters, a
+  den's turrets and reactor, and the scripted opening raid are not.
+- Back in flight there within 30 minutes of game clock (`TRAFFIC.linger`), the packs are where they
+  were and hunting again, the pods where they were left, and the HUD warns that raiders who saw the
+  player last time are still hunting there. Later than that, the record is dropped.
+- The save keeps such records for at most six systems; the oldest goes first.
+
+### 17.4 Witnesses, and fines that lapse
+
+- A crime (§12.1) is known where it was seen: the fine is booked with the system and the time, and
+  the news travels one jump every 10 minutes of game clock (`LAW.witness.perJump`). A faction's
+  patrols and stations act on the fines they know of where they are: a pilot is hunted there, and
+  gets emergency docking only, once the news has arrived. The HUD shows *Wanted* with the fines
+  known here, or that news of a crime is spreading.
+- Once the news has reached every system, the fine goes on the record (settled on docking and after
+  every jump). A pardon (§12.1) settles everything booked, known everywhere yet or not.
+- **Lapse**: after three hours of game clock without a new crime against a faction (`LAW.lapse`),
+  every fine owed to it lapses, and a toast says so. Never while the pilot is Hostile with it.
+
+### 17.5 The world log
+
+`GameState.world` (save version 10) holds the player's mark on the world:
+
+- `relief`: units sold into each shortage; `raidKills`: raiders downed in each raid;
+- `ended`: the events the player ended early, with the time;
+- `lingering`: what is still out there, by system (§17.3);
+- `border`: the player's deeds on each border front, and how The Long Border ended there (§20).
+
+The event engine reads the log of the save being played (`useWorldLog`), so events stay a pure
+function of the clock except for the endings recorded there. `tidyWorldLog` runs at every docking:
+endings over a day old are forgotten, and the relief and raid tallies keep their 40 newest events.
+The crimes whose news is still travelling, and each faction's last crime, are in `GameState.law`
+(§17.4). A version 9 save keeps its fines on record, counts them as committed at its own clock for
+the lapse, and starts with an empty world log.
+
+### 17.6 Guardrails
+
+`tests/unit/answers.test.ts` checks that:
+
+- a shortage one unit short of its relief share runs on; the next unit ends it, pays exactly the
+  bonus and raises standing with the owner, and the news shows it over and ended early; without the
+  save's world log, the same event runs its course;
+- a raid runs on until exactly three plus its threat level raiders are down, then breaks;
+- 300 units of water left at one dock drift into a neighbour: nothing at first, more at one
+  recovery time than at a fifth of one or at four, and less than 1% of the load after twelve;
+- a crime in Sol is owed in Sol at once but not two jumps away, where a lawful station still gives
+  full service; twenty minutes later it is owed there and that station gives emergency docking
+  only; the news reaches everywhere well before a fine could lapse, and settling then puts it on
+  the record;
+- fines lapse after exactly three quiet hours, not a second sooner, and never for a Hostile pilot;
+- a version 9 save keeps its fines and gets an empty world log; a lingering record for an unknown
+  system, or a travelling crime with a bad time, is rejected;
+- in a real `FlightSession` (in node, without rendering), a pack of two that saw the player and a
+  pod adrift are remembered, and flying in again brings back both raiders within a kilometre of
+  where they were, and the pod.
+
+`tests/unit/law.test.ts` checks that a fine is on the record at once and owed where the crime was
+seen, and `tests/unit/market.test.ts` that moved stock recovers with its 30-minute time constant.
 
 ## 18. A fleet of your own
 
