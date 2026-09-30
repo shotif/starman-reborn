@@ -5,155 +5,47 @@ when it is done, so the game stays playable throughout. Status: ✅ done · 🔨
 
 ## Where the game stands
 
-After the scripted opening (10–20 minutes), the neighbourhood is an open sandbox: 32 real
-systems, 58 generated stations of twelve kinds, 23 goods with stock-based prices (two of them
-contraband), traders and patrols on the lanes, raider packs in lawless space, 35 ships with over
-100 pieces of equipment, and generated contracts on every job board. Increments 1–6 (under
-[Done so far](#done-so-far)) added world events and news, escorts, deadlines, aces, chains and
-recoveries, the law and the outlaw path, ratings, a codex and milestones, three faction story
-arcs, and combat depth.
+After the scripted opening (10–20 minutes), the neighbourhood is an open sandbox: 207 real
+systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
+of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
+packs in lawless space; 39 ships and 139 pieces of equipment; and generated contracts on every job
+board. Increments 1–12 (under [Done so far](#done-so-far)) added world events and news, contracts
+of every kind, the law and the outlaw path, goals, four story arcs, combat depth, people in the
+bars and a trade computer, a world that answers, a fleet of your own, mining in the real belts,
+the frontier and a border war.
 
 What it lacks now:
 
-- **Planning.** Trading is the core loop, but the player plans from memory, and the bars are
-  rooms without people in them.
-- **Something to build.** After the biggest ship there is nothing left to own, and no reason to
-  open the game for a short session.
-- **A world that answers.** Events, stock and traffic run on the clock; what the player does
-  barely moves them, and nothing persists after a jump.
-- **A third career.** Trading and fighting (and scanning), but no mining, although the Solar
-  System's asteroid belt is real and not in the game yet.
-- **An ending.** The three arcs end separately and leave one mark on the world, a dark den.
-- **A verified sky.** Every real value still shows *Pending verification*.
-
-The proposals below go after these, numbered in the order I would build them. Sizes are relative:
-S, M, L.
+- **Real phones.** Every test runs in a desktop browser with emulated phones and touch, and the
+  first load has grown to about 610 KB with the verified sky; nothing has been measured on a phone.
+- **A frontier with a life of its own.** The 141 systems beyond 17.5 light-years are settled by the
+  same rules as the core (thin colonies, dens, survey work), with no story or events of their own.
+- **Company across jumps.** Escorts and convoys stay within one system; only wingmen follow you
+  through a lane.
 
 ## Proposed next increments
 
-### First, alongside: the real sky, verified ⏳ (S–M)
+Everything proposed before is done (see below). Candidates for what comes next, in the order I
+would build them:
 
-The snapshot script covers only the seven stars (and their seven planets) of the five hand-made
-systems; the other 37 stars and 30 planets come from HYG and the Open Exoplanet Catalogue. The
-container I work in cannot reach the archives, but GitHub's runners can, and I can drive them
-from here without any change to the environment:
+### 13. Phones, measured and tuned ⏳ (M)
 
-- **Cover the whole sky in the game**: extend `scripts/fetch-astro-snapshot.ts` to all 44 stars
-  (SIMBAD by HIP or Gliese number; the Gaia DR3 id from SIMBAD's cross-identifiers; Gaia DR3
-  astrometry where it passes the quality cuts, otherwise SIMBAD's adopted values with their
-  bibcodes; Hipparcos as a cross-check) and to every confirmed planet of their hosts in the NASA
-  Exoplanet Archive.
-- **A verification report**: star by star, how far the archive values move each star from what
-  the game shows (distance and position); planets the archive adds, drops or marks controversial;
-  and the stations, codex entries and saves that touches. Nothing is merged without reading it.
-- **A workflow on GitHub's runners** (`.github/workflows/sky-snapshot.yml`): `npm ci`, then
-  `data:snapshot`, `data:build`, `data:validate` and the unit tests. The report goes into the
-  run's log, and the dated snapshot, the raw archive responses and the report are committed to a
-  `sky-snapshot` branch with the run's own token. It starts when the workflow or the snapshot
-  script is pushed to the development branch; once it is on `main`, it can be re-run on demand
-  and runs monthly, committing only when the archives changed.
-- **Review and merge from here**: I follow the run and read its log through the GitHub
-  connection, fetch the branch with git (both work from this container), read the report, run
-  every check locally and merge. The badges disappear, and distances get their error bars.
-- **The Solar System on the real date**: the same run fetches JPL's Keplerian elements for
-  1800–2050 ([Approximate Positions of the Planets](https://ssd.jpl.nasa.gov/planets/approx_pos.html))
-  and a few Horizons positions to test against. Sol's planets then sit at their real heliocentric
-  longitudes for the game date (distances stay compressed), and a unit test holds them to Horizons
-  within JPL's stated accuracy.
-- **Nothing needed from you.** The runner has open internet, and pushing a branch needs only the
-  permission the workflow file asks for. (A workflow that opens a pull request would need a
-  repository setting, so it pushes a branch instead.)
-- **Risks**: an archive may refuse or rate-limit a runner (the run fails, commits nothing, and its
-  log says why); a planet the NASA archive does not confirm would take away the station built on
-  it (the report names it first, and a save migration keeps older saves loading).
-
-### 7. Trade computer, rumours and people in the bars ⏳ (M)
-
-Cheap, and it improves every session: trading gets a planning tool, and the bars get people.
-
-- **Trade computer** (a journal page, and Plan at the trader): the best routes from prices you
-  have seen, with the age of each price, profit per minute for your hold after jump fees and
-  transit time, and the news that will move them. It knows only what you know.
-- **Price watch**: mark a good at a station; docking within two jumps tells you if it moved.
-- **Rumours** for the price of a drink: true facts from the game's state (a shortage before it
-  reaches the news, where an ace was last seen, a den's defences, a wreck worth recovering),
-  never invented.
-- **People in the bars**: the story characters sit in their bars, and a small cast of generated
-  regulars (traders, pilots, a fixer) offer rumours, contracts and wingmen face to face, with
-  procedural portraits.
-- **Guardrails**: rumours are drawn from the model only, routes only from seen prices, and a
-  rumour never costs more than it is worth.
-
-### 8. A world that answers ⏳ (M)
-
-- **Events react**: a shortage you help fill ends sooner and pays whoever filled it; destroying
-  raiders shortens a raid.
-- **Goods move everywhere**: traffic moves stock along the lanes out of sight too, so a glut
-  drains into its neighbours and a route you work hard flattens.
-- **Encounters persist**: a pack you fled is still there for a while; a wreck keeps its cargo.
-- **Witnesses**: a crime is known where it was seen and travels with the traffic; fines lapse.
-- **Guardrails**: still a function of the seed and the clock, plus a short log of what the player
-  did; prices stay in their bands; the tutorial is left alone.
-
-### 9. A fleet of your own ⏳ (L)
-
-A long-term goal, and a reason to open the game for five minutes.
-
-- **More than one ship**: park ships at stations and switch where one is parked.
-- **Haulers on your routes**: give a parked ship a hired captain and a route you have flown; it
-  runs out of sight as a function of the clock (trips, profit, losses to raiders by the route's
-  security) and reports when you dock.
-- **Storage and stakes**: rent a hold at a station; later, buy a share of a station's trade.
-- **Guardrails**: a hauler earns well below flying yourself; losses are bounded and can be
-  insured; nothing runs in the background (it is worked out from the clock on load, the same on
-  every device).
-
-### 10. Mining in the real belts ⏳ (M)
-
-A third career, for pilots who would rather not fight.
-
-- **Real belts only**: the Solar System's main belt and Kuiper belt (missing today), Epsilon
-  Eridani's two belts, and other catalogued debris discs, each with its source.
-- Mining lasers and prospecting scanners at the outfitters; ore, ice and volatiles for the
-  refineries; claim contracts; raiders who hunt miners.
-- **Guardrails**: mined goods stay in their price bands, and no belt without a citation.
-
-### 11. The frontier, out to 25 light-years ⏳ (L)
-
-The map stops at about 17 light-years; the next shell holds some of the best-known planetary
-systems (Gliese 581 and HD 219134 among them, if the archive query agrees).
-
-- New systems straight from the verified pipeline (Gaia DR3, SIMBAD, the NASA Exoplanet
-  Archive), not from HYG.
-- A long-range jump drive to reach them; a thin, lawless frontier with independent colonies;
-  survey contracts for the codex.
-- **Guardrails**: the same world generator and checks; the 32 systems and existing saves stay as
-  they are.
-
-### 12. The arcs converge ⏳ (L)
-
-- **A contested border**: the Transit Authority and the Hollow Wake contest systems through the
-  world tick (blockades, skirmishes, a station changing hands), and the player's work tips it.
-- **A fourth arc** that reads the choices made in the other three, with different endings, and
-  war contracts on both sides.
-- **Guardrails**: a dock with repairs is always reachable, no dead ends, and the finale can be
-  reached as a lawful pilot, an outlaw or neither.
-
-### Parallel track: polish and reach ⏳ (M)
-
-- **Save slots with export and import**, early: browser storage can be cleared, and there are no
-  cloud saves.
-- Gamepad support.
 - The real-device checklist in [TEST_RECORD.md](TEST_RECORD.md) on an Android phone and an iPhone
-  (this one needs you), then performance tuning from what it finds.
-- More music, station ambience, and chatter from traffic.
+  (this one needs you), then tuning from what it finds.
+- A smaller first load: the world and sky data loaded behind the title screen, and the star map's
+  data on first open.
 
-### Quick wins (S each)
+### 14. The frontier's own stories ⏳ (M)
 
-- Sort and filter the job board (reward, reward per jump, kind).
-- A sound and a comm line when a contract pays.
-- Remember the last open window at each station.
-- Orders for wingmen: attack my target, form up.
+- A short arc among the frontier colonies, and events of their own (a first harvest, a drive
+  failure far from any dock, a survey that settles a contested planet in the game's fiction without
+  changing what the archives say).
+- **Guardrails**: nothing invented about real planets; contested ones stay marked as contested.
+
+### 15. Convoys across jumps ⏳ (M)
+
+- Escorts and convoys that follow you through the lanes, with ambushes at the beacons, and a
+  convoy finale for The Long Border's truce that crosses the line.
 
 ### How an increment ships
 
@@ -213,6 +105,81 @@ itself and can be knocked out (paid by the law, reported in the news, dark for s
 den assault contracts on lawful boards; hit flashes and radio chatter
 ([PROCGEN.md §15](PROCGEN.md#15-combat-depth)).
 
+### The real sky, verified ✅
+
+A workflow on GitHub's runners (`.github/workflows/sky-snapshot.yml`) asks SIMBAD, Gaia DR3,
+Hipparcos, the NASA Exoplanet Archive and the Extrasolar Planets Encyclopaedia about every star
+within about 27 light-years, and commits their answers to a `sky-snapshot` branch;
+`scripts/sky-process.ts` turns them into the game's data, with a report. On 30 September 2026:
+252 stars in 207 systems, 99 planets (77 confirmed, and 22 contested, kept in this edition and
+marked so) and 9 debris belts with their papers. The *Pending verification* badges are gone, and
+the Solar System's planets sit where they are on the game date (JPL's elements, held to JPL
+Horizons in the unit tests) ([ASTRONOMY_SOURCES.md](ASTRONOMY_SOURCES.md)).
+
+### 7. Trade computer, rumours and people in the bars ✅
+
+A trade computer at every dock (and its best routes in the trader) ranks routes from the prices
+you have seen, with each price's age and the profit per minute for your hold after fees and
+transit time; a price watch tells you when a watched good moves as you dock nearby; the bars have
+people (regulars by station type, the story characters, pilots for hire) with procedural
+portraits, and a round of drinks buys a rumour that is always true: a price, an event before the
+news, a den's guns, an ace, a wreck, a story or a border front
+([PROCGEN.md §16](PROCGEN.md#16-people-and-information)).
+
+### 8. A world that answers ✅
+
+A shortage you help fill ends sooner and pays a relief bonus; raiders destroyed during a raid break
+it; goods spill along the lanes out of sight, so gluts drain and hard-worked routes flatten; packs
+that saw you and cargo pods left adrift are still there if you come back within half an hour; a
+crime is known where it was seen and spreads a jump every ten minutes, and fines lapse after three
+hours without a new one ([PROCGEN.md §17](PROCGEN.md#17-a-world-that-answers)).
+
+### 9. A fleet of your own ✅
+
+Keep up to four ships parked at stations and switch between them; hire captains to haul routes you
+know, worked out from the game clock for well under what flying them earns, with raids and
+insurance; lease a hold at a station, and buy up to 10% of a station's trade for an hourly
+dividend ([PROCGEN.md §18](PROCGEN.md#18-a-fleet-of-your-own)).
+
+### 10. Mining in the real belts ✅
+
+Rocks in the belts the papers describe (the Solar System's main and Kuiper belts, Epsilon
+Eridani's belts and the other catalogued debris discs, each with its source), mining lasers and
+prospecting scanners at the outfitters, ore, ice and volatiles for the refineries, mining claims
+on the boards, and raiders who hunt miners ([PROCGEN.md §19](PROCGEN.md#19-mining)).
+
+### 11. The frontier, out to 27 light-years ✅
+
+175 new systems straight from the verified sky, 141 of them beyond 17.5 light-years: the frontier,
+reached through lanes that need a long-range jump drive (sold where a pilot without one can reach
+it). Thin, lawless space with independent colonies and dens, survey work for the codex paid half
+as much again, and two milestones. The core world and every save are locked: a fingerprint test
+holds the 32 original systems exactly as they were
+([PROCGEN.md §7.7](PROCGEN.md#77-growth-and-the-frontier)).
+
+### 12. The arcs converge ✅
+
+Five border fronts where lawful space meets a raider den swing between the law pushing the Wake
+back, skirmishes, blockades and a station falling to the Wake, with a 48-hour tide and the
+player's deeds; war contracts on both sides; and The Long Border, a fourth arc that reads the
+choices of the other three, branches three ways (for the Authority, for the Wake, or a truce) and
+settles the Ross 154 – Wolf 1061 line for good. A dock with repairs is always within reach, and
+the finale can be reached as a lawful pilot, an outlaw or neither
+([PROCGEN.md §20](PROCGEN.md#20-the-border-war)).
+
+### Polish and reach ✅
+
+Three save slots besides the autosave, with export to a file and import on any device; gamepad
+controls; music that follows where you are (the title, the map, the docks and bars, the five
+hand-made systems, deep space, lawless space and the dens), station ambience, and the local radio
+of the traffic around you. Still to do: the
+real-device checklist, which needs you (increment 13).
+
+### Quick wins ✅
+
+Sort and filter the job board, a sound and a comm line when a contract pays, the last open window
+remembered at each station, and orders for wingmen (attack my target, form up).
+
 ### Fix what real phones hit ✅
 
 Menus cut off on an Android phone with larger text: tab bars could be squeezed by their column,
@@ -262,14 +229,14 @@ of increment 6.
 
 ### More real stars ✅
 
-32 systems within about 17 light-years, with 44 stars and 37 confirmed planets from the HYG
-database and the Open Exoplanet Catalogue, generated fictional stations and jump lanes. Still
-provisional: the archive snapshot (see the real sky, verified, at the top of the proposals, and
-[KNOWN_GAPS.md](KNOWN_GAPS.md)).
+32 systems within about 17 light-years from the HYG database and the Open Exoplanet Catalogue,
+with generated fictional stations and jump lanes; since verified against the archives and grown to
+207 systems (the real sky, verified, and increment 11).
 
-### Story and polish
+### Story and polish ✅
 
-The opening chain and three faction arcs (increment 5); the rest is in the polish track.
+The opening chain, three faction arcs (increment 5) and The Long Border (increment 12); the polish
+track is done except the real-device checklist.
 
 ## Text generation
 
