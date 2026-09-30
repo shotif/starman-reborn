@@ -28,7 +28,7 @@ const STAR_LOOK: Record<string, { kind: StarKind; radius: number; light: number;
   D: { kind: 'white-dwarf', radius: 170, light: 0.8, range: 14_000, activity: 0, glow: 3, ambient: 0.26 },
 };
 
-/** Until the station generator's exteriors land, each kind of station borrows the closest hand-made model. */
+/** Exteriors are generated from each station's look; interiors borrow the closest hand-made style. */
 const BORROWED_ART: Record<StationType, StationKind> = {
   'trade-port': 'earth-port',
   'customs-depot': 'mars-depot',

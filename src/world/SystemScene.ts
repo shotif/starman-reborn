@@ -6,6 +6,7 @@ import { createPlanet, type PlanetArt } from './art/planets.ts';
 import { createSkybox } from './art/skybox.ts';
 import { createStar, type StarArt } from './art/stars.ts';
 import { createStation, type StationArt } from './art/stations.ts';
+import { createGeneratedStation } from './art/stationgen/index.ts';
 import { createJumpBeacon, createLaneRing, createNavBuoy, type LaneRingArt } from './art/structures.ts';
 import type { ArtContext, ArtObject } from './art/types.ts';
 import type { SceneLaneDef, ScenePlanetDef, SceneStarDef, SceneStationDef, SystemSceneDef } from './sceneTypes.ts';
@@ -144,7 +145,8 @@ export class SystemScene {
     }
 
     for (const s of def.stations) {
-      const art = createStation(s.kind, ctx);
+      // Generated stations are built from their look; the hand-made ones keep their models.
+      const art = s.look ? createGeneratedStation(s.look, ctx) : createStation(s.kind, ctx);
       art.object.position.copy(s.position);
       art.object.quaternion.setFromUnitVectors(art.dockApproach.clone().normalize(), s.approach.clone().normalize());
       art.object.updateMatrixWorld(true);
