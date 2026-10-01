@@ -28,12 +28,14 @@ interface Marks {
   title: number | null;
   /** Every value the progress bar showed, in order. */
   progress: number[];
+  /** Whether it said "Starting" once everything had arrived. */
+  starting: boolean;
 }
 
 /** Notes, in page time, when the loading title and the title first appear, and the bar's values. */
 async function watchMarks(page: Page): Promise<void> {
   await page.addInitScript(() => {
-    const marks: Marks = { firstScreen: null, title: null, progress: [] };
+    const marks: Marks = { firstScreen: null, title: null, progress: [], starting: false };
     (window as unknown as { __loadMarks: Marks }).__loadMarks = marks;
     const shown = (sel: string) => {
       const el = document.querySelector<HTMLElement>(sel);
@@ -48,9 +50,11 @@ async function watchMarks(page: Page): Promise<void> {
     };
     requestAnimationFrame(look);
     new MutationObserver(() => {
-      const value = document.querySelector('[data-testid="title-progress"]')?.getAttribute('aria-valuenow');
+      const meter = document.querySelector('[data-testid="title-progress"]');
+      const value = meter?.getAttribute('aria-valuenow');
       if (value !== null && value !== undefined && Number(value) !== marks.progress.at(-1)) marks.progress.push(Number(value));
-    }).observe(document, { subtree: true, attributes: true, attributeFilter: ['aria-valuenow'] });
+      if (meter?.getAttribute('aria-valuetext') === 'Starting' && meter.textContent?.includes('Starting')) marks.starting = true;
+    }).observe(document, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['aria-valuenow', 'aria-valuetext'] });
   });
 }
 
@@ -108,6 +112,8 @@ test('the first load on a slow phone network', async ({ page }, info) => {
   expect(marks.progress.length).toBeGreaterThan(5);
   expect(marks.progress).toEqual([...marks.progress].sort((a, b) => a - b));
   expect(marks.progress.at(-1)).toBe(100);
+  // Then, while the game starts up, it says so rather than sitting at 100%.
+  expect(marks.starting).toBe(true);
   // Every listed file came over the network once: the game's own import of it found it in the
   // cache (a transfer of a few hundred bytes of headers at most), not a second download.
   expect(listed.length).toBeGreaterThan(0);

@@ -99,6 +99,8 @@ export interface LoadingTitle {
   readonly element: HTMLElement;
   /** How much of the game has arrived, 0–1; null while that cannot be told (the bar sweeps). */
   progress(fraction: number | null): void;
+  /** Everything has arrived and the game is starting up (a second or two on a phone). */
+  starting(): void;
   /** The download failed: say so, and offer to try again. */
   failed(retry: () => void): void;
 }
@@ -132,9 +134,12 @@ export function renderLoadingTitle(parent: HTMLElement, opts: { systemCount: num
   const root = titleScreen({ testId: 'title-loading', systemCount: opts.systemCount, provisional: false }, actions);
   root.setAttribute('aria-busy', 'true');
   parent.appendChild(root);
+  let started = false;
   return {
     element: root,
     progress(fraction) {
+      // A late report must not take "Starting" back to a percentage.
+      if (started) return;
       if (fraction === null) {
         meter.classList.add('indeterminate');
         meter.removeAttribute('aria-valuenow');
@@ -146,6 +151,15 @@ export function renderLoadingTitle(parent: HTMLElement, opts: { systemCount: num
       meter.setAttribute('aria-valuenow', String(pct));
       bar.style.transform = `scaleX(${pct / 100})`;
       value.textContent = `${pct}%`;
+    },
+    starting() {
+      started = true;
+      meter.classList.remove('indeterminate');
+      meter.setAttribute('aria-valuenow', '100');
+      meter.setAttribute('aria-valuetext', 'Starting');
+      bar.style.transform = 'scaleX(1)';
+      label.textContent = 'Starting';
+      value.textContent = '';
     },
     failed(retry) {
       root.removeAttribute('aria-busy');

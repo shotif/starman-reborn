@@ -48,8 +48,9 @@ export async function startGame(): Promise<boolean> {
   let boot: typeof import('./boot.ts').boot;
   try {
     await download;
-    shell.progress(files.length > 0 ? 1 : null);
+    if (files.length > 0) shell.starting();
     ({ boot } = await import('./boot.ts'));
+    shell.starting();
   } catch (err) {
     console.error('Starman Reborn did not finish loading', err);
     shell.failed(() => window.location.reload());
