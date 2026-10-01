@@ -11,10 +11,10 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | --- | --- | --- |
 | TypeScript typecheck (app + scripts/tests) | `npm run typecheck` | Pass |
 | Astronomy data validation | `npm run data:validate` | Pass (22 warnings: the contested planets this edition keeps) |
-| Unit tests | `npm test` | Pass: 578 tests in 38 files |
+| Unit tests | `npm test` | Pass: 592 tests in 39 files |
 | Production build | `npm run build` | Pass |
-| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 17 passed (3 touch-only tests skipped) |
-| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 19 passed (1 desktop-only test skipped) |
+| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 22 passed (5 touch-only tests skipped) |
+| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 25 passed (2 desktop-only tests skipped) |
 | Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 81 screenshots, no audit findings |
 
 ### Unit tests (Vitest)
