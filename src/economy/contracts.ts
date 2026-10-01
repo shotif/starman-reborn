@@ -1,6 +1,6 @@
 import type { CommodityId, GameState } from '../app/state.ts';
 import { shipModel } from '../content/catalog.ts';
-import { ACE_NAMES, BOARD_KINDS, CONTRACTS, CURATED_BOARD_KINDS, DEN_BOARD_KINDS, FRONTIER_SURVEY_WEIGHT, RECOVERY_ITEMS, WAR_BOARD_WEIGHT, type ContractKind, type KindWeights } from '../content/contracts/rules.ts';
+import { ACE_NAMES, BOARD_KINDS, CONTRACTS, CONVOY_NAMES, CURATED_BOARD_KINDS, DEN_BOARD_KINDS, FRONTIER_SURVEY_WEIGHT, RECOVERY_ITEMS, WAR_BOARD_WEIGHT, type ContractKind, type KindWeights } from '../content/contracts/rules.ts';
 import { LAW } from '../content/law/rules.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
 import { beltGoods } from '../content/mining/rules.ts';
@@ -69,6 +69,14 @@ export function routeFeeBetween(a: SystemId, b: SystemId): number {
 }
 
 const security = (systemId: SystemId) => WORLD.profiles.get(systemId)?.security ?? 1;
+
+/**
+ * Something to fear in a system: raider packs, or thin security. Escorts are posted only to such
+ * places, and raiders wait at its jump beacon for escorted ships arriving through it.
+ */
+export function escortDanger(systemId: SystemId): boolean {
+  return baseThreat(systemId) !== null || security(systemId) < CONTRACTS.escort.secureAbove;
+}
 
 /**
  * Stations a pilot can dock at and do business with, as contract destinations: never a station on a
@@ -436,27 +444,54 @@ function survey(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
   };
 }
 
-/** Escorts: see a trader safely to another station in the system; raiders will try for it. */
+/**
+ * Escorts: see a trader safely to another station, in this system or up to two jumps away, where
+ * there is something to fear; across jumps it keeps with the player and jumps with them, and some
+ * go as a convoy of three (docs/PROCGEN.md §10.2).
+ */
 function escort(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
-  const system = giver.systemId;
-  const threat = baseThreat(system);
-  if (threat === null && security(system) >= 0.75) return null;
-  const dests = openStations().filter((l) => l.systemId === system && l.id !== giver.id);
+  const reach = (l: FictionalLocation) => jumpsBetween(giver.systemId, l.systemId);
+  const dests = openStations().filter((l) => l.id !== giver.id && escortDanger(l.systemId) && reach(l) <= CONTRACTS.maxJumps.escort);
+  const local = dests.filter((l) => l.systemId === giver.systemId);
+  const away = dests.filter((l) => l.systemId !== giver.systemId);
   if (!dests.length) return null;
-  const dest = r.pick(dests);
-  const level = threat ?? 1;
+  const pool = (r.next() < CONTRACTS.escort.acrossChance && away.length) || !local.length ? away : local;
+  const dest = r.pick(pool);
+  const jumps = reach(dest);
+  const level = baseThreat(dest.systemId) ?? 1;
   const owner = giver.factionId === 'sta' || giver.factionId === 'frontier' ? giver.factionId : 'independent';
   const model = r.pick(FLEETS[owner].traders.length ? FLEETS[owner].traders : FLEETS.independent.traders);
-  const shipName = shipModel(model).name;
+  const hull = shipModel(model).name;
+  const ec = CONTRACTS.escort;
+  const convoy = jumps > 0 && r.next() < ec.convoyChance ? { names: r.shuffle([...CONVOY_NAMES]).slice(0, ec.convoy.ships), need: ec.convoy.need, waves: level >= 3 ? 2 : 1 } : null;
+  const shipName = convoy ? `convoy from ${giver.name}` : hull;
   const rw = CONTRACTS.reward.escort;
-  const reward = pay(r, 0, rw.base + rw.perLevel * level);
+  const reward = pay(r, routeFeeBetween(giver.systemId, dest.systemId), (rw.base + rw.perLevel * level + rw.perJump * jumps) * (convoy ? rw.convoy : 1));
+  const difficulty = clampDifficulty(level + (jumps >= 2 ? 1 : 0));
+  const what = convoy ? `the convoy to ${dest.name}` : `the ${shipName} to ${dest.name}`;
+  const away_ = jumps === 1 ? 'one jump away' : `${jumps} jumps away`;
+  const briefing = jumps === 0
+    ? `The ${shipName} is hauling cargo to ${place(dest)} and wants a gun alongside: raiders have been watching the lane. It sets off when you launch. Stay close and see it docked; if it is lost, or you leave the system first, the contract fails.`
+    : `${convoy ? `Three ${hull}s of ${giver.name} are hauling together` : `The ${shipName} is hauling cargo`} to ${place(dest)}, ${away_}, and ${convoy ? 'want' : 'wants'} a gun alongside: raiders have been watching the lanes. ${convoy ? 'They set off' : 'It sets off'} when you launch and ${convoy ? 'keep' : 'keeps'} with you; jump when ${convoy ? 'they are' : 'it is'} within ${ec.keepUpM / 1000} km and ${convoy ? 'they jump' : 'it jumps'} with you. Expect raiders waiting at the beacon.${convoy ? ` ${convoy.need} of the ${convoy.names.length} must arrive.` : ' If it is lost, the contract fails.'}`;
   return {
-    ...common(giver, id, level),
-    title: `Escort the ${shipName} to ${dest.name}`,
-    briefing: `The ${shipName} is hauling cargo to ${place(dest)} and wants a gun alongside: raiders have been watching the lane. It sets off when you launch. Stay close and see it docked; if it is lost, or you leave the system first, the contract fails.`,
-    objectives: [{ kind: 'escort', systemId: system, fromLocationId: giver.id, locationId: dest.id, model, shipName, level, text: `Escort the ${shipName} to ${dest.name}` }],
+    ...common(giver, id, difficulty),
+    title: `Escort ${what}`,
+    briefing,
+    objectives: [
+      {
+        kind: 'escort',
+        systemId: dest.systemId,
+        fromLocationId: giver.id,
+        locationId: dest.id,
+        model,
+        shipName,
+        level,
+        text: `Escort ${what}${jumps ? ` (${getSystem(dest.systemId).displayName})` : ''}`,
+        ...(convoy ? { convoy } : {}),
+      },
+    ],
     reward,
-    difficultyNote: `Threat ${level} of 3; expect an ambush on the way`,
+    difficultyNote: jumps === 0 ? `Threat ${level} of 3; expect an ambush on the way` : `Threat ${level} of 3; ${routeNote(giver.systemId, dest.systemId).toLowerCase()}; raiders wait at the beacon`,
     destinationLocationId: dest.id,
     contract: { kind: 'escort' },
   };

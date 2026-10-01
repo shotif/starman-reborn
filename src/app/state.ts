@@ -246,6 +246,11 @@ export interface JobProgress {
   kills?: number;
   /** Escort contracts: the escorted ship docked at its destination. */
   escort?: 'arrived';
+  /**
+   * Escorts across jumps: the system the escorted ships are in, once they have jumped with the
+   * player (until then, the system they set off from).
+   */
+  escortAt?: SystemId;
   /** Recovery contracts: the item is aboard. */
   recovered?: boolean;
   /** Convoys: ships seen in, and ships lost. */

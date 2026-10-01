@@ -9,7 +9,7 @@ import { shipModel } from '../content/catalog.ts';
 import { RECOVERY_ITEMS } from '../content/contracts/rules.ts';
 import { FLEETS } from '../world/traffic/plan.ts';
 import { occupied } from './border.ts';
-import { boardFor, CONTRACT_PREFIX, expectedTrip, followUpFor, postsClaims, routeFeeBetween } from './contracts.ts';
+import { boardFor, CONTRACT_PREFIX, escortDanger, expectedTrip, followUpFor, postsClaims, routeFeeBetween } from './contracts.ts';
 import { LAW } from '../content/law/rules.ts';
 import { baseThreat, priceMultiplier, stationEventAt, systemEventAt } from './events.ts';
 import { lawIn, scansOnDocking } from './law.ts';
@@ -43,6 +43,7 @@ export function validateContracts(epochs = 40): Issue[] {
   let eventWork = 0;
   let urgent = 0;
   let chains = 0;
+  const escorts = { local: 0, across: 0, convoy: 0 };
   for (const giver of givers) {
     let empty = 0;
     const jumps = jumpsFrom(WORLD.links, giver.systemId);
@@ -62,6 +63,8 @@ export function validateContracts(epochs = 40): Issue[] {
         if (c.contract) kinds.add(c.contract.kind);
         if (c.contract?.event) answering++;
         if (c.contract?.urgent) urgent++;
+        const o = c.objectives[0];
+        if (o?.kind === 'escort') escorts[o.convoy ? 'convoy' : o.systemId === giver.systemId ? 'local' : 'across']++;
         // Follow-ups are offered where a parcel or haul ends, and must be as sound.
         const next = followUpFor(c, clock);
         if (next) {
@@ -81,6 +84,7 @@ export function validateContracts(epochs = 40): Issue[] {
   if (!eventWork) report('coverage', 'events', 'no board ever posts work answering a world event');
   if (!urgent) report('coverage', 'urgent', 'no board ever posts an urgent job');
   if (!chains) report('coverage', 'chains', 'no delivery ever leads to a follow-up');
+  for (const [k, n] of Object.entries(escorts)) if (!n) report('coverage', 'escorts', `no board ever posts a ${k === 'local' ? 'local escort' : k === 'across' ? 'escort across jumps' : 'convoy'}`);
   return issues;
 }
 
@@ -152,13 +156,19 @@ function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, numbe
     case 'escort': {
       if (o.kind !== 'escort') return report('objectives', c.id, `unexpected objective ${o.kind}`);
       const dest = getLocation(o.locationId);
-      if (o.fromLocationId !== c.giverLocationId || o.systemId !== from || dest.systemId !== from) report('escort', c.id, 'escorts run between two stations of the posting station’s system');
+      if (o.fromLocationId !== c.giverLocationId || dest.systemId !== o.systemId) report('escort', c.id, 'an escort sets off from the posting station for a station of its own system');
       if (dest.dockable === false || dest.status !== 'functional' || dest.id === c.giverLocationId) report('escort', c.id, `${dest.id} is not another open station`);
-      const threat = baseThreat(from);
-      if (threat === null && (WORLD.profiles.get(from)?.security ?? 1) >= 0.75) report('escort', c.id, 'nothing to fear in secure space');
-      if (o.level !== (threat ?? 1) || c.difficulty !== o.level) report('escort', c.id, 'ambush threat does not match the system');
+      if (!escortDanger(o.systemId)) report('escort', c.id, `nothing to fear in ${o.systemId}`);
+      const threat = baseThreat(o.systemId);
+      if (o.level !== (threat ?? 1) || c.difficulty !== Math.min(3, o.level + (j >= 2 ? 1 : 0))) report('escort', c.id, 'ambush threat does not match the destination');
       const fleets = Object.values(FLEETS).flatMap((f) => f.traders);
-      if (!fleets.includes(o.model) || shipModel(o.model).name !== o.shipName) report('escort', c.id, 'escorted ship is not a hauler of the catalogue');
+      if (!fleets.includes(o.model)) report('escort', c.id, 'escorted ship is not a hauler of the catalogue');
+      if (o.convoy) {
+        const v = o.convoy;
+        if (j === 0) report('escort', c.id, 'convoys run across jumps');
+        if (v.names.length !== CONTRACTS.escort.convoy.ships || new Set(v.names).size !== v.names.length || v.need !== CONTRACTS.escort.convoy.need) report('escort', c.id, 'a convoy is three named ships, two of which must arrive');
+        if (v.waves !== (o.level >= 3 ? 2 : 1)) report('escort', c.id, 'convoy waves do not match the threat');
+      } else if (shipModel(o.model).name !== o.shipName) report('escort', c.id, 'escorted ship is not named for its hull');
       break;
     }
     case 'smuggle': {

@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { migrateSave, SaveFormatError } from '../../src/app/save/migrate.ts';
 import { createNewGame, voyageTotals, type GameState } from '../../src/app/state.ts';
-import { dockAt, discoverBody, performJump } from '../../src/app/rules.ts';
+import { dockAt, discoverBody, jumpReadiness, performJump } from '../../src/app/rules.ts';
 import { CONTRACTS } from '../../src/content/contracts/rules.ts';
 import { formatIssues } from '../../src/content/validate.ts';
-import { getLocation, WORLD } from '../../src/data/systems.ts';
+import { ALL_LOCATIONS, getLocation, getSystem, WORLD } from '../../src/data/systems.ts';
 import { cargoCount } from '../../src/economy/cargo.ts';
-import { validateContracts } from '../../src/economy/contractGuards.ts';
+import { contractIssues, validateContracts } from '../../src/economy/contractGuards.ts';
 import { boardEpoch, boardFor, followUpFor, postedContract, postedContracts } from '../../src/economy/contracts.ts';
 import {
   abandonJob,
@@ -15,6 +15,9 @@ import {
   contractPacksIn,
   deliverJob,
   describeObjective,
+  escortArrived,
+  escortLost,
+  escortsFollowing,
   escortsIn,
   failJob,
   getJob,
@@ -313,7 +316,8 @@ describe('contracts II', () => {
   });
 
   it('escorts: the ship flies with you; docking safely pays, losing it or leaving it behind fails', () => {
-    const { job, epoch } = findPosted('escort', (c) => !c.requires && c.factionId !== null);
+    const local = (c: JobDef) => c.objectives[0]?.kind === 'escort' && c.objectives[0].systemId === getLocation(c.giverLocationId).systemId;
+    const { job, epoch } = findPosted('escort', (c) => !c.requires && c.factionId !== null && local(c));
     const o = job.objectives[0]!;
     if (o.kind !== 'escort') throw new Error('escorts escort');
     expect(getLocation(o.locationId).systemId).toBe(o.systemId);
@@ -341,6 +345,109 @@ describe('contracts II', () => {
     const route = findRoute(SYSTEMS, o.systemId, away.id)!;
     const events = performJump(left, route, route.totalFee);
     expect(events[0]).toMatchObject({ jobId: job.id, kind: 'failed', text: expect.stringMatching(/left the .* behind/) });
+  });
+
+  it('escorts across jumps: the ship keeps with you, jumps with you only when close, and is seen in at the far end', () => {
+    const across = (c: JobDef) => c.objectives[0]?.kind === 'escort' && !c.objectives[0].convoy && c.objectives[0].systemId !== getLocation(c.giverLocationId).systemId;
+    const { job, epoch } = findPosted('escort', (c) => !c.requires && across(c));
+    const o = job.objectives[0]!;
+    if (o.kind !== 'escort') throw new Error('escorts escort');
+    const home = getLocation(job.giverLocationId).systemId;
+    expect(job.briefing).toMatch(/jumps with you/);
+    expect(job.difficultyNote).toMatch(/raiders wait at the beacon/);
+    const s = pilotAt(job.giverLocationId, epoch * CONTRACTS.epochSeconds);
+    s.flags.clearance = true;
+    acceptJob(s, job.id);
+    // It sets off here and keeps with the player, to jump with them; none is waiting at the far end yet.
+    const setup = { jobId: job.id, from: o.fromLocationId, to: o.locationId, model: o.model, name: o.shipName, level: o.level, follow: true };
+    expect(escortsIn(s, home)).toEqual([expect.objectContaining(setup)]);
+    expect(escortsFollowing(s, home).map((e) => e.jobId)).toEqual([job.id]);
+    expect(escortsIn(s, o.systemId)).toEqual([]);
+    s.location = { ...s.location, dockedAt: null };
+    expect(describeObjective(s, job.id)?.text).toMatch(new RegExp(`jump to ${getSystem(o.systemId).displayName} with it within 2.5 km`));
+    expect(describeObjective(s, job.id)?.targetSystemId).toBe(o.systemId);
+    // Too far away, it holds the jump.
+    const readiness = jumpReadiness(s, { hostilesNearby: false, inLaneOrAutopilot: false, escortBehind: o.shipName });
+    expect(readiness).toEqual({ canJump: false, reason: expect.stringMatching(new RegExp(`The ${o.shipName} is too far away to jump with you`)) });
+    expect(jumpReadiness(s, { hostilesNearby: false, inLaneOrAutopilot: false, escortBehind: null }).canJump).toBe(true);
+    // Close by, it jumps with the player: nothing fails, and it is at the far end, with raiders at the beacon.
+    const route = findRoute(SYSTEMS, home, o.systemId)!;
+    expect(performJump(s, route, route.totalFee).filter((e) => e.kind === 'failed')).toEqual([]);
+    expect(s.jobs[job.id]!.escortAt).toBe(o.systemId);
+    expect(escortsIn(s, home)).toEqual([]);
+    const there = escortsIn(s, o.systemId)[0]!;
+    expect(there).toMatchObject({ jobId: job.id, to: o.locationId, beacon: true });
+    expect(there.follow).toBeUndefined();
+    expect(describeObjective(s, job.id)?.text).toBe(`${o.text}: stay close and keep it alive`);
+    // Seen in, it pays.
+    const before = s.credits;
+    expect(escortArrived(s, job.id)[0]).toMatchObject({ jobId: job.id, kind: 'complete' });
+    expect(s.credits).toBe(before + job.reward);
+    expect(escortsIn(s, o.systemId)).toEqual([]);
+    // In its destination's system it is not left: jumping away there fails it.
+    const t = pilotAt(job.giverLocationId, epoch * CONTRACTS.epochSeconds);
+    t.flags.clearance = true;
+    acceptJob(t, job.id);
+    t.location = { ...t.location, dockedAt: null };
+    performJump(t, route, route.totalFee);
+    const back = findRoute(SYSTEMS, o.systemId, home)!;
+    expect(performJump(t, back, back.totalFee)[0]).toMatchObject({ jobId: job.id, kind: 'failed', text: expect.stringMatching(/left the .* behind/) });
+    // Disabled on the way and towed home, the player finds it waiting where it was.
+    const u = pilotAt(job.giverLocationId, epoch * CONTRACTS.epochSeconds);
+    acceptJob(u, job.id);
+    u.jobs[job.id]!.escortAt = route.path[1]!;
+    if (route.path[1] !== o.systemId) {
+      expect(describeObjective(u, job.id)?.text).toMatch(/it is waiting for you there/);
+      expect(describeObjective(u, job.id)?.targetSystemId).toBe(route.path[1]);
+    }
+  });
+
+  it('convoys across jumps: three ships of one hull, two of which must arrive', () => {
+    const { job, epoch } = findPosted('escort', (c) => !c.requires && c.objectives[0]?.kind === 'escort' && !!c.objectives[0].convoy);
+    const o = job.objectives[0]!;
+    if (o.kind !== 'escort' || !o.convoy) throw new Error('a convoy');
+    expect(o.convoy.names).toHaveLength(3);
+    expect(o.convoy.need).toBe(2);
+    expect(o.shipName).toMatch(/^convoy from /);
+    expect(job.briefing).toMatch(/2 of the 3 must arrive/);
+    const s = pilotAt(job.giverLocationId, epoch * CONTRACTS.epochSeconds);
+    acceptJob(s, job.id);
+    s.jobs[job.id]!.escortAt = o.systemId;
+    expect(escortsIn(s, o.systemId)[0]!.convoy).toEqual({ names: o.convoy.names, waves: o.convoy.waves });
+    expect(escortLost(s, job.id)[0]).toMatchObject({ kind: 'objective', text: expect.stringMatching(/1 of 1 you can spare/) });
+    escortArrived(s, job.id);
+    const before = s.credits;
+    expect(escortArrived(s, job.id).some((e) => e.kind === 'complete')).toBe(true);
+    expect(s.credits).toBe(before + job.reward);
+    // Losing two fails it.
+    const t = pilotAt(job.giverLocationId, epoch * CONTRACTS.epochSeconds);
+    acceptJob(t, job.id);
+    escortLost(t, job.id);
+    expect(escortLost(t, job.id)[0]).toMatchObject({ kind: 'failed' });
+  });
+
+  it('guardrails catch an escort with nothing to fear, a convoy that is not three, and a difficulty that ignores the trip', () => {
+    const { job, epoch } = findPosted('escort', (c) => c.objectives[0]?.kind === 'escort' && !!c.objectives[0].convoy);
+    const o = job.objectives[0]!;
+    if (o.kind !== 'escort' || !o.convoy) throw new Error('a convoy');
+    const clock = epoch * CONTRACTS.epochSeconds;
+    expect(contractIssues(job, clock)).toEqual([]);
+    const safe = ALL_LOCATIONS.find((l) => l.systemId === 'sol' && l.id !== job.giverLocationId && l.dockable !== false && l.status === 'functional')!;
+    const rules = (c: JobDef) => contractIssues(c, clock).map((i) => i.rule);
+    expect(rules({ ...job, objectives: [{ ...o, systemId: 'sol', locationId: safe.id }] })).toContain('escort');
+    expect(rules({ ...job, objectives: [{ ...o, convoy: { ...o.convoy, names: o.convoy.names.slice(0, 2) } }] })).toContain('escort');
+    expect(rules({ ...job, difficulty: job.difficulty === 3 ? 2 : 3, requires: undefined })).toContain('escort');
+  });
+
+  it('old saves: an escort without a record of where its ships are is where it set off; a damaged one is refused', () => {
+    const { job, epoch } = findPosted('escort', (c) => !c.requires && c.objectives[0]?.kind === 'escort' && c.objectives[0].systemId !== getLocation(c.giverLocationId).systemId);
+    const s = pilotAt(job.giverLocationId, epoch * CONTRACTS.epochSeconds);
+    acceptJob(s, job.id);
+    const loaded = migrateSave(structuredClone(s));
+    expect(escortsIn(loaded, getLocation(job.giverLocationId).systemId).map((e) => e.jobId)).toEqual([job.id]);
+    const bad = structuredClone(s);
+    (bad.jobs[job.id] as unknown as { escortAt: string }).escortAt = 'nowhere';
+    expect(() => migrateSave(bad)).toThrow(SaveFormatError);
   });
 
   it('aces: one named target with guards, paid when the ace goes down', () => {

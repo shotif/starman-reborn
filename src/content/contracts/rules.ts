@@ -59,8 +59,8 @@ export const CONTRACTS = {
   board: { base: 2, largeAbove: 0.6, busy: ['trade-port', 'military-base'] as readonly StationType[], max: 4 },
   /** At most this many generated contracts in progress at once. */
   maxActive: 5,
-  /** How far contracts send you, in jumps (escorts stay in the posting station's system). */
-  maxJumps: { freight: 3, parcel: 4, supply: 3, bounty: 2, survey: 3, escort: 0, ace: 3, recovery: 3, smuggle: 3, piracy: 2, den: 3, claim: 3, war: 2 } satisfies Record<ContractKind, number>,
+  /** How far contracts send you, in jumps. */
+  maxJumps: { freight: 3, parcel: 4, supply: 3, bounty: 2, survey: 3, escort: 2, ace: 3, recovery: 3, smuggle: 3, piracy: 2, den: 3, claim: 3, war: 2 } satisfies Record<ContractKind, number>,
   /** Hold units a freight or supply contract asks for (before the good's unit size). */
   cargoUnits: [8, 30] as const,
   /** Most the cargo may be worth at base prices (keeps deposits and purchases within a young pilot's reach). */
@@ -81,7 +81,8 @@ export const CONTRACTS = {
     bounty: { base: 200, perRaider: 150 },
     /** Surveys pay more out in the frontier (the long-range drive, the long lanes). */
     survey: { base: 180, danger: 160, frontier: 1.5 },
-    escort: { base: 260, perLevel: 180 },
+    /** Escorts: per threat level of the destination, per jump, and a convoy's three ships pay `convoy` times as much. */
+    escort: { base: 260, perLevel: 180, perJump: 220, convoy: 1.8 },
     ace: { base: 900 },
     recovery: { base: 220, danger: 180, perGuard: 150 },
     smuggle: { base: 300, danger: 150, contrabandShare: 0.3 },
@@ -126,8 +127,22 @@ export const CONTRACTS = {
   chain: { chance: 0.45, maxSteps: 3, stepPay: 1.25, offerEpochs: 2 },
   /** Aces: a named raider in a better ship (tougher by `toughness`, deadlier by `damage`) with two guards. */
   ace: { model: 'ship.heavy-fighter.2.wake', guards: 2, toughness: 1.8, damage: 1.3, loot: [500, 900] as const },
-  /** Escorts: the ambush comes when the escorted ship is this far along its route. */
-  escort: { ambushAt: [0.25, 0.45] as const },
+  /**
+   * Escorts: the ambush on the way to the destination comes when the escorted ship is this far
+   * along; an escorted ship waits for the player beyond `keepUpM`, and jumps with them only within
+   * it (docs/PROCGEN.md §10.2). They are needed only where there is something to fear: raider
+   * packs, or security below `secureAbove`.
+   */
+  escort: {
+    ambushAt: [0.25, 0.45] as const,
+    keepUpM: 2_500,
+    secureAbove: 0.75,
+    /** How often an escort goes to another system when it can, and how often one across jumps is a convoy. */
+    acrossChance: 0.6,
+    convoyChance: 0.35,
+    /** A convoy: three ships of one model, two of which must arrive; a second wave where the threat is 3. */
+    convoy: { ships: 3, need: 2 },
+  },
   /**
    * Mining claims (docs/PROCGEN.md §19): mining outposts and refineries within `maxJumps.claim` of a
    * cited belt pay for a load mined there, of this many hold units (a young pilot's hold carries it).
@@ -150,6 +165,12 @@ export const ACE_NAMES = {
   last: ['Vell', 'Harrow', 'Quint', 'Sable', 'Marrick', 'Tolland', 'Crane', 'Voss', 'Ashby', 'Kestrel', 'Draygo', 'Lusk'],
   nick: ['the Knife', 'Blackwake', 'Grin', 'the Collector', 'Six-Guns', 'Cinder', 'Old Teeth', 'the Widow', 'Longshot', 'Hollowpoint'],
 };
+
+/** Names of the haulers in a convoy (all invented). */
+export const CONVOY_NAMES: readonly string[] = [
+  'Patience', 'Marigold', 'Long Haul', 'Steady Lamp', 'Bellwether', 'Second Wind', 'Quiet Harvest',
+  'Juniper', 'Ferryman', 'Good Measure', 'Tallow', 'Wayfarer', 'Copper Kettle', 'Small Mercy',
+];
 
 /** What a wreck may carry home (recovery contracts). */
 export const RECOVERY_ITEMS: readonly { item: string; why: string }[] = [

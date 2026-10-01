@@ -8,7 +8,7 @@ import { getLocation, getSystem } from '../data/systems.ts';
 import type { FactionId, SystemId } from '../data/types.ts';
 import { addCargo, cargoCount, itemsThatFit, removeCargo } from './cargo.ts';
 import { COMMODITIES } from './commodities.ts';
-import { CONTRACT_PREFIX, contractBlock, followUpFor, postedContract, postedContracts } from './contracts.ts';
+import { CONTRACT_PREFIX, contractBlock, escortDanger, followUpFor, postedContract, postedContracts } from './contracts.ts';
 import { adjustReputation, FACTIONS, standingTier, TIER_LABEL } from './factions.ts';
 import { cargoCapacity } from './loadout.ts';
 import { rating } from './progress.ts';
@@ -29,9 +29,11 @@ export type Objective =
    */
   | { kind: 'bounty'; systemId: SystemId; locationId: string; count: number; level: 1 | 2 | 3; text: string; ace?: { name: string; model: string } }
   /**
-   * See a trader (catalogue ship `model`) safely from one station to another in the same system
-   * (JobProgress.escort). A convoy is several ships (`names`) under `waves` ambushes, of which
-   * `need` must arrive (JobProgress.escorted / lost).
+   * See a trader (catalogue ship `model`) safely from one station to another (JobProgress.escort),
+   * in `systemId`, the destination's system. When it sets off in another system it keeps with the
+   * player and jumps with them (JobProgress.escortAt). A convoy is several ships (`names`) under
+   * `waves` ambushes on the way to the destination, of which `need` must arrive
+   * (JobProgress.escorted / lost).
    */
   | {
       kind: 'escort';
@@ -593,10 +595,17 @@ function describeCurrent(state: GameState, jobId: string): ObjectiveSummary | nu
       return { ...base, text: inOtherSystem(o.systemId, text), targetSystemId: o.systemId, targetLocationId: o.locationId };
     }
     case 'escort': {
-      if (!o.convoy) return { ...base, text: inOtherSystem(o.systemId, `${o.text}: stay close and keep it alive`), targetSystemId: o.systemId, targetLocationId: o.locationId };
+      const at = escortSystem(state, jobId, o);
       const p = state.jobs[jobId];
-      const tally = `${p?.escorted ?? 0} in, ${p?.lost ?? 0} lost; ${o.convoy.need} of ${o.convoy.names.length} must arrive`;
-      return { ...base, text: inOtherSystem(o.systemId, `${o.text} (${tally})`), targetSystemId: o.systemId, targetLocationId: o.locationId };
+      const tally = o.convoy ? ` (${p?.escorted ?? 0} in, ${p?.lost ?? 0} lost; ${o.convoy.need} of ${o.convoy.names.length} must arrive)` : '';
+      const target = { targetSystemId: o.systemId, targetLocationId: o.locationId };
+      if (at !== o.systemId) {
+        // Not there yet: the ships keep with the player, and jump with them when close.
+        const jump = `jump to ${getSystem(o.systemId).displayName} with ${o.convoy ? 'the convoy' : 'it'} within ${CONTRACTS.escort.keepUpM / 1000} km`;
+        if (at === here) return { ...base, ...target, text: `${o.text}${tally}: ${jump}` };
+        return { ...base, text: inOtherSystem(at, `${o.text}${tally}: it is waiting for you there`), targetSystemId: at, targetLocationId: null };
+      }
+      return { ...base, ...target, text: inOtherSystem(o.systemId, o.convoy ? `${o.text}${tally}` : `${o.text}: stay close and keep it alive`) };
     }
     case 'choice': {
       const loc = getLocation(o.locationId);
@@ -670,21 +679,47 @@ export interface EscortSetup {
   model: string;
   name: string;
   level: 1 | 2 | 3;
-  /** A convoy: the ships still to see in, and how many ambushes come. */
+  /** A convoy: the ships still to see in, and how many ambushes come on the way to the destination. */
   convoy?: { names: readonly string[]; waves: number };
+  /** Not yet in its destination's system: it keeps with the player, to jump with them. */
+  follow?: true;
+  /** An escort across jumps in a system with something to fear: raiders wait at its jump beacon for it. */
+  beacon?: true;
+}
+
+type EscortObjective = Extract<Objective, { kind: 'escort' }>;
+
+/** Where an escort's ships are: where they set off, until they jump with the player. */
+export function escortSystem(state: GameState, jobId: string, o: EscortObjective): SystemId {
+  return state.jobs[jobId]?.escortAt ?? getLocation(o.fromLocationId).systemId;
 }
 
 /** Ships the player is escorting in a system (escorts under way; a convoy's ships not yet in or lost). */
 export function escortsIn(state: GameState, systemId: SystemId): EscortSetup[] {
   return activeJobIds(state).flatMap((jobId) => {
     const o = currentObjective(state, jobId);
-    if (o?.kind !== 'escort' || o.systemId !== systemId) return [];
-    const base = { jobId, from: o.fromLocationId, to: o.locationId, model: o.model, name: o.shipName, level: o.level };
+    if (o?.kind !== 'escort' || escortSystem(state, jobId, o) !== systemId) return [];
+    const crossing = getLocation(o.fromLocationId).systemId !== o.systemId;
+    const base: EscortSetup = {
+      jobId,
+      from: o.fromLocationId,
+      to: o.locationId,
+      model: o.model,
+      name: o.shipName,
+      level: o.level,
+      ...(systemId !== o.systemId ? { follow: true as const } : {}),
+      ...(crossing && escortDanger(systemId) ? { beacon: true as const } : {}),
+    };
     if (!o.convoy) return [base];
     const p = state.jobs[jobId];
     const done = (p?.escorted ?? 0) + (p?.lost ?? 0);
     return [{ ...base, convoy: { names: o.convoy.names.slice(done), waves: o.convoy.waves } }];
   });
+}
+
+/** The escorted ships a jump from here takes along: those not yet in their destination's system. */
+export function escortsFollowing(state: GameState, systemId: SystemId): EscortSetup[] {
+  return escortsIn(state, systemId).filter((e) => e.follow);
 }
 
 /** Den assaults under way in a system (the den to knock out, its turrets still standing, and the lawful wing that flies with the player). */
@@ -786,10 +821,18 @@ export function escortLost(state: GameState, jobId: string): JobEvent[] {
   return [{ jobId, kind: 'objective', text: `A ship of the ${o.shipName} is lost (${progress.lost} of ${o.convoy.names.length - o.convoy.need} you can spare)` }, ...advanceJobs(state, { dockedAt: state.location.dockedAt, systemId: state.location.systemId })];
 }
 
-/** Escorts end when the player leaves their system: jumping away fails them. */
-export function leaveSystem(state: GameState, systemId: SystemId): JobEvent[] {
+/**
+ * The player jumps out of a system. Escorted ships still on their way to another system jump with
+ * them (the controller has checked they are close enough; without `to`, they stay behind); an
+ * escort in its destination's system is left behind, and fails.
+ */
+export function leaveSystem(state: GameState, systemId: SystemId, to?: SystemId): JobEvent[] {
   const events: JobEvent[] = [];
   for (const e of escortsIn(state, systemId)) {
+    if (e.follow && to) {
+      state.jobs[e.jobId]!.escortAt = to;
+      continue;
+    }
     const ev = failJob(state, e.jobId, `you left the ${e.name} behind`);
     if (ev) events.push(ev);
   }

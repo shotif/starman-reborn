@@ -1,3 +1,4 @@
+import { CONTRACTS } from '../content/contracts/rules.ts';
 import { EVENTS } from '../content/events/rules.ts';
 import { getLocation, getSystem } from '../data/systems.ts';
 import { rechargeShield } from '../economy/equipment.ts';
@@ -60,6 +61,8 @@ export function undock(state: GameState): void {
 export interface ReadinessContext {
   hostilesNearby: boolean;
   inLaneOrAutopilot: boolean;
+  /** An escorted ship that should jump with the player but is too far away to (its name). */
+  escortBehind?: string | null;
 }
 
 export function jumpReadiness(state: GameState, ctx: ReadinessContext): JumpReadiness {
@@ -69,6 +72,9 @@ export function jumpReadiness(state: GameState, ctx: ReadinessContext): JumpRead
   }
   if (ctx.hostilesNearby) return { canJump: false, reason: 'Hostile contact nearby: the jump drive cannot spin up.' };
   if (ctx.inLaneOrAutopilot) return { canJump: false, reason: 'Wait until lane travel or docking ends.' };
+  if (ctx.escortBehind) {
+    return { canJump: false, reason: `The ${ctx.escortBehind} is too far away to jump with you: let it come within ${CONTRACTS.escort.keepUpM / 1000} km.` };
+  }
   return { canJump: true };
 }
 
@@ -86,8 +92,8 @@ export function performJump(state: GameState, route: Route, fee: number): JobEve
     applyCredits(state, -fee, 'fee', `Jump fee ${getSystem(route.from).displayName} → ${getSystem(route.to).displayName}`);
   }
   for (const id of route.path) markVisited(state, id);
-  // Escorts under way in the system left behind fail.
-  const left = leaveSystem(state, route.from);
+  // Escorted ships on their way elsewhere jump too; an escort left in its destination's system fails.
+  const left = leaveSystem(state, route.from, route.to);
   // Lane transit takes time: the world (prices, events, contract boards) moves on meanwhile.
   state.clock += route.hops.length * EVENTS.jumpSeconds;
   state.location.systemId = route.to;

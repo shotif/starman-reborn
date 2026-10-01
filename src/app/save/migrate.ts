@@ -35,8 +35,9 @@ import { createNewGame, SAVE_VERSION, type CommodityId, type GameState } from '.
  *   or the price watch, with per-good times.
  * - v10 (current): `world` (events ended early, what lingers in each system) and the law's
  *   `pending` crimes and `lastCrimeAt` (docs/PROCGEN.md §17); `fleet` (owned ships, haulers,
- *   storage and stakes, §18); contracts may be mining claims, whose jobs carry `mined` (§19). See
- *   GameState in src/app/state.ts.
+ *   storage and stakes, §18); contracts may be mining claims, whose jobs carry `mined` (§19);
+ *   escorts across jumps carry `escortAt`, where their ships are (§10.2; absent in older v10
+ *   saves, which means where they set off). See GameState in src/app/state.ts.
  */
 export interface SaveV1 {
   version: 1;
@@ -353,6 +354,10 @@ export function assertValidState(s: GameState): void {
     for (const [c, qty] of Object.entries(m.stock)) if (!COMMODITY_IDS.includes(c as CommodityId) || !Number.isFinite(qty) || (qty as number) < 0) fail(`market ${id}`);
   }
   if (!isRecord(s.jobs) || !isRecord(s.reputation) || !isRecord(s.flags)) fail('records');
+  // Escorts across jumps remember the system their ships are in.
+  for (const [id, p] of Object.entries(s.jobs)) {
+    if (!isRecord(p) || (p.escortAt !== undefined && !SYSTEM_IDS.includes(p.escortAt))) fail(`job ${id}`);
+  }
   if (s.location.flight) {
     const { position, quaternion } = s.location.flight;
     if (!Array.isArray(position) || position.length !== 3 || !position.every(Number.isFinite)) fail('flight position');
