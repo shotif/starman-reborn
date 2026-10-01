@@ -4,6 +4,12 @@ import { createNewGame, type GameState } from '../../src/app/state.ts';
 import { CODEX_GRANT, MILESTONES, RATINGS, SURVEY_SALE } from '../../src/content/progress/rules.ts';
 import { ALL_LOCATIONS, SYSTEMS } from '../../src/data/systems.ts';
 import { whatNext } from '../../src/economy/advisor.ts';
+import { gearForSale, shipsForSale } from '../../src/content/catalog.ts';
+import { HINT } from '../../src/content/progress/rules.ts';
+import { hasOutfitter, hasShipyard } from '../../src/economy/equipment.ts';
+import { hullMax } from '../../src/economy/loadout.ts';
+import { FACTIONS } from '../../src/economy/factions.ts';
+import { dockAccess } from '../../src/economy/law.ts';
 import {
   buysSurveys,
   catalogue,
@@ -110,6 +116,54 @@ describe('what next', () => {
     expect(whatNext(s)).toMatch(/^Catalogue /);
     for (const e of codexEntries().filter((x) => x.systemId === 'tau-ceti')) catalogue(s, e.id);
     expect(whatNext(s)).toMatch(/job board|Trade idea/);
+  });
+
+  it('puts a badly damaged ship’s repairs before anything but fines, with where and what they cost', () => {
+    const s = pilot();
+    s.jobs['arc.sta.1'] = { status: 'active', objectiveIndex: 0, acceptedAt: 0 };
+    s.location = { systemId: 'sol', dockedAt: null, flight: null, lastDockId: 'earth-port' };
+    s.ship.hull = Math.floor(hullMax(s.ship) * 0.3);
+    expect(whatNext(s)).toMatch(/^Repairs first: your hull is at 3\d%\. The mechanic at .+ charges about \d+ cr\.$/);
+    s.ship.hull = hullMax(s.ship);
+    s.ship.systems = { engines: 0, guns: 0, shields: 0.6 };
+    expect(whatNext(s)).toMatch(/^Repairs first: your shield generator is damaged\./);
+    s.law.fines.sta = 200;
+    expect(whatNext(s)).toMatch(/fines/);
+  });
+
+  it('suggests a ship or the long-range drive the player can afford where they have seen it, leaving money in hand', () => {
+    const s = pilot();
+    s.jobs['arc.sta.1'] = { status: 'active', objectiveIndex: 0, acceptedAt: 0 };
+    s.location = { systemId: 'tau-ceti', dockedAt: null, flight: null, lastDockId: 'earth-port' };
+    for (const e of codexEntries().filter((x) => x.systemId === 'tau-ceti')) catalogue(s, e.id);
+    const yard = ALL_LOCATIONS.find((l) => hasShipyard(l.id) && l.systemId !== 'sol' && shipsForSale(l.id).length > 1)!;
+    s.visitedLocations.push(yard.id);
+    s.credits = 200_000;
+    expect(whatNext(s)).toMatch(new RegExp(`^An upgrade you can afford: the .+ at ${yard.name} \\(.+\\) costs \\d+ cr after trading in your ship, with room for \\d+ units \\(yours: \\d+\\)\\.$`));
+    // Not with only the reserve to spend.
+    s.credits = HINT.reserve;
+    expect(whatNext(s)).not.toMatch(/upgrade/);
+    // The drive: once the player has travelled, at an outfitter they know, until the frontier.
+    const outfitter = ALL_LOCATIONS.find((l) => hasOutfitter(l.id) && !hasShipyard(l.id) && dockAccess(s, l.id) === 'full' && gearForSale(l.id).some((g) => g.family === 'jump-drive'))!;
+    s.visitedLocations = [outfitter.id];
+    s.credits = 20_000;
+    s.stats.jumps = HINT.driveAfterJumps - 1;
+    expect(whatNext(s) ?? '').not.toMatch(/long-range/);
+    s.stats.jumps = HINT.driveAfterJumps;
+    expect(whatNext(s)).toMatch(new RegExp(`^The frontier past 17\\.5 light-years needs a long-range jump drive: ${outfitter.name} \\(.+\\) sells one for \\d+ cr\\.$`));
+    s.milestones['frontier-first'] = 1;
+    expect(whatNext(s) ?? '').not.toMatch(/long-range/);
+  });
+
+  it('says how much standing makes a lawful faction Friendly, when it is close', () => {
+    const s = pilot();
+    s.jobs['arc.sta.1'] = { status: 'active', objectiveIndex: 0, acceptedAt: 0 };
+    s.location = { systemId: 'tau-ceti', dockedAt: null, flight: null, lastDockId: 'earth-port' };
+    for (const e of codexEntries().filter((x) => x.systemId === 'tau-ceti')) catalogue(s, e.id);
+    s.reputation = { sta: 7, frontier: 0, 'hollow-wake': 0 };
+    expect(whatNext(s)).toBe(`3 more standing with the ${FACTIONS.sta.name} makes you Friendly: its boards then offer their hardest, best-paid work.`);
+    s.reputation.sta = 10;
+    expect(whatNext(s) ?? '').not.toMatch(/standing/);
   });
 });
 

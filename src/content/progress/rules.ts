@@ -51,6 +51,24 @@ export const SURVEY_SALE = { perBody: 120, min: 240 };
 /** The Frontier Cooperative's grant for cataloguing the whole sky (it grew with the sky snapshot). */
 export const CODEX_GRANT = 25_000;
 
+/**
+ * The what-next hint (docs/PROCGEN.md §13.4): when the ship needs a mechanic first, when an
+ * upgrade is worth a word, and what a suggestion to spend leaves in hand.
+ */
+export const HINT = {
+  /** Repairs come first below this share of the hull, or with a system at least this damaged. */
+  repairBelow: 0.5,
+  systemsFrom: 0.4,
+  /** A suggestion to spend leaves this much for fees and repairs. */
+  reserve: 1_000,
+  /** A ship is worth suggesting with this much more hold than the one flown, or a higher tier. */
+  upgradeHold: 1.5,
+  /** The long-range drive is suggested after this many jumps, until the frontier is reached. */
+  driveAfterJumps: 6,
+  /** Standing this close below Friendly is worth a word. */
+  friendlyWithin: 5,
+};
+
 export type MilestoneId =
   | 'first-contract'
   | 'contracts-25'
