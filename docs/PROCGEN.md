@@ -1406,8 +1406,9 @@ seen, and `tests/unit/market.test.ts` that moved stock recovers with its 30-minu
 Something to build after the biggest ship: more ships, captains to fly them, a hold at a station and
 a share in its trade (`src/economy/fleet.ts`; rules in `src/content/fleet/rules.ts`; the Fleet
 window on every dock's deck, `src/ui/station/fleet.ts`). Nothing runs in the background: the fleet
-is worked out from the game clock when the player docks, jumps or loads a save, the same on every
-device.
+is worked out from the game clock when the player docks, jumps or loads a save, and in flight as
+its steps fall due, the same on every device. The captains' runs fly the lanes where the player can
+meet them (§18.6).
 
 ### 18.1 The hangar
 
@@ -1434,7 +1435,9 @@ device.
   end's normal stock): the goods, the sale, jump fees both ways, the captain's cut, the time and the
   risk. No captain takes a run that pays under 50 cr.
 - **A run**, on the game clock: 180 s loading, then 1.5 × the expected trip (45 s out, 165 s a
-  jump, 30 s in) each way: about 7 minutes in a system, 15 for one jump, 23 for two. It buys 90%
+  jump by the fewest lanes, 30 s in) each way: about 7 minutes in a system, 15 for one jump, 23 for
+  two. (Runs from the core into the frontier once took for ever: the count the contract boards use
+  never sends a core pilot there. A captain's run counts the lanes it flies, so it gets in.) It buys 90%
   of the ship's hold (as much as the stock allows) at the home dock's price when it sets out and
   sells at the far end's price when it arrives, both at the list price without your standing.
   Everything the run needs is paid when it sets out: the goods, the jump fees there and back, and
@@ -1452,16 +1455,19 @@ device.
   each wait only once. Credits never go below zero.
 - **Raids**: each run meets raiders with a chance set by the route's worst security (every system
   on the shortest route): 8% lawless (below 0.35), 3% thin (below 0.6), 0.8% patrolled; one level
-  worse while a raid (§11) is under way in a system on the route when it sets out. Raiders take the
-  cargo; a quarter of the time they destroy the ship too (the captain escapes). Insured, a lost ship
-  pays back 60% of its model's price. The luck of each run is drawn from a stream keyed by the
-  save's seed, the ship, the hire and the run.
+  worse while a raid (§11) is under way in a system on the route when it sets out. They strike on
+  the way out, at one place and time (§18.6), and take the cargo there; a quarter of the time they
+  destroy the ship too (the captain escapes). A run robbed on the way flies on to the far end empty,
+  sells nothing and comes home. Insured, a ship lost to raiders pays back 60% of its model's price
+  (one the player's own guns destroy pays nothing). The luck of each run is drawn from a stream
+  keyed by the save's seed, the ship, the hire and the run.
 - **Recall**: a captain at home parks the ship at once; one on a run finishes it, flies home and
   parks. Insurance can be taken or dropped at any time (it counts when a run arrives).
 - **Reports**: every sale, raid, lost ship, reported wait and captain signing off is a report with
-  its game-clock time; the save keeps the newest 20. Docking, a jump or loading shows the new ones
-  as toasts: a lost ship always, two or fewer as they are, more as one summary line, and the
-  dividends paid.
+  its game-clock time (a raid or a lost ship says in which system); the save keeps the newest 20.
+  Docking, a jump, loading or a step in flight shows the new ones as toasts: a lost ship always, two
+  or fewer as they are, more as one summary line, and the dividends paid. The Fleet window says where
+  each captain is now (*now in Wolf 1061*, or *in a jump*), so the player can go and meet them.
 
 ### 18.3 Storage and stakes
 
@@ -1482,8 +1488,10 @@ device.
 ### 18.4 Settling from the clock
 
 `settleFleet` works out everything due since the last settle, up to the clock: every hauler step
-(set out, arrive, get home) and every hour of dividends, merged in time order, so a dividend can pay
-for the next load and one hauler's purchase can raise the next one's price. Each step depends only
+(set out, raiders striking, arrive, get home) and every hour of dividends, merged in time order, so
+a dividend can pay for the next load and one hauler's purchase can raise the next one's price. It
+runs when the player docks, jumps or loads, and once a second in flight (cheap when nothing is
+due), so the fleet's news comes as it happens. Each step depends only
 on the save and its own time, so settling once, twice or every few minutes comes out the same
 (tested), and so does every device. Docking settles the fleet before the prices seen there are
 recorded, so they include what its haulers bought and sold. A save left very long works out at most
@@ -1504,8 +1512,65 @@ at the plain rate in one sum, so a settle never loops for long.
   and one ship; insurance pays back 60% of the ship's price. The tests find a run that loses both
   and check the books, with and without insurance.
 - **Nothing runs in the background**: see §18.4. The fleet in the save is checked in full: owned
-  ships like the flown one, at most four, a hauler's route starting where its ship is parked,
-  storage within 60 units, stakes of 1–10% at no more than five stations, reports of known kinds.
+  ships like the flown one, at most four, a hauler's route starting where its ship is parked (and a
+  record of a run seen safely past its raid naming a real system), storage within 60 units, stakes
+  of 1–10% at no more than five stations, reports of known kinds.
+- **The lanes add up**: `validateFleetLanes` (`src/economy/fleetGuards.ts`, run in
+  `tests/unit/captains.test.ts` over every route from a dock a captain loads at to every other within
+  two jumps, and from Halcyon Ring to every dock in reach, the frontier's long routes among them)
+  checks that every run takes a finite time; that its way runs through the route's systems along
+  real lanes, out and home again, in legs of the right kinds and in order with a jump between, from
+  the end of loading for the run's time each way; that its raid strikes in a system of the way out,
+  at the middle of its leg there, where the rules say; and that the rules make sense (ambush levels
+  1–3, chances 0–1). Broken ways (a leg out of time, a system off the route, home not the way back)
+  and raids in the wrong place or at the wrong time are caught.
+
+### 18.6 Your captains on the lanes
+
+The captains' runs fly the same lanes as the timetable's haulers (§21), and the player can meet
+them on the way, guard them through a raid, or lose them to one. Rules in `FLEET.lanes` and
+`FLEET.risk`; the run's way and its raid are worked out in `src/economy/fleet.ts` (`runWay`,
+`runRaid`, `captainsIn`), and `FlightSession` flies them.
+
+- **The way** (`runWay`): a run flies its route's systems (the shortest route, the one its risk is
+  reckoned on) in legs like a timetable haul's: out of the dock to the jump beacon, across each
+  system on the way, in from the jump to the dock, with a jump between (between two docks of one
+  system, one leg), scaled so the whole way takes the run's time each way. The way out starts when
+  the loading is done; the way home is the same systems in reverse. A run's way depends only on its
+  route and when it began loading, so it is the same on every device.
+- **Where raiders strike** (`runRaid`): a run its luck sends raiders against (§18.2, the same runs
+  as ever) meets them on the way out, in the first system of its way with a raid (§11) under way
+  when it set out, otherwise in the least secure (the first, on ties), at the middle of the run's
+  leg there. Out of sight, the cargo is lost then (and a quarter of the time the ship), and the
+  report says where.
+- **In flight** (§9): the player's own haulers flying in the player's system show with the
+  timetable's (and whatever the traffic plan's cap): those under way when the scene starts,
+  wherever they are along their leg, then each as its leg begins, never popping in near the player,
+  and one ship once (one still flying behind its run's schedule comes in before its next leg).
+  Each is named as the player's (*Your Halden Petrel*), with its captain, cargo and where it is
+  bound (*Captain Ada Moss · 18 electronics for Deimos Depot*; *flying home to …, empty*; *robbed,
+  flying on to … empty*), flies the player's ship as it is fitted, and is marked as the player's on
+  the HUD: a green double square, always shown (at the screen's edge when off it), *■ Yours* in the
+  target box, and in the target cycle. Its captain's maydays always reach the player.
+- **A raid due in sight is flown**: when a run's raid is due in the player's system while its ship is
+  in the scene, raiders jump the captain at that moment (an escort's ambush, §10, of threat level
+  `FLEET.lanes.ambush` by how dangerous the route is: 1 patrolled or thin, 2 lawless). The fleet
+  holds that run's raid, and the rest of the run, while the ship is in sight (`settleFleet`'s
+  `inSight`).
+- **Guarded**: every raider of the ambush destroyed, fleeing or gone, or the captain at its dock or
+  through the jump beacon with them still on it: the captain says thanks over the radio, and the
+  run is marked seen safely past its raid there (`Hauler.sight`, as the world log does for the
+  timetable's haulers, §21.4). A captain the player sees to its dock or the beacon before the
+  raid's moment has come is marked the same way. The raid does not strike; the run sells as usual.
+- **Lost in sight**: destroyed in the player's sight by anyone, the ship is lost there and then
+  (`captainLost`), with whatever it still carried and what the run had at stake; half its cargo
+  spills in pods the player can scoop up (`HAULS.spill`, as a timetable hauler's does); the captain
+  gets away in a pod. Insurance pays for a ship raiders destroyed, not for one the player's own guns
+  did. Firing on or destroying your own ship is no crime.
+- **Left to it**: if the player leaves (docks, jumps or is towed home) while the ambush is still on,
+  the raid takes its course as the run's luck says, at its own time.
+- A captain seen anywhere else, or past the middle of a leg with no raid due there, changes
+  nothing: the run is decided where its raid strikes.
 
 ## 19. Mining
 
@@ -1828,7 +1893,8 @@ haulers, their names and their owners are fiction; the stars they fly between ar
   dock, or out of the jump), never popping in near the player. Each is named, with its owner, its
   cargo and where it is going (*The Bramble · Transit Authority · 18 food for Halcyon Ring*). A
   hauler destroyed spills half its cargo in pods of four to nine units (`spill`), whoever
-  destroyed it; destroying one is piracy (§12.1).
+  destroyed it; destroying one is piracy (§12.1). The player's own haulers fly alongside them,
+  marked as the player's (§18.6).
 - **Standing by**: a hauler that called a mayday and got away after the player destroyed at least
   one raider since its call (and was never hit by the player) sends thanks: 6 cr a unit it carries,
   at least 80 cr, and a point of standing with its owner (`thanks`).

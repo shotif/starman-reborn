@@ -330,6 +330,11 @@ h3 {
   color: var(--friendly);
 }
 
+/* One of the player's own ships, flown by a captain. */
+.badge-own {
+  color: var(--success);
+}
+
 .badge-neutral {
   color: var(--neutral);
 }

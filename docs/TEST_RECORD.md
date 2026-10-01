@@ -11,9 +11,9 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | --- | --- | --- |
 | TypeScript typecheck (app + scripts/tests) | `npm run typecheck` | Pass |
 | Astronomy data validation | `npm run data:validate` | Pass (22 warnings: the contested planets this edition keeps) |
-| Unit tests | `npm test` | Pass: 677 tests in 43 files |
+| Unit tests | `npm test` | Pass: 693 tests in 44 files |
 | Production build | `npm run build` | Pass |
-| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 630 KB of 700 (gzipped) |
+| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 632 KB of 700 (gzipped) |
 | Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 33 passed (5 touch-only tests skipped) |
 | Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 33 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
 | Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 126 screenshots, no audit findings |
@@ -334,6 +334,30 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   exactly half its cargo, of its own good; they leave the scene safe and others join as their legs
   begin; one kept alive through an attack by the player's guns sends thanks when it gets away, and
   one the player fired on sends none; stock the hauls move stays within reason.
+- `captains.test.ts`: **your captains on the lanes**. A run's way: between two docks of one system
+  one leg each way, over a jump out of the dock, a jump and in to the dock (home the same way back),
+  from the end of loading for the run's time each way; the lanes' guardrails pass on every route a
+  captain can fly (2,769 of them, the frontier's long routes among them), and broken ways and raids
+  are caught (a leg out of time, a system off the route, home not the way back, a raid off the
+  middle of its leg or in the wrong system); a run into the frontier takes a finite time and gets
+  in (it never did). Where raiders strike: the same runs as before, in the least secure system at
+  the middle of the leg; out of sight they take the cargo there and then (the report says where),
+  and the robbed run flies on empty, sells nothing and comes home; a ship they destroy is lost at
+  the raid, insured or not. A raid in the player's sight waits while the ship is in sight where it
+  is due (not elsewhere), and strikes at its own time once the player has gone; seen safely past it
+  does not strike and the run sells (seen in another system it counts for nothing), the save keeps
+  that and refuses a damaged record, and settling once or in steps comes out the same; destroyed in
+  sight, the ship is lost there and then with its cargo, insurance paying for raiders and not for
+  the player's guns, and on the way home only the ship is lost. `captainsIn` and the Fleet window's
+  status say where each one is. In a real `FlightSession` in node: the player's own hauler flies
+  in their system, named as theirs with its captain, cargo and destination, marked and in the
+  target cycle, whatever the traffic plan's cap, and leaves at the beacon; one flying behind its
+  schedule is not doubled when its run turns for home; a raid due in sight
+  brings an ambush on it (the fleet holding the raid meanwhile), and beaten off, the captain says
+  thanks and the run sells (the ship its luck would have lost kept); left to it, the raid would
+  strike as its luck says, and the captain making its dock with the raiders on it got away;
+  destroyed by raiders or by the player, it is lost at once, spills half its cargo of its own good,
+  and is no crime.
 
 ### Browser tests (Playwright)
 
@@ -443,9 +467,17 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   from, it flies, named, with its cargo; destroyed by the player's guns, the save remembers it lost
   and its cargo is adrift; back at the station, the News says it was lost to a pirate and the
   shortage runs on.
+- `captains.spec.ts`: **your captain on the lanes**: Deimos Depot's prices seen, a freighter bought
+  at Halcyon Ring with the courier kept, and a captain hired for the courier in the Fleet window
+  (electronics to Deimos Depot, insured), which shows it loading; launched, once loaded the captain
+  flies the lane in Sol named as the player's (*Captain … · 18 electronics for Deimos Depot*), and
+  targeted, the target box says *Your …* and *■ Yours*; raiders destroy it in sight: the ship is
+  gone from the fleet, the report (shown as a toast) says where, with what, and that insurance paid,
+  the credits rise and the cargo is adrift; docked again, the Fleet window keeps the report.
 - `screenshots.spec.ts`: the loading title (caught part-way, with the game's largest file held
-  back), title, Settings at its device report, job board, buy dialog, station deck, shipyard, outfitter, fleet,
-  flight HUD, star map and its Missions and Find dialogs, and the News with a shortage's relief
+  back), title, Settings at its device report, job board, buy dialog, station deck, shipyard, outfitter, fleet
+  (with a captain loading for a run), flight HUD, the player's own captain targeted in flight, star
+  map and its Missions and Find dialogs, and the News with a shortage's relief
   haulers on their way, at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
   zoom). Saved in `docs/screenshots/` once any smooth scrolling has come to rest. Each is audited

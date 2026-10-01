@@ -368,7 +368,7 @@ async function openHire(ctx: StationContext, o: OwnedShip, dests: string[], refr
         h('label', { for: 'fleet-insure' }, 'Insure the ship', h('span', { class: 'hint' }, `Pays ${formatCredits(Math.round(FLEET.risk.payout * model.price))} if raiders destroy it, for ${pct(FLEET.risk.premium)} of each run’s profit.`)),
         insure,
       ),
-      h('p', { class: 'muted small' }, 'Prices at the far end are the last you saw. Every run moves both markets, so a route worked hard pays less; the captain decides on the day, waits while a run does not pay, and reports when you dock.'),
+      h('p', { class: 'muted small' }, 'Prices at the far end are the last you saw. Every run moves both markets, so a route worked hard pays less; the captain decides on the day, waits while a run does not pay, and reports as the runs go. Meet your ship on the lanes, and you can guard it if raiders strike.'),
     ),
     actions: [
       { label: 'Cancel', value: 'cancel', testId: 'fleet-hire-cancel' },

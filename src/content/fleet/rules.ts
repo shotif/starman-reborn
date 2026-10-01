@@ -1,11 +1,14 @@
 import type { EventKind } from '../events/rules.ts';
 import type { StationType } from '../world/types.ts';
 
+/** How dangerous a route is, from its worst security (as the trade computer says it). */
+type Danger = 'patrolled' | 'thin' | 'lawless';
+
 /**
  * A fleet of your own (docs/PROCGEN.md §18): ships parked at stations, haulers with hired captains
- * flying the player's routes out of sight, leased storage and stakes in a station's trade. All of it
- * is worked out from the game clock when the player docks, jumps or loads (src/economy/fleet.ts):
- * nothing runs in the background.
+ * flying the player's routes (and met on the lanes), leased storage and stakes in a station's trade.
+ * All of it is worked out from the game clock when the player docks, jumps or loads, and in flight as
+ * its steps fall due (src/economy/fleet.ts): nothing runs in the background.
  */
 export const FLEET = {
   hangar: {
@@ -40,13 +43,28 @@ export const FLEET = {
     maxLooksPerSettle: 300,
   },
   risk: {
-    /** Chance a run meets raiders, by the route's worst security (a raid under way on the route: one level worse). */
+    /**
+     * Chance a run meets raiders, by the route's worst security (a raid under way on the route: one
+     * level worse). They strike in one system of the way out (one with a raid under way when the
+     * run set out, else the least secure), at the middle of the run's leg there.
+     */
     raided: { lawless: 0.08, thin: 0.03, patrolled: 0.008 },
     /** When raided: the cargo is lost; this share of the time, the ship too. */
     shipLost: 0.25,
-    /** Insurance: this share of each run's profit; a lost ship pays back this share of its price. */
+    /**
+     * Insurance: this share of each run's profit; a ship lost to raiders pays back this share of its
+     * price (not one the player's own guns destroyed).
+     */
     premium: 0.08,
     payout: 0.6,
+  },
+  /**
+   * Your captains on the lanes (docs/PROCGEN.md §18.6): in the player's sight, a run's raid is
+   * flown. Raiders of this threat level jump the captain (an escort's ambush, §10: one more ship
+   * than the level), by how dangerous the route is.
+   */
+  lanes: {
+    ambush: { patrolled: 1, thin: 1, lawless: 2 } satisfies Record<Danger, 1 | 2 | 3> as Record<Danger, 1 | 2 | 3>,
   },
   storage: {
     /** A lease at one station (paid once, kept for good): its price and hold size (units). */

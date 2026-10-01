@@ -9,12 +9,12 @@ After the scripted opening (10–20 minutes), the neighbourhood is an open sandb
 systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
 of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
 packs in lawless space; 39 ships and 139 pieces of equipment; and generated contracts on every job
-board. Increments 1–18 (under [Done so far](#done-so-far)) added world events and news, contracts
+board. Increments 1–19 (under [Done so far](#done-so-far)) added world events and news, contracts
 of every kind, the law and the outlaw path, goals, five story arcs, combat depth, people in the
-bars and a trade computer, a world that answers, a fleet of your own, mining in the real belts,
-the frontier with a life of its own, a border war whose fronts can be won for good, story endings
-that change stations for good, escorts and convoys across jumps, haulers with real cargo on a
-timetable, and a game measured and tuned on a real phone.
+bars and a trade computer, a world that answers, a fleet of your own whose captains fly the lanes,
+mining in the real belts, the frontier with a life of its own, a border war whose fronts can be won
+for good, story endings that change stations for good, escorts and convoys across jumps, haulers
+with real cargo on a timetable, and a game measured and tuned on a real phone.
 
 What it lacks now:
 
@@ -26,20 +26,10 @@ What it lacks now:
 
 Candidates for what comes next, in the order I would build them:
 
-### Your captains on the lanes ⏳ (M)
-
-The hauls of the player's own fleet fly the timetable like the stations' haulers: meet them on the
-way, guard them through a raid, or lose them to one.
-
 ### Gluts that ship out ⏳ (S)
 
 A glut sends its surplus out in haulers, as a shortage draws relief, and boards post escorts for
 relief bound through raided lanes.
-
-### Remappable controls ⏳ (M)
-
-Rebind keys and gamepad buttons in Settings, and a colour-blind-safe option for markers and the
-HUD.
 
 ### How an increment ships
 
@@ -49,6 +39,20 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 19. Your captains on the lanes ✅
+
+The runs of your own captains now fly the lanes like the stations' haulers. Each run goes through
+its route's systems leg by leg, so the Fleet window says where each captain is now, and in that
+system you meet your ship in flight: named as yours, with its captain and cargo, marked green on
+the HUD and in the target cycle. Raiders who strike a run do it at one place and time, in the
+riskiest system on its way out; if you are there, the raid is flown. Beat the ambush off, or see
+the captain to its dock or the jump beacon, and the run gets through with its cargo; if the ship is
+destroyed in front of you, it is lost there and then, half its cargo spilling where you can scoop
+it up, and insurance pays (not for your own guns). Leave mid-fight and the raid takes its course.
+The fleet now keeps up in flight too, so its news comes as it happens, and a run from the core
+into the frontier, which used to take for ever, gets in
+([PROCGEN.md §18.6](PROCGEN.md#186-your-captains-on-the-lanes)).
 
 ### 18. Traders you can see ✅
 

@@ -5,7 +5,7 @@ import type { Lingering } from './state.ts';
 import { TRAFFIC } from '../world/traffic/plan.ts';
 import { leaveMark, markSettledFronts, raidKill, settleFront, storyMark } from '../economy/answers.ts';
 import { useWorldLog } from '../economy/events.ts';
-import { fleetNews, settleFleet, type FleetSettlement } from '../economy/fleet.ts';
+import { captainLost, captainSeen, fleetNews, haulEstimate, haulGoods, hireHauler, settleFleet, type FleetSettlement } from '../economy/fleet.ts';
 import { lastView } from '../ui/station/lastView.ts';
 import { fill, PAYMENT } from '../content/people/lines.ts';
 import * as THREE from 'three';
@@ -17,7 +17,8 @@ import { addCargo, cargoUsed, itemsThatFit } from '../economy/cargo.ts';
 import { COMMODITIES } from '../economy/commodities.ts';
 import { getCatalog, shipModel } from '../content/catalog.ts';
 import { hashString } from '../content/random.ts';
-import { cargoCapacity, performanceOf } from '../economy/loadout.ts';
+import { cargoCapacity, newShipState, performanceOf } from '../economy/loadout.ts';
+import { recordMarketVisit } from '../economy/trade.ts';
 import { adjustReputation, FACTIONS, standingTier, TIER_LABEL } from '../economy/factions.ts';
 import { eventsAt, newsAt, systemEventAt } from '../economy/events.ts';
 import {
@@ -93,7 +94,7 @@ import { discoverBody, dockAt, jumpReadiness, performJump, rescueAfterDefeat, ro
 import type { SaveManager } from './save/SaveManager.ts';
 import { applyDocumentSettings, type Settings } from './settings.ts';
 import { Soundscape } from './soundscape.ts';
-import { applyCredits, createNewGame, type GameState } from './state.ts';
+import { applyCredits, createNewGame, markVisited, type GameState } from './state.ts';
 
 type Mode = 'loading' | 'title' | 'docked' | 'flight' | 'map' | 'jump';
 
@@ -183,6 +184,8 @@ export class Game {
   private modeBeforeMap: Mode = 'flight';
   private autosaveTimer = 0;
   private objectiveTimer = 0;
+  /** Seconds until the fleet is next settled in flight (docs/PROCGEN.md §18.6). */
+  private fleetTimer = 0;
   private objectiveText: string | null = null;
   /** The "what next" suggestion for this flight (worked out once per launch or arrival). */
   private hint: string | null = null;
@@ -960,6 +963,12 @@ export class Game {
         onBounty: (credits, name) => this.onBounty(credits, name),
         onContractKill: (jobId) => this.onContractKill(jobId),
         onHaul: (id, fate, by) => recordHaul(state.world, id, { at: state.clock, fate, systemId: state.location.systemId, ...(by ? { by } : {}) }),
+        // The player's own haulers in sight (docs/PROCGEN.md §18.6): seen safely past their raid, or lost there and then.
+        onCaptain: (shipId, fate, by) => {
+          if (fate === 'safe') captainSeen(state, shipId);
+          else this.announceFleet(captainLost(state, shipId, by ?? 'raiders', new Set(this.flight?.captainsInSight() ?? [])));
+          this.persist();
+        },
         onHaulThanks: (haul) => {
           const { perUnit, min, standing } = HAULS.thanks;
           const paid = Math.max(min, haul.qty * perUnit);
@@ -1689,6 +1698,16 @@ export class Game {
       this.openControls();
       return;
     }
+    // The fleet keeps up in flight: its steps as they fall due, a raid due in sight left to the flight.
+    this.fleetTimer -= dt;
+    if (this.fleetTimer <= 0) {
+      this.fleetTimer = 1;
+      const fleet = settleFleet(state, { inSight: new Set(flight.captainsInSight()) });
+      if (fleet.steps) {
+        this.announceFleet(fleet);
+        this.persist();
+      }
+    }
     this.objectiveTimer -= dt;
     if (this.objectiveTimer <= 0) {
       this.objectiveTimer = 0.4;
@@ -1879,6 +1898,25 @@ export class Game {
           }
         }
         return null;
+      },
+      /**
+       * Test-only: a ship of `model` parked where the player is docked, the prices at `to` known as if
+       * seen there, and a captain hired (insured) for its best run (screenshots). Returns the ship's id.
+       */
+      hireCaptain: (arg: { model: string; to: string }) => {
+        const state = this.state;
+        const here = state?.location.dockedAt;
+        if (!state || !here) return null;
+        const to = getLocation(arg.to);
+        markVisited(state, to.systemId, to.id);
+        recordMarketVisit(state, to.id);
+        const id = `ship-${state.fleet.ships.length + 1}`;
+        const o = { id, ship: newShipState(arg.model), locationId: here };
+        state.fleet.ships.push(o);
+        const best = haulGoods(state, here, to.id).sort((a, b) => (haulEstimate(state, o, to.id, b, true)?.net ?? 0) - (haulEstimate(state, o, to.id, a, true)?.net ?? 0))[0];
+        const r = best ? hireHauler(state, id, to.id, best, true) : null;
+        this.station?.render();
+        return r?.ok ? id : null;
       },
       /** Test-only: destroy a ship in flight outright (`byPlayer`: as the player's guns would). */
       destroyNpc: (arg: { id: string; byPlayer: boolean }) => this.flight?.debugDestroy(arg.id, arg.byPlayer) ?? false,

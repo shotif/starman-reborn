@@ -204,13 +204,27 @@ for (const size of SIZES) {
       await press(page, 'slot-shield');
       await shot(page, `${size.name}-3d-outfitter`, size.touch, results);
       await press(page, 'room-deck');
+      // A captain hauling for the player (docs/PROCGEN.md §18.6): on the Fleet window, then met in flight.
+      const captain = await api<string | null>(page, 'hireCaptain', { model: 'ship.freighter.1.halden', to: 'meridian-outpost' });
+      expect(captain).not.toBeNull();
       await press(page, 'station-fleet');
+      await expect(page.getByTestId(`fleet-hauler-${captain}`)).toBeVisible();
       await shot(page, `${size.name}-3e-fleet`, size.touch, results);
       await press(page, 'dock-launch');
       await press(page, 'sheet-close');
       await waitUntil(page, 'undocked', async () => (await api<{ autopilot: string } | null>(page, 'player'))?.autopilot === 'none');
       await api(page, 'selectTarget', 'station:mars-depot');
       await shot(page, `${size.name}-4-flight`, size.touch, results);
+      // Loaded, the captain flies out of Halcyon Ring for the jump beacon, marked as the player's own.
+      await api(page, 'advanceClock', 200);
+      let mine: { id: string } | undefined;
+      await waitUntil(page, 'the captain in flight', async () => {
+        mine = (await api<{ id: string; captain: string | null }[]>(page, 'npcs')).find((n) => n.captain === captain);
+        return !!mine;
+      }, 60_000);
+      await api(page, 'selectTarget', `ship:${mine!.id}`);
+      await expect(page.locator('.badge-own')).toBeVisible();
+      await shot(page, `${size.name}-4b-captain`, size.touch, results);
       await press(page, 'hud-map');
       await page.waitForTimeout(800);
       await shot(page, `${size.name}-5-map`, size.touch, results);

@@ -142,6 +142,11 @@ export interface Hauler {
   runs: number;
   /** Net credits the hauler has made the player. */
   earned: number;
+  /**
+   * The player saw run `run` safely past its raid in `systemId` (docs/PROCGEN.md §18.6): guarded
+   * through the ambush, or seen to its dock or the jump beacon. The raid does not strike.
+   */
+  sight?: { run: number; systemId: SystemId; at: number };
 }
 
 /** A ship the player owns besides the one they fly. */

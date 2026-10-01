@@ -36,8 +36,9 @@ Belt, and the debris discs astronomers have seen around nearby stars, each with 
 mining laser cuts ore, ice and volatiles from rocks, a prospecting scanner gets more from them,
 refineries buy the load, mines and refineries post claim contracts, and raiders hunt miners. A
 fleet of your own comes after the biggest ship: keep ships parked at stations, hire captains to
-haul your routes out of sight (worked out from the game clock, for well under what flying them
-earns, with raids and insurance), lease storage and buy a share of a station's trade.
+haul your routes (worked out from the game clock, for well under what flying them earns, with raids
+and insurance), lease storage and buy a share of a station's trade. Your captains fly the same lanes
+as everyone else's haulers: meet one on the way, guard it when raiders jump it, or watch it go.
 Ships, equipment, the world, the economy, events, contracts and the law are generated from rule
 files and checked by automated guardrails ([docs/PROCGEN.md](docs/PROCGEN.md)).
 

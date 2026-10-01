@@ -478,7 +478,9 @@ export class Hud {
           h('strong', { class: 'target-name' }, t.name),
           t.hostile
             ? h('span', { class: 'badge badge-hostile' }, '◆ Hostile')
-            : faction
+            : t.own
+              ? h('span', { class: 'badge badge-own' }, '■ Yours')
+              : faction
               ? h('span', { class: 'badge badge-friendly' }, `■ ${faction.shortName}`)
               : dataBadge(t.dataClass === 'fictional' ? 'fictional' : 'observed', t.dataClass === 'observed' ? 'Real' : undefined),
         ),
@@ -554,7 +556,7 @@ export class Hud {
       }
       el.hidden = false;
       el.dataset.id = m.id;
-      const cls = `marker kind-${m.kind}${m.hostile ? ' hostile' : ''}${m.selected ? ' selected' : ''}${m.objective ? ' objective' : ''}${m.onScreen ? '' : ' offscreen'}${m.faction ? ` faction-${m.faction}` : ''}`;
+      const cls = `marker kind-${m.kind}${m.hostile ? ' hostile' : ''}${m.own ? ' own' : ''}${m.selected ? ' selected' : ''}${m.objective ? ' objective' : ''}${m.onScreen ? '' : ' offscreen'}${m.faction ? ` faction-${m.faction}` : ''}`;
       if (el.className !== cls) el.className = cls;
       el.style.transform = `translate(${m.x.toFixed(1)}px, ${m.y.toFixed(1)}px)`;
       const shape = el.firstChild as HTMLElement;

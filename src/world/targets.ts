@@ -19,6 +19,8 @@ export interface Target {
   dataClass: DataClass;
   faction?: FactionId;
   hostile?: boolean;
+  /** One of the player's own ships, flown by a captain (docs/PROCGEN.md §18.6). */
+  own?: boolean;
   locationId?: string;
   bodyId?: string;
   laneId?: string;

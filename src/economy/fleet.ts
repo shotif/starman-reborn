@@ -1,17 +1,20 @@
 import { applyCredits, type Cargo, type CommodityId, type FleetReport, type GameState, type Hauler, type OwnedShip, type ShipState, type Stake } from '../app/state.ts';
 import { shipModel, shipsForSale } from '../content/catalog.ts';
+import { CONTRACTS } from '../content/contracts/rules.ts';
 import { FLEET } from '../content/fleet/rules.ts';
 import { FIRST_NAMES, LAST_NAMES } from '../content/people/lines.ts';
 import { rng } from '../content/random.ts';
 import type { ShipModel } from '../content/types.ts';
-import { ALL_LOCATIONS, getLocation, SYSTEMS } from '../data/systems.ts';
+import { jumpsFrom } from '../content/world/network.ts';
+import { ALL_LOCATIONS, getLocation, getSystem, SYSTEMS, WORLD } from '../data/systems.ts';
 import type { FactionId, SystemId } from '../data/types.ts';
 import { findRoute } from '../galaxy/routing.ts';
 import { addCargo, cargoCount, cargoUsed, itemsThatFit, removeCargo } from './cargo.ts';
 import { COMMODITIES, COMMODITY_IDS } from './commodities.ts';
-import { expectedTrip, routeFeeBetween } from './contracts.ts';
+import { routeFeeBetween } from './contracts.ts';
 import { hasShipyard, shipStandingBlock, shipTradeIn, type Result } from './equipment.ts';
 import { stationEventAt, systemEventAt, type WorldEvent } from './events.ts';
+import { legsOf, type HaulLeg } from './hauls.ts';
 import { dockAccess } from './law.ts';
 import { cargoCapacity, clampShip, newShipState, performanceOf, shieldCapacity } from './loadout.ts';
 import { hasMarket, moveStock, orderTotal, quote, stockAvailable, type MarketContext } from './markets.ts';
@@ -25,9 +28,15 @@ import { riskOf, security, type RouteRisk } from './tradeComputer.ts';
  * src/content/fleet/rules.ts.
  *
  * Nothing runs in the background. `settleFleet` works out everything due since the last settle from
- * the game clock (when the player docks, jumps or loads a save): every hauler run and every hour of
- * dividends, in time order, each run's luck drawn from a stream keyed by the save's seed, the ship
- * and the run. Settling often or seldom comes out the same, and so does every device.
+ * the game clock (when the player docks, jumps or loads a save, and in flight as steps fall due):
+ * every hauler run and every hour of dividends, in time order, each run's luck drawn from a stream
+ * keyed by the save's seed, the ship and the run. Settling often or seldom comes out the same, and
+ * so does every device.
+ *
+ * Your captains on the lanes (§18.6): a run flies its route's systems in legs like a timetable
+ * haul's, so FlightSession can show it where the player is (`captainsIn`). Raiders strike a run at
+ * one place and time; in the player's sight that raid is flown, and what the player sees decides it
+ * (`captainSeen`, `captainLost`).
  *
  * Haulers trade for real: a run's purchase drains the stock where it loads and its sale fills the
  * stock where it sells (moveStock, in time order), so a route worked hard flattens like one the
@@ -305,7 +314,7 @@ function payPartHour(state: GameState, k: Stake): void {
 export const lawfulCargo = (c: CommodityId): boolean => c !== 'weapons' && COMMODITIES[c].category !== 'contraband';
 
 /** Docks a captain loads or sells at: an open market, never a raider den. */
-function haulDock(locationId: string): boolean {
+export function haulDock(locationId: string): boolean {
   const loc = getLocation(locationId);
   return hasMarket(locationId) && loc.dockable !== false && loc.stationType !== 'pirate-den';
 }
@@ -313,7 +322,7 @@ function haulDock(locationId: string): boolean {
 const pathCache = new Map<string, SystemId[]>();
 
 /** Systems a run passes through, both ends included (the shortest route). */
-function routeSystems(a: SystemId, b: SystemId): SystemId[] {
+export function routeSystems(a: SystemId, b: SystemId): SystemId[] {
   if (a === b) return [a];
   const key = `${a}|${b}`;
   let path = pathCache.get(key);
@@ -342,11 +351,56 @@ export function haulRisk(from: string, to: string, clock: number): HaulRisk {
   return { base, level, raid, raided: FLEET.risk.raided[level], shipLost: FLEET.risk.shipLost };
 }
 
+const jumpCache = new Map<SystemId, Map<SystemId, number>>();
+/** Jumps between two systems by the fewest lanes (a captain's drive reaches the frontier's long lanes). */
+function jumpsBetween(a: SystemId, b: SystemId): number {
+  let m = jumpCache.get(a);
+  if (!m) jumpCache.set(a, (m = jumpsFrom(WORLD.links, a)));
+  return m.get(b) ?? routeSystems(a, b).length - 1;
+}
+
+/**
+ * The trip as the trade computer counts it for the player (out of the dock, each jump, into the
+ * dock), between any two systems: the contract boards' count never sends a core pilot into the
+ * frontier, but a captain flies wherever the player has been.
+ */
+function tripSeconds(a: SystemId, b: SystemId): number {
+  const t = CONTRACTS.urgent.trip;
+  return t.depart + jumpsBetween(a, b) * t.perJump + t.arrive;
+}
+
 /** A run's timing (game-clock seconds): loading, each way, and the whole run. */
 export function haulTimes(from: string, to: string): { load: number; oneWay: number; run: number } {
   const load = FLEET.haulers.loadSeconds;
-  const oneWay = Math.max(1, Math.round(expectedTrip(getLocation(from).systemId, getLocation(to).systemId) * FLEET.haulers.tripFactor));
+  const oneWay = Math.max(1, Math.round(tripSeconds(getLocation(from).systemId, getLocation(to).systemId) * FLEET.haulers.tripFactor));
   return { load, oneWay, run: load + 2 * oneWay };
+}
+
+/** A run's way there (`out`, with the cargo) and home (`back`, empty): the legs it flies in each system. */
+export interface RunWay {
+  out: HaulLeg[];
+  back: HaulLeg[];
+}
+
+/**
+ * The way of the run under way (docs/PROCGEN.md §18.6): the route's systems (the shortest route, as
+ * its risk is reckoned), in legs like a timetable haul's (out of the dock to the jump beacon, across
+ * each system on the way, in from the jump to the dock; between two docks of one system, one leg),
+ * scaled to the run's time each way. The way out starts when the loading is done.
+ */
+export function runWay(h: Pick<Hauler, 'route' | 'since'>): RunWay {
+  const { from, to } = h.route;
+  const path = routeSystems(getLocation(from).systemId, getLocation(to).systemId);
+  const { load, oneWay } = haulTimes(from, to);
+  const depart = h.since + load;
+  return { out: scaledLegs(path, depart, oneWay), back: scaledLegs([...path].reverse(), depart + oneWay, oneWay) };
+}
+
+function scaledLegs(path: readonly SystemId[], depart: number, seconds: number): HaulLeg[] {
+  const legs = legsOf(path, 0);
+  const natural = legs.at(-1)!.end;
+  const at = (t: number) => depart + Math.round((t * seconds) / natural);
+  return legs.map((l) => ({ ...l, start: at(l.start), end: at(l.end) }));
 }
 
 /** Jump fees for a run: there and back. */
@@ -376,6 +430,44 @@ export function insurancePayout(ship: ShipState): number {
 export function runLuck(seed: number, shipId: string, hired: number, run: number): { raid: number; loss: number } {
   const r = rng(seed, 'hauler', shipId, Math.round(hired), run);
   return { raid: r.next(), loss: r.next() };
+}
+
+/** Where and when raiders strike a run, and whether they take the ship too. */
+export interface RunRaid {
+  systemId: SystemId;
+  at: number;
+  shipLost: boolean;
+  /** How dangerous the route was when the run set out (what an ambush in sight is made of). */
+  level: RouteRisk;
+}
+
+/**
+ * The raid the run under way meets, if its luck says so (docs/PROCGEN.md §18.6): on the way out, in
+ * the first system of the way with a raid (§11) under way when it set out, else in the least
+ * secure (the first, on ties), at the middle of the run's leg there.
+ */
+export function runRaid(seed: number, o: Pick<OwnedShip, 'id' | 'hauler'>): RunRaid | null {
+  const h = o.hauler;
+  if (!h || h.leg !== 'out') return null;
+  const { from, to } = h.route;
+  const setOff = h.since + FLEET.haulers.loadSeconds;
+  const risk = haulRisk(from, to, setOff);
+  const luck = runLuck(seed, o.id, h.hired, h.runs);
+  if (luck.raid >= risk.raided) return null;
+  const way = runWay(h).out;
+  const systems = way.map((l) => l.systemId);
+  const where = systems.find((sys) => systemEventAt(sys, setOff)?.kind === 'raid') ?? systems.reduce((worst, sys) => (security(sys) < security(worst) ? sys : worst));
+  const leg = way.find((l) => l.systemId === where)!;
+  return { systemId: where, at: (leg.start + leg.end) / 2, shipLost: luck.loss < risk.shipLost, level: risk.level };
+}
+
+/** The raid still ahead of a run: it has its cargo aboard, and the player did not see it safely past. */
+export function raidAhead(seed: number, o: OwnedShip): RunRaid | null {
+  const h = o.hauler;
+  const raid = runRaid(seed, o);
+  if (!h || !raid || cargoCount(o.ship.cargo, h.route.commodity) <= 0) return null;
+  if (h.sight?.run === h.runs && h.sight.systemId === raid.systemId) return null;
+  return raid;
 }
 
 /** A captain's name for this ship, today. */
@@ -546,7 +638,16 @@ export interface FleetSettlement {
   steps: number;
 }
 
-/** When a hauler's next step is due: setting out (at home), arriving (out), or getting home (back). */
+/** How a settle in flight treats the player's own haulers in sight (docs/PROCGEN.md §18.6). */
+export interface SettleOptions {
+  /**
+   * Owned ships flying in the player's sight: a raid due on one in the player's system waits for
+   * the flight to decide it (and the rest of that run waits with it).
+   */
+  inSight?: ReadonlySet<string>;
+}
+
+/** When a hauler's leg ends: setting out (at home), arriving (out), or getting home (back). */
 export function haulerNext(h: Hauler): number {
   if (h.leg === 'home') return h.since;
   const { load, oneWay } = haulTimes(h.route.from, h.route.to);
@@ -627,49 +728,70 @@ function setOut(state: GameState, o: OwnedShip, h: Hauler, t: number, out: Fleet
   h.waits = 0;
 }
 
-/** At the far end: raiders on the way (the cargo lost, perhaps the ship), or the sale. */
-function arrive(state: GameState, o: OwnedShip, h: Hauler, t: number, out: FleetSettlement): void {
+const systemName = (id: SystemId) => getSystem(id).displayName;
+
+/**
+ * A ship lost on a run, at `t` in `systemId`: to raiders, or to the player's own guns. Whatever it
+ * still carried is lost with it; insurance pays for a ship raiders destroyed, not one the player did.
+ */
+function wreck(state: GameState, o: OwnedShip, h: Hauler, t: number, systemId: SystemId, by: 'raiders' | 'player', qty: number, out: FleetSettlement): void {
   const { from, to, commodity: c } = h.route;
+  const payout = h.insured && by === 'raiders' ? insurancePayout(o.ship) : 0;
+  credit(state, payout);
+  // What the run still had at stake (the goods and fees, until it sells) goes with the ship.
+  const net = payout - h.cost;
+  h.earned += net;
+  out.hauled += net;
+  // A run ended on its way out counts as a run; one on its way home was counted when it arrived.
+  if (h.leg === 'out') out.runs += 1;
+  o.ship.cargo = {};
+  state.fleet.ships.splice(state.fleet.ships.indexOf(o), 1);
+  const way = h.leg === 'out' ? `on the way to ${place(to)}` : `on the way home to ${place(from)}`;
+  const aboard = qty > 0 ? `, with ${qty} ${goodName(c)}` : '';
+  const who = by === 'raiders' ? 'Raiders destroyed' : 'Your own guns destroyed';
+  const insured = payout ? ` Insurance paid ${payout} cr.` : by === 'player' && h.insured ? ' Insurance does not pay for that.' : '';
+  report(state, out, {
+    at: t,
+    kind: 'lost',
+    shipId: o.id,
+    amount: net,
+    text: `${who} your ${shipName(o.ship)} in ${systemName(systemId)} ${way}${aboard}. ${h.captain} got away in a pod.${insured}`,
+  });
+}
+
+/** Raiders strike a run out of the player's sight: the cargo is lost, and perhaps the ship. */
+function strike(state: GameState, o: OwnedShip, h: Hauler, raid: RunRaid, out: FleetSettlement): void {
+  const { to, commodity: c } = h.route;
   const qty = cargoCount(o.ship.cargo, c);
-  const risk = haulRisk(from, to, h.since + FLEET.haulers.loadSeconds);
-  const luck = runLuck(state.seed, o.id, h.hired, h.runs);
+  if (raid.shipLost) return wreck(state, o, h, raid.at, raid.systemId, 'raiders', qty, out);
+  o.ship.cargo = {};
+  const net = -h.cost;
+  h.cost = 0;
+  h.earned += net;
+  out.hauled += net;
+  report(state, out, { at: raid.at, kind: 'raid', shipId: o.id, amount: net, text: `Raiders took ${h.captain}’s ${qty} ${goodName(c)} in ${systemName(raid.systemId)}, on the way to ${place(to)} (${signed(net)} cr).` });
+}
+
+/** At the far end: the sale (a run robbed on the way flies on empty, and sells nothing). */
+function arrive(state: GameState, o: OwnedShip, h: Hauler, t: number, out: FleetSettlement): void {
+  const { to, commodity: c } = h.route;
+  const qty = cargoCount(o.ship.cargo, c);
   h.runs += 1;
   out.runs += 1;
+  h.leg = 'back';
+  delete h.sight;
+  if (qty <= 0) return;
   o.ship.cargo = {};
-  if (luck.raid < risk.raided) {
-    if (luck.loss < risk.shipLost) {
-      const payout = h.insured ? insurancePayout(o.ship) : 0;
-      credit(state, payout);
-      const net = payout - h.cost;
-      h.earned += net;
-      out.hauled += net;
-      state.fleet.ships.splice(state.fleet.ships.indexOf(o), 1);
-      report(state, out, {
-        at: t,
-        kind: 'lost',
-        shipId: o.id,
-        amount: net,
-        text: `Raiders destroyed your ${shipName(o.ship)} on the way to ${place(to)}, with ${qty} ${goodName(c)}. ${h.captain} got away in a pod.${payout ? ` Insurance paid ${payout} cr.` : ''}`,
-      });
-      return;
-    }
-    const net = -h.cost;
-    h.earned += net;
-    out.hauled += net;
-    report(state, out, { at: t, kind: 'raid', shipId: o.id, amount: net, text: `Raiders took ${h.captain}’s ${qty} ${goodName(c)} on the way to ${place(to)} (${signed(net)} cr).` });
-    h.leg = 'back';
-    return;
-  }
   const sale = orderTotal(to, c, qty, 'sell', NEUTRAL, { clock: t, markets: state.markets }) ?? 0;
   moveStockAt(state, to, c, qty, t);
   const profit = sale - h.cost;
+  h.cost = 0;
   const { wage, premium } = cuts(profit, h.insured);
   credit(state, sale - wage - premium);
   const net = profit - wage - premium;
   h.earned += net;
   out.hauled += net;
   report(state, out, { at: t, kind: 'run', shipId: o.id, amount: net, text: `${h.captain} sold ${qty} ${goodName(c)} at ${place(to)}: ${signed(net)} cr.` });
-  h.leg = 'back';
 }
 
 function comeHome(state: GameState, o: OwnedShip, h: Hauler, t: number, out: FleetSettlement): void {
@@ -692,7 +814,7 @@ function payDividend(state: GameState, k: Stake, out: FleetSettlement): void {
  * and every hour of dividends, in time order (so a dividend can pay for the next load). The same
  * clock gives the same result however often it is called, on every device.
  */
-export function settleFleet(state: GameState): FleetSettlement {
+export function settleFleet(state: GameState, opts: SettleOptions = {}): FleetSettlement {
   const out: FleetSettlement = { reports: [], runs: 0, hauled: 0, dividends: 0, steps: 0 };
   const fleet = state.fleet;
   if (!fleet.stakes.length && !fleet.ships.some((o) => o.hauler)) return out;
@@ -710,12 +832,19 @@ export function settleFleet(state: GameState): FleetSettlement {
   }
   const looks = new Map<OwnedShip, number>();
   const resting = new Set<OwnedShip>();
+  // A raid due where the player watches the ship waits for the flight to decide it.
+  const here = state.location.dockedAt ? null : state.location.systemId;
   for (;;) {
-    let next: { t: number; ship?: OwnedShip; stake?: Stake } | null = null;
+    let next: { t: number; ship?: OwnedShip; raid?: RunRaid; stake?: Stake } | null = null;
     for (const o of fleet.ships) {
       if (!o.hauler || resting.has(o)) continue;
-      const t = haulerNext(o.hauler);
-      if (t <= now && (!next || t < next.t)) next = { t, ship: o };
+      let t = haulerNext(o.hauler);
+      const raid = o.hauler.leg === 'out' ? raidAhead(state.seed, o) : null;
+      if (raid && raid.at <= t) {
+        if (raid.at <= now && opts.inSight?.has(o.id) && raid.systemId === here) continue;
+        t = raid.at;
+      }
+      if (t <= now && (!next || t < next.t)) next = { t, ship: o, ...(raid && t === raid.at ? { raid } : {}) };
     }
     for (const k of fleet.stakes) {
       const t = k.since + HOUR;
@@ -729,7 +858,9 @@ export function settleFleet(state: GameState): FleetSettlement {
     }
     const o = next.ship!;
     const h = o.hauler!;
-    if (h.leg === 'home') {
+    if (next.raid) {
+      strike(state, o, h, next.raid, out);
+    } else if (h.leg === 'home') {
       const n = (looks.get(o) ?? 0) + 1;
       if (n > FLEET.haulers.maxLooksPerSettle) {
         // Too long to work out every look and run: the captain rests until now.
@@ -748,7 +879,89 @@ export function settleFleet(state: GameState): FleetSettlement {
   return out;
 }
 
+// ---------------------------------------------------------------- on the lanes, in the player's sight
+
+/** One of the player's haulers flying in a system now (docs/PROCGEN.md §18.6). */
+export interface CaptainHere {
+  ship: OwnedShip;
+  hauler: Hauler;
+  /** Out with the cargo, or home empty. */
+  way: 'out' | 'back';
+  leg: HaulLeg;
+  /** How far along its leg (0–1). */
+  progress: number;
+  /** What it carries (none on the way home, or robbed on the way). */
+  qty: number;
+  /** The run's raid, when it is due in this system and still ahead. */
+  raid: RunRaid | null;
+}
+
+/** The leg a hauler flies at a moment, on the run under way. */
+function legAt(h: Hauler, clock: number): { way: 'out' | 'back'; leg: HaulLeg } | null {
+  if (h.leg === 'home') return null;
+  const w = runWay(h);
+  const legs = h.leg === 'out' ? w.out : w.back;
+  const leg = legs.find((l) => clock >= l.start && clock < l.end);
+  return leg ? { way: h.leg, leg } : null;
+}
+
+/** The player's haulers flying in a system at a moment, for the flight scene. */
+export function captainsIn(state: GameState, systemId: SystemId, clock: number): CaptainHere[] {
+  const out: CaptainHere[] = [];
+  for (const o of state.fleet.ships) {
+    const h = o.hauler;
+    const at = h ? legAt(h, clock) : null;
+    if (!h || !at || at.leg.systemId !== systemId) continue;
+    const raid = at.way === 'out' ? raidAhead(state.seed, o) : null;
+    out.push({
+      ship: o,
+      hauler: h,
+      way: at.way,
+      leg: at.leg,
+      progress: (clock - at.leg.start) / (at.leg.end - at.leg.start),
+      qty: cargoCount(o.ship.cargo, h.route.commodity),
+      raid: raid?.systemId === systemId ? raid : null,
+    });
+  }
+  return out;
+}
+
+/**
+ * The player saw a hauler safely past its raid in the system they are in: guarded through the
+ * ambush, or to its dock or the jump beacon. The raid does not strike (it is overridden, as the
+ * world log does for the timetable's haulers). False when no raid was due there.
+ */
+export function captainSeen(state: GameState, shipId: string): boolean {
+  const o = state.fleet.ships.find((x) => x.id === shipId);
+  const h = o?.hauler;
+  const raid = o ? raidAhead(state.seed, o) : null;
+  if (!h || !raid || raid.systemId !== state.location.systemId) return false;
+  h.sight = { run: h.runs, systemId: raid.systemId, at: state.clock };
+  return true;
+}
+
+/**
+ * A hauler destroyed in the player's sight, now, by raiders or the player's own guns: the fleet is
+ * settled up to now first (with the ships in sight, this one among them, so its raid waits), then
+ * the ship is lost with what it carries.
+ */
+export function captainLost(state: GameState, shipId: string, by: 'raiders' | 'player', inSight: ReadonlySet<string> = new Set()): FleetSettlement {
+  const out = settleFleet(state, { inSight: new Set([...inSight, shipId]) });
+  const o = state.fleet.ships.find((x) => x.id === shipId);
+  const h = o?.hauler;
+  if (!o || !h || h.leg === 'home') return out;
+  out.steps += 1;
+  wreck(state, o, h, state.clock, state.location.systemId, by, cargoCount(o.ship.cargo, h.route.commodity), out);
+  return out;
+}
+
 // ---------------------------------------------------------------- what the player sees
+
+/** Where on its way a hauler is now: the system it is crossing, or between two in a jump. */
+function whereNow(state: GameState, h: Hauler): string {
+  const at = legAt(h, state.clock);
+  return at ? ` · now in ${systemName(at.leg.systemId)}` : ' · now in a jump';
+}
 
 /** Where a captain's ship is and what it is doing. */
 export function haulerStatus(state: GameState, o: OwnedShip): string {
@@ -757,8 +970,12 @@ export function haulerStatus(state: GameState, o: OwnedShip): string {
   const { from, to, commodity: c } = h.route;
   const minutes = Math.max(1, Math.round((haulerNext(h) - state.clock) / 60));
   const recalled = h.recalled ? ' · recalled' : '';
-  if (h.leg === 'out') return `Carrying ${cargoCount(o.ship.cargo, c)} ${goodName(c)} to ${place(to)}, there in ${minutes} min${recalled}`;
-  if (h.leg === 'back') return `Flying back to ${place(from)}, home in ${minutes} min${recalled}`;
+  const loading = h.leg === 'out' && state.clock < h.since + FLEET.haulers.loadSeconds;
+  if (loading) return `Loading ${cargoCount(o.ship.cargo, c)} ${goodName(c)} at ${place(from)} for ${place(to)}, there in ${minutes} min${recalled}`;
+  const qty = cargoCount(o.ship.cargo, c);
+  if (h.leg === 'out' && qty > 0) return `Carrying ${qty} ${goodName(c)} to ${place(to)}, there in ${minutes} min${whereNow(state, h)}${recalled}`;
+  if (h.leg === 'out') return `Robbed on the way: flying on to ${place(to)} empty, there in ${minutes} min${whereNow(state, h)}${recalled}`;
+  if (h.leg === 'back') return `Flying back to ${place(from)}, home in ${minutes} min${whereNow(state, h)}${recalled}`;
   if (h.waiting === 'credits') return `Waiting at ${place(from)}: not enough credits for a load (looks again in ${minutes} min)`;
   if (h.waiting === 'unprofitable') return `Waiting at ${place(from)} for prices to recover (looks again in ${minutes} min)`;
   return `Loading at ${place(from)}`;

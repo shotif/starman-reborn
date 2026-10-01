@@ -577,6 +577,17 @@
   top: -8px;
 }
 
+/* The player's own ships, flown by their captains: green, with a double square (never colour alone). */
+.marker.own {
+  color: var(--success);
+}
+
+.marker.own .marker-shape {
+  border-style: double;
+  border-width: 4px;
+  border-radius: 2px;
+}
+
 /* Hostile: red diamond (shape + "◆" text prefix, never colour alone). */
 .marker.hostile {
   color: var(--hostile);

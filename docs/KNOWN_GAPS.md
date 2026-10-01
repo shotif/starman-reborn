@@ -83,8 +83,13 @@ snapshot branch only when the archives changed.
 - The stations' freight is a timetable of haulers: they fly as ships only in the player's system,
   and elsewhere a raid loses them by its odds. Only shortages draw relief (not gluts, booms or
   strikes), and haulers avoid raids but not border blockades. What the player leaves at a dock
-  still evens out with its neighbours as a spill out of sight, and the player's own captains' hauls
-  (§18 of PROCGEN) are not on the lanes.
+  still evens out with its neighbours as a spill out of sight.
+- The player's own captains fly the lanes too (PROCGEN §18.6), but only the run's one raid, where
+  and when its luck says, can be flown in sight; a timetable raid's odds (§21.2) do not apply to
+  them, and the star map does not show them (the Fleet window says which system each one is in).
+  A ship guarded through an ambush comes out of it whole: damage taken in sight is not kept. In the
+  scene a captain flies at its ship's own speed, so it may dock a little before or after the run's
+  schedule says; the sale goes by the schedule.
 - Traffic and raider packs exist only around the player. Packs that saw the player and cargo pods
   left adrift wait for 30 minutes of game clock (in the last six systems), as do the packs and
   wrecks of the player's own contracts; everything else is generated again on arrival.

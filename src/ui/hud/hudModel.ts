@@ -17,6 +17,8 @@ export interface HudMarker {
   distance: number;
   hostile: boolean;
   faction?: FactionId;
+  /** One of the player's own ships (docs/PROCGEN.md §18.6). */
+  own?: boolean;
   selected: boolean;
   objective: boolean;
   dataClass: DataClass;
@@ -30,6 +32,7 @@ export interface HudTarget {
   distance: number;
   hostile: boolean;
   faction?: FactionId;
+  own?: boolean;
   dataClass: DataClass;
   shield?: number;
   hull?: number;

@@ -38,7 +38,8 @@ import { createNewGame, SAVE_VERSION, type CommodityId, type GameState } from '.
  *   `pending` crimes and `lastCrimeAt` (docs/PROCGEN.md §17); `fleet` (owned ships, haulers,
  *   storage and stakes, §18); contracts may be mining claims, whose jobs carry `mined` (§19);
  *   escorts across jumps carry `escortAt`, where their ships are (§10.2; absent in older v10
- *   saves, which means where they set off). See GameState in src/app/state.ts.
+ *   saves, which means where they set off); a hauler may carry `sight`, a run the player saw safely
+ *   past its raid (§18.6). See GameState in src/app/state.ts.
  */
 export interface SaveV1 {
   version: 1;
@@ -261,7 +262,8 @@ function assertValidFleet(fl: GameState['fleet'], fail: (msg: string) => never):
       h.cost < 0 ||
       !Number.isInteger(h.runs) ||
       h.runs < 0 ||
-      !Number.isFinite(h.earned)
+      !Number.isFinite(h.earned) ||
+      (h.sight !== undefined && (!isRecord(h.sight) || !Number.isInteger(h.sight.run) || h.sight.run < 0 || !SYSTEM_IDS.includes(h.sight.systemId) || !time(h.sight.at)))
     ) {
       fail('hauler');
     }
