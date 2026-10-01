@@ -4,11 +4,12 @@ This is an honest list of what the prototype does not do yet, or what has not be
 
 ## Needs your action
 
-1. **Real-device testing is pending.** Everything was tested in headless Chromium with emulated
-   phone and tablet viewports, touch events, multi-touch and a gamepad (see
-   [TEST_RECORD.md](TEST_RECORD.md)). Nothing ran on a physical iPhone, iPad or Android device, or
-   with a physical controller. Please run the hands-on checklist in the test record over HTTPS, at
-   <https://shotif.github.io/starman-reborn/>.
+1. **Real-device testing has barely started.** Everything was tested in headless Chromium with
+   emulated phone and tablet viewports, touch events, multi-touch and a gamepad (see
+   [TEST_RECORD.md](TEST_RECORD.md)). On a real phone, only the star map's pinch zoom has been
+   confirmed so far (1 October 2026); nothing else has run on a physical iPhone, iPad or Android
+   device, or with a physical controller. Please run the rest of the hands-on checklist in the test
+   record over HTTPS, at <https://shotif.github.io/starman-reborn/>.
 
 ## The sky, as verified
 
@@ -37,10 +38,11 @@ snapshot branch only when the archives changed.
   the Ring/Silent switch; the settings screen explains this.
 - **Safe-area insets** were tested by overriding the CSS variables, not on a device with a notch
   or home bar.
-- **The star map's pinch and search on a real phone.** Pinch zoom (toward the fingers) and the Find
-  dialog were exercised with emulated touch only. With an on-screen keyboard up, the dialog keeps to
-  the visible part of the screen through the Visual Viewport API; how iOS Safari scrolls around a
-  focused field needs a real iPhone to confirm.
+- **The star map's search on a real phone.** Pinch zoom toward the fingers is confirmed on a real
+  phone (1 October 2026). The Find dialog was exercised with emulated touch only: with an on-screen
+  keyboard up, it keeps to the visible part of the screen through the Visual Viewport API, and how
+  iOS Safari scrolls around a focused field needs a real iPhone to confirm. Double tap and Missions
+  have not been tried on a real phone either.
 - **WebGL context loss** is handled (overlay with reload, automatic resume on restore) but was not
   forced in automated tests.
 - **Transferred size on mobile networks.** Measured from the production build: about 620 KB

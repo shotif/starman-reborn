@@ -318,11 +318,13 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 
 SwiftShader renders on the CPU, so frame rates here say nothing about real devices. Observed:
 about 8–20 fps depending on viewport, with dynamic resolution lowering the pixel ratio as
-designed. Production build transfer size for the first scene: about 288 KB gzipped (JS + CSS +
-HTML). The star map (~19 KB) and science notes (~11 KB) load on first use; the bloom chain
-(~4 KB) loads only on the High preset.
+designed. Production build transfer size for the first scene, measured 1 October 2026: about
+630 KB gzipped (JS + CSS + HTML: the game code with its bundled world and sky data 455 KB, of
+which the sky's JSON is about 68 KB; three.js 149 KB; addons 7 KB; CSS 16 KB), plus the four
+interface fonts (about 72 KB). The star map (~27 KB with its CSS) and science notes (~4 KB) load
+on first use; the bloom chain (~4 KB) loads only on the High preset.
 
-## Real-device checklist (pending — please run)
+## Real-device checklist (partly run — please run the rest)
 
 Open <https://shotif.github.io/starman-reborn/> (or serve over HTTPS with `npm run dev:https` or a
 tunnel; see the README), then on an actual **Android phone** and an **iPhone/iPad**:
@@ -352,4 +354,5 @@ Record results here (device, OS, browser, fps, issues):
 
 | Device | OS / browser | Steps passed | fps (fight) | Notes |
 | --- | --- | --- | --- | --- |
-| _pending_ | | | | |
+| Owner's phone (model not recorded) | Not recorded | 7: star map pinch only | Not measured | 1 October 2026: a pinch over the star map zooms toward the fingers, with the star staying under them. The rest of step 7 (double tap, Find with the on-screen keyboard up, Missions) and steps 1–6 and 8–11 not run yet. |
+| _pending_: the whole checklist on an Android phone and an iPhone or iPad | | | | Find with the on-screen keyboard up matters most on iPhone Safari. |

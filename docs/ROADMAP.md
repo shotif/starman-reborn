@@ -17,7 +17,8 @@ the frontier and a border war.
 What it lacks now:
 
 - **Real phones.** Every test runs in a desktop browser with emulated phones and touch, and the
-  first load has grown to about 620 KB with the verified sky; nothing has been measured on a phone.
+  first load has grown to about 620 KB with the verified sky. On a real phone, only the star map's
+  pinch zoom has been tried (it works); nothing has been measured.
 - **A frontier with a life of its own.** The 141 systems beyond 17.5 light-years are settled by the
   same rules as the core (thin colonies, dens, survey work), with no story or events of their own.
 - **Company across jumps.** Escorts and convoys stay within one system; only wingmen follow you
