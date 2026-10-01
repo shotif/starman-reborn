@@ -39,6 +39,8 @@ fleet of your own comes after the biggest ship: keep ships parked at stations, h
 haul your routes (worked out from the game clock, for well under what flying them earns, with raids
 and insurance), lease storage and buy a share of a station's trade. Your captains fly the same lanes
 as everyone else's haulers: meet one on the way, guard it when raiders jump it, or watch it go.
+And after the fleet, a station of your own: charter a site in orbit of a real planet, haul the
+materials there stage by stage, and your outpost opens, trades and pays you by the hour.
 Ships, equipment, the world, the economy, events, contracts and the law are generated from rule
 files and checked by automated guardrails ([docs/PROCGEN.md](docs/PROCGEN.md)).
 

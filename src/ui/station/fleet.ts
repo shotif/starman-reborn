@@ -42,6 +42,7 @@ import '../styles/fleet.css';
 import { ago, RISK_WORD } from './computer.ts';
 import type { Refresh, StationContext } from './context.ts';
 import { shipKind } from './gearText.ts';
+import { outpostSection } from './outpost.ts';
 import { COMMODITY_GLYPH } from './trader.ts';
 
 /**
@@ -94,7 +95,7 @@ export function fleetContent(ctx: StationContext, refresh: Refresh): HTMLElement
       'div',
       { class: 'trade-cols fleet-cols' },
       h('div', { class: 'stack' }, parkedHere(ctx, refresh), haulers(ctx, refresh), parkedElsewhere(ctx)),
-      h('div', { class: 'stack' }, storage(ctx, refresh), stakes(ctx, refresh), reports(ctx)),
+      h('div', { class: 'stack' }, outpostSection(ctx, refresh), storage(ctx, refresh), stakes(ctx, refresh), reports(ctx)),
     ),
   );
 }

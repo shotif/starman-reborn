@@ -24,9 +24,10 @@ import { traderContent } from './trader.ts';
 import { peopleContent } from './people.ts';
 import { computerContent } from './computer.ts';
 import { fleetContent } from './fleet.ts';
+import { atOwnOutpost, outpostContent } from './outpost.ts';
 import { rememberView } from './lastView.ts';
 
-export type StationWindow = 'trader' | 'outfitter' | 'shipyard' | 'fleet' | 'jobs' | 'people' | 'news' | 'computer' | 'journal' | 'arrival' | 'menu';
+export type StationWindow = 'trader' | 'outfitter' | 'shipyard' | 'fleet' | 'outpost' | 'jobs' | 'people' | 'news' | 'computer' | 'journal' | 'arrival' | 'menu';
 
 export interface StationOpen {
   room?: RoomView;
@@ -55,6 +56,7 @@ const WINDOW_TITLE: Record<StationWindow, string> = {
   outfitter: 'Outfitter',
   shipyard: 'Shipyard',
   fleet: 'Fleet',
+  outpost: 'Your outpost',
   jobs: 'Job board',
   people: 'People',
   news: 'Station news',
@@ -256,6 +258,8 @@ export class StationHub {
     if (room === 'deck' && full && hasShipyard(this.ctx.locationId)) items.push(act('shipyard', 'Ships', 'shipyard', 'station-ships'));
     // Your fleet (docs/PROCGEN.md §18): parked ships, captains, storage and stakes, at any dock.
     if (room === 'deck' && full) items.push(act('wing', 'Fleet', 'fleet', 'station-fleet'));
+    // At your own outpost (docs/PROCGEN.md §22): the materials for its next stage, and how it stands.
+    if (room === 'deck' && atOwnOutpost(this.ctx)) items.push(act('habitat', 'Outpost', 'outpost', 'station-outpost'));
     // On emergency docking the board is shut, unless an independent has story work here (docs/PROCGEN.md §20).
     const jobs = full || jobsAt(this.ctx.state, this.ctx.locationId).length > 0;
     if (room === 'bar') items.push(...(jobs ? [act('jobs', 'Jobs', 'jobs', 'station-jobs')] : []), act('bar', 'People', 'people', 'station-people'), act('news', 'News', 'news', 'station-news'));
@@ -362,6 +366,8 @@ export class StationHub {
         return shipyardContent(ctx, refresh);
       case 'fleet':
         return fleetContent(ctx, refresh);
+      case 'outpost':
+        return outpostContent(ctx, refresh);
       case 'jobs':
         return jobBoardContent(
           ctx,

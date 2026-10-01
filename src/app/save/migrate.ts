@@ -9,7 +9,9 @@ import { COMMODITIES, COMMODITY_IDS } from '../../content/economy/goods.ts';
 import { COMBAT } from '../../content/combat/rules.ts';
 import { markById } from '../../economy/marks.ts';
 import { FLEET } from '../../content/fleet/rules.ts';
-import { createNewGame, SAVE_VERSION, type CommodityId, type GameState } from '../state.ts';
+import { OUTPOSTS } from '../../content/outposts/rules.ts';
+import { outpostId, outpostSite } from '../../content/outposts/sites.ts';
+import { createNewGame, SAVE_VERSION, type CommodityId, type GameState, type OutpostRecord } from '../state.ts';
 
 /**
  * Save format history:
@@ -56,7 +58,31 @@ export interface SaveV1 {
 
 export class SaveFormatError extends Error {}
 
-const LOCATION_IDS = new Set(ALL_LOCATIONS.filter((l) => l.status === 'functional').map((l) => l.id));
+const SHARED_IDS: ReadonlySet<string> = new Set(ALL_LOCATIONS.filter((l) => l.status === 'functional').map((l) => l.id));
+/** Stations a save may name: the shared world's, and its own outpost once it is valid (set as a save is checked). */
+let LOCATION_IDS: ReadonlySet<string> = SHARED_IDS;
+
+/** The player's outpost (docs/PROCGEN.md §22): a real site, a kind it allows, its stage and deliveries in range. */
+function assertValidOutpost(o: OutpostRecord, fail: (msg: string) => never): void {
+  const site = isRecord(o) && typeof o.site === 'string' ? outpostSite(o.site) : undefined;
+  if (
+    !site ||
+    !site.kinds.includes(o.kind) ||
+    typeof o.name !== 'string' ||
+    !o.name.trim() ||
+    o.name.length > 40 ||
+    !Number.isInteger(o.stage) ||
+    o.stage < 0 ||
+    o.stage > OUTPOSTS.stages.length ||
+    !isRecord(o.delivered) ||
+    !Object.entries(o.delivered).every(([c, q]) => COMMODITY_IDS.includes(c as CommodityId) && Number.isFinite(q) && (q as number) >= 0) ||
+    !Number.isFinite(o.founded) ||
+    !Number.isFinite(o.since) ||
+    !Number.isFinite(o.earned)
+  ) {
+    fail('outpost');
+  }
+}
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -303,6 +329,13 @@ export function assertValidState(s: GameState): void {
     throw new SaveFormatError(`Save data is damaged: ${msg}`);
   };
   if (!isRecord(s) || s.version !== SAVE_VERSION) fail('wrong version');
+  // The save's own outpost first: once valid, its id is a station the rest of the save may name.
+  const own = isRecord(s.world) ? s.world.outpost : undefined;
+  LOCATION_IDS = SHARED_IDS;
+  if (own !== undefined) {
+    assertValidOutpost(own, fail);
+    LOCATION_IDS = new Set([...SHARED_IDS, outpostId(own.site)]);
+  }
   if (!SYSTEM_IDS.includes(s.location?.systemId)) fail('unknown system');
   if (s.location.dockedAt !== null && !LOCATION_IDS.has(s.location.dockedAt)) fail('unknown dock');
   if (!LOCATION_IDS.has(s.location.lastDockId)) fail('unknown respawn dock');

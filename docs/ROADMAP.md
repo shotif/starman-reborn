@@ -9,12 +9,12 @@ After the scripted opening (10–20 minutes), the neighbourhood is an open sandb
 systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
 of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
 packs in lawless space; 39 ships and 139 pieces of equipment; and generated contracts on every job
-board. Increments 1–19 (under [Done so far](#done-so-far)) added world events and news, contracts
+board. Increments 1–20 (under [Done so far](#done-so-far)) added world events and news, contracts
 of every kind, the law and the outlaw path, goals, five story arcs, combat depth, people in the
 bars and a trade computer, a world that answers, a fleet of your own whose captains fly the lanes,
-mining in the real belts, the frontier with a life of its own, a border war whose fronts can be won
-for good, story endings that change stations for good, escorts and convoys across jumps, haulers
-with real cargo on a timetable, and a game measured and tuned on a real phone.
+a station of your own, mining in the real belts, the frontier with a life of its own, a border war
+whose fronts can be won for good, story endings that change stations for good, escorts and convoys
+across jumps, haulers with real cargo on a timetable, and a game measured and tuned on a real phone.
 
 What it lacks now:
 
@@ -24,14 +24,8 @@ What it lacks now:
 
 ## Proposed next increments
 
-Candidates for what comes next, in the order they will be built (the first four chosen by the
-owner on 1 October 2026, as fresh directions):
-
-### A station of your own ⏳ (L)
-
-The fleet's next step: found an outpost (fiction) at a real site the archives list, a confirmed
-planet's orbit or a catalogued belt. Build it up by hauling materials there, and it joins the
-economy with its own market, job board and stakes. Today a fleet's stakes are passive.
+Candidates for what comes next, in the order they will be built (the first three chosen by the
+owner on 1 October 2026 as fresh directions, with A station of your own, now done):
 
 ### Passengers and sightseers ⏳ (M)
 
@@ -68,6 +62,19 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 20. A station of your own ✅
+
+After a fleet, a station. At any station of a system with a confirmed planet (66 sites in 37
+systems; none in Sol or the other first systems), the Fleet window offers its sites: charter one for
+8,000 cr, choose what it will be (a mine, refinery, factory, farm, research station, relay, trade
+port or free port, as the system's security allows) and one of three names. Bring the materials and
+hand them over at the site: habitat modules, metals and machinery raise its frame, and it opens with
+a market and repairs; then a station with a job board; then a port with an outfitter. It pays by the
+hour from the day it opens (300, 800, then 1,600 cr), less in an hour raiders swarm its system, and
+your captains can haul to it. It is yours alone: nobody else's prices, boards or haulers change
+because of it ([PROCGEN.md §22](PROCGEN.md#22-a-station-of-your-own)). Sites in the catalogued
+belts are still to come.
 
 ### 19. Your captains on the lanes ✅
 

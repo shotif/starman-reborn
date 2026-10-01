@@ -6,7 +6,7 @@ import { FIRST_NAMES, LAST_NAMES } from '../content/people/lines.ts';
 import { rng } from '../content/random.ts';
 import type { ShipModel } from '../content/types.ts';
 import { jumpsFrom } from '../content/world/network.ts';
-import { ALL_LOCATIONS, getLocation, getSystem, SYSTEMS, WORLD } from '../data/systems.ts';
+import { ALL_LOCATIONS, getLocation, getSystem, saveLocations, SYSTEMS, WORLD } from '../data/systems.ts';
 import type { FactionId, SystemId } from '../data/types.ts';
 import { findRoute } from '../galaxy/routing.ts';
 import { addCargo, cargoCount, cargoUsed, itemsThatFit, removeCargo } from './cargo.ts';
@@ -15,6 +15,7 @@ import { routeFeeBetween } from './contracts.ts';
 import { hasShipyard, shipStandingBlock, shipTradeIn, type Result } from './equipment.ts';
 import { stationEventAt, systemEventAt, type WorldEvent } from './events.ts';
 import { legsOf, type HaulLeg } from './hauls.ts';
+import { outpostNext, payOldHours, payOutpostHour } from './outposts.ts';
 import { dockAccess } from './law.ts';
 import { cargoCapacity, clampShip, newShipState, performanceOf, shieldCapacity } from './loadout.ts';
 import { hasMarket, moveStock, orderTotal, quote, stockAvailable, type MarketContext } from './markets.ts';
@@ -503,7 +504,9 @@ const OPEN = new Set(ALL_LOCATIONS.filter((l) => l.status === 'functional').map(
  * charts and your contacts), with a market whose prices you know.
  */
 export function haulDestinations(state: GameState, from: string): string[] {
-  return state.visitedLocations.filter((id) => OPEN.has(id) && haulGoods(state, from, id).length > 0);
+  // Your own outpost too, once it is open (docs/PROCGEN.md §22).
+  const own = (id: string) => saveLocations().some((l) => l.id === id && l.services.includes('market'));
+  return state.visitedLocations.filter((id) => (OPEN.has(id) || own(id)) && haulGoods(state, from, id).length > 0);
 }
 
 export interface HaulEstimate {
@@ -634,6 +637,8 @@ export interface FleetSettlement {
   /** What those runs made the player, all told (negative: lost). */
   hauled: number;
   dividends: number;
+  /** Income from the player's outpost (docs/PROCGEN.md §22). */
+  outpost: number;
   /** Steps worked out (loads, arrivals, homecomings, looks, hours of dividends): 0 when nothing was due. */
   steps: number;
 }
@@ -815,10 +820,17 @@ function payDividend(state: GameState, k: Stake, out: FleetSettlement): void {
  * clock gives the same result however often it is called, on every device.
  */
 export function settleFleet(state: GameState, opts: SettleOptions = {}): FleetSettlement {
-  const out: FleetSettlement = { reports: [], runs: 0, hauled: 0, dividends: 0, steps: 0 };
+  const out: FleetSettlement = { reports: [], runs: 0, hauled: 0, dividends: 0, outpost: 0, steps: 0 };
   const fleet = state.fleet;
-  if (!fleet.stakes.length && !fleet.ships.some((o) => o.hauler)) return out;
+  const post = state.world.outpost;
+  if (!fleet.stakes.length && !fleet.ships.some((o) => o.hauler) && !post?.stage) return out;
   const now = state.clock;
+  if (post) {
+    const old = payOldHours(post, now);
+    out.outpost += old.pay;
+    out.steps += old.hours;
+    credit(state, old.pay);
+  }
   // Away for very long: the oldest hours of dividends are paid at the plain rate, all at once.
   for (const k of fleet.stakes) {
     const old = Math.floor((now - k.since) / HOUR) - FLEET.stakes.maxHoursPerSettle;
@@ -835,7 +847,8 @@ export function settleFleet(state: GameState, opts: SettleOptions = {}): FleetSe
   // A raid due where the player watches the ship waits for the flight to decide it.
   const here = state.location.dockedAt ? null : state.location.systemId;
   for (;;) {
-    let next: { t: number; ship?: OwnedShip; raid?: RunRaid; stake?: Stake } | null = null;
+    let next: { t: number; ship?: OwnedShip; raid?: RunRaid; stake?: Stake; outpost?: true } | null = null;
+    if (post && outpostNext(post) <= now) next = { t: outpostNext(post), outpost: true };
     for (const o of fleet.ships) {
       if (!o.hauler || resting.has(o)) continue;
       let t = haulerNext(o.hauler);
@@ -852,6 +865,12 @@ export function settleFleet(state: GameState, opts: SettleOptions = {}): FleetSe
     }
     if (!next) break;
     out.steps += 1;
+    if (next.outpost) {
+      const pay = payOutpostHour(post!);
+      out.outpost += pay;
+      credit(state, pay);
+      continue;
+    }
     if (next.stake) {
       payDividend(state, next.stake, out);
       continue;
@@ -1005,5 +1024,6 @@ export function fleetNews(s: FleetSettlement): { text: string; tone: 'good' | 'b
     lines.push({ text: `Your haulers: ${parts.join(', ')} (${signed(net)} cr). The Fleet window on the deck has the reports.`, tone: net < 0 || raids ? 'bad' : 'good' });
   }
   if (s.dividends > 0) lines.push({ text: `Dividends from your stakes: +${s.dividends} cr.`, tone: 'good' });
+  if (s.outpost > 0) lines.push({ text: `Income from your outpost: +${s.outpost} cr.`, tone: 'good' });
   return lines;
 }

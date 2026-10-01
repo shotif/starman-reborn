@@ -358,6 +358,20 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   strike as its luck says, and the captain making its dock with the raiders on it got away;
   destroyed by raiders or by the player, it is lost at once, spills half its cargo of its own good,
   and is no crime.
+- `outposts.test.ts`: **a station of your own**. The outpost guardrails pass, and broken rules and
+  sites are caught (contraband needed, income that does not grow, a stage that drops the market, one
+  that pays for itself at once, a name word already a station's, a site in a hand-made system or of
+  a kind outside its band); there is one site at each confirmed planet of the generated systems and
+  none in Sol or Alpha Centauri. The charter: offered only at a station of the site's system, for
+  the fee, with a name offered, once to a pilot, and not without the credits. The outpost is the
+  save's only: found by its id, never among the world's stations, a dock clear of its planet in its
+  system's scene (built in node, a shipyard's frames while it is built), and gone for another
+  save. Building it: only what the next stage needs, only at the outpost, the frame opening it with
+  a market and repairs (the trader's room, live quotes, no board yet), the station posting work and
+  the port selling consumables; nobody else's market tables, prices or board change. Its income:
+  nothing while it is built, then by the hour moved by raids in its system, the same however often
+  it is settled; a captain can be hired to it once it trades. Saves keep it (docked there too) and
+  refuse a damaged outpost, or a dock at one the save does not have.
 
 ### Browser tests (Playwright)
 
@@ -474,10 +488,17 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   targeted, the target box says *Your …* and *■ Yours*; raiders destroy it in sight: the ship is
   gone from the fleet, the report (shown as a toast) says where, with what, and that insurance paid,
   the credits rise and the cargo is adrift; docked again, the Fleet window keeps the report.
+- `outpost.spec.ts`: **your own outpost**: at Wayfarer Array the Fleet window offers Lalande 21185's
+  sites; a charter for GJ 411 b with the name offered costs 8,000 cr and the Fleet window says its
+  frame is going up; docked at the site, the Outpost window takes the frame's materials from the
+  hold (there is no trader yet), and the outpost opens with a trader's room and says what the
+  station needs next; an hour later it has paid its income, with a toast; launched, it is a station
+  of the system's scene, named as chartered.
 - `screenshots.spec.ts`: the loading title (caught part-way, with the game's largest file held
   back), title, Settings at its device report, job board, buy dialog, station deck, shipyard, outfitter, fleet
   (with a captain loading for a run), flight HUD, the player's own captain targeted in flight, star
-  map and its Missions and Find dialogs, and the News with a shortage's relief
+  map and its Missions and Find dialogs, the charter of an outpost and the Outpost window at its
+  site, and the News with a shortage's relief
   haulers on their way, at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
   zoom). Saved in `docs/screenshots/` once any smooth scrolling has come to rest. Each is audited

@@ -1,10 +1,10 @@
 import type { CommodityId, MarketState, PriceQuote } from '../app/state.ts';
 import { COMMODITIES, COMMODITY_IDS, PRICE_BAND } from '../content/economy/goods.ts';
-import { buildMarkets, type MarketEntry, type StationMarket } from '../content/economy/markets.ts';
+import { buildMarkets, type MarketEntry, type MarketStationInput, type StationMarket } from '../content/economy/markets.ts';
 import { ECONOMY } from '../content/economy/rules.ts';
 import { WORLD_SEED } from '../content/world/rules.ts';
-import { ALL_LOCATIONS, getLocation, WORLD } from '../data/systems.ts';
-import type { FactionId } from '../data/types.ts';
+import { ALL_LOCATIONS, getLocation, saveLocations, saveLocationsKey, WORLD } from '../data/systems.ts';
+import type { FactionId, FictionalLocation } from '../data/types.ts';
 import { marketEffect } from './events.ts';
 import { haulStock } from './hauls.ts';
 import { standingPriceModifier } from './factions.ts';
@@ -36,22 +36,59 @@ const AT_START: MarketContext = { clock: 0, markets: {} };
 /** Buy and sell at one dock always differ by at least this fraction of the price. */
 const MIN_SPREAD = 0.04;
 
-let tables: Map<string, StationMarket> | null = null;
+/**
+ * The shared world's market tables, which also answer, by id, for the save's own stations (the
+ * player's outpost, docs/PROCGEN.md §22). Going through them (keys, entries) gives the shared
+ * world's only, so events, the timetable, the spill between neighbours and other stations' prices
+ * never change with a save's outpost.
+ */
+class Tables extends Map<string, StationMarket> {
+  override get(id: string): StationMarket | undefined {
+    return super.get(id) ?? saveTable(id);
+  }
+
+  override has(id: string): boolean {
+    return super.has(id) || !!saveTable(id);
+  }
+}
+
+let tables: Tables | null = null;
+let stationInputs: MarketStationInput[] = [];
+
+const inputOf = (l: FictionalLocation): MarketStationInput => ({
+  id: l.id,
+  systemId: l.systemId,
+  type: l.stationType ?? null,
+  size: l.look?.size ?? 0.8,
+  security: WORLD.profiles.get(l.systemId)?.security ?? 1,
+});
 
 /** Market tables for every station with a market (built on first use). */
 export function marketTables(): ReadonlyMap<string, StationMarket> {
   if (!tables) {
     // Open stations with a market, and the raider dens' black markets (open to pilots the Wake trusts).
-    const stations = ALL_LOCATIONS.filter((l) => l.status === 'functional' && ((l.services.includes('market') && l.dockable !== false) || l.stationType === 'pirate-den')).map((l) => ({
-      id: l.id,
-      systemId: l.systemId,
-      type: l.stationType ?? null,
-      size: l.look?.size ?? 0.8,
-      security: WORLD.profiles.get(l.systemId)?.security ?? 1,
-    }));
-    tables = buildMarkets(stations, WORLD.links, WORLD_SEED);
+    stationInputs = ALL_LOCATIONS.filter((l) => l.status === 'functional' && ((l.services.includes('market') && l.dockable !== false) || l.stationType === 'pirate-den')).map(inputOf);
+    tables = new Tables(buildMarkets(stationInputs, WORLD.links, WORLD_SEED));
   }
   return tables;
+}
+
+let saved: { key: string; tables: Map<string, StationMarket> } | null = null;
+
+/**
+ * A save's own station's table, priced by the same rules as everyone's (its kind's profile, the
+ * makers within reach), without being one of anyone else's makers.
+ */
+function saveTable(id: string): StationMarket | undefined {
+  const key = saveLocationsKey();
+  if (!key) return undefined;
+  if (saved?.key !== key) {
+    marketTables();
+    const own = saveLocations().filter((l) => l.services.includes('market'));
+    const built = own.length ? buildMarkets([...stationInputs, ...own.map(inputOf)], WORLD.links, WORLD_SEED) : new Map<string, StationMarket>();
+    saved = { key, tables: new Map(own.flatMap((l) => (built.has(l.id) ? [[l.id, built.get(l.id)!] as const] : []))) };
+  }
+  return saved.tables.get(id);
 }
 
 export function hasMarket(locationId: string): boolean {
@@ -85,6 +122,8 @@ let neighbourCache: Map<string, Map<CommodityId, string[]>> | null = null;
 
 /** Stations within reach of a dock that trade a good (where its surplus or shortfall drifts). */
 export function spillNeighbours(locationId: string, commodity: CommodityId): string[] {
+  // The save's own stations keep to themselves (see Tables).
+  if (saveLocations().some((l) => l.id === locationId)) return [];
   neighbourCache ??= new Map();
   let byGood = neighbourCache.get(locationId);
   if (!byGood) {

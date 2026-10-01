@@ -6,7 +6,8 @@ import { hashString, rng, type Rng } from '../content/random.ts';
 import type { LastingMark } from '../content/story/marks.ts';
 import { jumpsFrom } from '../content/world/network.ts';
 import { WORLD_SEED } from '../content/world/rules.ts';
-import { ALL_LOCATIONS, getLocation, getSystem, isFrontier, SYSTEMS, WORLD } from '../data/systems.ts';
+import { isOutpostId, outpostLocation } from '../content/outposts/sites.ts';
+import { ALL_LOCATIONS, getLocation, getSystem, isFrontier, setSaveLocations, SYSTEMS, WORLD } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { trafficPlan } from '../world/traffic/plan.ts';
 import { FACTIONS } from './factions.ts';
@@ -182,7 +183,8 @@ const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 function stationEventIn(locationId: string, index: number): WorldEvent | null {
   return cached(`s|${locationId}|${index}`, () => {
-    if (NO_EVENT_SYSTEMS.has(getLocation(locationId).systemId)) return null;
+    // The player's own outpost has no world events of its own (docs/PROCGEN.md §22): only its system's raids touch it.
+    if (isOutpostId(locationId) || NO_EVENT_SYSTEMS.has(getLocation(locationId).systemId)) return null;
     const r = rng(WORLD_SEED, 'events', locationId, index);
     const kind = pickKind<StationEventKind>(r, EVENTS.stationOdds);
     if (!kind || !frontierEligible(kind, locationId)) return null;
@@ -334,11 +336,18 @@ function systemEventIn(systemId: SystemId, index: number): WorldEvent | null {
  * shortage, breaking a raid), and a story's ending can leave a lasting mark on a station (§14.7).
  * The game points this at the save's world log; tests may too.
  */
-type ActiveLog = Pick<WorldLog, 'ended'> & Partial<Pick<WorldLog, 'border' | 'marks' | 'hauls'>>;
+type ActiveLog = Pick<WorldLog, 'ended'> & Partial<Pick<WorldLog, 'border' | 'marks' | 'hauls' | 'outpost'>>;
 let worldLog: ActiveLog | null = null;
 
 export function useWorldLog(log: ActiveLog | null): void {
   worldLog = log;
+  refreshSaveStations();
+}
+
+/** Points the world at the save's own stations (its outpost, docs/PROCGEN.md §22): when the log is set, and when the outpost changes. */
+export function refreshSaveStations(): void {
+  const o = worldLog?.outpost ? outpostLocation(worldLog.outpost) : null;
+  setSaveLocations(o ? [o] : []);
 }
 
 /** The lasting marks left in the save the game points at, in the order they were left. */

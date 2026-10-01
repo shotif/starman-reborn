@@ -384,7 +384,7 @@ export function isNewSystem(systemId: SystemId): boolean {
   return !CORE_IDS.has(systemId);
 }
 
-const KIND_OF: Record<StationType, LocationKind> = {
+export const KIND_OF: Record<StationType, LocationKind> = {
   'trade-port': 'port',
   'customs-depot': 'depot',
   shipyard: 'depot',
@@ -579,8 +579,33 @@ export const ALL_LOCATIONS: readonly FictionalLocation[] = ALL;
 
 const locationIndex = new Map(ALL.map((l) => [l.id, l]));
 
+/**
+ * Stations that exist only in the save the game points at: the player's own outpost (docs/PROCGEN.md
+ * §22). `getLocation` finds them, but they are never in `ALL_LOCATIONS` or a system's
+ * `fictionalLocations`, so nothing built from the shared world (other stations' prices, boards,
+ * timetables, traffic) changes; the places that show them ask for them (`saveLocations`).
+ */
+let saveIndex = new Map<string, FictionalLocation>();
+let saveKey = '';
+
+/** Points the world at a save's own stations (economy/events.ts useWorldLog, and when they change). */
+export function setSaveLocations(list: readonly FictionalLocation[]): void {
+  saveIndex = new Map(list.map((l) => [l.id, l]));
+  saveKey = list.map((l) => `${l.id}:${l.stationType}:${l.look?.type}:${l.services.join('+')}`).join('|');
+}
+
+/** The save's own stations (in one system, when given). */
+export function saveLocations(systemId?: SystemId): FictionalLocation[] {
+  return [...saveIndex.values()].filter((l) => !systemId || l.systemId === systemId);
+}
+
+/** What the save's own stations are now, as text, for caches of what depends on them. */
+export function saveLocationsKey(): string {
+  return saveKey;
+}
+
 export function getLocation(id: string): FictionalLocation {
-  const loc = locationIndex.get(id);
+  const loc = locationIndex.get(id) ?? saveIndex.get(id);
   if (!loc) throw new Error(`Unknown location ${id}`);
   return loc;
 }

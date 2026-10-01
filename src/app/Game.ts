@@ -11,7 +11,7 @@ import { fill, PAYMENT } from '../content/people/lines.ts';
 import * as THREE from 'three';
 import { AudioEngine } from '../audio/AudioEngine.ts';
 import type { MusicMood, SfxId } from '../audio/types.ts';
-import { ALL_LOCATIONS, getComponent, getLocation, getPlanet, getSystem, hasProvisionalData, SYSTEMS, WORLD } from '../data/systems.ts';
+import { ALL_LOCATIONS, getComponent, getLocation, getPlanet, getSystem, hasProvisionalData, saveLocationsKey, SYSTEMS, WORLD } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { addCargo, cargoUsed, itemsThatFit } from '../economy/cargo.ts';
 import { COMMODITIES } from '../economy/commodities.ts';
@@ -169,6 +169,8 @@ export class Game {
   private system: SystemScene | null = null;
   /** The game day Sol's scene was laid out for (null for other systems). */
   private systemDay: number | null = null;
+  /** The save's own stations when the system scene was built (the player's outpost, docs/PROCGEN.md §22). */
+  private systemOwn = '';
   private flight: FlightSession | null = null;
   /** What has been cut from the rocks this session (docs/PROCGEN.md §19): it outlives a flight, not the page. */
   private readonly minedRocks: MiningLedger = new Map();
@@ -522,12 +524,13 @@ export class Game {
     // Sol is laid out for the game date: rebuilt when the day changes (and after the title's schematic Sol).
     const jd = this.gameDate();
     const day = systemId === 'sol' && jd !== null ? Math.floor(jd) : null;
-    if (this.system && this.system.def.systemId === systemId && this.systemDay === day) return;
+    if (this.system && this.system.def.systemId === systemId && this.systemDay === day && this.systemOwn === saveLocationsKey()) return;
     this.disposeFlight();
     this.dockedView = null;
     this.system?.dispose();
     this.system = new SystemScene(sceneDefFor(systemId, jd), this.artCtx);
     this.systemDay = day;
+    this.systemOwn = saveLocationsKey();
     this.system.scene.add(this.camera);
   }
 
@@ -586,7 +589,7 @@ export class Game {
         quitToTitle: () => void this.quitToTitle(),
         acceptJob: (id) => this.acceptJob(id),
         decide: () => void this.offerChoice(),
-        reload: () => this.enterDocked(locationId, { room: this.station?.currentRoom ?? 'deck', window: 'news' }),
+        reload: (win) => this.enterDocked(locationId, { room: this.station?.currentRoom ?? 'deck', window: win === undefined ? 'news' : win }),
         deliverJob: (id) => void this.deliver(id),
         travelCost: (from, to) => this.travelCost(from, to),
         // The first view is set while the hub is being built: jump straight there.
@@ -1870,6 +1873,12 @@ export class Game {
       setFines: (faction: 'sta' | 'frontier', amount: number) => {
         if (!this.state) return;
         this.state.law.fines[faction] = amount;
+      },
+      /** Test-only: set what the hold carries, as if bought (an outpost's materials, docs/PROCGEN.md §22). */
+      setCargo: (cargo: GameState['ship']['cargo']) => {
+        if (!this.state) return;
+        this.state.ship.cargo = { ...cargo };
+        this.station?.render();
       },
       /** Test-only: set the wallet (shipyard and outfitter checks). */
       setCredits: (credits: number) => {

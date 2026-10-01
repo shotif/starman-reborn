@@ -3,7 +3,7 @@
  * the fictional route with the Jump button. Desktop/landscape: side panel. Portrait: bottom sheet
  * whose details collapse; the header and the jump footer stay visible.
  */
-import { beltsOf, getSystem } from '../data/systems.ts';
+import { beltsOf, getSystem, saveLocations } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { dataBadge } from '../ui/components.ts';
 import { formatCredits, h, replaceChildren } from '../ui/dom.ts';
@@ -191,7 +191,8 @@ export class InfoCard {
       h('p', { class: 'gmap-summary' }, system.fiction),
       securityNote(systemId),
       newsBlock(systemId, state),
-      system.fictionalLocations.length ? locationList(system.fictionalLocations, 'compact') : null,
+      // The system's stations, and the player's own outpost there (docs/PROCGEN.md §22).
+      system.fictionalLocations.length ? locationList([...system.fictionalLocations, ...saveLocations(system.id)], 'compact') : null,
     );
     const links = h(
       'div',

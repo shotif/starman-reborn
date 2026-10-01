@@ -1,4 +1,5 @@
 import type { CommodityId } from '../content/economy/goods.ts';
+import type { StationType } from '../content/world/types.ts';
 import { STARTER_SHIP_ID } from '../content/rules/index.ts';
 import type { MilestoneId } from '../content/progress/rules.ts';
 import type { JobDef } from '../economy/jobs.ts';
@@ -212,6 +213,30 @@ export interface WorldLog {
   marks?: Record<string, number>;
   /** What became of the hauls the player saw (docs/PROCGEN.md §21), by haul id; kept three hours. */
   hauls?: Record<string, HaulRecord>;
+  /** The player's own outpost (docs/PROCGEN.md §22), once chartered. */
+  outpost?: OutpostRecord;
+}
+
+/**
+ * A station of the player's own (docs/PROCGEN.md §22): chartered at a site in orbit of a confirmed
+ * planet, built stage by stage from the materials the player brings, paying an income once open.
+ */
+export interface OutpostRecord {
+  /** The site: the confirmed planet it orbits (content/outposts/sites.ts). */
+  site: string;
+  /** What it is (OUTPOSTS.kinds), and its name (one of those offered at the charter). */
+  kind: StationType;
+  name: string;
+  /** Game clock when it was chartered. */
+  founded: number;
+  /** Stages done (0: its frame is being built; OUTPOSTS.stages.length: complete). */
+  stage: number;
+  /** Units delivered toward the next stage. */
+  delivered: Partial<Record<CommodityId, number>>;
+  /** Game clock its income is settled to (whole hours from when it opened). */
+  since: number;
+  /** Income paid so far. */
+  earned: number;
 }
 
 /** A haul the player saw: through a system `safe` (whatever a raid there would have done), or `lost` (destroyed). */

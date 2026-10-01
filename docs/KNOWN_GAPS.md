@@ -90,6 +90,13 @@ snapshot branch only when the archives changed.
   A ship guarded through an ambush comes out of it whole: damage taken in sight is not kept. In the
   scene a captain flies at its ship's own speed, so it may dock a little before or after the run's
   schedule says; the sale goes by the schedule.
+- A station of your own (PROCGEN §22) is one outpost to a save, at a confirmed planet only: the
+  roadmap's sites in the catalogued belts are not there yet, and an outpost cannot be sold or
+  abandoned. Its materials are handed over by the player in person (a captain can be hired to it
+  only once it trades), its frames borrow a shipyard's look while it is built, and it has no world
+  events of its own (its system's raids still cut its income). It keeps to itself: no other
+  station's board sends work to it, the timetable's haulers do not call there, and the star map's
+  search does not find it (its system's card lists it).
 - Traffic and raider packs exist only around the player. Packs that saw the player and cargo pods
   left adrift wait for 30 minutes of game clock (in the last six systems), as do the packs and
   wrecks of the player's own contracts; everything else is generated again on arrival.

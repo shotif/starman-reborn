@@ -6,7 +6,7 @@
 import './styles/encyclopedia.css';
 import { LY_PER_PARSEC } from '../data/coords.ts';
 import { SOURCES } from '../data/sources.ts';
-import { ASTROMETRY, BELTS, EXOPLANETS, SYSTEMS, beltsOf, getSystem, hasProvisionalData } from '../data/systems.ts';
+import { ASTROMETRY, BELTS, EXOPLANETS, SYSTEMS, beltsOf, getSystem, hasProvisionalData, saveLocations } from '../data/systems.ts';
 import type { SourceRef, StarSystemRecord, SystemId } from '../data/types.ts';
 import { MAP_LINKS, formatLy } from '../galaxy/mapData.ts';
 import { MAP_LEGEND_TEXT, formatEpoch } from '../galaxy/mapText.ts';
@@ -155,7 +155,7 @@ function systemSection(system: StarSystemRecord, id: string, discovered: Readonl
     badgeHeading('h4', 'In the game', 'fictional'),
     h('p', null, system.fiction),
     securityNote(system.id),
-    locationList(system.fictionalLocations, 'full'),
+    locationList([...system.fictionalLocations, ...saveLocations(system.id)], 'full'),
     jumpLinkList(system),
   );
 }

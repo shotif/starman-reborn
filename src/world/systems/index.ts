@@ -1,5 +1,8 @@
+import { outpostSite } from '../../content/outposts/sites.ts';
+import { saveLocations, saveLocationsKey } from '../../data/systems.ts';
 import type { SystemId } from '../../data/types.ts';
-import type { SystemSceneDef } from '../sceneTypes.ts';
+import type { SceneStationDef, SystemSceneDef } from '../sceneTypes.ts';
+import { dirTo, polar, v } from './helpers.ts';
 import { ALPHA_CENTAURI_SCENE } from './alphaCentauri.ts';
 import { BARNARD_SCENE } from './barnard.ts';
 import { catalogSceneDef } from './generated.ts';
@@ -21,6 +24,30 @@ export const SCENE_DEFS: Record<SystemId, SystemSceneDef> = {
  * `jd` is the game date (a Julian date): Sol's planets then sit where they really are.
  */
 export function sceneDefFor(systemId: SystemId, jd: number | null = null): SystemSceneDef {
-  if (systemId === 'sol' && jd !== null) return solScene(jd);
-  return SCENE_DEFS[systemId] ?? catalogSceneDef(systemId);
+  const def = systemId === 'sol' && jd !== null ? solScene(jd) : (SCENE_DEFS[systemId] ?? catalogSceneDef(systemId));
+  return withOwnStations(def);
+}
+
+const withOwn = new WeakMap<SystemSceneDef, { key: string; def: SystemSceneDef }>();
+
+/**
+ * A scene with the save's own stations in it (the player's outpost, docs/PROCGEN.md §22): in orbit
+ * of its planet where the site says, its bay facing away from the planet.
+ */
+function withOwnStations(def: SystemSceneDef): SystemSceneDef {
+  const own = saveLocations(def.systemId);
+  if (!own.length) return def;
+  const key = saveLocationsKey();
+  const hit = withOwn.get(def);
+  if (hit?.key === key) return hit.def;
+  const stations = own.flatMap((l): SceneStationDef[] => {
+    const site = l.nearBodyId ? outpostSite(l.nearBodyId) : undefined;
+    const planet = def.planets.find((p) => p.id === l.nearBodyId);
+    if (!site || !planet || !l.look) return [];
+    const position = polar(planet.position, site.orbit.distance + planet.radius, site.orbit.angle, site.orbit.height);
+    return [{ locationId: l.id, kind: 'proxima-outpost', look: l.look, position, approach: dirTo(planet.position, position).add(v(0, 0.15, 0)).normalize() }];
+  });
+  const out = { ...def, stations: [...def.stations, ...stations] };
+  withOwn.set(def, { key, def: out });
+  return out;
 }

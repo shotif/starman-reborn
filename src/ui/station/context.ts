@@ -2,6 +2,7 @@ import type { SfxId } from '../../audio/types.ts';
 import type { GameState } from '../../app/state.ts';
 import type { SystemId } from '../../data/types.ts';
 import type { RoomView, ViewTransition } from '../../world/rooms/types.ts';
+import type { StationWindow } from './StationHub.ts';
 
 /** Everything the station screens need from the game. */
 export interface StationContext {
@@ -25,8 +26,8 @@ export interface StationContext {
   acceptJob(jobId: string): void;
   /** Opens the story choice waiting at this dock (docs/PROCGEN.md §14). */
   decide(): void;
-  /** Rebuilds the station screen (after a pardon, the whole station opens up). */
-  reload(): void;
+  /** Rebuilds the station screen (after a pardon, the whole station opens up; your outpost grows), with a window open. */
+  reload(window?: StationWindow | null): void;
   deliverJob(jobId: string): void;
   /** Jump fees between systems (0 when covered by a contract). */
   travelCost(from: SystemId, to: SystemId): number;

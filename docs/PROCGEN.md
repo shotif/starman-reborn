@@ -1929,3 +1929,81 @@ lost and spills its real cargo, that they leave the scene safe at their dock or 
 others join as their legs begin, and that one kept alive through an attack by the player's guns
 sends thanks, and one the player fired on does not.
 
+
+## 22. A station of your own
+
+After a fleet, a station: the player charters a site in orbit of a real planet, builds an outpost
+there by bringing the materials, stage by stage, and it trades and pays an income by the hour
+(`src/economy/outposts.ts`; rules in `OUTPOSTS`, `src/content/outposts/rules.ts`; sites in
+`src/content/outposts/sites.ts`; the Fleet window and the Outpost window,
+`src/ui/station/outpost.ts`). The outpost, its name and its people are fiction; the planet it
+orbits is real, and nothing is invented about it.
+
+### 22.1 Sites
+
+One site in orbit of each confirmed planet of the generated systems: 66 sites in 37 systems today.
+Sol and the four other hand-made systems keep their own stations, and contested planets have none.
+A site's orbit (1,600–2,800 units from the surface, `orbit`) is drawn from its own seeded stream,
+so the world's stations, which are locked (§7.6), never move. What an outpost can be (`kinds`):
+a mine, refinery, factory, farm, research station, relay, trade port or free port, each only where
+the system's security is within that kind's band (§7.3), and a mine only round a small planet.
+
+### 22.2 The charter
+
+At any station of the site's system where the player has full access, the Fleet window lists the
+system's sites. Chartering one costs 8,000 cr (`charter`); the player picks its kind and one of three
+names offered for that kind at that site (a name word, `nameWords`, and the noun of the kind, such
+as *Hearthlight Exchange*). One outpost to a save (`max`).
+
+### 22.3 Building it
+
+The site is a dock at once: a shipyard's frames, small and new, where the player can dock but
+nothing is sold. At the site, the Outpost window lists what the next stage needs and hands it over
+from the hold. Each stage done changes the station (`stages`):
+
+| Stage | Needs | Then it has | Income (cr an hour) |
+| --- | --- | --- | --- |
+| Frame | 8 habitat modules, 20 refined metals, 6 machinery | a market and repairs: it opens | 300 |
+| Station | 12 habitat modules, 30 polymers, 15 electronics, 8 fabricator parts | a job board | 800 |
+| Port | 16 habitat modules, 15 ship components, 15 machinery, 20 electronics | an outfitter (consumables, `shop`) | 1,600 |
+
+Its size, which sets its market's normal stock, its structure and its crowd, grows with each stage
+(0.3, 0.55, 0.8); its look is its kind's, independent, barely worn.
+
+### 22.4 Open
+
+- **Its market** is priced by the same rules as everyone's (§8): its kind's profile, the makers
+  within reach and its security. The player and the player's captains (§18) trade there; a captain
+  can be hired to it once it trades.
+- **Its board** (from the station on) posts the work its kind posts anywhere (§10).
+- **Its income** is paid by the hour from when it opens, with the fleet (§18.4), and moved by what
+  happens in its system as stakes' dividends are: a raid that hour × 0.6. It has no world events
+  of its own. A save left very long is paid its oldest hours at the plain rate in one sum.
+- **On the map** it is listed with its system's stations, and it is a station of its system's
+  scene, to fly to and dock at.
+
+### 22.5 One save's own
+
+The outpost lives in the save's world log (`world.outpost`), and the world finds it by its id
+(`outpost.<planet>`): `getLocation` resolves the save's own stations (`setSaveLocations`), the
+market tables answer for it by id, its system's scene adds its dock, and its board and outfitter
+are its own. It is never added to the shared world's lists (`ALL_LOCATIONS`, a system's stations,
+the market tables as they are gone through), so nobody else's prices, boards, the haul timetable
+(§21), traffic or events change because of it, for that player or any other.
+
+Guardrails (`validateOutposts`, `src/economy/outpostGuards.ts`, run in
+`tests/unit/outposts.test.ts`): every stage needs lawful goods somebody makes, in whole numbers;
+stages grow in size and income and keep the services they had, and the first opens a market; each
+pays for itself (at the goods' galaxy-wide prices, the charter with the frame) in 8–60 hours, and
+the whole outpost in 10–60 hours at full income; every kind has a market, a board and a bar; the
+name words are distinct and never a station's or a system's name, and three names are offered for
+every kind at every site; every site orbits a confirmed planet of a generated system, within its
+orbit's bounds, allowing only kinds the world's rules allow there, and its outpost would clash with
+no station. Broken rules (contraband needed, income that does not grow, a stage that drops its
+market, one that pays for itself at once, a name already a station's) and broken sites (in a
+hand-made system, a kind outside its band) are caught. The tests also check the charter (only in
+the site's system, for the fee, once), that the outpost is the save's only (another save does not
+have it; the shared lists never do), its dock in the scene, the stages (the market opening with the
+frame, the board with the station, consumables at the port), that nobody else's prices or board
+change, its income by the hour however often it is settled, captains hired to it, and saves that
+keep it and refuse a damaged one.

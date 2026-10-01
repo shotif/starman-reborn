@@ -252,6 +252,27 @@ for (const size of SIZES) {
       if (!(await page.getByTestId('news-window').isVisible().catch(() => false))) await press(page, 'station-news');
       await page.locator('.news-relief').first().scrollIntoViewIfNeeded();
       await shot(page, `${size.name}-6-news`, size.touch, results);
+      // A station of your own (docs/PROCGEN.md §22): the charter at Lalande 21185, then the site's Outpost window.
+      const docked = async (id: string) => {
+        await api(page, 'dockAt', id);
+        await waitUntil(page, `docked at ${id}`, async () => (await api<{ location: { dockedAt: string | null } }>(page, 'state')).location.dockedAt === id);
+        for (let i = 0; i < 6 && (await page.getByTestId('story-continue').isVisible().catch(() => false)); i++) await press(page, 'story-continue');
+      };
+      await api(page, 'setCredits', 50_000);
+      await docked('wayfarer-array');
+      await press(page, 'room-deck');
+      if (!(await page.getByTestId('fleet').isVisible().catch(() => false))) await press(page, 'station-fleet');
+      await press(page, 'outpost-charter-gj-411-b');
+      await expect(page.getByTestId('outpost-charter-dialog')).toBeVisible();
+      await shot(page, `${size.name}-7-charter`, size.touch, results);
+      await press(page, 'outpost-charter-confirm');
+      await docked('outpost.gj-411-b');
+      await api(page, 'setCargo', { metals: 12, machinery: 6 });
+      await press(page, 'room-deck');
+      if (!(await page.getByTestId('outpost-window').isVisible().catch(() => false))) await press(page, 'station-outpost');
+      await press(page, 'outpost-deliver-machinery');
+      await expect(page.getByTestId('outpost-need-machinery')).toContainText('6/6 delivered');
+      await shot(page, `${size.name}-7b-outpost`, size.touch, results);
       for (const [name, r] of Object.entries(results)) {
         expect.soft(r.overflow, `${name}: page overflow`).toBe(false);
         expect.soft(r.clipped, `${name}: clipped controls`).toEqual([]);

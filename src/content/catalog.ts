@@ -1,4 +1,5 @@
-import { WORLD } from '../data/systems.ts';
+import { saveLocations, WORLD } from '../data/systems.ts';
+import { OUTPOSTS } from './outposts/rules.ts';
 import { buildCatalog } from './gen/catalog.ts';
 import { CATALOG_SEED, RULES } from './rules/index.ts';
 import type { Catalog, GearItem, ManufacturerId, ManufacturerRule, ShipClassRule, ShipModel, ShopRule, Tier } from './types.ts';
@@ -50,7 +51,14 @@ export function shopRule(locationId: string): ShopRule | undefined {
   const authored = RULES.shops.find((s) => s.locationId === locationId);
   if (authored) return authored;
   generatedShops ??= new Map(WORLD.stations.flatMap((st) => (st.shop ? [[st.id, { locationId: st.id, ...st.shop }] as const] : [])));
-  return generatedShops.get(locationId);
+  return generatedShops.get(locationId) ?? ownShop(locationId);
+}
+
+/** The player's outpost, once a port (docs/PROCGEN.md §22): an outfitter of consumables, no maker's equipment and no shipyard. */
+function ownShop(locationId: string): ShopRule | undefined {
+  const own = saveLocations().find((l) => l.id === locationId);
+  if (!own?.services.includes('equipment')) return undefined;
+  return { locationId, makers: [], maxClass: OUTPOSTS.shop.maxClass, shipyard: [], maxShipTier: 1 };
 }
 
 /** Equipment the outfitter at a station sells, by slot then family then class. */

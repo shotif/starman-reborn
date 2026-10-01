@@ -9,7 +9,7 @@ import { hashString, rng, type Rng } from '../content/random.ts';
 import type { LastingMark } from '../content/story/marks.ts';
 import { jumpsFrom } from '../content/world/network.ts';
 import { WORLD_SEED } from '../content/world/rules.ts';
-import { ALL_LOCATIONS, BELTS, getLocation, getSystem, isFrontier, SYSTEMS, WORLD } from '../data/systems.ts';
+import { ALL_LOCATIONS, BELTS, getLocation, getSystem, isFrontier, saveLocationsKey, SYSTEMS, WORLD } from '../data/systems.ts';
 import type { FactionId, FictionalLocation, SystemId } from '../data/types.ts';
 import { findRoute } from '../galaxy/routing.ts';
 import { FLEETS } from '../world/traffic/plan.ts';
@@ -127,7 +127,7 @@ const boardCache = new Map<string, JobDef[]>();
 /** The contracts a station posts in a time slot (hand-made jobs are separate, in jobs.ts). */
 export function boardFor(locationId: string, epoch: number): JobDef[] {
   // The border war, its settled fronts and lasting marks are the save's own, so boards are kept per save.
-  const key = `${locationId}|${epoch}|${worldLogKey()}|${marksKey()}|${settledKey()}`;
+  const key = `${locationId}|${epoch}|${worldLogKey()}|${marksKey()}|${settledKey()}|${saveLocationsKey()}`;
   const cached = boardCache.get(key);
   if (cached) return cached;
   const loc = getLocation(locationId);
