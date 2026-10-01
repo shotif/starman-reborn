@@ -37,6 +37,10 @@ snapshot branch only when the archives changed.
   the Ring/Silent switch; the settings screen explains this.
 - **Safe-area insets** were tested by overriding the CSS variables, not on a device with a notch
   or home bar.
+- **The star map's pinch and search on a real phone.** Pinch zoom (toward the fingers) and the Find
+  dialog were exercised with emulated touch only. With an on-screen keyboard up, the dialog keeps to
+  the visible part of the screen through the Visual Viewport API; how iOS Safari scrolls around a
+  focused field needs a real iPhone to confirm.
 - **WebGL context loss** is handled (overlay with reload, automatic resume on restore) but was not
   forced in automated tests.
 - **Transferred size on mobile networks.** Measured from the production build: about 620 KB
