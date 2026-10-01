@@ -354,5 +354,5 @@ Record results here (device, OS, browser, fps, issues):
 
 | Device | OS / browser | Steps passed | fps (fight) | Notes |
 | --- | --- | --- | --- | --- |
-| Owner's phone (model not recorded) | Not recorded | 7: star map pinch only | Not measured | 1 October 2026: a pinch over the star map zooms toward the fingers, with the star staying under them. The rest of step 7 (double tap, Find with the on-screen keyboard up, Missions) and steps 1–6 and 8–11 not run yet. |
+| Android phone (the owner's) | Android, Chrome | 7: star map pinch only | Not measured | 1 October 2026: a pinch over the star map zooms toward the fingers, with the star staying under them. The rest of step 7 (double tap, Find with the on-screen keyboard up, Missions) and steps 1–6 and 8–11 not run yet. |
 | _pending_: the whole checklist on an Android phone and an iPhone or iPad | | | | Find with the on-screen keyboard up matters most on iPhone Safari. |
