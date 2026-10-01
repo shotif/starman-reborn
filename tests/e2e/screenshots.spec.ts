@@ -31,7 +31,8 @@ const SIZES: readonly SizeCase[] = [
   { name: 'android-zoom130-316x570', width: 316, height: 570, touch: true },
 ];
 
-const OUT = 'docs/screenshots';
+/** Where the screenshots go: docs/screenshots/, or SCREENSHOT_DIR (to audit without touching the committed ones). */
+const OUT = process.env['SCREENSHOT_DIR'] || 'docs/screenshots';
 
 interface AuditResult {
   overflow: boolean;
