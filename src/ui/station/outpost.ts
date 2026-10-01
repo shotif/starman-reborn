@@ -170,7 +170,7 @@ export function outpostContent(ctx: StationContext, refresh: Refresh): HTMLEleme
   const needs = stillNeeded(o);
   return h(
     'div',
-    { class: 'stack fleet', 'data-testid': 'outpost-window' },
+    { class: 'stack fleet', 'data-testid': 'outpost-content' },
     h('p', { class: 'muted small' }, `${o.name}, your ${kindWord(o.kind)} (fiction) in orbit of ${outpostPlace(o)}.`),
     h('p', { 'data-testid': 'outpost-window-status' }, outpostStatus(state, o)),
     stage

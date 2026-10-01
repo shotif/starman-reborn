@@ -40,6 +40,12 @@ async function dockAt(page: Page, id: string): Promise<void> {
   await hearOut(page);
 }
 
+/** Closes a discovery card if one is up (it pauses the flight). */
+async function dismissDiscovery(page: Page): Promise<void> {
+  const ok = page.getByTestId('discovery-ok');
+  if (await ok.isVisible().catch(() => false)) await ok.click().catch(() => {});
+}
+
 async function openWindow(page: Page, room: string, action: string, windowId: string): Promise<void> {
   await press(page, room);
   if (!(await page.getByTestId(windowId).isVisible().catch(() => false))) await press(page, action);
@@ -81,10 +87,11 @@ test('sightseers: a cabin fitted, a tour taken at the bar, Proxima Centauri d se
   await press(page, 'dock-launch');
   await waitUntil(page, 'in flight', async () => (await api(page, 'mode')) === 'flight');
   if (await page.getByTestId('controls-sheet').isVisible().catch(() => false)) await press(page, 'sheet-close');
-  await waitUntil(page, 'undocked', async () => (await api<{ autopilot: string } | null>(page, 'player'))?.autopilot === 'none', 60_000);
+  // Proxima Centauri b is in the scanner from the dock: a discovery card may pause the flight.
+  await waitUntil(page, 'undocked', async () => (await dismissDiscovery(page), (await api<{ autopilot: string } | null>(page, 'player'))?.autopilot === 'none'), 60_000);
   expect(await api<boolean>(page, 'placeNear', { id: SIGHT, distance: 3_000 })).toBe(true);
+  await waitUntil(page, 'the sight seen', async () => (await dismissDiscovery(page), (await api<PassengerState>(page, 'state')).jobs[TOUR]?.objectiveIndex === 1));
   await expect(page.locator('.toast.comm', { hasText: lead })).toContainText('Proxima Centauri d');
-  await waitUntil(page, 'the sight seen', async () => (await api<PassengerState>(page, 'state')).jobs[TOUR]?.objectiveIndex === 1);
   expect((await api<PassengerState>(page, 'state')).jobs[TOUR]?.seen).toBe(true);
 
   // Home to Meridian Outpost: paid in full, no rough trip.

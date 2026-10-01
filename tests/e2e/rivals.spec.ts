@@ -19,7 +19,7 @@ interface Claim {
 interface RivalNow {
   where: 'docked' | 'flying' | 'jumping' | 'down';
   at: string | null;
-  run: { id: string; kind: string; from: string; to: string; depart: number; arrive: number; legs: { systemId: string; start: number; end: number }[] } | null;
+  run: { id: string; kind: string; from: string; to: string; depart: number; arrive: number; legs: { systemId: string; kind: string; start: number; end: number }[] } | null;
 }
 interface RivalState {
   clock: number;
@@ -107,12 +107,13 @@ test('rival pilots: a claim bought back from a hunter, the News, the hunter in a
   await press(page, 'rival-close');
 
   // Out in flight: a trader rival on its way, named, with what it carries.
-  // Its next long leg, waiting a turn for one if need be.
-  let leg: { systemId: string; start: number; end: number } | undefined;
+  // Its next leg into a dock (from the arrival point: the beacon is often close by, so a ship passing
+  // through is soon gone), waiting a turn for one if need be.
+  let leg: { systemId: string; kind: string; start: number; end: number } | undefined;
   for (let i = 0; i < 6 && !leg; i++) {
     const now = (await api<RivalState>(page, 'state')).clock;
     const trader = (await api<RivalNow>(page, 'rival', 'quickstep'))!;
-    leg = trader.run?.legs.find((l) => l.end - l.start >= 300 && l.start > now);
+    leg = trader.run?.legs.find((l) => l.kind === 'in' && l.start > now);
     if (!leg) await advanceTo(page, Math.max(now, trader.run?.arrive ?? now) + 1_800);
   }
   expect(leg).toBeDefined();

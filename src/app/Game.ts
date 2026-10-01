@@ -1981,7 +1981,7 @@ export class Game {
         if (!r || !this.state) return null;
         const w = rivalWhere(r, this.state.clock);
         const run = w.kind === 'flying' || w.kind === 'jumping' ? w.run : nextRun(r, this.state.clock);
-        return { where: w.kind, at: w.kind === 'docked' ? w.locationId : w.kind === 'flying' ? w.leg.systemId : null, run: run ? { id: run.id, kind: run.kind, from: run.from, to: run.to, depart: run.depart, arrive: run.arrive, legs: run.legs.map((l) => ({ systemId: l.systemId, start: l.start, end: l.end })) } : null };
+        return { where: w.kind, at: w.kind === 'docked' ? w.locationId : w.kind === 'flying' ? w.leg.systemId : null, run: run ? { id: run.id, kind: run.kind, from: run.from, to: run.to, depart: run.depart, arrive: run.arrive, legs: run.legs.map((l) => ({ systemId: l.systemId, kind: l.kind, start: l.start, end: l.end })) } : null };
       },
       /**
        * Test-only: a ship of `model` parked where the player is docked, the prices at `to` known as if

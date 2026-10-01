@@ -736,7 +736,7 @@ function tour(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
     title: `Sightseers to ${sight.name}`,
     briefing: `${partyName(names)} ${wants(names)} to see ${sight.name}, ${SIGHT_WORD[sight.kind]} in ${system}, with their own eyes. Fly close enough for a good look, then bring them back to ${giver.name}. ${BERTHS_NOTE}`,
     objectives: [
-      { kind: 'sight', sightId: sight.id, systemId: sight.systemId, targetId: sight.targetId, text: `Show ${partyName(names)} ${sight.name} (${system})` },
+      { kind: 'sight', sightId: sight.id, systemId: sight.systemId, targetId: sight.targetId, text: `Show ${sight.name} (${system}) to ${partyName(names)}` },
       { kind: 'visit', locationId: giver.id, text: `Bring ${partyName(names)} back to ${giver.name}` },
     ],
     reward: pay(r, routeFeeBetween(giver.systemId, sight.systemId), varying),
