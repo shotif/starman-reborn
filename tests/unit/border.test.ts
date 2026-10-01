@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { dockAt } from '../../src/app/rules.ts';
+import { dockAt, performJump } from '../../src/app/rules.ts';
+import { findRoute } from '../../src/galaxy/routing.ts';
 import { migrateSave } from '../../src/app/save/migrate.ts';
 import { createNewGame, type GameState } from '../../src/app/state.ts';
 import { BORDER } from '../../src/content/border/rules.ts';
@@ -12,7 +13,7 @@ import { atWar, borderNews, deedsAt, EXPOSED, FRONTS, frontState, getFront, occu
 import { boardFor } from '../../src/economy/contracts.ts';
 import { welcomeText } from '../../src/economy/dockText.ts';
 import { useWorldLog } from '../../src/economy/events.ts';
-import { acceptJob, advanceJobs, countPiracy, currentObjective, escortArrived, jobsAt, type JobDef } from '../../src/economy/jobs.ts';
+import { acceptJob, advanceJobs, countPiracy, currentObjective, escortArrived, escortsIn, jobsAt, type JobDef } from '../../src/economy/jobs.ts';
 import { dockAccess } from '../../src/economy/law.ts';
 import { checkMilestones } from '../../src/economy/progress.ts';
 import { arcStatus, briefingFor, makeChoice, optionLock } from '../../src/economy/story.ts';
@@ -305,7 +306,7 @@ describe('The Long Border', () => {
     expect(occupied('waymark-waypoint', s.clock)).toBeNull();
   });
 
-  it('can be finished as neither: the envoys’ truce quiets the line', () => {
+  it('can be finished as neither: the envoys cross the line, and the truce quiets it', () => {
     const s = pilot();
     s.reputation.sta = -10;
     toTheChoice(s);
@@ -321,6 +322,15 @@ describe('The Long Border', () => {
     expect(done(s, 'arc.border.4.truce')).toBe(true);
     expect(acceptJob(s, 'arc.border.5.truce').ok).toBe(true);
     s.location.dockedAt = null;
+    // The envoys set off in Ross 154 and keep with the player, to cross the line with them.
+    expect(escortsIn(s, 'ross-154')).toEqual([expect.objectContaining({ jobId: 'arc.border.5.truce', follow: true, convoy: { names: ['Kettering Line II', 'Garrison cutter', 'Roost launch'], waves: 1 } })]);
+    s.flags.clearance = true;
+    const route = findRoute(SYSTEMS, 'ross-154', 'wolf-1061')!;
+    expect(route.hops).toHaveLength(1);
+    expect(performJump(s, route, route.totalFee).filter((e) => e.kind === 'failed')).toEqual([]);
+    // Over the line, raiders wait at the beacon, and the envoys make for Flotsam Diggings.
+    expect(escortsIn(s, 'wolf-1061')).toEqual([expect.objectContaining({ jobId: 'arc.border.5.truce', to: 'flotsam-diggings', beacon: true })]);
+    expect(escortsIn(s, 'wolf-1061')[0]!.follow).toBeUndefined();
     escortArrived(s, 'arc.border.5.truce');
     escortArrived(s, 'arc.border.5.truce');
     escortArrived(s, 'arc.border.5.truce');

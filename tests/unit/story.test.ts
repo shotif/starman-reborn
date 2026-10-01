@@ -56,6 +56,12 @@ describe('story arcs', () => {
     expect(broken((jobs) => (job(jobs, 'arc.sta.1').objectives[0] = { kind: 'visit', locationId: 'maw-roost', text: 'x' }))).toContain('places');
     // Somewhere out of reach.
     expect(broken((jobs) => (job(jobs, 'arc.sta.1').objectives[0] = { kind: 'visit', locationId: 'wildcard-haven', text: 'x' }))).toContain('reach');
+    // An escort may set off in another system, but not more than two jumps from where it is going.
+    expect(broken(() => {})).toEqual([]);
+    expect(broken((jobs) => {
+      const o = job(jobs, 'arc.border.5.truce').objectives[0]!;
+      if (o.kind === 'escort') job(jobs, 'arc.border.5.truce').objectives[0] = { ...o, fromLocationId: 'earth-port' };
+    })).toContain('places');
     // A choice where every way ends the arc, or the next step does not follow the ways on.
     expect(broken((jobs) => {
       const o = job(jobs, 'arc.sta.4').objectives[0]!;

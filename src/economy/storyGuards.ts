@@ -1,4 +1,5 @@
 import { findShip } from '../content/catalog.ts';
+import { CONTRACTS } from '../content/contracts/rules.ts';
 import { LAW } from '../content/law/rules.ts';
 import { ARC_JOBS, ARC_ORDER, ARCS, CHARACTERS } from '../content/story/arcs.ts';
 import type { Line } from '../content/story/types.ts';
@@ -101,7 +102,9 @@ export function validateStory(arcJobs: readonly JobDef[] = ARC_JOBS): Issue[] {
       for (const [k, o] of job.objectives.entries()) {
         const sys = objectiveSystem(o);
         if ('systemId' in o && 'locationId' in o && getLocation(o.locationId).systemId !== o.systemId) report('places', subject, `objective ${k}: ${o.locationId} is not in ${o.systemId}`);
-        if (o.kind === 'escort' && getLocation(o.fromLocationId).systemId !== o.systemId) report('places', subject, 'the escort starts in another system');
+        if (o.kind === 'escort' && (jumpsFrom(WORLD.links, getLocation(o.fromLocationId).systemId).get(o.systemId) ?? 99) > CONTRACTS.maxJumps.escort) {
+          report('places', subject, `the escort sets off more than ${CONTRACTS.maxJumps.escort} jumps from where it is going`);
+        }
         if (sys && (jumps.get(sys) ?? 99) > STORY_MAX_JUMPS) report('reach', subject, `objective ${k} is more than ${STORY_MAX_JUMPS} jumps from the giver`);
         if (o.kind === 'assault' || o.kind === 'defend') {
           if (!isDen(o.locationId)) report('finale', subject, `${o.locationId} is not a raider den`);
