@@ -159,7 +159,15 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   damage and regeneration, damage-type multipliers on shields and hull, and the autopilot's
   obstacle avoidance (clear paths, the nearest blocking sphere on the right side, spheres behind).
 - `galaxy-map.test.ts`: camera-relative transforms, orbit controller, projection and label layout,
-  jump-button rules.
+  jump-button rules; zoom about a point on screen (stars nearer and farther than the focus all stay
+  under it, and zooming back returns to the start), the zoom limits, a target radius that reaches
+  the far shell; gestures that zoom about the pinch point and drop lost fingers without forgetting
+  a tap.
+- `map-search.test.ts`: finding a system by its own name or a star, planet, station, belt or
+  catalogue name in it (case, accents, punctuation and Greek letters ignored; Gliese numbers in all
+  three spellings), typos forgiven only when nothing matches as typed, one row per system with
+  equal matches nearest first, highlights on the name as written; the missions list grouped by
+  system with the tracked objective first, then by jumps, unreachable last.
 - `rooms.test.ts`: station interiors: structure per station, camera moves and cuts, reduced
   motion, omitted rooms, determinism, draw-call and triangle budgets per quality, lights per room,
   hotspots on desktop and phones, portrait framing and disposal; generated interiors for every
@@ -288,8 +296,17 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 - `mining.spec.ts`: a mining laser fitted, Sol's main belt scanned for its source, a rock mined with
   the Mine action (B on the keyboard, the amber action button on touch), ore in the hold, and the
   beam stopped the same way.
+- `map.spec.ts`: the star map's finding aids. **Missions** lists Barnard's Star for Clean
+  Manifests with its next step and jumps, and choosing it selects and centres the system; with no
+  missions it says so. **Find** opens on the nearest systems, finds Alpha Centauri from "proxima b"
+  (Enter takes the first match) and Barnard's Star from a typo, says when nothing matches, closes
+  on Escape with the map still open, and on a keyboard opens with **/** and moves with the arrows.
+  The 2D view zooms about the fingers or the cursor, pans without selecting, and the zoom and reset
+  buttons work there. Touch: **a pinch zooms toward the fingers** (the star under them stays within
+  6 px while the view zooms 3×), and a touch whose lift was lost does not turn the next drag into a
+  pinch. Desktop: **the wheel zooms toward the cursor**.
 - `screenshots.spec.ts`: title, job board, buy dialog, station deck, shipyard, outfitter, fleet,
-  flight HUD and star map at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
+  flight HUD, star map and its Missions and Find dialogs at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
   zoom). Saved in `docs/screenshots/` once any smooth scrolling has come to rest. Each is audited
   for page scroll overflow, clipped controls (controls inside a scrolling panel count only if the
@@ -323,6 +340,9 @@ tunnel; see the README), then on an actual **Android phone** and an **iPhone/iPa
 6. Dock at Mars and check the voyage report shows a profit.
 7. Jump to Alpha Centauri, discover **Proxima b** and open its citation, then dock at Meridian
    Outpost and deliver.
+   On the star map: **pinch** over a star (it should stay under your fingers as the view zooms),
+   double-tap empty space, open **Find** and type a name with the on-screen keyboard up (the
+   field and the first matches stay visible), and choose a system from **Missions**.
 8. **Refresh** the page and press Continue. Everything should be as you left it.
 9. Switch to another app and back mid-flight. The game should not jump ahead.
 10. On a tablet with a keyboard or mouse attached, the desktop controls should take over.

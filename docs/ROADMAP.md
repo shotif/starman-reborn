@@ -175,6 +175,15 @@ hand-made systems, deep space, lawless space and the dens), station ambience, an
 of the traffic around you. Still to do: the
 real-device checklist, which needs you (increment 13).
 
+### Finding your way on the star map ✅
+
+The map was hard to use on a phone. **Find** searches every system by its name or any star,
+planet, station, belt or catalogue name in it (accents and a typo or two forgiven); **Missions**
+lists the systems your active missions send you to, each with its next step and how many jumps
+away it is. Choosing either brings the system to the middle with its neighbours around it. A pinch
+or the wheel zooms toward the fingers or the cursor, a double tap zooms in on the spot, the 2D view
+zooms and pans too, and a short hint shows the gestures the first few times on a touch screen.
+
 ### Quick wins ✅
 
 Sort and filter the job board, a sound and a comm line when a contract pays, the last open window

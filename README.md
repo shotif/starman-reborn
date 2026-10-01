@@ -121,6 +121,21 @@ sticks. Stations and menus use the mouse, keyboard or touch (Start closes the pa
 Back the star map). The HUD's hints follow whichever device you used last, and on a phone or tablet
 the touch controls hide while you use the pad.
 
+On the star map:
+
+| Action | Mouse and keyboard | Touch |
+| --- | --- | --- |
+| Turn the view | Drag; arrow keys | Drag with one finger |
+| Zoom | Wheel, toward the cursor; **+ / −** or the zoom buttons | Pinch, toward your fingers; the zoom buttons |
+| Zoom in on a spot | Double-click empty space | Double-tap empty space |
+| Centre a star | Double-click it | Double-tap it |
+| Move the view | Right-, middle- or Shift-drag | Two-finger drag |
+| Find a system by name (or a star, planet, station or catalogue number in it) | **Find** or **/** | **Find** |
+| The systems your missions send you to | **Missions** | **Missions** |
+| The whole map again | **Home** or the reset button | The reset button |
+
+The 2D view zooms the same way, and a drag (or the arrow keys) moves it.
+
 Settings include alternate desktop steering (drag-to-steer, or keyboard steer with mouse aim),
 invert pitch, a left-handed touch layout, aim assist (Off/Low/Medium, touch default Low), difficulty,
 quality presets, text size, reduced motion, camera shake, bloom and volume. A mouse or keyboard

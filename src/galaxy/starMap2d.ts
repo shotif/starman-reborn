@@ -292,6 +292,8 @@ function attachGestures(container: HTMLElement, e: Entry): () => void {
     window.addEventListener('pointercancel', onCancel);
   };
   const onWheel = (ev: WheelEvent) => {
+    // The key scrolls as usual.
+    if (ev.target instanceof Element && ev.target.closest('.gmap-legend')) return;
     ev.preventDefault();
     let dy = ev.deltaY;
     if (ev.deltaMode === 1) dy *= 16;
