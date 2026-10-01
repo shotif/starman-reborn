@@ -18,6 +18,7 @@ import { InfoCard } from './infoCard.ts';
 import type { JumpEvaluation } from './jumpRules.ts';
 import { buildLegend } from './legend.ts';
 import { KEY_ROTATE_STEP, KEY_ZOOM_STEP, OrbitController } from './mapCamera.ts';
+import { openMissionsDialog, openSearchDialog, type MapDialog, type PickerContext } from './mapDialogs.ts';
 import { MAP_LABELS, MAP_STARS, RING_RADII_LY, formatLy, mapBounds, systemFocus, type MapLabel } from './mapData.ts';
 import { mapIcon } from './mapIcons.ts';
 import {
@@ -33,7 +34,7 @@ import {
 } from './mapMath.ts';
 import { MAP_FOV_DEG, MapScene } from './mapScene.ts';
 import { createLabelBox, layoutLabels, pickNearestPoint, type LabelBox } from './screenLayout.ts';
-import { disposeStarMap2D, renderStarMap2D } from './starMap2d.ts';
+import { centreStarMap2D, disposeStarMap2D, panStarMap2D, renderStarMap2D, resetStarMap2D, zoomStarMap2D } from './starMap2d.ts';
 import type { GalaxyMapCallbacks, MapState } from './types.ts';
 
 export { renderStarMap2D } from './starMap2d.ts';
@@ -65,6 +66,14 @@ interface ViewLabel {
 /** Tap radius around projected stars (CSS px). */
 const PICK_RADIUS_TOUCH = 28;
 const PICK_RADIUS_MOUSE = 18;
+/** A double tap on empty space zooms in this much toward it. */
+const DOUBLE_TAP_ZOOM = 2;
+/** A system found by search or the missions list is shown with about this many light-years around it. */
+const LOCATE_SPAN_LY = 8;
+/** The gesture hint shows on a touch screen's first few map openings, for a few seconds. */
+const HINT_KEY = 'starman.mapHints';
+const HINT_SHOWS = 3;
+const HINT_MS = 7000;
 const MAP_BOUNDS = mapBounds();
 /** The overview frames the familiar neighbourhood (the first catalogue's systems); zoom out for the far shell. */
 const STAR_POSITIONS = MAP_STARS.filter((s) => !isNewSystem(s.systemId)).map((s) => s.pos);
@@ -88,6 +97,11 @@ export class GalaxyMapView {
   private readonly viewport: HTMLElement;
   private readonly map2d: HTMLElement;
   private readonly zoomControls: HTMLElement;
+  private readonly tools: HTMLElement;
+  private readonly searchButton: HTMLButtonElement;
+  private readonly missionsButton: HTMLButtonElement;
+  private readonly missionsCount: HTMLElement;
+  private readonly hint: HTMLElement;
   private readonly legend: HTMLElement;
   private readonly card: InfoCard;
   private readonly live: HTMLElement;
@@ -111,6 +125,8 @@ export class GalaxyMapView {
   private selected: SystemId = 'sol';
   private mode: Mode;
   private encyclopedia: { close(): void } | null = null;
+  private dialog: MapDialog | null = null;
+  private hintTimer = 0;
   private previousFocus: HTMLElement | null = null;
   private rootPointerEvents = '';
   private time = 0;
@@ -119,6 +135,7 @@ export class GalaxyMapView {
   private sizeHint = { w: 0, h: 0 };
   private canvasX = 0;
   private canvasY = 0;
+  private canvasW = 1;
   private canvasH = 1;
   private stageRect: Rect = { x: 0, y: 0, w: 1, h: 1 };
   private obstacles: Rect[] = [];
@@ -146,14 +163,18 @@ export class GalaxyMapView {
     this.gestures = new GestureTracker({
       rotate: (dx, dy) => this.controller.rotateByPixels(dx, dy),
       pan: (dx, dy) => this.controller.pan(dx, dy, this.canvasH, MAP_FOV_DEG),
-      zoom: (f) => this.controller.zoom(f),
+      zoom: (f, x, y) => this.zoomAtScreen(f, x, y),
       tap: (x, y, type) => {
         const id = this.pickAt(x, y, type);
         if (id) this.select(id, { announce: true, revealInList: true });
       },
       doubleTap: (x, y, type) => {
         const id = this.pickAt(x, y, type);
-        if (!id) return;
+        // On empty space, zoom in toward the tap; on a star, centre it.
+        if (!id) {
+          this.zoomAtScreen(1 / DOUBLE_TAP_ZOOM, x, y, true);
+          return;
+        }
         this.select(id, { announce: true, revealInList: true });
         this.focusOn(id);
       },
@@ -273,12 +294,50 @@ export class GalaxyMapView {
     this.zoomControls = h(
       'div',
       { class: 'gmap-zoom', role: 'group', 'aria-label': 'Map view' },
-      zoomButton('plus', 'Zoom in', () => this.controller.zoom(1 / KEY_ZOOM_STEP)),
-      zoomButton('minus', 'Zoom out', () => this.controller.zoom(KEY_ZOOM_STEP)),
+      zoomButton('plus', 'Zoom in', () => this.zoomStep(1 / KEY_ZOOM_STEP)),
+      zoomButton('minus', 'Zoom out', () => this.zoomStep(KEY_ZOOM_STEP)),
       zoomButton('reset', 'Reset view', () => this.resetView()),
     );
+    // Finding systems: by name, or where your missions send you.
+    this.searchButton = h(
+      'button',
+      {
+        type: 'button',
+        class: 'btn gmap-tool',
+        'aria-label': 'Find a system',
+        'aria-haspopup': 'dialog',
+        title: 'Find a system by name (/)',
+        'data-testid': 'map-search',
+        onClick: () => this.openSearch(),
+      },
+      mapIcon('search'),
+      h('span', { class: 'gmap-tool-text' }, 'Find'),
+    );
+    this.missionsCount = h('span', { class: 'gmap-tool-count num', 'aria-hidden': 'true', hidden: true });
+    this.missionsButton = h(
+      'button',
+      {
+        type: 'button',
+        class: 'btn gmap-tool',
+        'aria-label': 'Missions',
+        'aria-haspopup': 'dialog',
+        title: 'Systems your missions send you to',
+        'data-testid': 'map-missions',
+        onClick: () => this.openMissions(),
+      },
+      icon('objective'),
+      h('span', { class: 'gmap-tool-text' }, 'Missions'),
+      this.missionsCount,
+    );
+    this.tools = h('div', { class: 'gmap-tools', role: 'group', 'aria-label': 'Find systems' }, this.searchButton, this.missionsButton);
+    this.hint = h(
+      'p',
+      { class: 'gmap-hint', hidden: true, 'data-testid': 'map-hint' },
+      mapIcon('pinch'),
+      h('span', null, 'Pinch to zoom · drag to turn · double-tap to zoom in'),
+    );
     this.legend = buildLegend('3d');
-    this.stage = h('div', { class: 'gmap-stage' }, this.viewport, this.map2d, this.zoomControls, this.legend);
+    this.stage = h('div', { class: 'gmap-stage' }, this.viewport, this.map2d, this.tools, this.zoomControls, this.legend, this.hint);
 
     this.card = new InfoCard({
       onJump: (ev) => this.jump(ev),
@@ -316,7 +375,7 @@ export class GalaxyMapView {
           })
         : null;
     if (this.observer) {
-      for (const target of [this.el, top, list, this.stage, this.card.el, this.legend, this.zoomControls]) {
+      for (const target of [this.el, top, list, this.stage, this.card.el, this.legend, this.zoomControls, this.tools]) {
         this.observer.observe(target);
       }
     }
@@ -360,6 +419,7 @@ export class GalaxyMapView {
     this.attach();
     this.applyMode();
     this.refresh(true);
+    this.maybeShowHint();
     const btn = this.listButtons.get(this.selected)?.btn;
     btn?.focus({ preventScroll: true });
     this.revealInList(this.selected, false);
@@ -376,6 +436,9 @@ export class GalaxyMapView {
     this.opened = false;
     this.encyclopedia?.close();
     this.encyclopedia = null;
+    this.dialog?.close();
+    this.dialog = null;
+    this.hideHint();
     this.detach();
     this.gestures.reset();
     this.el.hidden = true;
@@ -440,6 +503,39 @@ export class GalaxyMapView {
     this.el.classList.toggle('reduced-motion', on);
   }
 
+  /**
+   * For browser tests (?test=1): the camera distance, the projection centre and where each plotted
+   * star is (CSS px in the map layer, whose page offset is `origin`). Null unless the 3D map is open.
+   */
+  debugView(): {
+    /** Still easing or waiting for a frame: the positions are not final yet. */
+    moving: boolean;
+    distance: number;
+    origin: { x: number; y: number };
+    centre: { x: number; y: number };
+    stars: { id: SystemId; x: number; y: number; depth: number; visible: boolean }[];
+  } | null {
+    if (!this.opened || this.mode !== '3d') return null;
+    const r = this.el.getBoundingClientRect();
+    return {
+      moving:
+        !!this.initialView ||
+        this.layoutDirty ||
+        this.viewDirty ||
+        this.controller.isAnimating ||
+        this.controller.version !== this.lastViewVersion ||
+        this.shift.x !== this.shiftGoal.x ||
+        this.shift.y !== this.shiftGoal.y,
+      distance: this.controller.current.distance,
+      origin: { x: r.left, y: r.top },
+      centre: { x: this.canvasX + this.canvasW / 2 + this.shift.x, y: this.canvasY + this.canvasH / 2 + this.shift.y },
+      stars: MAP_STARS.map((star, i) => {
+        const p = this.starPoints[i]!;
+        return { id: star.systemId, x: p.x, y: p.y, depth: p.depth, visible: p.visible };
+      }),
+    };
+  }
+
   dispose(): void {
     this.close();
     this.observer?.disconnect();
@@ -470,20 +566,70 @@ export class GalaxyMapView {
     return `${s.displayName} selected, ${where}. ${jump}`;
   }
 
+  /**
+   * Lays out and sets the opening view now if the first frame has not done so yet, so that a move
+   * asked for before it (a pick from a list) is not undone by it.
+   */
+  private ensureView(): void {
+    if (!this.opened) return;
+    if (this.layoutDirty) this.measureLayout();
+    if (this.initialView) this.applyInitialView();
+  }
+
   /** Centres the orbit on a system and zooms in close enough to separate its stars. */
   private focusOn(id: SystemId): void {
     if (this.mode !== '3d') return;
+    this.ensureView();
     const f = systemFocus(id);
     this.controller.transitionTo({ target: f.target, distance: f.distance }, 0.14);
+  }
+
+  /**
+   * Selects a system found by name or from the missions list and brings it to the middle of the
+   * stage, with about LOCATE_SPAN_LY of its neighbourhood around it.
+   */
+  private locate(id: SystemId): void {
+    this.select(id, { announce: true, revealInList: true });
+    if (this.mode !== '3d') {
+      centreStarMap2D(this.map2d, id);
+      return;
+    }
+    this.ensureView();
+    const f = systemFocus(id);
+    const st = this.stageRect;
+    const span = Math.max(1, Math.min(st.w, st.h));
+    const distance = (LOCATE_SPAN_LY * this.canvasH) / (2 * Math.tan((MAP_FOV_DEG * Math.PI) / 360) * span);
+    this.controller.transitionTo({ target: f.target, distance: Math.max(f.distance, distance) }, 0.14);
+  }
+
+  /** Zoom about a point of the map layer (CSS px): what is under it stays there. */
+  private zoomAtScreen(factor: number, x: number, y: number, animate = false): void {
+    this.ensureView();
+    // The projection centre: the canvas centre moved by the view shift (the middle of the stage).
+    const dx = x - (this.canvasX + this.canvasW / 2 + this.shift.x);
+    const dy = y - (this.canvasY + this.canvasH / 2 + this.shift.y);
+    this.controller.zoomAt(factor, dx, dy, this.canvasH, MAP_FOV_DEG, animate);
   }
 
   /** Centres the orbit on a system without changing zoom. */
   private panTo(id: SystemId): void {
     if (this.mode !== '3d') return;
+    this.ensureView();
     this.controller.transitionTo({ target: systemFocus(id).target }, 0.12);
   }
 
+  /** A zoom button or key: the distance multiplier (< 1 zooms in), about the middle. */
+  private zoomStep(factor: number): void {
+    if (this.mode === '2d') zoomStarMap2D(this.map2d, 1 / factor);
+    else this.controller.zoom(factor);
+  }
+
   private resetView(): void {
+    if (this.mode === '2d') {
+      resetStarMap2D(this.map2d);
+      return;
+    }
+    this.ensureView();
     this.controller.transitionTo(this.overviewOrbit(), 0.14);
   }
 
@@ -532,9 +678,9 @@ export class GalaxyMapView {
     const is2d = this.mode === '2d';
     this.map2d.hidden = !is2d;
     this.viewport.hidden = is2d;
-    this.zoomControls.hidden = is2d;
     this.legend.hidden = is2d;
     this.labelLayer.hidden = is2d;
+    if (is2d) this.hideHint();
     if (is2d) this.render2d();
     else {
       this.layoutDirty = true;
@@ -544,7 +690,22 @@ export class GalaxyMapView {
 
   private render2d(): void {
     if (!this.state || this.mode !== '2d' || !this.opened) return;
-    renderStarMap2D(this.map2d, this.state, (id) => this.select(id, { announce: true, revealInList: true }), this.selected);
+    renderStarMap2D(this.map2d, this.state, (id) => this.select(id, { announce: true, revealInList: true }), this.selected, {
+      zoomable: true,
+      obstacles: () => this.overlays2d(),
+      insetTop: this.tools.offsetHeight + 6,
+    });
+  }
+
+  /** The controls lying over the 2D map (Find and Missions, the zoom buttons), in its own px. */
+  private overlays2d(): Rect[] {
+    const base = this.map2d.getBoundingClientRect();
+    const out: Rect[] = [];
+    for (const o of [this.tools, this.zoomControls]) {
+      const r = o.getBoundingClientRect();
+      if (!o.hidden && r.width > 0) out.push({ x: r.left - base.left, y: r.top - base.top, w: r.width, h: r.height });
+    }
+    return out;
   }
 
   private jump(ev: JumpEvaluation): void {
@@ -552,8 +713,56 @@ export class GalaxyMapView {
     this.callbacks.onJump(ev.route, ev.fee);
   }
 
+  private openSearch(): void {
+    this.openDialog(openSearchDialog, this.searchButton);
+  }
+
+  private openMissions(): void {
+    this.openDialog(openMissionsDialog, this.missionsButton);
+  }
+
+  private openDialog(build: (ctx: PickerContext) => MapDialog, opener: HTMLElement): void {
+    if (this.dialog || this.encyclopedia || !this.opened || !this.state) return;
+    this.gestures.reset();
+    this.hideHint();
+    this.dialog = build({
+      host: this.el,
+      state: this.state,
+      marks: (id) => this.systemMarks(id),
+      onClose: () => {
+        this.dialog = null;
+        if (this.opened && opener.isConnected) opener.focus({ preventScroll: true });
+      },
+      onPick: (id) => this.locate(id),
+    });
+  }
+
+  /** The gesture hint, on a touch screen's first few openings of the 3D map. */
+  private maybeShowHint(): void {
+    if (this.mode !== '3d' || typeof matchMedia !== 'function' || !matchMedia('(pointer: coarse)').matches) return;
+    let shown = 0;
+    try {
+      shown = Number(localStorage.getItem(HINT_KEY)) || 0;
+      if (shown < HINT_SHOWS) localStorage.setItem(HINT_KEY, String(shown + 1));
+    } catch {
+      // Storage unavailable: show it this time.
+    }
+    if (shown >= HINT_SHOWS) return;
+    this.hint.hidden = false;
+    this.layoutDirty = true;
+    window.clearTimeout(this.hintTimer);
+    this.hintTimer = window.setTimeout(() => this.hideHint(), HINT_MS);
+  }
+
+  private hideHint(): void {
+    window.clearTimeout(this.hintTimer);
+    if (this.hint.hidden) return;
+    this.hint.hidden = true;
+    this.layoutDirty = true;
+  }
+
   private showEncyclopedia(systemId: SystemId | null): void {
-    if (this.encyclopedia || !this.opened) return;
+    if (this.encyclopedia || this.dialog || !this.opened) return;
     this.gestures.reset();
     this.encyclopedia = openEncyclopedia(this.el, {
       discoveredBodies: this.state?.discoveredBodies ?? new Set<string>(),
@@ -580,6 +789,7 @@ export class GalaxyMapView {
       s.feeCoverage ? `${s.feeCoverage.systemId}:${s.feeCoverage.note}` : '',
       (s.news ?? []).map((n) => `${n.id}:${n.active ? 1 : 0}`).join(','),
       [...(s.contractSystems ?? [])].sort().join(','),
+      (s.missions ?? []).map((m) => `${m.jobId}:${m.systemId}:${m.primary ? 1 : 0}`).join(','),
     ].join('|');
   }
 
@@ -590,16 +800,25 @@ export class GalaxyMapView {
     if (!force && sig === this.signature) return;
     this.signature = sig;
     this.creditsValue.textContent = formatCredits(state.credits);
-    for (const [id, { marks }] of this.listButtons) {
-      const items: Node[] = [];
-      if (state.currentSystemId === id) items.push(this.mark('current', icon('goto'), 'you are here'));
-      if (state.objectiveSystemId === id) items.push(this.mark('objective', icon('objective'), 'objective'));
-      else if (state.contractSystems?.has(id)) items.push(this.mark('contract', icon('objective'), 'contract'));
-      if (state.news?.some((n) => n.systemId === id && n.active)) items.push(this.mark('news', icon('alert'), 'in the news'));
-      if (state.visited.has(id) && state.currentSystemId !== id) items.push(this.mark('visited', mapIcon('check'), 'visited'));
-      marks.replaceChildren(...items);
-    }
+    for (const [id, { marks }] of this.listButtons) marks.replaceChildren(...this.systemMarks(id));
+    const count = new Set((state.missions ?? []).map((m) => m.systemId)).size;
+    this.missionsCount.textContent = String(count);
+    this.missionsCount.hidden = count === 0;
+    this.missionsButton.setAttribute('aria-label', count ? `Missions: ${count === 1 ? '1 system' : `${count} systems`}` : 'Missions: none active');
     this.refreshSelection();
+  }
+
+  /** Marks for a system: you are here, objective or contract, in the news, visited. */
+  private systemMarks(id: SystemId): Node[] {
+    const state = this.state;
+    if (!state) return [];
+    const items: Node[] = [];
+    if (state.currentSystemId === id) items.push(this.mark('current', icon('goto'), 'you are here'));
+    if (state.objectiveSystemId === id) items.push(this.mark('objective', icon('objective'), 'objective'));
+    else if (state.contractSystems?.has(id)) items.push(this.mark('contract', icon('objective'), 'contract'));
+    if (state.news?.some((n) => n.systemId === id && n.active)) items.push(this.mark('news', icon('alert'), 'in the news'));
+    if (state.visited.has(id) && state.currentSystemId !== id) items.push(this.mark('visited', mapIcon('check'), 'visited'));
+    return items;
   }
 
   private mark(kind: string, glyph: SVGSVGElement, text: string): HTMLElement {
@@ -749,10 +968,11 @@ export class GalaxyMapView {
     }
     this.canvasX = cx;
     this.canvasY = cy;
+    this.canvasW = cw;
     this.canvasH = ch;
     this.stageRect = this.relRect(this.stage, base);
     this.obstacles.length = 0;
-    for (const o of [this.legend, this.zoomControls]) {
+    for (const o of [this.legend, this.zoomControls, this.tools, this.hint]) {
       if (!o.hidden) this.obstacles.push(this.relRect(o, base));
     }
     stageShift(cw, ch, { x: this.stageRect.x - cx, y: this.stageRect.y - cy, w: this.stageRect.w, h: this.stageRect.h }, this.shiftGoal);
@@ -838,6 +1058,9 @@ export class GalaxyMapView {
       c.addEventListener('contextmenu', this.onContextMenu);
     }
     document.addEventListener('keydown', this.onKeyDown);
+    // Safari's own pinch events: never zoom the page from the map.
+    document.addEventListener('gesturestart', this.onSafariGesture, { passive: false });
+    document.addEventListener('gesturechange', this.onSafariGesture, { passive: false });
   }
 
   private detach(): void {
@@ -852,17 +1075,27 @@ export class GalaxyMapView {
       c.removeEventListener('contextmenu', this.onContextMenu);
     }
     document.removeEventListener('keydown', this.onKeyDown);
+    document.removeEventListener('gesturestart', this.onSafariGesture);
+    document.removeEventListener('gesturechange', this.onSafariGesture);
   }
 
   private interactive(): boolean {
-    return this.opened && this.mode === '3d' && !this.encyclopedia;
+    return this.opened && this.mode === '3d' && !this.encyclopedia && !this.dialog;
   }
+
+  private readonly onSafariGesture = (e: Event): void => {
+    const t = e.target;
+    if (this.opened && (t === this.renderer?.domElement || (t instanceof Node && this.stage.contains(t)))) e.preventDefault();
+  };
 
   private readonly onPointerDown = (e: PointerEvent): void => {
     if (!this.interactive()) return;
     const mouse = e.pointerType === 'mouse';
     if (mouse && e.button > 2) return;
     const pan = mouse && (e.button === 1 || e.button === 2 || e.shiftKey || e.ctrlKey || e.metaKey);
+    // A first finger while fingers are still tracked: their ends were lost (a missed pointerup).
+    if (e.pointerType === 'touch' && e.isPrimary && this.gestures.tracks('touch')) this.gestures.releaseAll();
+    this.hideHint();
     const rect = this.el.getBoundingClientRect();
     if (this.gestures.activePointers === 0) this.pointerRect = rect;
     const base = this.pointerRect ?? rect;
@@ -917,15 +1150,30 @@ export class GalaxyMapView {
     if (e.deltaMode === 1) dy *= 16;
     else if (e.deltaMode === 2) dy *= this.canvasH;
     const k = e.ctrlKey ? 0.01 : 0.0015;
-    this.controller.zoom(Math.exp(clamp(dy * k, -0.8, 0.8)));
+    // Toward the cursor, like a map.
+    const rect = this.el.getBoundingClientRect();
+    this.zoomAtScreen(Math.exp(clamp(dy * k, -0.8, 0.8)), e.clientX - rect.left, e.clientY - rect.top);
   };
 
   private readonly onContextMenu = (e: Event): void => {
     if (this.interactive()) e.preventDefault();
   };
 
+  /** Keys on the 2D map: arrows move it, plus and minus zoom, Home shows all of it. */
+  private onKeyDown2d(e: KeyboardEvent): void {
+    const step = 60;
+    const moves: Record<string, [number, number]> = { ArrowLeft: [step, 0], ArrowRight: [-step, 0], ArrowUp: [0, step], ArrowDown: [0, -step] };
+    const move = moves[e.key];
+    if (move) panStarMap2D(this.map2d, move[0], move[1]);
+    else if (e.key === '+' || e.key === '=') this.zoomStep(1 / KEY_ZOOM_STEP);
+    else if (e.key === '-' || e.key === '_') this.zoomStep(KEY_ZOOM_STEP);
+    else if (e.key === 'Home') this.resetView();
+    else return;
+    e.preventDefault();
+  }
+
   private readonly onKeyDown = (e: KeyboardEvent): void => {
-    if (!this.opened || this.encyclopedia || e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+    if (!this.opened || this.encyclopedia || this.dialog || e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
     const t = e.target;
     const canvas = this.renderer?.domElement ?? null;
     const inMap = t === document.body || t === document.documentElement || t === canvas || (t instanceof Node && this.el.contains(t));
@@ -935,7 +1183,16 @@ export class GalaxyMapView {
       this.callbacks.onClose();
       return;
     }
-    if (this.mode !== '3d' || (t instanceof Node && this.card.el.contains(t))) return;
+    if (e.key === '/') {
+      e.preventDefault();
+      this.openSearch();
+      return;
+    }
+    if (t instanceof Node && this.card.el.contains(t)) return;
+    if (this.mode === '2d') {
+      this.onKeyDown2d(e);
+      return;
+    }
     let handled = true;
     switch (e.key) {
       case 'ArrowLeft':

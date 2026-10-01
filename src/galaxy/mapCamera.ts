@@ -15,6 +15,7 @@ import {
   rotateOrbit,
   smoothingFactor,
   zoomOrbit,
+  zoomOrbitAt,
   type OrbitLimits,
   type OrbitState,
   type Vec3,
@@ -76,6 +77,22 @@ export class OrbitController {
   zoom(factor: number): void {
     this.beginDirect();
     zoomOrbit(this.current, factor, this.limits);
+    this.endDirect();
+  }
+
+  /**
+   * Zoom toward a point on screen (CSS px from the projection centre): what is under it stays
+   * there. `animate` eases there (a double tap) instead of moving at once (a pinch or the wheel).
+   */
+  zoomAt(factor: number, dxPx: number, dyPx: number, viewportHeightPx: number, fovDeg: number, animate = false): void {
+    if (animate) {
+      const goal = cloneOrbit(this.current);
+      zoomOrbitAt(goal, factor, dxPx, dyPx, viewportHeightPx, fovDeg, this.limits);
+      this.transitionTo({ target: goal.target, distance: goal.distance }, 0.12);
+      return;
+    }
+    this.beginDirect();
+    zoomOrbitAt(this.current, factor, dxPx, dyPx, viewportHeightPx, fovDeg, this.limits);
     this.endDirect();
   }
 

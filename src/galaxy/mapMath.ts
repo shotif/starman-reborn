@@ -94,10 +94,11 @@ export interface OrbitLimits {
 
 export const ORBIT_LIMITS: OrbitLimits = {
   minDistance: 0.25,
-  maxDistance: 60,
+  maxDistance: 80,
   minPitch: -1.45,
   maxPitch: 1.45,
-  maxTargetRadius: 16,
+  // Past the far shell (about 27 ly), so every system can be brought to the centre.
+  maxTargetRadius: 30,
 };
 
 export function cloneOrbit(s: OrbitState): OrbitState {
@@ -191,6 +192,33 @@ export function panOrbit(
   s.target[0] += (-panRight[0] * dxPx + panUp[0] * dyPx) * k;
   s.target[1] += (-panRight[1] * dxPx + panUp[1] * dyPx) * k;
   s.target[2] += (-panRight[2] * dxPx + panUp[2] * dyPx) * k;
+  clampOrbit(s, limits);
+}
+
+/**
+ * Zoom toward a point on screen (the pinch midpoint or the cursor): the spot under it, at the
+ * target's depth, stays put while the distance scales by `factor` (< 1 zooms in). `dxPx`/`dyPx`
+ * are CSS pixels from the projection centre (x right, y down).
+ */
+export function zoomOrbitAt(
+  s: OrbitState,
+  factor: number,
+  dxPx: number,
+  dyPx: number,
+  viewportHeightPx: number,
+  fovDeg: number,
+  limits: OrbitLimits = ORBIT_LIMITS,
+): void {
+  if (!(factor > 0) || !Number.isFinite(factor)) return;
+  const before = s.distance;
+  zoomOrbit(s, factor, limits);
+  const f = s.distance / before;
+  if (f === 1) return;
+  const k = worldPerPixel(before, fovDeg, viewportHeightPx) * (1 - f);
+  orbitBasis(s.yaw, s.pitch, panRight, panUp);
+  s.target[0] += (panRight[0] * dxPx - panUp[0] * dyPx) * k;
+  s.target[1] += (panRight[1] * dxPx - panUp[1] * dyPx) * k;
+  s.target[2] += (panRight[2] * dxPx - panUp[2] * dyPx) * k;
   clampOrbit(s, limits);
 }
 

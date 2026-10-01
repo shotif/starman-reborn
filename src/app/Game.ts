@@ -1206,6 +1206,12 @@ export class Game {
           ]
         : [],
       contractSystems: new Set(state ? activeJobIds(state).flatMap((id) => describeObjective(state, id)?.targetSystemId ?? []) : []),
+      missions: state
+        ? activeJobIds(state).flatMap((id) => {
+            const o = describeObjective(state, id);
+            return o?.targetSystemId ? [{ jobId: id, systemId: o.targetSystemId, title: o.jobTitle, step: o.text, primary: id === objective?.jobId }] : [];
+          })
+        : [],
       ...(state ? { catalogued: new Set(state.codex) } : {}),
       jumpReach: state ? performanceOf(state.ship).jumpReach : 0,
     };
@@ -1796,6 +1802,8 @@ export class Game {
         this.persist();
         this.station?.render();
       },
+      /** Test-only: the open 3D star map's camera distance and where its stars are on screen. */
+      mapView: () => this.map?.debugView() ?? null,
       /** Test-only: fit a catalogue item to the first slot of its type (empty first); flights launched after it fly with it. */
       fit: (gearId: string) => {
         const item = this.state ? getCatalog().gearById.get(gearId) : undefined;

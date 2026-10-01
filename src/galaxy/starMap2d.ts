@@ -3,11 +3,16 @@
  * celestial pole) with distance rings, fictional jump links, the selected route and each system as
  * a focusable button. Heights above/below the plane are given in the labels. Used when WebGL 2 is
  * unavailable and as the "2D view" of the map. Re-renders itself when the container resizes.
+ *
+ * On the full-screen map it zooms and pans too (`zoomable`): a pinch or the wheel zooms about the
+ * fingers or the cursor, a drag moves the map and a double tap zooms in. While a gesture lasts the
+ * drawing is only transformed; it is drawn again, labels laid out afresh, when the gesture ends.
  */
 import '../ui/styles/map.css';
 import { isNewSystem, SYSTEMS } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { h, svg } from '../ui/dom.ts';
+import { GestureTracker } from './gestures.ts';
 import { buildLegend } from './legend.ts';
 import {
   MAP_LINKS,
@@ -18,15 +23,37 @@ import {
   formatHeightShort,
   formatLy,
   labelsOf,
+  planarUV,
   project2D,
   type MapLabel,
+  type Projection2D,
 } from './mapData.ts';
 import { laneTaker } from './jumpRules.ts';
+import { clamp, type Rect } from './mapMath.ts';
 import { findRoute } from './routing.ts';
 import { createLabelBox, layoutLabels, rectsOverlap, type LabelBox } from './screenLayout.ts';
 import type { MapState } from './types.ts';
 
 type SelectFn = (id: SystemId) => void;
+
+export interface Map2DOptions {
+  /**
+   * Pinch, drag, double tap and the wheel zoom and pan the map. For the full-screen map only: the
+   * page without WebGL scrolls, and a map that took every touch would trap it.
+   */
+  zoomable?: boolean;
+  /** Parts of the map covered by controls (container px): labels keep clear of them. */
+  obstacles?: () => Rect[];
+  /** Height at the top kept clear of stars at the fitted view (for controls along the top edge). */
+  insetTop?: number;
+}
+
+/** The 2D view: zoom (1 is the whole map fitted) and the equatorial-plane point (ly) in the middle. */
+interface View2D {
+  zoom: number;
+  x: number;
+  y: number;
+}
 
 interface Entry {
   state: MapState;
@@ -36,6 +63,13 @@ interface Entry {
   width: number;
   height: number;
   keyOpen: boolean;
+  opts: Map2DOptions;
+  /** Null: fitted. */
+  view: View2D | null;
+  /** The projection last drawn (gestures and zoom work from it), and the group a gesture transforms. */
+  proj: Projection2D | null;
+  content: SVGGElement | null;
+  detach: (() => void) | null;
 }
 
 const entries = new WeakMap<HTMLElement, Entry>();
@@ -43,15 +77,32 @@ const entries = new WeakMap<HTMLElement, Entry>();
 /** Hit radius (CSS px) around each system: targets of at least 44 px. */
 const HIT_RADIUS = 23;
 
+/** Most a 2D map zooms in on the fitted view. */
+export const MAX_ZOOM_2D = 8;
+
 export function renderStarMap2D(
   container: HTMLElement,
   state: MapState,
   onSelect: (id: SystemId) => void,
   selected?: SystemId,
+  opts: Map2DOptions = {},
 ): void {
   let entry = entries.get(container);
   if (!entry) {
-    const created: Entry = { state, onSelect, selected: null, observer: null, width: -1, height: -1, keyOpen: false };
+    const created: Entry = {
+      state,
+      onSelect,
+      selected: null,
+      observer: null,
+      width: -1,
+      height: -1,
+      keyOpen: false,
+      opts,
+      view: null,
+      proj: null,
+      content: null,
+      detach: null,
+    };
     entry = created;
     entries.set(container, created);
     if (typeof ResizeObserver !== 'undefined') {
@@ -64,14 +115,211 @@ export function renderStarMap2D(
   entry.state = state;
   entry.onSelect = onSelect;
   entry.selected = selected ?? null;
+  entry.opts = opts;
+  if (opts.zoomable && !entry.detach) entry.detach = attachGestures(container, entry);
   draw(container, entry);
 }
 
-/** Stops resize tracking and clears the container. */
+/** Stops resize tracking and gestures and clears the container. */
 export function disposeStarMap2D(container: HTMLElement): void {
-  entries.get(container)?.observer?.disconnect();
+  const e = entries.get(container);
+  e?.observer?.disconnect();
+  e?.detach?.();
   entries.delete(container);
   container.replaceChildren();
+}
+
+/** Zooms a zoomable 2D map about its middle (factor > 1 zooms in). */
+export function zoomStarMap2D(container: HTMLElement, factor: number): void {
+  const e = entries.get(container);
+  if (!e?.proj || !(factor > 0)) return;
+  const p = e.proj;
+  setView(e, (e.view?.zoom ?? 1) * factor, planeToEq(p.ou, p.ov, p.rotate));
+  draw(container, e);
+}
+
+/** Pans a zoomable 2D map by CSS px (the map follows: dx right, dy down). */
+export function panStarMap2D(container: HTMLElement, dx: number, dy: number): void {
+  const e = entries.get(container);
+  if (!e?.proj) return;
+  const p = e.proj;
+  setView(e, e.view?.zoom ?? 1, planeToEq(p.ou - dx / p.scale, p.ov + dy / p.scale, p.rotate));
+  draw(container, e);
+}
+
+/** Back to the whole map. */
+export function resetStarMap2D(container: HTMLElement): void {
+  const e = entries.get(container);
+  if (!e || !e.view) return;
+  e.view = null;
+  draw(container, e);
+}
+
+/** Brings a system to the middle of a zoomed-in 2D map (the fitted view already shows it). */
+export function centreStarMap2D(container: HTMLElement, id: SystemId): void {
+  const e = entries.get(container);
+  if (!e?.view) return;
+  const sys = SYSTEMS.find((s) => s.id === id);
+  if (!sys) return;
+  setView(e, e.view.zoom, [sys.positionLy[0], sys.positionLy[1]]);
+  draw(container, e);
+}
+
+/** The view's zoom (1 when fitted), for tests and the zoom buttons. */
+export function starMap2DZoom(container: HTMLElement): number {
+  return entries.get(container)?.view?.zoom ?? 1;
+}
+
+/** Equatorial-plane x, y (ly) of plane coordinates u, v (see planarUV). */
+function planeToEq(u: number, v: number, rotate: boolean): [number, number] {
+  return rotate ? [-v, u] : [u, v];
+}
+
+const PLANE_BOUNDS = (() => {
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  for (const s of MAP_STARS) {
+    minX = Math.min(minX, s.eq[0]);
+    maxX = Math.max(maxX, s.eq[0]);
+    minY = Math.min(minY, s.eq[1]);
+    maxY = Math.max(maxY, s.eq[1]);
+  }
+  return { minX, maxX, minY, maxY };
+})();
+
+/** Sets the view, kept within the zoom range and over the stars. */
+function setView(e: Entry, zoom: number, centre: [number, number]): void {
+  const b = PLANE_BOUNDS;
+  e.view = {
+    zoom: clamp(zoom, 1, MAX_ZOOM_2D),
+    x: clamp(centre[0], b.minX, b.maxX),
+    y: clamp(centre[1], b.minY, b.maxY),
+  };
+}
+
+/**
+ * Pinch, drag, double tap and wheel on a zoomable map. The drawing follows at once through a
+ * transform (x' = s·x + t) and is drawn again when the gesture ends. Returns the detach function.
+ */
+function attachGestures(container: HTMLElement, e: Entry): () => void {
+  let s = 1;
+  let tx = 0;
+  let ty = 0;
+  let moved = false;
+  let suppressClick = false;
+  let commitTimer = 0;
+  const local = (ev: { clientX: number; clientY: number }): [number, number] => {
+    const r = container.getBoundingClientRect();
+    return [ev.clientX - r.left, ev.clientY - r.top];
+  };
+  const apply = () => e.content?.setAttribute('transform', `matrix(${s} 0 0 ${s} ${tx} ${ty})`);
+  const zoomBy = (k: number, px: number, py: number) => {
+    const now = (e.view?.zoom ?? 1) * s;
+    const f = clamp(now * k, 1, MAX_ZOOM_2D) / now;
+    if (!(f > 0) || f === 1) return;
+    s *= f;
+    tx = px + (tx - px) * f;
+    ty = py + (ty - py) * f;
+    moved = true;
+    apply();
+  };
+  const panBy = (dx: number, dy: number) => {
+    tx += dx;
+    ty += dy;
+    moved = true;
+    apply();
+  };
+  const commit = () => {
+    window.clearTimeout(commitTimer);
+    const p = e.proj;
+    if (!p || (s === 1 && tx === 0 && ty === 0)) return;
+    // The drawn point now in the middle of the view becomes the view's centre.
+    const mx = (p.cx - tx) / s;
+    const my = (p.cy - ty) / s;
+    const zoom = (e.view?.zoom ?? 1) * s;
+    s = 1;
+    tx = 0;
+    ty = 0;
+    setView(e, zoom, planeToEq(p.ou + (mx - p.cx) / p.scale, p.ov - (my - p.cy) / p.scale, p.rotate));
+    draw(container, e);
+  };
+  const tracker = new GestureTracker({
+    rotate: panBy,
+    pan: panBy,
+    zoom: (f, x, y) => zoomBy(1 / f, x, y),
+    // A tap is the system's own click (it selects); a double tap zooms in there.
+    tap: () => {},
+    doubleTap: (x, y) => zoomBy(2, x, y),
+  });
+  const onMove = (ev: PointerEvent) => {
+    const [x, y] = local(ev);
+    tracker.move(ev.pointerId, x, y);
+  };
+  const finish = () => {
+    if (tracker.activePointers > 0) return;
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
+    window.removeEventListener('pointercancel', onCancel);
+    if (moved) {
+      // The click that ends a drag (or a double tap) must not select what is under it.
+      suppressClick = true;
+      window.setTimeout(() => (suppressClick = false), 0);
+    }
+    commit();
+  };
+  const onUp = (ev: PointerEvent) => {
+    const [x, y] = local(ev);
+    tracker.up(ev.pointerId, x, y, ev.timeStamp);
+    finish();
+  };
+  const onCancel = (ev: PointerEvent) => {
+    tracker.cancel(ev.pointerId);
+    finish();
+  };
+  const onDown = (ev: PointerEvent) => {
+    if (ev.pointerType === 'mouse' && ev.button !== 0) return;
+    // Clicks on the map's own controls (its key) are not gestures.
+    if (ev.target instanceof Element && ev.target.closest('.gmap-legend')) return;
+    // A first finger while fingers are still tracked: their ends were lost.
+    if (ev.pointerType === 'touch' && ev.isPrimary && tracker.tracks('touch')) tracker.releaseAll();
+    if (tracker.activePointers === 0) moved = false;
+    const [x, y] = local(ev);
+    if (!tracker.down(ev.pointerId, x, y, ev.timeStamp, ev.pointerType || 'mouse')) return;
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onCancel);
+  };
+  const onWheel = (ev: WheelEvent) => {
+    ev.preventDefault();
+    let dy = ev.deltaY;
+    if (ev.deltaMode === 1) dy *= 16;
+    else if (ev.deltaMode === 2) dy *= container.clientHeight;
+    const [x, y] = local(ev);
+    zoomBy(Math.exp(-clamp(dy * (ev.ctrlKey ? 0.01 : 0.0015), -0.8, 0.8)), x, y);
+    window.clearTimeout(commitTimer);
+    commitTimer = window.setTimeout(commit, 160);
+  };
+  const onClick = (ev: MouseEvent) => {
+    if (!suppressClick) return;
+    ev.stopPropagation();
+    ev.preventDefault();
+  };
+  container.classList.add('is-zoomable');
+  container.addEventListener('pointerdown', onDown);
+  container.addEventListener('wheel', onWheel, { passive: false });
+  container.addEventListener('click', onClick, true);
+  return () => {
+    window.clearTimeout(commitTimer);
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
+    window.removeEventListener('pointercancel', onCancel);
+    container.removeEventListener('pointerdown', onDown);
+    container.removeEventListener('wheel', onWheel);
+    container.removeEventListener('click', onClick, true);
+    container.classList.remove('is-zoomable');
+  };
 }
 
 function lightYears(v: number): string {
@@ -138,7 +386,19 @@ function draw(container: HTMLElement, e: Entry): void {
   // the objective): the far shell beyond spills past the edge, as on the 3D map, and is in the list.
   const st = e.state;
   const frames = (id: SystemId) => !isNewSystem(id) || st.visited.has(id) || id === st.currentSystemId || id === st.objectiveSystemId || id === e.selected;
-  const proj = fitProjection2D(W, fitH, rotate, Math.min(56, W * 0.06 + 12), 22, frames);
+  // Controls along the top (the full-screen map's Find and Missions) keep the fitted stars below them.
+  const inset = Math.min(Math.max(0, e.opts.insetTop ?? 0), fitH / 3);
+  const fit = fitProjection2D(W, fitH - inset, rotate, Math.min(56, W * 0.06 + 12), 22, frames);
+  fit.cy += inset;
+  let proj = fit;
+  if (e.view) {
+    const [u, v] = planarUV([e.view.x, e.view.y, 0], rotate, [0, 0]);
+    proj = { ...fit, scale: fit.scale * e.view.zoom, ou: u, ov: v };
+  }
+  e.proj = proj;
+  const content = svg('g', { class: 'map2d-content' });
+  e.content = content;
+  svgEl.append(content);
   // Small maps show a second label line (distance, plane height) only for key systems.
   const compact = proj.scale < 26;
   const pt: [number, number] = [0, 0];
@@ -158,7 +418,7 @@ function draw(container: HTMLElement, e: Entry): void {
       ringLabels.push(t);
     }
   }
-  svgEl.append(rings);
+  content.append(rings);
 
   // Fictional jump links (dashed) and the selected route.
   const anchors = new Map<SystemId, [number, number]>();
@@ -169,13 +429,13 @@ function draw(container: HTMLElement, e: Entry): void {
     const b = anchors.get(l.b)!;
     links.append(svg('line', { class: 'map2d-link', x1: a[0], y1: a[1], x2: b[0], y2: b[1] }));
   }
-  svgEl.append(links);
+  content.append(links);
   const selected = e.selected;
   if (selected && selected !== e.state.currentSystemId) {
     const route = findRoute(SYSTEMS, e.state.currentSystemId, selected, { canTake: laneTaker(e.state.jumpReach ?? 0) });
     if (route && route.path.length > 1) {
       const points = route.path.map((id) => anchors.get(id)!.join(',')).join(' ');
-      svgEl.append(
+      content.append(
         svg('polyline', { class: 'map2d-route-glow', points, 'aria-hidden': 'true' }),
         svg('polyline', { class: 'map2d-route', points, 'aria-hidden': 'true' }),
       );
@@ -252,7 +512,7 @@ function draw(container: HTMLElement, e: Entry): void {
         activate();
       }
     });
-    svgEl.append(g);
+    content.append(g);
   }
 
   // Measure labels, then place them without overlaps (hidden when they cannot fit).
@@ -268,7 +528,7 @@ function draw(container: HTMLElement, e: Entry): void {
   layoutLabels(
     labelEls.map((l) => l.box),
     { x: 4, y: 4, w: W - 8, h: fitH - 6 },
-    [],
+    e.opts.obstacles?.() ?? [],
     [],
     [],
   );

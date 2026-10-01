@@ -52,7 +52,7 @@ async function audit(page: Page, touch: boolean): Promise<AuditResult> {
       return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none' && Number(cs.opacity) > 0.05;
     };
     const label = (el: Element) => (el.getAttribute('data-testid') ?? el.getAttribute('aria-label') ?? el.textContent ?? el.tagName).trim().slice(0, 40);
-    const topLayer = document.querySelector('.modal-backdrop, .sheet-backdrop');
+    const topLayer = document.querySelector('.modal-backdrop, .sheet-backdrop, .gmap-dialog-backdrop');
     const scope = topLayer ?? document;
     // A control inside a scrolled container only needs its container on screen: it can be
     // scrolled into view.
@@ -187,6 +187,15 @@ for (const size of SIZES) {
       await press(page, 'hud-map');
       await page.waitForTimeout(800);
       await shot(page, `${size.name}-5-map`, size.touch, results);
+      // Finding systems: the missions list and the search.
+      await press(page, 'map-missions');
+      await shot(page, `${size.name}-5b-map-missions`, size.touch, results);
+      await press(page, 'map-missions-dialog-close');
+      await press(page, 'map-search');
+      await page.getByTestId('map-search-input').fill('ross');
+      await shot(page, `${size.name}-5c-map-search`, size.touch, results);
+      await page.getByTestId('map-search-input').press('Escape');
+      await expect(page.getByTestId('map-search-dialog')).toBeHidden();
       for (const [name, r] of Object.entries(results)) {
         expect.soft(r.overflow, `${name}: page overflow`).toBe(false);
         expect.soft(r.clipped, `${name}: clipped controls`).toEqual([]);

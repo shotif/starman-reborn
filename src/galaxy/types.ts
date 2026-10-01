@@ -28,10 +28,24 @@ export interface MapState {
   news?: readonly MapNewsItem[];
   /** Systems where active contracts send the player (besides the objective). */
   contractSystems?: ReadonlySet<SystemId>;
+  /** Every active mission and the system it sends the player to now (the map's missions list). */
+  missions?: readonly MapMission[];
   /** The player's codex: bodies scanned (for the science notes). */
   catalogued?: ReadonlySet<string>;
   /** Reach of the ship's long-range jump drive, light-years (0: none): frontier lanes need it. */
   jumpReach?: number;
+}
+
+export interface MapMission {
+  jobId: string;
+  /** Where the mission sends the player next. */
+  systemId: SystemId;
+  /** The job's title. */
+  title: string;
+  /** What to do next, as the flight view says it. */
+  step: string;
+  /** The objective the flight view tracks. */
+  primary: boolean;
 }
 
 export interface MapNewsItem {

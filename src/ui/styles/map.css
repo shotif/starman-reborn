@@ -421,6 +421,319 @@
   background: var(--panel);
 }
 
+/* ---------- Finding systems: Find and Missions (stage top-left), gesture hint ---------- */
+
+.gmap-tools {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  gap: 0.35rem;
+  pointer-events: auto;
+}
+
+.gmap-tool {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.3rem 0.85rem;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+}
+
+.gmap-tool .icon {
+  flex: none;
+}
+
+.gmap-tool-count {
+  min-width: 1.4rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: var(--warm);
+  color: #1d1300;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.4rem;
+  text-align: center;
+}
+
+.gmap-tool-count[hidden] {
+  display: none;
+}
+
+.gmap-hint {
+  position: absolute;
+  left: 0;
+  top: calc(44px + 0.45rem);
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  max-width: min(24rem, calc(100% - 3.6rem));
+  margin: 0;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--panel-border-strong);
+  border-radius: var(--radius-sm);
+  background: rgba(4, 8, 18, 0.82);
+  color: var(--text);
+  font-size: 0.8rem;
+  line-height: 1.3;
+  pointer-events: none;
+}
+
+.gmap-hint[hidden] {
+  display: none;
+}
+
+.gmap-hint .icon {
+  flex: none;
+  color: var(--accent);
+}
+
+.gmap:not(.reduced-motion) .gmap-hint {
+  animation: gmap-hint-in 0.35s ease-out;
+}
+
+@keyframes gmap-hint-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* ---------- Find a system and Missions dialogs ---------- */
+
+.gmap-dialog-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: calc(var(--safe-top) + 0.75rem) calc(var(--safe-right) + 0.75rem) calc(var(--safe-bottom) + 0.75rem)
+    calc(var(--safe-left) + 0.75rem);
+  background: rgba(2, 4, 10, 0.62);
+  pointer-events: auto;
+}
+
+.gmap-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(32rem, 100%);
+  max-height: 100%;
+  min-height: 0;
+}
+
+.gmap-dialog-head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0.35rem 0.35rem 1rem;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.gmap-dialog-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.gmap-dialog-close {
+  flex: none;
+  width: 48px;
+  padding: 0;
+}
+
+.gmap-dialog-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.55rem;
+  min-height: 0;
+  padding: 0.75rem 1rem 1rem;
+}
+
+.gmap-dialog-note,
+.gmap-dialog-empty {
+  flex: none;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.gmap-dialog-empty {
+  padding: 0.5rem 0;
+  font-size: 0.95rem;
+}
+
+.gmap-search-field {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 48px;
+  padding: 0 0.75rem;
+  border: 1px solid var(--panel-border-strong);
+  border-radius: var(--radius-sm);
+  background: rgba(4, 8, 18, 0.72);
+  cursor: text;
+}
+
+.gmap-search-field:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.gmap-search-field .icon {
+  flex: none;
+  color: var(--accent);
+}
+
+.gmap-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  /* 16 px or more, or iOS zooms the page when the field takes focus. */
+  font-size: max(16px, 1rem);
+  outline: none;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.gmap-search-input::placeholder {
+  color: var(--text-dim);
+}
+
+.gmap-results {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gmap-results > li {
+  flex: none;
+}
+
+.gmap-result {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  min-height: 48px;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: rgba(20, 30, 52, 0.6);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.gmap-result:hover,
+.gmap-result[aria-selected='true'] {
+  background: rgba(92, 200, 255, 0.16);
+  border-color: rgba(92, 200, 255, 0.55);
+}
+
+.gmap-result:focus-visible {
+  outline: 3px solid var(--accent-strong);
+  outline-offset: -3px;
+}
+
+.gmap-result-text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.gmap-result-name {
+  font-size: 0.98rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.gmap-result-sub {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.gmap-result-match {
+  color: var(--text);
+}
+
+.gmap-result mark {
+  background: none;
+  color: var(--accent-strong);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.gmap-result-marks {
+  display: flex;
+  flex: none;
+  gap: 0.2rem;
+}
+
+.gmap-result-marks:empty {
+  display: none;
+}
+
+.gmap-mission-row {
+  align-items: flex-start;
+}
+
+.gmap-mission-row .gmap-sys-dot {
+  margin-top: 0.3rem;
+}
+
+.gmap-mission-row.is-primary {
+  border-color: rgba(255, 180, 92, 0.45);
+}
+
+.gmap-mission {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+}
+
+.gmap-mission-title {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--warm);
+  font-weight: 600;
+}
+
+.gmap-mission-title .icon {
+  flex: none;
+  width: 0.95em;
+  height: 0.95em;
+}
+
+.gmap-mission-step {
+  display: block;
+  color: var(--text-muted);
+}
+
 .gmap-legend {
   position: absolute;
   left: 0;
@@ -1012,6 +1325,19 @@
   overflow: hidden;
 }
 
+/* The full-screen 2D map zooms and pans (pinch, drag, wheel): no browser gestures over it. */
+.map2d-host.is-zoomable {
+  touch-action: none;
+}
+
+.map2d-host.is-zoomable .map2d-svg {
+  cursor: grab;
+}
+
+.map2d-host.is-zoomable .gmap-legend {
+  touch-action: pan-y;
+}
+
 .map2d {
   position: relative;
   width: 100%;
@@ -1190,6 +1516,27 @@
 @container gmap-stage (max-height: 190px) {
   .gmap-zoom {
     display: none;
+  }
+}
+
+/* Find and Missions: icon-only when the stage is narrow, or when the zoom buttons share their row. */
+@container gmap-stage (max-width: 17rem) {
+  .gmap-tool-text {
+    display: none;
+  }
+
+  .gmap-tool {
+    padding: 0 0.55rem;
+  }
+}
+
+@container gmap-stage (max-height: 330px) and (max-width: 26rem) {
+  .gmap-tool-text {
+    display: none;
+  }
+
+  .gmap-tool {
+    padding: 0 0.55rem;
   }
 }
 

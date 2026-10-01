@@ -7,8 +7,8 @@
 export interface GestureSink {
   rotate(dx: number, dy: number): void;
   pan(dx: number, dy: number): void;
-  /** Distance multiplier: < 1 zooms in. */
-  zoom(factor: number): void;
+  /** Distance multiplier (< 1 zooms in) about the point (x, y) between the fingers. */
+  zoom(factor: number, x: number, y: number): void;
   tap(x: number, y: number, pointerType: string): void;
   doubleTap(x: number, y: number, pointerType: string): void;
 }
@@ -94,9 +94,10 @@ export class GestureTracker {
     const dist = Math.hypot(a.x - b.x, a.y - b.y);
     const mx = (a.x + b.x) / 2;
     const my = (a.y + b.y) / 2;
+    // Zoom about where the fingers were, then follow them: what is under them stays there.
     if (this.pinchDistance > 0 && dist > 0) {
       const factor = this.pinchDistance / dist;
-      if (factor !== 1) this.sink.zoom(factor);
+      if (factor !== 1) this.sink.zoom(factor, this.midX, this.midY);
     }
     const pdx = mx - this.midX;
     const pdy = my - this.midY;
@@ -143,10 +144,24 @@ export class GestureTracker {
   }
 
   reset(): void {
+    this.releaseAll();
+    this.lastTapT = -Infinity;
+  }
+
+  /**
+   * Forgets every pointer but keeps the last tap (for a double tap). For a new first touch while
+   * touches are still tracked: their ends never arrived, and stale fingers would turn every later
+   * drag into a pinch.
+   */
+  releaseAll(): void {
     this.pointers.length = 0;
     this.dragged = false;
     this.pinchDistance = 0;
-    this.lastTapT = -Infinity;
+  }
+
+  /** Whether any tracked pointer is of this type. */
+  tracks(type: string): boolean {
+    return this.pointers.some((p) => p.type === type);
   }
 
   private find(id: number): number {

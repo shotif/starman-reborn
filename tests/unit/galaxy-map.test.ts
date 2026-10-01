@@ -27,6 +27,7 @@ import {
   mapToEquatorial,
   orbitBasis,
   orbitCameraPosition,
+  orbitDirection,
   panOrbit,
   projectPoint,
   rotateOrbit,
@@ -35,6 +36,7 @@ import {
   spriteScaleForPixels,
   stageShift,
   zoomOrbit,
+  zoomOrbitAt,
   type OrbitState,
   type Vec3,
 } from '../../src/galaxy/mapMath.ts';
@@ -133,6 +135,71 @@ describe('orbit math', () => {
     expect(cur).toEqual(goal);
   });
 
+  /** Where a world point lands on screen (px from the projection centre, y down) for an orbit camera. */
+  const screenOf = (s: OrbitState, p: Vec3, fov: number, h: number): { x: number; y: number } => {
+    const c = orbitCameraPosition(s, [0, 0, 0]);
+    const dir = orbitDirection(s.yaw, s.pitch, [0, 0, 0]);
+    const r: Vec3 = [0, 0, 0];
+    const u: Vec3 = [0, 0, 0];
+    orbitBasis(s.yaw, s.pitch, r, u);
+    const d: Vec3 = [p[0] - c[0], p[1] - c[1], p[2] - c[2]];
+    const depth = -(d[0] * dir[0] + d[1] * dir[1] + d[2] * dir[2]);
+    const f = h / 2 / Math.tan((fov * Math.PI) / 360);
+    return { x: ((d[0] * r[0] + d[1] * r[1] + d[2] * r[2]) / depth) * f, y: (-(d[0] * u[0] + d[1] * u[1] + d[2] * u[2]) / depth) * f };
+  };
+  /** The world point at `depth` along the ray through screen point (x, y). */
+  const pointAt = (s: OrbitState, x: number, y: number, depth: number, fov: number, h: number): Vec3 => {
+    const c = orbitCameraPosition(s, [0, 0, 0]);
+    const dir = orbitDirection(s.yaw, s.pitch, [0, 0, 0]);
+    const r: Vec3 = [0, 0, 0];
+    const u: Vec3 = [0, 0, 0];
+    orbitBasis(s.yaw, s.pitch, r, u);
+    const k = depth / (h / 2 / Math.tan((fov * Math.PI) / 360));
+    return [0, 1, 2].map((i) => c[i]! - dir[i]! * depth + r[i]! * x * k - u[i]! * y * k) as Vec3;
+  };
+
+  it('zooms toward a point on screen: whatever is under it stays there, near or far', () => {
+    const s: OrbitState = { target: [3, -1, 2], yaw: 0.8, pitch: 0.45, distance: 12 };
+    const h = 800;
+    // Points under (180, -95) px at the target's depth, nearer and farther.
+    const points = [12, 7, 20].map((depth) => pointAt(s, 180, -95, depth, 50, h));
+    for (const p of points) {
+      const before = screenOf(s, p, 50, h);
+      expect(before.x).toBeCloseTo(180, 6);
+      expect(before.y).toBeCloseTo(-95, 6);
+    }
+    const z = { ...s, target: [...s.target] as Vec3 };
+    zoomOrbitAt(z, 0.5, 180, -95, h, 50);
+    expect(z.distance).toBeCloseTo(6, 12);
+    for (const p of points) {
+      const after = screenOf(z, p, 50, h);
+      expect(after.x).toBeCloseTo(180, 6);
+      expect(after.y).toBeCloseTo(-95, 6);
+    }
+    // Zooming back out about the same point returns to where it started.
+    zoomOrbitAt(z, 2, 180, -95, h, 50);
+    for (let i = 0; i < 3; i++) expect(z.target[i]).toBeCloseTo(s.target[i]!, 9);
+  });
+
+  it('zooms about the middle like a plain zoom, and leaves the view alone at the limits', () => {
+    const a: OrbitState = { target: [1, 2, 3], yaw: 0.3, pitch: 0.2, distance: 9 };
+    const b: OrbitState = { target: [1, 2, 3], yaw: 0.3, pitch: 0.2, distance: 9 };
+    zoomOrbitAt(a, 0.7, 0, 0, 600, 50);
+    zoomOrbit(b, 0.7);
+    expect(a).toEqual(b);
+    const far: OrbitState = { target: [1, 2, 3], yaw: 0.3, pitch: 0.2, distance: ORBIT_LIMITS.maxDistance };
+    zoomOrbitAt(far, 1.5, 200, 100, 600, 50);
+    expect(far.target).toEqual([1, 2, 3]);
+    expect(far.distance).toBe(ORBIT_LIMITS.maxDistance);
+    zoomOrbitAt(far, Number.NaN, 200, 100, 600, 50);
+    expect(far.target).toEqual([1, 2, 3]);
+  });
+
+  it('can centre any system, the far shell included', () => {
+    const farthest = Math.max(...SYSTEMS.map((sys) => Math.hypot(...sys.positionLy)));
+    expect(ORBIT_LIMITS.maxTargetRadius).toBeGreaterThan(farthest);
+  });
+
   it('uses frame-rate independent smoothing', () => {
     expect(smoothingFactor(0.1, 0.1)).toBeCloseTo(0.5, 12);
     expect(smoothingFactor(0.2, 0.1)).toBeCloseTo(0.75, 12);
@@ -157,6 +224,20 @@ describe('orbit controller', () => {
     r.transitionTo({ distance: 2 });
     expect(r.isAnimating).toBe(false);
     expect(r.current.distance).toBe(2);
+  });
+
+  it('zooms toward a point at once (a pinch) or eases there (a double tap)', () => {
+    const now = new OrbitController(start);
+    now.zoomAt(0.5, 120, 40, 700, 50);
+    expect(now.isAnimating).toBe(false);
+    expect(now.current.distance).toBeCloseTo(5, 12);
+    const eased = new OrbitController(start);
+    eased.zoomAt(0.5, 120, 40, 700, 50, true);
+    expect(eased.isAnimating).toBe(true);
+    expect(eased.current.distance).toBe(10);
+    for (let i = 0; i < 600 && eased.update(1 / 60); i++);
+    expect(eased.current.distance).toBeCloseTo(5, 9);
+    for (let i = 0; i < 3; i++) expect(eased.current.target[i]).toBeCloseTo(now.current.target[i]!, 9);
   });
 
   it('lets direct manipulation cancel a transition from the on-screen view', () => {
@@ -300,7 +381,7 @@ describe('gestures', () => {
     const sink: GestureSink = {
       rotate: (dx, dy) => log.push(`rotate ${dx},${dy}`),
       pan: (dx, dy) => log.push(`pan ${dx},${dy}`),
-      zoom: (f) => log.push(`zoom ${f.toFixed(2)}`),
+      zoom: (f, x, y) => log.push(`zoom ${f.toFixed(2)} at ${x},${y}`),
       tap: (x, y, t) => log.push(`tap ${x},${y},${t}`),
       doubleTap: (x, y) => log.push(`double ${x},${y}`),
     };
@@ -340,10 +421,29 @@ describe('gestures', () => {
     const { log, g } = recorder();
     g.down(1, 100, 100, 0, 'touch');
     g.down(2, 200, 100, 10, 'touch');
-    g.move(2, 300, 100); // distance 100 -> 200: zoom in by half, midpoint moves 50 px right
+    g.move(2, 300, 100); // distance 100 -> 200: zoom in by half about where the fingers were, then follow them 50 px right
     g.up(1, 100, 100, 100);
     g.up(2, 300, 100, 110);
-    expect(log).toEqual(['zoom 0.50', 'pan 50,0']);
+    expect(log).toEqual(['zoom 0.50 at 150,100', 'pan 50,0']);
+  });
+
+  it('drops lost fingers without forgetting the last tap', () => {
+    const { log, g } = recorder();
+    g.down(1, 10, 10, 0, 'touch');
+    g.up(1, 10, 10, 50);
+    // A finger whose lift never arrives…
+    g.down(2, 300, 300, 100, 'touch');
+    expect(g.tracks('touch')).toBe(true);
+    expect(g.tracks('mouse')).toBe(false);
+    g.releaseAll();
+    expect(g.activePointers).toBe(0);
+    // …does not stop the next tap from making a double tap, or a drag from turning the view.
+    g.down(3, 12, 11, 200, 'touch');
+    g.up(3, 12, 11, 250);
+    g.down(4, 100, 100, 1000, 'touch');
+    g.move(4, 140, 100);
+    g.up(4, 140, 100, 1100);
+    expect(log).toEqual(['tap 10,10,touch', 'double 12,11', 'rotate 40,0']);
   });
 
   it('never taps after a cancel, ignores a third finger and honours pan mode', () => {
