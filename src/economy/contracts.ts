@@ -211,6 +211,9 @@ function makeContract(kind: ContractKind, giver: FictionalLocation, r: Rng, id: 
       return claim(giver, r, id);
     case 'war':
       return war(giver, r, id, clock);
+    case 'rescue':
+      // Only ever posted as work answering a drive failure (eventContract).
+      return null;
   }
 }
 
@@ -225,8 +228,21 @@ function eventContract(giver: FictionalLocation, r: Rng, id: string, clock: numb
     const c = wanted.length ? supply(giver, r, id, clock, { commodity: r.pick(wanted), event: own }) : null;
     if (c) return c;
   }
-  if (own?.kind === 'glut') {
+  if (own?.kind === 'glut' || own?.kind === 'harvest') {
     const c = freight(giver, r, id, clock, { commodity: own.goods[0]!, event: own });
+    if (c) return c;
+  }
+  // A frontier research post's survey season wants its planet surveyed.
+  if (own?.kind === 'survey') {
+    const c = survey(giver, r, id, { event: own });
+    if (c) return c;
+  }
+  // A frontier hauler stranded within reach wants parts flown out.
+  const stranded = SYSTEMS.map((s) => systemEventAt(s.id, clock)).filter(
+    (e): e is WorldEvent => e?.kind === 'stranded' && jumpsBetween(giver.systemId, e.systemId) <= CONTRACTS.maxJumps.rescue,
+  );
+  if (stranded.length) {
+    const c = rescue(giver, r, id, r.pick(stranded));
     if (c) return c;
   }
   const raids = SYSTEMS.map((s) => systemEventAt(s.id, clock)).filter(
@@ -337,7 +353,7 @@ function freight(giver: FictionalLocation, r: Rng, id: string, clock: number, op
   const why = opts.event ? `${opts.event.headline}. ` : '';
   const job: JobDef = {
     ...common(giver, id, difficulty),
-    title: opts.event ? `Surplus haul: ${qty} ${name} to ${dest.name}` : `Haul ${qty} ${name} to ${dest.name}`,
+    title: opts.event ? `${opts.event.kind === 'harvest' ? 'Harvest' : 'Surplus'} haul: ${qty} ${name} to ${dest.name}` : `Haul ${qty} ${name} to ${dest.name}`,
     briefing: `${why}${giver.name} has ${qty} ${name} (${qty * good.unitSize} hold units) bound for ${place(dest)}. We load it on acceptance against a deposit of ${deposit} cr, returned with your pay on delivery.`,
     objectives: [{ kind: 'deliver', commodity, qty, locationId: dest.id, text: `Deliver ${qty} ${name} to ${place(dest)}` }],
     reward,
@@ -419,28 +435,31 @@ function bounty(giver: FictionalLocation, r: Rng, id: string, opts: { event?: Wo
   };
 }
 
-function survey(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
-  const planets = SYSTEMS.filter((s) => jumpsBetween(giver.systemId, s.id) <= CONTRACTS.maxJumps.survey).flatMap((s) => s.confirmedBodies.map((p) => ({ p, s })));
+function survey(giver: FictionalLocation, r: Rng, id: string, opts: { event?: WorldEvent } = {}): JobDef | null {
+  const studied = opts.event?.bodyId;
+  const planets = SYSTEMS.filter((s) => jumpsBetween(giver.systemId, s.id) <= CONTRACTS.maxJumps.survey)
+    .flatMap((s) => s.confirmedBodies.map((p) => ({ p, s })))
+    .filter(({ p }) => !studied || p.id === studied);
   if (!planets.length) return null;
   const { p, s } = r.pick(planets);
   const rw = CONTRACTS.reward.survey;
-  const reward = pay(r, routeFeeBetween(giver.systemId, s.id), (rw.base + rw.danger * (1 - security(s.id))) * (isFrontier(s.id) ? rw.frontier : 1));
+  const reward = pay(r, routeFeeBetween(giver.systemId, s.id), (rw.base + rw.danger * (1 - security(s.id))) * (isFrontier(s.id) ? rw.frontier : 1) * premium(opts.event));
   const difficulty = difficultyFor(giver.systemId, s.id);
   const what =
     p.status === 'confirmed'
       ? `a confirmed planet in ${s.displayName}`
       : p.status === 'candidate'
-        ? `a candidate planet in ${s.displayName} that no one has confirmed; the readings could settle it`
-        : `a planet in ${s.displayName} the archives disagree about; the readings could settle it`;
+        ? `a candidate planet in ${s.displayName} that no archive has confirmed; the readings go in the station’s log, and only the archives can settle it`
+        : `a planet in ${s.displayName} the archives disagree about; the readings go in the station’s log, and only the archives can settle it`;
   return {
     ...common(giver, id, difficulty),
-    title: `Survey ${p.displayName}`,
-    briefing: `${giver.name} wants fresh instrument readings of ${p.displayName}, ${what}. Fly close enough for your scanner to log it.`,
+    title: opts.event ? `Survey season: ${p.displayName}` : `Survey ${p.displayName}`,
+    briefing: `${opts.event ? `${opts.event.headline}. ` : ''}${giver.name} wants fresh instrument readings of ${p.displayName}, ${what}. Fly close enough for your scanner to log it.`,
     objectives: [{ kind: 'scan', bodyId: p.id, systemId: s.id, text: `Scan ${p.displayName} (${s.displayName})` }],
     reward,
     difficultyNote: routeNote(giver.systemId, s.id),
     destinationLocationId: giver.id,
-    contract: { kind: 'survey' },
+    contract: { kind: 'survey', ...(opts.event ? { event: opts.event.id } : {}) },
   };
 }
 
@@ -494,6 +513,37 @@ function escort(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
     difficultyNote: jumps === 0 ? `Threat ${level} of 3; expect an ambush on the way` : `Threat ${level} of 3; ${routeNote(giver.systemId, dest.systemId).toLowerCase()}; raiders wait at the beacon`,
     destinationLocationId: dest.id,
     contract: { kind: 'escort' },
+  };
+}
+
+/**
+ * Rescues (docs/PROCGEN.md §11): ship components for a frontier hauler stranded by a drive failure
+ * within reach, loaded on acceptance against a deposit and handed over alongside it, where
+ * scavengers of the system's threat may be watching it.
+ */
+function rescue(giver: FictionalLocation, r: Rng, id: string, event: WorldEvent): JobDef | null {
+  if (!event.ship) return null;
+  const rc = CONTRACTS.rescue;
+  const good = COMMODITIES[rc.commodity];
+  const qty = r.int(rc.qty[0], rc.qty[1]);
+  if (qty * good.unitSize > CONTRACTS.cargoUnits[1]) return null;
+  const system = getSystem(event.systemId);
+  const guard = baseThreat(event.systemId);
+  const deposit = round5(qty * good.basePrice * 1.1);
+  const rw = CONTRACTS.reward.rescue;
+  const reward = pay(r, routeFeeBetween(giver.systemId, event.systemId), (rw.base + rw.danger * (1 - security(event.systemId)) + rw.perGuard * (guard ?? 0)) * premium(event));
+  const difficulty = clampDifficulty(difficultyFor(giver.systemId, event.systemId) + (guard && guard >= 2 ? 1 : 0));
+  const model = r.pick(FLEETS.independent.traders);
+  const name = good.name.toLowerCase();
+  return {
+    ...common(giver, id, difficulty),
+    title: `Rescue: the ${event.ship}`,
+    briefing: `${event.headline}. ${giver.name} has ${qty} ${name} for the ${event.ship}, a colony hauler adrift in ${system.displayName} far from any dock. We load them on acceptance against a deposit of ${deposit} cr, returned with your pay. Fly out, come alongside and hand them over.${guard ? ' Scavengers have been seen nearby.' : ''}`,
+    objectives: [{ kind: 'rescue', systemId: event.systemId, shipName: event.ship, model, commodity: rc.commodity, qty, guard, text: `Bring ${qty} ${name} to the ${event.ship} (${system.displayName})` }],
+    reward,
+    difficultyNote: `${routeNote(giver.systemId, event.systemId)}${guard ? `; scavengers, threat ${guard} of 3` : ''}`,
+    destinationLocationId: giver.id,
+    contract: { kind: 'rescue', cargo: { commodity: rc.commodity, qty }, deposit, event: event.id },
   };
 }
 

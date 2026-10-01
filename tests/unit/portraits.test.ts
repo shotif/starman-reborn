@@ -132,7 +132,7 @@ describe('portraits', () => {
     }
   });
 
-  it('cover the six story characters, each with a face of their own', () => {
+  it('cover the story characters, each with a face of their own', () => {
     const ids = Object.keys(CHARACTERS) as CharacterId[];
     expect(Object.keys(STORY_PORTRAITS).sort()).toEqual([...ids].sort());
     expect(new Set(ids.map((id) => STORY_PORTRAITS[id].seed)).size).toBe(ids.length);
@@ -153,6 +153,8 @@ describe('portraits', () => {
     expect([t('brandt').headwear, t('brandt').beard]).toEqual(['beanie', null]);
     expect([t('ansari').glasses, t('ansari').garment]).toEqual(['square', 'lab']);
     expect([t('salt').implant, t('salt').scar, t('salt').age]).toEqual(['eye', 'cheek', 'old']);
+    expect([t('halloway').headwear, t('halloway').style, t('halloway').garment]).toEqual(['headset', 'bob', 'jacket']);
+    expect([t('fenwick').style, t('fenwick').garment, t('fenwick').beard]).toEqual(['afro', 'shirt', null]);
   });
 
   it('describe themselves to screen readers', () => {

@@ -57,6 +57,7 @@ const CATEGORY: Record<ContractKind, BoardFilter> = {
   survey: 'other',
   recovery: 'other',
   claim: 'other',
+  rescue: 'other',
 };
 
 /** Jumps from a dock to where a job ends (0 in the same system). */
@@ -165,6 +166,7 @@ const KIND_GLYPH: Record<ContractKind, GlyphName> = {
   den: 'missile',
   claim: 'mining-laser',
   war: 'gun',
+  rescue: 'shipparts',
 };
 const KIND_LABEL: Record<ContractKind, string> = {
   freight: 'Freight',
@@ -180,6 +182,7 @@ const KIND_LABEL: Record<ContractKind, string> = {
   den: 'Den assault',
   claim: 'Mining claim',
   war: 'Border war',
+  rescue: 'Rescue',
 };
 
 /** Where a job sends you, for the card's subtitle. */

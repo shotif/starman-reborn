@@ -53,7 +53,7 @@ interface Npc {
   target: { name: string; hostile?: boolean };
 }
 
-function flightIn(systemId: SystemId, traffic: Omit<TrafficSetup, 'plan' | 'owner'>, spawn: SpawnSpec = { kind: 'arrival' }) {
+function flightIn(systemId: SystemId, traffic: Omit<TrafficSetup, 'plan' | 'owner'>, spawn: SpawnSpec = { kind: 'arrival' }, handOver: (jobId: string) => number = () => 0) {
   const scene = new SystemScene(sceneDefFor(systemId), { quality: 'low', reducedMotion: true });
   const state = createNewGame(7);
   state.location = { systemId, dockedAt: null, flight: null, lastDockId: state.location.lastDockId };
@@ -78,6 +78,11 @@ function flightIn(systemId: SystemId, traffic: Omit<TrafficSetup, 'plan' | 'owne
     onEscortArrived: record('escortArrived'),
     onEscortLost: record('escortLost'),
     onRecovered: record('recovered'),
+    onHandOver: (jobId) => {
+      record('handOver')(jobId);
+      return handOver(jobId);
+    },
+    onRescueLost: record('rescueLost'),
   };
   const audio = { play() {}, setCombatIntensity() {}, setEngine() {} } as unknown as AudioEngine;
   const flight = new FlightSession({
@@ -222,5 +227,47 @@ describe('contracts in flight', () => {
     expect(log.some((m) => m.includes('The convoy from Regent Concourse (3 ships) is with you'))).toBe(true);
     expect(log.some((m) => m.includes('closing on the convoy from Regent Concourse'))).toBe(true);
     expect(npcs().filter((n) => n.side === 'raider').some((n) => ships.includes(n.prey as Npc))).toBe(true);
+  });
+  it('a ship stranded far from any dock drifts there until the parts are handed over alongside, then makes for a dock', () => {
+    const rescue = { jobId: 'c.rescue.0.0', name: 'Barley Moon', model: 'ship.freighter.1.halden', commodity: 'ship-parts' as const, qty: 4, guard: 1 as const };
+    let missing = 2;
+    const { flight, calls, log, run, npcs, scene } = flightIn('hd-219134', { rescues: [rescue] }, { kind: 'arrival' }, () => missing);
+    run(2.5);
+    const ship = npcs().find((n) => n.name === 'Barley Moon')!;
+    expect(ship.target).toMatchObject({ name: 'Barley Moon (stranded)', hostile: false });
+    expect(flight.allTargets().some((t) => t.id === 'stranded:c.rescue.0.0')).toBe(true);
+    // Far from any dock, and always in the same place for the same job.
+    for (const d of scene.docks) expect(d.dockPoint.distanceTo(ship.body.position)).toBeGreaterThan(CONTRACTS.rescue.clearOfDocksM);
+    expect(flight.strandedPosition(rescue.jobId).distanceTo(ship.body.position)).toBeLessThan(1);
+    // Scavengers watch it.
+    expect(npcs().filter((n) => n.side === 'raider')).toHaveLength(1);
+    // The objective steers to it.
+    flight.setObjective(null, null, 'stranded:c.rescue.0.0');
+    expect(flight.selectedTarget?.id).toBe('stranded:c.rescue.0.0');
+    // Alongside without the parts: it says so once, and waits.
+    const at = ship.body.position.clone();
+    flight.player.position.copy(at).add(new THREE.Vector3(0, 0, 250));
+    flight.player.velocity.set(0, 0, 0);
+    run(1);
+    expect(calls.handOver?.length).toBeGreaterThan(0);
+    expect(log.filter((m) => m.includes('needs 2 more'))).toHaveLength(1);
+    expect(ship.body.position.distanceTo(at)).toBeLessThan(50);
+    // With them: handed over, and a few seconds later its drive is back and it heads for a dock.
+    missing = 0;
+    run(1);
+    expect(log.some((m) => m.includes('The Barley Moon’s crew have the parts'))).toBe(true);
+    expect(ship.trader).toBeUndefined();
+    run(7);
+    expect(ship.trader).toBeDefined();
+    expect(calls.rescueLost).toBeUndefined();
+  });
+
+  it('a stranded ship destroyed before the parts arrive ends the rescue', () => {
+    const rescue = { jobId: 'c.rescue.0.1', name: 'Haymaker', model: 'ship.freighter.1.halden', commodity: 'ship-parts' as const, qty: 3, guard: null };
+    const { calls, run, npcs, hit } = flightIn('hd-219134', { rescues: [rescue] });
+    run(2.5);
+    expect(npcs().some((n) => n.side === 'raider')).toBe(false);
+    hit(npcs().find((n) => n.name === 'Haymaker')!, 1e6);
+    expect(calls.rescueLost).toEqual([['c.rescue.0.1']]);
   });
 });

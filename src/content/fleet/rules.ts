@@ -77,7 +77,7 @@ export const FLEET = {
      * What an event at the station, or a raid or sweep in its system, does to that hour's dividend
      * (looked up at the middle of the hour; both multiply when both happen).
      */
-    events: { boom: 1.5, glut: 0.9, shortage: 0.7, strike: 0.4, raid: 0.6, sweep: 1 } satisfies Record<EventKind, number> as Record<EventKind, number>,
+    events: { boom: 1.5, glut: 0.9, shortage: 0.7, strike: 0.4, raid: 0.6, sweep: 1, harvest: 1.2, survey: 1.3, stranded: 1 } satisfies Record<EventKind, number> as Record<EventKind, number>,
     /** Hours paid one by one at a settle; any older hours are paid at the plain rate. */
     maxHoursPerSettle: 720,
     /** Selling a stake back pays this share of its current price. */

@@ -35,9 +35,12 @@ import {
   escortArrived,
   escortLost,
   escortsIn,
+  failJob,
   getJob,
+  handOver,
   LIFELINE_ID,
   primaryObjective,
+  rescuesIn,
   wrecksIn,
   type JobEvent,
 } from '../economy/jobs.ts';
@@ -906,6 +909,20 @@ export class Game {
           this.announceJobEvents(advanceJobs(state, { dockedAt: state.location.dockedAt, systemId: state.location.systemId }));
           this.persist();
         },
+        onHandOver: (jobId) => {
+          const r = handOver(state, jobId);
+          if (r.missing === 0) {
+            this.announceJobEvents(r.events);
+            this.persist();
+          }
+          return r.missing;
+        },
+        onRescueLost: (jobId) => {
+          const o = currentObjective(state, jobId);
+          const ev = failJob(state, jobId, o?.kind === 'rescue' ? `the ${o.shipName} was destroyed` : 'the stranded ship was destroyed');
+          if (ev) this.announceJobEvents([ev]);
+          this.persist();
+        },
         onWingmanLost: (id) => {
           wingmanLost(state, id);
           this.persist();
@@ -961,6 +978,7 @@ export class Game {
       contractPacks: contractPacksIn(state, here),
       escorts: escortsIn(state, here),
       wrecks: wrecksIn(state, here),
+      rescues: rescuesIn(state, here),
       assaults: assaultsIn(state, here),
       defences: defencesIn(state, here),
       downDens,

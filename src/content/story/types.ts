@@ -2,14 +2,14 @@ import type { FactionId } from '../../data/types.ts';
 import type { CommodityId } from '../economy/goods.ts';
 
 /**
- * Story arcs (docs/PROCGEN.md §14): three hand-written arcs, one per faction, and a fourth on the
- * border where they meet (§20), built from contract objectives plus scripted beats. Everything
- * here is fiction.
+ * Story arcs (docs/PROCGEN.md §14): three hand-written arcs, one per faction, a fourth on the
+ * border where they meet (§20) and a fifth among the frontier's farms (§14.6), built from contract
+ * objectives plus scripted beats. Everything here is fiction.
  */
 
-export type ArcId = 'sta' | 'frontier' | 'wake' | 'border';
+export type ArcId = 'sta' | 'frontier' | 'wake' | 'border' | 'harvest';
 
-export type CharacterId = 'castell' | 'kettering' | 'quist' | 'brandt' | 'ansari' | 'salt';
+export type CharacterId = 'castell' | 'kettering' | 'quist' | 'brandt' | 'ansari' | 'salt' | 'halloway' | 'fenwick';
 
 export interface Character {
   id: CharacterId;

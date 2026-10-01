@@ -159,6 +159,8 @@ function earned(state: GameState, id: MilestoneId): boolean {
       return finaleDone(state, 'wake');
     case 'story-border':
       return finaleDone(state, 'border');
+    case 'story-harvest':
+      return finaleDone(state, 'harvest');
   }
 }
 

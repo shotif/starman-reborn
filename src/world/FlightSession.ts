@@ -21,7 +21,7 @@ import { CONTRACTS } from '../content/contracts/rules.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
 import { hashString } from '../content/random.ts';
 import { LAW } from '../content/law/rules.ts';
-import type { EscortSetup } from '../economy/jobs.ts';
+import { strandedTargetId, type EscortSetup } from '../economy/jobs.ts';
 import type { Lingering } from '../app/state.ts';
 import { DENS } from '../content/dens/rules.ts';
 import { MINED_GOODS, MINING } from '../content/mining/rules.ts';
@@ -93,6 +93,13 @@ export interface FlightCallbacks {
   onEscortLost?(jobId: string): void;
   /** The item of a recovery contract was tractored aboard. */
   onRecovered?(jobId: string): void;
+  /**
+   * The player came alongside a stranded ship with a rescue under way: hand the goods over if they
+   * are aboard. Returns how many are still missing (0: handed over).
+   */
+  onHandOver?(jobId: string): number;
+  /** The stranded ship of a rescue was destroyed. */
+  onRescueLost?(jobId: string): void;
   /** The player fired on (`attack`, once per ship) or destroyed a lawful ship. */
   onCrime?(kind: 'attack' | 'destroy', faction: FactionId | 'independent', name: string, role: 'trader' | 'patrol'): void;
   /** A patrol's cargo scan finished (`complete`) or the player flew off before it did (`evaded`). */
@@ -175,6 +182,8 @@ interface NpcShip {
    * come for the convoy). On its way to another system, it keeps station off the player (`follow`).
    */
   escort?: { jobId: string; start: THREE.Vector3; ambushAt: number; ambushed: boolean; level: 1 | 2 | 3; waiting?: boolean; convoy?: boolean; follow?: { offset: THREE.Vector3 } };
+  /** A ship stranded by a drive failure (a rescue): adrift until the player hands over the parts. */
+  stranded?: { jobId: string; handed: boolean; told: boolean; restartAt?: number };
   /** Who it is fighting. */
   foe: NpcShip | 'player' | null;
   /** Bounty paid when the player destroys it. */
@@ -196,6 +205,8 @@ export interface TrafficSetup {
   escorts?: readonly EscortSetup[];
   /** Wrecks the player's recovery contracts send them to in this system. */
   wrecks?: readonly { jobId: string; locationId: string; item: string; guard: 1 | 2 | 3 | null }[];
+  /** Ships stranded far from any dock that the player's rescues send them to here. */
+  rescues?: readonly { jobId: string; name: string; model: string; commodity: CommodityId; qty: number; guard: 1 | 2 | 3 | null }[];
   /** Den assaults under way here: the den, its turrets still standing, and whose wing flies with the player. */
   assaults?: readonly { jobId: string; locationId: string; turretsLeft: number; wing?: FactionId | null }[];
   /** Wingmen on the player's pay: they fly alongside wherever the player goes. */
@@ -284,6 +295,8 @@ const HOSTILE_RADIUS = 3_500;
 const ESCORT_WAIT = CONTRACTS.escort.keepUpM;
 /** A wingman or an escorted ship left this far behind (a lane, a long cruise) catches up. */
 const CATCH_UP = 6_000;
+/** Coming this close to a stranded ship hands the parts over. */
+const RESCUE_RANGE = 400;
 /** Patrols go after a pilot their faction hunts within this range. */
 const PATROL_HUNT = 6_000;
 const CONVERGENCE = 700;
@@ -589,7 +602,7 @@ export class FlightSession {
 
   private objectiveTargetId(): string | null {
     const id = this.objective.targetId;
-    if (id && (this.loot.some((l) => l.target.id === id) || this.mining.find(id))) return id;
+    if (id && (this.loot.some((l) => l.target.id === id) || this.mining.find(id) || this.npcs.some((n) => n.target.id === id && n.target.alive))) return id;
     if (this.objective.locationId) return `station:${this.objective.locationId}`;
     if (this.objective.bodyId) return `planet:${this.objective.bodyId}`;
     return null;
@@ -849,8 +862,8 @@ export class FlightSession {
     const { locationId, bodyId, targetId } = this.objective;
     if (locationId) return this.findTarget(`station:${locationId}`);
     if (bodyId) return this.findTarget(`planet:${bodyId}`);
-    // A claim sends the player to a belt.
-    return targetId ? this.mining.find(targetId) : null;
+    // A claim sends the player to a belt; a rescue to a stranded ship.
+    return targetId ? (this.mining.find(targetId) ?? this.npcs.find((n) => n.target.id === targetId && n.target.alive)?.target ?? null) : null;
   }
 
   private nearestDock(): { site: DockSite; distance: number } | null {
@@ -1746,6 +1759,7 @@ export class FlightSession {
       this.spawnLoot(n.body.position.clone().add(this.tmp.set(-18, -6, 14)), 0, { cargo: { commodity: goods[Math.floor(this.rand() * goods.length)]!, qty: 3 + Math.floor(this.rand() * 4) } });
     }
     if (n.escort) this.callbacks.onEscortLost?.(n.escort.jobId);
+    if (n.stranded && !n.stranded.handed) this.callbacks.onRescueLost?.(n.stranded.jobId);
     else if (n.role === 'trader') this.callbacks.onMessage(`${n.name} was destroyed.`, 'bad');
     if (n.side === 'raider' && !n.den && !n.hunter && !n.encounter) this.dropLoot(n);
     if (n.wingman?.crewId) {
@@ -1980,6 +1994,7 @@ export class FlightSession {
       for (const c of t.contractPacks ?? []) this.spawnContractPack(c);
       for (const e of t.escorts ?? []) this.spawnEscort(e);
       for (const w of t.wrecks ?? []) this.spawnWreck(w);
+      for (const rescue of t.rescues ?? []) this.spawnStranded(rescue);
       for (const p of t.lingering?.packs ?? []) this.spawnLingeringPack(p);
       for (const pod of t.lingering?.pods ?? []) this.spawnLoot(new THREE.Vector3(...pod.position), pod.value, { ...(pod.cargo ? { cargo: pod.cargo } : {}), ...(pod.gear ? { gear: pod.gear } : {}) });
       if (t.lingering?.packs.length) this.callbacks.onMessage('Raiders who saw you last time are still hunting here.', 'bad');
@@ -2044,6 +2059,7 @@ export class FlightSession {
       else if (n.wingman) this.flyWingman(n, dt);
       else if (n.sweep) this.flySweep(n, dt);
       else if (n.escort?.follow) this.flyEscortFollowing(n, dt);
+      else if (n.stranded && !n.trader) this.flyStranded(n, dt);
       else if (n.role === 'trader') this.flyTrader(n);
       else if (n.role === 'patrol') this.flyPatrol(n, dt);
       else this.flyRaider(n, dt);
@@ -2417,6 +2433,74 @@ export class FlightSession {
     this.sfx('alert');
     const who = convoy ?? target.name;
     this.callbacks.onMessage(at === 'beacon' ? `Raiders were waiting at the beacon! They are closing on the ${who}.` : `Ambush! Raiders are closing on the ${who}.`, 'bad');
+  }
+
+  /**
+   * Where a rescue's ship drifts: far from any dock (CONTRACTS.rescue.clearOfDocksM) and clear of
+   * stars and planets, the same every time for the same job.
+   */
+  strandedPosition(jobId: string): THREE.Vector3 {
+    const r = seededRandom(hashString(`stranded|${jobId}`));
+    const from = this.system.def.arrival.position;
+    const clear = (p: THREE.Vector3) =>
+      this.system.docks.every((d) => d.dockPoint.distanceTo(p) >= CONTRACTS.rescue.clearOfDocksM) && this.system.obstacles(null).every((o) => o.center.distanceTo(p) > o.radius + 3_000);
+    let best: THREE.Vector3 | null = null;
+    for (let i = 0; i < 24 && !best; i++) {
+      const dir = new THREE.Vector3(r() - 0.5, (r() - 0.5) * 0.3, r() - 0.5).normalize();
+      const p = from.clone().addScaledVector(dir, 14_000 + r() * 14_000);
+      if (clear(p)) best = p;
+    }
+    return best ?? from.clone().add(new THREE.Vector3(0, 2_000, -CONTRACTS.rescue.clearOfDocksM - 4_000));
+  }
+
+  /** A ship stranded by a drive failure: adrift far from any dock, perhaps watched by scavengers. */
+  private spawnStranded(rescue: NonNullable<TrafficSetup['rescues']>[number]): void {
+    const at = this.strandedPosition(rescue.jobId);
+    const heading = new THREE.Vector3(1, 0, 0);
+    const npc = this.makeNpc(rescue.model, 'trader', 'independent', at, heading, 'Adrift · drive failure');
+    npc.name = rescue.name;
+    npc.target.name = `${rescue.name} (stranded)`;
+    npc.target.id = strandedTargetId(rescue.jobId);
+    npc.target.hostile = false;
+    npc.origin = null;
+    npc.stranded = { jobId: rescue.jobId, handed: false, told: false };
+    // Dead in space: no drive, no drift.
+    npc.body.velocity.set(0, 0, 0);
+    if (rescue.guard) {
+      const pack = ++this.packSerial;
+      const home = at.clone().add(new THREE.Vector3(0, 400, 600));
+      this.packHome.set(pack, home);
+      const pool = RAIDERS[rescue.guard];
+      for (let i = 0; i < rescue.guard; i++) this.spawnGuard(pool[i % pool.length]!, pack, home.clone().add(this.tmp.set(this.rand() - 0.5, this.rand() - 0.5, this.rand() - 0.5).multiplyScalar(500)));
+    }
+  }
+
+  /** Adrift until the parts are handed over alongside; then its drive comes back and it makes for the nearest dock. */
+  private flyStranded(n: NpcShip, dt: number): void {
+    const s = n.stranded!;
+    for (const g of n.guns) g.tick(dt);
+    n.controls.throttle = 0;
+    n.body.velocity.multiplyScalar(Math.max(0, 1 - dt * 0.5));
+    if (!s.handed && this.alive && !this.busy && n.body.position.distanceTo(this.player.position) < RESCUE_RANGE) {
+      const missing = this.callbacks.onHandOver?.(s.jobId) ?? 0;
+      if (missing === 0) {
+        s.handed = true;
+        s.restartAt = this.time + 6;
+        this.sfx('mission-complete');
+        this.callbacks.onMessage(`The ${n.name}’s crew have the parts. Her drive will be back in a moment.`, 'good');
+      } else if (!s.told) {
+        s.told = true;
+        this.callbacks.onMessage(`The ${n.name} needs ${missing} more for her drive: they are not in your hold.`, 'bad');
+      }
+    }
+    if (s.handed && this.time >= (s.restartAt ?? Infinity)) {
+      let best: DockSite | null = null;
+      for (const d of this.openDocks()) if (!best || d.dockPoint.distanceTo(n.body.position) < best.dockPoint.distanceTo(n.body.position)) best = d;
+      if (best) {
+        n.trader = new TraderBrain({ id: best.def.locationId, point: best.dockPoint }, n.durability);
+        n.target.subtitle = `Underway again · bound for ${getLocation(best.def.locationId).name}`;
+      }
+    }
   }
 
   /** A recovery contract's wreck: a dead hull a few kilometres off a station, and the item to tractor in. */

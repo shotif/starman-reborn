@@ -4,9 +4,11 @@ import { migrateSave } from '../../src/app/save/migrate.ts';
 import { createNewGame, type GameState } from '../../src/app/state.ts';
 import { LAW } from '../../src/content/law/rules.ts';
 import { ARC_JOBS } from '../../src/content/story/arcs.ts';
-import { getLocation } from '../../src/data/systems.ts';
+import { getLocation, getSystem, SYSTEMS } from '../../src/data/systems.ts';
 import { cargoCount } from '../../src/economy/cargo.ts';
-import { acceptJob, advanceJobs, countPiracy, currentObjective, deliverJob, escortArrived, escortLost, jobsAt, leaveSystem } from '../../src/economy/jobs.ts';
+import { acceptJob, advanceJobs, countPiracy, currentObjective, deliverJob, escortArrived, escortLost, escortsIn, getJob, handOver, jobsAt, leaveSystem, rescuesIn } from '../../src/economy/jobs.ts';
+import { performJump } from '../../src/app/rules.ts';
+import { findRoute } from '../../src/galaxy/routing.ts';
 import { checkMilestones } from '../../src/economy/progress.ts';
 import { arcStatus, briefingFor, choiceHere, debriefFor, denDown, knockOutDen, makeChoice, markSeen, pendingBeats, storyWaiting } from '../../src/economy/story.ts';
 import { validateStory } from '../../src/economy/storyGuards.ts';
@@ -262,6 +264,86 @@ describe('story arcs', () => {
     expect(denDown(s, 'maw-roost')).toBe(true);
     s.clock += DENS.downSeconds;
     expect(denDown(s, 'maw-roost')).toBe(false);
+  });
+});
+
+describe('First Harvest, out among the frontier farms (docs/PROCGEN.md §14.6)', () => {
+  /** Through the choice, with the harvest ready to go. */
+  function toTheHarvest(s: GameState) {
+    dock(s, 'squall-relay');
+    expect(jobsAt(s, 'squall-relay').map((o) => o.job.id)).toContain('arc.harvest.1');
+    expect(acceptJob(s, 'arc.harvest.1').ok).toBe(true);
+    dock(s, 'harrow-farmstead');
+    expect(done(s, 'arc.harvest.1')).toBe(true);
+    // Dead in the water: the drive parts are handed over at the farm, and taken out to the Wrenna in Achird.
+    expect(acceptJob(s, 'arc.harvest.2').ok).toBe(true);
+    expect(cargoCount(s.ship.cargo, 'ship-parts')).toBe(4);
+    inSpace(s, 'achird');
+    expect(rescuesIn(s, 'achird')).toEqual([{ jobId: 'arc.harvest.2', name: 'Wrenna', model: 'ship.freighter.1.halden', commodity: 'ship-parts', qty: 4, guard: 1 }]);
+    expect(handOver(s, 'arc.harvest.2').missing).toBe(0);
+    expect(cargoCount(s.ship.cargo, 'ship-parts')).toBe(0);
+    expect(pendingBeats(s, true).some((b) => b.lines.some((l) => l.text.includes('drive’s turning over')))).toBe(true);
+    dock(s, 'harrow-farmstead');
+    expect(done(s, 'arc.harvest.2')).toBe(true);
+    // Readings: a confirmed planet and a contested one, and the contested one stays contested.
+    expect(acceptJob(s, 'arc.harvest.3').ok).toBe(true);
+    s.discoveredBodies.push('hd-219134-d', 'hd-219134-f');
+    inSpace(s, 'hd-219134');
+    dock(s, 'curlew-institute');
+    expect(done(s, 'arc.harvest.3')).toBe(true);
+    const words = pendingBeats(s, false).flatMap((b) => b.lines.map((l) => l.text)).join(' ');
+    expect(words).toMatch(/the archives disagree, and a farm’s instruments won’t settle that/);
+    expect(getSystem('hd-219134').confirmedBodies.find((p) => p.id === 'hd-219134-f')?.status).toBe('contested');
+    dock(s, 'harrow-farmstead');
+    expect(acceptJob(s, 'arc.harvest.4').ok).toBe(true);
+  }
+
+  it('is given at Squall Relay, at the core’s edge, after the opening delivery, and needs nobody’s standing', () => {
+    const fresh = createNewGame(17);
+    fresh.location = { ...fresh.location, systemId: 'ev-lacertae', dockedAt: 'squall-relay' };
+    expect(jobsAt(fresh, 'squall-relay').find((o) => o.job.id === 'arc.harvest.1')?.status ?? 'locked').toBe('locked');
+    const s = pilot();
+    s.reputation = { sta: -40, frontier: -40, 'hollow-wake': -40 };
+    dock(s, 'squall-relay');
+    expect(jobsAt(s, 'squall-relay').map((o) => o.job.id)).toContain('arc.harvest.1');
+    expect(briefingFor(s, getJob('arc.harvest.1', s))).toMatch(/long-range jump drive/);
+  });
+
+  it('can end at Doppler Freeport: the harvest convoy crosses with the player, and the milestone is earned', () => {
+    const s = pilot();
+    toTheHarvest(s);
+    expect(makeChoice(s, 'arc.harvest.4', 'freeport').ok).toBe(true);
+    expect(jobsAt(s, 'harrow-farmstead').map((o) => o.job.id)).toEqual(expect.arrayContaining(['arc.harvest.5.freeport']));
+    expect(jobsAt(s, 'harrow-farmstead').map((o) => o.job.id)).not.toContain('arc.harvest.5.relay');
+    expect(acceptJob(s, 'arc.harvest.5.freeport').ok).toBe(true);
+    s.location.dockedAt = null;
+    expect(escortsIn(s, 'hd-219134')).toEqual([expect.objectContaining({ follow: true, convoy: { names: ['Wrenna', 'Furrow', 'Late Swallow'], waves: 1 } })]);
+    const route = findRoute(SYSTEMS, 'hd-219134', 'achird')!;
+    performJump(s, route, route.totalFee);
+    expect(escortsIn(s, 'achird')).toEqual([expect.objectContaining({ to: 'doppler-freeport', beacon: true })]);
+    escortArrived(s, 'arc.harvest.5.freeport');
+    escortArrived(s, 'arc.harvest.5.freeport');
+    escortLost(s, 'arc.harvest.5.freeport');
+    expect(done(s, 'arc.harvest.5.freeport')).toBe(true);
+    expect(arcStatus(s, 'harvest').phase).toBe('complete');
+    expect(checkMilestones(s).map((m) => m.id)).toContain('story-harvest');
+  });
+
+  it('can end at Squall Relay instead, across the core’s edge', () => {
+    const s = pilot();
+    toTheHarvest(s);
+    const before = s.reputation.frontier;
+    expect(makeChoice(s, 'arc.harvest.4', 'relay').ok).toBe(true);
+    expect(s.reputation.frontier).toBe(before + 5);
+    expect(acceptJob(s, 'arc.harvest.5.relay').ok).toBe(true);
+    s.location.dockedAt = null;
+    const route = findRoute(SYSTEMS, 'hd-219134', 'ev-lacertae')!;
+    expect(route.hops).toHaveLength(1);
+    performJump(s, route, route.totalFee);
+    expect(escortsIn(s, 'ev-lacertae')).toEqual([expect.objectContaining({ to: 'squall-relay', beacon: true })]);
+    for (let i = 0; i < 3; i++) escortArrived(s, 'arc.harvest.5.relay');
+    expect(done(s, 'arc.harvest.5.relay')).toBe(true);
+    expect(debriefFor(s, getJob('arc.harvest.5.relay', s))[0]!.who).toBe('halloway');
   });
 });
 

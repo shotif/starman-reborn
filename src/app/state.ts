@@ -260,6 +260,8 @@ export interface JobProgress {
   assault?: 'done';
   /** Mining claims: units of the good mined in the belt so far (docs/PROCGEN.md §19). */
   mined?: number;
+  /** Rescues: the goods were handed over to the stranded ship. */
+  rescued?: boolean;
 }
 
 export type PirateOutcome = 'none' | 'destroyed' | 'bypassed' | 'escaped';

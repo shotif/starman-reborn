@@ -3,7 +3,7 @@ import { COMMODITIES, PRICE_BAND } from '../content/economy/goods.ts';
 import { beltGoods } from '../content/mining/rules.ts';
 import type { Issue } from '../content/validate.ts';
 import { jumpsFrom } from '../content/world/network.ts';
-import { ALL_LOCATIONS, findBelt, getLocation, getSystem, WORLD } from '../data/systems.ts';
+import { ALL_LOCATIONS, findBelt, getLocation, getSystem, isFrontier, WORLD } from '../data/systems.ts';
 import { trafficFor } from '../world/traffic/setup.ts';
 import { shipModel } from '../content/catalog.ts';
 import { RECOVERY_ITEMS } from '../content/contracts/rules.ts';
@@ -110,7 +110,7 @@ function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, numbe
   if (!o || c.objectives.length !== expected) return report('objectives', c.id, `expected ${expected} objective(s)`);
 
   // Where it sends you, and what the trip costs.
-  const target = o.kind === 'scan' || o.kind === 'bounty' || o.kind === 'recover' || o.kind === 'escort' || o.kind === 'piracy' || o.kind === 'mine' ? o.systemId : 'locationId' in o ? getLocation(o.locationId).systemId : from;
+  const target = o.kind === 'scan' || o.kind === 'bounty' || o.kind === 'recover' || o.kind === 'escort' || o.kind === 'piracy' || o.kind === 'mine' || o.kind === 'rescue' ? o.systemId : 'locationId' in o ? getLocation(o.locationId).systemId : from;
   const j = jumps.get(target) ?? Infinity;
   if (j > CONTRACTS.maxJumps[kind]) report('reach', c.id, `${j} jumps (at most ${CONTRACTS.maxJumps[kind]})`);
   let tripFrom = from;
@@ -169,6 +169,17 @@ function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, numbe
         if (v.names.length !== CONTRACTS.escort.convoy.ships || new Set(v.names).size !== v.names.length || v.need !== CONTRACTS.escort.convoy.need) report('escort', c.id, 'a convoy is three named ships, two of which must arrive');
         if (v.waves !== (o.level >= 3 ? 2 : 1)) report('escort', c.id, 'convoy waves do not match the threat');
       } else if (shipModel(o.model).name !== o.shipName) report('escort', c.id, 'escorted ship is not named for its hull');
+      break;
+    }
+    case 'rescue': {
+      if (o.kind !== 'rescue') return report('objectives', c.id, `unexpected objective ${o.kind}`);
+      const e = systemEventAt(o.systemId, clock);
+      if (!isFrontier(o.systemId) || e?.kind !== 'stranded' || e.ship !== o.shipName) report('rescue', c.id, `no hauler called ${o.shipName} is stranded in ${o.systemId}`);
+      const cargo = c.contract!.cargo;
+      if (o.commodity !== CONTRACTS.rescue.commodity || !cargo || cargo.commodity !== o.commodity || cargo.qty !== o.qty) report('rescue', c.id, 'cargo loaded differs from the parts handed over');
+      if ((c.contract!.deposit ?? 0) < o.qty * COMMODITIES[o.commodity].basePrice) report('rescue', c.id, 'deposit below what the parts are worth');
+      if (o.guard !== baseThreat(o.systemId)) report('rescue', c.id, 'scavengers do not match the system');
+      if (!Object.values(FLEETS).some((f) => f.traders.includes(o.model))) report('rescue', c.id, 'the stranded ship is not a hauler of the catalogue');
       break;
     }
     case 'smuggle': {
@@ -253,8 +264,10 @@ function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, numbe
     const good = o.kind === 'deliver' ? o.commodity : null;
     const answers =
       (kind === 'supply' && station?.id === eventId && (station.kind === 'shortage' || station.kind === 'boom') && !!good && station.goods.includes(good)) ||
-      (kind === 'freight' && station?.id === eventId && station.kind === 'glut' && !!good && station.goods.includes(good)) ||
-      (kind === 'bounty' && raid?.id === eventId && raid.kind === 'raid');
+      (kind === 'freight' && station?.id === eventId && (station.kind === 'glut' || station.kind === 'harvest') && !!good && station.goods.includes(good)) ||
+      (kind === 'survey' && station?.id === eventId && station.kind === 'survey' && o.kind === 'scan' && o.bodyId === station.bodyId) ||
+      (kind === 'bounty' && raid?.id === eventId && raid.kind === 'raid') ||
+      (kind === 'rescue' && o.kind === 'rescue' && systemEventAt(o.systemId, clock)?.id === eventId);
     if (!answers) report('events', c.id, `does not answer the event ${eventId} under way`);
   }
   // Urgent terms: only parcels and hauls, with a time limit that can be kept and a real bonus.

@@ -57,7 +57,12 @@ export type Objective =
   /** Hold a den against a lawful sweep: destroy `count` of its ships (JobProgress.kills). */
   | { kind: 'defend'; systemId: SystemId; locationId: string; count: number; text: string }
   /** Mine `qty` units of a good in a cited belt (JobProgress.mined; docs/PROCGEN.md §19). */
-  | { kind: 'mine'; systemId: SystemId; beltId: string; commodity: CommodityId; qty: number; text: string };
+  | { kind: 'mine'; systemId: SystemId; beltId: string; commodity: CommodityId; qty: number; text: string }
+  /**
+   * Bring `qty` of a good to a ship stranded by a drive failure far from any dock, perhaps watched
+   * by scavengers of threat `guard`, and hand it over alongside (JobProgress.rescued).
+   */
+  | { kind: 'rescue'; systemId: SystemId; shipName: string; model: string; commodity: CommodityId; qty: number; guard: 1 | 2 | 3 | null; text: string };
 
 export interface JobDef {
   id: string;
@@ -402,6 +407,8 @@ function objectiveSatisfied(state: GameState, jobId: string, o: Objective, ctx: 
       return (state.jobs[jobId]?.kills ?? 0) >= o.count;
     case 'mine':
       return (state.jobs[jobId]?.mined ?? 0) >= o.qty;
+    case 'rescue':
+      return !!state.jobs[jobId]?.rescued;
     case 'have-cargo':
       return cargoCount(state.ship.cargo, o.commodity) >= o.qty;
     case 'dock':
@@ -607,6 +614,12 @@ function describeCurrent(state: GameState, jobId: string): ObjectiveSummary | nu
       }
       return { ...base, ...target, text: inOtherSystem(o.systemId, o.convoy ? `${o.text}${tally}` : `${o.text}: stay close and keep it alive`) };
     }
+    case 'rescue': {
+      const have = cargoCount(state.ship.cargo, o.commodity);
+      const name = COMMODITIES[o.commodity].name.toLowerCase();
+      const then = have >= o.qty ? `${o.text}: fly alongside it` : `${o.text} (you have ${have} of ${o.qty} ${name})`;
+      return { ...base, text: inOtherSystem(o.systemId, then), targetSystemId: o.systemId, targetLocationId: null, ...(o.systemId === here ? { targetId: strandedTargetId(jobId) } : {}) };
+    }
     case 'choice': {
       const loc = getLocation(o.locationId);
       const text = state.location.dockedAt === o.locationId ? `${o.text}: open the Jobs window` : `Dock at ${loc.name}: ${o.text.charAt(0).toLowerCase()}${o.text.slice(1)}`;
@@ -753,6 +766,33 @@ export function wrecksIn(state: GameState, systemId: SystemId): { jobId: string;
     const o = currentObjective(state, jobId);
     return o?.kind === 'recover' && o.systemId === systemId ? [{ jobId, locationId: o.locationId, item: o.item, guard: o.guard }] : [];
   });
+}
+
+/** The flight target of a rescue's stranded ship. */
+export function strandedTargetId(jobId: string): string {
+  return `stranded:${jobId}`;
+}
+
+/** Ships stranded far from any dock that the player's rescues send them to in a system (not yet helped). */
+export function rescuesIn(state: GameState, systemId: SystemId): { jobId: string; name: string; model: string; commodity: CommodityId; qty: number; guard: 1 | 2 | 3 | null }[] {
+  return activeJobIds(state).flatMap((jobId) => {
+    const o = currentObjective(state, jobId);
+    return o?.kind === 'rescue' && o.systemId === systemId ? [{ jobId, name: o.shipName, model: o.model, commodity: o.commodity, qty: o.qty, guard: o.guard }] : [];
+  });
+}
+
+/**
+ * The player came alongside a stranded ship: with the goods in the hold, they are handed over and
+ * the rescue is done; without enough, nothing happens (the reason says what is missing).
+ */
+export function handOver(state: GameState, jobId: string): { events: JobEvent[]; missing: number } {
+  const o = currentObjective(state, jobId);
+  if (o?.kind !== 'rescue') return { events: [], missing: 0 };
+  const have = cargoCount(state.ship.cargo, o.commodity);
+  if (have < o.qty) return { events: [], missing: o.qty - have };
+  removeCargo(state.ship.cargo, o.commodity, o.qty);
+  state.jobs[jobId]!.rescued = true;
+  return { events: advanceJobs(state, { dockedAt: state.location.dockedAt, systemId: state.location.systemId }), missing: 0 };
 }
 
 /** The flight target of a belt (its first ring). */

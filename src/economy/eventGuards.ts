@@ -1,10 +1,10 @@
-import { EVENTS, type EventKind } from '../content/events/rules.ts';
+import { EVENTS, FRONTIER_EVENTS, STRANDED_NAMES, type EventKind } from '../content/events/rules.ts';
 import { COMMODITIES, PRICE_BAND } from '../content/economy/goods.ts';
 import { CURATED_MARKETS } from '../content/economy/rules.ts';
 import type { Issue } from '../content/validate.ts';
-import { ALL_LOCATIONS, getLocation, WORLD } from '../data/systems.ts';
+import { ALL_LOCATIONS, getLocation, isFrontier, WORLD } from '../data/systems.ts';
 import { trafficFor } from '../world/traffic/setup.ts';
-import { baseThreat, eventPriceChange, eventsAt, windowPhase, type WorldEvent } from './events.ts';
+import { baseThreat, eventPriceChange, eventsAt, surveyPlanets, windowPhase, type WorldEvent } from './events.ts';
 import { marketTables, quote } from './markets.ts';
 
 /**
@@ -45,7 +45,7 @@ export function validateEvents(hours = 300, stepSeconds = 600): Issue[] {
   const open = ALL_LOCATIONS.filter((l) => l.status === 'functional' && l.dockable !== false && l.services.includes('market')).length;
   const average = (stationEvents / Math.max(1, samples)) * (100 / Math.max(1, open));
   if (average < ACTIVE_BAND[0] || average > ACTIVE_BAND[1]) report('density', 'stations', `${average.toFixed(1)} station events under way per hundred stations on average (want ${ACTIVE_BAND[0]}–${ACTIVE_BAND[1]})`);
-  for (const k of ['shortage', 'glut', 'boom', 'strike', 'raid', 'sweep'] as EventKind[]) if (!kinds.has(k)) report('coverage', k, 'never happens');
+  for (const k of ['shortage', 'glut', 'boom', 'strike', 'raid', 'sweep', 'harvest', 'survey', 'stranded'] as EventKind[]) if (!kinds.has(k)) report('coverage', k, 'never happens');
   return issues;
 }
 
@@ -62,11 +62,20 @@ function checkEvent(e: WorldEvent, report: (rule: string, subject: string, messa
     if (loc.systemId === 'sol') report('place', e.id, 'events never touch Sol');
     const table = marketTables().get(e.locationId);
     const fixed = Object.keys(CURATED_MARKETS[e.locationId]?.anchors ?? {});
-    const roles: Record<string, readonly string[]> = { shortage: ['consume'], glut: ['produce'], strike: ['produce'], boom: ['consume', 'trade'] };
+    const roles: Record<string, readonly string[]> = { shortage: ['consume'], glut: ['produce'], strike: ['produce'], boom: ['consume', 'trade'], harvest: ['produce'], survey: ['consume'] };
+    // The frontier's own: harvests at its farms, survey seasons at its research posts, of a real planet nearby.
+    if (e.kind === 'harvest' && (!isFrontier(loc.systemId) || loc.stationType !== 'agri-station' || !e.goods.every((g) => FRONTIER_EVENTS.harvestGoods.includes(g)))) report('place', e.id, 'a harvest comes in only at a frontier farm, of what it grows');
+    if (e.kind === 'survey') {
+      if (!isFrontier(loc.systemId) || loc.stationType !== 'research-station') report('place', e.id, 'survey seasons are for frontier research posts');
+      const planet = surveyPlanets(e.locationId).find((p) => p.id === e.bodyId);
+      if (!planet) report('survey', e.id, `${e.bodyId} is not a planet within reach`);
+      else if (planet.contested && !/archives disagree about/.test(e.detail)) report('survey', e.id, 'a contested planet must be said to be contested');
+      if (/\b(settled|settles it|proves?|confirms)\b/i.test(e.detail)) report('survey', e.id, 'readings never settle what the archives say');
+    }
     if (!e.goods.length) report('goods', e.id, 'no goods');
     for (const g of e.goods) {
       const role = table?.entries.get(g)?.role;
-      if (!role || !roles[e.kind]!.includes(role)) report('goods', e.id, `${e.locationId} does not ${e.kind === 'glut' || e.kind === 'strike' ? 'make' : 'want'} ${g}`);
+      if (!role || !roles[e.kind]!.includes(role)) report('goods', e.id, `${e.locationId} does not ${e.kind === 'glut' || e.kind === 'strike' || e.kind === 'harvest' ? 'make' : 'want'} ${g}`);
       if (fixed.includes(g) || g === 'weapons') report('goods', e.id, `${g} is off limits`);
     }
     const fx = EVENTS.effects[e.kind as keyof typeof EVENTS.effects];
@@ -83,6 +92,9 @@ function checkEvent(e: WorldEvent, report: (rule: string, subject: string, messa
     } else if (e.kind === 'sweep') {
       if (owner !== 'sta' && owner !== 'frontier') report('place', e.id, 'sweep in unclaimed space');
       if (baseThreat(e.systemId) === null) report('place', e.id, 'sweep where no raiders roam');
+    } else if (e.kind === 'stranded') {
+      if (!isFrontier(e.systemId)) report('place', e.id, 'drive failures far from any dock are the frontier’s');
+      if (!e.ship || !STRANDED_NAMES.includes(e.ship) || !e.detail.includes(e.ship)) report('text', e.id, 'a stranded hauler needs its name');
     } else report('kind', e.id, `station event ${e.kind} without a station`);
   }
 }

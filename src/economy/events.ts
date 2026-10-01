@@ -1,11 +1,11 @@
 import type { CommodityId, WorldLog } from '../app/state.ts';
-import { BOOMS, EVENTS, GLUT_CAUSES, SHORTAGE_CAUSES, STRIKE_CAUSES, type EventKind, type StationEventKind, type SystemEventKind } from '../content/events/rules.ts';
+import { BOOMS, EVENTS, FRONTIER_EVENTS, GLUT_CAUSES, SHORTAGE_CAUSES, STRANDED_NAMES, STRIKE_CAUSES, type EventKind, type StationEventKind, type SystemEventKind } from '../content/events/rules.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
 import { CURATED_MARKETS, ECONOMY } from '../content/economy/rules.ts';
 import { hashString, rng, type Rng } from '../content/random.ts';
 import { jumpsFrom } from '../content/world/network.ts';
 import { WORLD_SEED } from '../content/world/rules.ts';
-import { ALL_LOCATIONS, getLocation, getSystem, SYSTEMS, WORLD } from '../data/systems.ts';
+import { ALL_LOCATIONS, getLocation, getSystem, isFrontier, SYSTEMS, WORLD } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { trafficPlan } from '../world/traffic/plan.ts';
 import { FACTIONS } from './factions.ts';
@@ -13,7 +13,8 @@ import { marketTables } from './markets.ts';
 
 /**
  * World events (docs/PROCGEN.md §11): shortages, gluts, booms and strikes at stations, raids and
- * security sweeps in systems. Like the markets, they are a pure function of the world seed and the
+ * security sweeps in systems, and the frontier's own: harvests at its farms, survey seasons at its
+ * research posts and haulers stranded by drive failures. Like the markets, they are a pure function of the world seed and the
  * game clock: each station and system has one time window after another, and each window holds at
  * most one event, drawn from its own random stream. Nothing runs in the background and nothing
  * needs saving; every device sees the same events at the same clock.
@@ -38,6 +39,10 @@ export interface WorldEvent {
   level: 1 | 2 | 3 | null;
   headline: string;
   detail: string;
+  /** Survey seasons: the planet the research post is taking readings of. */
+  bodyId?: string;
+  /** Drive failures: the stranded hauler. */
+  ship?: string;
 }
 
 const NEUTRAL = { price: 1, stock: 1 } as const;
@@ -84,6 +89,27 @@ export function baseThreat(systemId: SystemId): 1 | 2 | 3 | null {
 function raidEligible(systemId: SystemId): boolean {
   const security = WORLD.profiles.get(systemId)?.security ?? 1;
   return security < EVENTS.raidBelowSecurity && solJumps(systemId) >= 1 && !NO_EVENT_SYSTEMS.has(systemId);
+}
+
+/** A frontier farm's harvest, or a frontier research post's survey season. */
+function frontierEligible(kind: StationEventKind, locationId: string): boolean {
+  const loc = getLocation(locationId);
+  if (kind === 'harvest') return isFrontier(loc.systemId) && loc.stationType === 'agri-station';
+  if (kind === 'survey') return isFrontier(loc.systemId) && loc.stationType === 'research-station';
+  return true;
+}
+
+/**
+ * The planets a survey season can study: those of the post's system and one jump away, the ones the
+ * archives disagree about first (fresh readings never settle that: the archives do).
+ */
+export function surveyPlanets(locationId: string): { id: string; name: string; systemId: SystemId; contested: boolean }[] {
+  const near = jumpsFrom(WORLD.links, getLocation(locationId).systemId);
+  const all = SYSTEMS.filter((s) => (near.get(s.id) ?? 99) <= FRONTIER_EVENTS.surveyReach).flatMap((s) =>
+    s.confirmedBodies.map((p) => ({ id: p.id, name: p.displayName, systemId: s.id, contested: p.status !== 'confirmed' })),
+  );
+  const contested = all.filter((p) => p.contested);
+  return contested.length ? contested : all;
 }
 
 function sweepEligible(systemId: SystemId): boolean {
@@ -149,15 +175,22 @@ function stationEventIn(locationId: string, index: number): WorldEvent | null {
     if (NO_EVENT_SYSTEMS.has(getLocation(locationId).systemId)) return null;
     const r = rng(WORLD_SEED, 'events', locationId, index);
     const kind = pickKind<StationEventKind>(r, EVENTS.stationOdds);
-    if (!kind) return null;
+    if (!kind || !frontierEligible(kind, locationId)) return null;
     const loc = getLocation(locationId);
     const fx = EVENTS.effects[kind];
     let goods: CommodityId[];
     let boom: (typeof BOOMS)[number] | null = null;
+    let planet: ReturnType<typeof surveyPlanets>[number] | null = null;
     if (kind === 'shortage') goods = eligibleGoods(locationId, ['consume']);
     else if (kind === 'glut') goods = eligibleGoods(locationId, ['produce']);
     else if (kind === 'strike') goods = eligibleGoods(locationId, ['produce']);
-    else {
+    else if (kind === 'harvest') goods = eligibleGoods(locationId, ['produce']).filter((g) => FRONTIER_EVENTS.harvestGoods.includes(g));
+    else if (kind === 'survey') {
+      const planets = surveyPlanets(locationId);
+      if (!planets.length) return null;
+      planet = r.pick(planets);
+      goods = eligibleGoods(locationId, ['consume']).filter((g) => FRONTIER_EVENTS.surveyGoods.includes(g));
+    } else {
       const wanted = new Set(eligibleGoods(locationId, ['consume', 'trade']));
       const fits = BOOMS.filter((b) => b.goods.some((g) => wanted.has(g)));
       if (!fits.length) return null;
@@ -194,8 +227,35 @@ function stationEventIn(locationId: string, index: number): WorldEvent | null {
         headline = `Strike at ${place}`;
         detail = `Workers at ${place} have walked out ${r.pick(STRIKE_CAUSES)}: ${listGoods(goods)} ${goods.length > 1 ? 'are scarce and cost' : 'is scarce and costs'} up to ${change}% more.`;
         break;
+      case 'harvest':
+        headline = `Harvest in at ${place}`;
+        detail = `${place} has brought its harvest in, more ${listGoods(goods)} than its silos hold: prices are down by up to ${-change}%, and haulers are wanted.`;
+        break;
+      case 'survey': {
+        const p = planet!;
+        const which = p.contested
+          ? `${p.name}, a planet the archives disagree about (the readings go in the post’s log; they settle nothing the archives do not)`
+          : `${p.name}, a confirmed planet`;
+        headline = `Survey season at ${place}`;
+        detail = `${place} is taking fresh readings of ${which}. ${capital(listGoods(goods))} ${goods.length > 1 ? 'fetch' : 'fetches'} up to ${change}% more.`;
+        break;
+      }
     }
-    return { id: `e.${locationId}.${index}`, kind, systemId: loc.systemId, locationId, start, end, goods, price, stock: fx.stock, level: null, headline, detail: capital(detail) };
+    return {
+      id: `e.${locationId}.${index}`,
+      kind,
+      systemId: loc.systemId,
+      locationId,
+      start,
+      end,
+      goods,
+      price,
+      stock: fx.stock,
+      level: null,
+      headline,
+      detail: capital(detail),
+      ...(planet ? { bodyId: planet.id } : {}),
+    };
   });
 }
 
@@ -203,9 +263,26 @@ function systemEventIn(systemId: SystemId, index: number): WorldEvent | null {
   return cached(`y|${systemId}|${index}`, () => {
     const r = rng(WORLD_SEED, 'events', 'system', systemId, index);
     const kind = pickKind<SystemEventKind>(r, EVENTS.systemOdds);
-    if (!kind || (kind === 'raid' && !raidEligible(systemId)) || (kind === 'sweep' && !sweepEligible(systemId))) return null;
+    if (!kind || (kind === 'raid' && !raidEligible(systemId)) || (kind === 'sweep' && !sweepEligible(systemId)) || (kind === 'stranded' && !isFrontier(systemId))) return null;
     const { start, end } = timing(r, systemId, EVENTS.systemWindow, index, EVENTS.systemDuration);
     const name = getSystem(systemId).displayName;
+    if (kind === 'stranded') {
+      const ship = r.pick(STRANDED_NAMES);
+      return {
+        id: `e.${systemId}.${index}`,
+        kind,
+        systemId,
+        locationId: null,
+        start,
+        end,
+        goods: [],
+        ...NEUTRAL,
+        level: null,
+        headline: `Drive failure in ${name}`,
+        detail: `The ${ship}, a colony hauler, has lost its drive in ${name}, far from any dock. Its crew are safe but going nowhere: boards within reach want ship components flown out to it.`,
+        ship,
+      };
+    }
     if (kind === 'raid') {
       const level = Math.min(3, (baseThreat(systemId) ?? 0) + 1) as 1 | 2 | 3;
       return {

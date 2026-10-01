@@ -4,8 +4,9 @@ import { createNewGame, voyageTotals, type GameState } from '../../src/app/state
 import { dockAt, discoverBody, jumpReadiness, performJump } from '../../src/app/rules.ts';
 import { CONTRACTS } from '../../src/content/contracts/rules.ts';
 import { formatIssues } from '../../src/content/validate.ts';
-import { ALL_LOCATIONS, getLocation, getSystem, WORLD } from '../../src/data/systems.ts';
-import { cargoCount } from '../../src/economy/cargo.ts';
+import { ALL_LOCATIONS, getLocation, getSystem, isFrontier, WORLD } from '../../src/data/systems.ts';
+import { addCargo, cargoCount, removeCargo } from '../../src/economy/cargo.ts';
+import { systemEventAt } from '../../src/economy/events.ts';
 import { contractIssues, validateContracts } from '../../src/economy/contractGuards.ts';
 import { boardEpoch, boardFor, followUpFor, postedContract, postedContracts } from '../../src/economy/contracts.ts';
 import {
@@ -21,6 +22,9 @@ import {
   escortsIn,
   failJob,
   getJob,
+  handOver,
+  rescuesIn,
+  strandedTargetId,
   jobsAt,
   wreckTargetId,
   wrecksIn,
@@ -437,6 +441,41 @@ describe('contracts II', () => {
     expect(rules({ ...job, objectives: [{ ...o, systemId: 'sol', locationId: safe.id }] })).toContain('escort');
     expect(rules({ ...job, objectives: [{ ...o, convoy: { ...o.convoy, names: o.convoy.names.slice(0, 2) } }] })).toContain('escort');
     expect(rules({ ...job, difficulty: job.difficulty === 3 ? 2 : 3, requires: undefined })).toContain('escort');
+  });
+
+  it('rescues: parts loaded against a deposit, handed over alongside a stranded hauler, and paid', () => {
+    const { job, epoch } = findPosted('rescue', (c) => !c.requires);
+    const o = job.objectives[0]!;
+    if (o.kind !== 'rescue') throw new Error('a rescue');
+    const clock = epoch * CONTRACTS.epochSeconds;
+    expect(isFrontier(o.systemId)).toBe(true);
+    expect(systemEventAt(o.systemId, clock)).toMatchObject({ kind: 'stranded', ship: o.shipName, id: job.contract!.event });
+    expect(job.title).toBe(`Rescue: the ${o.shipName}`);
+    expect(job.briefing).toMatch(/far from any dock/);
+    expect(job.contract?.cargo).toEqual({ commodity: 'ship-parts', qty: o.qty });
+    const s = pilotAt(job.giverLocationId, clock);
+    const start = s.credits;
+    acceptJob(s, job.id);
+    expect(cargoCount(s.ship.cargo, 'ship-parts')).toBe(o.qty);
+    expect(s.credits).toBe(start - job.contract!.deposit!);
+    expect(rescuesIn(s, o.systemId)).toEqual([{ jobId: job.id, name: o.shipName, model: o.model, commodity: 'ship-parts', qty: o.qty, guard: o.guard }]);
+    s.location = { ...s.location, systemId: o.systemId, dockedAt: null };
+    expect(describeObjective(s, job.id)).toMatchObject({ targetSystemId: o.systemId, targetId: strandedTargetId(job.id), text: expect.stringMatching(/fly alongside it$/) });
+    // Short of parts, nothing happens; with them, they go aboard and the job pays, deposit and all.
+    removeCargo(s.ship.cargo, 'ship-parts', 1);
+    expect(handOver(s, job.id)).toEqual({ events: [], missing: 1 });
+    expect(describeObjective(s, job.id)?.text).toMatch(new RegExp(`you have ${o.qty - 1} of ${o.qty} ship components`));
+    addCargo(s.ship.cargo, 'ship-parts', 1, 999);
+    const out = handOver(s, job.id);
+    expect(out.missing).toBe(0);
+    expect(out.events[0]).toMatchObject({ jobId: job.id, kind: 'complete' });
+    expect(cargoCount(s.ship.cargo, 'ship-parts')).toBe(0);
+    expect(s.credits).toBe(start + job.reward);
+    expect(rescuesIn(s, o.systemId)).toEqual([]);
+    // Destroyed, it fails.
+    const t = pilotAt(job.giverLocationId, clock);
+    acceptJob(t, job.id);
+    expect(failJob(t, job.id, `the ${o.shipName} was destroyed`)).toMatchObject({ kind: 'failed' });
   });
 
   it('old saves: an escort without a record of where its ships are is where it set off; a damaged one is refused', () => {

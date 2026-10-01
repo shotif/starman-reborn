@@ -10,7 +10,7 @@ import type { StationType } from '../world/types.ts';
  * `claim`: mine a load in a belt within reach and bring it in (docs/PROCGEN.md §19); `war`: work on a
  * border front while it fights (§20).
  */
-export type ContractKind = 'freight' | 'parcel' | 'supply' | 'bounty' | 'survey' | 'escort' | 'ace' | 'recovery' | 'smuggle' | 'piracy' | 'den' | 'claim' | 'war';
+export type ContractKind = 'freight' | 'parcel' | 'supply' | 'bounty' | 'survey' | 'escort' | 'ace' | 'recovery' | 'smuggle' | 'piracy' | 'den' | 'claim' | 'war' | 'rescue';
 
 /** Relative weights of contract kinds on a station's board. */
 export type KindWeights = Partial<Record<ContractKind, number>>;
@@ -60,7 +60,7 @@ export const CONTRACTS = {
   /** At most this many generated contracts in progress at once. */
   maxActive: 5,
   /** How far contracts send you, in jumps. */
-  maxJumps: { freight: 3, parcel: 4, supply: 3, bounty: 2, survey: 3, escort: 2, ace: 3, recovery: 3, smuggle: 3, piracy: 2, den: 3, claim: 3, war: 2 } satisfies Record<ContractKind, number>,
+  maxJumps: { freight: 3, parcel: 4, supply: 3, bounty: 2, survey: 3, escort: 2, ace: 3, recovery: 3, smuggle: 3, piracy: 2, den: 3, claim: 3, war: 2, rescue: 2 } satisfies Record<ContractKind, number>,
   /** Hold units a freight or supply contract asks for (before the good's unit size). */
   cargoUnits: [8, 30] as const,
   /** Most the cargo may be worth at base prices (keeps deposits and purchases within a young pilot's reach). */
@@ -96,6 +96,8 @@ export const CONTRACTS = {
      * broken, the Wake per hauler of the front's faction; a fallen station pays more to retake.
      */
     war: { base: 450, perRaider: 140, perShip: 240, fallen: 1.25 },
+    /** A frontier hauler stranded by a drive failure (docs/PROCGEN.md §11): the trip, its danger, and scavengers about. */
+    rescue: { base: 380, danger: 220, perGuard: 150 },
   },
   /** Standing with the Hollow Wake for outlaw work (smuggling, piracy); the law's standing is not touched unless you are caught. */
   outlawWake: { smuggle: 6, piracy: 10, war: 12 },
@@ -127,6 +129,12 @@ export const CONTRACTS = {
   chain: { chance: 0.45, maxSteps: 3, stepPay: 1.25, offerEpochs: 2 },
   /** Aces: a named raider in a better ship (tougher by `toughness`, deadlier by `damage`) with two guards. */
   ace: { model: 'ship.heavy-fighter.2.wake', guards: 2, toughness: 1.8, damage: 1.3, loot: [500, 900] as const },
+  /**
+   * Rescues: ship components flown out to a frontier hauler stranded by a drive failure, loaded on
+   * acceptance against a deposit (like freight) and handed over alongside it. It drifts at least
+   * `clearOfDocksM` from any dock.
+   */
+  rescue: { commodity: 'ship-parts' as const, qty: [3, 5] as const, clearOfDocksM: 12_000 },
   /**
    * Escorts: the ambush on the way to the destination comes when the escorted ship is this far
    * along; an escorted ship waits for the player beyond `keepUpM`, and jumps with them only within

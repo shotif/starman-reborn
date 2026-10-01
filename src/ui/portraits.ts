@@ -31,7 +31,7 @@ export const PORTRAIT_ROLES: readonly PortraitRole[] = ['trader', 'pilot', 'fixe
 export const PORTRAIT_AGES: readonly PortraitAge[] = ['young', 'middle', 'old'];
 
 /**
- * The six story characters (src/content/story/arcs.ts). The seeds were picked by eye to fit each
+ * The story characters (src/content/story/arcs.ts). The seeds were picked by eye to fit each
  * one (tests/unit/portraits.test.ts pins the traits that make them who they are), and sit above
  * 1000 so small seeds given to regulars never repeat a story face.
  */
@@ -48,6 +48,10 @@ export const STORY_PORTRAITS: Readonly<Record<CharacterId, { seed: number; look:
   ansari: { seed: 2636, look: { faction: 'frontier', role: 'scientist', age: 'middle' } },
   // Captain of the Nest crews: a grey crop, a scar and a cybernetic eye.
   salt: { seed: 1020, look: { faction: 'hollow-wake', role: 'officer', age: 'old' } },
+  // Keeper of Squall Relay: long silver hair, a comm headset always on, a navy jacket.
+  halloway: { seed: 3008, look: { faction: 'independent', role: 'pilot', age: 'old' } },
+  // Steward of Harrow Farmstead: grey curls and a work shirt.
+  fenwick: { seed: 3016, look: { faction: 'independent', role: 'colonist', age: 'old' } },
 };
 
 /* ---------------------------------------------------------------------------------------------- */

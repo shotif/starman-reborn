@@ -18,11 +18,16 @@ export const EVENT_LABEL: Record<EventKind, string> = {
   strike: 'Strike',
   raid: 'Raid',
   sweep: 'Security sweep',
+  harvest: 'Harvest',
+  survey: 'Survey season',
+  stranded: 'Drive failure',
 };
 
 export function eventGlyph(e: Pick<WorldEvent, 'kind' | 'goods'>): GlyphName {
   if (e.kind === 'raid') return 'gun';
   if (e.kind === 'sweep') return 'shieldgen';
+  if (e.kind === 'survey') return 'scanner';
+  if (e.kind === 'stranded') return 'shipparts';
   return e.goods[0] ? COMMODITY_GLYPH[e.goods[0]] : 'trader';
 }
 

@@ -2,12 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { performJump } from '../../src/app/rules.ts';
 import { createNewGame } from '../../src/app/state.ts';
 import { CONTRACTS } from '../../src/content/contracts/rules.ts';
-import { EVENTS } from '../../src/content/events/rules.ts';
+import { createHash } from 'node:crypto';
+import { EVENTS, STRANDED_NAMES, type EventKind } from '../../src/content/events/rules.ts';
 import { formatIssues } from '../../src/content/validate.ts';
-import { getLocation, SYSTEMS } from '../../src/data/systems.ts';
+import { getLocation, getSystem, isFrontier, SYSTEMS } from '../../src/data/systems.ts';
 import { boardFor } from '../../src/economy/contracts.ts';
 import { validateEvents } from '../../src/economy/eventGuards.ts';
-import { baseThreat, eventsAt, eventStations, marketEffect, newsAt, stationEventAt, systemEventAt, type WorldEvent } from '../../src/economy/events.ts';
+import { baseThreat, eventsAt, eventStations, marketEffect, newsAt, stationEventAt, surveyPlanets, systemEventAt, type WorldEvent } from '../../src/economy/events.ts';
 import { marketEntry, marketTables, moveStock, normalStock, quote, stockNow, traderDelivery } from '../../src/economy/markets.ts';
 import { findRoute } from '../../src/galaxy/routing.ts';
 import { trafficFor } from '../../src/world/traffic/setup.ts';
@@ -15,6 +16,10 @@ import { trafficFor } from '../../src/world/traffic/setup.ts';
 /** World events (docs/PROCGEN.md §11): guardrails, markets, traffic, news and the work they create. */
 
 const REP = { sta: 0, frontier: 0, 'hollow-wake': 0 };
+
+/** The frontier's own events (increment 14), and the fingerprint of every other event before they came. */
+const FRONTIER_KINDS: readonly EventKind[] = ['harvest', 'survey', 'stranded'];
+const OLD_EVENTS = 'aaf473f61b3f2d41';
 
 /** The first event of a kind, scanning the clock minute by minute from `from`. */
 function first(kind: WorldEvent['kind'], from = 0, match: (e: WorldEvent) => boolean = () => true): WorldEvent {
@@ -100,7 +105,8 @@ describe('world events', () => {
 
   it('post work that answers them: a shortage run, a surplus haul, a raid response', () => {
     const found = new Set<string>();
-    for (let epoch = 0; epoch < 60 && found.size < 3; epoch++) {
+    const wanted = ['bounty', 'freight', 'supply'];
+    for (let epoch = 0; epoch < 60 && !wanted.every((k) => found.has(k)); epoch++) {
       const clock = epoch * CONTRACTS.epochSeconds;
       for (const id of eventStations()) {
         for (const c of boardFor(id, epoch)) {
@@ -113,14 +119,86 @@ describe('world events', () => {
             expect(raid.id).toBe(ev);
             expect(o.level).toBe(raid.level);
             expect(c.title).toMatch(/^Raid response/);
-          } else {
+          } else if (c.contract!.kind !== 'rescue') {
             expect(stationEventAt(id, clock)?.id).toBe(ev);
           }
           found.add(c.contract!.kind);
         }
       }
     }
-    expect([...found].sort()).toEqual(['bounty', 'freight', 'supply']);
+    expect([...found]).toEqual(expect.arrayContaining(wanted));
+  });
+
+  it('leave every event there was before the frontier’s own exactly as it was (100 hours, fingerprinted)', () => {
+    const h = createHash('sha256');
+    const seen = new Set<string>();
+    for (let clock = 0; clock < 100 * 3_600; clock += 900) {
+      for (const e of eventsAt(clock)) {
+        if (FRONTIER_KINDS.includes(e.kind) || seen.has(e.id)) continue;
+        seen.add(e.id);
+        h.update(JSON.stringify([e.id, e.kind, e.start, e.end, e.goods, e.price, e.stock, e.level]));
+      }
+    }
+    expect([seen.size, h.digest('hex').slice(0, 16)]).toEqual([6_555, OLD_EVENTS]);
+  });
+});
+
+describe('the frontier’s own events (docs/PROCGEN.md §11)', () => {
+  it('a harvest comes in only at a frontier farm: its food floods the market and wants hauling', () => {
+    const e = first('harvest');
+    const farm = getLocation(e.locationId!);
+    expect(isFrontier(farm.systemId)).toBe(true);
+    expect(farm.stationType).toBe('agri-station');
+    expect(e.headline).toBe(`Harvest in at ${farm.name}`);
+    const g = e.goods[0]!;
+    expect(['food', 'fine-food']).toContain(g);
+    const cheap = quote(farm.id, g, REP, { clock: e.start + 1, markets: {} }).buy!;
+    const usual = quote(farm.id, g, REP, { clock: e.start - 1, markets: {} }).buy!;
+    expect(cheap).toBeLessThan(usual * 0.8);
+    const epoch = Math.ceil(e.start / CONTRACTS.epochSeconds);
+    if (epoch * CONTRACTS.epochSeconds < e.end) {
+      const haul = boardFor(farm.id, epoch).find((c) => c.contract?.event === e.id);
+      expect(haul?.title).toMatch(/^Harvest haul: /);
+      expect(haul?.contract?.cargo?.commodity).toBe(g);
+    }
+  });
+
+  it('a survey season at a frontier research post studies a real planet nearby, and never settles a contested one', () => {
+    const e = first('survey', 0, (x) => surveyPlanets(x.locationId!).some((p) => p.contested));
+    const post = getLocation(e.locationId!);
+    expect(isFrontier(post.systemId)).toBe(true);
+    expect(post.stationType).toBe('research-station');
+    const planet = surveyPlanets(post.id).find((p) => p.id === e.bodyId)!;
+    expect(planet.contested).toBe(true);
+    expect(getSystem(planet.systemId).confirmedBodies.find((p) => p.id === planet.id)?.status).not.toBe('confirmed');
+    expect(e.detail).toContain(`${planet.name}, a planet the archives disagree about`);
+    expect(e.detail).toMatch(/settle nothing the archives do not/);
+    // Its board wants that planet surveyed, and says the readings settle nothing.
+    for (let epoch = Math.ceil(e.start / CONTRACTS.epochSeconds); epoch * CONTRACTS.epochSeconds < e.end; epoch++) {
+      const work = boardFor(post.id, epoch).find((c) => c.contract?.event === e.id);
+      if (!work) continue;
+      expect(work.title).toBe(`Survey season: ${planet.name}`);
+      expect(work.objectives[0]).toMatchObject({ kind: 'scan', bodyId: planet.id });
+      expect(work.briefing).toMatch(/only the archives can settle it/);
+      return;
+    }
+  });
+
+  it('a drive failure strands a named colony hauler in a frontier system, far from any dock', () => {
+    const e = first('stranded');
+    expect(isFrontier(e.systemId)).toBe(true);
+    expect(e.locationId).toBeNull();
+    expect(STRANDED_NAMES).toContain(e.ship);
+    expect(e.headline).toBe(`Drive failure in ${getSystem(e.systemId).displayName}`);
+    expect(e.detail).toContain(`The ${e.ship}, a colony hauler`);
+    // It moves no prices and no traffic.
+    expect(trafficFor(e.systemId, 'high', e.start + 1).plan).toEqual(trafficFor(e.systemId, 'high', e.start - 1).plan);
+  });
+
+  it('happen nowhere else', () => {
+    for (let clock = 0; clock < 100 * 3_600; clock += 1_800) {
+      for (const e of eventsAt(clock)) if (FRONTIER_KINDS.includes(e.kind)) expect(isFrontier(e.systemId), e.id).toBe(true);
+    }
   });
 
   it('have traders top short stock up without flooding a market or emptying a maker', () => {

@@ -3,8 +3,8 @@ import { LAW } from '../law/rules.ts';
 import type { Arc, ArcId, Character, CharacterId } from './types.ts';
 
 /**
- * The three faction arcs (docs/PROCGEN.md §14), written by hand, and The Long Border (§20), where
- * they meet. Each mission is a job built from the contract objectives, plus beats: words at the
+ * The three faction arcs (docs/PROCGEN.md §14), written by hand, The Long Border (§20), where
+ * they meet, and First Harvest (§14.6), out among the frontier's farms. Each mission is a job built from the contract objectives, plus beats: words at the
  * docks, comms in flight, a choice or two with standing consequences, and a finale. The people,
  * stations and events are fiction; the stars they happen around are real.
  */
@@ -19,6 +19,8 @@ export const CHARACTERS: Record<CharacterId, Character> = {
   brandt: { id: 'brandt', name: 'Ilse Brandt', role: 'Foreman, Stonecrop Gardens', factionId: 'frontier', locationId: 'stonecrop-gardens' },
   ansari: { id: 'ansari', name: 'Dr Pell Ansari', role: 'Botanist, Dawnfield Institute', factionId: 'frontier', locationId: 'dawnfield-institute' },
   salt: { id: 'salt', name: 'Salt', role: 'Captain of the Graveyard Nest crews', factionId: 'hollow-wake', locationId: 'graveyard-nest' },
+  halloway: { id: 'halloway', name: 'Ines Halloway', role: 'Keeper of Squall Relay', factionId: null, locationId: 'squall-relay' },
+  fenwick: { id: 'fenwick', name: 'Orla Fenwick', role: 'Steward of Harrow Farmstead', factionId: null, locationId: 'harrow-farmstead' },
 };
 
 export const ARCS: Record<ArcId, Arc> = {
@@ -54,9 +56,20 @@ export const ARCS: Record<ArcId, Arc> = {
     summary: 'The Transit Authority and the Hollow Wake are fighting over the lane from Ross 154 to Wolf 1061, and Sabine Kettering’s haulers are caught in between. Someone has to decide how it ends.',
     hook: 'Sabine Kettering needs a pilot who has flown both sides of the Ross 154 line.',
   },
+  harvest: {
+    id: 'harvest',
+    title: 'First Harvest',
+    factionId: null,
+    giver: 'halloway',
+    summary: 'Past the edge of the core, at HD 219134, Harrow Farmstead is bringing in its first harvest, and its calls for help go unanswered.',
+    hook: 'The keeper of Squall Relay has been hearing calls from the frontier farms.',
+  },
 };
 
-export const ARC_ORDER: readonly ArcId[] = ['sta', 'frontier', 'wake', 'border'];
+export const ARC_ORDER: readonly ArcId[] = ['sta', 'frontier', 'wake', 'border', 'harvest'];
+
+/** The harvest convoy's three haulers (fiction). */
+const HARVEST_CONVOY = { names: ['Wrenna', 'Furrow', 'Late Swallow'], need: 2, waves: 1 } as const;
 
 /** The front The Long Border decides (economy/border.ts): Maw Roost's den against Ross 154. */
 export const LONG_BORDER_FRONT = 'wolf-1061~ross-154';
@@ -885,6 +898,172 @@ export const ARC_JOBS: readonly JobDef[] = [
       settles: { front: LONG_BORDER_FRONT, ending: 'truce' },
       comms: [{ at: 0, lines: [{ who: 'kettering', text: 'Kettering here, on the open channel, so both sides can hear it: these ships carry envoys. Anybody who fires on them answers to both.' }] }],
       debrief: [{ who: 'kettering', text: 'Both envoys signed, aboard my ship, at Flotsam Diggings, with Wake ground under one and an Authority escort behind the other. Nobody calls it peace yet. But the packs stay in Wolf 1061, the patrols stay in Ross 154, and my haulers run the lane between them. That will do.' }],
+    },
+  },
+
+  // ------------------------------------------------------------ First Harvest (the frontier's farms, nobody's)
+  {
+    id: 'arc.harvest.1',
+    title: 'The far farms',
+    giverLocationId: 'squall-relay',
+    factionId: null,
+    briefing:
+      '“Harrow Farmstead has been calling this relay for a month, one jump out at HD 219134, past the edge of the core. Their first harvest is coming in, their hauler has gone quiet, and nobody answers frontier calls. Out there the lanes are long: you’ll need a long-range jump drive. Go and see what they need.”',
+    objectives: [{ kind: 'visit', locationId: 'harrow-farmstead', text: 'Dock at Harrow Farmstead (HD 219134)' }],
+    reward: 600,
+    repReward: { frontier: 3 },
+    difficulty: 2,
+    difficultyNote: 'Lawless space past the core; a long-range jump drive needed',
+    destinationLocationId: 'harrow-farmstead',
+    requires: { jobComplete: OPENING },
+    story: {
+      arc: 'harvest',
+      step: 1,
+      speaker: 'halloway',
+      debrief: [
+        { who: 'fenwick', text: 'Orla Fenwick. I keep this place, for my sins. Halloway sent you? Then she’s the only one who listened. Sit down: there’s soup, and there’s trouble.' },
+        { who: 'fenwick', text: 'We planted for three years before anything grew right. This year it did. And the one hauler we own is adrift with next year’s seed aboard.' },
+      ],
+    },
+  },
+  {
+    id: 'arc.harvest.2',
+    title: 'Dead in the water',
+    giverLocationId: 'harrow-farmstead',
+    factionId: null,
+    briefing:
+      '“Our hauler, the Wrenna, lost her drive coming back from Achird with next year’s seed, and she’s adrift out there, far from any dock. Take her these drive parts and come alongside: her crew can fit them. The Blackflag scavengers have noticed her.”',
+    objectives: [
+      { kind: 'rescue', systemId: 'achird', shipName: 'Wrenna', model: 'ship.freighter.1.halden', commodity: 'ship-parts', qty: 4, guard: 1, text: 'Bring 4 ship components to the Wrenna, adrift in Achird' },
+      { kind: 'visit', locationId: 'harrow-farmstead', text: 'Report to Orla Fenwick at Harrow Farmstead' },
+    ],
+    reward: 1_200,
+    repReward: { frontier: 4 },
+    difficulty: 2,
+    difficultyNote: 'Scavengers near the Wrenna',
+    destinationLocationId: 'harrow-farmstead',
+    requires: { jobComplete: 'arc.harvest.1' },
+    story: {
+      arc: 'harvest',
+      step: 2,
+      speaker: 'fenwick',
+      cargo: { commodity: 'ship-parts', qty: 4 },
+      beats: [{ after: 0, lines: [{ who: 'comm', text: 'Wrenna to Harrow, on the open channel: the drive’s turning over. We’re coming home, seed and all. Tell Orla to put the kettle on.' }] }],
+      debrief: [{ who: 'fenwick', text: 'The seed’s in the store and the Wrenna’s in her berth, scorched but whole. Next year has a chance now. So does this one, if the council can agree on anything.' }],
+    },
+  },
+  {
+    id: 'arc.harvest.3',
+    title: 'Readings',
+    giverLocationId: 'harrow-farmstead',
+    factionId: null,
+    briefing:
+      '“The council won’t vote on next year’s fields without the Institute’s report, and Curlew Institute won’t report without fresh readings, and its own skiff is in pieces. Log HD 219134 d, then f, the one the archives argue about, and take them to Curlew. Whatever you log, f stays what the archives say it is.”',
+    objectives: [
+      { kind: 'scan', bodyId: 'hd-219134-d', systemId: 'hd-219134', text: 'Scan HD 219134 d' },
+      { kind: 'scan', bodyId: 'hd-219134-f', systemId: 'hd-219134', text: 'Scan HD 219134 f, a planet the archives disagree about' },
+      { kind: 'visit', locationId: 'curlew-institute', text: 'Bring the readings to Curlew Institute' },
+    ],
+    reward: 1_000,
+    repReward: { frontier: 3 },
+    difficulty: 2,
+    difficultyNote: 'Blackflag Den is in the same system',
+    destinationLocationId: 'curlew-institute',
+    requires: { jobComplete: 'arc.harvest.2' },
+    story: {
+      arc: 'harvest',
+      step: 3,
+      speaker: 'fenwick',
+      beats: [
+        { after: 2, lines: [{ who: 'comm', text: 'Curlew’s duty astronomer: “d, clean as anything. And f again, no better than a maybe. It goes in the log as it is: the archives disagree, and a farm’s instruments won’t settle that.”' }] },
+      ],
+      debrief: [{ who: 'fenwick', text: 'The council has its report. The new fields go next to the old ones, where the water lines already run, which is what I said in the first place. Now: the harvest.' }],
+    },
+  },
+  {
+    id: 'arc.harvest.4',
+    title: 'Where it goes',
+    giverLocationId: 'harrow-farmstead',
+    factionId: null,
+    briefing:
+      '“Three holds of grain and fruit, the first we ever grew enough of to sell. Doppler Freeport at Achird pays best, in metal and machinery. Squall Relay can’t pay much, but its crews passed on our calls for a month when nobody else answered. The council says I decide, and I say you’ve earned a say.”',
+    objectives: [
+      {
+        kind: 'choice',
+        locationId: 'harrow-farmstead',
+        choiceId: 'harvest.market',
+        text: 'Decide where Harrow’s first harvest goes',
+        prompt: 'Doppler Freeport’s prices, or Squall Relay’s crews. Where does the harvest go?',
+        options: [
+          {
+            id: 'freeport',
+            label: 'Sell it at Doppler Freeport',
+            outcome: 'Fenwick nods slowly. “Metal and machinery: next year’s fields, and a second hauler. The free ports will know Harrow’s name.” Doppler pays a deposit on the spot.',
+            rep: { 'hollow-wake': 2 },
+            credits: 600,
+          },
+          {
+            id: 'relay',
+            label: 'Feed the crews at Squall Relay',
+            outcome: 'Fenwick smiles for the first time. “They eat first. Halloway won’t forget it, and the Cooperative will hear of it, out here where nobody hears anything.”',
+            rep: { frontier: 5 },
+          },
+        ],
+      },
+    ],
+    ...DECISION,
+    destinationLocationId: 'harrow-farmstead',
+    requires: { jobComplete: 'arc.harvest.3' },
+    story: { arc: 'harvest', step: 4, speaker: 'fenwick' },
+  },
+  {
+    id: 'arc.harvest.5.freeport',
+    title: 'The harvest run',
+    giverLocationId: 'harrow-farmstead',
+    factionId: null,
+    briefing:
+      '“The Wrenna and two borrowed haulers, full to the hatches, for Doppler Freeport at Achird. Every scavenger from here to Blackflag knows what a farm convoy carries. Keep them close when you jump, and get two of the three in.”',
+    objectives: [
+      { kind: 'escort', systemId: 'achird', fromLocationId: 'harrow-farmstead', locationId: 'doppler-freeport', model: 'ship.freighter.1.halden', shipName: 'harvest convoy', level: 2, convoy: HARVEST_CONVOY, text: 'Escort the harvest convoy to Doppler Freeport (Achird)' },
+    ],
+    reward: 2_600,
+    repReward: { frontier: 4, 'hollow-wake': 2 },
+    difficulty: 3,
+    difficultyNote: 'Raiders at the Achird beacon, and a wave on the way in',
+    destinationLocationId: 'doppler-freeport',
+    requires: { jobComplete: 'arc.harvest.4', choice: { id: 'harvest.market', oneOf: ['freeport'] } },
+    story: {
+      arc: 'harvest',
+      step: 5,
+      speaker: 'fenwick',
+      finale: true,
+      comms: [{ at: 0, lines: [{ who: 'fenwick', text: 'Fenwick to the convoy: slow and steady, and stay off Blackflag’s channel. We’ve waited three years. We can wait another hour.' }] }],
+      debrief: [{ who: 'fenwick', text: 'Doppler paid in machinery, and the dock crews clapped the Wrenna in. Harrow has a second hauler on order and fields for two harvests. Out here that counts as a fortune. Come back at sowing: there’s always soup.' }],
+    },
+  },
+  {
+    id: 'arc.harvest.5.relay',
+    title: 'The harvest run',
+    giverLocationId: 'harrow-farmstead',
+    factionId: null,
+    briefing:
+      '“The Wrenna and two borrowed haulers, full to the hatches, back across the edge to Squall Relay in EV Lacertae. Shiv Roost’s packs work that lane. Keep them close when you jump, and get two of the three in.”',
+    objectives: [
+      { kind: 'escort', systemId: 'ev-lacertae', fromLocationId: 'harrow-farmstead', locationId: 'squall-relay', model: 'ship.freighter.1.halden', shipName: 'harvest convoy', level: 2, convoy: HARVEST_CONVOY, text: 'Escort the harvest convoy to Squall Relay (EV Lacertae)' },
+    ],
+    reward: 2_600,
+    repReward: { frontier: 6 },
+    difficulty: 3,
+    difficultyNote: 'Raiders at the EV Lacertae beacon, and a wave on the way in',
+    destinationLocationId: 'squall-relay',
+    requires: { jobComplete: 'arc.harvest.4', choice: { id: 'harvest.market', oneOf: ['relay'] } },
+    story: {
+      arc: 'harvest',
+      step: 5,
+      speaker: 'fenwick',
+      finale: true,
+      comms: [{ at: 0, lines: [{ who: 'halloway', text: 'Squall Relay to the harvest convoy: we see you. Half the relay is at the windows. Bring them in.' }] }],
+      debrief: [{ who: 'halloway', text: 'Fresh bread on a relay. I’d forgotten. The crews have put Harrow’s calls on the first channel, so nobody out there goes unanswered again. Tell Orla she has friends at the edge.' }],
     },
   },
 ];
