@@ -64,7 +64,7 @@ export type OfflineStatus =
   | { kind: 'tests' }
   | { kind: 'insecure' }
   | { kind: 'not-yet' }
-  | { kind: 'kept'; kept: number; of: number };
+  | { kind: 'kept'; kept: number; of: number; missing: readonly string[] };
 
 export interface DeviceFacts {
   build: string;
@@ -79,8 +79,11 @@ export interface DeviceFacts {
   graphics: { webgl2: boolean; gpu: string; maxTexture: number } | null;
   quality: { setting: string; preset: string; pixelRatio: number; bloom: boolean };
   frameRate: FrameRateSummary | null;
-  /** Seconds from opening the page to the loading title and to the title with Play; kilobytes over the network. */
-  load: { firstScreen: number | null; title: number | null; downloadedKB: number | null };
+  /**
+   * Seconds from opening the page to the loading title and to the title with Play; kilobytes over
+   * the network. A service worker hides the sizes of the files it hands the page (`viaWorker`).
+   */
+  load: { firstScreen: number | null; title: number | null; downloadedKB: number | null; viaWorker: boolean };
   network: { type: string; downlink: number | null } | null;
   offline: OfflineStatus;
   sound: { state: string; muted: boolean };
@@ -109,7 +112,7 @@ function offlineLine(o: OfflineStatus): string {
     case 'not-yet':
       return 'not kept yet (it starts once the game has loaded)';
     case 'kept':
-      return o.kept >= o.of ? `ready: all ${o.of} files kept` : `${o.kept} of ${o.of} files kept so far`;
+      return o.kept >= o.of ? `ready: all ${o.of} files kept` : `${o.kept} of ${o.of} files kept so far (not yet: ${o.missing.join(', ')})`;
   }
 }
 
@@ -129,9 +132,14 @@ export function formatReport(f: DeviceFacts): string {
     load.firstScreen !== null ? `title showed at ${secs(load.firstScreen)}` : null,
     load.title !== null ? `Play at ${secs(load.title)}` : null,
   ].filter(Boolean);
-  const loadLine =
-    (loadParts.length ? `${loadParts.join(', ')} after opening the page` : 'not measured') +
-    (load.downloadedKB !== null ? (load.downloadedKB > 0 ? `; ${Math.round(load.downloadedKB)} KB downloaded` : '; all from the cache') : '');
+  const size = load.viaWorker
+    ? '; the offline copy handed over the files, so their download size is not known'
+    : load.downloadedKB === null
+      ? ''
+      : load.downloadedKB > 0
+        ? `; ${Math.round(load.downloadedKB)} KB downloaded`
+        : '; all from the browser’s cache';
+  const loadLine = (loadParts.length ? `${loadParts.join(', ')} after opening the page` : 'not measured') + size;
   const fr = f.frameRate;
   return [
     'Starman Reborn device report',
@@ -163,11 +171,22 @@ function markAt(name: string): number | null {
   return e ? e.startTime / 1000 : null;
 }
 
-/** Kilobytes of this page and its files that came over the network (null where the browser does not say). */
-function downloadedKB(): number | null {
+/** A build file's name without its content hash: `boot-CCQjQR63.js` is `boot.js`. */
+export function shortName(file: string): string {
+  const name = file.split('/').pop() ?? file;
+  return name.replace(/-[A-Za-z0-9_-]{8}(\.[a-z0-9]+)$/, '$1');
+}
+
+/**
+ * Kilobytes of this page and its files that came over the network (null where the browser does not
+ * say), and whether a service worker handed over the files: then the browser reports them as 0
+ * bytes even when the worker downloaded them.
+ */
+function downloads(): { downloadedKB: number | null; viaWorker: boolean } {
   const entries = [...performance.getEntriesByType('navigation'), ...performance.getEntriesByType('resource')] as PerformanceResourceTiming[];
-  if (!entries.length || entries.every((e) => e.transferSize === undefined)) return null;
-  return entries.reduce((sum, e) => sum + (e.transferSize ?? 0), 0) / 1024;
+  const viaWorker = entries.some((e) => e.entryType === 'resource' && e.workerStart > 0);
+  if (viaWorker || !entries.length || entries.every((e) => e.transferSize === undefined)) return { downloadedKB: null, viaWorker };
+  return { downloadedKB: entries.reduce((sum, e) => sum + (e.transferSize ?? 0), 0) / 1024, viaWorker };
 }
 
 /** The notch and rounded corners the page keeps clear of, in CSS pixels (src/ui/styles/base.css). */
@@ -191,9 +210,9 @@ async function offline(): Promise<OfflineStatus> {
     if (!registration || !(await caches.has(OFFLINE_CACHE))) return { kind: 'not-yet' };
     const files = JSON.parse(document.getElementById('offline-files')?.textContent ?? '[]') as string[];
     const cache = await caches.open(OFFLINE_CACHE);
-    let kept = 0;
-    for (const f of files) if (await cache.match(new URL(f, location.href).href)) kept++;
-    return { kind: 'kept', kept, of: files.length };
+    const missing: string[] = [];
+    for (const f of files) if (!(await cache.match(new URL(f, location.href).href))) missing.push(shortName(f));
+    return { kind: 'kept', kept: files.length - missing.length, of: files.length, missing };
   } catch {
     return { kind: 'not-yet' };
   }
@@ -232,7 +251,7 @@ export async function collectDeviceFacts(game: GameFacts): Promise<DeviceFacts> 
     graphics: game.graphics,
     quality: game.quality,
     frameRate: game.frameRate,
-    load: { firstScreen: markAt(LOAD_MARKS.firstScreen), title: markAt(LOAD_MARKS.title), downloadedKB: downloadedKB() },
+    load: { firstScreen: markAt(LOAD_MARKS.firstScreen), title: markAt(LOAD_MARKS.title), ...downloads() },
     network: conn?.effectiveType ? { type: conn.effectiveType, downlink: typeof conn.downlink === 'number' ? conn.downlink : null } : null,
     offline: await offline(),
     sound: game.sound,

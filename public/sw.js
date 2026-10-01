@@ -15,6 +15,9 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+/** Waits before a second and third try at a download that failed (a phone's connection drops out). */
+const RETRY_MS = [2000, 6000];
+
 /** Keeps every listed file of this origin (from the browser's cache, mostly) and drops old build files. */
 async function keep(urls) {
   const cache = await caches.open(CACHE);
@@ -23,11 +26,18 @@ async function keep(urls) {
     urls.map(async (url) => {
       // The page itself is refreshed on every visit; build files never change under one name.
       if (!url.endsWith('/') && (await cache.match(url))) return;
-      try {
-        const res = await fetch(url);
-        if (res.ok) await cache.put(url, res);
-      } catch {
-        // Offline already: keep what there is.
+      for (let attempt = 0; attempt <= RETRY_MS.length; attempt++) {
+        if (attempt > 0) await new Promise((done) => setTimeout(done, RETRY_MS[attempt - 1]));
+        try {
+          const res = await fetch(url);
+          if (res.ok) {
+            await cache.put(url, res);
+            return;
+          }
+        } catch {
+          // Offline, or the connection dropped: try again, then keep what there is (the next
+          // visit tries the rest).
+        }
       }
     }),
   );

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatReport, FrameRateLog, type DeviceFacts } from '../../src/app/deviceReport.ts';
+import { formatReport, FrameRateLog, shortName, type DeviceFacts } from '../../src/app/deviceReport.ts';
 
 /**
  * The device report in Settings (docs/TEST_RECORD.md, the real-device checklist): the frame rate
@@ -18,9 +18,9 @@ const PHONE: DeviceFacts = {
   graphics: { webgl2: true, gpu: 'ANGLE (Qualcomm, Adreno (TM) 730, OpenGL ES 3.2)', maxTexture: 4096 },
   quality: { setting: 'auto', preset: 'medium', pixelRatio: 1.75, bloom: false },
   frameRate: { average: 51.6, slowest: 37.8, seconds: 192.4 },
-  load: { firstScreen: 0.62, title: 3.94, downloadedKB: 690.4 },
+  load: { firstScreen: 0.62, title: 3.94, downloadedKB: 690.4, viaWorker: false },
   network: { type: '4g', downlink: 9.5 },
-  offline: { kind: 'kept', kept: 34, of: 34 },
+  offline: { kind: 'kept', kept: 15, of: 15, missing: [] },
   sound: { state: 'on', muted: false },
   textScale: 1,
   reducedMotion: false,
@@ -71,7 +71,7 @@ describe('device report: the text', () => {
         'Frame rate, last flight: 52 fps on average, 38 in the slowest second (3 min 12 s)',
         'Load: title showed at 0.6 s, Play at 3.9 s after opening the page; 690 KB downloaded',
         'Network: 4g, about 9.5 Mbit/s',
-        'Offline play: ready: all 34 files kept',
+        'Offline play: ready: all 15 files kept',
         'Sound: on',
         'Text size 100%, reduced motion off',
       ].join('\n'),
@@ -87,9 +87,9 @@ describe('device report: the text', () => {
       graphics: null,
       quality: { setting: 'high', preset: 'high', pixelRatio: 1, bloom: true },
       frameRate: null,
-      load: { firstScreen: null, title: null, downloadedKB: 0 },
+      load: { firstScreen: null, title: null, downloadedKB: 0, viaWorker: false },
       network: null,
-      offline: { kind: 'kept', kept: 12, of: 34 },
+      offline: { kind: 'kept', kept: 13, of: 15, missing: ['boot.js', 'saira-condensed-latin-600-normal.woff2'] },
       sound: { state: 'waiting for a first tap or key press', muted: true },
       textScale: 1.25,
       reducedMotion: true,
@@ -101,11 +101,25 @@ describe('device report: the text', () => {
     expect(text).toContain('Graphics: not available');
     expect(text).toContain('Quality: High, pixel ratio 1, bloom on');
     expect(text).toContain('Frame rate, last flight: no flight yet');
-    expect(text).toContain('Load: not measured; all from the cache');
+    expect(text).toContain('Load: not measured; all from the browser’s cache');
     expect(text).toContain('Network: not reported by this browser');
-    expect(text).toContain('Offline play: 12 of 34 files kept so far');
+    expect(text).toContain('Offline play: 13 of 15 files kept so far (not yet: boot.js, saira-condensed-latin-600-normal.woff2)');
     expect(text).toContain('Sound: waiting for a first tap or key press, muted');
     expect(text).toContain('Text size 125%, reduced motion on');
+  });
+
+  it('does not guess download sizes the service worker hides', () => {
+    const line = formatReport({ ...PHONE, load: { firstScreen: 0.7, title: 1.4, downloadedKB: null, viaWorker: true } })
+      .split('\n')
+      .find((l) => l.startsWith('Load'));
+    expect(line).toBe('Load: title showed at 0.7 s, Play at 1.4 s after opening the page; the offline copy handed over the files, so their download size is not known');
+  });
+
+  it('names build files without their content hash', () => {
+    expect(shortName('./assets/boot-CCQjQR63.js')).toBe('boot.js');
+    expect(shortName('./assets/GalaxyMapView-C2uyinKQ.css')).toBe('GalaxyMapView.css');
+    expect(shortName('./assets/saira-semi-condensed-latin-400-normal-DBFPQfhT.woff2')).toBe('saira-semi-condensed-latin-400-normal.woff2');
+    expect(shortName('./assets/encyclopedia-Bk09aQ9-.js')).toBe('encyclopedia.js');
   });
 
   it('explains why the game is not kept for offline play', () => {

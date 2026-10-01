@@ -26,15 +26,29 @@ const COMPRESS = new Set(['.html', '.js', '.css', '.json', '.webmanifest', '.svg
 export interface PagesServer {
   url: string;
   close(): Promise<void>;
+  /** Requests seen so far, by path. */
+  requests: Map<string, number>;
+}
+
+export interface PagesOptions {
+  /** The first request for a path matching this fails (503), as a download does when a phone loses signal. */
+  failOnce?: RegExp;
 }
 
 /** `host` 'localhost' gives an origin where the service worker registers (src/main.ts). */
-export async function servePages(root = 'dist', port = 0, host: '127.0.0.1' | 'localhost' = '127.0.0.1'): Promise<PagesServer> {
+export async function servePages(root = 'dist', port = 0, host: '127.0.0.1' | 'localhost' = '127.0.0.1', opts: PagesOptions = {}): Promise<PagesServer> {
   const base = resolve(root);
   const cache = new Map<string, { body: Buffer; gz: Buffer | null; etag: string }>();
+  const requests = new Map<string, number>();
   const server: Server = createServer((req, res) => {
     void (async () => {
       const path = decodeURIComponent(new URL(req.url ?? '/', 'http://x').pathname);
+      const seen = (requests.get(path) ?? 0) + 1;
+      requests.set(path, seen);
+      if (opts.failOnce?.test(path) && seen === 1) {
+        res.writeHead(503).end();
+        return;
+      }
       let file = normalize(join(base, path));
       if (!file.startsWith(base)) {
         res.writeHead(403).end();
@@ -81,6 +95,7 @@ export async function servePages(root = 'dist', port = 0, host: '127.0.0.1' | 'l
   let closed: Promise<void> | null = null;
   return {
     url: `http://${host}:${actual}`,
+    requests,
     // Kept-alive connections go too, so nothing more can be served once it returns.
     close: () =>
       (closed ??= new Promise<void>((done) => {

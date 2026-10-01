@@ -166,8 +166,13 @@ Other balance guardrails:
   phone or computer and its browser tell the game: the screen and safe areas, the input, the
   graphics chip, the quality in use, the load times (the loading title and the title leave marks in
   the browser's performance timeline), the last flight's average frame rate and slowest second,
-  the network, and whether the game is kept for offline play. It is only shown, never sent: the
-  tester copies it.
+  the network, and whether the game is kept for offline play, naming any file not kept yet. When
+  the service worker hands the page its files, the browser reports their sizes as nothing, so the
+  report says the size is not known rather than guess. It is only shown, never sent: the tester
+  copies it.
+- **Offline play** (`public/sw.js`): once the game is up, the page gives the service worker the
+  list of every build file to keep; a download that fails is tried twice more (after 2 and 6
+  seconds), and anything still missing is tried again on the next visit.
 
 ## 5. Testing
 

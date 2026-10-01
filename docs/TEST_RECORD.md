@@ -117,8 +117,9 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 - `deviceReport.test.ts`: the device report: a flight's average frame rate and its slowest second,
   nothing before a second of flight, a minute behind another app left out, a new flight starting
   afresh; the report's text line by line for a phone, and plainly what is missing (no graphics, no
-  flight yet, a load from the cache, no network details, offline play part-kept, not supported,
-  off in tests, needing HTTPS or not set up yet).
+  flight yet, a load from the browser's cache, download sizes the service worker hides, no network
+  details, offline play part-kept with the files not yet kept named without their hashes, not
+  supported, off in tests, needing HTTPS or not set up yet).
 - `progress.test.ts`: the codex lists exactly the catalogued stars, confirmed planets and the Solar
   System's bodies, each scannable in its scene; a scan counts once and off-catalogue bodies are
   ignored; research stations buy a completed survey once; ratings follow the career record;
@@ -381,6 +382,9 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   worker registers; after one visit the page and every file of the build are in its cache, and the
   device report says so; then the server is switched off and the browser goes offline (a fetch of
   anything else fails), and a reload brings the title, Play starts a game and the star map opens.
+  A download that fails once (a 503 for the science notes, which only the worker asks for) is
+  tried again, and the report then says all the files are kept; with the earlier worker, which
+  gave up at once, the same test fails.
 - `device.spec.ts`: **the device report** in Settings, from the title: the build, the load times
   (the loading title and Play), WebGL 2 and its texture size, the safe-area insets (set as a
   notched phone's), touch or mouse as the device has, no flight yet and offline play off in test
@@ -453,10 +457,12 @@ notes.
     report says offline play is ready), turn on flight mode and reload. The title should come back,
     a game should start, and the star map should open.
 12. Settings → **Copy report**, and paste it with your results.
+13. For the first load over the phone network, open the site in a new **Incognito** (private) tab,
+    which has nothing kept from earlier visits, wait for Play, and copy that tab's report too.
 
 Record results here (device, OS, browser, fps, issues):
 
 | Device | OS / browser | Steps passed | fps (fight) | Notes |
 | --- | --- | --- | --- | --- |
-| Android phone (the owner's) | Android, Chrome | 7: star map pinch only | Not measured | 1 October 2026: a pinch over the star map zooms toward the fingers, with the star staying under them. The rest of step 7 (double tap, Find with the on-screen keyboard up, Missions) and steps 1–6 and 8–11 not run yet. |
+| Android phone (the owner's): Adreno 750 graphics, 384 × 832 at pixel ratio 2.81 | Android, Chrome 154 | 7: star map pinch; the device report | 99 average, 54 in the slowest second (a 29 s flight, High with bloom) | 1 October 2026: a pinch over the star map zooms toward the fingers, with the star staying under them. The device report (build c7bb929, on 4G at about 8.7 Mbit/s): the title at 0.7 s and Play at 1.4 s, but on a repeat visit through the offline copy, so not yet a first load over the phone network; no safe-area insets (the browser keeps the page clear of the status bar); offline play 13 of 15 files kept. That led to two fixes: the service worker now tries a failed download twice more, and the report names any file not yet kept and no longer calls hidden download sizes "from the cache". The rest of step 7 (double tap, Find with the on-screen keyboard up, Missions) and steps 2–6 and 8–11 not reported yet. |
 | _pending_: the whole checklist on an Android phone and an iPhone or iPad | | | | Find with the on-screen keyboard up matters most on iPhone Safari. |

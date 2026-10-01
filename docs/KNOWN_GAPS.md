@@ -11,7 +11,9 @@ This is an honest list of what the prototype does not do yet, or what has not be
    device, or with a physical controller. Please run the rest of the hands-on checklist in the test
    record over HTTPS, at <https://shotif.github.io/starman-reborn/>, and paste the device report
    (Settings → **Copy report**) with your notes: it carries the load times, the frame rate and
-   whether offline play is ready.
+   whether offline play is ready. The first report, from the owner's Android phone (a recent
+   high-end one), showed 99 fps on average on High with bloom; a mid-range phone, an iPhone and a
+   first load over a phone network (in a private tab) are still to come.
 
 ## The sky, as verified
 

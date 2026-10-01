@@ -62,3 +62,28 @@ test('after one visit the game starts and the star map opens with no network', a
   await press(page, 'dock-map');
   await expect(page.getByTestId('galaxy-map')).toBeVisible();
 });
+
+test('a download that fails while the game is kept for offline play is tried again', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'The service worker is the same on every device; once is enough.');
+  // The science notes load only on demand, so only the worker asks for them: that first time fails.
+  await server.close();
+  server = await servePages('dist', 0, 'localhost', { failOnce: /\/assets\/encyclopedia-[^/]+\.js$/ });
+  await page.goto(server.url + '/');
+  await expect(page.getByTestId('title-screen')).toBeVisible();
+  const wanted = await page.evaluate(() => (JSON.parse(document.getElementById('offline-files')?.textContent ?? '[]') as string[]).length);
+  await press(page, 'title-settings');
+  // Ready once the second try has got it (the report is made each time Settings opens).
+  await expect
+    .poll(
+      async () => {
+        await press(page, 'sheet-close');
+        await press(page, 'title-settings');
+        await expect(page.getByTestId('device-report')).toHaveValue(/^Starman Reborn device report/);
+        return page.getByTestId('device-report').inputValue();
+      },
+      { timeout: 60_000, intervals: [2_000] },
+    )
+    .toMatch(new RegExp(`^Offline play: ready: all ${wanted} files kept$`, 'm'));
+  const tries = [...server.requests].find(([path]) => /\/assets\/encyclopedia-/.test(path))?.[1];
+  expect(tries, 'failed once, then fetched again').toBe(2);
+});
