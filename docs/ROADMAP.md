@@ -24,7 +24,36 @@ What it lacks now:
 
 ## Proposed next increments
 
-Candidates for what comes next, in the order I would build them:
+Candidates for what comes next, in the order they will be built (the first four chosen by the
+owner on 1 October 2026, as fresh directions):
+
+### A station of your own ⏳ (L)
+
+The fleet's next step: found an outpost (fiction) at a real site the archives list, a confirmed
+planet's orbit or a catalogued belt. Build it up by hauling materials there, and it joins the
+economy with its own market, job board and stakes. Today a fleet's stakes are passive.
+
+### Passengers and sightseers ⏳ (M)
+
+A passenger cabin; fares between stations, and sightseers (fiction) who pay to be flown close to
+real sights from the codex (Proxima b, Epsilon Eridani's belts, Sirius B), commenting as they go. A
+fight with passengers aboard costs their fare. The real sky pays its way; today the codex is only
+a record.
+
+### Rival pilots ⏳ (M)
+
+A handful of named rival pilots (fiction) with careers of their own: they trade the player's
+routes, take the bounties the player wants and race them to a shortage. They turn up in the News
+and the bars, and can be befriended, outbid or fought. Today people live only in the bars, and aces
+are one-offs.
+
+### Stellar death, as fiction ⏳ (M–L)
+
+Supernovae and black holes forming. No real star within the map can go supernova (none is massive
+enough), and the nearest known black hole, Gaia BH1, is about 1,560 light-years away, so these
+events are invented: an exception to the rule that real astronomy is never invented, chosen by the
+owner. They will be labelled as fiction in the game wherever they appear, and never written into
+the real sky's data or its sources.
 
 ### Gluts that ship out ⏳ (S)
 
