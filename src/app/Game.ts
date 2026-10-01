@@ -19,6 +19,8 @@ import { getCatalog, shipModel } from '../content/catalog.ts';
 import { hashString } from '../content/random.ts';
 import { cargoCapacity, newShipState, performanceOf } from '../economy/loadout.ts';
 import { carriesPassengers, frighten, passengerFright, passengerGoodbye, passengerJobs, seeSight, sightseersArrive, sightsIn } from '../economy/passengers.ts';
+import { claimFor, nextRun, rivalById, rivalDestroyed, rivalHello, rivalKnockedOut, rivalName, rivalShot, rivalWhere, turnOf } from '../economy/rivals.ts';
+import { ROSTER } from '../content/rivals/rules.ts';
 import { recordMarketVisit } from '../economy/trade.ts';
 import { adjustReputation, FACTIONS, standingTier, TIER_LABEL } from '../economy/factions.ts';
 import { eventsAt, newsAt, systemEventAt } from '../economy/events.ts';
@@ -46,7 +48,7 @@ import {
   wrecksIn,
   type JobEvent,
 } from '../economy/jobs.ts';
-import { partyName, postedContract, postedContracts } from '../economy/contracts.ts';
+import { boardEpoch, partyName, postedContract, postedContracts } from '../economy/contracts.ts';
 import { briefingFor, choiceHere, denDown, isStoryJob, knockOutDen, makeChoice, markSeen, optionLock, pendingBeats, speakerName } from '../economy/story.ts';
 import { DENS } from '../content/dens/rules.ts';
 import { showChoice, showDialogue } from '../ui/story.ts';
@@ -191,6 +193,8 @@ export class Game {
   private fleetTimer = 0;
   /** Game clock when passengers last said they were frightened (docs/PROCGEN.md §23). */
   private lastFright = -Infinity;
+  /** When this flight began (a rival counts the player's shots against standing once a flight). */
+  private flightStart = 0;
   private objectiveText: string | null = null;
   /** The "what next" suggestion for this flight (worked out once per launch or arrival). */
   private hint: string | null = null;
@@ -854,6 +858,7 @@ export class Game {
   private enterFlight(spawn: Parameters<FlightSession['start']>[0]): void {
     const state = this.state!;
     useWorldLog(state.world);
+    this.flightStart = state.clock;
     this.clearScreens();
     this.loadSystem(state.location.systemId);
     this.disposeFlight();
@@ -994,6 +999,23 @@ export class Game {
         onCaptain: (shipId, fate, by) => {
           if (fate === 'safe') captainSeen(state, shipId);
           else this.announceFleet(captainLost(state, shipId, by ?? 'raiders', new Set(this.flight?.captainsInSight() ?? [])));
+          this.persist();
+        },
+        onRival: (id, what, detail) => {
+          const r = rivalById(id);
+          if (!r) return;
+          const name = rivalName(r);
+          if (what === 'met') this.comm(name, rivalHello(state, r, !!detail?.hostile), 5000);
+          else if (what === 'shot') {
+            const line = rivalShot(state, r, this.flightStart);
+            if (line) this.comm(name, line, 5000);
+          } else if (detail?.by === 'player') {
+            this.comm(name, rivalDestroyed(state, r, state.location.systemId), 6000);
+            toast(`${name} ejected from the ${r.shipName}. They will be refitting at ${getLocation(r.home).name} for a while.`, 'info', 5000);
+          } else {
+            rivalKnockedOut(state, r, state.location.systemId);
+            toast(`${name}’s ${r.shipName} was destroyed by raiders. ${r.first} ejected.`, 'bad', 5000);
+          }
           this.persist();
         },
         onHaulThanks: (haul) => {
@@ -1941,6 +1963,25 @@ export class Game {
           }
         }
         return null;
+      },
+      /** Test-only: the first bounty a rival hunter takes off a board from `from` on: where, which, when, and who. */
+      findRivalClaim: (from: number) => {
+        for (const r of ROSTER.filter((x) => x.style === 'hunter')) {
+          for (let n = Math.max(0, turnOf(from)); n < turnOf(from) + 200; n++) {
+            const c = claimFor(r, n);
+            // With time to spare before the board's posting rolls over.
+            if (c && c.at >= from && c.contract.contract?.kind === 'bounty' && boardEpoch(c.at + 600) === boardEpoch(c.at)) return { rival: r.id, giver: c.giver, contract: c.contract.id, title: c.contract.title, at: c.at };
+          }
+        }
+        return null;
+      },
+      /** Test-only: where a rival is now (docked, flying, in a jump or refitting), and the run it is on or flies next. */
+      rival: (id: string) => {
+        const r = rivalById(id);
+        if (!r || !this.state) return null;
+        const w = rivalWhere(r, this.state.clock);
+        const run = w.kind === 'flying' || w.kind === 'jumping' ? w.run : nextRun(r, this.state.clock);
+        return { where: w.kind, at: w.kind === 'docked' ? w.locationId : w.kind === 'flying' ? w.leg.systemId : null, run: run ? { id: run.id, kind: run.kind, from: run.from, to: run.to, depart: run.depart, arrive: run.arrive, legs: run.legs.map((l) => ({ systemId: l.systemId, start: l.start, end: l.end })) } : null };
       },
       /**
        * Test-only: a ship of `model` parked where the player is docked, the prices at `to` known as if

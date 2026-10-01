@@ -11,6 +11,7 @@ import type { FictionalLocation, SystemId } from '../data/types.ts';
 import { FLEETS } from '../world/traffic/plan.ts';
 import { activeHaulLog, eventEnd, stationEventById, stationEventsBetween, systemEventAt, systemEventsBetween, type WorldEvent } from './events.ts';
 import { marketTables } from './markets.ts';
+import { rivalRelief } from './rivals.ts';
 
 /**
  * Haulers on the lanes (docs/PROCGEN.md §21). The stations send each other freight as ships with
@@ -73,7 +74,8 @@ export function haulSenders(): readonly FictionalLocation[] {
 }
 
 const madeCache = new Map<string, CommodityId[]>();
-function made(locationId: string): CommodityId[] {
+/** The lawful goods a station makes (none at a closed one). */
+export function made(locationId: string): CommodityId[] {
   let out = madeCache.get(locationId);
   if (!out) {
     const t = marketTables().get(locationId);
@@ -128,7 +130,7 @@ export function takersOf(from: FictionalLocation, commodity: CommodityId): reado
 }
 
 /** Stations that make `commodity` within `jumps` of a station, nearest first. */
-function makersNear(to: FictionalLocation, commodity: CommodityId, jumps: number): FictionalLocation[] {
+export function makersNear(to: FictionalLocation, commodity: CommodityId, jumps: number): FictionalLocation[] {
   const ways = waysFrom(to.systemId);
   return haulSenders()
     .filter((l) => l.id !== to.id && made(l.id).includes(commodity) && (ways.get(l.systemId)?.length ?? 99) - 1 <= jumps)
@@ -369,29 +371,41 @@ export function haulsIn(systemId: SystemId, clock: number): HaulHere[] {
   return out.sort((a, b) => Number(b.haul.kind === 'relief') - Number(a.haul.kind === 'relief') || (a.haul.id < b.haul.id ? -1 : 1));
 }
 
-/** The relief a shortage has had by a moment: units delivered by hauls that arrived. */
+/** The relief a shortage has had by a moment: units delivered by hauls (and rival runners, §24) that arrived. */
 export function reliefDelivered(e: WorldEvent, clock: number): number {
   let sum = 0;
-  for (const h of reliefHauls(e)) {
-    const fate = haulFate(h);
-    if (fate.delivered && fate.at <= clock) sum += h.qty;
-  }
+  for (const a of arrivals(e, true)) if (a.at <= clock) sum += a.qty;
   return sum;
 }
 
-/** When a shortage's relief hauls between them bring what ends it (EVENTS.react.relief of what it lacks), or Infinity. */
-export function reliefEnd(e: WorldEvent): number {
-  const need = shortfall(e) * EVENTS.react.relief;
-  const arrivals = reliefHauls(e)
+/** Relief arriving for a shortage, soonest first: its hauls that get there, and (with `rivals`) the rival runners' cargo. */
+function arrivals(e: WorldEvent, rivals: boolean): { at: number; qty: number }[] {
+  const out = reliefHauls(e)
     .map((h) => ({ h, fate: haulFate(h) }))
     .filter((x) => x.fate.delivered)
-    .sort((a, b) => a.fate.at - b.fate.at);
+    .map((x) => ({ at: x.fate.at, qty: x.h.qty }));
+  if (rivals) out.push(...rivalRelief(e));
+  return out.sort((a, b) => a.at - b.at);
+}
+
+function endOf(e: WorldEvent, rivals: boolean): number {
+  const need = shortfall(e) * EVENTS.react.relief;
   let sum = 0;
-  for (const { h, fate } of arrivals) {
-    sum += h.qty;
-    if (need > 0 && sum >= need - 1e-9) return fate.at;
+  for (const a of arrivals(e, rivals)) {
+    sum += a.qty;
+    if (need > 0 && sum >= need - 1e-9) return a.at;
   }
   return Infinity;
+}
+
+/** When a shortage's relief between them brings what ends it (EVENTS.react.relief of what it lacks), or Infinity. */
+export function reliefEnd(e: WorldEvent): number {
+  return endOf(e, true);
+}
+
+/** When the haulers' relief alone would end a shortage (what a rival runner weighs before it races), or Infinity. */
+export function haulReliefEnd(e: WorldEvent): number {
+  return endOf(e, false);
 }
 
 // ---------------------------------------------------------------- news

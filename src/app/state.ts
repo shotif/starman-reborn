@@ -215,6 +215,26 @@ export interface WorldLog {
   hauls?: Record<string, HaulRecord>;
   /** The player's own outpost (docs/PROCGEN.md §22), once chartered. */
   outpost?: OutpostRecord;
+  /** Rival pilots (docs/PROCGEN.md §24): the ones the player knocked out, and the claims bought back. */
+  rivals?: RivalLog;
+}
+
+/** What the player did to rival pilots' careers (docs/PROCGEN.md §24). */
+export interface RivalLog {
+  /** Rivals whose ship the player destroyed: rival id → when and where (the latest time only). */
+  down: Record<string, { at: number; systemId: SystemId }>;
+  /** Bounty hunters' claims the player bought back: contract id → game clock. */
+  bought: Record<string, number>;
+}
+
+/** How the player stands with a rival pilot (docs/PROCGEN.md §24). */
+export interface RivalStanding {
+  /** −100 to 100, from 0. */
+  standing: number;
+  /** The bar shift (PEOPLE.shift board epochs) in which the player last bought them a round. */
+  round?: number;
+  /** When a shot of the player's last cost standing (once a flight). */
+  shot?: number;
 }
 
 /**
@@ -341,6 +361,8 @@ export interface GameState {
   rumours: HeardRumour[];
   /** Stock the player's trades have moved (economy/markets.ts). */
   markets: MarketState;
+  /** How the player stands with each rival pilot (docs/PROCGEN.md §24), by id; absent until it matters. */
+  rivals?: Record<string, RivalStanding>;
   /** Generated contracts the player accepted, as posted (economy/contracts.ts). */
   contracts: Record<string, JobDef>;
   /** The law (docs/PROCGEN.md §12): fines owed to each lawful faction. */

@@ -11,13 +11,14 @@ import { button, dataBadge } from '../components.ts';
 import { formatCredits, h, signed } from '../dom.ts';
 import { glyph, type GlyphName } from '../glyphs.ts';
 import { icon } from '../icons.ts';
-import { borderNewsList, denNews, haulNews, markNews, newsList } from '../news.ts';
+import { borderNewsList, denNews, haulNews, markNews, newsList, rivalNewsList } from '../news.ts';
 import { fineOwed, isLawful, pardonCost, payFines } from '../../economy/law.ts';
 import { buysSurveys, sellSurvey, surveysForSale, surveyValue } from '../../economy/progress.ts';
 import { toast } from '../components.ts';
 import type { StationContext } from './context.ts';
 import { sightById } from '../../content/passengers/sights.ts';
 import { berths } from '../../economy/passengers.ts';
+import { buyClaim, claimsAt, rivalName, rivalTier } from '../../economy/rivals.ts';
 
 export function pips(level: number, of = 3): HTMLElement {
   return h('span', { class: 'pips', role: 'img', 'aria-label': `Difficulty ${level} of ${of}` }, Array.from({ length: of }, (_, i) => h('span', { class: i < level ? 'on' : '' })));
@@ -145,6 +146,7 @@ export function jobBoardContent(ctx: StationContext, selected: string | null, on
     offers.length
       ? h('ul', { class: 'list' }, offers.map((o) => jobCard(ctx, o, o.job.id === open, onSelect)))
       : h('p', { class: 'list-empty' }, all.length ? 'No contracts of that kind here.' : 'No contracts posted at this dock.'),
+    claimList(ctx, refresh),
     active.length
       ? h(
           'section',
@@ -153,6 +155,43 @@ export function jobBoardContent(ctx: StationContext, selected: string | null, on
           h('ul', { class: 'plain active-jobs' }, active.map((o) => h('li', null, icon('objective'), h('strong', null, ` ${o.jobTitle}: `), o.text))),
         )
       : null,
+  );
+}
+
+/** Bounties rival hunters took off this board (docs/PROCGEN.md §24.4), and what buying each claim back costs. */
+function claimList(ctx: StationContext, refresh: () => void): HTMLElement | null {
+  const { state, locationId } = ctx;
+  const claims = claimsAt(state, locationId);
+  if (!claims.length) return null;
+  return h(
+    'section',
+    { 'aria-label': 'Taken by rivals', 'data-testid': 'board-claims' },
+    h('div', { class: 'list-head' }, h('span', null, 'Taken by rival pilots'), h('span', null, 'Their price')),
+    h(
+      'ul',
+      { class: 'list' },
+      claims.map((c) => {
+        const hostile = rivalTier(state, c.rival.id) === 'hostile';
+        return h(
+          'li',
+          { class: 'trade-row claim-row', 'data-testid': `claim-${c.contract.id}` },
+          glyph(KIND_GLYPH[c.contract.contract?.kind ?? 'bounty']),
+          h('span', { class: 'trade-text' }, h('span', { class: 'row-name' }, c.contract.title), h('span', { class: 'row-sub' }, `Taken by ${rivalName(c.rival)} · pays ${formatCredits(c.contract.reward)}${hostile ? ' · will not sell to you' : ''}`)),
+          button(`Buy the claim · ${formatCredits(c.price)}`, {
+            size: 'sm',
+            testId: `claim-buy-${c.contract.id}`,
+            disabled: hostile || state.credits < c.price,
+            onClick: () => {
+              const r = buyClaim(state, locationId, c.contract.id);
+              ctx.sfx(r.ok ? 'ui-confirm' : 'ui-error');
+              toast(r.message, r.ok ? 'good' : 'bad');
+              ctx.save();
+              refresh();
+            },
+          }),
+        );
+      }),
+    ),
   );
 }
 
@@ -327,6 +366,7 @@ export function newsContent(ctx: StationContext): HTMLElement {
     denNews(state, loc.systemId),
     newsList(loc.systemId, state.clock),
     haulNews(loc.systemId, state.clock),
+    rivalNewsList(loc.systemId, state.clock),
   );
 }
 

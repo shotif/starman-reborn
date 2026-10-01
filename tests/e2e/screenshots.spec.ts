@@ -289,6 +289,23 @@ for (const size of SIZES) {
       else await head.click();
       await page.getByTestId(`job-party-${party!.id}`).scrollIntoViewIfNeeded();
       await shot(page, `${size.name}-8-passengers`, size.touch, results);
+      // Rival pilots (docs/PROCGEN.md §24): a bounty a hunter took off a board, then the hunter in a bar where its run ends.
+      const now = (await api<{ clock: number }>(page, 'state')).clock;
+      const claim = (await api<{ rival: string; giver: string; contract: string; at: number } | null>(page, 'findRivalClaim', now))!;
+      expect(claim, 'a rival’s claim on a board').not.toBeNull();
+      await api(page, 'advanceClock', claim.at + 5 - now);
+      await docked(claim.giver);
+      await press(page, 'room-bar');
+      if (!(await page.getByTestId('jobs-window').isVisible().catch(() => false))) await press(page, 'station-jobs');
+      await page.getByTestId(`claim-${claim.contract}`).scrollIntoViewIfNeeded();
+      await shot(page, `${size.name}-9-rival-claim`, size.touch, results);
+      const hunter = (await api<{ run: { to: string; arrive: number } | null }>(page, 'rival', claim.rival))!;
+      await api(page, 'advanceClock', hunter.run!.arrive + 5 - (await api<{ clock: number }>(page, 'state')).clock);
+      await docked(hunter.run!.to);
+      await press(page, 'room-bar');
+      if (!(await page.getByTestId('people-window').isVisible().catch(() => false))) await press(page, 'station-people');
+      await page.getByTestId(`rival-${claim.rival}`).scrollIntoViewIfNeeded();
+      await shot(page, `${size.name}-9b-rival-bar`, size.touch, results);
       for (const [name, r] of Object.entries(results)) {
         expect.soft(r.overflow, `${name}: page overflow`).toBe(false);
         expect.soft(r.clipped, `${name}: clipped controls`).toEqual([]);

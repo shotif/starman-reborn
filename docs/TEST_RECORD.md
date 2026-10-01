@@ -384,6 +384,21 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   belt from inside its band, nothing from the arrival point, and the few sights in view from a jump
   beacon never a tour's; hull hits felt as a share of the hull, shield hits not. Saves keep a party,
   a sight seen and a fright, and refuse damaged ones.
+- `rivals.test.ts`: **rival pilots**. The rival guardrails pass over two days of every career (with
+  trade runs, hunts and races among them), and broken rules, rosters, lines and runs are caught (a
+  turn too short, a shot that raises standing, a family name the bars use, a home in Sol, a number
+  in a line, a run that overruns, contraband). Careers start after the opening, each run from where
+  the last ended, the same in every save; a rival rests in the bar, flies its legs, waits docked at
+  the maker while a runner loads, and docks where it was going. A trade run takes its cargo out of
+  the market where it loads and into the one where it sells. A hunter takes a bounty off a board as
+  it sets off; bought back, it is on the board again for the claim's price and a little standing; a
+  hostile hunter will not sell, and a job the player holds is not shown taken. A runner's race ends
+  a shortage sooner, and beaten to it by the player it sells nothing and the News says so.
+  Standing: a round once a shift up to its cap, friendly tips, a shot once a flight, hostile and
+  amends. A knock-out: out of the game, its run lost, in the News, back at work from home. In a
+  flight scene: a rival met, named, with its ship and cargo, shot and destroyed (an attack and a
+  crime, as for a trader); hostile in a lawless system, it fights as a raider with no bounty and no
+  crime. Saves keep standing, knock-outs and claims bought, and refuse damaged ones.
 
 ### Browser tests (Playwright)
 
@@ -511,11 +526,19 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   the berths it needs (*1 berth (you have 2 free)*), and is taken; launched and flown close to the
   planet, the sightseer says so over the radio, naming it, and the tour turns for home; docked again
   at Meridian Outpost, it pays in full.
+- `rivals.spec.ts`: **rival pilots**: a bounty a hunter took off a board as it set off is listed in
+  the Jobs window as *Taken by …*, not among the contracts; bought back, the job is on the board
+  again, the credits are down and the hunter's standing below zero; the News says it took the
+  bounty; where its run ends, the hunter sits in the bar under *Rival pilots*, *Wary*, and a round
+  brings it back to *Neutral*; out in flight, Mara “Quickstep” Venn's ship flies its leg in the
+  scene, named, with the *Merry Dancer* and what it carries, and targeted, the target box names the
+  rival.
 - `screenshots.spec.ts`: the loading title (caught part-way, with the game's largest file held
   back), title, Settings at its device report, job board, buy dialog, station deck, shipyard, outfitter, fleet
   (with a captain loading for a run), flight HUD, the player's own captain targeted in flight, star
   map and its Missions and Find dialogs, the charter of an outpost and the Outpost window at its
-  site, a party's job open at a bar with a cabin fitted, and the News with a shortage's relief
+  site, a party's job open at a bar with a cabin fitted, a bounty taken by a rival on a job board and
+  the rival in a bar, and the News with a shortage's relief
   haulers on their way, at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
   zoom). Saved in `docs/screenshots/` once any smooth scrolling has come to rest. Each is audited

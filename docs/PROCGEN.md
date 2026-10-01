@@ -2085,3 +2085,113 @@ floor; take a tour out to its sight (scanned before, still to be seen) and home;
 within range and a belt from inside its band in a flight scene, and nothing at the arrival point;
 feel hull hits and not shield hits; and keep a party, a sight seen and a fright in a save while
 refusing a damaged one.
+
+## 24. Rival pilots
+
+Six named pilots with careers of their own, who work the same lanes as the player
+(`src/economy/rivals.ts`; the six and their rules in `RIVALS` and `ROSTER`,
+`src/content/rivals/rules.ts`; what they say in `src/content/rivals/lines.ts`). The rivals, their
+names, their ships' names and their words are fiction; the stations and stars are the world's.
+Like the haulers' timetable (§21), a career is a function of the seed, the game clock and the
+save's world log: nothing runs in the background.
+
+### 24.1 The six
+
+| Rival | Style | Home | Ship |
+| --- | --- | --- | --- |
+| Mara “Quickstep” Venn | Trader | Sirius Platform | *Merry Dancer*, a class 2 freighter |
+| Bastian “Tally” Okonjo | Trader | Dogwood Port (Luyten 726-8) | *Fair Exchange*, a class 3 freighter |
+| Ione “Lantern” Sallow | Bounty hunter | Regent Concourse (Ross 154) | *Long Night*, a heavy fighter |
+| Dax “Two Bells” Corrigan | Bounty hunter | Ledger Institute (Wolf 359) | *Last Orders*, a gunship |
+| Pell “Halfpenny” Arkwright | Runner | Dawnfield Institute (Procyon) | *Spare Change*, a fast courier |
+| Saoirse “Sundown” Kalu | Runner | Millstone Relay (GJ 1061) | *Late Light*, a courier |
+
+Each works a patch: the open stations with a market within one jump of home, never in Sol, whose
+prices are the opening's (`patch`). The two hunters' patches do not overlap.
+
+### 24.2 Careers
+
+Careers start two hours into a game (`from`), once the player has found their feet, so the
+opening's prices are always the designed ones. A career is a run of turns of one game hour
+(`turnSeconds`): the rival rests 5–10 minutes in the bar where it is (`rest`), then flies a run
+to the next station, leg by leg like a hauler (§21.1), and docks there until the next turn.
+
+- **A trader** picks a station of its patch and carries the best lawful cargo between the two (the
+  good the first sells and the second takes with the widest gap between their normal prices),
+  16–32 units. With nothing worth carrying, it flies empty; picking where it already is, it stays.
+- **A bounty hunter** takes one bounty or ace posted on a board of its patch as it sets off, on a
+  pack within two jumps of home (`hunt.reach`), and flies to the pack's station. Without one, it
+  flies light to another station of its patch, looking for work.
+- **A runner** races to a shortage that began at a station of its patch in the turn before, still
+  on (not ended by the player, nor by the haulers' relief), loading half of what the station lacks
+  (`race.share`) at the nearest maker within a jump of it, then flying it in. Without one, it trades.
+
+Every run is over before the next turn sets off. Each run starts where the last one ended, so a
+rival is always somewhere: resting in a bar, flying a leg, in a jump, or refitting.
+
+### 24.3 What the markets feel
+
+A trader's or runner's cargo leaves the market where it loads and arrives where it sells, and both
+fade as the markets recover (`ECONOMY.recoverySeconds`), as the haulers' lost cargo does (§21.3).
+A rival on a route the player runs makes it pay a little less for a while. A runner's cargo counts
+toward the relief that ends its shortage (§21.2): a runner can end one before the player gets
+there. If the shortage is over before the runner arrives (relieved by the player, say), it sells
+nothing, and the News says it was beaten to it.
+
+### 24.4 Claims
+
+From the moment a hunter takes a bounty until the board's posting rolls over, the bounty is gone
+from that board's list, and the Jobs window shows it under *Taken by rival pilots*, with what the
+claim costs: 35% of the reward (`hunt.claim`), half that from a friendly hunter. A hunter knocked
+out lets its claim go. Buying it back
+puts the job on the board again for the player, and costs a little standing with the hunter
+(`standing.outbid`). A hostile hunter will not sell. A job the player already holds stays theirs
+(the hunter may still turn up after the same pack), and a turn is longer than a posting, so a
+hunter never takes two from one board.
+
+### 24.5 Standing
+
+The player's standing with each rival runs from −100 to 100, from 0, in the factions' tiers
+(hostile, wary, neutral, friendly). A round bought in the bar where a rival sits raises it by 5,
+once a shift, up to 30 (`standing.round`, `roundsUpTo`); a claim bought back lowers it by 6; the
+player's first shot at a rival in a flight by 25; destroying its ship by 60. A hostile rival will
+not drink with the player, but amends (1,500 cr) bring it to wary. A friendly rival says, in the
+bar, what it is doing next, and sells a claim for half.
+
+### 24.6 In flight, in the bars, in the News
+
+- **In flight**, a rival flying a leg in the player's system is a ship of the scene, named
+  (*Mara “Quickstep” Venn*) with its ship and what it carries (*Rival · Merry Dancer · 24
+  electronics for Marram Gardens*), and says hello over the radio. Shooting one is an attack on an
+  independent ship, and destroying one is a crime, as for any trader; its hold spills half its
+  cargo, and the rival ejects and spends three hours refitting at home (`downSeconds`), its run
+  lost. A hostile rival in a lawless system (security under 0.5) comes for the player instead:
+  it fights as a raider, but pays no bounty and leaves no salvage.
+- **In the bars**, a rival docked at the station sits in the People window under *Rival pilots*,
+  with its style and the player's standing. Sitting with it, the player hears its greeting (by
+  standing, and, friendly, its next run), and can buy a round or make amends.
+- **In the News**, within two jumps and over the last hour: trade runs made and under way, bounties
+  taken, races run (and won or lost), and rivals knocked out.
+
+### 24.7 Guardrails
+
+`validateRivals` (`src/economy/rivalGuards.ts`, run in `tests/unit/rivals.test.ts`): a turn longer
+than a board's posting, a rest that fits in it, loads and claim prices and shares in range, standing
+that moves the right way, amends that leave a rival wary, a knock-out longer than a turn; the six
+distinct, with no first name, family name or nickname the bars, the aces or the wingmen use, no
+story character's name and no hauler's ship name, at home at an open station with a market outside
+Sol, in a ship of the catalogue, with a patch of at least three stations, the hunters' patches
+apart, every style among them; no line with a number of its own or a field it cannot fill; and over
+two days of every career, every run over before the next turn, its legs in order along real lanes,
+its cargo lawful and traded that way at its two stations, a hunt a bounty posted in the patch on a
+pack within reach, a race to a shortage of the patch with its maker within a jump. The tests also
+break the rules (a turn too short, a shot that raises standing), the roster (a name the bars use, a
+home in Sol), a line (a number in it) and runs (one that overruns, contraband) to see them caught;
+check careers (none before the opening is over, each run from where the last ended, the same in
+every save), where a rival is through a run (resting, flying, loading at the maker, docked), the
+stock a trade run moves at each end, a claim taken off a board and bought back (its price, the job
+back, standing), a hostile hunter that will not sell, a race that ends a shortage sooner and one
+beaten to it, standing through rounds, shots and amends, a knock-out (the run lost, the News, back
+at work from home), the flight scene (a rival met, named, shot and destroyed with the crimes that
+go with it; a hostile one in lawless space as a raider with no bounty), and saves that keep it all
+and refuse damaged ones.

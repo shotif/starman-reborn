@@ -7,6 +7,7 @@ import { ALL_LOCATIONS, getLocation, saveLocations, saveLocationsKey, WORLD } fr
 import type { FactionId, FictionalLocation } from '../data/types.ts';
 import { marketEffect } from './events.ts';
 import { haulStock } from './hauls.ts';
+import { rivalStock } from './rivals.ts';
 import { standingPriceModifier } from './factions.ts';
 
 /**
@@ -163,7 +164,7 @@ function spillIn(locationId: string, entry: MarketEntry, ctx: MarketContext): nu
 /** Stock now: the station's own, plus what drifts in from its neighbours and what the hauls bring or miss (§21). */
 export function stockNow(locationId: string, entry: MarketEntry, ctx: MarketContext): number {
   const own = ownStock(locationId, entry, ctx);
-  const moved = spillIn(locationId, entry, ctx) + haulStock(locationId, entry.commodity, ctx.clock);
+  const moved = spillIn(locationId, entry, ctx) + haulStock(locationId, entry.commodity, ctx.clock) + rivalStock(locationId, entry.commodity, ctx.clock);
   return moved === 0 ? own : Math.max(0, own + moved);
 }
 

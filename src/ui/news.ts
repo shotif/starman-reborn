@@ -7,6 +7,8 @@ import type { SystemId } from '../data/types.ts';
 import { eventEnd, marksNear, minutes, newsAt, type NewsItem, type WorldEvent } from '../economy/events.ts';
 import { haulsLostNear, reliefNews } from '../economy/hauls.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
+import type { RivalStyle } from '../content/rivals/rules.ts';
+import { rivalName, rivalNews } from '../economy/rivals.ts';
 import { h } from './dom.ts';
 import { glyph, type GlyphName } from './glyphs.ts';
 import { COMMODITY_GLYPH } from './station/trader.ts';
@@ -187,5 +189,31 @@ export function haulNews(systemId: SystemId, clock: number): HTMLElement | null 
         ),
       );
     }),
+  );
+}
+
+const STYLE_GLYPH: Record<RivalStyle, GlyphName> = { trader: 'trader', hunter: 'gun', runner: 'cargopod' };
+
+/** What rival pilots did within reach, lately (docs/PROCGEN.md §24). */
+export function rivalNewsList(systemId: SystemId, clock: number): HTMLElement | null {
+  const items = rivalNews(systemId, clock);
+  if (!items.length) return null;
+  return h(
+    'ul',
+    { class: 'list news-list', 'data-testid': 'rival-news' },
+    items.map((n) =>
+      h(
+        'li',
+        { class: 'news-item kind-rival', 'data-rival': n.rival.id },
+        glyph(STYLE_GLYPH[n.rival.style]),
+        h(
+          'span',
+          { class: 'news-text' },
+          h('span', { class: 'row-name' }, rivalName(n.rival)),
+          h('span', { class: 'row-sub' }, `Rival pilot · ${n.jumps === 0 ? 'this system' : `${n.jumps} jump${n.jumps > 1 ? 's' : ''} away`} · ${clock - n.at < 60 ? 'just now' : `${minutes(clock - n.at)} min ago`}`),
+          h('span', { class: 'news-detail' }, n.text),
+        ),
+      ),
+    ),
   );
 }

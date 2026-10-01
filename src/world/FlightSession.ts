@@ -66,6 +66,8 @@ import { sightInView } from './sightseeing.ts';
 import { haulsIn, type Haul, type HaulHere, type HaulLeg } from '../economy/hauls.ts';
 import { FLEET } from '../content/fleet/rules.ts';
 import { captainsIn, type CaptainHere, type RunRaid } from '../economy/fleet.ts';
+import { RIVALS } from '../content/rivals/rules.ts';
+import { rivalName, rivalsIn, rivalSubtitle, type RivalLeg, type RivalRun } from '../economy/rivals.ts';
 import type { StationOwner } from '../content/world/types.ts';
 import type { ArtContext, ArtObject } from './art/types.ts';
 import { seededRandom } from './art/util.ts';
@@ -102,6 +104,11 @@ export interface FlightCallbacks {
    * (`safe`: guarded through the ambush, or to its dock or the jump beacon), or destroyed (`lost`).
    */
   onCaptain?(shipId: string, fate: 'safe' | 'lost', by?: 'player' | 'raiders'): void;
+  /**
+   * A rival pilot (docs/PROCGEN.md §24): met here (in the scene, `hostile` when it is out for the
+   * player), shot at by the player, or its ship destroyed (by the player, or by raiders).
+   */
+  onRival?(rivalId: string, what: 'met' | 'shot' | 'destroyed', detail?: { hostile?: boolean; by?: 'player' | 'raiders' }): void;
   /** The ship of an escort contract docked at its destination. */
   onEscortArrived?(jobId: string): void;
   /** The ship of an escort contract was destroyed. */
@@ -167,6 +174,8 @@ interface NpcShip {
    * comes, and whether the raid is settled (seen safely past).
    */
   captain?: { shipId: string; key: string; name: string; leg: HaulLeg; way: 'out' | 'back'; qty: number; raid: RunRaid | null; ambush?: number; settled?: boolean };
+  /** A rival pilot (docs/PROCGEN.md §24): who, and the run it flies here. */
+  rival?: { id: string; run: RivalRun; leg: RivalLeg };
   patrol?: { brain: PatrolBrain; offset: THREE.Vector3 };
   controls: ShipControls;
   target: Target;
@@ -1769,6 +1778,7 @@ export class FlightSession {
       if (n.role === 'patrol') n.foe = 'player';
       this.callbacks.onCrime?.('attack', n.faction, n.name, n.role);
     }
+    if (byPlayer && n.rival) this.callbacks.onRival?.(n.rival.id, 'shot');
     const r = applyDamage(n.durability, amount, type);
     const shieldHit = r.absorbedByShield > 0;
     n.art.flashShield(shieldHit ? 0.8 : 0.2);
@@ -1797,8 +1807,8 @@ export class FlightSession {
     if (n.escort) this.callbacks.onEscortLost?.(n.escort.jobId);
     if (n.stranded && !n.stranded.handed) this.callbacks.onRescueLost?.(n.stranded.jobId);
     else if (n.haul) this.callbacks.onMessage(`The ${n.haul.haul.name} was destroyed, with ${n.haul.haul.qty} ${COMMODITIES[n.haul.haul.commodity].name.toLowerCase()} aboard.`, 'bad');
-    else if (n.role === 'trader' && !n.captain) this.callbacks.onMessage(`${n.name} was destroyed.`, 'bad');
-    if (n.side === 'raider' && !n.den && !n.hunter && !n.encounter) this.dropLoot(n);
+    else if (n.role === 'trader' && !n.captain && !n.rival) this.callbacks.onMessage(`${n.name} was destroyed.`, 'bad');
+    if (n.side === 'raider' && !n.den && !n.hunter && !n.encounter && !n.rival) this.dropLoot(n);
     if (n.wingman?.crewId) {
       this.callbacks.onMessage(`${n.name}’s ship is gone; ${n.name} ejected and leaves your wing.`, 'bad');
       this.callbacks.onWingmanLost?.(n.wingman.crewId);
@@ -1807,11 +1817,12 @@ export class FlightSession {
     if (killer?.wingman?.crewId && n.side === 'raider') this.chatter('wing-kill', killer.name);
     else if (n.side === 'raider' && !n.den && this.inRadioRange(n) && this.rand() < 0.35) this.chatter('raider-down', 'Wake raider');
     const byPlayer = this.time - n.playerHitAt < 30;
-    if (n.side === 'raider' && byPlayer) this.raidersDowned++;
+    if (n.side === 'raider' && byPlayer && !n.rival) this.raidersDowned++;
     // A scheduled hauler's hold spills a share of its real cargo (docs/PROCGEN.md §21), whoever destroyed
     // it; so does one of the player's own (§18.6), whose loss the game reckons first.
-    const spill = n.haul ? { commodity: n.haul.haul.commodity, qty: n.haul.haul.qty } : n.captain ? { commodity: this.captainGood(n), qty: this.captainCargo(n) } : null;
+    const spill = n.haul ? { commodity: n.haul.haul.commodity, qty: n.haul.haul.qty } : n.captain ? { commodity: this.captainGood(n), qty: this.captainCargo(n) } : n.rival ? this.rivalSpill(n) : null;
     if (n.haul) this.callbacks.onHaul?.(n.haul.haul.id, 'lost', byPlayer ? 'player' : 'raiders');
+    if (n.rival) this.callbacks.onRival?.(n.rival.id, 'destroyed', { by: byPlayer ? 'player' : 'raiders' });
     if (n.captain) this.callbacks.onCaptain?.(n.captain.shipId, 'lost', byPlayer ? 'player' : 'raiders');
     if (spill) {
       const { share, pod } = HAULS.spill;
@@ -1823,8 +1834,8 @@ export class FlightSession {
       }
     }
     if (byPlayer && n.side === 'lawful' && n.role !== 'raider' && !n.captain) {
-      // Piracy: a hauler's hold spills a pod or two of its cargo (a scheduled hauler's did above).
-      if (n.role === 'trader' && !n.haul) {
+      // Piracy: a hauler's hold spills a pod or two of its cargo (a scheduled hauler's, or a rival's, did above).
+      if (n.role === 'trader' && !n.haul && !n.rival) {
         const goods: CommodityId[] = ['consumer-goods', 'electronics', 'machinery', 'medical', 'food', 'metals', 'polymers', 'luxuries'];
         for (let i = 0; i < 1 + Math.floor(this.rand() * 2); i++) {
           this.spawnLoot(n.body.position.clone().add(this.tmp.set((this.rand() - 0.5) * 40, (this.rand() - 0.5) * 20, (this.rand() - 0.5) * 40)), 0, {
@@ -1838,7 +1849,7 @@ export class FlightSession {
     else if (n.contract) this.callbacks.onContractKill(n.contract);
     else if (n.hunter) {
       if (byPlayer) this.callbacks.onHunterDown?.();
-    } else if (n.side === 'raider' && !n.encounter && byPlayer) this.callbacks.onBounty(n.bounty, n.name);
+    } else if (n.side === 'raider' && !n.encounter && !n.rival && byPlayer) this.callbacks.onBounty(n.bounty, n.name);
     this.removeNpc(n);
     if (this.activeEncounter && this.activeEncounter.npcId === n.id) {
       const def = this.activeEncounter.def;
@@ -2042,6 +2053,7 @@ export class FlightSession {
       timers.haulCheck = 2;
       this.updateHauls(plan.traders, !timers.populated);
       this.updateCaptains(!timers.populated);
+      this.updateRivals(!timers.populated);
       timers.populated = true;
     }
     if (!timers.contractsSpawned && this.time > 2) {
@@ -2267,6 +2279,41 @@ export class FlightSession {
     npc.trader = new TraderBrain({ id: at.toDock ? haul.to : 'jump', point: at.end }, npc.durability);
     npc.haul = { haul, leg };
     return true;
+  }
+
+  // ---------------------------------------------------------------- rival pilots (docs/PROCGEN.md §24)
+
+  /** Legs of rivals' runs already brought into this scene (each flies once a flight). */
+  private readonly rivalLegs = new Set<string>();
+
+  /** Brings rival pilots flying a leg here into the scene: named, with what they carry, out for the player when hostile in lawless space. */
+  private updateRivals(first: boolean): void {
+    for (const c of rivalsIn(this.state, this.state.location.systemId, this.state.clock)) {
+      const key = `${c.run.id}|${c.leg.start}`;
+      if (this.rivalLegs.has(key) || this.npcs.some((n) => n.rival?.id === c.rival.id)) continue;
+      const at = this.placeOnLeg(key, c.leg, c.leg.from, c.leg.to, c.progress, first);
+      if (!at) continue;
+      this.rivalLegs.add(key);
+      const name = rivalName(c.rival);
+      const subtitle = rivalSubtitle(c.run, (id) => this.whereIs(id));
+      const npc = c.hostile
+        ? this.makeNpc(c.rival.ship, 'raider', 'independent', at.position, at.forward, `${subtitle} · out for you`)
+        : this.makeNpc(c.rival.ship, 'trader', 'independent', at.position, at.forward, subtitle);
+      npc.name = name;
+      npc.target.name = name;
+      npc.target.cycle = true;
+      if (!c.hostile) npc.trader = new TraderBrain({ id: at.toDock ? c.leg.to : 'jump', point: at.end }, npc.durability);
+      else npc.foe = 'player';
+      npc.rival = { id: c.rival.id, run: c.run, leg: c.leg };
+      this.callbacks.onRival?.(c.rival.id, 'met', { hostile: c.hostile });
+    }
+  }
+
+  /** The cargo a rival's hold spills when its ship is destroyed. */
+  private rivalSpill(n: NpcShip): { commodity: CommodityId; qty: number } | null {
+    const run = n.rival?.run;
+    if (!run?.commodity || !run.qty || (run.kind === 'race' && this.state.clock < run.loaded)) return null;
+    return { commodity: run.commodity, qty: Math.max(1, Math.round(run.qty * RIVALS.spill.share)) };
   }
 
   // ---------------------------------------------------------------- your captains on the lanes (docs/PROCGEN.md §18.6)
@@ -3911,6 +3958,8 @@ export class FlightSession {
     haul: string | null;
     /** The player's owned ship it is, flown by a captain (§18.6). */
     captain: string | null;
+    /** The rival pilot flying it (§24). */
+    rival: string | null;
     subtitle: string;
     state: string;
     hull: number;
@@ -3929,6 +3978,7 @@ export class FlightSession {
       prey: n.prey?.name ?? null,
       haul: n.haul?.haul.id ?? null,
       captain: n.captain?.shipId ?? null,
+      rival: n.rival?.id ?? null,
       subtitle: n.target.subtitle ?? '',
       state: n.trader?.state ?? (n.patrol && n.foe === null ? n.patrol.brain.state : n.brain.state),
       hull: n.durability.hull,

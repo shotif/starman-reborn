@@ -336,7 +336,7 @@ function systemEventIn(systemId: SystemId, index: number): WorldEvent | null {
  * shortage, breaking a raid), and a story's ending can leave a lasting mark on a station (§14.7).
  * The game points this at the save's world log; tests may too.
  */
-type ActiveLog = Pick<WorldLog, 'ended'> & Partial<Pick<WorldLog, 'border' | 'marks' | 'hauls' | 'outpost'>>;
+type ActiveLog = Pick<WorldLog, 'ended'> & Partial<Pick<WorldLog, 'border' | 'marks' | 'hauls' | 'outpost' | 'rivals'>>;
 let worldLog: ActiveLog | null = null;
 
 export function useWorldLog(log: ActiveLog | null): void {
@@ -383,6 +383,21 @@ export function marksKey(): string {
 /** What became of the hauls the player saw, in the save the game points at (docs/PROCGEN.md §21), or null. */
 export function activeHaulLog(): WorldLog['hauls'] | null {
   return worldLog?.hauls ?? null;
+}
+
+/** What the player did to rival pilots' careers in the save the game points at (docs/PROCGEN.md §24), or null. */
+export function activeRivalLog(): WorldLog['rivals'] | null {
+  return worldLog?.rivals ?? null;
+}
+
+/** How many events the player has ended early, for caches of what depends on them. */
+export function endedKey(): number {
+  return worldLog ? Object.keys(worldLog.ended).length : 0;
+}
+
+/** When the player ended an event early, in the save the game points at. */
+export function endedAt(e: WorldEvent): number | undefined {
+  return worldLog?.ended[e.id];
 }
 
 /** The border war's log in the save the game points at (docs/PROCGEN.md §20), or null. */

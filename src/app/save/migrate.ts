@@ -10,6 +10,7 @@ import { COMBAT } from '../../content/combat/rules.ts';
 import { markById } from '../../economy/marks.ts';
 import { FLEET } from '../../content/fleet/rules.ts';
 import { OUTPOSTS } from '../../content/outposts/rules.ts';
+import { ROSTER } from '../../content/rivals/rules.ts';
 import { outpostId, outpostSite } from '../../content/outposts/sites.ts';
 import { createNewGame, SAVE_VERSION, type CommodityId, type GameState, type OutpostRecord } from '../state.ts';
 
@@ -42,7 +43,9 @@ import { createNewGame, SAVE_VERSION, type CommodityId, type GameState, type Out
  *   escorts across jumps carry `escortAt`, where their ships are (§10.2; absent in older v10
  *   saves, which means where they set off); a passenger contract carries its `party`, and its
  *   progress `seen` and `fright` (§23); a hauler may carry `sight`, a run the player saw safely
- *   past its raid (§18.6). See GameState in src/app/state.ts.
+ *   past its raid (§18.6); `rivals` (standing with rival pilots) and the world log's `rivals`
+ *   (rivals knocked out, claims bought back, §24), absent in older v10 saves. See GameState in
+ *   src/app/state.ts.
  */
 export interface SaveV1 {
   version: 1;
@@ -367,6 +370,11 @@ export function assertValidState(s: GameState): void {
       if (!isRecord(r) || !Number.isFinite(r.at) || !['safe', 'lost'].includes(r.fate) || !SYSTEM_IDS.includes(r.systemId) || (r.by !== undefined && !['raiders', 'player'].includes(r.by))) fail('world');
     }
   }
+  if (w.rivals !== undefined) {
+    if (!isRecord(w.rivals) || !isRecord(w.rivals.down) || !isRecord(w.rivals.bought)) fail('world');
+    for (const [id, d] of Object.entries(w.rivals.down)) if (!ROSTER.some((r) => r.id === id) || !isRecord(d) || !Number.isFinite(d.at) || !SYSTEM_IDS.includes(d.systemId)) fail('world');
+    for (const t of Object.values(w.rivals.bought)) if (!Number.isFinite(t)) fail('world');
+  }
   for (const [sys, l] of Object.entries(w.lingering)) {
     if (!SYSTEM_IDS.includes(sys) || !isRecord(l) || !Number.isFinite(l.at) || !Array.isArray(l.packs) || !Array.isArray(l.pods)) fail('world');
     const v3 = (p: unknown) => Array.isArray(p) && p.length === 3 && p.every(Number.isFinite);
@@ -400,6 +408,14 @@ export function assertValidState(s: GameState): void {
     for (const [c, qty] of Object.entries(m.stock)) if (!COMMODITY_IDS.includes(c as CommodityId) || !Number.isFinite(qty) || (qty as number) < 0) fail(`market ${id}`);
   }
   if (!isRecord(s.jobs) || !isRecord(s.reputation) || !isRecord(s.flags)) fail('records');
+  // Standing with rival pilots (§24): only the six, within ±100.
+  if (s.rivals !== undefined) {
+    if (!isRecord(s.rivals)) fail('rivals');
+    for (const [id, r] of Object.entries(s.rivals)) {
+      const ok = ROSTER.some((x) => x.id === id) && isRecord(r) && Number.isFinite(r.standing) && Math.abs(r.standing) <= 100 && (r.round === undefined || Number.isInteger(r.round)) && (r.shot === undefined || Number.isFinite(r.shot));
+      if (!ok) fail(`rival ${id}`);
+    }
+  }
   // Escorts across jumps remember the system their ships are in.
   for (const [id, p] of Object.entries(s.jobs)) {
     if (!isRecord(p) || (p.escortAt !== undefined && !SYSTEM_IDS.includes(p.escortAt))) fail(`job ${id}`);

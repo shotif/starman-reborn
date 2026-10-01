@@ -44,6 +44,9 @@ materials there stage by stage, and your outpost opens, trades and pays you by t
 Fit a passenger cabin and the bars offer fares: passages between stations, and sightseers who pay
 to be flown close to the real sky's planets, dwarf stars and belts, and say what the archives
 record of them when they see them. A fight with passengers aboard costs you some of the fare.
+And you are not the only pilot out there: six rivals with careers of their own trade the best
+routes, take bounties off the boards (buy the claim back if you want the job) and race relief to
+shortages. Meet them in the bars, the News and in flight; buy them a round, outbid them, or fight.
 Ships, equipment, the world, the economy, events, contracts and the law are generated from rule
 files and checked by automated guardrails ([docs/PROCGEN.md](docs/PROCGEN.md)).
 

@@ -17,6 +17,7 @@ import type { FactionId, FictionalLocation, SystemId } from '../data/types.ts';
 import { findRoute } from '../galaxy/routing.ts';
 import { FLEETS } from '../world/traffic/plan.ts';
 import { inViewFromStation, tourSights } from '../world/sightseeing.ts';
+import { takenIds } from './rivals.ts';
 import { trafficFor } from '../world/traffic/setup.ts';
 import { atWar, decisiveOpen, EXPOSED, FRONTS, frontState, momentum, occupied, settledKey, type FrontState } from './border.ts';
 import { itemsThatFit } from './cargo.ts';
@@ -1022,8 +1023,11 @@ export function postedContracts(state: GameState, locationId: string): JobDef[] 
   // Dens deal only with pilots the Wake trusts; a station that only lets you in for repairs posts nothing.
   if (loc.stationType === 'pirate-den' && !wakeFriendly(state)) return [];
   if (dockAccess(state, locationId) !== 'full') return [];
+  // Bounties a rival hunter took off this board are gone from it, unless the player bought the claim back (§24.4).
+  const taken = takenIds(state, locationId);
   return boardFor(locationId, boardEpoch(state.clock)).filter((c) => {
     if (state.jobs[c.id]) return true;
+    if (taken.has(c.id)) return false;
     const o = c.objectives[0];
     return !(c.contract?.kind === 'survey' && o?.kind === 'scan' && state.discoveredBodies.includes(o.bodyId));
   });

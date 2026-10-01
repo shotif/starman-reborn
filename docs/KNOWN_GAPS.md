@@ -104,6 +104,12 @@ snapshot branch only when the archives changed.
   not among them). Three confirmed planets whose systems' jump beacons sit within sight of them
   are left out of tours. A fright cuts a fare by the share of hull lost, whoever fired; it is not
   calmed by flying gently afterwards.
+- Rival pilots (PROCGEN §24) are six, with careers on the clock: they do not learn from the player
+  or follow the player's own routes (only the best routes of their patches), never die (a rival
+  destroyed ejects and refits), cannot be hired or flown with, and fight only as a hostile rival in
+  lawless space. Out of the player's sight they are never lost to raids. A hunter's claim only takes
+  the job off the board: the pack it hunts is not destroyed for anyone else. Rivals' trades move
+  stock at each end, but they do not buy or sell at the player's own outpost.
 - Traffic and raider packs exist only around the player. Packs that saw the player and cargo pods
   left adrift wait for 30 minutes of game clock (in the last six systems), as do the packs and
   wrecks of the player's own contracts; everything else is generated again on arrival.

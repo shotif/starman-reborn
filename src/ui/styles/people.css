@@ -169,3 +169,28 @@
   font: inherit;
   font-size: 0.9rem;
 }
+
+/* Rival pilots (docs/PROCGEN.md §24). */
+.rival-section {
+  margin-top: 0.4rem;
+}
+
+.tag.rival-tag {
+  color: var(--warm);
+  border-color: rgba(255, 180, 92, 0.45);
+}
+
+.tag.tier-hostile {
+  color: var(--hostile);
+  border-color: rgba(255, 95, 95, 0.5);
+}
+
+.tag.tier-wary {
+  color: var(--warning);
+  border-color: rgba(255, 209, 102, 0.45);
+}
+
+.tag.tier-friendly {
+  color: var(--friendly);
+  border-color: rgba(98, 227, 154, 0.45);
+}

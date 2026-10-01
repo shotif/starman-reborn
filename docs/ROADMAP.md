@@ -9,13 +9,13 @@ After the scripted opening (10–20 minutes), the neighbourhood is an open sandb
 systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
 of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
 packs in lawless space; 39 ships and 146 pieces of equipment; and generated contracts on every job
-board. Increments 1–21 (under [Done so far](#done-so-far)) added world events and news, contracts
+board. Increments 1–22 (under [Done so far](#done-so-far)) added world events and news, contracts
 of every kind, the law and the outlaw path, goals, five story arcs, combat depth, people in the
 bars and a trade computer, a world that answers, a fleet of your own whose captains fly the lanes,
-a station of your own, passengers and sightseers, mining in the real belts, the frontier with a
-life of its own, a border war whose fronts can be won for good, story endings that change
-stations for good, escorts and convoys across jumps, haulers with real cargo on a timetable, and a
-game measured and tuned on a real phone.
+a station of your own, passengers and sightseers, rival pilots with careers of their own, mining
+in the real belts, the frontier with a life of its own, a border war whose fronts can be won for
+good, story endings that change stations for good, escorts and convoys across jumps, haulers with
+real cargo on a timetable, and a game measured and tuned on a real phone.
 
 What it lacks now:
 
@@ -25,16 +25,9 @@ What it lacks now:
 
 ## Proposed next increments
 
-Candidates for what comes next, in the order they will be built (the first two were chosen by the
-owner on 1 October 2026 as fresh directions, along with A station of your own and Passengers and
-sightseers, both now done):
-
-### Rival pilots ⏳ (M)
-
-A handful of named rival pilots (fiction) with careers of their own: they trade the player's
-routes, take the bounties the player wants and race them to a shortage. They turn up in the News
-and the bars, and can be befriended, outbid or fought. Today people live only in the bars, and aces
-are one-offs.
+Candidates for what comes next, in the order they will be built (the first was chosen by the owner
+on 1 October 2026 as a fresh direction, along with A station of your own, Passengers and
+sightseers, and Rival pilots, all now done):
 
 ### Stellar death, as fiction ⏳ (M–L)
 
@@ -57,6 +50,19 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 22. Rival pilots ✅
+
+Six named pilots (fiction) with careers of their own: two traders, two bounty hunters and two
+runners, each working the stations within a jump of home, an hour of game time a run. The traders
+carry the best cargo between two stations, so a route the player runs pays a little less while
+they are on it; the hunters take bounties off the boards as they set off, and the Jobs window shows
+them taken, with what the claim costs to buy back; the runners race relief to fresh shortages, and
+can end one before the player gets there. Meet them in the bars (a round raises their opinion of
+you, and a friendly rival says where it is going next), in the News, and in flight, named, with
+what they carry. Shoot one and it remembers; destroy one and it spends three hours refitting at
+home, and a hostile rival comes for you in lawless space
+([PROCGEN.md §24](PROCGEN.md#24-rival-pilots)).
 
 ### 21. Passengers and sightseers ✅
 
