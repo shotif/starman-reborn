@@ -273,7 +273,9 @@ for (const size of SIZES) {
       await press(page, 'outpost-deliver-machinery');
       await expect(page.getByTestId('outpost-need-machinery')).toContainText('6/6 delivered');
       await shot(page, `${size.name}-7b-outpost`, size.touch, results);
-      // Passengers and sightseers (docs/PROCGEN.md §23): a cabin fitted, and a party's job open at Meridian Outpost's bar.
+      // Passengers and sightseers (docs/PROCGEN.md §23): a cabin fitted, and a party's job open at Meridian Outpost's bar
+      // (the first systems' boards post once the opening delivery is done).
+      await api(page, 'completeJobs', ['lifeline']);
       expect(await api<boolean>(page, 'fit', 'gear.cabin.2.toliman')).toBe(true);
       let party: { id: string } | undefined;
       for (let i = 0; i < 16 && !party; i++) {
@@ -298,6 +300,7 @@ for (const size of SIZES) {
       await press(page, 'room-bar');
       if (!(await page.getByTestId('jobs-window').isVisible().catch(() => false))) await press(page, 'station-jobs');
       await page.getByTestId(`claim-${claim.contract}`).scrollIntoViewIfNeeded();
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 15_000 });
       await shot(page, `${size.name}-9-rival-claim`, size.touch, results);
       const hunter = (await api<{ run: { to: string; arrive: number } | null }>(page, 'rival', claim.rival))!;
       await api(page, 'advanceClock', hunter.run!.arrive + 5 - (await api<{ clock: number }>(page, 'state')).clock);
@@ -305,6 +308,7 @@ for (const size of SIZES) {
       await press(page, 'room-bar');
       if (!(await page.getByTestId('people-window').isVisible().catch(() => false))) await press(page, 'station-people');
       await page.getByTestId(`rival-${claim.rival}`).scrollIntoViewIfNeeded();
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 15_000 });
       await shot(page, `${size.name}-9b-rival-bar`, size.touch, results);
       for (const [name, r] of Object.entries(results)) {
         expect.soft(r.overflow, `${name}: page overflow`).toBe(false);

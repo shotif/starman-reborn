@@ -194,3 +194,17 @@
   color: var(--friendly);
   border-color: rgba(98, 227, 154, 0.45);
 }
+
+/* A bounty a rival holds, on the Jobs window (§24.4): what and who on top, the price to buy it back beneath, at every width. */
+.trade-row.claim-row {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.trade-row.claim-row > button {
+  grid-column: 2;
+  justify-self: start;
+}
+
+.trade-row.claim-row .trade-text .row-name {
+  white-space: normal;
+}
