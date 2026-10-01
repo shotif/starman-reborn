@@ -48,12 +48,17 @@ async function padCall<K extends keyof FakePadApi>(page: Page, fn: K, ...args: P
   );
 }
 
-/** Holds a pad button until `done` is true, then lets go and gives the game a frame to see it. */
+/**
+ * Holds a pad button until `done` is true, then lets go and waits until the game has drawn two
+ * frames, so it has seen the release however slow its frames are (a press the game never saw
+ * released is not a new press).
+ */
 async function hold(page: Page, button: number, label: string, done: () => Promise<boolean>): Promise<void> {
   await padCall(page, 'button', button, true);
   await waitUntil(page, label, done, 20_000);
   await padCall(page, 'button', button, false);
-  await page.waitForTimeout(300);
+  const at = await api<number>(page, 'framesDrawn');
+  await waitUntil(page, 'the release seen', async () => (await api<number>(page, 'framesDrawn')) >= at + 2, 20_000);
 }
 
 test('a gamepad flies alongside the mouse or touch, pauses with Start and hands back when unplugged', async ({ page }) => {
@@ -66,7 +71,8 @@ test('a gamepad flies alongside the mouse or touch, pauses with Start and hands 
   // Plugging it in changes nothing until it is used.
   await padCall(page, 'connect');
   await expect(page.getByText('Gamepad connected')).toBeVisible();
-  await page.waitForTimeout(400);
+  const at = await api<number>(page, 'framesDrawn');
+  await waitUntil(page, 'a few frames with the pad idle', async () => (await api<number>(page, 'framesDrawn')) >= at + 3, 20_000);
   expect(await api<string>(page, 'scheme')).toBe(before);
 
   // A takes the HUD's context action (dock) and hands the HUD to the pad; B takes the controls back.
