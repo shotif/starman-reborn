@@ -59,11 +59,16 @@ snapshot branch only when the archives changed.
 ## Deliberate prototype limits
 
 - The written story is the opening chain, three short optional jobs, three faction arcs of five
-  missions each and The Long Border (five steps, branching three ways at its choice); everything
-  else on the job boards is generated. The faction arcs know about each other only through
-  standing and through Kettering, whose briefings follow the choices made in them. The lasting
-  marks an arc leaves on the world are a dark den (for six hours) and the Ross 154 – Wolf 1061
-  front, settled for good by The Long Border.
+  missions each, The Long Border (five steps, branching three ways at its choice) and First
+  Harvest, out in the frontier (five steps, branching two ways); everything else on the job boards
+  is generated. The faction arcs know about each other only through standing and through
+  Kettering, whose briefings follow the choices made in them. The lasting marks an arc leaves on
+  the world are a dark den (for six hours) and the Ross 154 – Wolf 1061 front, settled for good by
+  The Long Border; First Harvest's ending changes standing and words, not the world.
+- The frontier's own events (harvests, survey seasons, drive failures) follow the clock like the
+  others; a stranded hauler waits for the player's rescue however long it takes, and only the
+  player's rescue is flown. A survey season's readings never settle a contested planet: the
+  archives do.
 - The border war is a tide on the clock plus the player's deeds, not a simulation of fleets. It
   runs only on the five lanes where a den's system touches lawful space, and only The Long Border
   settles a front; the other four swing for ever.

@@ -382,7 +382,11 @@ the finished core without changing it, nearest to Sol first, by the rules in `GR
   system is out of reach from outside); frontier boards send anywhere. Every frontier board except
   a den's adds 2 to the weight of surveys (`FRONTIER_SURVEY_WEIGHT`), and a survey of a frontier
   planet pays half as much again on its varying part (`CONTRACTS.reward.survey.frontier`, §10.3). A
-  survey of a contested or candidate planet says the readings could settle it.
+  survey of a contested or candidate planet says so, and that the readings go in the station's
+  log: only the archives can settle it (§1).
+- **A life of its own**: harvests come in at its farms, its research posts hold survey seasons,
+  and its colony haulers lose their drives far from any dock (§11), each with work to match; and
+  First Harvest (§14.6) is its story.
 - **The star map** frames the core's systems (zoom out for the far shell), draws frontier lanes in
   dashed amber on the 3D map with a line in the key, gives the labels of the core's systems and of
   systems visited priority over the far shell's, and draws new systems' drop lines fainter.
@@ -585,6 +589,13 @@ hand-made stations join in once the opening delivery is done.
   cited belt within three jumps and brought back to them.
 - **War work** (§20.4): only while a border front within two jumps is fighting; the law pays for
   a raider pack broken on its lanes, the dens for the front faction's haulers hit.
+- **Rescue** (only as work answering a drive failure, §11): 3–5 ship components for a frontier
+  hauler stranded within two jumps, loaded on acceptance against a deposit of 110% of their base
+  value (returned with the pay). The hauler drifts at least 12 km from any dock and clear of stars
+  and planets, in the same place every time for the same job; scavengers of the system's threat
+  may watch it. Coming within 400 m with the parts in the hold hands them over and pays; short of
+  them, the HUD and a message say how many are missing. A few seconds later the hauler's drive is
+  back and it makes for the nearest dock. Destroyed first, the rescue fails.
 
 Two variations:
 
@@ -637,7 +648,9 @@ forty time slots, and every follow-up those boards lead to (`tests/unit/contract
   occur;
 - aces: one named target at the top difficulty, where packs are nasty;
 - recoveries: find and bring back, guards matching the system, a known item;
-- surveys: the planet is a confirmed planet of that system;
+- surveys: the planet is a catalogued planet of that system (a survey season's, its own);
+- rescues: a hauler of that name is stranded there right now, in the frontier; the parts loaded are
+  the ones handed over, against a deposit at least their value; scavengers match the system;
 - urgent terms only on parcels and hauls, with at least twice the expected trip and a real bonus;
 - work that answers an event answers one under way where it says, one per board at most;
 - pay beats 1.2 × the jump fees there and back plus 40 cr of expected repairs per difficulty level
@@ -680,14 +693,24 @@ transit, so the world moves on while you travel.
   - **glut** (10%): one good it makes; price × 0.7–0.85, stock × 1.8;
   - **boom** (7%): a construction boom, a founders' festival, a research push or a fleet refit
     raises up to three goods it wants or trades; price × 1.15–1.3, stock × 0.8;
-  - **strike** (5%): the goods it makes; price × 1.2–1.35, stock × 0.5.
+  - **strike** (5%): the goods it makes; price × 1.2–1.35, stock × 0.5;
+  - **harvest in** (14%, frontier farms only): the farm's food or fine food floods in; price ×
+    0.65–0.8, stock × 2;
+  - **survey season** (12%, frontier research posts only): the post takes fresh readings of a real
+    planet of its system or one jump away (one the archives disagree about, when there is one) and
+    wants electronics, helium-3 or fabricators; price × 1.15–1.3, stock × 0.8. Its news says
+    plainly that the readings go in the post's log and settle nothing the archives do not (§1).
 
+  The frontier's own kinds come last in the odds, so they take only windows that were quiet
+  before: every other event is exactly as it was (a unit test fingerprints 100 hours of them).
   The hand-made stations' three opening goods and small arms are never touched. The lower stock
   moves the price further through scarcity, and the price bands (0.4–2.2 × base) still hold.
 - **Systems** have three-hour windows:
   - **raid** (22%, below security 0.75): one more raider threat level (at most 3), one more pack
     at a time, packs sooner and more often, half the traders; 40–100 minutes;
-  - **security sweep** (12%, in claimed space where packs roam): no packs, one more patrol wing.
+  - **security sweep** (12%, in claimed space where packs roam): no packs, one more patrol wing;
+  - **drive failure** (15%, frontier systems only): a colony hauler (named from an invented pool)
+    has lost its drive far from any dock. It moves no prices or traffic; it wants rescuing.
 - News text says what an event does in numbers printed from the event itself ("pays up to 49%
   more than usual"), with the cause from a small pool of phrases.
 
@@ -711,8 +734,9 @@ transit, so the world moves on while you travel.
   goods an event moves at that station.
 - **Work**: a station's board posts at most one contract answering an event: a *shortage run* or
   *boom supplies* into its own shortage or boom (markup 60% instead of 35%), a *surplus haul* out
-  of its glut, or a *raid response* bounty on a raid within two jumps (the raid's threat). Their
-  varying pay is 30% higher.
+  of its glut, a *harvest haul* out of its harvest, a *survey season* survey of the planet its
+  season studies, a *rescue* for a hauler stranded within two jumps (§10.2), or a *raid response*
+  bounty on a raid within two jumps (the raid's threat). Their varying pay is 30% higher.
 
 ### 11.4 Event guardrails
 
@@ -721,8 +745,11 @@ transit, so the world moves on while you travel.
 window, never touch Sol or the opening goods, only concern goods the station deals in the right
 way, keep effects inside the rules, state the change they cause, keep live prices inside their
 bands with buy above sell, put raids only below security 0.75 with the threat one above the
-system's, put sweeps only where packs roam in claimed space, happen at a sensible rate (3–25
-station events under way on average) and cover every kind.
+system's, put sweeps only where packs roam in claimed space, happen at a sensible rate (5–45
+station events under way per hundred stations on average) and cover every kind. The frontier's
+own happen only there: harvests at its farms, of what they grow; survey seasons at its research
+posts, of a real planet within reach, a contested one said to be contested and never said to be
+settled; drive failures in its systems, with the hauler named.
 
 ## 12. The law and the outlaw path
 
@@ -821,13 +848,13 @@ Ace hunts (§10.2) need a Hardened combat rating.
 
 ### 13.3 Milestones
 
-Twenty-three milestones, each earned once and toasted when it happens: the first and the 25th
+Twenty-four milestones, each earned once and toasted when it happens: the first and the 25th
 contract, 10,000 and 50,000 credits in hand, flying a Mk II and a Mk III ship, ten and all
 systems visited, the first frontier system and 25 of them visited (§7.7), ten confirmed planets
 scanned, half and all of the codex, ten and fifty raiders down, Friendly with the Transit
 Authority and with the Frontier Cooperative, trusted by the Hollow Wake, a top rank in any rating,
-and each of the four story arcs (§14, §20.5) finished, The Long Border whichever way it ends. The
-journal lists those earned.
+and each of the five story arcs (§14, §20.5) finished, The Long Border and First Harvest whichever
+way they end. The journal lists those earned.
 
 ### 13.4 What next
 
@@ -846,8 +873,9 @@ with no fines and no milestones yet (they are awarded at the next save if alread
 
 ## 14. Story arcs
 
-Three short arcs give the sandbox a spine, one per faction, and a fourth, The Long Border (§20.5),
-is where they meet (`src/content/story/arcs.ts`, played by `src/economy/story.ts`). Unlike
+Three short arcs give the sandbox a spine, one per faction, a fourth, The Long Border (§20.5),
+is where they meet, and a fifth, First Harvest (§14.6), belongs to the frontier's farms
+(`src/content/story/arcs.ts`, played by `src/economy/story.ts`). Unlike
 everything else in this document they are written by hand, not generated, and reviewed like code:
 the guardrails below check them, unit tests play each one through, and a browser test flies the
 first steps.
@@ -856,7 +884,7 @@ first steps.
 
 - A **mission** is a job with story data: its arc and step, the character who gives it, and its
   words. Its objectives are the contract objectives (dock, deliver, scan, escort, recover, bounty,
-  piracy) plus three made for the story: a **choice** made at a dock, a **den assault** and a **den
+  piracy, rescue) plus three made for the story: a **choice** made at a dock, a **den assault** and a **den
   defence**.
 - **Beats** are the words: the briefing (in the giver's voice, sometimes following an earlier
   choice), lines said when an objective is done, comms when the player arrives in the system of the
@@ -941,7 +969,23 @@ it broken arcs to prove it catches them) checks that:
   speaks the briefing; scene lines are in the third person.
 - No real people, organisations or other games' names, places or plots.
 
-## 15. Combat depth
+### 14.6 First Harvest
+
+The frontier's own story, nobody's faction's, out past the core at HD 219134 (a real star with
+seven catalogued planets, three of them contested), where Harrow Farmstead, a farm colony, is
+bringing in its first harvest. It is given after the opening delivery and asks no standing.
+
+| Step | Giver | What |
+| --- | --- | --- |
+| 1. The far farms | Ines Halloway, keeper of Squall Relay (EV Lacertae, at the core's edge) | dock at Harrow Farmstead, one jump out; the briefing says a long-range jump drive is needed |
+| 2. Dead in the water | Orla Fenwick, steward of Harrow Farmstead | four ship components (handed over on acceptance) to the Wrenna, adrift in Achird far from any dock with a scavenger watching her, then back to Harrow |
+| 3. Readings | Fenwick | scan HD 219134 d (confirmed) and f (contested), and take the readings to Curlew Institute; the Institute says f stays as the archives have it |
+| 4. Where it goes | Fenwick | the choice: sell the harvest at Doppler Freeport (Achird), or feed the crews at Squall Relay who passed on Harrow's calls |
+| 5. The harvest run | Fenwick | the finale: a convoy of three haulers (two must arrive) across one jump, to Doppler Freeport or to Squall Relay, raiders at the beacon and a wave on the way in |
+
+- **Honest about the sky**: the readings of HD 219134 f settle nothing (§1): the planet stays
+  contested, with what each archive says, and the words say so.
+- Its finale earns a milestone. The arc's ending changes standing and words, not the world.
 
 What a fight is made of beyond guns and shields (`src/content/combat/rules.ts`, the phrase pools in
 `src/content/combat/chatter.ts`, the economy side in `src/economy/combat.ts`). The numbers are game

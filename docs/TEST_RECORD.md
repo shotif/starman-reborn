@@ -56,38 +56,48 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   early scans, reputation-gated contracts, visit-only couriers, rescue after defeat.
 - `contracts.test.ts`: every station's contract board, and every follow-up it leads to, passes the
   guardrails over forty time slots (reach, pay against fees and repairs, deposits against the
-  cargo's value, bounties and aces only where raiders roam, escorts only where there is something
-  to fear, surveys of confirmed planets, time limits that can be kept, event work matching an event
+  cargo's value, bounties and aces only where raiders roam, escorts only where there is something to
+  fear, surveys of confirmed planets, time limits that can be kept, event work matching an event
   under way, escorts at home and across jumps and convoys) and is deterministic; the hand-made
-  stations post only after the first delivery; each
-  kind played through (freight loads cargo against a deposit and refunds it, parcels complete on
-  docking, supply runs brief the source, bounties count kills, surveys complete on a scan and are
-  not offered twice, escorts pay on arrival and fail when lost or left behind, aces pay for one
-  named kill, recoveries find the item and bring it back); an escort across jumps keeps with the
-  player, holds the jump while too far away, jumps with them, is seen in at the far end with raiders
-  at the beacon, fails when left in its destination's system, and waits where it was after a tow;
-  a convoy across jumps pays when two of three are in and fails when two are lost; the guardrails
-  catch an escort with nothing to fear, a convoy that is not three and a difficulty that ignores
-  the trip; an older save's escort is where it set off; urgent jobs pay the bonus in time and
-  cost standing when late; follow-ups are offered at the destination, pay more, can be taken, and
-  lapse; refusals without hold space or credits; abandoning (deposit forfeit, cargo kept, standing
-  lost, no second try, story jobs kept); the five-contract limit; accepted contracts survive later
-  boards and the save; v4 → v5 and v5 → v6 migrations and damaged contracts rejected.
+  stations post only after the first delivery; each kind played through (freight loads cargo against
+  a deposit and refunds it, parcels complete on docking, supply runs brief the source, bounties
+  count kills, surveys complete on a scan and are not offered twice, escorts pay on arrival and fail
+  when lost or left behind, aces pay for one named kill, recoveries find the item and bring it
+  back); an escort across jumps keeps with the player, holds the jump while too far away, jumps with
+  them, is seen in at the far end with raiders at the beacon, fails when left in its destination's
+  system, and waits where it was after a tow; a convoy across jumps pays when two of three are in
+  and fails when two are lost; the guardrails catch an escort with nothing to fear, a convoy that is
+  not three and a difficulty that ignores the trip; an older save's escort is where it set off; a
+  rescue loads its ship components against a deposit, steers to the stranded hauler, does nothing
+  while parts are missing (and says how many), and pays with the deposit back when they are handed
+  over, or fails if the hauler is destroyed; urgent jobs pay the bonus in time and cost standing
+  when late; follow-ups are offered at the destination, pay more, can be taken, and lapse; refusals
+  without hold space or credits; abandoning (deposit forfeit, cargo kept, standing lost, no second
+  try, story jobs kept); the five-contract limit; accepted contracts survive later boards and the
+  save; v4 → v5 and v5 → v6 migrations and damaged contracts rejected.
 - `flightContracts.test.ts`: a real `FlightSession` in node flies an escorted hauler that sets off
   with the player, is ambushed part-way and ends docked or lost; a hauler and a convoy on their way
   to another system that keep station with the player (no ambush out of a dock), hold the jump while
-  more than 2.5 km away, catch up after a long cruise and report their loss; raiders waiting at
-  the beacon for escorted ships arriving through it, from ahead and going for them; an ace with two
-  guards that is tougher than a guard in the same ship and drops credits and a cargo pod; and a
-  wreck, guarded, whose item the tractor beam pulls in.
+  more than 2.5 km away, catch up after a long cruise and report their loss; raiders waiting at the
+  beacon for escorted ships arriving through it, from ahead and going for them; a hauler stranded
+  more than 12 km from any dock, in the same place for the same job, watched by a scavenger, that
+  the objective steers to, says once what is missing, takes the parts alongside and then makes for a
+  dock, or reports its loss; an ace with two guards that is tougher than a guard in the same ship
+  and drops credits and a cargo pod; and a wreck, guarded, whose item the tractor beam pulls in.
 - `events.test.ts`: world events pass their guardrails over 300 hours of clock (no overlaps, only
   goods the station deals in, never Sol or the opening goods, prices in their bands, news text
   quoting the change, raids and sweeps only where they can happen, a sensible rate, every kind);
   they are a pure function of the clock; a shortage raises what a station pays and a glut lowers
   what it asks; moved stock recovers toward the event's normal stock; raids bring nastier packs and
   fewer traders and sweeps clear them; news reaches two jumps, nearest first, and keeps recent
-  events for half an hour; boards post a shortage run, a surplus haul and a raid response; traders
-  top short stock up without flooding a market or emptying a maker; each jump moves the clock on.
+  events for half an hour; boards post a shortage run, a surplus haul and a raid response; every
+  event there was before the frontier's own is exactly as it was (100 hours fingerprinted); a
+  harvest comes in only at a frontier farm, floods its food and posts a harvest haul; a survey
+  season at a frontier research post studies a real planet within reach, says a contested one is
+  contested and that the readings settle nothing, and posts a survey of it; a drive failure strands
+  a named colony hauler in a frontier system without moving prices or traffic; none of them happen
+  anywhere else; traders top short stock up without flooding a market or emptying a maker; each jump
+  moves the clock on.
 - `law.test.ts`: the law passes its guardrails (a pardon lifts standing above Hostile, repairs
   within one jump of every system, contraband sold somewhere with a smuggling route into claimed
   space past customs, dens with black markets and work, no crime in the story); crimes fine and
@@ -107,9 +117,9 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 - `progress.test.ts`: the codex lists exactly the catalogued stars, confirmed planets and the Solar
   System's bodies, each scannable in its scene; a scan counts once and off-catalogue bodies are
   ignored; research stations buy a completed survey once; ratings follow the career record;
-  milestones are earned once and the whole sky pays the grant; the what-next hint puts fines
-  first, then the hold, the codex, a route and a job board; v6 saves start the codex from the
-  bodies already scanned.
+  milestones are earned once and the whole sky pays the grant; the what-next hint puts fines first,
+  then the hold, the codex, a route and a job board; v6 saves start the codex from the bodies
+  already scanned.
 - `story.test.ts`: the story arcs pass their guardrails, and broken arcs (a missing step, a crime in
   a lawful arc, a den as a dock, a place out of reach, choices that all end or that the next step
   does not follow, missing words, a stranger speaking, a cheap finale, the Wake's arc open to
@@ -121,8 +131,11 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   water run and convoy (two ships lost fails it and it goes back to its giver, two of three in
   completes it); a story escort left behind goes back to its giver; Salt's Crew needs the Wake's
   trust, hands over its contraband, counts haulers taken, and its betrayal is a pardon that ends the
-  arc; the Wake's finale counts sweep ships; a knocked-out den is rebuilt after six hours; v7 saves
-  gain an empty story, damaged story data rejected.
+  arc; the Wake's finale counts sweep ships; a knocked-out den is rebuilt after six hours; First
+  Harvest is given at Squall Relay after the opening delivery to anyone, and played through both
+  ways (the drive parts handed over to the Wrenna in Achird, HD 219134 d and f scanned with f still
+  contested, the harvest convoy across one jump to Doppler Freeport or to Squall Relay, and its
+  milestone); v7 saves gain an empty story, damaged story data rejected.
 - `flightStory.test.ts`: a real `FlightSession` in node flies a convoy of three that sets off
   together, is ambushed in two waves along its route and reports each ship lost; a den assault
   with three turrets that fire on a pilot in range, a reactor that shrugs off hits until the
@@ -212,7 +225,7 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   Back heard by the pause menu and the map; connections and disconnections reported once; the last
   device used owns the HUD, and a drifting stick never takes it.
 - `portraits.test.ts`: portraits are a pure function of seed and look, differ between seeds, keep
-  the face when only the clothes change, dress each role and faction, grey with age, give the six
+  the face when only the clothes change, dress each role and faction, grey with age, give the eight
   story characters faces of their own, stay well-formed and light, and describe themselves to screen
   readers.
 - `people.test.ts`: a bar of regulars at every dock, the same for everyone in a shift; story
@@ -312,6 +325,10 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   close; the jump to Wolf 1061 from the star map's Missions list takes them along (the save says
   so); over the line they make for Flotsam Diggings and the raiders waiting at the beacon go for
   them.
+- `frontier.spec.ts`: **First Harvest**: Ines Halloway's call at Squall Relay, Orla Fenwick at
+  Harrow Farmstead and the drive parts loaded; in Achird the Wrenna drifts far from any dock and the
+  HUD steers to her; alongside her the parts go aboard and the HUD sends the player back to
+  Fenwick, whose debrief follows; the journal lists the arc.
 - `combat.spec.ts`: salvaged equipment fitted from the stash, damaged systems repaired and a decoy
   bought at the outfitter, then a wingman hired in the bar who launches with the player and forms
   up alongside.
