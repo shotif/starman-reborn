@@ -16,9 +16,9 @@ the frontier and a border war.
 
 What it lacks now:
 
-- **Real phones.** Every test runs in a desktop browser with emulated phones and touch, and the
-  first load has grown to about 620 KB with the verified sky. On a real phone, only the star map's
-  pinch zoom has been tried (it works); nothing has been measured.
+- **Real phones.** Every test runs in a desktop browser with emulated phones and touch. The title
+  now shows at once and the game loads behind it, measured on a simulated slow phone network; on a
+  real phone, only the star map's pinch zoom has been tried (it works).
 - **A frontier with a life of its own.** The 141 systems beyond 17.5 light-years are settled by the
   same rules as the core (thin colonies, dens, survey work), with no story or events of their own.
 - **Company across jumps.** Escorts and convoys stay within one system; only wingmen follow you
@@ -29,12 +29,17 @@ What it lacks now:
 Everything proposed before is done (see below). Candidates for what comes next, in the order I
 would build them:
 
-### 13. Phones, measured and tuned ⏳ (M)
+### 13. Phones, measured and tuned 🔨 (M)
 
-- The real-device checklist in [TEST_RECORD.md](TEST_RECORD.md) on an Android phone and an iPhone
-  (this one needs you), then tuning from what it finds.
-- A smaller first load: the world and sky data loaded behind the title screen, and the star map's
-  data on first open.
+- ✅ **A first load that shows the title at once.** A 15 KB first screen draws the title with a bar
+  where Play will be, and the game (three.js, the world, the sky and the game code, 609 KB in all)
+  loads behind it; a failed download offers to try again. On simulated slow 4G the title shows at
+  0.45 s instead of 4.8 s. The sky turned out to be only 68 KB of the game, so the game loads as a
+  whole behind the title rather than the data alone; the star map's code already loaded on first
+  open. A first-load budget runs after every build ([PROCGEN.md §4.6](PROCGEN.md#46-performance)).
+- ✅ **Offline after one visit**, and **WebGL context loss**, both forced in browser tests.
+- ⏳ The real-device checklist in [TEST_RECORD.md](TEST_RECORD.md) on an Android phone and an
+  iPhone (this needs you; pinch zoom is confirmed on Android), then tuning from what it finds.
 
 ### 14. The frontier's own stories ⏳ (M)
 

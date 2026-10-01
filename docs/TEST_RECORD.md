@@ -11,11 +11,12 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | --- | --- | --- |
 | TypeScript typecheck (app + scripts/tests) | `npm run typecheck` | Pass |
 | Astronomy data validation | `npm run data:validate` | Pass (22 warnings: the contested planets this edition keeps) |
-| Unit tests | `npm test` | Pass: 592 tests in 39 files |
+| Unit tests | `npm test` | Pass: 606 tests in 40 files |
 | Production build | `npm run build` | Pass |
+| First-load budget | `npm run size` | Pass: first screen 15 KB of 32, first load 609 KB of 700 (gzipped) |
 | Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 22 passed (5 touch-only tests skipped) |
 | Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 25 passed (2 desktop-only tests skipped) |
-| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 99 screenshots, no audit findings |
+| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 108 screenshots, no audit findings |
 
 ### Unit tests (Vitest)
 
@@ -168,6 +169,14 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   three spellings), typos forgiven only when nothing matches as typed, one row per system with
   equal matches nearest first, highlights on the name as written; the missions list grouped by
   system with the tracked objective first, then by jumps, unreachable last.
+- `load.test.ts`: the first load: the loading title counts the systems as the game does before the
+  sky has arrived; the build's list of files is read and anything malformed dropped; the bar rises
+  to exactly 1 in many steps, even when a file is larger or smaller than listed or comes without a
+  readable body; a missing file fails the load so the title can offer to try again; the build lists
+  the boot chunk, its imports and its CSS, largest first, and leaves out what the page already
+  loaded and what loads on demand; the offline list has every script, style and font and no source
+  maps; the first-load budget passes a build within it and catches a grown first screen, a first
+  load over budget and a page that lists no game files.
 - `rooms.test.ts`: station interiors: structure per station, camera moves and cuts, reduced
   motion, omitted rooms, determinism, draw-call and triangle budgets per quality, lights per room,
   hotspots on desktop and phones, portrait framing and disposal; generated interiors for every
@@ -264,6 +273,9 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   - Refresh mid-flight resumes at the same place with cargo and job intact.
   - Hidden tab: the simulation freezes, and on resume the ship does not teleport.
   - Safe-area insets respected (HUD and touch controls).
+  - **WebGL context loss** forced in flight (`WEBGL_lose_context`): the notice shows, the game
+    freezes and is saved, and when the context is restored the notice goes and drawing and flying
+    carry on, with no errors.
   - **Multi-touch**: steering and aiming at once, firing while held, and lifting one finger
     keeps the other in control.
   - **pointercancel** releases both sticks.
@@ -305,7 +317,19 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   buttons work there. Touch: **a pinch zooms toward the fingers** (the star under them stays within
   6 px while the view zooms 3×), and a touch whose lift was lost does not turn the next drag into a
   pinch. Desktop: **the wheel zooms toward the cursor**.
-- `screenshots.spec.ts`: title, job board, buy dialog, station deck, shipyard, outfitter, fleet,
+- `load.spec.ts`: **the first load on a slow phone network**: the build served like GitHub Pages
+  (gzip, ten-minute cache, `tests/e2e/pagesServer.ts`) through Chromium's throttling at slow 4G
+  (1.6 Mbit/s down, 150 ms latency). The loading title shows within 1.5 s (0.45 s measured), its
+  bar moves forward in many steps to 100% and then says Starting while the game starts up, the title
+  with Play follows, and every game file comes
+  over the network once (the game's imports find them in the cache). A download that fails shows
+  the message and **Try again**, which brings the title.
+- `offline.spec.ts`: **offline after one visit**: the build served from `localhost` so the service
+  worker registers; after one visit the page and every file of the build are in its cache; then the
+  server is switched off and the browser goes offline (a fetch of anything else fails), and a
+  reload brings the title, Play starts a game and the star map opens.
+- `screenshots.spec.ts`: the loading title (caught part-way, with the game's largest file held
+  back), title, job board, buy dialog, station deck, shipyard, outfitter, fleet,
   flight HUD, star map and its Missions and Find dialogs at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
   zoom). Saved in `docs/screenshots/` once any smooth scrolling has come to rest. Each is audited
@@ -318,19 +342,33 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 
 SwiftShader renders on the CPU, so frame rates here say nothing about real devices. Observed:
 about 8–20 fps depending on viewport, with dynamic resolution lowering the pixel ratio as
-designed. Production build transfer size for the first scene, measured 1 October 2026: about
-630 KB gzipped (JS + CSS + HTML: the game code with its bundled world and sky data 455 KB, of
-which the sky's JSON is about 68 KB; three.js 149 KB; addons 7 KB; CSS 16 KB), plus the four
-interface fonts (about 72 KB). The star map (~27 KB with its CSS) and science notes (~4 KB) load
-on first use; the bloom chain (~4 KB) loads only on the High preset.
+designed.
+
+The first load, from `npm run size` on 1 October 2026 (gzipped): the first screen, the loading
+title, is 15 KB (HTML, a 7.6 KB script and 7 KB of CSS); the game behind it 594 KB (the game code
+with its world and sky data 433 KB, of which the sky's JSON is about 68 KB; three.js 144 KB; its
+CSS 9.5 KB; addons 7 KB): 609 KB in all, plus the four interface fonts (71 KB). The star map
+(~27 KB with its CSS) and science notes (~4 KB) load on first use; the bloom chain (~4 KB) only on
+the High preset.
+
+On simulated slow 4G (`load.spec.ts`, the container's CPU):
+
+| Build | Anything on screen | Title with Play | Transferred |
+| --- | --- | --- | --- |
+| Before (one bundle, 1038e2d) | 4.8 s | 4.8 s | 679 KB |
+| After (loading title first) | 0.45 s | 5.2 s | 683 KB |
+
+Play comes about 0.4 s later than before because the fonts now load with the game (the loading
+title uses them) instead of after the title appeared.
 
 ## Real-device checklist (partly run — please run the rest)
 
 Open <https://shotif.github.io/starman-reborn/> (or serve over HTTPS with `npm run dev:https` or a
 tunnel; see the README), then on an actual **Android phone** and an **iPhone/iPad**:
 
-1. Open the site; tap **Play**. Sound starts after the first tap (iPhone: Ring/Silent switch set
-   to Ring).
+1. Open the site. The title should appear within a second or two, with a bar where **Play** will
+   be filling as the game loads; note roughly how long until Play appears, and on which network.
+   Tap **Play**. Sound starts after the first tap (iPhone: Ring/Silent switch set to Ring).
 2. In flight, **steer with the left thumb and aim/fire with the right thumb at the same time**.
    Boost, Cruise, Target and the green action button should all be reachable without letting go
    of both sticks.
@@ -348,7 +386,8 @@ tunnel; see the README), then on an actual **Android phone** and an **iPhone/iPa
 8. **Refresh** the page and press Continue. Everything should be as you left it.
 9. Switch to another app and back mid-flight. The game should not jump ahead.
 10. On a tablet with a keyboard or mouse attached, the desktop controls should take over.
-11. Optional (offline stretch goal): after one visit, go offline and reload.
+11. Optional (offline stretch goal): after one visit (wait until Play appears), turn on flight mode
+    and reload. The title should come back, a game should start, and the star map should open.
 
 Record results here (device, OS, browser, fps, issues):
 

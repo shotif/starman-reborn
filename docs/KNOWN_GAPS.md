@@ -43,14 +43,18 @@ snapshot branch only when the archives changed.
   keyboard up, it keeps to the visible part of the screen through the Visual Viewport API, and how
   iOS Safari scrolls around a focused field needs a real iPhone to confirm. Double tap and Missions
   have not been tried on a real phone either.
-- **WebGL context loss** is handled (overlay with reload, automatic resume on restore) but was not
-  forced in automated tests.
-- **Transferred size on mobile networks.** Measured from the production build: about 620 KB
-  gzipped for the first scene (three.js 147 KB, game code and the bundled sky and world data
-  449 KB, addons 7 KB, CSS 16 KB, HTML). It has grown with the verified sky (207 systems) and
-  the game's systems; splitting the world data out of the first load is the obvious next step
-  when phones are tuned. Loaded on demand: the star map (~20 KB) on first open, the science notes
-  (~4 KB), and bloom (~4 KB) on the High preset only. Real-network timings were not measured.
+- **WebGL context loss** is forced in a browser test (the `WEBGL_lose_context` extension, in
+  flight): the notice shows, the game freezes and saves, and it carries on when the context comes
+  back. How often a real phone's browser takes the context away, and whether it gives it back, was
+  not seen.
+- **The first load on a real phone network.** The title now appears from a 15 KB first screen and
+  the game (609 KB gzipped in all, with three.js 144 KB and the game code with the world and sky
+  433 KB) loads behind it with a progress bar. On simulated slow 4G (1.6 Mbit/s, 150 ms) in the
+  test browser, the title shows at 0.45 s (it took 4.8 s before) and Play is ready at about 5.2 s
+  (4.8 s before: the fonts now arrive with the game rather than after it). A phone's slower
+  processor adds to the second figure; nothing was timed on a real phone or network. Loaded on
+  demand: the star map (~27 KB) on first open, the science notes (~4 KB), and bloom (~4 KB) on the
+  High preset only.
 
 ## Deliberate prototype limits
 
@@ -89,5 +93,9 @@ snapshot branch only when the archives changed.
   approximate elements, valid 1800–2050; outside those years the layout is schematic), with
   distances compressed so the system can be flown; Mars is kept within 140° of Earth.
 - Stations and ships do not collide with each other in detail (spheres only).
-- The offline cache (service worker) is a stretch-goal implementation: it registers only in
-  production builds over HTTPS or on localhost, and was not tested offline on a phone.
+- The offline cache (service worker) is a stretch goal: it registers only in production builds
+  over HTTPS or on localhost, keeps every file of the build after one visit, and is tested in
+  Chromium with the server switched off (the game starts and the star map opens). It was not tried
+  offline on a phone. On iPhone, Safari can clear a site's stored data, offline files and saves
+  alike, after seven days of browsing without a visit, unless the game is added to the Home Screen;
+  exporting a save keeps it safe.

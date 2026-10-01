@@ -50,6 +50,10 @@ trade lanes and all story text are original fiction and are labelled that way in
   `main` redeploys it.
 - **Locally:** see *Run it* below.
 
+The title appears straight away, even on a slow phone connection, with a bar where **Play** will
+be that fills as the rest of the game arrives (about 610 KB compressed). After one visit the game
+also works offline: the browser keeps its files.
+
 A first playthrough takes about 10–20 minutes. Progress saves automatically in the browser
 (IndexedDB) after docking, trading, rewards and jumps, and when the tab is hidden. Refresh at any
 time and press **Continue**.
@@ -72,7 +76,9 @@ npm run build     # production static site in dist/ (relative asset paths)
 npm run preview   # serve dist/ at http://localhost:4173
 ```
 
-`npm run check` runs typecheck, data validation, unit tests and the production build.
+`npm run check` runs typecheck, data validation, unit tests, the production build and the
+first-load budget (`npm run size`, which lists what a phone downloads and fails when the first
+screen or the whole first load grows past its budget).
 
 ## Test on real phones and tablets (HTTPS)
 
@@ -176,7 +182,8 @@ docs/          sources, design notes, test record, known gaps, screenshots
 npm test                       # unit tests (Vitest)
 npx playwright install chromium  # once, to download the test browser
 npm run test:e2e               # Playwright journeys on desktop and touch viewports
-npm run screenshots            # layout screenshots + audits for the seven test sizes
+npm run screenshots            # layout screenshots + audits for the nine test sizes
+npm run size                   # after a build: what the first load downloads, against its budget
 ```
 
 The results and device coverage are recorded in [docs/TEST_RECORD.md](docs/TEST_RECORD.md). Open

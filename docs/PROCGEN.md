@@ -150,6 +150,18 @@ Other balance guardrails:
 
 - The whole catalogue builds in under 20 ms (the test measures it; it takes a few milliseconds);
   world generation per system under 50 ms, and only for systems being entered.
+- **The first load.** The page first loads only the loading title (`src/app/loader.ts`): the
+  title's frame, its styles and fonts, and a bar where Play will be. It must not import three.js,
+  the world, the sky or the game code; it fetches those itself from the list the build writes into
+  the page (`scripts/bootFiles.ts`), counting their bytes for the bar, and the game's own imports
+  then find them in the browser's cache. The system count on the loading title is worked out at
+  build time, and a unit test holds it to the game's.
+- **Budgets**, in gzipped kilobytes, checked after every build by `npm run size`
+  (`scripts/load-budget.ts`, in `npm run check` and CI): the first screen at most **32 KB** (15 KB
+  on 1 October 2026) and the whole first load, first screen and game, at most **700 KB** (609 KB).
+  Fonts (71 KB, already compressed) and what loads on demand (the star map, the science notes,
+  bloom: 35 KB) are reported, not budgeted. Going over is a decision to make, not an accident: raise
+  the budget in the same change, with the reason.
 
 ## 5. Testing
 
