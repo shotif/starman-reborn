@@ -555,12 +555,23 @@ hand-made stations join in once the opening delivery is done.
 - **Survey**: fly close enough to a confirmed planet within three jumps for the scanner to log it
   (real catalogued planets only). Pays as soon as the scan is logged.
 - **Escort**: a hauler of the station's owner (independents' otherwise) sets off alongside the
-  player for another station in the same system; only in systems with something to fear (raider
-  packs, or security below 0.75). It keeps to sublight speed and holds position while the player is
-  more than 2.5 km away. A quarter to nearly half of the way along, raiders of the system's threat
-  (at least 1) ambush it from ahead, and half of them go for the hauler until the player draws them
-  off. The contract pays when the hauler docks; it fails if the hauler is destroyed or the player
-  jumps out of the system first.
+  player for another station, in the same system or up to two jumps away (six in ten go to another
+  system when one is in reach), and only to a system with something to fear (raider packs, or
+  security below 0.75). In its destination's system it keeps to sublight speed and holds position
+  while the player is more than 2.5 km away. A quarter to nearly half of the way along, raiders of
+  that system's threat (at least 1) ambush it from ahead, and half of them go for the hauler until
+  the player draws them off. The contract pays when the hauler docks; it fails if the hauler is
+  destroyed, or if the player jumps out of the destination's system without it.
+- **Escorts across jumps**: on the way to another system the hauler keeps station behind the
+  player instead (never fighting) and catches up after a lane or a long cruise, as wingmen do. The
+  jump drive waits, and the star map says why, while it is more than 2.5 km away; within that it
+  jumps with the player, and the save records the system it is in (`escortAt`). Arriving through a
+  jump with escorted ships in a system with something to fear, raiders of the escort's threat are
+  waiting at the beacon: they strike a few seconds later from ahead, and half of them go for the
+  haulers. If the player is towed home after a defeat, the haulers wait where they were.
+- **Convoys**: a third of the escorts across jumps are a convoy of three haulers of one hull (named
+  from an invented pool), two of which must arrive. Ships lost count against it wherever they fall;
+  one wave of raiders comes on the way to the dock (two where the threat is 3), besides the beacons.
 - **Ace hunt**: a named Hollow Wake ace (names from invented pools) in a heavy fighter, 80% tougher
   and 30% deadlier than its hull suggests, with two guards, near a marked spot within three jumps
   where packs are nasty (threat 2 or more). Always difficulty 3. The guards pay the usual bounty;
@@ -592,11 +603,12 @@ Two variations:
   that varies by ±10% from one posting to the next: a base (110–900 cr by kind), a danger part
   times (1 − the destination's security), and the kind's own part (15% of the freight's base value,
   the 35% markup on supply goods, 150 cr per raider per threat level on bounties, 180 cr per threat
-  level on escorts, 150 cr per guard level on recoveries). Work that answers an event pays 30% more
-  on the varying part. Rounded to 5 cr.
+  level and 220 cr per jump on escorts, a convoy 1.8 times as much, 150 cr per guard level on
+  recoveries). Work that answers an event pays 30% more on the varying part. Rounded to 5 cr.
 - **Difficulty** 1–3: one more for a lawless destination (security below 0.35) and one more for
-  three jumps or more; supply runs count the trip to the source; bounties and escorts take the
-  threat level; aces are always 3. The briefing notes the route and the risk.
+  three jumps or more; supply runs count the trip to the source; bounties take the threat level,
+  escorts the destination's threat and one more for two jumps; aces are always 3. The briefing
+  notes the route and the risk.
 - **Standing** with the station's owner: +2, +4 or +6 by difficulty; difficulty 3 needs Friendly
   standing (10). Independent stations have no gates and give no standing.
 - **Abandoning** a generated contract (from the journal): any deposit is forfeit, the cargo stays
@@ -618,8 +630,11 @@ forty time slots, and every follow-up those boards lead to (`tests/unit/contract
 - supply runs: the giver wants the goods and the named source makes them;
 - bounties: raiders roam the system, and the pack's size and threat match the system's (or the
   raid's);
-- escorts: two stations of the posting station's system, something to fear there, the ambush
-  threat matching the system, a hauler from the catalogue;
+- escorts: from the posting station to another open station within two jumps, something to fear
+  at the destination, the ambush threat and difficulty matching the destination and the trip, a
+  hauler from the catalogue; convoys only across jumps, three named ships of which two must
+  arrive, with the waves the threat calls for; local escorts, escorts across jumps and convoys all
+  occur;
 - aces: one named target at the top difficulty, where packs are nasty;
 - recoveries: find and bring back, guards matching the system, a known item;
 - surveys: the planet is a confirmed planet of that system;
@@ -630,8 +645,10 @@ forty time slots, and every follow-up those boards lead to (`tests/unit/contract
 - no station's board is empty in more than one time slot in ten; every kind, urgent jobs, event
   work and follow-ups all occur.
 
-`tests/unit/flightContracts.test.ts` flies an escort with its ambush, an ace with its guards and
-loot, and a wreck's recovery in a real `FlightSession` (in node, without rendering).
+`tests/unit/flightContracts.test.ts` flies an escort with its ambush, an escort and a convoy on
+their way to another system (keeping with the player, holding the jump while too far, catching up,
+and the ambush at the beacon), an ace with its guards and loot, and a wreck's recovery in a real
+`FlightSession` (in node, without rendering).
 
 ### 10.5 What the player sees
 
@@ -878,7 +895,9 @@ Rules in `src/content/dens/rules.ts`.
 
 - **Convoy**: the ships set off together alongside the player and wait when left behind; ambushes
   come in waves as the leading ship passes a fifth of the route and three quarters of it. Two of
-  the three must arrive; losing more fails the convoy.
+  the three must arrive; losing more fails the convoy. A convoy for another system keeps with the
+  player and jumps with them like any escort across jumps (§10.2), and raiders wait for it at the
+  beacon on the way.
 - **Den assault**: three gun turrets (240 hull, 90 shield, 1.5 km range) stand around the den, and
   the reactor pod on its far side (900 hull) is shielded while any turret stands. Two raiders defend
   it, and a wing of three Transit Authority fighters flies with the player, keeping station off
@@ -1561,7 +1580,7 @@ Wolf 1061 line for good.
 | 2 | Letters under fire: a mail pouch from a wreck near Jackpot Stillworks | | |
 | 3 | Three letters: the choice | | |
 | 4 | the Wake's forward pack at Flotsam Diggings | two Authority haulers in Ross 154 | a letter to both sides and back |
-| 5 | break the Wake's push on Regent Concourse | break the Authority's sweep at Maw Roost | escort the envoys to Regent Concourse (two of three must arrive) |
+| 5 | break the Wake's push on Regent Concourse | break the Authority's sweep at Maw Roost | escort the envoys from Waymark Waypoint across the line to Flotsam Diggings (two of three must arrive; raiders at the Wolf 1061 beacon) |
 
 - **It reads the other arcs**: Kettering's first briefing, and the choice, carry a line for each
   choice made in the other three arcs (what happened to Oren Vail, the quarantine at Stonecrop,

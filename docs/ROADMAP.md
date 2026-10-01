@@ -9,10 +9,10 @@ After the scripted opening (10–20 minutes), the neighbourhood is an open sandb
 systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
 of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
 packs in lawless space; 39 ships and 139 pieces of equipment; and generated contracts on every job
-board. Increments 1–12 (under [Done so far](#done-so-far)) added world events and news, contracts
-of every kind, the law and the outlaw path, goals, four story arcs, combat depth, people in the
-bars and a trade computer, a world that answers, a fleet of your own, mining in the real belts,
-the frontier and a border war.
+board. Increments 1–12 and 15 (under [Done so far](#done-so-far)) added world events and news,
+contracts of every kind, the law and the outlaw path, goals, four story arcs, combat depth, people
+in the bars and a trade computer, a world that answers, a fleet of your own, mining in the real
+belts, the frontier, a border war, and escorts and convoys across jumps.
 
 What it lacks now:
 
@@ -21,13 +21,10 @@ What it lacks now:
   real phone, only the star map's pinch zoom has been tried (it works).
 - **A frontier with a life of its own.** The 141 systems beyond 17.5 light-years are settled by the
   same rules as the core (thin colonies, dens, survey work), with no story or events of their own.
-- **Company across jumps.** Escorts and convoys stay within one system; only wingmen follow you
-  through a lane.
 
 ## Proposed next increments
 
-Everything proposed before is done (see below). Candidates for what comes next, in the order I
-would build them:
+Candidates for what comes next, in the order I would build them:
 
 ### 13. Phones, measured and tuned 🔨 (M)
 
@@ -48,11 +45,6 @@ would build them:
   changing what the archives say).
 - **Guardrails**: nothing invented about real planets; contested ones stay marked as contested.
 
-### 15. Convoys across jumps ⏳ (M)
-
-- Escorts and convoys that follow you through the lanes, with ambushes at the beacons, and a
-  convoy finale for The Long Border's truce that crosses the line.
-
 ### How an increment ships
 
 Rules go in data files with guardrails ([PROCGEN.md](PROCGEN.md)). Each increment adds unit tests
@@ -61,6 +53,14 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 15. Convoys across jumps ✅
+
+Escorts now go up to two jumps: the hauler, or a convoy of three of which two must arrive, keeps
+with the player and jumps with them when within 2.5 km (the star map says why it waits
+otherwise), and raiders wait at the beacon where there is something to fear. The Long Border's
+truce ends with the envoys crossing the Ross 154 – Wolf 1061 line to Flotsam Diggings
+([PROCGEN.md §10.2](PROCGEN.md#102-kinds), [§20.5](PROCGEN.md#205-the-long-border)).
 
 ### 1. A world that moves: events, news and restocking ✅
 

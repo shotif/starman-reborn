@@ -58,19 +58,28 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   guardrails over forty time slots (reach, pay against fees and repairs, deposits against the
   cargo's value, bounties and aces only where raiders roam, escorts only where there is something
   to fear, surveys of confirmed planets, time limits that can be kept, event work matching an event
-  under way) and is deterministic; the hand-made stations post only after the first delivery; each
+  under way, escorts at home and across jumps and convoys) and is deterministic; the hand-made
+  stations post only after the first delivery; each
   kind played through (freight loads cargo against a deposit and refunds it, parcels complete on
   docking, supply runs brief the source, bounties count kills, surveys complete on a scan and are
   not offered twice, escorts pay on arrival and fail when lost or left behind, aces pay for one
-  named kill, recoveries find the item and bring it back); urgent jobs pay the bonus in time and
+  named kill, recoveries find the item and bring it back); an escort across jumps keeps with the
+  player, holds the jump while too far away, jumps with them, is seen in at the far end with raiders
+  at the beacon, fails when left in its destination's system, and waits where it was after a tow;
+  a convoy across jumps pays when two of three are in and fails when two are lost; the guardrails
+  catch an escort with nothing to fear, a convoy that is not three and a difficulty that ignores
+  the trip; an older save's escort is where it set off; urgent jobs pay the bonus in time and
   cost standing when late; follow-ups are offered at the destination, pay more, can be taken, and
   lapse; refusals without hold space or credits; abandoning (deposit forfeit, cargo kept, standing
   lost, no second try, story jobs kept); the five-contract limit; accepted contracts survive later
   boards and the save; v4 → v5 and v5 → v6 migrations and damaged contracts rejected.
 - `flightContracts.test.ts`: a real `FlightSession` in node flies an escorted hauler that sets off
-  with the player, is ambushed part-way and ends docked or lost; an ace with two guards that is
-  tougher than a guard in the same ship and drops credits and a cargo pod; and a wreck, guarded,
-  whose item the tractor beam pulls in.
+  with the player, is ambushed part-way and ends docked or lost; a hauler and a convoy on their way
+  to another system that keep station with the player (no ambush out of a dock), hold the jump while
+  more than 2.5 km away, catch up after a long cruise and report their loss; raiders waiting at
+  the beacon for escorted ships arriving through it, from ahead and going for them; an ace with two
+  guards that is tougher than a guard in the same ship and drops credits and a cargo pod; and a
+  wreck, guarded, whose item the tractor beam pulls in.
 - `events.test.ts`: world events pass their guardrails over 300 hours of clock (no overlaps, only
   goods the station deals in, never Sol or the opening goods, prices in their bands, news text
   quoting the change, raids and sweeps only where they can happen, a sensible rate, every kind);
@@ -101,18 +110,19 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   milestones are earned once and the whole sky pays the grant; the what-next hint puts fines
   first, then the hold, the codex, a route and a job board; v6 saves start the codex from the
   bodies already scanned.
-- `story.test.ts`: the story arcs pass their guardrails, and broken arcs (a missing step, a crime
-  in a lawful arc, a den as a dock, a place out of reach, choices that all end or that the next
-  step does not follow, missing words, a stranger speaking, a cheap finale, the Wake's arc open to
-  anyone) are caught; only the step in hand of each arc shows, and a finished step leaves the
-  board; Clean Manifests is played through (words at the relay told once, comms in Ross 154, the
-  wreck, the witness, a choice that pays and moves standing, a finale whose words follow the
-  choice, the milestone); selling the evidence ends the arc with no finale; choices are made at
-  their dock, once; The Stonecrop Blight's water run and convoy (two ships lost fails it and it goes
-  back to its giver, two of three in completes it); a story escort left behind goes back to its
-  giver; Salt's Crew needs the Wake's trust, hands over its contraband, counts haulers taken, and
-  its betrayal is a pardon that ends the arc; the Wake's finale counts sweep ships; a knocked-out
-  den is rebuilt after six hours; v7 saves gain an empty story, damaged story data rejected.
+- `story.test.ts`: the story arcs pass their guardrails, and broken arcs (a missing step, a crime in
+  a lawful arc, a den as a dock, a place out of reach, choices that all end or that the next step
+  does not follow, missing words, a stranger speaking, a cheap finale, the Wake's arc open to
+  anyone, an escort setting off more than two jumps from where it is going) are caught; only the
+  step in hand of each arc shows, and a finished step leaves the board; Clean Manifests is played
+  through (words at the relay told once, comms in Ross 154, the wreck, the witness, a choice that
+  pays and moves standing, a finale whose words follow the choice, the milestone); selling the
+  evidence ends the arc with no finale; choices are made at their dock, once; The Stonecrop Blight's
+  water run and convoy (two ships lost fails it and it goes back to its giver, two of three in
+  completes it); a story escort left behind goes back to its giver; Salt's Crew needs the Wake's
+  trust, hands over its contraband, counts haulers taken, and its betrayal is a pardon that ends the
+  arc; the Wake's finale counts sweep ships; a knocked-out den is rebuilt after six hours; v7 saves
+  gain an empty story, damaged story data rejected.
 - `flightStory.test.ts`: a real `FlightSession` in node flies a convoy of three that sets off
   together, is ambushed in two waves along its route and reports each ship lost; a den assault
   with three turrets that fire on a pilot in range, a reactor that shrugs off hits until the
@@ -249,7 +259,9 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   war contracts are posted by the law only while its front fights and by the dens against the front
   faction's haulers, push the front their way and stop once it is settled; The Long Border reads
   the other arcs' choices and is finished as a lawful pilot, an outlaw hunted by the Authority, and
-  neither, each ending holding the front for good (and earning its milestone); border saves.
+  neither (the envoys keeping with the player in Ross 154, jumping with them over the line, and met
+  by raiders at the Wolf 1061 beacon), each ending holding the front for good (and earning its
+  milestone); border saves.
 
 ### Browser tests (Playwright)
 
@@ -295,6 +307,11 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   News at Waymark Waypoint, Kettering's arc on the board, and at the three letters the Wake's answer
   closed (with what it needs) to a pilot the Wake does not trust; the truce chosen, its next step
   on the board.
+- `convoy.spec.ts`: **a convoy across a jump**: The Long Border's truce finale accepted at Waymark
+  Waypoint; at launch the three envoys keep with the player and the HUD says to jump with them
+  close; the jump to Wolf 1061 from the star map's Missions list takes them along (the save says
+  so); over the line they make for Flotsam Diggings and the raiders waiting at the beacon go for
+  them.
 - `combat.spec.ts`: salvaged equipment fitted from the stash, damaged systems repaired and a decoy
   bought at the outfitter, then a wingman hired in the bar who launches with the player and forms
   up alongside.

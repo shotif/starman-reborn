@@ -72,7 +72,9 @@ snapshot branch only when the archives changed.
 - Traffic and raider packs exist only around the player. Packs that saw the player and cargo pods
   left adrift wait for 30 minutes of game clock (in the last six systems), as do the packs and
   wrecks of the player's own contracts; everything else is generated again on arrival.
-- Escorts run between two stations of one system; there are no escorts across jumps.
+- Escorts go at most two jumps. On the way to another system the haulers keep station behind the
+  player rather than flying a route of their own, catch up after a lane as wingmen do, and come
+  back whole each time the player launches (only ships destroyed count against a convoy).
 - The law is simple: a crime is known where it was seen and spreads a jump every ten minutes;
   fines lapse after three hours without a new crime; a patrol scans at most once a flight.
   Selling contraband at a station is not a crime; only having it in the hold at a scan is.

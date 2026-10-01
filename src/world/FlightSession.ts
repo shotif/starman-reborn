@@ -3615,10 +3615,30 @@ export class FlightSession {
   }
 
   /** Debug snapshot of NPC state for automated tests. */
-  debugNpcs(): { id: string; role: NpcRole; state: string; hull: number; shield: number; energy: number; distance: number; shotsFired: number }[] {
+  debugNpcs(): {
+    id: string;
+    name: string;
+    role: NpcRole;
+    side: 'lawful' | 'raider';
+    /** The escort contract it is the ship of, whether it is keeping with the player, and the escorted ship it goes for. */
+    escort: string | null;
+    following: boolean;
+    prey: string | null;
+    state: string;
+    hull: number;
+    shield: number;
+    energy: number;
+    distance: number;
+    shotsFired: number;
+  }[] {
     return this.npcs.map((n) => ({
       id: n.id,
+      name: n.name,
       role: n.role,
+      side: n.side,
+      escort: n.escort?.jobId ?? null,
+      following: !!n.escort?.follow,
+      prey: n.prey?.name ?? null,
       state: n.trader?.state ?? (n.patrol && n.foe === null ? n.patrol.brain.state : n.brain.state),
       hull: n.durability.hull,
       shield: n.durability.shield,
