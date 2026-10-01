@@ -88,7 +88,7 @@ export function fleetContent(ctx: StationContext, refresh: Refresh): HTMLElement
     h(
       'p',
       { class: 'muted small' },
-      `You own ${owned === 0 ? 'no ship' : owned === 1 ? 'one ship' : `${owned} ships`} besides the one you fly (at most ${FLEET.hangar.max}). Captains, storage and stakes are worked out from the clock whenever you dock or jump.`,
+      `You own ${owned === 0 ? 'no ship' : owned === 1 ? 'one ship' : `${owned} ships`} besides the one you fly (at most ${FLEET.hangar.max}). Captains and stakes are worked out from the clock, and your captains fly the lanes, where you can meet them.`,
     ),
     h(
       'div',

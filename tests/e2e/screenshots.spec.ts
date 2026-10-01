@@ -204,11 +204,14 @@ for (const size of SIZES) {
       await press(page, 'slot-shield');
       await shot(page, `${size.name}-3d-outfitter`, size.touch, results);
       await press(page, 'room-deck');
-      // A captain hauling for the player (docs/PROCGEN.md §18.6): on the Fleet window, then met in flight.
+      // A captain hauling for the player (docs/PROCGEN.md §18.6): on the Fleet window, then met in flight
+      // (with the credits to pay for a load, or the captain waits at home).
+      await api(page, 'setCredits', 20_000);
       const captain = await api<string | null>(page, 'hireCaptain', { model: 'ship.freighter.1.halden', to: 'meridian-outpost' });
       expect(captain).not.toBeNull();
       await press(page, 'station-fleet');
       await expect(page.getByTestId(`fleet-hauler-${captain}`)).toBeVisible();
+      await page.getByTestId(`fleet-hauler-${captain}`).scrollIntoViewIfNeeded();
       await shot(page, `${size.name}-3e-fleet`, size.touch, results);
       await press(page, 'dock-launch');
       await press(page, 'sheet-close');
