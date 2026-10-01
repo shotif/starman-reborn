@@ -9,7 +9,9 @@ This is an honest list of what the prototype does not do yet, or what has not be
    [TEST_RECORD.md](TEST_RECORD.md)). On a real phone, only the star map's pinch zoom has been
    confirmed so far (1 October 2026); nothing else has run on a physical iPhone, iPad or Android
    device, or with a physical controller. Please run the rest of the hands-on checklist in the test
-   record over HTTPS, at <https://shotif.github.io/starman-reborn/>.
+   record over HTTPS, at <https://shotif.github.io/starman-reborn/>, and paste the device report
+   (Settings → **Copy report**) with your notes: it carries the load times, the frame rate and
+   whether offline play is ready.
 
 ## The sky, as verified
 
@@ -47,9 +49,9 @@ snapshot branch only when the archives changed.
   flight): the notice shows, the game freezes and saves, and it carries on when the context comes
   back. How often a real phone's browser takes the context away, and whether it gives it back, was
   not seen.
-- **The first load on a real phone network.** The title now appears from a 15 KB first screen and
-  the game (609 KB gzipped in all, with three.js 144 KB and the game code with the world and sky
-  433 KB) loads behind it with a progress bar. On simulated slow 4G (1.6 Mbit/s, 150 ms) in the
+- **The first load on a real phone network.** The title now appears from a 16 KB first screen and
+  the game (621 KB gzipped in all, with three.js 144 KB and the game code with the world and sky
+  445 KB) loads behind it with a progress bar. On simulated slow 4G (1.6 Mbit/s, 150 ms) in the
   test browser, the title shows at 0.45 s (it took 4.8 s before) and Play is ready at about 5.2 s
   (4.8 s before: the fonts now arrive with the game rather than after it). A phone's slower
   processor adds to the second figure; nothing was timed on a real phone or network. Loaded on

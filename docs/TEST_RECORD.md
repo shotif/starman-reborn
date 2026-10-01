@@ -403,9 +403,9 @@ about 8–20 fps depending on viewport, with dynamic resolution lowering the pix
 designed.
 
 The first load, from `npm run size` on 1 October 2026 (gzipped): the first screen, the loading
-title, is 15 KB (HTML, a 7.6 KB script and 7 KB of CSS); the game behind it 594 KB (the game code
-with its world and sky data 433 KB, of which the sky's JSON is about 68 KB; three.js 144 KB; its
-CSS 9.5 KB; addons 7 KB): 609 KB in all, plus the four interface fonts (71 KB). The star map
+title, is 16 KB (HTML, a 7.8 KB script and 7 KB of CSS); the game behind it 606 KB (the game code
+with its world and sky data 445 KB, of which the sky's JSON is about 68 KB; three.js 144 KB; its
+CSS 9.5 KB; addons 7 KB): 621 KB in all, plus the four interface fonts (71 KB). The star map
 (~27 KB with its CSS) and science notes (~4 KB) load on first use; the bloom chain (~4 KB) only on
 the High preset.
 
