@@ -16,7 +16,7 @@ import { denDown } from './dens.ts';
 import { dockAccess } from './law.ts';
 import { BORDER } from '../content/border/rules.ts';
 import { getFront, pushFront } from './border.ts';
-import { leaveMark, settleFront } from './answers.ts';
+import { leaveMark, settleFront, storyMark } from './answers.ts';
 
 export type Objective =
   | { kind: 'have-cargo'; commodity: CommodityId; qty: number; text: string }
@@ -516,7 +516,8 @@ function payOut(state: GameState, job: JobDef): Payout {
     note += `; ${front.name} is settled for good`;
   }
   // A story's ending may change a station for good (docs/PROCGEN.md §14.7).
-  if (job.story?.leaves) leaveMark(state, job.story.leaves);
+  const mark = storyMark(state, job.story);
+  if (mark) leaveMark(state, mark);
   // A parcel or haul may lead to a follow-up at its destination.
   let offer: JobEvent | null = null;
   const next = followUpFor(job, state.clock);

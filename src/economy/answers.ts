@@ -1,6 +1,7 @@
 import { applyCredits, type BorderEnding, type CommodityId, type GameState } from '../app/state.ts';
 import { EVENTS } from '../content/events/rules.ts';
 import type { LastingMark } from '../content/story/marks.ts';
+import type { StoryMeta } from '../content/story/types.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
 import { getLocation, getSystem } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
@@ -44,6 +45,13 @@ export function leaveMark(state: GameState, id: string): LastingMark | null {
   if (marks[id] !== undefined) return null;
   marks[id] = state.clock;
   return mark;
+}
+
+/** The lasting mark a story mission leaves when it is done: the one for the choice it follows, if it has one. */
+export function storyMark(state: GameState, story: StoryMeta | undefined): string | undefined {
+  const v = story?.variant;
+  const pick = v ? state.story.choices[v.choiceId] : undefined;
+  return (pick && v?.leaves?.[pick]) || story?.leaves;
 }
 
 export interface Answer {

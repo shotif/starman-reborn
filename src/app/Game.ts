@@ -3,7 +3,7 @@ import { atWar, borderNews, occupied, pushFront, recordDeed } from '../economy/b
 import { gameJulianDate } from '../data/solar.ts';
 import type { Lingering } from './state.ts';
 import { TRAFFIC } from '../world/traffic/plan.ts';
-import { leaveMark, markSettledFronts, raidKill, settleFront } from '../economy/answers.ts';
+import { leaveMark, markSettledFronts, raidKill, settleFront, storyMark } from '../economy/answers.ts';
 import { useWorldLog } from '../economy/events.ts';
 import { fleetNews, settleFleet, type FleetSettlement } from '../economy/fleet.ts';
 import { lastView } from '../ui/station/lastView.ts';
@@ -1825,7 +1825,8 @@ export class Game {
           const job = getJob(id, this.state);
           this.state.jobs[id] = { status: 'complete', objectiveIndex: job.objectives.length, acceptedAt: this.state.clock, completedAt: this.state.clock };
           // A finale's lasting mark, or a decisive operation's settled front, comes with it, as when it is flown.
-          if (job.story?.leaves) leaveMark(this.state, job.story.leaves);
+          const mark = storyMark(this.state, job.story);
+          if (mark) leaveMark(this.state, mark);
           const c = job.contract;
           if (c?.decisive && c.front && !this.state.world.border[c.front]?.ending) settleFront(this.state, c.front, c.side === 'wake' ? 'wake' : 'law');
         }

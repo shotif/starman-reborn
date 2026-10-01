@@ -150,14 +150,21 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   ways (the drive parts handed over to the Wrenna in Achird, HD 219134 d and f scanned with f still
   contested, the harvest convoy across one jump to Doppler Freeport or to Squall Relay, and its
   milestone); First Harvest's lasting marks pass their guardrails, and broken ones are caught (a
-  den, goods not traded, a price out of bounds, two marks on the same goods, a run of goods not
-  made there, out of reach or overpaid, a mark no finale leaves, one left by a step before the
-  finale, by two finales or unknown); ended at Doppler Freeport, food and fine food are cheaper at
+  den, goods not traded, a price out of bounds, two marks on the same goods that could both be
+  left, a run of goods not made there, out of reach or overpaid, a mark no finale leaves, one left
+  by a step before the finale, by two finales or unknown); ended at Doppler Freeport, food and fine food are cheaper at
   Harrow and medicine is not, and every board after carries one harvest run of fine food to
   Doppler after the rest of the board, unchanged; ended at Squall Relay, medicine is cheaper and
   food is not, and the board carries the relay's share; nowhere else changes, and the news within
   two jumps tells of it; a mark is left once, kept in the save, and damaged marks are refused;
-  v7 saves gain an empty story, damaged story data rejected.
+  the faction arcs' marks: each of the eight ways the three arcs can end leaves one mark and every
+  mark is left by one ending (a mark on an answer that goes on, on an answer nobody can give, on a
+  finale for an answer that does not lead to it, unknown, or left twice, is caught); each ending
+  played from its choice (the finale's den assault, convoy or sweep done) leaves exactly its mark:
+  the goods concerned dearer or cheaper than without it, the run on the board in every time slot to
+  where it says (none where the mark has no run), and the news nearby; marks that follow other
+  answers to the same choice leave nothing behind; v7 saves gain an empty story, damaged story data
+  rejected.
 - `flightStory.test.ts`: a real `FlightSession` in node flies a convoy of three that sets off
   together, is ambushed in two waves along its route and reports each ship lost; a den assault
   with three turrets that fire on a pilot in range, a reactor that shrugs off hits until the
@@ -349,8 +356,10 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   the customs desk only (no trader, no job board), buys a pardon and has the whole station back;
   the journal shows the three ratings and the codex.
 - `story.spec.ts`: the first step of Clean Manifests flown for real (the relay's words, the debrief
-  and pay at Halcyon Ring), then the choice about Oren Vail made in its dialogue, and the journal's
-  record of the arc. The Long Border: eight hours on, a blockade of Ross 154 in the
+  and pay at Halcyon Ring), then the choice about Oren Vail made in its dialogue, the journal's
+  record of the arc, and once the finale is done, the save holds the mark that choice leads to, the
+  News at Halcyon Ring says its supply lines run clean, for good, and its board carries an
+  audited-supply run of medical supplies to Barnard Transit Relay. The Long Border: eight hours on, a blockade of Ross 154 in the
   News at Waymark Waypoint, Kettering's arc on the board, and at the three letters the Wake's answer
   closed (with what it needs) to a pilot the Wake does not trust; the truce chosen, its next step
   on the board.

@@ -3,7 +3,8 @@ import { api, openFresh, press, waitUntil } from './helpers.ts';
 
 /**
  * A faction arc in the browser (docs/PROCGEN.md §14): the first step of Clean Manifests flown for
- * real (words at the relay, the debrief at Halcyon Ring), then its choice, and the journal's record.
+ * real (words at the relay, the debrief at Halcyon Ring), then its choice, the journal's record, and
+ * the mark the arc's ending leaves on Halcyon Ring for good (§14.7).
  */
 
 type Hooks = { __starman: { completeJobs(ids: string[]): void; warp(id: string): void; dockAt(id: string): void } };
@@ -66,6 +67,17 @@ test('Clean Manifests: an audit flown for real, then the choice about Oren Vail'
   await press(page, 'station-journal');
   await expect(page.getByTestId('arc-sta')).toContainText('Step 5 of 5');
   await expect(page.getByTestId('arc-sta')).toContainText('Keep it inside the Authority');
+
+  // The finale done (the den assault is flightStory.test.ts's and story.test.ts's), the ending the choice
+  // led to changes Halcyon Ring for good: in the news, and a run of medicine on its board.
+  await page.evaluate(() => (window as unknown as Hooks).__starman.completeJobs(['arc.sta.5']));
+  expect(Object.keys((await api<{ world: { marks?: Record<string, number> } }>(page, 'state')).world.marks ?? {})).toEqual(['sta.internal']);
+  await press(page, 'room-bar');
+  if (!(await page.getByTestId('news-window').isVisible().catch(() => false))) await press(page, 'station-news');
+  await expect(page.getByTestId('mark-sta.internal')).toContainText('Clean supply lines from Halcyon Ring');
+  await expect(page.getByTestId('mark-sta.internal')).toContainText('For good');
+  await openJobs(page);
+  await expect(page.getByTestId('jobs-window')).toContainText(/Audited supply: \d+ medical supplies to Barnard Transit Relay/);
 });
 
 test('The Long Border: a blockade in the news, Kettering’s letters, and a choice closed by standing', async ({ page }) => {

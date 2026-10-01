@@ -4,6 +4,7 @@ import { ARC_JOBS, ARC_ORDER, ARCS, CHARACTERS } from '../content/story/arcs.ts'
 import type { Arc, ArcId, Line, StoryOption } from '../content/story/types.ts';
 import { getLocation } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
+import { leaveMark } from './answers.ts';
 import { adjustReputation, FACTIONS, standingTier, TIER_LABEL } from './factions.ts';
 import { advanceJobs, currentObjective, jobLockReason, storyVisible, type JobDef, type JobEvent, type Objective } from './jobs.ts';
 import { LAWFUL } from './law.ts';
@@ -135,6 +136,8 @@ export function makeChoice(state: GameState, jobId: string, optionId: string): {
     applyCredits(state, option.credits, 'reward', `${getJobTitle(jobId)}: ${option.label}`);
     state.stats.rewards += option.credits;
   }
+  // An arc that ends here may change a station for good, as a finale does (docs/PROCGEN.md §14.7).
+  if (option.ends && option.leaves) leaveMark(state, option.leaves);
   const events = advanceJobs(state, { dockedAt: state.location.dockedAt, systemId: state.location.systemId });
   return { ok: true, message: option.outcome, events };
 }

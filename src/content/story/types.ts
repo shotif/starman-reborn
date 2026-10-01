@@ -41,6 +41,8 @@ export interface StoryOption {
   ends?: boolean;
   /** Offered only to a pilot with this standing (another option is always open). */
   requires?: { minRep: { faction: FactionId; value: number } };
+  /** An ending the arc comes to here leaves a lasting mark on a station (marks.ts), as a finale may. */
+  leaves?: string;
 }
 
 /** Story data carried by a mission (a JobDef with `story`). */
@@ -59,8 +61,16 @@ export interface StoryMeta {
   debrief?: readonly Line[];
   /** Loaded into the hold on accepting (it must fit). */
   cargo?: { commodity: CommodityId; qty: number };
-  /** Words that follow an earlier choice: the briefing and debrief for each of its options. */
-  variant?: { choiceId: string; briefing: Readonly<Record<string, string>>; debrief: Readonly<Record<string, readonly Line[]>> };
+  /**
+   * Words that follow an earlier choice: the briefing and debrief for each of its options, and for
+   * a finale, the lasting mark it leaves after each (in place of `leaves`).
+   */
+  variant?: {
+    choiceId: string;
+    briefing: Readonly<Record<string, string>>;
+    debrief: Readonly<Record<string, readonly Line[]>>;
+    leaves?: Readonly<Record<string, string>>;
+  };
   /** Words that follow choices made in other arcs, said after the briefing for each one made. */
   echoes?: readonly { choiceId: string; said: Readonly<Record<string, string>> }[];
   /** Done, the mission settles a border front for good (economy/border.ts). */

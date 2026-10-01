@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { dockAt } from '../../src/app/rules.ts';
 import { migrateSave } from '../../src/app/save/migrate.ts';
-import { createNewGame, type GameState } from '../../src/app/state.ts';
+import { createNewGame, type CommodityId, type GameState } from '../../src/app/state.ts';
 import { LAW } from '../../src/content/law/rules.ts';
 import { ARC_JOBS } from '../../src/content/story/arcs.ts';
 import { getLocation, getSystem, SYSTEMS } from '../../src/data/systems.ts';
@@ -11,7 +11,7 @@ import { performJump } from '../../src/app/rules.ts';
 import { findRoute } from '../../src/galaxy/routing.ts';
 import { checkMilestones } from '../../src/economy/progress.ts';
 import { arcStatus, briefingFor, choiceHere, debriefFor, denDown, knockOutDen, makeChoice, markSeen, pendingBeats, storyWaiting } from '../../src/economy/story.ts';
-import { validateStory } from '../../src/economy/storyGuards.ts';
+import { markSources, validateStory } from '../../src/economy/storyGuards.ts';
 import { DENS } from '../../src/content/dens/rules.ts';
 import { LASTING_MARKS, type LastingMark } from '../../src/content/story/marks.ts';
 import { leaveMark } from '../../src/economy/answers.ts';
@@ -408,14 +408,17 @@ describe('First Harvest leaves its mark on Harrow Farmstead (docs/PROCGEN.md §1
     expect(rules([{ ...a, locationId: 'maw-roost' }, b])).toContain('places');
     expect(rules([{ ...a, market: { ...a.market, goods: ['luxuries'] } }, b])).toContain('market');
     expect(rules([{ ...a, market: { ...a.market, price: 0.3 } }, b])).toContain('market');
-    expect(rules([a, { ...b, market: { ...b.market, goods: ['food'] } }])).toContain('market');
+    // Two marks on one station touch different goods, unless they follow different answers to one choice.
+    const audit = LASTING_MARKS.find((m) => m.id === 'sta.internal')!;
+    expect(rules([a, b, { ...audit, locationId: 'harrow-farmstead', market: { ...audit.market, goods: ['food'] }, run: undefined }])).toContain('market');
+    expect(rules([a, { ...b, market: { ...b.market, goods: ['food'] } }])).not.toContain('market');
     expect(rules([{ ...a, run: { ...a.run!, commodity: 'machinery' } }, b])).toContain('run');
     expect(rules([{ ...a, run: { ...a.run!, to: 'earth-port' } }, b])).toContain('run');
     expect(rules([{ ...a, run: { ...a.run!, premium: 3 } }, b])).toContain('run');
     expect(rules([a, b, { ...a, id: 'nobody.leaves.this' }])).toContain('marks');
-    // In the arcs: only a finale leaves a mark, a real one, and each mark is left once.
+    // In the arcs: only a finale (or an answer that ends its arc) leaves a mark, a real one, and each mark is left once.
     const story = (patch: (j: (typeof ARC_JOBS)[number]) => (typeof ARC_JOBS)[number]) => validateStory(ARC_JOBS.map(patch)).map((i) => i.message);
-    expect(story((j) => (j.id === 'arc.harvest.3' ? { ...j, story: { ...j.story!, leaves: 'harvest.freeport' } } : j))).toContain('only a finale leaves a lasting mark');
+    expect(story((j) => (j.id === 'arc.harvest.3' ? { ...j, story: { ...j.story!, leaves: 'harvest.freeport' } } : j))).toContain('only a finale, or an answer that ends its arc, leaves a lasting mark');
     expect(story((j) => (j.id === 'arc.harvest.5.relay' ? { ...j, story: { ...j.story!, leaves: 'harvest.nowhere' } } : j))).toContain('no lasting mark harvest.nowhere');
     expect(story((j) => (j.id === 'arc.harvest.5.relay' ? { ...j, story: { ...j.story!, leaves: 'harvest.freeport' } } : j))).toContain('harvest.freeport is already left by arc.harvest.5.freeport');
   });
@@ -500,5 +503,113 @@ describe('story saves', () => {
     expect(s.dens).toEqual({});
     expect(() => migrateSave({ ...structuredClone(s), story: { choices: { a: 3 }, seen: [] } })).toThrow();
     expect(() => migrateSave({ ...structuredClone(s), dens: { nowhere: 3 } })).toThrow();
+  });
+});
+
+describe('the faction arcs leave their marks (docs/PROCGEN.md §14.7)', () => {
+  afterEach(() => useWorldLog(null));
+
+  /** Every way each faction arc can end: at its finale after each answer that goes on, or at an answer that ends it. */
+  const ENDINGS = [
+    { decide: 'arc.sta.4', answer: 'press', finale: 'arc.sta.5', mark: 'sta.press' },
+    { decide: 'arc.sta.4', answer: 'internal', finale: 'arc.sta.5', mark: 'sta.internal' },
+    { decide: 'arc.sta.4', answer: 'bribe', finale: null, mark: 'sta.bribe' },
+    { decide: 'arc.frontier.4', answer: 'seal', finale: 'arc.frontier.5', mark: 'frontier.seal' },
+    { decide: 'arc.frontier.4', answer: 'burn', finale: 'arc.frontier.5', mark: 'frontier.burn' },
+    { decide: 'arc.wake.4', answer: 'loyal', finale: 'arc.wake.5', mark: 'wake.loyal' },
+    { decide: 'arc.wake.4', answer: 'warn', finale: 'arc.wake.5', mark: 'wake.warn' },
+    { decide: 'arc.wake.4', answer: 'betray', finale: null, mark: 'wake.betray' },
+  ] as const;
+
+  /** Plays an arc from its choice to the end it is given (the steps before are checked above). */
+  function endArc(s: GameState, e: (typeof ENDINGS)[number]) {
+    const decide = ARC_JOBS.find((j) => j.id === e.decide)!;
+    for (const j of ARC_JOBS) if (j.story!.arc === decide.story!.arc && j.story!.step < decide.story!.step) s.jobs[j.id] = { status: 'complete', objectiveIndex: j.objectives.length, acceptedAt: 0 };
+    s.reputation['hollow-wake'] = 40;
+    expect(acceptJob(s, e.decide).ok).toBe(true);
+    s.location = { systemId: getLocation(decide.giverLocationId).systemId, dockedAt: decide.giverLocationId, flight: null, lastDockId: decide.giverLocationId };
+    expect(makeChoice(s, e.decide, e.answer).ok).toBe(true);
+    if (!e.finale) return;
+    expect(s.world.marks?.[e.mark]).toBeUndefined();
+    expect(acceptJob(s, e.finale).ok).toBe(true);
+    const o = getJob(e.finale, s).objectives[0]!;
+    if (o.kind === 'assault') s.jobs[e.finale]!.assault = 'done';
+    if (o.kind === 'defend') s.jobs[e.finale]!.kills = o.count;
+    if (o.kind === 'escort') for (let i = 0; i < 3; i++) escortArrived(s, e.finale);
+    inSpace(s, 'systemId' in o ? o.systemId : s.location.systemId);
+    expect(done(s, e.finale)).toBe(true);
+  }
+
+  const price = (s: GameState, locationId: string, c: CommodityId) => {
+    const q = quote(locationId, c, s.reputation, marketContext(s));
+    return (q.buy ?? q.sell)!;
+  };
+
+  it('pass their guardrails: each ending leaves one mark, and every mark is left by one ending', () => {
+    expect(validateMarks()).toEqual([]);
+    const left = markSources().filter((x) => ['sta', 'frontier', 'wake'].some((a) => x.by.startsWith(`arc.${a}.`)));
+    expect(left.map((x) => x.mark).sort()).toEqual(ENDINGS.map((e) => e.mark).sort());
+    expect(left.every((x) => x.ok)).toBe(true);
+    // Only an answer that ends its arc leaves a mark, and a finale's marks follow answers that lead to it.
+    const story = (patch: (j: (typeof ARC_JOBS)[number]) => (typeof ARC_JOBS)[number]) => validateStory(ARC_JOBS.map(patch)).map((i) => i.message);
+    const withAnswer = (j: (typeof ARC_JOBS)[number], answer: string, leaves: string) => ({
+      ...j,
+      objectives: j.objectives.map((o) => (o.kind === 'choice' ? { ...o, options: o.options.map((x) => (x.id === answer ? { ...x, leaves } : x)) } : o)),
+    });
+    expect(story((j) => (j.id === 'arc.sta.4' ? withAnswer(j, 'press', 'sta.press') : j))).toContain('only a finale, or an answer that ends its arc, leaves a lasting mark');
+    expect(story((j) => (j.id === 'arc.sta.4' ? withAnswer(j, 'bribe', 'sta.nowhere') : j))).toContain('no lasting mark sta.nowhere');
+    const variant = (j: (typeof ARC_JOBS)[number], leaves: Record<string, string>) => ({ ...j, story: { ...j.story!, variant: { ...j.story!.variant!, leaves } } });
+    expect(story((j) => (j.id === 'arc.sta.5' ? variant(j, { press: 'sta.press', bribe: 'sta.internal' }) : j))).toContain('only a finale, or an answer that ends its arc, leaves a lasting mark');
+    expect(story((j) => (j.id === 'arc.sta.5' ? variant(j, { press: 'sta.press', maybe: 'sta.internal' }) : j))).toContain('leaves a mark after an answer to sta.vail that nobody can give');
+    expect(story((j) => (j.id === 'arc.wake.5' ? variant(j, { loyal: 'wake.loyal', warn: 'sta.press' }) : j))).toContain('sta.press is already left by arc.sta.5 (press)');
+  });
+
+  for (const e of ENDINGS) {
+    const mark = LASTING_MARKS.find((m) => m.id === e.mark)!;
+    it(`${e.decide} ${e.answer}: ${mark.headline}`, () => {
+      const s = pilot();
+      useWorldLog(s.world);
+      endArc(s, e);
+      expect(Object.keys(s.world.marks ?? {})).toEqual([e.mark]);
+      // A quiet moment there, so a passing world event does not hide the mark.
+      while (stationEventAt(mark.locationId, s.clock)) s.clock += 600;
+      for (const c of mark.market.goods) {
+        const now = price(s, mark.locationId, c);
+        useWorldLog({ ...s.world, marks: {} });
+        const before = price(s, mark.locationId, c);
+        useWorldLog(s.world);
+        if (mark.market.price < 1) expect(now).toBeLessThan(before);
+        else expect(now).toBeGreaterThan(before);
+      }
+      // The run is on the board in every time slot, to where it says; a mark without a run posts none.
+      for (let k = 0; k < 4; k++) {
+        const board = boardFor(mark.locationId, boardEpoch(s.clock) + k);
+        const runs = board.filter((j) => j.id.endsWith(`.run-${mark.id.replace(/\./g, '-')}`));
+        if (!mark.run) {
+          expect(runs).toEqual([]);
+          continue;
+        }
+        expect(runs).toHaveLength(1);
+        expect(runs[0]!.title.startsWith(`${mark.run.title}: `)).toBe(true);
+        expect(runs[0]!.destinationLocationId).toBe(mark.run.to);
+      }
+      // The news nearby carries it.
+      expect(marksNear(getLocation(mark.locationId).systemId).map((n) => n.mark.id)).toEqual([e.mark]);
+    });
+  }
+
+  it('the other ways an arc might have ended leave nothing', () => {
+    const s = pilot();
+    useWorldLog(s.world);
+    endArc(s, ENDINGS[0]);
+    endArc(s, ENDINGS[4]);
+    endArc(s, ENDINGS[6]);
+    expect(Object.keys(s.world.marks ?? {}).sort()).toEqual(['frontier.burn', 'sta.press', 'wake.warn']);
+    expect(arcStatus(s, 'sta').phase).toBe('complete');
+    // Pinball Freeport's salvage is as it always was: neither the loyal crews' nor the sold Nest's.
+    while (stationEventAt('pinball-freeport', s.clock)) s.clock += 600;
+    const now = price(s, 'pinball-freeport', 'salvage');
+    useWorldLog({ ...s.world, marks: {} });
+    expect(price(s, 'pinball-freeport', 'salvage')).toBe(now);
   });
 });

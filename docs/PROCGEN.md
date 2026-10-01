@@ -943,7 +943,8 @@ first steps.
 | Salt's Crew | Hollow Wake: Salt, a Wake captain, at Graveyard Nest | transponder spoofers smuggled into Ross 154, two Authority haulers taken, a strongbox recovered in Wolf 1061 | what Salt is told about Juno Fiske, who wrote a list of Nests for the Authority: everything, a warning to Juno first, or the Nest sold to the Authority (a pardon, and the end of the arc) | holding Graveyard Nest against an Authority sweep |
 
 Each finished arc is a milestone. Standing moves with every step, most of all at the choices and
-finales (the Wake's arc makes an outlaw of anyone who finishes it).
+finales (the Wake's arc makes an outlaw of anyone who finishes it). However an arc ends, at its
+finale or at a choice that ends it, it changes one station for good (§14.7).
 
 ### 14.3 Finales in flight
 
@@ -1018,13 +1019,16 @@ bringing in its first harvest. It is given after the opening delivery and asks n
 ### 14.7 Lasting marks
 
 A story's ending can change a station for good (`src/content/story/marks.ts`), and so can a
-border front settled for good (§20.7). When a finale that leaves a mark is done, or a front is
-settled, the mark is written to the save's world log (§17.5), once. From then on:
+border front settled for good (§20.7). A finale leaves its mark (`leaves`), or one for each answer
+to the choice it follows (`variant.leaves`), and an answer that ends its arc early can leave one
+too (the option's `leaves`). When such a finale is done, such an answer given, or a front settled,
+the mark is written to the save's world log (§17.5), once. From then on:
 
 - **its market** moves as under a world event that never ends: the goods concerned have their
   price and normal stock multiplied, on top of any event there (§11);
 - **its job board** posts a standing run in every time slot, after the rest of the board (which is
-  as it was): the station's own produce to one place, paid a premium on the usual freight;
+  as it was): the station's own produce to one place, paid a premium on the usual freight (a mark
+  may have no run: a den has no board, and a back door posts no contracts);
 - **the news** within two jumps says so, for good.
 
 First Harvest's two endings each leave one on Harrow Farmstead (fiction):
@@ -1034,13 +1038,28 @@ First Harvest's two endings each leave one on Harrow Farmstead (fiction):
 | Sold at Doppler Freeport: machinery for new fields and a second hauler | food and fine food: price ×0.85, stock ×1.6 | Harvest run: fine food to Doppler Freeport (Achird), usual pay |
 | Fed to Squall Relay's crews, who answer Harrow's calls first | medicine: price ×0.85, stock ×1.6 | The relay's share: staple food to Squall Relay (EV Lacertae), pay ×1.25 |
 
+The three faction arcs leave one for each way they can end (fiction): at the finale, after the
+answer that led to it, or at an answer that ends the arc.
+
+| Arc and ending | Station | Market | Standing run |
+| --- | --- | --- | --- |
+| Clean Manifests: the evidence to the Frontier press, then Maw Roost | Deimos Depot (Sol): open manifests | food and water: price ×0.9, stock ×1.5 | Open manifests: machinery to Eridani Mining Hub, pay ×1.15 |
+| Clean Manifests: kept inside the Authority, then Maw Roost | Halcyon Ring (Sol): clean supply lines | medicine and fabricators: price ×0.9, stock ×1.4 | Audited supply: medicine to Barnard Transit Relay, pay ×1.15 |
+| Clean Manifests: sold back to Vail (the arc ends) | Deimos Depot: the back door | weapons: price ×0.8, stock ×1.6 | none |
+| The Stonecrop Blight: the Gardens sealed, then the relief convoy | Dawnfield Institute (Procyon): the blight cure | medicine: price ×0.85, stock ×1.6 | Ansari's cure: medicine to Horizon Platform (Sirius), pay ×1.1 |
+| The Stonecrop Blight: burnt and reseeded, then the relief convoy | Stonecrop Gardens (Procyon): new bays | food and fine food: price ×0.85, stock ×1.6 | Clean-seed harvest: food to Meridian Outpost (Alpha Centauri), pay ×1.1 |
+| Salt's Crew: Salt told everything, then the sweep broken | Pinball Freeport (70 Ophiuchi): the crews trade there | salvage: price ×0.8, stock ×1.6 | Nest salvage: salvage to Velvet Stillworks, pay ×1.1 |
+| Salt's Crew: Juno Fiske warned, then the sweep broken | Sandbar Bazaar (DX Cancri): Juno's yard | salvage: price ×0.85, stock ×1.5 | Juno's salvage: salvage to Moss Smelter (Ross 614), pay ×1.1 |
+| Salt's Crew: the Nest sold to the Authority (the arc ends) | Pinball Freeport: the Nest's trade dries up | salvage and weapons: price ×1.15, stock ×0.7 | none |
+
 Guardrails (`validateMarks`, `src/economy/storyGuards.ts`, run in `tests/unit/story.test.ts` and
 `tests/unit/border.test.ts`): a mark changes an open station (or a den) with a market, only goods it
 trades, with price ×0.7–1.2 and stock ×0.6–2; a run needs a job board, and carries the station's
 own produce to another open station within freight reach that takes it, at a premium of ×1–1.5;
-marks on one station never touch the same goods, unless they answer one front with different
-endings (only one can be left); a story mark is left by exactly one finale, and only finales leave
-them; a front's marks name real fronts.
+marks on one station never touch the same goods, unless only one of them can be left (they answer
+one front with different endings, or follow different answers to one choice); a story mark is left
+by exactly one finale or ending answer, only those leave them, and a finale's marks follow answers
+that lead to it; a front's marks name real fronts.
 
 ## 15. Combat depth
 

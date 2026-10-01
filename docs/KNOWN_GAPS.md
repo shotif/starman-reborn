@@ -68,9 +68,10 @@ snapshot branch only when the archives changed.
   is generated. The faction arcs know about each other only through standing and through
   Kettering, whose briefings follow the choices made in them. The lasting marks an arc leaves on
   the world are a dark den (for six hours), the Ross 154 – Wolf 1061 front, settled for good by
-  The Long Border (with the markets and boards around it), and Harrow Farmstead's market and board,
-  changed for good by First Harvest's ending; the three faction arcs change standing and words, not
-  stations.
+  The Long Border (with the markets and boards around it), and one station's market (and most
+  often its board) for each way First Harvest and the three faction arcs can end. A mark moves
+  prices and stock and posts a run; it does not change who runs a station, its look or its
+  people.
 - The frontier's own events (harvests, survey seasons, drive failures) follow the clock like the
   others; a stranded hauler waits for the player's rescue however long it takes, and only the
   player's rescue is flown. A survey season's readings never settle a contested planet: the

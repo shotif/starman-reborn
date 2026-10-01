@@ -19,6 +19,37 @@ export const STORY_MAX_JUMPS = 4;
 const BRIEFING_MAX = 520;
 const LINE_MAX = 300;
 
+/** Where a story leaves a lasting mark: a finale (for the choice it follows, or whatever was chosen), or an answer that ends its arc. */
+export interface MarkSource {
+  mark: string;
+  /** The mission, and the answer when the mark follows one. */
+  by: string;
+  /** The answers to one choice that lead to it (none: it is left whatever was chosen). */
+  when?: { id: string; oneOf: readonly string[] };
+  /** Left where a mark may be: at a finale, or by an answer that ends the arc. */
+  ok: boolean;
+}
+
+export function markSources(arcJobs: readonly JobDef[] = ARC_JOBS): MarkSource[] {
+  const out: MarkSource[] = [];
+  for (const job of arcJobs) {
+    const story = job.story;
+    if (!story) continue;
+    if (story.leaves) out.push({ mark: story.leaves, by: job.id, ...(job.requires?.choice ? { when: job.requires.choice } : {}), ok: !!story.finale });
+    const v = story.variant;
+    for (const [answer, mark] of Object.entries(v?.leaves ?? {})) {
+      const way = job.requires?.choice;
+      const follows = !way || way.id !== v!.choiceId || way.oneOf.includes(answer);
+      out.push({ mark, by: `${job.id} (${answer})`, when: { id: v!.choiceId, oneOf: [answer] }, ok: !!story.finale && follows });
+    }
+    for (const o of job.objectives) {
+      if (o.kind !== 'choice') continue;
+      for (const x of o.options) if (x.leaves) out.push({ mark: x.leaves, by: `${job.id} (${x.id})`, when: { id: o.choiceId, oneOf: [x.id] }, ok: !!x.ends });
+    }
+  }
+  return out;
+}
+
 /**
  * Story guardrails (docs/PROCGEN.md §14.4, §20): every arc is a chain that can be finished (a
  * choice may branch it, each way to its own finale), sends the player only to real, open places
@@ -32,7 +63,6 @@ export function validateStory(arcJobs: readonly JobDef[] = ARC_JOBS): Issue[] {
   const ids = new Set<string>();
   const functional = new Set(ALL_LOCATIONS.filter((l) => l.status === 'functional').map((l) => l.id));
   const isDen = (id: string) => getLocation(id).stationType === 'pirate-den';
-  const leftBy = new Map<string, string>();
   const checkLines = (subject: string, lines: readonly Line[]) => {
     for (const l of lines) {
       if (l.who !== 'comm' && !CHARACTERS[l.who]) report('text', subject, `unknown speaker ${l.who}`);
@@ -83,12 +113,6 @@ export function validateStory(arcJobs: readonly JobDef[] = ARC_JOBS): Issue[] {
       if (story.settles) {
         if (!story.finale) report('chain', subject, 'only a finale settles a front');
         if (!getFront(story.settles.front)) report('chain', subject, `no border front ${story.settles.front}`);
-      }
-      if (story.leaves) {
-        if (!story.finale) report('chain', subject, 'only a finale leaves a lasting mark');
-        if (!markById(story.leaves)) report('chain', subject, `no lasting mark ${story.leaves}`);
-        else if (leftBy.has(story.leaves)) report('chain', subject, `${story.leaves} is already left by ${leftBy.get(story.leaves)}`);
-        leftBy.set(story.leaves, job.id);
       }
 
       // People and places.
@@ -205,6 +229,17 @@ export function validateStory(arcJobs: readonly JobDef[] = ARC_JOBS): Issue[] {
       if (!story.finale && !(story.debrief ?? []).length && !decision) report('text', subject, 'a mission with no debrief');
     });
   }
+  // Lasting marks: left only by a finale or by an answer that ends its arc, each by one of them.
+  const leftBy = new Map<string, string>();
+  for (const src of markSources(arcJobs)) {
+    if (!src.ok) report('chain', src.by, 'only a finale, or an answer that ends its arc, leaves a lasting mark');
+    if (src.when && !arcJobs.some((j) => j.objectives.some((o) => o.kind === 'choice' && o.choiceId === src.when!.id && src.when!.oneOf.every((a) => o.options.some((x) => x.id === a))))) {
+      report('chain', src.by, `leaves a mark after an answer to ${src.when.id} that nobody can give`);
+    }
+    if (!markById(src.mark)) report('chain', src.by, `no lasting mark ${src.mark}`);
+    else if (leftBy.has(src.mark)) report('chain', src.by, `${src.mark} is already left by ${leftBy.get(src.mark)}`);
+    leftBy.set(src.mark, src.by);
+  }
   return issues;
 }
 
@@ -222,16 +257,21 @@ export function validateMarks(marks: readonly LastingMark[] = allMarks(), arcJob
   const live = (id: string) => ALL_LOCATIONS.some((l) => l.id === id && l.status === 'functional');
   const open = (id: string) => live(id) && getLocation(id).stationType !== 'pirate-den';
   const within = ([lo, hi]: readonly [number, number], x: number) => x >= lo && x <= hi;
-  // Two marks can both be left unless they answer the same front with different endings.
-  const exclusive = (a: LastingMark, b: LastingMark) => !!a.front && !!b.front && a.front.ending !== b.front.ending && a.front.ids.some((id) => b.front!.ids.includes(id));
+  // Two marks can both be left unless they answer the same front with different endings, or follow different answers to one choice.
+  const sources = markSources(arcJobs);
+  const ways = (m: LastingMark) => sources.filter((src) => src.mark === m.id);
+  const apart = (a: MarkSource, b: MarkSource) => !!a.when && !!b.when && a.when.id === b.when.id && !a.when.oneOf.some((x) => b.when!.oneOf.includes(x));
+  const exclusive = (a: LastingMark, b: LastingMark) =>
+    (!!a.front && !!b.front && a.front.ending !== b.front.ending && a.front.ids.some((id) => b.front!.ids.includes(id))) ||
+    (ways(a).length > 0 && ways(a).every((x) => ways(b).length > 0 && ways(b).every((y) => apart(x, y))));
   const seen = new Set<string>();
   for (const m of marks) {
     if (seen.has(m.id)) report('marks', m.id, 'duplicate id');
     seen.add(m.id);
     if (m.front) {
       if (!m.front.ids.length || m.front.ids.some((id) => !getFront(id))) report('marks', m.id, 'left by a border front that does not exist');
-      if (arcJobs.some((j) => j.story?.leaves === m.id)) report('marks', m.id, 'left by a front and by a finale');
-    } else if (arcJobs.filter((j) => j.story?.leaves === m.id && j.story.finale).length !== 1) report('marks', m.id, 'no finale leaves it');
+      if (ways(m).length) report('marks', m.id, 'left by a front and by a story');
+    } else if (ways(m).filter((src) => src.ok).length !== 1) report('marks', m.id, 'no finale, or answer that ends an arc, leaves it');
     if (!m.headline.trim() || m.headline.length > 80 || !m.detail.trim() || m.detail.length > LINE_MAX) report('text', m.id, 'headline or detail empty or too long');
     if (!live(m.locationId)) {
       report('places', m.id, `${m.locationId} is not an open station`);

@@ -9,11 +9,12 @@ After the scripted opening (10–20 minutes), the neighbourhood is an open sandb
 systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
 of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
 packs in lawless space; 39 ships and 139 pieces of equipment; and generated contracts on every job
-board. Increments 1–16 (under [Done so far](#done-so-far)) added world events and news, contracts
+board. Increments 1–17 (under [Done so far](#done-so-far)) added world events and news, contracts
 of every kind, the law and the outlaw path, goals, five story arcs, combat depth, people in the
 bars and a trade computer, a world that answers, a fleet of your own, mining in the real belts,
-the frontier with a life of its own, a border war whose fronts can be won for good, escorts and
-convoys across jumps, and a game measured and tuned on a real phone.
+the frontier with a life of its own, a border war whose fronts can be won for good, story endings
+that change stations for good, escorts and convoys across jumps, and a game measured and tuned on
+a real phone.
 
 What it lacks now:
 
@@ -31,11 +32,6 @@ Haulers carrying real cargo between systems along the lanes, instead of goods dr
 stations out of sight: shortages fill with ships you can watch, raids hit real convoys, and you can
 escort, rob or race them.
 
-### The faction arcs leave their marks ⏳ (S)
-
-The three faction arcs each change a station for good when they end, as First Harvest and the
-settled border fronts now do: a market that moves and a standing run on the board.
-
 ### Remappable controls ⏳ (M)
 
 Rebind keys and gamepad buttons in Settings, and a colour-blind-safe option for markers and the
@@ -49,6 +45,19 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 17. The faction arcs leave their marks ✅
+
+However the three faction arcs end, each now changes a station for good, as First Harvest and the
+settled border fronts do: eight endings, eight marks. Clean Manifests opens Deimos Depot's
+manifests to the Cooperative if the evidence went to the press, cleans up Halcyon Ring's supply
+lines if it stayed inside the Authority, and leaves Deimos Depot's back door open if it was sold
+back. The Stonecrop Blight makes Dawnfield Institute the home of the blight cure if the Gardens
+were sealed, or gives Stonecrop Gardens new bays if they were burnt and reseeded. Salt's Crew
+brings the crews' salvage to Pinball Freeport if Salt was told everything, gives Juno Fiske a yard
+at Sandbar Bazaar if Juno was warned, and dries Pinball Freeport's trade up if the Nest was sold.
+Each moves a market, and most post a standing run on the board
+([PROCGEN.md §14.7](PROCGEN.md#147-lasting-marks)).
 
 ### 16. Border wars that end ✅
 
