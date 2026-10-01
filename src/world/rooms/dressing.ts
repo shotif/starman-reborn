@@ -90,6 +90,18 @@ function ribSlot(h: HangarLook, want: number): [number, number] | null {
 /** Yaw that turns local +Z from (x, z) towards (tx, tz). */
 const aim = (x: number, z: number, tx: number, tz: number): number => Math.atan2(tx - x, tz - z);
 
+/** `color` with its lightness (HSL, as the eye sees it: sRGB) held between `least` and `most`. */
+function lightness(color: string, least: number, most: number): string {
+  const c = new THREE.Color(color);
+  const hsl = { h: 0, s: 0, l: 0 };
+  c.getHSL(hsl, THREE.SRGBColorSpace);
+  if (hsl.l >= least && hsl.l <= most) return color;
+  return `#${c.setHSL(hsl.h, hsl.s, Math.min(most, Math.max(least, hsl.l)), THREE.SRGBColorSpace).getHexString()}`;
+}
+
+/** A paint colour no paler than a light mid-tone, for goods that pass close under lamps. */
+const muted = (color: string): string => lightness(color, 0, 0.6);
+
 const MODULES: Record<DressingKind, Module> = {
   /* ---------------------------------------------------------------- Everyone: owner livery. */
   livery(b, h) {
@@ -253,7 +265,9 @@ const MODULES: Record<DressingKind, Module> = {
   'hull-dock'(b, h) {
     // A hull section in its build frame outside the bay, lit by floodlights.
     const pos: V3 = [-24, 1, -80];
-    hullSection(b, pos, 0.22, 6.5, 30, h.containers[1] ?? h.pillar, h.machine, 0.55);
+    // Primer-pale plating under the frame's floodlights, and light frames: in dark paint, unlit out
+    // here beyond the bay, it read as a flat block.
+    hullSection(b, pos, 0.22, 6.5, 30, lightness(h.containers[1] ?? h.pillar, 0.64, 0.72), lightness(h.machine, 0.58, 0.68), 0.55, true);
     const f = new Frame(pos, 0.22);
     for (const x of [-16, -4, 8, 16]) {
       for (const s of [-1, 1]) b.beam('metal', f.p([x, -9, s * 8]), f.p([x, 9, s * 8]), 0.5, h.machine);
@@ -418,10 +432,12 @@ const MODULES: Record<DressingKind, Module> = {
 
   /* ---------------------------------------------------------------- Factory. */
   conveyors(b, h) {
-    const goods = [...h.containers.slice(0, 4), '#8a8f86'];
+    // Goods ride right under the work lamps: pale paint would glare white there, so it is toned down
+    // (and matte: see the conveyors in setpieces.ts).
+    const goods = [...h.containers.slice(0, 4), '#8a8f86'].map((c) => muted(c));
     for (const s of [-1, 1]) conveyor(b, s * FX, FZ0, FZ1, h.trim, h.machine, goods, s > 0 ? 0.9 : -0.9, h.glow);
     // Parts riding overhead lines past the pad and through the workshop.
-    const parts = [h.machine, h.hazard[0], h.containers[1] ?? h.accent, '#6a6e75'];
+    const parts = [h.machine, h.hazard[0], h.containers[1] ?? h.accent, '#6a6e75'].map((c) => muted(c));
     overheadConveyor(b, -8.6, 12.5, HALL.back + 3, 4, h.trim, parts, 1.1, HALL.ceil - 2.2);
     overheadConveyor(b, -36, 11.5, HALL.back + 2, 10, h.trim, parts, -0.8, HALL.ceil - 2.2);
   },

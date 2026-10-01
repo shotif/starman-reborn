@@ -205,6 +205,22 @@ export interface RoomMaterialOptions {
   barFloor: 'tiles' | 'planks' | 'plates' | 'terrazzo';
 }
 
+/**
+ * A surface whose own colour (vertex colours, with any baked light, times its texture) also glows
+ * at `level`, as if lit from every side by lamps the scene has no light for.
+ */
+function selfLit(m: THREE.MeshStandardMaterial, level: number, name: string): THREE.MeshStandardMaterial {
+  m.emissive.set('#ffffff');
+  m.emissiveIntensity = level;
+  m.onBeforeCompile = (shader) => {
+    // After the texture and vertex colours are in diffuseColor.
+    shader.fragmentShader = shader.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n\ttotalEmissiveRadiance *= diffuseColor.rgb;');
+  };
+  m.customProgramCacheKey = () => name;
+  m.name = name;
+  return m;
+}
+
 export function createRoomMaterials(ctx: ArtContext, opts: RoomMaterialOptions): RoomMaterials {
   const q = ctx.quality;
   const owned: THREE.Material[] = [];
@@ -261,6 +277,11 @@ export function createRoomMaterials(ctx: ArtContext, opts: RoomMaterialOptions):
     windows: windowMaterial(q),
     // Raw rock (rock-cut walls, rubble, ore): flat-shaded facets, colour from the vertices.
     rock: rockMaterial(),
+    // Rock-cut hall walls: their baked light also glows faintly, so the stone still reads where
+    // the lamps do not reach (generated mining halls).
+    rockWall: own(selfLit(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0.02, flatShading: true }), 0.3, 'room-rock-wall')),
+    // A hull on the slip outside a shipyard's bay, under the build frame's floodlights.
+    hullLit: own(selfLit(new THREE.MeshStandardMaterial({ vertexColors: true, map: panelTexture(q), roughness: 0.7, metalness: 0.15 }), 0.4, 'room-hull-lit')),
     floor: std({ map: deckTexture(q), roughness: opts.floorRough, metalness: opts.floorMetal }),
     paint: std({ map: paintTexture(q), roughness: 0.58, metalness: 0.08, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
     grate: std({ map: grateTexture(q), roughness: 0.5, metalness: 0.6 }),
@@ -276,6 +297,8 @@ export function createRoomMaterials(ctx: ArtContext, opts: RoomMaterialOptions):
   const motion: Record<string, THREE.Material> = {
     'm:metal': own(withMotion(new THREE.MeshStandardMaterial({ vertexColors: true, map: panelTexture(q), roughness: 0.5, metalness: 0.5 }), motionUniforms)),
     'm:plain': own(withMotion(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.45, metalness: 0.2 }), motionUniforms)),
+    // Painted goods on conveyors: matte, so starlight through the bay does not glint white off them.
+    'm:matte': own(withMotion(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0.05 }), motionUniforms)),
     'm:emissive': own(withMotion(new THREE.MeshBasicMaterial({ vertexColors: true }), motionUniforms, false)),
     // A stronger cool rim keeps figures readable against dark rooms (classic character lighting).
     people: own(withMotion(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.7, metalness: 0.04 }), motionUniforms, true, 5)),

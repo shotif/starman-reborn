@@ -118,8 +118,10 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   System's bodies, each scannable in its scene; a scan counts once and off-catalogue bodies are
   ignored; research stations buy a completed survey once; ratings follow the career record;
   milestones are earned once and the whole sky pays the grant; the what-next hint puts fines first,
-  then the hold, the codex, a route and a job board; v6 saves start the codex from the bodies
-  already scanned.
+  then repairs, the hold, the codex, a route and a job board; it suggests a better ship the pilot
+  can afford at a shipyard already visited (never one the station will not sell them), the
+  long-range jump drive after six jumps without one, and the last few points of standing that make
+  a lawful faction Friendly; v6 saves start the codex from the bodies already scanned.
 - `story.test.ts`: the story arcs pass their guardrails, and broken arcs (a missing step, a crime in
   a lawful arc, a den as a dock, a place out of reach, choices that all end or that the next step
   does not follow, missing words, a stranger speaking, a cheap finale, the Wake's arc open to
@@ -204,8 +206,10 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   motion, omitted rooms, determinism, draw-call and triangle budgets per quality, lights per room,
   hotspots on desktop and phones, portrait framing and disposal; generated interiors for every
   station type and owner at every quality (budgets, lights, determinism, ship, dealer, mechanic
-  and bar crowd in shot on desktop and phone, flicker only with motion allowed), and fingerprints
-  proving the six hand-made interiors are unchanged.
+  and bar crowd in shot on desktop and phone, flicker only with motion allowed), the shipyard hull
+  on the slip floodlit and shaded top to bottom, factory goods matte and never pale, mining-hall
+  rock walls holding some light away from the floodlights, and fingerprints proving the six
+  hand-made interiors are unchanged.
 - `stationgen.test.ts`: every station type builds in every owner palette with one lit docking bay,
   a clear approach corridor at every animated pose, a radius that encloses every vertex and light,
   identical geometry for the same look, mesh and triangle budgets per quality, and clean disposal.

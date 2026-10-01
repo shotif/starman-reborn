@@ -708,6 +708,47 @@ describe('generated interiors: rooms', () => {
     }
   });
 
+  it('lights the shipyard hull on the slip, keeps factory goods matte and mid-toned, and lets mining walls read', () => {
+    const meshes = (interior: StationInterior, key: string): THREE.Mesh[] => {
+      const out: THREE.Mesh[] = [];
+      roomGroup(interior, 'hangar')!.traverse((o) => {
+        if ((o as THREE.Mesh).isMesh && o.name === key) out.push(o as THREE.Mesh);
+      });
+      return out;
+    };
+    const lightness = (mesh: THREE.Mesh): number[] => {
+      const c = mesh.geometry.attributes.color!;
+      const out: number[] = [];
+      for (let i = 0; i < c.count; i++) out.push(hsl(`#${new THREE.Color(c.getX(i), c.getY(i), c.getZ(i)).getHexString()}`).l);
+      return out;
+    };
+    const glows = (mesh: THREE.Mesh): number => (mesh.material as THREE.MeshStandardMaterial).emissiveIntensity;
+    for (const owner of STATION_OWNERS) {
+      // The half-built hull outside a shipyard's bay: floodlit, and shaded from top to bottom so it
+      // reads as round from the deck rather than as a flat block.
+      const yard = buildLook(lookOf('shipyard', owner, { size: 1 }));
+      const [hull] = meshes(yard, 'hullLit');
+      expect(hull, owner).toBeDefined();
+      expect(glows(hull!)).toBeGreaterThan(0);
+      const shade = lightness(hull!);
+      expect(Math.max(...shade) - Math.min(...shade), owner).toBeGreaterThan(0.3);
+      yard.dispose();
+      // Factory goods ride under the lamps and past the bay's starlight: matte, and never pale.
+      const works = buildLook(lookOf('factory', owner, { size: 1 }));
+      const [goods] = meshes(works, 'm:matte');
+      expect(goods, owner).toBeDefined();
+      expect((goods!.material as THREE.MeshStandardMaterial).roughness).toBeGreaterThanOrEqual(0.8);
+      expect(Math.max(...lightness(goods!)), owner).toBeLessThanOrEqual(0.61);
+      works.dispose();
+      // Mining halls: the rock walls keep some light of their own away from the floodlights.
+      const mine = buildLook(lookOf('mining-outpost', owner, { size: 1 }));
+      const [walls] = meshes(mine, 'rockWall');
+      expect(walls, owner).toBeDefined();
+      expect(glows(walls!)).toBeGreaterThan(0);
+      mine.dispose();
+    }
+  });
+
   it('is deterministic by look, and every type looks different', () => {
     const a = buildLook(lookOf('freeport', 'independent', { seed: 11 }), 'low');
     const b = buildLook(lookOf('freeport', 'independent', { seed: 11 }), 'low');

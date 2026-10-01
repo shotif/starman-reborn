@@ -65,6 +65,10 @@ export interface RockFaceSpec {
   holes?: [number, number, number, number][];
   /** Multiplier on the depth at (u, v) (keep clear of pipes, doors). */
   depthAt?: (u: number, v: number) => number;
+  /** Light the rock keeps where the key light misses it (default 0.3: deep shadow). */
+  fill?: number;
+  /** Material: 'rock', or 'rockWall' for hall walls whose baked light also glows faintly. */
+  material?: 'rock' | 'rockWall';
 }
 
 const tmpA = new THREE.Vector3();
@@ -109,6 +113,7 @@ export function rockFace(b: RoomBuilder, s: RockFaceSpec): void {
   const col = new THREE.Color();
   // Baked light from above and in front of the face, so the facets read even in dim halls.
   const key = new THREE.Vector3(s.n[0] * 0.55, 0.8 + s.n[1] * 0.3, s.n[2] * 0.55).normalize();
+  const fill = s.fill ?? 0.3;
   const pos: number[] = [];
   const nrm: number[] = [];
   const cols: number[] = [];
@@ -125,7 +130,7 @@ export function rockFace(b: RoomBuilder, s: RockFaceSpec): void {
     if (flip) tmpN.negate();
     col.copy(dark).lerp(light, Math.max(0, Math.min(1, shade)));
     const lit = Math.max(0, tmpN.dot(key));
-    col.multiplyScalar(0.3 + 1.25 * lit * lit);
+    col.multiplyScalar(fill + 1.25 * lit * lit);
     for (const p of flip ? [a, e, c] : [a, c, e]) {
       pos.push(p[0], p[1], p[2]);
       nrm.push(tmpN.x, tmpN.y, tmpN.z);
@@ -150,7 +155,7 @@ export function rockFace(b: RoomBuilder, s: RockFaceSpec): void {
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   g.setAttribute('normal', new THREE.Float32BufferAttribute(nrm, 3));
   g.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
-  b.add('rock', g, { uv: 4 });
+  b.add(s.material ?? 'rock', g, { uv: 4 });
 }
 
 /** A boulder: a squashed, jittered icosahedron with per-facet colour. */
@@ -227,6 +232,8 @@ function rockWalls(b: RoomBuilder, h: HangarLook): void {
   const cell = b.low ? 2.6 : b.high ? 1.45 : 1.85;
   const light = new THREE.Color(h.wall).multiplyScalar(1.55);
   const lightHex = `#${light.getHexString()}`;
+  // The hall's lamps and the lit floor reach the walls too: no face goes black away from them.
+  const fill = 0.62;
   const seed = Math.floor(b.rand() * 1000);
   // The rock bulges out around the bay, as if the opening were blasted through it.
   const nearMouth = (dist: number): number => 1 + 2.2 * Math.exp(-dist / 2.2);
@@ -246,6 +253,8 @@ function rockWalls(b: RoomBuilder, h: HangarLook): void {
       dark: h.wallDark,
       light: lightHex,
       seed: seed + side * 31,
+      fill,
+      material: 'rockWall',
       holes,
       depthAt: sideDepth,
     });
@@ -266,6 +275,8 @@ function rockWalls(b: RoomBuilder, h: HangarLook): void {
       dark: h.wallDark,
       light: lightHex,
       seed: seed + 50 + side,
+      fill,
+      material: 'rockWall',
       depthAt: (u) => nearMouth(side < 0 ? w - u : u),
     });
   }
@@ -281,6 +292,8 @@ function rockWalls(b: RoomBuilder, h: HangarLook): void {
     dark: h.wallDark,
     light: lightHex,
     seed: seed + 60,
+    fill,
+    material: 'rockWall',
     depthAt: (_u, v) => nearMouth(v),
   });
   // Work-lamp washes on the rock beside the ribs (the rib lamps light the stone around them).

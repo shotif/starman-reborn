@@ -859,11 +859,26 @@ way they end. The journal lists those earned.
 ### 13.4 What next
 
 After the opening chain, when no contract is under way, the HUD's objective line suggests one
-concrete thing from what the player already knows, in this order: pay fines owed (and where); sell
-goods in the hold where the best known price is; see someone with a story mission waiting (§14);
-catalogue a body of this system the codex lacks; run a known trade route from the last dock; or dock
-at a station here with a job board. The hint
-is worked out again after a scan, a launch or a jump.
+concrete thing from what the player already knows, in this order:
+
+1. pay fines owed (and where);
+2. get repairs when the hull is below half or a system is at least 40% damaged, with what a
+   mechanic in this system charges;
+3. sell goods in the hold where the best known price is;
+4. see someone with a story mission waiting (§14);
+5. buy a better ship at a known shipyard the player can afford with 1,000 cr left over, after the
+   trade-in: one with half as much hold again, or of a higher class;
+6. or, failing that, buy a long-range jump drive at a known outfitter once the pilot has made six
+   jumps without one and not yet reached the frontier (§7.7, past 17.5 light-years);
+7. catalogue a body of this system the codex lacks;
+8. earn the last few points (five at most) of standing that make a lawful faction Friendly, whose
+   boards then offer their hardest, best-paid work (§10.3);
+9. run a known trade route from the last dock; or
+10. dock at a station here with a job board.
+
+Ships and equipment are only ever suggested from places the player has docked at, and only when
+the station sells them to this pilot (§10.3). The thresholds live in `HINT`
+(`src/content/progress/rules.ts`). The hint is worked out again after a scan, a launch or a jump.
 
 ### 13.5 Progress saves
 

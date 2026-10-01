@@ -46,6 +46,15 @@ to the live site once CI passes.
 
 ## Done so far
 
+### A smarter hint, and station art rough edges ✅
+
+The what-next hint now also says when the ship needs a mechanic first, when a better ship is
+affordable at a shipyard already visited, when the long-range jump drive is worth buying for the
+frontier, and when a few more points of standing would open a faction's best work
+([PROCGEN.md §13.4](PROCGEN.md#134-what-next)). In generated stations, the half-built hull outside
+a shipyard's bay is floodlit and reads as round, goods on factory conveyors no longer glint white
+in the starlight through the bay, and mining-hall rock walls hold some light away from the lamps.
+
 ### 14. The frontier's own stories ✅
 
 The frontier has a life of its own: harvests come in at its farms (food floods, haulers wanted),

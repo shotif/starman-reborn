@@ -87,13 +87,11 @@ snapshot branch only when the archives changed.
   raiders, aces and bounty hunters) are the only missiles fired at the player, and decoy flares
   the only countermeasure.
 - Ratings change nothing in the world except the combat rank that ace hunts and den assaults ask
-  for; milestones are a record, with one grant (the whole codex). The what-next hint looks only at
-  fines, the hold, stories waiting, the codex, known prices and job boards, not at ships, equipment
-  or standing.
+  for; milestones are a record, with one grant (the whole codex). The what-next hint suggests one
+  thing at a time and only from places already visited: it never compares ships or equipment
+  across the whole sky, and suggests no weapons or shields.
 - Generated stations have generated exteriors and interiors (twelve kinds in four owner
-  palettes). Known rough edges: the half-built hull outside a shipyard bay reads as a flat block
-  on the phone deck view, some white crates on factory conveyors bloom under the lamps, and mining
-  hall rock walls are dark away from the floodlights.
+  palettes).
 - Damage to systems is modelled for the player only (other ships just lose shield and hull); no
   fleet battles, multiplayer, cloud saves or cross-device sync (out of scope per the spec).
 - Solar System planets sit at their real heliocentric longitudes for the game date (JPL's

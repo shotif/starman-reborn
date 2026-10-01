@@ -181,8 +181,8 @@ export function conveyor(b: RoomBuilder, x: number, z0: number, z1: number, fram
     const w = 0.7 + b.rand() * 0.4;
     const hh = 0.45 + b.rand() * 0.35;
     const f = new Frame([x, top + hh / 2 + 0.02, zc], b.range(-0.2, 0.2));
-    mbox(b, f, 'm:plain', [w, hh, w], [0, 0, 0], b.pick(goods), a);
-    mbox(b, f, 'm:plain', [w + 0.02, 0.08, w + 0.02], [0, hh * 0.2, 0], '#2e3034', a);
+    mbox(b, f, 'm:matte', [w, hh, w], [0, 0, 0], b.pick(goods), a);
+    mbox(b, f, 'm:matte', [w + 0.02, 0.08, w + 0.02], [0, hh * 0.2, 0], '#2e3034', a);
   }
 }
 
@@ -201,15 +201,15 @@ export function overheadConveyor(b: RoomBuilder, x: number, y: number, z0: numbe
   for (let i = 0; i < n; i++) {
     const a: Motion = { type: MOTION.conveyZ, pivot: [0, 0, 0], speed, amp: len, phase: (i / n) * len };
     const f = new Frame([x, y - 0.45, zc], 0);
-    mbox(b, f, 'm:plain', [0.36, 0.22, 0.5], [0, 0, 0], DARK, a);
-    mbox(b, f, 'm:plain', [0.07, 1.4, 0.07], [0, -0.8, 0], DARK, a);
+    mbox(b, f, 'm:matte', [0.36, 0.22, 0.5], [0, 0, 0], DARK, a);
+    mbox(b, f, 'm:matte', [0.07, 1.4, 0.07], [0, -0.8, 0], DARK, a);
     if (i % 2) {
       // A motor housing with its end cap.
-      mcyl(b, f, 'm:plain', 0.45, 1.2, [0, -1.95, 0], b.pick(goods), a, undefined, { rot: [0, 0, Math.PI / 2], seg: 10 });
-      mcyl(b, f, 'm:plain', 0.3, 0.2, [0.7, -1.95, 0], DARK, a, undefined, { rot: [0, 0, Math.PI / 2], seg: 10 });
+      mcyl(b, f, 'm:matte', 0.45, 1.2, [0, -1.95, 0], b.pick(goods), a, undefined, { rot: [0, 0, Math.PI / 2], seg: 10 });
+      mcyl(b, f, 'm:matte', 0.3, 0.2, [0.7, -1.95, 0], DARK, a, undefined, { rot: [0, 0, Math.PI / 2], seg: 10 });
     } else {
       const hh = 0.6 + b.rand() * 0.5;
-      mbox(b, f, 'm:plain', [0.9 + b.rand() * 0.5, hh, 0.8 + b.rand() * 0.4], [0, -1.5 - hh / 2, 0], b.pick(goods), a);
+      mbox(b, f, 'm:matte', [0.9 + b.rand() * 0.5, hh, 0.8 + b.rand() * 0.4], [0, -1.5 - hh / 2, 0], b.pick(goods), a);
     }
   }
 }
@@ -595,13 +595,15 @@ export function bollard(b: RoomBuilder, pos: V3, color: string, band: string): v
  * A hull section under construction lying along local X: exposed ribs and stringers at one end,
  * plating over the rest, and a dark interior.
  */
-export function hullSection(b: RoomBuilder, pos: V3, ry: number, r: number, len: number, hull: string, rib: string, plated: number): void {
+export function hullSection(b: RoomBuilder, pos: V3, ry: number, r: number, len: number, hull: string, rib: string, plated: number, floodlit = false): void {
   const f = new Frame(pos, ry);
   const seg = b.low ? 12 : 20;
   const ribs = b.low ? 6 : 10;
+  // Big hulls get heavier frames, so the ribs still read from across the hall.
+  const tube = Math.max(0.18, r * 0.045);
   for (let i = 0; i <= ribs; i++) {
     const x = -len / 2 + (i * len) / ribs;
-    const g = new THREE.TorusGeometry(r, 0.18, 4, seg);
+    const g = new THREE.TorusGeometry(r, tube, 4, seg);
     g.rotateY(Math.PI / 2);
     b.add('metal', g, { position: f.p([x, 0, 0]), quaternion: f.rot(), color: rib });
   }
@@ -613,11 +615,29 @@ export function hullSection(b: RoomBuilder, pos: V3, ry: number, r: number, len:
   const pl = len * plated;
   const shell = new THREE.CylinderGeometry(r + 0.12, r + 0.12, pl, seg, 1, true, 0, Math.PI * 2);
   shell.rotateZ(Math.PI / 2);
-  b.add('hull', shell, { position: f.p([-len / 2 + pl / 2, 0, 0]), quaternion: f.rot(), color: hull, uv: 3 });
+  litFromAbove(shell, hull);
+  b.add(floodlit ? 'hullLit' : 'hull', shell, { position: f.p([-len / 2 + pl / 2, 0, 0]), quaternion: f.rot(), uv: 3 });
   const inner = new THREE.CylinderGeometry(r - 0.2, r - 0.2, len, seg, 1, true);
   inner.rotateZ(Math.PI / 2);
   inner.scale(1, -1, 1);
   b.add('dark', inner, { position: f.p([0, 0, 0]), quaternion: f.rot() });
+}
+
+/**
+ * Paints `color` over a shape with the hall's overhead lamps baked in: bright on top, in shadow
+ * underneath, so a big curved hull reads as round rather than as a flat block.
+ */
+function litFromAbove(g: THREE.BufferGeometry, color: string): void {
+  const base = new THREE.Color(color);
+  const n = g.attributes.normal!;
+  const col = new Float32Array(n.count * 3);
+  const c = new THREE.Color();
+  for (let i = 0; i < n.count; i++) {
+    const up = 0.5 + 0.5 * n.getY(i);
+    c.copy(base).multiplyScalar(0.15 + 1.1 * up * up);
+    col.set([c.r, c.g, c.b], i * 3);
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
 }
 
 /** Stand holding a curved hull plate for welding. */
