@@ -10,7 +10,7 @@ import { MISSILE_LOCK_CONE, MISSILE_LOCK_RANGE, updateMissile, type Missile, typ
 import { PirateBrain } from '../combat/PirateAI.ts';
 import { PatrolBrain, TraderBrain } from '../combat/TrafficAI.ts';
 import { Gun, ProjectileSystem, segmentHitsSphere, withinArc } from '../combat/weapons.ts';
-import { EXOPLANETS, getLocation } from '../data/systems.ts';
+import { EXOPLANETS, getLocation, getSystem } from '../data/systems.ts';
 import type { FactionId } from '../data/types.ts';
 import type { DamageType } from '../content/types.ts';
 import type { ShipPerformance } from '../content/loadout.ts';
@@ -170,8 +170,11 @@ interface NpcShip {
   sweep?: { locationId: string };
   /** This patrol has decided whether to scan the player. */
   scanRolled?: boolean;
-  /** The ship of an escort contract: where it set off and when the ambush comes (a convoy's ambushes come for the convoy). */
-  escort?: { jobId: string; start: THREE.Vector3; ambushAt: number; ambushed: boolean; level: 1 | 2 | 3; waiting?: boolean; convoy?: boolean };
+  /**
+   * The ship of an escort contract: where it set off and when the ambush comes (a convoy's ambushes
+   * come for the convoy). On its way to another system, it keeps station off the player (`follow`).
+   */
+  escort?: { jobId: string; start: THREE.Vector3; ambushAt: number; ambushed: boolean; level: 1 | 2 | 3; waiting?: boolean; convoy?: boolean; follow?: { offset: THREE.Vector3 } };
   /** Who it is fighting. */
   foe: NpcShip | 'player' | null;
   /** Bounty paid when the player destroys it. */
@@ -277,8 +280,10 @@ const LANE_ENTER_RANGE = 450;
 const AVOID_MARGIN = 700;
 const DEFAULT_SCAN_RANGE = 9_000;
 const HOSTILE_RADIUS = 3_500;
-/** An escorted ship holds position while the player is further away than this. */
-const ESCORT_WAIT = 2_500;
+/** An escorted ship holds position while the player is further away than this, and jumps with them only within it. */
+const ESCORT_WAIT = CONTRACTS.escort.keepUpM;
+/** A wingman or an escorted ship left this far behind (a lane, a long cruise) catches up. */
+const CATCH_UP = 6_000;
 /** Patrols go after a pilot their faction hunts within this range. */
 const PATROL_HUNT = 6_000;
 const CONVERGENCE = 700;
@@ -414,6 +419,10 @@ export class FlightSession {
   private readonly sweeps: { jobId: string; locationId: string; waves: number[]; next: number; t: number }[] = [];
   /** Convoys under way: when each ambush comes (fractions of the route) and how many have come. */
   private readonly convoys = new Map<string, { waves: number[]; next: number; level: 1 | 2 | 3; name: string }>();
+  /** The player came through the jump beacon (not out of a dock): raiders may be waiting there for an escort. */
+  private arrived = false;
+  /** Ambushes waiting at the beacon for escorted ships that came through it, and when they strike. */
+  private readonly beaconAmbushes: { jobId: string; level: 1 | 2 | 3; name: string; at: number }[] = [];
   /** A patrol's cargo scan under way, and whether one has run this session. */
   private scan: { npc: NpcShip; t: number } | null = null;
   private scanned = false;
@@ -533,6 +542,7 @@ export class FlightSession {
       this.throttle = 0.35;
       this.sfx('undock');
     } else if (spawn.kind === 'arrival') {
+      this.arrived = true;
       const a = this.system.def.arrival;
       p.position.copy(a.position);
       p.lookAlong(this.tmp.copy(a.lookAt).sub(a.position).normalize());
@@ -1987,6 +1997,13 @@ export class FlightSession {
         this.spawnAmbush(n, e.level);
       }
     }
+    // Raiders waiting at the beacon strike a few seconds after escorted ships come through it.
+    for (const b of [...this.beaconAmbushes]) {
+      if (this.time < b.at) continue;
+      this.beaconAmbushes.splice(this.beaconAmbushes.indexOf(b), 1);
+      const ships = this.npcs.filter((n) => n.escort?.jobId === b.jobId && n.durability.hull > 0);
+      if (ships.length) this.spawnAmbush(ships[Math.floor(this.rand() * ships.length)]!, b.level, b.name, 'beacon');
+    }
     // Convoys: each wave comes when the leading ship reaches its mark, for one of the ships still flying.
     for (const [jobId, c] of this.convoys) {
       const ships = this.npcs.filter((n) => n.escort?.jobId === jobId && n.trader && n.durability.hull > 0);
@@ -2026,6 +2043,7 @@ export class FlightSession {
       if (n.den) this.flyDenPart(n, dt);
       else if (n.wingman) this.flyWingman(n, dt);
       else if (n.sweep) this.flySweep(n, dt);
+      else if (n.escort?.follow) this.flyEscortFollowing(n, dt);
       else if (n.role === 'trader') this.flyTrader(n);
       else if (n.role === 'patrol') this.flyPatrol(n, dt);
       else this.flyRaider(n, dt);
@@ -2292,12 +2310,21 @@ export class FlightSession {
     return npc;
   }
 
-  /** The ship (or ships, for a convoy) of an escort contract: it sets off alongside the player toward its destination. */
+  /**
+   * The ship (or ships, for a convoy) of an escort contract: in its destination's system it sets off
+   * alongside the player toward its dock; on its way to another system it keeps station off the
+   * player, to jump with them. Raiders wait at the beacon for escorted ships that came through it.
+   */
   private spawnEscort(e: EscortSetup): void {
-    const dest = this.system.dock(e.to);
-    if (!dest) return;
     const names = e.convoy?.names ?? [e.name];
     if (!names.length) return;
+    if (e.beacon && this.arrived) this.beaconAmbushes.push({ jobId: e.jobId, level: e.level, name: e.name, at: this.time + 3 });
+    if (e.follow) {
+      this.spawnFollowingEscort(e, names);
+      return;
+    }
+    const dest = this.system.dock(e.to);
+    if (!dest) return;
     const forward = this.player.forward(new THREE.Vector3());
     const side = new THREE.Vector3(1, 0, 0).applyQuaternion(this.player.quaternion);
     const owner = this.traffic?.owner;
@@ -2325,10 +2352,53 @@ export class FlightSession {
     }
   }
 
-  /** Raiders jump the escorted ship: they come from ahead of it and go for it first. */
-  private spawnAmbush(target: NpcShip, level: 1 | 2 | 3, convoy?: string): void {
+  /** Escorted ships on their way to another system: they keep station behind the player, to jump with them. */
+  private spawnFollowingEscort(e: EscortSetup, names: readonly string[]): void {
+    const owner = this.traffic?.owner;
+    const faction = owner === 'sta' || owner === 'frontier' ? owner : 'independent';
+    const dest = getLocation(e.to);
+    const where = `${dest.name} (${getSystem(dest.systemId).displayName})`;
+    names.forEach((name, i) => {
+      // Behind the player, either side, a little further back for each ship.
+      const offset = new THREE.Vector3((i % 2 === 0 ? 1 : -1) * (160 + Math.floor(i / 2) * 140), -20, 240 + i * 90);
+      const position = offset.clone().applyQuaternion(this.player.quaternion).add(this.player.position);
+      const npc = this.makeNpc(e.model, 'trader', faction, position, this.player.forward(new THREE.Vector3()), `${e.convoy ? `The ${e.name}` : 'Your escort'} · bound for ${where}`);
+      npc.name = name;
+      npc.target.name = `${name} (${e.convoy ? 'convoy' : 'escort'})`;
+      npc.target.hostile = false;
+      npc.origin = null;
+      npc.escort = { jobId: e.jobId, start: position.clone(), ambushAt: Infinity, ambushed: true, level: e.level, ...(e.convoy ? { convoy: true } : {}), follow: { offset } };
+    });
+    const who = e.convoy ? `The ${e.name} (${names.length} ships) is` : `The ${e.name} is`;
+    this.callbacks.onMessage(`${who} with you, bound for ${where}. Jump with ${e.convoy ? 'them' : 'it'} within ${ESCORT_WAIT / 1000} km.`, 'info');
+  }
+
+  /** An escorted ship on its way to another system keeps station behind the player, catching up as wingmen do. */
+  private flyEscortFollowing(n: NpcShip, dt: number): void {
+    const f = n.escort!.follow!;
+    for (const g of n.guns) g.tick(dt);
+    const slot = this.tmp2.copy(f.offset).applyQuaternion(this.player.quaternion).add(this.player.position);
+    if (!this.busy && n.body.position.distanceTo(this.player.position) > CATCH_UP) {
+      n.body.position.copy(slot);
+      n.body.velocity.copy(this.player.velocity);
+    }
+    flyTo(n.body, slot, { arriveDistance: 80, allowCruise: false, maxThrottle: 1 }, n.controls);
+    n.body.requestCruise(this.player.cruise === 'on' && n.body.position.distanceTo(slot) > 400);
+  }
+
+  /** The escorted ship that should jump with the player but is too far away to (its name), if any. */
+  escortBehind(): string | null {
+    const far = this.npcs.find((n) => n.escort?.follow && n.durability.hull > 0 && n.body.position.distanceTo(this.player.position) > ESCORT_WAIT);
+    return far?.name ?? null;
+  }
+
+  /**
+   * Raiders jump the escorted ship: they come from ahead of it (at the beacon, from ahead of the
+   * player) and go for it first.
+   */
+  private spawnAmbush(target: NpcShip, level: 1 | 2 | 3, convoy?: string, at: 'route' | 'beacon' = 'route'): void {
     const pack = ++this.packSerial;
-    const ahead = target.trader!.destination.point.clone().sub(target.body.position).normalize();
+    const ahead = target.trader && at === 'route' ? target.trader.destination.point.clone().sub(target.body.position).normalize() : this.player.forward(new THREE.Vector3());
     const side = new THREE.Vector3().crossVectors(ahead, new THREE.Vector3(0, 1, 0)).normalize();
     const home = target.body.position.clone().addScaledVector(ahead, 1_600).addScaledVector(side, (this.rand() - 0.5) * 1_200);
     this.packHome.set(pack, home);
@@ -2345,7 +2415,8 @@ export class FlightSession {
       if (i % 2 === 0) npc.prey = target;
     }
     this.sfx('alert');
-    this.callbacks.onMessage(convoy ? `Ambush! Raiders are closing on the ${convoy}.` : `Ambush! Raiders are closing on the ${target.name}.`, 'bad');
+    const who = convoy ?? target.name;
+    this.callbacks.onMessage(at === 'beacon' ? `Raiders were waiting at the beacon! They are closing on the ${who}.` : `Ambush! Raiders are closing on the ${who}.`, 'bad');
   }
 
   /** A recovery contract's wreck: a dead hull a few kilometres off a station, and the item to tractor in. */
@@ -2664,7 +2735,7 @@ export class FlightSession {
   private flyWingman(n: NpcShip, dt: number): void {
     const w = n.wingman!;
     // Left far behind (a lane, a long cruise), a wingman catches up.
-    if (!this.busy && n.body.position.distanceTo(this.player.position) > 6_000) {
+    if (!this.busy && n.body.position.distanceTo(this.player.position) > CATCH_UP) {
       n.body.position.copy(w.offset).applyQuaternion(this.player.quaternion).add(this.player.position);
       n.body.velocity.copy(this.player.velocity);
     }

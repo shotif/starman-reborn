@@ -1185,6 +1185,7 @@ export class Game {
         ? jumpReadiness(state, {
             hostilesNearby: this.flight?.hostilesNearby() ?? false,
             inLaneOrAutopilot: this.flight?.busy ?? false,
+            escortBehind: this.flight?.escortBehind() ?? null,
           })
         : { canJump: false, reason: 'Start a game to travel.' },
       objectiveSystemId: objective?.targetSystemId ?? null,
