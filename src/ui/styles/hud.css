@@ -829,6 +829,13 @@
   .hud.touch-mode .hud-system {
     display: none;
   }
+
+  /* One line of subtitle at most (a hauler bound for another system has a long one), so the target box never reaches the thumbs' buttons. */
+  .hud.touch-mode .target-sub {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
 @media (orientation: portrait) and (max-width: 600px) {
