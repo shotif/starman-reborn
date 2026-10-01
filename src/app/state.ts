@@ -305,6 +305,10 @@ export interface JobProgress {
   mined?: number;
   /** Rescues: the goods were handed over to the stranded ship. */
   rescued?: boolean;
+  /** Tours: the sightseers have seen their sight (docs/PROCGEN.md §23). */
+  seen?: boolean;
+  /** Passages and tours: the share of the hull lost with the passengers aboard (it cuts the fare). */
+  fright?: number;
 }
 
 export type PirateOutcome = 'none' | 'destroyed' | 'bypassed' | 'escaped';

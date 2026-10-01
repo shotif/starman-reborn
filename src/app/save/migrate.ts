@@ -40,7 +40,8 @@ import { createNewGame, SAVE_VERSION, type CommodityId, type GameState, type Out
  *   `pending` crimes and `lastCrimeAt` (docs/PROCGEN.md §17); `fleet` (owned ships, haulers,
  *   storage and stakes, §18); contracts may be mining claims, whose jobs carry `mined` (§19);
  *   escorts across jumps carry `escortAt`, where their ships are (§10.2; absent in older v10
- *   saves, which means where they set off); a hauler may carry `sight`, a run the player saw safely
+ *   saves, which means where they set off); a passenger contract carries its `party`, and its
+ *   progress `seen` and `fright` (§23); a hauler may carry `sight`, a run the player saw safely
  *   past its raid (§18.6). See GameState in src/app/state.ts.
  */
 export interface SaveV1 {
@@ -345,6 +346,8 @@ export function assertValidState(s: GameState): void {
   if (!isRecord(s.contracts)) fail('contracts');
   for (const [id, c] of Object.entries(s.contracts)) {
     if (!isRecord(c) || c.id !== id || !Array.isArray(c.objectives) || !c.objectives.length || !Number.isFinite(c.reward) || typeof c.title !== 'string') fail(`contract ${id}`);
+    const party = c.contract?.party;
+    if (party !== undefined && (!Array.isArray(party) || !party.length || !party.every((n) => typeof n === 'string' && n.length > 0))) fail(`contract ${id}`);
   }
   if (!isRecord(s.law) || !isRecord(s.law.fines) || !Array.isArray(s.law.pending) || !isRecord(s.law.lastCrimeAt)) fail('law');
   for (const c of s.law.pending) {
@@ -400,6 +403,8 @@ export function assertValidState(s: GameState): void {
   // Escorts across jumps remember the system their ships are in.
   for (const [id, p] of Object.entries(s.jobs)) {
     if (!isRecord(p) || (p.escortAt !== undefined && !SYSTEM_IDS.includes(p.escortAt))) fail(`job ${id}`);
+    // Passengers and sightseers (docs/PROCGEN.md §23): a tour's sight seen, and a fare's fright within 0–1.
+    if ((p.seen !== undefined && typeof p.seen !== 'boolean') || (p.fright !== undefined && !(Number.isFinite(p.fright) && p.fright >= 0 && p.fright <= 1))) fail(`job ${id}`);
   }
   if (s.location.flight) {
     const { position, quaternion } = s.location.flight;

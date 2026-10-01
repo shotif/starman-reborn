@@ -204,6 +204,19 @@ export const GEAR_FAMILIES: readonly GearFamilyRule[] = [
     flavour: 'An external hold.',
   },
   {
+    // Passenger berths (docs/PROCGEN.md §23): 2, 3 and 4 by class.
+    id: 'cabin',
+    slot: 'utility',
+    noun: 'passenger cabin',
+    kind: 'cabin',
+    base: { amount: 2, penalty: 0.03 },
+    growth: 1.42,
+    minTierStep: 0.15,
+    basePrice: 260,
+    priceGrowth: 1.5,
+    flavour: 'Bunks, air and a galley for paying passengers.',
+  },
+  {
     id: 'scanner',
     slot: 'utility',
     noun: 'scanner',

@@ -62,6 +62,7 @@ import { clearShipArtCache, createCatalogShipArt } from './art/shipgen/index.ts'
 import type { ShipArt } from './art/ships.ts';
 import { bountyFor, FLEETS, RAIDERS, TRAFFIC, type TrafficPlan } from './traffic/plan.ts';
 import { HAULS } from '../content/economy/hauls.ts';
+import { sightInView } from './sightseeing.ts';
 import { haulsIn, type Haul, type HaulHere, type HaulLeg } from '../economy/hauls.ts';
 import { FLEET } from '../content/fleet/rules.ts';
 import { captainsIn, type CaptainHere, type RunRaid } from '../economy/fleet.ts';
@@ -126,6 +127,10 @@ export interface FlightCallbacks {
   onWingmanLost?(crewId: string): void;
   /** Radio chatter: who speaks, and the line. */
   onComm?(speaker: string, text: string): void;
+  /** Sightseers have had their good look at their sight (docs/PROCGEN.md §23). */
+  onSight?(jobId: string): void;
+  /** The player's hull took a hit: this share of its maximum (passengers aboard take fright, §23). */
+  onHullHit?(share: number): void;
   /** The mining laser cut a whole unit from a rock of belt `beltId`: into the hold, or out in a cargo pod (docs/PROCGEN.md §19). */
   onMined?(beltId: string, commodity: CommodityId, into: 'hold' | 'pod'): void;
   onMessage(text: string, tone: 'good' | 'bad' | 'info'): void;
@@ -237,6 +242,8 @@ export interface TrafficSetup {
   defences?: readonly { jobId: string; locationId: string; count: number; faction?: 'sta' | 'frontier' }[];
   /** Raider dens here that are knocked out (wrecked, silent and closed). */
   downDens?: readonly string[];
+  /** Sights the player's sightseers want to see here (docs/PROCGEN.md §23): the tour, and the sight's target in the scene. */
+  sights?: readonly { jobId: string; targetId: string }[];
 }
 
 interface Drone {
@@ -628,7 +635,7 @@ export class FlightSession {
 
   private objectiveTargetId(): string | null {
     const id = this.objective.targetId;
-    if (id && (this.loot.some((l) => l.target.id === id) || this.mining.find(id) || this.npcs.some((n) => n.target.id === id && n.target.alive))) return id;
+    if (id && (this.loot.some((l) => l.target.id === id) || this.mining.find(id) || this.npcs.some((n) => n.target.id === id && n.target.alive) || (id.startsWith('star:') && this.findTarget(id)))) return id;
     if (this.objective.locationId) return `station:${this.objective.locationId}`;
     if (this.objective.bodyId) return `planet:${this.objective.bodyId}`;
     return null;
@@ -888,7 +895,8 @@ export class FlightSession {
     const { locationId, bodyId, targetId } = this.objective;
     if (locationId) return this.findTarget(`station:${locationId}`);
     if (bodyId) return this.findTarget(`planet:${bodyId}`);
-    // A claim sends the player to a belt; a rescue to a stranded ship.
+    // A claim sends the player to a belt; a rescue to a stranded ship; a tour to a dwarf star (docs/PROCGEN.md §23).
+    if (targetId?.startsWith('star:')) return this.findTarget(targetId);
     return targetId ? (this.mining.find(targetId) ?? this.npcs.find((n) => n.target.id === targetId && n.target.alive)?.target ?? null) : null;
   }
 
@@ -1180,6 +1188,7 @@ export class FlightSession {
     if (this.scanTimer <= 0) {
       this.scanTimer = 0.5;
       this.autoScan();
+      this.watchSights();
     }
     this.updateMissileLock(dt);
     if (this.deathTimer >= 0) {
@@ -1716,6 +1725,7 @@ export class FlightSession {
     this.playerArt.flashShield(shieldHit ? 0.8 : 0.2);
     // Hull hits flash the screen's edges, and may damage a system.
     if (r.hullDamage > 0) {
+      this.callbacks.onHullHit?.(r.hullDamage / Math.max(1, this.playerDurability.hullMax));
       this.hullFlash = Math.min(1, this.hullFlash + 0.35 + r.hullDamage / 40);
       if (!r.destroyed) this.maybeHitSystem(r.hullDamage);
     } else this.shieldFlash = Math.min(1, this.shieldFlash + 0.3);
@@ -3450,6 +3460,19 @@ export class FlightSession {
     for (const z of this.system.def.scanZones) {
       if (this.state.discoveredBodies.includes(z.bodyId)) continue;
       if (pos.distanceTo(z.center) < z.range) this.callbacks.onDiscovery(z.bodyId);
+    }
+  }
+
+  /** Tours seen here already, this flight. */
+  private readonly sightsSeen = new Set<string>();
+
+  /** Sightseers' sights (docs/PROCGEN.md §23.2): seen once each, scanned before or not. */
+  private watchSights(): void {
+    if (!this.alive) return;
+    for (const s of this.traffic?.sights ?? []) {
+      if (this.sightsSeen.has(s.jobId) || !sightInView(this.system.def, s.targetId, this.player.position)) continue;
+      this.sightsSeen.add(s.jobId);
+      this.callbacks.onSight?.(s.jobId);
     }
   }
 

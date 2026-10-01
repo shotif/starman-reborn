@@ -16,6 +16,8 @@ import { fineOwed, isLawful, pardonCost, payFines } from '../../economy/law.ts';
 import { buysSurveys, sellSurvey, surveysForSale, surveyValue } from '../../economy/progress.ts';
 import { toast } from '../components.ts';
 import type { StationContext } from './context.ts';
+import { sightById } from '../../content/passengers/sights.ts';
+import { berths } from '../../economy/passengers.ts';
 
 export function pips(level: number, of = 3): HTMLElement {
   return h('span', { class: 'pips', role: 'img', 'aria-label': `Difficulty ${level} of ${of}` }, Array.from({ length: of }, (_, i) => h('span', { class: i < level ? 'on' : '' })));
@@ -58,6 +60,8 @@ const CATEGORY: Record<ContractKind, BoardFilter> = {
   recovery: 'other',
   claim: 'other',
   rescue: 'other',
+  passage: 'hauling',
+  tour: 'other',
 };
 
 /** Jumps from a dock to where a job ends (0 in the same system). */
@@ -167,6 +171,8 @@ const KIND_GLYPH: Record<ContractKind, GlyphName> = {
   claim: 'mining-laser',
   war: 'gun',
   rescue: 'shipparts',
+  passage: 'cabin',
+  tour: 'science',
 };
 const KIND_LABEL: Record<ContractKind, string> = {
   freight: 'Freight',
@@ -183,6 +189,8 @@ const KIND_LABEL: Record<ContractKind, string> = {
   claim: 'Mining claim',
   war: 'Border war',
   rescue: 'Rescue',
+  passage: 'Passage',
+  tour: 'Sightseers',
 };
 
 /** Where a job sends you, for the card's subtitle. */
@@ -206,6 +214,7 @@ function whereTo(job: JobDef): string {
   if (o?.kind === 'escort') return `to ${getLocation(o.locationId).name}, this system`;
   if (o?.kind === 'piracy') return `in ${getSystem(o.systemId).displayName}`;
   if (o?.kind === 'mine') return `in the ${findBelt(o.beltId)?.name ?? 'belt'}, ${getSystem(o.systemId).displayName}`;
+  if (o?.kind === 'sight') return `${sightById(o.sightId)?.name ?? o.sightId}, ${getSystem(o.systemId).displayName}`;
   const near = o?.kind === 'bounty' || o?.kind === 'recover';
   const loc = getLocation(near ? o.locationId : job.destinationLocationId);
   return `${near ? 'near' : 'to'} ${loc.name}, ${getSystem(loc.systemId).displayName}`;
@@ -227,6 +236,8 @@ function jobCard(ctx: StationContext, o: JobOffer, expanded: boolean, onSelect: 
   const deliver = job.objectives.find((x) => x.kind === 'deliver');
   const urgent = job.contract?.urgent;
   const chain = job.contract?.chain;
+  const party = job.contract?.party;
+  const free = berths(ctx.state).free;
   const tags = [
     story ? h('span', { class: 'job-tag story' }, `${ARCS[story.arc].title} · ${story.step}/${arcSteps(story.arc)}`) : null,
     chain ? h('span', { class: 'job-tag chain' }, `Follow-up ${chain.step}/${CONTRACTS.chain.maxSteps}`) : null,
@@ -278,6 +289,8 @@ function jobCard(ctx: StationContext, o: JobOffer, expanded: boolean, onSelect: 
             deliver && deliver.kind === 'deliver'
               ? h('dd', null, `${deliver.qty} ${COMMODITIES[deliver.commodity].name.toLowerCase()} · ${deliver.qty * COMMODITIES[deliver.commodity].unitSize} hold units${cargo ? ', loaded here' : ''}`)
               : null,
+            party ? h('dt', null, 'Passengers') : null,
+            party ? h('dd', { 'data-testid': `job-party-${job.id}` }, `${party.join(', ')} · ${party.length} berth${party.length === 1 ? '' : 's'} (you have ${free} free)`) : null,
             job.contract?.deposit ? h('dt', null, 'Deposit') : null,
             job.contract?.deposit ? h('dd', null, `${formatCredits(job.contract.deposit)}, returned with the reward`) : null,
             urgent ? h('dt', null, 'Time limit') : null,

@@ -11,6 +11,7 @@ import { COMMODITIES } from './commodities.ts';
 import { CONTRACT_PREFIX, contractBlock, escortDanger, followUpFor, postedContract, postedContracts } from './contracts.ts';
 import { adjustReputation, FACTIONS, standingTier, TIER_LABEL } from './factions.ts';
 import { cargoCapacity } from './loadout.ts';
+import { carriesPassengers, fare } from './passengers.ts';
 import { rating } from './progress.ts';
 import { denDown } from './dens.ts';
 import { dockAccess } from './law.ts';
@@ -22,6 +23,8 @@ export type Objective =
   | { kind: 'have-cargo'; commodity: CommodityId; qty: number; text: string }
   | { kind: 'dock'; locationId: string; text: string }
   | { kind: 'scan'; bodyId: string; systemId: SystemId; text: string }
+  /** Fly sightseers close to a sight of the real sky (docs/PROCGEN.md §23; JobProgress.seen), seen before or not. */
+  | { kind: 'sight'; sightId: string; systemId: SystemId; targetId: string; text: string }
   | { kind: 'deliver'; commodity: CommodityId; qty: number; locationId: string; text: string }
   | { kind: 'visit'; locationId: string; text: string }
   /**
@@ -107,6 +110,8 @@ export interface JobDef {
     side?: 'law' | 'wake';
     /** A side's decisive operation: done, it settles the front for good (docs/PROCGEN.md §20.7). */
     decisive?: true;
+    /** Passages and tours (docs/PROCGEN.md §23): the party aboard, by name (fiction); each takes a berth. */
+    party?: readonly string[];
   };
   /** Story arc missions (content/story/arcs.ts): arc, step, speaker and beats. */
   story?: StoryMeta;
@@ -420,6 +425,8 @@ function objectiveSatisfied(state: GameState, jobId: string, o: Objective, ctx: 
       return ctx.dockedAt === o.locationId;
     case 'scan':
       return state.discoveredBodies.includes(o.bodyId);
+    case 'sight':
+      return !!state.jobs[jobId]?.seen;
     case 'deliver':
       // Deliveries complete only when the player turns the cargo in (see deliverJob).
       return false;
@@ -431,6 +438,8 @@ export interface JobEvent {
   /** `offer`: a follow-up is offered at the station (its id is `jobId`). */
   kind: 'objective' | 'complete' | 'failed' | 'offer';
   text: string;
+  /** A completed job: what it paid, all told (a passenger fare less its fright, an urgent bonus). */
+  paid?: number;
 }
 
 /**
@@ -449,7 +458,7 @@ export function advanceJobs(state: GameState, ctx: JobContext): JobEvent[] {
       progress.objectiveIndex += 1;
       if (progress.objectiveIndex >= job.objectives.length) {
         const out = payOut(state, job);
-        events.push({ jobId, kind: 'complete', text: `${job.title} complete${out.note}` });
+        events.push({ jobId, kind: 'complete', text: `${job.title} complete${out.note}`, paid: out.paid });
         if (out.offer) events.push(out.offer);
       } else {
         events.push({ jobId, kind: 'objective', text: o.text });
@@ -480,15 +489,17 @@ function payOut(state: GameState, job: JobDef): Payout {
   const left = urgentTimeLeft(state, job.id);
   progress.status = 'complete';
   progress.completedAt = state.clock;
-  applyCredits(state, job.reward, 'reward', `${job.title} reward`);
+  // Passengers pay their fare less what a rough trip frightened out of them (docs/PROCGEN.md §23).
+  const reward = carriesPassengers(job) ? fare(state, job) : job.reward;
+  applyCredits(state, reward, 'reward', `${job.title} reward`);
   if (job.contract?.deposit) applyCredits(state, job.contract.deposit, 'reward', `Deposit returned: ${job.title}`);
   const repChanges: Partial<Record<FactionId, number>> = {};
   for (const [faction, delta] of Object.entries(job.repReward) as [FactionId, number][]) {
     repChanges[faction] = adjustReputation(state.reputation, faction, delta);
   }
   // Urgent jobs: a bonus in time, a little standing lost when late.
-  let paid = job.reward;
-  let note = '';
+  let paid = reward;
+  let note = reward < job.reward ? ` (a rough trip: ${job.reward - reward} cr off the fare)` : '';
   const urgent = job.contract?.urgent;
   if (urgent && left !== null && left >= 0) {
     applyCredits(state, urgent.bonus, 'reward', `On-time bonus: ${job.title}`);
@@ -607,6 +618,15 @@ function describeCurrent(state: GameState, jobId: string): ObjectiveSummary | nu
         targetSystemId: o.systemId,
         targetLocationId: null,
         targetBodyId: o.bodyId,
+      };
+    case 'sight':
+      // A planet is steered to as a body; a dwarf star or a belt by its target in the scene.
+      return {
+        ...base,
+        text: inOtherSystem(o.systemId, o.text),
+        targetSystemId: o.systemId,
+        targetLocationId: null,
+        ...(o.targetId.startsWith('planet:') ? { targetBodyId: o.sightId } : o.systemId === here ? { targetId: o.targetId } : {}),
       };
     case 'bounty': {
       const kills = state.jobs[jobId]?.kills ?? 0;

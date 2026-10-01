@@ -14,7 +14,7 @@ export type DamageType = 'energy' | 'kinetic' | 'plasma' | 'ion';
 export type ShieldType = 'deflector' | 'diffuser' | 'balanced';
 export type SlotType = 'gun' | 'launcher' | 'shield' | 'engine' | 'thruster' | 'power' | 'utility';
 export type LauncherKind = 'rocket' | 'seeker' | 'torpedo';
-export type UtilityKind = 'armor' | 'cargo-pod' | 'scanner' | 'tractor' | 'jump-drive' | 'mining-laser' | 'prospector';
+export type UtilityKind = 'armor' | 'cargo-pod' | 'cabin' | 'scanner' | 'tractor' | 'jump-drive' | 'mining-laser' | 'prospector';
 
 export type GearFamilyId =
   | 'pulse'
@@ -32,6 +32,7 @@ export type GearFamilyId =
   | 'power'
   | 'armor'
   | 'cargo-pod'
+  | 'cabin'
   | 'scanner'
   | 'tractor'
   | 'jump-drive'
@@ -324,9 +325,9 @@ export interface PowerStats {
 
 export interface UtilityStats {
   kind: UtilityKind;
-  /** armor: hull points; cargo-pod: cargo units; scanner: scan range multiplier; tractor: metres. */
+  /** armor: hull points; cargo-pod: cargo units; cabin: passenger berths; scanner: scan range multiplier; tractor: metres. */
   amount: number;
-  /** Fractional agility (armour) or top-speed (cargo pod) penalty. */
+  /** Fractional agility (armour) or top-speed (cargo pod, cabin) penalty. */
   penalty: number;
 }
 

@@ -197,6 +197,8 @@ export function describeStats(stats: GearStats): string {
           return `+${u.amount} hull; turning −${pct(u.penalty)}.`;
         case 'cargo-pod':
           return `+${u.amount} cargo; top speed −${pct(u.penalty)}.`;
+        case 'cabin':
+          return `${u.amount} passenger berths; top speed −${pct(u.penalty)}.`;
         case 'scanner':
           return `Scan range ×${u.amount}.`;
         case 'tractor':

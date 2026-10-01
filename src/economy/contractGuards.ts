@@ -1,9 +1,12 @@
 import { CONTRACTS, type ContractKind } from '../content/contracts/rules.ts';
 import { COMMODITIES, PRICE_BAND } from '../content/economy/goods.ts';
 import { beltGoods } from '../content/mining/rules.ts';
+import { PASSENGERS } from '../content/passengers/rules.ts';
+import { sightById } from '../content/passengers/sights.ts';
 import type { Issue } from '../content/validate.ts';
 import { jumpsFrom } from '../content/world/network.ts';
 import { ALL_LOCATIONS, findBelt, getLocation, getSystem, isFrontier, WORLD } from '../data/systems.ts';
+import { inViewFromGates, inViewFromStation } from '../world/sightseeing.ts';
 import { trafficFor } from '../world/traffic/setup.ts';
 import { shipModel } from '../content/catalog.ts';
 import { RECOVERY_ITEMS } from '../content/contracts/rules.ts';
@@ -106,11 +109,11 @@ function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, numbe
   const gated = !!c.requires?.minRep;
   if (gated !== (c.difficulty >= CONTRACTS.gatedDifficulty && c.factionId !== null)) report('standing', c.id, 'standing gate does not match the difficulty');
   const o = c.objectives[0];
-  const expected = kind === 'recovery' || kind === 'claim' ? 2 : 1;
+  const expected = kind === 'recovery' || kind === 'claim' || kind === 'tour' ? 2 : 1;
   if (!o || c.objectives.length !== expected) return report('objectives', c.id, `expected ${expected} objective(s)`);
 
   // Where it sends you, and what the trip costs.
-  const target = o.kind === 'scan' || o.kind === 'bounty' || o.kind === 'recover' || o.kind === 'escort' || o.kind === 'piracy' || o.kind === 'mine' || o.kind === 'rescue' ? o.systemId : 'locationId' in o ? getLocation(o.locationId).systemId : from;
+  const target = o.kind === 'scan' || o.kind === 'sight' || o.kind === 'bounty' || o.kind === 'recover' || o.kind === 'escort' || o.kind === 'piracy' || o.kind === 'mine' || o.kind === 'rescue' ? o.systemId : 'locationId' in o ? getLocation(o.locationId).systemId : from;
   const j = jumps.get(target) ?? Infinity;
   if (j > CONTRACTS.maxJumps[kind]) report('reach', c.id, `${j} jumps (at most ${CONTRACTS.maxJumps[kind]})`);
   let tripFrom = from;
@@ -253,6 +256,27 @@ function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, numbe
     case 'survey': {
       if (o.kind !== 'scan') return report('objectives', c.id, `unexpected objective ${o.kind}`);
       if (!getSystem(o.systemId).confirmedBodies.some((p) => p.id === o.bodyId)) report('survey', c.id, `${o.bodyId} is not a confirmed planet of ${o.systemId}`);
+      break;
+    }
+    // Passengers and sightseers (docs/PROCGEN.md §23): a party of the rules' size; a passage to an
+    // open station, a tour out to a real sight of that system and back to the station that posted it.
+    case 'passage':
+    case 'tour': {
+      const party = c.contract!.party ?? [];
+      const [lo, hi] = PASSENGERS[kind].party;
+      if (party.length < lo || party.length > hi || new Set(party).size !== party.length) report('party', c.id, `a party of ${party.length}`);
+      if (kind === 'passage') {
+        if (o.kind !== 'visit') return report('objectives', c.id, `unexpected objective ${o.kind}`);
+        const dest = getLocation(o.locationId);
+        if (dest.id === c.giverLocationId || dest.dockable === false || dest.status !== 'functional' || !dest.services.length) report('destination', c.id, `${dest.id} is not another open station`);
+      } else {
+        const back = c.objectives[1];
+        if (o.kind !== 'sight' || back?.kind !== 'visit' || back.locationId !== c.giverLocationId) return report('objectives', c.id, 'a tour sees a sight, then comes back');
+        const sight = sightById(o.sightId);
+        if (!sight || sight.systemId !== o.systemId || sight.targetId !== o.targetId) report('tour', c.id, `${o.sightId} is not a sight of ${o.systemId}`);
+        // A trip out: never to a sight in view from where the pilot jumps in or undocks.
+        else if (inViewFromGates(sight) || inViewFromStation(sight, c.giverLocationId)) report('tour', c.id, `${o.sightId} is in view from a jump beacon or ${c.giverLocationId}`);
+      }
       break;
     }
   }

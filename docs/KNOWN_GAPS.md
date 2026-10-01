@@ -97,6 +97,13 @@ snapshot branch only when the archives changed.
   events of its own (its system's raids still cut its income). It keeps to itself: no other
   station's board sends work to it, the timetable's haulers do not call there, and the star map's
   search does not find it (its system's card lists it).
+- Passengers and sightseers (PROCGEN §23) ride with the player only: a captain does not carry them,
+  and the passengers have no lasting names or memories (a party is a contract's, gone when it
+  ends). A good look at a sight is a matter of distance, not of where the ship is pointing, and the
+  sights are bodies and belts of the catalogue only (no moons, comets or nebulae; Sol's planets are
+  not among them). Three confirmed planets whose systems' jump beacons sit within sight of them
+  are left out of tours. A fright cuts a fare by the share of hull lost, whoever fired; it is not
+  calmed by flying gently afterwards.
 - Traffic and raider packs exist only around the player. Packs that saw the player and cargo pods
   left adrift wait for 30 minutes of game clock (in the last six systems), as do the packs and
   wrecks of the player's own contracts; everything else is generated again on arrival.

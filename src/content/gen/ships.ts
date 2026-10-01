@@ -114,6 +114,7 @@ const LAUNCHER_FAMILY = { rocket: 'rocket-pod', seeker: 'seeker', torpedo: 'torp
 const UTILITY_FAMILY = {
   armor: 'armor',
   'cargo-pod': 'cargo-pod',
+  cabin: 'cabin',
   scanner: 'scanner',
   tractor: 'tractor',
   'jump-drive': 'jump-drive',

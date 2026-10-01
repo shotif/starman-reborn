@@ -10,8 +10,8 @@ twelve kinds (ports, mines, refineries, farms, research stations, shipyards, fre
 dens...), 23 goods with stock-based prices, world events reported in each station's news, traders
 and patrols on the lanes, raider packs in lawless space, and contract boards in every station bar
 (freight, courier parcels, supply runs, bounties, planet surveys, escorts and convoys that jump
-with you, ace hunts, wreck recoveries, mining claims, rescues and war work, some urgent, some
-leading to follow-ups). 39 ships in six classes carry 139 pieces of equipment, among them a
+with you, ace hunts, wreck recoveries, mining claims, rescues, war work, passengers and sightseers, some
+urgent, some leading to follow-ups). 39 ships in six classes carry 146 pieces of equipment, among them a
 long-range jump drive for the frontier beyond 17.5 light-years, which has a life of its own:
 harvests at its farms, survey seasons at its research posts, and colony haulers stranded far from
 any dock.
@@ -41,6 +41,9 @@ and insurance), lease storage and buy a share of a station's trade. Your captain
 as everyone else's haulers: meet one on the way, guard it when raiders jump it, or watch it go.
 And after the fleet, a station of your own: charter a site in orbit of a real planet, haul the
 materials there stage by stage, and your outpost opens, trades and pays you by the hour.
+Fit a passenger cabin and the bars offer fares: passages between stations, and sightseers who pay
+to be flown close to the real sky's planets, dwarf stars and belts, and say what the archives
+record of them when they see them. A fight with passengers aboard costs you some of the fare.
 Ships, equipment, the world, the economy, events, contracts and the law are generated from rule
 files and checked by automated guardrails ([docs/PROCGEN.md](docs/PROCGEN.md)).
 

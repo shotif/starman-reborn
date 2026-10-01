@@ -10,23 +10,23 @@ import type { StationType } from '../world/types.ts';
  * `claim`: mine a load in a belt within reach and bring it in (docs/PROCGEN.md §19); `war`: work on a
  * border front while it fights (§20).
  */
-export type ContractKind = 'freight' | 'parcel' | 'supply' | 'bounty' | 'survey' | 'escort' | 'ace' | 'recovery' | 'smuggle' | 'piracy' | 'den' | 'claim' | 'war' | 'rescue';
+export type ContractKind = 'freight' | 'parcel' | 'supply' | 'bounty' | 'survey' | 'escort' | 'ace' | 'recovery' | 'smuggle' | 'piracy' | 'den' | 'claim' | 'war' | 'rescue' | 'passage' | 'tour';
 
 /** Relative weights of contract kinds on a station's board. */
 export type KindWeights = Partial<Record<ContractKind, number>>;
 
 export const BOARD_KINDS: Record<Exclude<StationType, 'pirate-den'>, KindWeights> = {
-  'trade-port': { freight: 3, parcel: 2, supply: 2, bounty: 1, escort: 1 },
+  'trade-port': { freight: 3, parcel: 2, supply: 2, bounty: 1, escort: 1, passage: 2, tour: 1 },
   'customs-depot': { parcel: 2, bounty: 3, freight: 1, ace: 1, recovery: 1, den: 1 },
   shipyard: { supply: 3, freight: 1, parcel: 1, recovery: 1 },
   'mining-outpost': { freight: 2, supply: 2, bounty: 1, escort: 1, claim: 2 },
   refinery: { freight: 2, supply: 2, parcel: 1, escort: 1, claim: 2 },
   factory: { freight: 3, supply: 2, escort: 1 },
-  'agri-station': { freight: 3, supply: 1, parcel: 1, escort: 1 },
-  'research-station': { survey: 3, parcel: 2, supply: 1, recovery: 2 },
-  relay: { parcel: 3, bounty: 1, recovery: 1 },
+  'agri-station': { freight: 3, supply: 1, parcel: 1, escort: 1, passage: 1 },
+  'research-station': { survey: 3, parcel: 2, supply: 1, recovery: 2, tour: 2 },
+  relay: { parcel: 3, bounty: 1, recovery: 1, passage: 2, tour: 1 },
   'military-base': { bounty: 4, parcel: 1, ace: 2, den: 1 },
-  freeport: { freight: 2, parcel: 2, supply: 1, bounty: 1, recovery: 1, escort: 1, ace: 1, smuggle: 2 },
+  freeport: { freight: 2, parcel: 2, supply: 1, bounty: 1, recovery: 1, escort: 1, ace: 1, smuggle: 2, passage: 1 },
 };
 
 /** Frontier boards want the new systems surveyed for the codex: this much extra survey weight. */
@@ -48,7 +48,7 @@ export const CURATED_BOARD_KINDS: Record<string, KindWeights> = {
   'mars-depot': { bounty: 2, parcel: 2, freight: 2, supply: 1, escort: 1, ace: 1, den: 1 },
   'meridian-outpost': BOARD_KINDS['research-station'],
   'barnard-relay': BOARD_KINDS.relay,
-  'sirius-platform': { survey: 2, freight: 2, supply: 1, parcel: 1, recovery: 1 },
+  'sirius-platform': { survey: 2, freight: 2, supply: 1, parcel: 1, recovery: 1, tour: 1 },
   'eridani-hub': { freight: 2, supply: 2, bounty: 1, escort: 1, claim: 2 },
 };
 
@@ -60,7 +60,7 @@ export const CONTRACTS = {
   /** At most this many generated contracts in progress at once. */
   maxActive: 5,
   /** How far contracts send you, in jumps. */
-  maxJumps: { freight: 3, parcel: 4, supply: 3, bounty: 2, survey: 3, escort: 2, ace: 3, recovery: 3, smuggle: 3, piracy: 2, den: 3, claim: 3, war: 2, rescue: 2 } satisfies Record<ContractKind, number>,
+  maxJumps: { freight: 3, parcel: 4, supply: 3, bounty: 2, survey: 3, escort: 2, ace: 3, recovery: 3, smuggle: 3, piracy: 2, den: 3, claim: 3, war: 2, rescue: 2, passage: 3, tour: 2 } satisfies Record<ContractKind, number>,
   /** Hold units a freight or supply contract asks for (before the good's unit size). */
   cargoUnits: [8, 30] as const,
   /** Most the cargo may be worth at base prices (keeps deposits and purchases within a young pilot's reach). */

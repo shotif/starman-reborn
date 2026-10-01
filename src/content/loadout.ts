@@ -26,6 +26,8 @@ export interface ShipPerformance {
   miningRate: number;
   /** Yield multiplier from a prospecting scanner (1: none). */
   prospect: number;
+  /** Passenger berths from cabins (docs/PROCGEN.md §23; 0: none). */
+  berths: number;
 }
 
 /** Items that actually fit: the slot exists, the type matches and the class is within the limit. */
@@ -49,6 +51,7 @@ export function shipPerformance(ship: ShipModel, fittings: Fittings, gearById: R
   let armour = 0;
   let agility = 1;
   let pods = 0;
+  let berths = 0;
   let speedFactor = 1;
   let scanRange = 1;
   let tractorRange = 0;
@@ -84,6 +87,9 @@ export function shipPerformance(ship: ShipModel, fittings: Fittings, gearById: R
         } else if (u.kind === 'cargo-pod') {
           pods += u.amount;
           speedFactor *= 1 - u.penalty;
+        } else if (u.kind === 'cabin') {
+          berths += u.amount;
+          speedFactor *= 1 - u.penalty;
         } else if (u.kind === 'scanner') scanRange = Math.max(scanRange, u.amount);
         else if (u.kind === 'tractor') tractorRange = Math.max(tractorRange, u.amount);
         else if (u.kind === 'jump-drive') jumpReach = Math.max(jumpReach, u.amount);
@@ -114,7 +120,7 @@ export function shipPerformance(ship: ShipModel, fittings: Fittings, gearById: R
     boostDrain: thruster?.boostDrain ?? 0,
     radius: ship.radius,
   };
-  return { flight, hullMax: ship.hull + armour, cargo: ship.cargo + pods, shield, guns, launchers, scanRange, tractorRange, jumpReach, miningRate, prospect };
+  return { flight, hullMax: ship.hull + armour, cargo: ship.cargo + pods, shield, guns, launchers, scanRange, tractorRange, jumpReach, miningRate, prospect, berths };
 }
 
 /** Share of the time the guns can fire over a fight of `seconds`: full until energy runs dry, then what regeneration allows. */

@@ -372,6 +372,18 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   nothing while it is built, then by the hour moved by raids in its system, the same however often
   it is settled; a captain can be hired to it once it trades. Saves keep it (docked there too) and
   refuse a damaged outpost, or a dock at one the save does not have.
+- `passengers.test.ts`: **passengers and sightseers**. Cabins give 2, 3 or 4 berths by class, cost
+  a little speed and are sold at outfitters. The passenger guardrails pass (143 sights, every kind
+  among them), and broken ones are caught: a number written into a line, a field a line cannot
+  fill, a sight that is not real. A sight's facts are its record's (a planet's period to two places
+  under ten days, a minimum mass said as "at least"), and every line about every sight fills. A
+  passage: posted with a party, refused without the berths, kept with its cabin fitted, its fare cut
+  by a fright down to the floor, and paid on arrival with the rough trip noted and a goodbye. A
+  tour: its sight still to see though scanned before, seen once with a line from the sightseer,
+  then home and paid in full. In a flight scene: a planet seen from within range only, once, a
+  belt from inside its band, nothing from the arrival point, and the few sights in view from a jump
+  beacon never a tour's; hull hits felt as a share of the hull, shield hits not. Saves keep a party,
+  a sight seen and a fright, and refuse damaged ones.
 
 ### Browser tests (Playwright)
 
@@ -494,11 +506,16 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   hold (there is no trader yet), and the outpost opens with a trader's room and says what the
   station needs next; an hour later it has paid its income, with a toast; launched, it is a station
   of the system's scene, named as chartered.
+- `passengers.spec.ts`: **sightseers**: at Meridian Outpost the outfitter sells a Bunkhouse cabin
+  for the utility mount, bought and fitted; the bar's tour to Proxima Centauri d names its party and
+  the berths it needs (*1 berth (you have 2 free)*), and is taken; launched and flown close to the
+  planet, the sightseer says so over the radio, naming it, and the tour turns for home; docked again
+  at Meridian Outpost, it pays in full.
 - `screenshots.spec.ts`: the loading title (caught part-way, with the game's largest file held
   back), title, Settings at its device report, job board, buy dialog, station deck, shipyard, outfitter, fleet
   (with a captain loading for a run), flight HUD, the player's own captain targeted in flight, star
   map and its Missions and Find dialogs, the charter of an outpost and the Outpost window at its
-  site, and the News with a shortage's relief
+  site, a party's job open at a bar with a cabin fitted, and the News with a shortage's relief
   haulers on their way, at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
   zoom). Saved in `docs/screenshots/` once any smooth scrolling has come to rest. Each is audited

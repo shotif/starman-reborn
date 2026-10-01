@@ -62,6 +62,8 @@ gear.power.2.halden                Lantern Mk II power plant            235  Fee
 gear.power.3.halden                Lantern Mk III power plant           360  Feeds the guns and the boost. 144 energy stored, 28.8 regenerated per second.
 gear.cargo-pod.1.halden            Seahold Mk I cargo pod               140  An external hold. +8 cargo; top speed −4%.
 gear.cargo-pod.2.halden            Seahold Mk II cargo pod              210  An external hold. +10 cargo; top speed −4%.
+gear.cabin.1.halden                Snug Mk I passenger cabin            260  Bunks, air and a galley for paying passengers. 2 passenger berths; top speed −3%.
+gear.cabin.2.halden                Snug Mk II passenger cabin           390  Bunks, air and a galley for paying passengers. 3 passenger berths; top speed −3%.
 gear.scanner.1.halden              Lookout Mk I scanner                 120  Longer-range sensors for scans and targeting. Scan range ×1.25.
 gear.tractor.1.halden              Gleaner Mk I tractor beam             90  Reels in loose cargo and salvage. Pulls in loose cargo from 500 m.
 gear.mass-driver.1.ares            Drophammer Mk I mass driver          200  Fast magnetic slugs, slow to cycle and hard on hulls. 17 kinetic damage per shot, 0.95 shots/s, 1150 m range, 9.5 energy per shot. Weak against deflector shields; hits hulls hard.
@@ -106,6 +108,9 @@ gear.power.3.toliman               Sapwell Mk III power plant           350  Fee
 gear.cargo-pod.1.toliman           Granary Mk I cargo pod               136  An external hold. +8 cargo; top speed −4%.
 gear.cargo-pod.2.toliman           Granary Mk II cargo pod              205  An external hold. +10 cargo; top speed −4%.
 gear.cargo-pod.3.toliman           Granary Mk III cargo pod             305  An external hold. +14 cargo; top speed −4%.
+gear.cabin.1.toliman               Bunkhouse Mk I passenger cabin       250  Bunks, air and a galley for paying passengers. 2 passenger berths; top speed −3%.
+gear.cabin.2.toliman               Bunkhouse Mk II passenger cabin      380  Bunks, air and a galley for paying passengers. 3 passenger berths; top speed −3%.
+gear.cabin.3.toliman               Bunkhouse Mk III passenger cabin     565  Bunks, air and a galley for paying passengers. 4 passenger berths; top speed −3%.
 gear.scanner.1.toliman             Taproot Mk I scanner                 116  Longer-range sensors for scans and targeting. Scan range ×1.25.
 gear.scanner.2.toliman             Taproot Mk II scanner                175  Longer-range sensors for scans and targeting. Scan range ×1.4.
 gear.scanner.3.toliman             Taproot Mk III scanner               260  Longer-range sensors for scans and targeting. Scan range ×1.55.
@@ -158,6 +163,8 @@ gear.cargo-pod.1.eridani           Floodgate Mk I cargo pod             126  An 
 gear.cargo-pod.2.eridani           Floodgate Mk II cargo pod            189  An external hold. +10 cargo; top speed −4%.
 gear.cargo-pod.3.eridani           Floodgate Mk III cargo pod           285  An external hold. +14 cargo; top speed −4%.
 gear.cargo-pod.4.eridani           Floodgate Mk IV cargo pod            425  An external hold. +18 cargo; top speed −4%.
+gear.cabin.1.eridani               Houseboat Mk I passenger cabin       235  Bunks, air and a galley for paying passengers. 2 passenger berths; top speed −3%.
+gear.cabin.2.eridani               Houseboat Mk II passenger cabin      350  Bunks, air and a galley for paying passengers. 3 passenger berths; top speed −3%.
 gear.armor.1.eridani               Breakwater Mk I armour plating       117  Bolt-on hull plates. +25 hull; turning −5%.
 gear.armor.2.eridani               Breakwater Mk II armour plating      176  Bolt-on hull plates. +33 hull; turning −5%.
 gear.tractor.1.eridani             Undertow Mk I tractor beam            81  Reels in loose cargo and salvage. Pulls in loose cargo from 500 m.

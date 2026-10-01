@@ -7,6 +7,7 @@ import { LAW } from '../content/law/rules.ts';
 import { dockAccess } from './law.ts';
 import { ammoName, clampShip, fittedItem, fittedLaunchers, hullMax, newShipState, performanceOf, shieldCapacity, shipSlots } from './loadout.ts';
 import { dockFaction } from './markets.ts';
+import { berthBlock } from './passengers.ts';
 
 /**
  * Outfitter and shipyard: buying, replacing and selling equipment, ammunition, repair kits, hull
@@ -67,10 +68,14 @@ function slotOf(state: GameState, slotId: string): ShipSlot | undefined {
 
 /** Hold size after a change of fittings (to refuse changes that would spill cargo). */
 function capacityWith(state: GameState, slotId: string, gearId: string | null): number {
+  return performanceWith(state, slotId, gearId).cargo;
+}
+
+function performanceWith(state: GameState, slotId: string, gearId: string | null) {
   const fittings = { ...state.ship.fittings };
   if (gearId) fittings[slotId] = gearId;
   else delete fittings[slotId];
-  return performanceOf({ model: state.ship.model, fittings }).cargo;
+  return performanceOf({ model: state.ship.model, fittings });
 }
 
 function ammoRefund(ship: ShipState, slotId: string): number {
@@ -91,6 +96,8 @@ function offerFor(state: GameState, locationId: string, item: GearItem, slot: Sh
   else blocked = standingBlock(state, locationId, standingForGear(item.tier));
   if (!blocked && net > state.credits) blocked = 'Not enough credits';
   if (!blocked && capacityWith(state, slot.id, item.id) < cargoUsed(state.ship.cargo)) blocked = 'Your cargo would not fit';
+  // Passengers aboard keep their berths (docs/PROCGEN.md §23).
+  if (!blocked) blocked = berthBlock(state, performanceWith(state, slot.id, item.id).berths);
   return { item, tradeIn, net, blocked, fitted };
 }
 
@@ -133,6 +140,7 @@ export function sellQuote(state: GameState, locationId: string, slotId: string):
   if (!sellsEquipment(locationId)) blocked = 'No equipment dealer here';
   else if (CORE_SLOT_TYPES.has(slot.type)) blocked = 'Replace it instead: every ship needs one';
   else if (capacityWith(state, slotId, null) < cargoUsed(state.ship.cargo)) blocked = 'Your cargo would not fit';
+  else blocked = berthBlock(state, performanceWith(state, slotId, null).berths);
   return { item, value: resaleValue(item.price) + ammoRefund(state.ship, slotId), blocked };
 }
 
@@ -277,6 +285,7 @@ export function shipOffers(state: GameState, locationId: string): ShipOffer[] {
     let blocked: string | null = current ? 'Your current ship' : shipStandingBlock(state, locationId, model);
     if (!blocked && net > state.credits) blocked = 'Not enough credits';
     if (!blocked && performanceOf({ model: model.id, fittings: model.stock }).cargo < cargoUsed(state.ship.cargo)) blocked = 'Sell cargo first: the hold is smaller';
+    if (!blocked) blocked = berthBlock(state, performanceOf({ model: model.id, fittings: model.stock }).berths);
     return { model, tradeIn, net, blocked, current };
   });
 }

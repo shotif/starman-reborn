@@ -304,6 +304,12 @@ const GLYPHS = {
     { d: 'M5 9h22a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-8a3 3 0 0 1 3-3z' },
     { d: 'M9 9h2v14H9zM15 9h2v14h-2zM21 9h2v14h-2z', kind: 'dark' },
   ],
+  /** Passenger cabin: two bunks between their posts, a pillow on each. */
+  cabin: [
+    { d: 'M4 5h3v22H4zM25 5h3v22h-3z' },
+    { d: 'M7 11h18v4H7zM7 21h18v4H7z' },
+    { d: 'M9 8h6v3H9zM9 18h6v3H9z', kind: 'dark' },
+  ],
   /** Scanner: a dish sending signal arcs. */
   scanner: [
     { d: 'M3 14c4 9 13 13 22 11L9 5C5 7 3 10 3 14z' },

@@ -128,7 +128,7 @@ function checkGear(catalog: Catalog, rules: ContentRules, report: Report): void 
     const s = it.stats;
     if (s.slot === 'thruster' && s.thruster.boostSpeed > rules.limits.boostSpeed.max) report('flight-envelope', it.id, `boost ${s.thruster.boostSpeed} m/s is over the limit`);
     if (s.slot === 'engine' && s.engine.cruiseSpeed > rules.limits.cruiseSpeed.max) report('flight-envelope', it.id, `cruise ${s.engine.cruiseSpeed} m/s is over the limit`);
-    if (s.slot === 'utility' && (s.utility.kind === 'armor' || s.utility.kind === 'cargo-pod') && !(s.utility.penalty > 0)) {
+    if (s.slot === 'utility' && (s.utility.kind === 'armor' || s.utility.kind === 'cargo-pod' || s.utility.kind === 'cabin') && !(s.utility.penalty > 0)) {
       report('trade-offs', it.id, `${s.utility.kind} must cost ${s.utility.kind === 'armor' ? 'agility' : 'speed'}`);
     }
     if (!(it.price > 0)) report('economy', it.id, 'price must be positive');

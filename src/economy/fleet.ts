@@ -16,6 +16,7 @@ import { hasShipyard, shipStandingBlock, shipTradeIn, type Result } from './equi
 import { stationEventAt, systemEventAt, type WorldEvent } from './events.ts';
 import { legsOf, type HaulLeg } from './hauls.ts';
 import { outpostNext, payOldHours, payOutpostHour } from './outposts.ts';
+import { berthBlock } from './passengers.ts';
 import { dockAccess } from './law.ts';
 import { cargoCapacity, clampShip, newShipState, performanceOf, shieldCapacity } from './loadout.ts';
 import { hasMarket, moveStock, orderTotal, quote, stockAvailable, type MarketContext } from './markets.ts';
@@ -99,6 +100,7 @@ export function keepOffer(state: GameState, locationId: string, modelId: string)
   let blocked = shipStandingBlock(state, locationId, model);
   if (!blocked && state.fleet.ships.length >= FLEET.hangar.max) blocked = `Hangar full: you own ${FLEET.hangar.max} other ships`;
   if (!blocked && model.price > state.credits) blocked = 'Not enough credits';
+  if (!blocked) blocked = berthBlock(state, performanceOf({ model: model.id, fittings: model.stock }).berths);
   const cargoMoves = performanceOf({ model: model.id, fittings: model.stock }).cargo >= cargoUsed(state.ship.cargo);
   return { model, price: model.price, blocked, cargoMoves };
 }
@@ -133,6 +135,9 @@ export function switchShip(state: GameState, shipId: string): Result {
   const block = dockBlock(state, here);
   if (block) return { ok: false, message: block };
   if (o.hauler) return { ok: false, message: `${o.hauler.captain} has it on a route: recall the captain first.` };
+  // Passengers aboard go with you, and need their berths in the ship you take (docs/PROCGEN.md §23).
+  const berths = berthBlock(state, performanceOf(o.ship).berths);
+  if (berths) return { ok: false, message: `${berths} in the ${shipName(o.ship)}.` };
   const flown = state.ship;
   state.ship = o.ship;
   o.ship = flown;

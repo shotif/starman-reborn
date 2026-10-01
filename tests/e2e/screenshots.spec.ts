@@ -273,6 +273,22 @@ for (const size of SIZES) {
       await press(page, 'outpost-deliver-machinery');
       await expect(page.getByTestId('outpost-need-machinery')).toContainText('6/6 delivered');
       await shot(page, `${size.name}-7b-outpost`, size.touch, results);
+      // Passengers and sightseers (docs/PROCGEN.md §23): a cabin fitted, and a party's job open at Meridian Outpost's bar.
+      expect(await api<boolean>(page, 'fit', 'gear.cabin.2.toliman')).toBe(true);
+      let party: { id: string } | undefined;
+      for (let i = 0; i < 16 && !party; i++) {
+        party = (await api<{ id: string; title: string }[]>(page, 'board', 'meridian-outpost')).find((j) => /^(Sightseers|Passage) to /.test(j.title));
+        if (!party) await api(page, 'advanceClock', 1_500);
+      }
+      expect(party, 'a passage or a tour on Meridian Outpost’s board').toBeDefined();
+      await docked('meridian-outpost');
+      await press(page, 'room-bar');
+      if (!(await page.getByTestId('jobs-window').isVisible().catch(() => false))) await press(page, 'station-jobs');
+      const head = page.getByTestId(`job-${party!.id}`).locator('.job-head');
+      if (size.touch) await head.tap();
+      else await head.click();
+      await page.getByTestId(`job-party-${party!.id}`).scrollIntoViewIfNeeded();
+      await shot(page, `${size.name}-8-passengers`, size.touch, results);
       for (const [name, r] of Object.entries(results)) {
         expect.soft(r.overflow, `${name}: page overflow`).toBe(false);
         expect.soft(r.clipped, `${name}: clipped controls`).toEqual([]);

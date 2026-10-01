@@ -18,6 +18,7 @@ import { COMMODITIES } from '../economy/commodities.ts';
 import { getCatalog, shipModel } from '../content/catalog.ts';
 import { hashString } from '../content/random.ts';
 import { cargoCapacity, newShipState, performanceOf } from '../economy/loadout.ts';
+import { carriesPassengers, frighten, passengerFright, passengerGoodbye, passengerJobs, seeSight, sightseersArrive, sightsIn } from '../economy/passengers.ts';
 import { recordMarketVisit } from '../economy/trade.ts';
 import { adjustReputation, FACTIONS, standingTier, TIER_LABEL } from '../economy/factions.ts';
 import { eventsAt, newsAt, systemEventAt } from '../economy/events.ts';
@@ -45,7 +46,7 @@ import {
   wrecksIn,
   type JobEvent,
 } from '../economy/jobs.ts';
-import { postedContract, postedContracts } from '../economy/contracts.ts';
+import { partyName, postedContract, postedContracts } from '../economy/contracts.ts';
 import { briefingFor, choiceHere, denDown, isStoryJob, knockOutDen, makeChoice, markSeen, optionLock, pendingBeats, speakerName } from '../economy/story.ts';
 import { DENS } from '../content/dens/rules.ts';
 import { showChoice, showDialogue } from '../ui/story.ts';
@@ -188,6 +189,8 @@ export class Game {
   private objectiveTimer = 0;
   /** Seconds until the fleet is next settled in flight (docs/PROCGEN.md §18.6). */
   private fleetTimer = 0;
+  /** Game clock when passengers last said they were frightened (docs/PROCGEN.md §23). */
+  private lastFright = -Infinity;
   private objectiveText: string | null = null;
   /** The "what next" suggestion for this flight (worked out once per launch or arrival). */
   private hint: string | null = null;
@@ -741,14 +744,17 @@ export class Game {
       if (e.kind === 'complete') {
         const job = getJob(e.jobId, this.state!);
         const bonus = e.text.includes('on-time bonus') ? job.contract?.urgent?.bonus ?? 0 : 0;
+        const paid = e.paid ?? job.reward + bonus;
         this.sfx('mission-complete');
-        if (job.reward + bonus === 0) toast(`${job.title} complete`, 'good', 5000);
-        else toast(`${job.title} complete: +${formatCredits(job.reward + bonus)}${bonus ? ' with the on-time bonus' : e.text.includes('(late') ? ' (late: no bonus)' : ''}`, 'good', 5000);
-        // The poster's dispatcher confirms the payment (story missions have their own words).
-        if (job.reward + bonus > 0 && !job.story) {
+        if (paid === 0) toast(`${job.title} complete`, 'good', 5000);
+        else toast(`${job.title} complete: +${formatCredits(paid)}${bonus ? ' with the on-time bonus' : e.text.includes('(late') ? ' (late: no bonus)' : e.text.includes('rough trip') ? ' (a rough trip cut the fare)' : ''}`, 'good', 5000);
+        // The poster's dispatcher confirms the payment (story missions have their own words); passengers say goodbye.
+        if (paid > 0 && !job.story) {
           const giver = getLocation(job.giverLocationId);
           const lines = PAYMENT[giver.factionId ?? 'independent'];
-          commToast(`${giver.name} dispatch`, fill(lines[hashString(e.jobId) % lines.length]!, { amount: formatCredits(job.reward + bonus) }), 4500);
+          const goodbye = carriesPassengers(job) ? passengerGoodbye(job) : null;
+          if (goodbye) commToast(goodbye.speaker, goodbye.text, 4500);
+          else commToast(`${giver.name} dispatch`, fill(lines[hashString(e.jobId) % lines.length]!, { amount: formatCredits(paid) }), 4500);
         }
       } else if (e.kind === 'failed') {
         this.sfx('ui-error');
@@ -951,6 +957,24 @@ export class Game {
           this.persist();
         },
         onComm: (speaker, text) => this.comm(speaker, text, 5000),
+        // Sightseers at their sight (docs/PROCGEN.md §23): they say so, and the tour heads home.
+        onSight: (jobId) => {
+          const line = seeSight(state, jobId);
+          if (!line) return;
+          this.comm(line.speaker, line.text, 7000);
+          this.announceJobEvents(advanceJobs(state, { dockedAt: null, systemId: state.location.systemId }));
+          this.persist();
+        },
+        // A hit on the hull frightens passengers aboard: it comes off their fare, and they say so (at most every 20 s).
+        onHullHit: (share) => {
+          const scared = frighten(state, share);
+          if (!scared.length) return;
+          if (state.clock - this.lastFright > 20) {
+            this.lastFright = state.clock;
+            const line = passengerFright(scared[0]!, String(Math.floor(state.clock)));
+            this.comm(line.speaker, line.text, 4000);
+          }
+        },
         // A unit cut counts for mining claims on its belt (docs/PROCGEN.md §19); the hold itself autosaves.
         onMined: (beltId, commodity) => {
           const events = countMined(state, beltId, commodity);
@@ -997,6 +1021,13 @@ export class Game {
     this.refreshFlightUi();
     this.soundscape.flight(this.system!.def, moodFor(state.location.systemId), state, this.flight.player.position);
     this.tellStory();
+    // Sightseers whose sight is in this system say so as they arrive (docs/PROCGEN.md §23).
+    if (spawn.kind === 'arrival') {
+      for (const s of sightsIn(state, state.location.systemId)) {
+        const line = state.contracts[s.jobId] ? sightseersArrive(state.contracts[s.jobId]!) : null;
+        if (line) this.comm(line.speaker, line.text, 5000);
+      }
+    }
   }
 
   /** Traffic for the system the player flies in: the plan, and everything their contracts and story put there. */
@@ -1017,6 +1048,7 @@ export class Game {
       defences: defencesIn(state, here),
       downDens,
       crew: state.crew.map((w) => ({ id: w.id, name: w.name, model: w.model, skill: w.skill })),
+      sights: sightsIn(state, here),
       lingering: this.takeLingering(),
     };
   }
@@ -1220,6 +1252,8 @@ export class Game {
     });
     const r = rescueAfterDefeat(state);
     toast(`Rescued: −${formatCredits(r.fee)}`, 'bad');
+    // Passengers leave with the tug's crew: their trips are over (docs/PROCGEN.md §23).
+    this.announceJobEvents(passengerJobs(state).flatMap((c) => failJob(state, c.id, `${partyName(c.contract?.party ?? [])} left with the tug’s crew`) ?? []));
     await this.saves.save(state);
     this.enterDocked(r.dockId, {});
   }

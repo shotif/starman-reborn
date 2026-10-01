@@ -2007,3 +2007,81 @@ have it; the shared lists never do), its dock in the scene, the stages (the mark
 frame, the board with the station, consumables at the port), that nobody else's prices or board
 change, its income by the hour however often it is settled, captains hired to it, and saves that
 keep it and refuse a damaged one.
+
+## 23. Passengers and sightseers
+
+People, not only cargo: fares between stations, and tours out to the real sky's sights, carried in
+a passenger cabin (`src/economy/passengers.ts`; rules in `PASSENGERS`,
+`src/content/passengers/rules.ts`; the sights in `src/content/passengers/sights.ts`; what
+passengers say in `src/content/passengers/lines.ts`). The passengers, their names and their words
+are fiction. Every sight is a body or a belt the archives list, and every number a sightseer says
+is printed from that record, never written into a line.
+
+### 23.1 Cabins and berths
+
+A passenger cabin is a utility fitting, a gear family like any other (§9): two berths at class 1,
+three at class 2 and four at class 3, for about 235–565 cr, and it costs a little top speed (3%).
+Three makers build them: Halden's *Snug* (classes 1–2), Toliman's *Bunkhouse* (1–3) and Eridani's
+*Houseboat* (1–2), sold at outfitters as their other gear is. A ship's berths are its cabins'
+total. With passengers aboard, a cabin they need cannot be sold, and the player cannot switch to a
+ship (or keep one) with too few berths for them.
+
+### 23.2 Passages and tours
+
+The contract boards (§10) post two new kinds, where people travel: trade ports, relays, farms and
+free ports post passages; research stations, trade ports, relays and Sirius's platform post tours.
+
+- **A passage** takes a party of 1–3 to another open station within 3 jumps. Fare: 140, 120 a
+  jump, 90 a passenger, scaled by the route's danger as other work is.
+- **A tour** takes a party of 1–4 to see a sight within 2 jumps and back to the station that
+  posted it. Fare: 220, 150 a jump, 110 a passenger, times the sight's interest (`interest`: a
+  planet 1, a giant 1.15, a belt 1.2, a brown dwarf 1.3, a white dwarf 1.4).
+
+Each passenger needs a free berth: a job a party would not fit says so on the board ("Needs 2
+free passenger berths (you have 1): fit a passenger cabin") and cannot be taken. The job card
+names the party and the berths it needs.
+
+**The sights** are every confirmed planet (a giant above `GIANT_EARTH_MASSES`), every white dwarf
+(spectral class D) and brown dwarf (L, T, Y) the archives list, and every belt or debris disc a
+cited source reports: 143 sights in 100 systems today (68 planets, 9 giants, 11 white dwarfs, 46
+brown dwarfs, 9 belts). A good look is within `sightRange` (9,000 units) of a planet's or dwarf's
+surface, or inside a belt's band (`sightInView`, `src/world/sightseeing.ts`). It counts whether
+the body was scanned before or not. A tour is a trip out: it never goes to a sight in view from
+where a pilot jumps in (three planets today, whose systems' beacons sit close by, are left out of
+tours) or from the dock that posts it.
+
+### 23.3 What they say, and fright
+
+The party's first passenger speaks for it, over the radio:
+
+- arriving in the sight's system ("{system} at last. Where is {sight}?");
+- at the sight, a line about it filled from its record (`SIGHT_LINES`): a planet's period, its
+  mass (an archive's minimum mass is said as "at least"), its distance from its star, its width,
+  the year and the way it was found; a dwarf's spectral type or distance; a belt's source. A line
+  is only picked when the record has every field it needs, and every sight has a line that needs
+  none;
+- at home, or at the passage's end, a thank-you.
+
+Passengers hate a fight. Each share of the hull the ship loses with them aboard (shields do not
+count) takes `perHull` (1.5) times that share off their fare, never below `floor` (40%) of it: a
+hit taking a tenth of the hull costs 15% of the fare. They say so, at most once every 20 seconds.
+The fare paid says what a rough trip cost. If the ship is lost, they leave with the tug's crew
+and the job fails.
+
+### 23.4 Guardrails
+
+`validatePassengers` (`src/economy/passengerGuards.ts`, run in `tests/unit/passengers.test.ts`):
+parties no cabin is too small for, the same reach as the contract boards, fares that are positive,
+a fright that cuts a fare but never wipes it out, interests within 1–2 and a positive sight range;
+no line with a number of its own or a field it cannot fill, and a line for every kind of sight that
+needs no field; every sight a record of the catalogue (a confirmed planet, a dwarf of its class, a
+cited belt) with a target in its system's scene and a fact for every field it gives; every tour
+sight out of view from its system's arrival point and beacons, and nine in ten sights at least left
+to tours. The contract guardrails (§10) check that each posted passage goes to another open station
+and each tour to a sight of the system it names, out of view from the beacons and the dock that
+posted it, and back. The tests also break the guardrails (a number in a line, a field it cannot
+fill, a planet that is not real) to see them caught; carry a passage with a fright to its fare's
+floor; take a tour out to its sight (scanned before, still to be seen) and home; see a planet from
+within range and a belt from inside its band in a flight scene, and nothing at the arrival point;
+feel hull hits and not shield hits; and keep a party, a sight seen and a fright in a save while
+refusing a damaged one.

@@ -8,13 +8,14 @@ when it is done, so the game stays playable throughout. Status: ✅ done · 🔨
 After the scripted opening (10–20 minutes), the neighbourhood is an open sandbox: 207 real
 systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
 of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
-packs in lawless space; 39 ships and 139 pieces of equipment; and generated contracts on every job
-board. Increments 1–20 (under [Done so far](#done-so-far)) added world events and news, contracts
+packs in lawless space; 39 ships and 146 pieces of equipment; and generated contracts on every job
+board. Increments 1–21 (under [Done so far](#done-so-far)) added world events and news, contracts
 of every kind, the law and the outlaw path, goals, five story arcs, combat depth, people in the
 bars and a trade computer, a world that answers, a fleet of your own whose captains fly the lanes,
-a station of your own, mining in the real belts, the frontier with a life of its own, a border war
-whose fronts can be won for good, story endings that change stations for good, escorts and convoys
-across jumps, haulers with real cargo on a timetable, and a game measured and tuned on a real phone.
+a station of your own, passengers and sightseers, mining in the real belts, the frontier with a
+life of its own, a border war whose fronts can be won for good, story endings that change
+stations for good, escorts and convoys across jumps, haulers with real cargo on a timetable, and a
+game measured and tuned on a real phone.
 
 What it lacks now:
 
@@ -24,15 +25,9 @@ What it lacks now:
 
 ## Proposed next increments
 
-Candidates for what comes next, in the order they will be built (the first three chosen by the
-owner on 1 October 2026 as fresh directions, with A station of your own, now done):
-
-### Passengers and sightseers ⏳ (M)
-
-A passenger cabin; fares between stations, and sightseers (fiction) who pay to be flown close to
-real sights from the codex (Proxima b, Epsilon Eridani's belts, Sirius B), commenting as they go. A
-fight with passengers aboard costs their fare. The real sky pays its way; today the codex is only
-a record.
+Candidates for what comes next, in the order they will be built (the first two were chosen by the
+owner on 1 October 2026 as fresh directions, along with A station of your own and Passengers and
+sightseers, both now done):
 
 ### Rival pilots ⏳ (M)
 
@@ -62,6 +57,18 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 21. Passengers and sightseers ✅
+
+People, not only cargo. Fit a passenger cabin (two to four berths, from three makers, for a little
+top speed) and the boards post fares: passages for a party of one to three to another station, and
+tours for sightseers who pay to be flown close to a real sight within two jumps and brought home.
+The sights are the real sky's: 143 confirmed planets, white and brown dwarfs and belts, the rarer
+paying more. Come close enough for a good look and they say so, with a fact from the archives'
+record of it (a planet's year, its mass, when and how it was found), never one made up. They hate
+a fight: each hit to the hull with them aboard comes off the fare, down to 40% of it, and they say
+that too. The real sky now pays its way, not only the codex
+([PROCGEN.md §23](PROCGEN.md#23-passengers-and-sightseers)).
 
 ### 20. A station of your own ✅
 

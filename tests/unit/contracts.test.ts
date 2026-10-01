@@ -284,7 +284,7 @@ describe('contracts II', () => {
       for (const id of GENERATED) {
         const job = boardFor(id, epoch).find((c) => c.contract?.kind === 'parcel' && !c.requires && !c.contract.urgent);
         const next = job ? followUpFor(job, epoch * CONTRACTS.epochSeconds) : null;
-        if (job && next) {
+        if (job && next && !next.requires) {
           found = { job, epoch, next };
           break;
         }

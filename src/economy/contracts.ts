@@ -5,6 +5,9 @@ import { BORDER } from '../content/border/rules.ts';
 import { LAW } from '../content/law/rules.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
 import { beltGoods } from '../content/mining/rules.ts';
+import { PASSENGERS } from '../content/passengers/rules.ts';
+import type { Sight } from '../content/passengers/sights.ts';
+import { FIRST_NAMES, LAST_NAMES } from '../content/people/lines.ts';
 import { hashString, rng, type Rng } from '../content/random.ts';
 import type { LastingMark } from '../content/story/marks.ts';
 import { jumpsFrom } from '../content/world/network.ts';
@@ -13,6 +16,7 @@ import { ALL_LOCATIONS, BELTS, getLocation, getSystem, isFrontier, saveLocations
 import type { FactionId, FictionalLocation, SystemId } from '../data/types.ts';
 import { findRoute } from '../galaxy/routing.ts';
 import { FLEETS } from '../world/traffic/plan.ts';
+import { inViewFromStation, tourSights } from '../world/sightseeing.ts';
 import { trafficFor } from '../world/traffic/setup.ts';
 import { atWar, decisiveOpen, EXPOSED, FRONTS, frontState, momentum, occupied, settledKey, type FrontState } from './border.ts';
 import { itemsThatFit } from './cargo.ts';
@@ -21,6 +25,7 @@ import { FACTIONS } from './factions.ts';
 import { dockAccess, lawIn, scansOnDocking, wakeFriendly } from './law.ts';
 import type { JobDef } from './jobs.ts';
 import { cargoCapacity } from './loadout.ts';
+import { berths } from './passengers.ts';
 import { marketTables } from './markets.ts';
 
 /**
@@ -228,6 +233,10 @@ function makeContract(kind: ContractKind, giver: FictionalLocation, r: Rng, id: 
     case 'rescue':
       // Only ever posted as work answering a drive failure (eventContract).
       return null;
+    case 'passage':
+      return passage(giver, r, id);
+    case 'tour':
+      return tour(giver, r, id);
   }
 }
 
@@ -663,6 +672,79 @@ function claim(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
   };
 }
 
+// ---------------------------------------------------------------- passengers and sightseers (docs/PROCGEN.md §23)
+
+/** A party of passengers (fiction): `n` different names. */
+function party(r: Rng, [lo, hi]: readonly [number, number]): string[] {
+  const n = lo + Math.floor(r.next() * (hi - lo + 1));
+  const names = new Set<string>();
+  while (names.size < n) names.add(`${r.pick(FIRST_NAMES)} ${r.pick(LAST_NAMES)}`);
+  return [...names];
+}
+
+/** A party as the board says it: "Ada Moss", "Ada Moss and Jon Hale", "Ada Moss and two others". */
+export function partyName(names: readonly string[]): string {
+  if (names.length <= 1) return names[0] ?? 'Nobody';
+  if (names.length === 2) return `${names[0]} and ${names[1]}`;
+  return `${names[0]} and ${['two', 'three', 'four', 'five'][names.length - 3] ?? names.length - 1} others`;
+}
+
+const wants = (names: readonly string[]) => (names.length === 1 ? 'wants' : 'want');
+
+const BERTHS_NOTE = 'A berth each in a passenger cabin (an outfitter fits one in a utility slot); every hit your hull takes with them aboard comes off the fare.';
+
+/** Passage: a party to another open station within reach, paid by the distance and the heads. */
+function passage(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
+  const options = openStations().filter((l) => l.id !== giver.id && jumpsBetween(giver.systemId, l.systemId) <= CONTRACTS.maxJumps.passage);
+  if (!options.length) return null;
+  const dest = r.pick(options);
+  const names = party(r, PASSENGERS.passage.party);
+  const rw = PASSENGERS.passage.reward;
+  const reward = pay(r, routeFeeBetween(giver.systemId, dest.systemId), rw.base + rw.perJump * jumpsBetween(giver.systemId, dest.systemId) + rw.perPassenger * names.length);
+  return {
+    ...common(giver, id, difficultyFor(giver.systemId, dest.systemId)),
+    title: `Passage to ${dest.name}`,
+    briefing: `${partyName(names)} ${wants(names)} passage to ${place(dest)}. ${BERTHS_NOTE}`,
+    objectives: [{ kind: 'visit', locationId: dest.id, text: `Take ${partyName(names)} to ${place(dest)}` }],
+    reward,
+    difficultyNote: routeNote(giver.systemId, dest.systemId),
+    destinationLocationId: dest.id,
+    contract: { kind: 'passage', party: names },
+  };
+}
+
+const SIGHT_WORD: Record<Sight['kind'], string> = {
+  planet: 'a world round another star',
+  giant: 'a giant world round another star',
+  'white-dwarf': 'a white dwarf, the core of a star that died',
+  'brown-dwarf': 'a brown dwarf, too small to shine as a star does',
+  belt: 'a belt of rock and dust round its star',
+};
+
+/** Sightseers: a party to see a sight of the real sky within reach, then home again, paid by its interest. */
+function tour(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
+  const sights = tourSights().filter((s) => jumpsBetween(giver.systemId, s.systemId) <= CONTRACTS.maxJumps.tour && !inViewFromStation(s, giver.id));
+  if (!sights.length) return null;
+  const sight = r.pick(sights);
+  const names = party(r, PASSENGERS.tour.party);
+  const rw = PASSENGERS.tour.reward;
+  const varying = (rw.base + rw.perJump * jumpsBetween(giver.systemId, sight.systemId) + rw.perPassenger * names.length) * PASSENGERS.interest[sight.kind];
+  const system = getSystem(sight.systemId).displayName;
+  return {
+    ...common(giver, id, difficultyFor(giver.systemId, sight.systemId)),
+    title: `Sightseers to ${sight.name}`,
+    briefing: `${partyName(names)} ${wants(names)} to see ${sight.name}, ${SIGHT_WORD[sight.kind]} in ${system}, with their own eyes. Fly close enough for a good look, then bring them back to ${giver.name}. ${BERTHS_NOTE}`,
+    objectives: [
+      { kind: 'sight', sightId: sight.id, systemId: sight.systemId, targetId: sight.targetId, text: `Show ${partyName(names)} ${sight.name} (${system})` },
+      { kind: 'visit', locationId: giver.id, text: `Bring ${partyName(names)} back to ${giver.name}` },
+    ],
+    reward: pay(r, routeFeeBetween(giver.systemId, sight.systemId), varying),
+    difficultyNote: routeNote(giver.systemId, sight.systemId),
+    destinationLocationId: giver.id,
+    contract: { kind: 'tour', party: names },
+  };
+}
+
 /** Recoveries: find a wreck near a station, tractor in what it carried, and bring it back. */
 function recovery(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
   const sites = ALL_LOCATIONS.filter((l) => l.status === 'functional' && l.id !== giver.id && jumpsBetween(giver.systemId, l.systemId) <= CONTRACTS.maxJumps.recovery);
@@ -922,6 +1004,10 @@ export function contractBlock(state: GameState, job: JobDef): string | null {
     return `Needs ${c.cargo.qty * COMMODITIES[c.cargo.commodity].unitSize} free hold units`;
   }
   if (c.deposit && state.credits < c.deposit) return `Needs ${c.deposit} cr for the deposit`;
+  if (c.party && !state.jobs[job.id] && berths(state).free < c.party.length) {
+    const { free } = berths(state);
+    return `Needs ${c.party.length} free passenger berth${c.party.length === 1 ? '' : 's'} (you have ${free}): fit a passenger cabin`;
+  }
   if (c.decisive && c.front && state.world.border[c.front]?.ending && !state.jobs[job.id]) return 'That front is settled';
   const o = job.objectives[0];
   if (c.kind === 'survey' && o?.kind === 'scan' && state.discoveredBodies.includes(o.bodyId)) return 'You have already scanned this planet';
