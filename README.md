@@ -151,7 +151,8 @@ The 2D view zooms the same way, and a drag (or the arrow keys) moves it.
 
 Settings include alternate desktop steering (drag-to-steer, or keyboard steer with mouse aim),
 invert pitch, a left-handed touch layout, aim assist (Off/Low/Medium, touch default Low), difficulty,
-quality presets, text size, reduced motion, camera shake, bloom and volume. A mouse or keyboard
+quality presets (Auto starts at Medium and steps down on a device that cannot keep up), text
+size, reduced motion, camera shake, bloom and volume. A mouse or keyboard
 attached to a tablet switches it to the desktop controls automatically.
 
 ## Project layout

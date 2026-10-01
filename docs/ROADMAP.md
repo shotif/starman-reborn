@@ -17,9 +17,9 @@ jumps.
 
 What it lacks now:
 
-- **Real phones.** Every test runs in a desktop browser with emulated phones and touch. The title
-  now shows at once and the game loads behind it, measured on a simulated slow phone network; on a
-  real phone, only the star map's pinch zoom has been tried (it works).
+- **More real phones.** The automated tests run in a desktop browser with emulated phones and
+  touch. One real phone, a recent high-end Android, has passed the whole checklist (99 fps on High,
+  Play 1.1 s after opening the site over 4G); an iPhone and a mid-range phone have not been tried.
 
 ## Proposed next increments
 
@@ -37,8 +37,12 @@ Candidates for what comes next, in the order I would build them:
 - ✅ **A device report** in Settings: the phone, browser, screen, safe areas and graphics chip,
   the load times, the last flight's frame rate and whether the game is kept for offline play, as
   text to copy with one tap, so the checklist below takes minutes to report.
-- ⏳ The real-device checklist in [TEST_RECORD.md](TEST_RECORD.md) on an Android phone and an
-  iPhone (this needs you; pinch zoom is confirmed on Android), then tuning from what it finds.
+- ✅ **The real-device checklist on an Android phone** (a recent high-end one): all fine, 99 fps on
+  High, and a first load over 4G with the title at 0.5 s and Play at 1.1 s. Tuned from it: offline
+  play retries a failed download (it had kept 13 of 15 files), and Auto quality starts at Medium
+  instead of Low on every phone, stepping down only where frames stay slow; half-rate docked and
+  menu screens no longer lower the resolution on 60 Hz screens.
+- ⏳ The same checklist on an iPhone or iPad, and on a mid-range phone (this needs you).
 
 ### How an increment ships
 

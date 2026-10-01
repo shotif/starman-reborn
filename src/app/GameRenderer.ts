@@ -1,28 +1,17 @@
 import * as THREE from 'three';
 import type { QualityLevel } from '../world/art/types.ts';
 import type { BloomChain } from './bloom.ts';
+import { AUTO_QUALITY, FrameGovernor, PRESETS, type Preset } from './frameGovernor.ts';
 import type { QualitySetting } from './settings.ts';
-
-interface Preset {
-  dprCap: number;
-  frameBudgetMs: number;
-  bloom: boolean;
-}
-
-const PRESETS: Record<QualityLevel, Preset> = {
-  low: { dprCap: 1, frameBudgetMs: 1000 / 30, bloom: false },
-  medium: { dprCap: 1.5, frameBudgetMs: 1000 / 60, bloom: false },
-  high: { dprCap: 2, frameBudgetMs: 1000 / 60, bloom: true },
-};
 
 export function isTouchDevice(): boolean {
   return typeof window !== 'undefined' && (window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0);
 }
 
-/** 'auto' picks the low preset on phones/tablets and medium on desktops. */
+/** 'auto' starts every device at Medium (frameGovernor.ts); it may step down from there. */
 export function resolveQuality(setting: QualitySetting): QualityLevel {
   if (setting !== 'auto') return setting;
-  return isTouchDevice() ? 'low' : 'medium';
+  return AUTO_QUALITY.start;
 }
 
 /**
@@ -33,9 +22,8 @@ export function resolveQuality(setting: QualitySetting): QualityLevel {
 export class GameRenderer {
   readonly renderer: THREE.WebGLRenderer;
   readonly canvas: HTMLCanvasElement;
-  quality: QualityLevel;
-  /** Multiplier applied on top of the capped DPR (0.55..1), driven by frame time. */
-  dynamicScale = 1;
+  /** Frame rate, dynamic resolution and Auto's steps down. */
+  private readonly governor: FrameGovernor;
   /** Frames drawn so far (the browser tests watch it stop and start with the WebGL context). */
   framesDrawn = 0;
   onContextLost: (() => void) | null = null;
@@ -45,17 +33,13 @@ export class GameRenderer {
   private bloomAllowed = true;
   private bloom: BloomChain | null = null;
   private bloomLoading = false;
-  private frameTimes: number[] = [];
-  private slowFor = 0;
-  private fastFor = 0;
   private width = 0;
   private height = 0;
   private dpr = 1;
-  fps = 0;
 
   constructor(canvas: HTMLCanvasElement, quality: QualityLevel) {
     this.canvas = canvas;
-    this.quality = quality;
+    this.governor = new FrameGovernor(quality);
     this.renderer = new THREE.WebGLRenderer({
       canvas,
       antialias: !isTouchDevice(),
@@ -87,6 +71,16 @@ export class GameRenderer {
     return this.dpr;
   }
 
+  /** The preset in use (Auto may have stepped it down). */
+  get quality(): QualityLevel {
+    return this.governor.quality;
+  }
+
+  /** Frames drawn per second, recently. */
+  get fps(): number {
+    return this.governor.fps;
+  }
+
   /** What the browser says about its WebGL, for the device report (null while the context is lost). */
   graphicsInfo(): { webgl2: boolean; gpu: string; maxTexture: number } | null {
     if (this.contextLost) return null;
@@ -100,11 +94,10 @@ export class GameRenderer {
     return { webgl2: typeof WebGL2RenderingContext !== 'undefined' && gl instanceof WebGL2RenderingContext, gpu, maxTexture: this.renderer.capabilities.maxTextureSize };
   }
 
-  setQuality(quality: QualityLevel, bloomAllowed: boolean): void {
-    this.quality = quality;
+  /** A preset from Settings; `autoSteps` lets Auto step it down on a device that cannot keep up. */
+  setQuality(quality: QualityLevel, bloomAllowed: boolean, autoSteps = false): void {
     this.bloomAllowed = bloomAllowed;
-    this.dynamicScale = 1;
-    this.frameTimes = [];
+    this.governor.reset(quality, autoSteps);
     if (!this.useBloom) this.disposeComposer();
     this.resize(true);
   }
@@ -118,7 +111,7 @@ export class GameRenderer {
   resize(force = false): void {
     const w = Math.max(1, Math.floor(this.canvas.clientWidth || window.innerWidth));
     const h = Math.max(1, Math.floor(this.canvas.clientHeight || window.innerHeight));
-    const dpr = Math.max(0.5, Math.min(window.devicePixelRatio || 1, this.preset.dprCap) * this.dynamicScale);
+    const dpr = Math.max(0.5, Math.min(window.devicePixelRatio || 1, this.preset.dprCap) * this.governor.scale);
     if (!force && w === this.width && h === this.height && Math.abs(dpr - this.dpr) < 0.01) return;
     this.width = w;
     this.height = h;
@@ -170,37 +163,15 @@ export class GameRenderer {
   }
 
   /**
-   * Feed the measured frame interval. Lowers the resolution scale when frames run over budget
-   * and slowly restores it when there is headroom.
+   * Feed the measured frame interval, drawn every `refreshes` display refreshes (2 at half rate on
+   * docked and menu screens). Lowers the resolution when frames run over budget, restores it with
+   * headroom, and under Auto steps the preset down on a device that cannot keep up.
    */
-  recordFrame(dtSeconds: number): void {
-    const ms = dtSeconds * 1000;
-    this.frameTimes.push(ms);
-    if (this.frameTimes.length > 30) this.frameTimes.shift();
-    const avg = this.frameTimes.reduce((a, b) => a + b, 0) / this.frameTimes.length;
-    this.fps = avg > 0 ? 1000 / avg : 0;
-    if (this.frameTimes.length < 20) return;
-    const budget = this.preset.frameBudgetMs;
-    if (avg > budget * 1.2) {
-      this.slowFor += dtSeconds;
-      this.fastFor = 0;
-    } else if (avg < budget * 0.75) {
-      this.fastFor += dtSeconds;
-      this.slowFor = 0;
-    } else {
-      this.slowFor = 0;
-      this.fastFor = 0;
-    }
-    if (this.slowFor > 1.5 && this.dynamicScale > 0.55) {
-      this.dynamicScale = Math.max(0.55, this.dynamicScale - 0.1);
-      this.slowFor = 0;
-      this.frameTimes = [];
-      this.resize(true);
-    } else if (this.fastFor > 4 && this.dynamicScale < 1) {
-      this.dynamicScale = Math.min(1, this.dynamicScale + 0.05);
-      this.fastFor = 0;
-      this.resize(true);
-    }
+  recordFrame(dtSeconds: number, refreshes = 1): void {
+    const change = this.governor.record(dtSeconds, refreshes, window.devicePixelRatio || 1);
+    if (!change) return;
+    if (change === 'quality' && !this.useBloom) this.disposeComposer();
+    this.resize(true);
   }
 
   dispose(): void {

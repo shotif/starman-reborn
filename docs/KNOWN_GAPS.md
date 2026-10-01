@@ -4,16 +4,15 @@ This is an honest list of what the prototype does not do yet, or what has not be
 
 ## Needs your action
 
-1. **Real-device testing has barely started.** Everything was tested in headless Chromium with
-   emulated phone and tablet viewports, touch events, multi-touch and a gamepad (see
-   [TEST_RECORD.md](TEST_RECORD.md)). On a real phone, only the star map's pinch zoom has been
-   confirmed so far (1 October 2026); nothing else has run on a physical iPhone, iPad or Android
-   device, or with a physical controller. Please run the rest of the hands-on checklist in the test
-   record over HTTPS, at <https://shotif.github.io/starman-reborn/>, and paste the device report
+1. **Real-device testing has started on one phone.** The automated tests run in headless Chromium
+   with emulated phone and tablet viewports, touch events, multi-touch and a gamepad (see
+   [TEST_RECORD.md](TEST_RECORD.md)). One real phone, the owner's Android, has passed the hands-on
+   checklist (1 October 2026); nothing has run on a physical iPhone, iPad or mid-range phone yet, or
+   with a physical controller. Please run the checklist in the test record on one, over HTTPS, at
+   <https://shotif.github.io/starman-reborn/>, and paste the device report
    (Settings → **Copy report**) with your notes: it carries the load times, the frame rate and
-   whether offline play is ready. The first report, from the owner's Android phone (a recent
-   high-end one), showed 99 fps on average on High with bloom; a mid-range phone, an iPhone and a
-   first load over a phone network (in a private tab) are still to come.
+   whether offline play is ready. On the Android phone (a recent high-end one): 99 fps on average
+   on High with bloom, and over 4G the title at 0.5 s and Play at 1.1 s.
 
 ## The sky, as verified
 
@@ -33,10 +32,11 @@ snapshot branch only when the archives changed.
 
 ## Not verified here
 
-- **Frame-rate targets** (60 fps on a laptop, 30 fps on a mid-range phone during the fight) could
-  not be measured: the test browser renders WebGL in software (SwiftShader, ~10–20 fps at any
-  size). Dynamic resolution and the Low preset exist for phones, but real numbers need real
-  hardware.
+- **Frame-rate targets** (60 fps on a laptop, 30 fps on a mid-range phone during the fight): the
+  test browser renders WebGL in software (SwiftShader, ~10–20 fps at any size), so only real
+  devices tell. The one real phone so far is a recent high-end Android (99 fps on High); how a
+  mid-range phone fares, and whether Auto's step down to Low comes when it should there, is not
+  known yet.
 - **iOS Safari audio.** The unlock follows the iOS rules (context created inside a gesture, silent
   buffer, resume on interruption). Only Chromium was exercised. On iPhone, sound also depends on
   the Ring/Silent switch; the settings screen explains this.

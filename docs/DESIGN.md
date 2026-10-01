@@ -140,9 +140,13 @@ the career ([§13](PROCGEN.md#13-goals)), and three hand-written faction arcs te
 - One WebGL 2 `WebGLRenderer` is shared by flight, docked backdrops and the map. ACES tone mapping
   and sRGB output.
 - Quality presets: Low (DPR ≤ 1, 30 fps budget), Medium (DPR ≤ 1.5) and High (DPR ≤ 2 plus bloom,
-  loaded lazily). `Auto` picks Low on touch devices and Medium on desktop. Dynamic resolution
-  lowers the pixel ratio (down to ×0.55) when frames run over budget and restores it with
-  headroom.
+  loaded lazily). `Auto` starts every device at Medium (the first real phone tried ran High at
+  99 fps, so Low for every touch screen wasted most phones) and steps down a preset, for the rest of
+  the session, on a device that stays over budget with the resolution already at its floor; it
+  never steps up, and a preset chosen in Settings never moves. Dynamic resolution lowers the pixel
+  ratio (down to ×0.55) when frames run over budget and restores it with headroom; frames on
+  screens drawn at half rate are judged per display refresh, so saving battery is not taken for
+  slowness (`src/app/frameGovernor.ts`).
 - The loop stops while the tab is hidden and renders at roughly half rate on docked and menu
   screens.
 - WebGL context loss shows a recoverable overlay with a reload path.

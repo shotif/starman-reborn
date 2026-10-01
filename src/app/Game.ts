@@ -124,6 +124,16 @@ function moodFor(systemId: SystemId): MusicMood {
   return cls === 'M' ? 'barnard' : cls === 'D' || cls === 'A' || cls === 'B' ? 'sirius' : cls === 'K' ? 'epsilon-eridani' : 'alpha-centauri';
 }
 
+/**
+ * Whether Auto quality may step down on this device. Not in test runs: the test browser draws on
+ * the CPU at a fraction of a phone's speed, so Auto would always step down there, and the tests
+ * would stop seeing what players see.
+ */
+const TEST_RUN = typeof location !== 'undefined' && new URLSearchParams(location.search).get('test') === '1';
+function autoSteps(settings: Settings): boolean {
+  return settings.quality === 'auto' && !TEST_RUN;
+}
+
 export class Game {
   readonly audio = new AudioEngine();
   /** Music, station ambience and local radio, kept in step with where the player is. */
@@ -187,7 +197,7 @@ export class Game {
     this.schemes = new SchemeTracker(isTouchDevice() ? 'touch' : 'desktop');
     this.scheme = this.schemes.scheme;
     this.renderer = new GameRenderer(canvas, resolveQuality(settings.quality));
-    this.renderer.setQuality(resolveQuality(settings.quality), settings.bloom && !settings.reducedMotion);
+    this.renderer.setQuality(resolveQuality(settings.quality), settings.bloom && !settings.reducedMotion, autoSteps(settings));
     this.screenLayer = h('div', { class: 'screen-layer passthrough' });
     const modalLayer = h('div', { class: 'modal-layer passthrough' });
     const toastLayer = h('div', { class: 'toasts', 'aria-live': 'polite' });
@@ -268,7 +278,7 @@ export class Game {
     this.settings = next;
     applyDocumentSettings(next);
     if (prev.quality !== next.quality || prev.bloom !== next.bloom || prev.reducedMotion !== next.reducedMotion || !persist) {
-      this.renderer.setQuality(resolveQuality(next.quality), next.bloom && !next.reducedMotion);
+      this.renderer.setQuality(resolveQuality(next.quality), next.bloom && !next.reducedMotion, autoSteps(next));
     }
     this.audio.setVolumes(next.volumes);
     this.audio.setMuted(next.muted);
@@ -1587,7 +1597,8 @@ export class Game {
 
   private tick(rawDt: number): void {
     const dt = rawDt * this.timeScale;
-    this.renderer.recordFrame(rawDt);
+    // Docked and menu screens draw every other refresh (Loop.lowPower), which is not slowness.
+    this.renderer.recordFrame(rawDt, this.loop.lowPower ? 2 : 1);
     if (this.mode === 'flight' && !this.paused) this.flightFrames.frame(rawDt);
     this.onResizeIfNeeded();
     this.fpsTimer -= rawDt;
