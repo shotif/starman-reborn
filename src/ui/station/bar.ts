@@ -232,6 +232,7 @@ function jobCard(ctx: StationContext, o: JobOffer, expanded: boolean, onSelect: 
     chain ? h('span', { class: 'job-tag chain' }, `Follow-up ${chain.step}/${CONTRACTS.chain.maxSteps}`) : null,
     urgent ? h('span', { class: 'job-tag urgent' }, `Urgent · ${urgent.seconds / 60} min`) : null,
     job.contract?.event ? h('span', { class: 'job-tag event' }, 'In the news') : null,
+    job.contract?.decisive ? h('span', { class: 'job-tag story' }, 'Settles the front for good') : null,
   ].filter(Boolean);
   const head = h(
     'button',

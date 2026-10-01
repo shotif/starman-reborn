@@ -3,7 +3,8 @@ import type { CommodityId } from '../economy/goods.ts';
 /**
  * Lasting marks (docs/PROCGEN.md §14.7): what a story's ending changes at a station for good, once
  * its finale is done. A mark moves the station's market like a world event that never ends, and
- * puts a standing run on its job board in every time slot. Everything here is fiction.
+ * puts a standing run on its job board in every time slot. Everything here is fiction. The marks a
+ * settled border front leaves are made from the fronts themselves (economy/marks.ts).
  */
 
 export interface LastingMark {
@@ -15,8 +16,10 @@ export interface LastingMark {
   detail: string;
   /** Price and normal-stock multipliers on the goods concerned (as a world event's). */
   market: { goods: readonly CommodityId[]; price: number; stock: number };
-  /** A haul the station posts in every time slot: its own produce to `to`, paid `premium` times the usual. */
-  run: { commodity: CommodityId; to: string; title: string; why: string; premium: number };
+  /** A haul the station posts in every time slot: its own produce to `to`, paid `premium` times the usual (none where it has no board, or nowhere to send it). */
+  run?: { commodity: CommodityId; to: string; title: string; why: string; premium: number };
+  /** Left when one of these border fronts is settled with this ending (economy/marks.ts), rather than by a story's finale. */
+  front?: { ids: readonly string[]; ending: 'law' | 'wake' };
 }
 
 /** What a mark may do, so a story's ending changes a station without breaking its market. */
@@ -61,6 +64,3 @@ export const LASTING_MARKS: readonly LastingMark[] = [
   },
 ];
 
-export function findMark(id: string): LastingMark | undefined {
-  return LASTING_MARKS.find((m) => m.id === id);
-}

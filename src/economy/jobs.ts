@@ -15,8 +15,8 @@ import { rating } from './progress.ts';
 import { denDown } from './dens.ts';
 import { dockAccess } from './law.ts';
 import { BORDER } from '../content/border/rules.ts';
-import { endFront, getFront, pushFront } from './border.ts';
-import { leaveMark } from './answers.ts';
+import { getFront, pushFront } from './border.ts';
+import { leaveMark, settleFront } from './answers.ts';
 
 export type Objective =
   | { kind: 'have-cargo'; commodity: CommodityId; qty: number; text: string }
@@ -55,8 +55,8 @@ export type Objective =
   | { kind: 'choice'; locationId: string; choiceId: string; prompt: string; options: readonly StoryOption[]; text: string }
   /** Knock out a raider den's turrets, then its reactor (JobProgress.assault). */
   | { kind: 'assault'; systemId: SystemId; locationId: string; text: string }
-  /** Hold a den against a lawful sweep: destroy `count` of its ships (JobProgress.kills). */
-  | { kind: 'defend'; systemId: SystemId; locationId: string; count: number; text: string }
+  /** Hold a den against a lawful sweep (the Authority's unless `faction` says): destroy `count` of its ships (JobProgress.kills). */
+  | { kind: 'defend'; systemId: SystemId; locationId: string; count: number; text: string; faction?: 'sta' | 'frontier' }
   /** Mine `qty` units of a good in a cited belt (JobProgress.mined; docs/PROCGEN.md §19). */
   | { kind: 'mine'; systemId: SystemId; beltId: string; commodity: CommodityId; qty: number; text: string }
   /**
@@ -105,6 +105,8 @@ export interface JobDef {
     /** War work (economy/border.ts): the front it is for, and whose side it pushes. */
     front?: string;
     side?: 'law' | 'wake';
+    /** A side's decisive operation: done, it settles the front for good (docs/PROCGEN.md §20.7). */
+    decisive?: true;
   };
   /** Story arc missions (content/story/arcs.ts): arc, step, speaker and beats. */
   story?: StoryMeta;
@@ -220,11 +222,12 @@ export function jobLockReason(state: GameState, job: JobDef): string | null {
     return `Needs ${cargo.qty * COMMODITIES[cargo.commodity].unitSize} free hold units`;
   }
   // Ace hunts and den assaults are for pilots with a record.
-  if ((job.contract?.kind === 'ace' || job.contract?.kind === 'den') && rating(state, 'combat').index < ACE_COMBAT_RANK) {
+  const strike = job.contract?.kind === 'den' || (job.contract?.decisive && job.contract.side === 'law');
+  if ((job.contract?.kind === 'ace' || strike) && rating(state, 'combat').index < ACE_COMBAT_RANK) {
     return `Needs a ${RATINGS.combat.ranks[ACE_COMBAT_RANK]![0]} combat rating`;
   }
   const assault = job.objectives[0];
-  if (job.contract?.kind === 'den' && assault?.kind === 'assault' && !state.jobs[job.id] && denDown(state, assault.locationId)) return `${getLocation(assault.locationId).name} is already dark`;
+  if (strike && assault?.kind === 'assault' && !state.jobs[job.id] && denDown(state, assault.locationId)) return `${getLocation(assault.locationId).name} is already dark`;
   // A lawful faction that is wary of you only trusts you with the easiest work.
   if (job.contract && job.factionId && job.factionId !== 'hollow-wake' && job.difficulty >= 2) {
     const tier = standingTier(state.reputation[job.factionId] ?? 0);
@@ -506,7 +509,12 @@ function payOut(state: GameState, job: JobDef): Payout {
     }
   }
   const settles = job.story?.settles;
-  if (settles) endFront(state, settles.front, settles.ending);
+  if (settles) settleFront(state, settles.front, settles.ending);
+  // A decisive operation settles its front for good, the way its side wanted (docs/PROCGEN.md §20.7).
+  if (front && job.contract?.decisive && !state.world.border[front.id]?.ending) {
+    settleFront(state, front.id, job.contract.side === 'wake' ? 'wake' : 'law');
+    note += `; ${front.name} is settled for good`;
+  }
   // A story's ending may change a station for good (docs/PROCGEN.md §14.7).
   if (job.story?.leaves) leaveMark(state, job.story.leaves);
   // A parcel or haul may lead to a follow-up at its destination.
@@ -750,11 +758,11 @@ export function assaultsIn(state: GameState, systemId: SystemId): { jobId: strin
 }
 
 /** Den defences under way in a system (sweep ships still to destroy). */
-export function defencesIn(state: GameState, systemId: SystemId): { jobId: string; locationId: string; count: number }[] {
+export function defencesIn(state: GameState, systemId: SystemId): { jobId: string; locationId: string; count: number; faction: 'sta' | 'frontier' }[] {
   return activeJobIds(state).flatMap((jobId) => {
     const o = currentObjective(state, jobId);
     const left = o?.kind === 'defend' ? o.count - (state.jobs[jobId]?.kills ?? 0) : 0;
-    return o?.kind === 'defend' && o.systemId === systemId && left > 0 ? [{ jobId, locationId: o.locationId, count: left }] : [];
+    return o?.kind === 'defend' && o.systemId === systemId && left > 0 ? [{ jobId, locationId: o.locationId, count: left, faction: o.faction ?? 'sta' }] : [];
   });
 }
 

@@ -213,8 +213,8 @@ export interface TrafficSetup {
   crew?: readonly { id: string; name: string; model: string; skill: 'steady' | 'sharp' }[];
   /** What the player left here last time (docs/PROCGEN.md §17): packs still hunting, pods adrift. */
   lingering?: Pick<Lingering, 'packs' | 'pods'>;
-  /** Den defences under way here: the den, and the sweep ships still to destroy. */
-  defences?: readonly { jobId: string; locationId: string; count: number }[];
+  /** Den defences under way here: the den, the sweep ships still to destroy, and whose sweep it is (the Authority's unless said). */
+  defences?: readonly { jobId: string; locationId: string; count: number; faction?: 'sta' | 'frontier' }[];
   /** Raider dens here that are knocked out (wrecked, silent and closed). */
   downDens?: readonly string[];
 }
@@ -429,7 +429,7 @@ export class FlightSession {
   /** Raider dens knocked out (before this flight or during it): wrecked, silent, closed. */
   private readonly downDens = new Set<string>();
   /** Den defences under way: the sweep ships still to come, wave by wave. */
-  private readonly sweeps: { jobId: string; locationId: string; waves: number[]; next: number; t: number }[] = [];
+  private readonly sweeps: { jobId: string; locationId: string; waves: number[]; next: number; t: number; faction: 'sta' | 'frontier' }[] = [];
   /** Convoys under way: when each ambush comes (fractions of the route) and how many have come. */
   private readonly convoys = new Map<string, { waves: number[]; next: number; level: 1 | 2 | 3; name: string }>();
   /** The player came through the jump beacon (not out of a dock): raiders may be waiting there for an escort. */
@@ -2864,7 +2864,7 @@ export class FlightSession {
     // One ship more than must be downed, spread over the waves.
     const total = d.count + 1;
     const waves = Array.from({ length: DENS.sweep.waves }, (_, i) => Math.ceil((total - i) / DENS.sweep.waves));
-    this.sweeps.push({ jobId: d.jobId, locationId: d.locationId, waves, next: 0, t: 6 });
+    this.sweeps.push({ jobId: d.jobId, locationId: d.locationId, waves, next: 0, t: 6, faction: d.faction ?? 'sta' });
     const pack = ++this.packSerial;
     const home = site.def.position.clone().addScaledVector(site.approach, site.radius + 900);
     this.packHome.set(pack, home);
@@ -2889,15 +2889,15 @@ export class FlightSession {
       for (let i = 0; i < count; i++) {
         const model = DENS.sweep.models[i % DENS.sweep.models.length]!;
         const position = from.clone().addScaledVector(heading, 800 + i * 60).add(this.tmp.set(this.rand() - 0.5, this.rand() - 0.5, this.rand() - 0.5).multiplyScalar(400));
-        const npc = this.makeNpc(model, 'patrol', 'sta', position, heading, `${FACTIONS.sta.shortName} sweep · hostile`);
-        npc.name = `${FACTIONS.sta.shortName} sweep`;
+        const npc = this.makeNpc(model, 'patrol', sw.faction, position, heading, `${FACTIONS[sw.faction].shortName} sweep · hostile`);
+        npc.name = `${FACTIONS[sw.faction].shortName} sweep`;
         npc.target.name = npc.name;
         npc.sweep = { locationId: sw.locationId };
         npc.contract = sw.jobId;
         npc.foe = 'player';
       }
       this.sfx('alert');
-      this.callbacks.onMessage(sw.next === 1 ? `${count} Transit Authority sweep ships inbound for ${getLocation(sw.locationId).name}!` : `A second wave: ${count} more sweep ships inbound!`, 'bad');
+      this.callbacks.onMessage(sw.next === 1 ? `${count} ${FACTIONS[sw.faction].shortName} sweep ships inbound for ${getLocation(sw.locationId).name}!` : `A second wave: ${count} more sweep ships inbound!`, 'bad');
     }
   }
 

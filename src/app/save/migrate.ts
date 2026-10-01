@@ -7,7 +7,7 @@ import type { SystemId } from '../../data/types.ts';
 import { clampShip, newShipState } from '../../economy/loadout.ts';
 import { COMMODITIES, COMMODITY_IDS } from '../../content/economy/goods.ts';
 import { COMBAT } from '../../content/combat/rules.ts';
-import { findMark } from '../../content/story/marks.ts';
+import { markById } from '../../economy/marks.ts';
 import { FLEET } from '../../content/fleet/rules.ts';
 import { createNewGame, SAVE_VERSION, type CommodityId, type GameState } from '../state.ts';
 
@@ -322,7 +322,7 @@ export function assertValidState(s: GameState): void {
     if (!isRecord(b) || !Array.isArray(b.deeds) || !b.deeds.every((d) => Array.isArray(d) && d.length === 2 && d.every(Number.isFinite))) fail('border');
     if (b.ending !== undefined && !['law', 'wake', 'truce'].includes(b.ending)) fail('border');
   }
-  if (w.marks !== undefined && (!isRecord(w.marks) || !Object.entries(w.marks).every(([id, t]) => !!findMark(id) && Number.isFinite(t)))) fail('world');
+  if (w.marks !== undefined && (!isRecord(w.marks) || !Object.entries(w.marks).every(([id, t]) => !!markById(id) && Number.isFinite(t)))) fail('world');
   for (const [sys, l] of Object.entries(w.lingering)) {
     if (!SYSTEM_IDS.includes(sys) || !isRecord(l) || !Number.isFinite(l.at) || !Array.isArray(l.packs) || !Array.isArray(l.pods)) fail('world');
     const v3 = (p: unknown) => Array.isArray(p) && p.length === 3 && p.every(Number.isFinite);

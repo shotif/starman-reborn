@@ -298,7 +298,16 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   the other arcs' choices and is finished as a lawful pilot, an outlaw hunted by the Authority, and
   neither (the envoys keeping with the player in Ross 154, jumping with them over the line, and met
   by raiders at the Wolf 1061 beacon), each ending holding the front for good (and earning its
-  milestone); border saves.
+  milestone); fronts that end: the four fronts no story settles each have a law station to ask and
+  a den to answer; neither side offers its decisive operation without the momentum, with too
+  little, once it has faded, or on The Long Border's front; the law's names the den across the line
+  and the Wake's the faction's sweep at it, within the pay ceiling; done for the law, the YZ Ceti
+  line holds for a whole tide, its stations ship more (machinery at Hearthstone Works is cheaper),
+  its board posts the reopened lanes, war work on it stops and the news says the Cooperative holds
+  it; done for the Wake, Hearthstone Works falls for good, and WISE 0722−0540, with no station to
+  lose, is blockaded for good in the news; a settled front's operation cannot be taken; a save in
+  which The Long Border ended before marks gets the Ross 154 front's marks on load (a truce leaves
+  none); every front has marks for both endings, and broken ones are caught; border saves.
 
 ### Browser tests (Playwright)
 
@@ -349,6 +358,11 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   close; the jump to Wolf 1061 from the star map's Missions list takes them along (the save says
   so); over the line they make for Flotsam Diggings and the raiders waiting at the beacon go for
   them.
+- `fronts.spec.ts`: **fronts that end**: three war contracts' worth for the Cooperative on the YZ
+  Ceti – GJ 1 line, and the next time slot's board at Heather Smelter offers the decisive
+  operation (knock out Cutlass Nest); done, the save holds the front settled for the law and its
+  three marks, the news says the Cooperative holds the line and Heather Smelter's lanes are safe for
+  good, and its board posts a run of refined metals on the reopened lanes.
 - `frontier.spec.ts`: **First Harvest**: Ines Halloway's call at Squall Relay, Orla Fenwick at
   Harrow Farmstead and the drive parts loaded; in Achird the Wrenna drifts far from any dock and the
   HUD steers to her; alongside her the parts go aboard and the HUD sends the player back to

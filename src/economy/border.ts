@@ -1,7 +1,7 @@
 import type { BorderEnding, BorderLog, GameState } from '../app/state.ts';
 import { BORDER } from '../content/border/rules.ts';
 import { hashString } from '../content/random.ts';
-import { CHARACTERS } from '../content/story/arcs.ts';
+import { ARC_JOBS, CHARACTERS } from '../content/story/arcs.ts';
 import { jumpsFrom } from '../content/world/network.ts';
 import { ALL_LOCATIONS, getLocation, getSystem, WORLD } from '../data/systems.ts';
 import type { FactionId, SystemId } from '../data/types.ts';
@@ -124,6 +124,35 @@ export function frontsHere(systemId: SystemId, clock: number): FrontState[] {
   return frontsAt(systemId).map((f) => frontState(f, clock));
 }
 
+/** Fronts a story arc settles (The Long Border's): no decisive operation is posted for them. */
+export const STORY_FRONTS: ReadonlySet<string> = new Set(ARC_JOBS.flatMap((j) => (j.story?.settles ? [j.story.settles.front] : [])));
+
+/** The player's own weight on a front now (+ the law's way, − the Wake's): their deeds, fading. */
+export function momentum(front: Front, clock: number, log: Record<string, BorderLog> | null = activeBorderLog()): number {
+  return deedsAt(log?.[front.id], clock);
+}
+
+/**
+ * Whether a side offers its decisive operation on a front (docs/PROCGEN.md §20.7): the front is not
+ * settled, no story settles it, and the player's own deeds there have come to the campaign's
+ * momentum that side's way.
+ */
+export function decisiveOpen(front: Front, side: 'law' | 'wake', clock: number, log: Record<string, BorderLog> | null = activeBorderLog()): boolean {
+  if (STORY_FRONTS.has(front.id) || log?.[front.id]?.ending) return false;
+  const m = momentum(front, clock, log);
+  return side === 'law' ? m >= BORDER.campaign.momentum : m <= -BORDER.campaign.momentum;
+}
+
+/** Which fronts are settled, as text, for caches of what depends on them (job boards). */
+export function settledKey(log: Record<string, BorderLog> | null = activeBorderLog()): string {
+  if (!log) return '';
+  return Object.entries(log)
+    .filter(([, e]) => e.ending)
+    .map(([id, e]) => `${id}:${e.ending}`)
+    .sort()
+    .join(',');
+}
+
 /** Stations on a front line that can fall: generated contracts never send a pilot to one. */
 export const EXPOSED: ReadonlySet<string> = new Set(FRONTS.flatMap((f) => (f.exposedId ? [f.exposedId] : [])));
 
@@ -163,7 +192,7 @@ export function pushFront(state: GameState, frontId: string, amount: number): bo
   return true;
 }
 
-/** The Long Border's ending holds its front for good. */
+/** An ending holds a front for good (The Long Border's, or a decisive operation's; economy/answers.ts settleFront). */
 export function endFront(state: GameState, frontId: string, ending: BorderEnding): void {
   (state.world.border[frontId] ??= { deeds: [] }).ending = ending;
 }
@@ -196,7 +225,9 @@ export function frontWords(s: FrontState): { headline: string; detail: string } 
     case 'skirmish':
       return { headline: `Skirmishes on ${f.name}`, detail: `Patrol wings and Wake raiders are fighting between ${law} and ${wake}. Both sides are hiring pilots.` };
     case 'blockade':
-      return { headline: `The Hollow Wake blockades ${law}`, detail: `Raider packs sit on the lanes into ${law}; traders are scarce and ${side} is paying for pilots who break it.` };
+      return s.ending
+        ? { headline: `The Hollow Wake holds the lanes into ${law}`, detail: `For good: raider packs sit on the lanes into ${law}, and traders are scarce. ${side[0]!.toUpperCase()}${side.slice(1)} keeps its base, and little else.` }
+        : { headline: `The Hollow Wake blockades ${law}`, detail: `Raider packs sit on the lanes into ${law}; traders are scarce and ${side} is paying for pilots who break it.` };
     case 'fallen':
       return {
         headline: s.ending ? `${station} is the Wake's` : `${station} falls to the Hollow Wake`,

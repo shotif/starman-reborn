@@ -2,7 +2,7 @@ import { findShip } from '../content/catalog.ts';
 import { CONTRACTS } from '../content/contracts/rules.ts';
 import { LAW } from '../content/law/rules.ts';
 import { ARC_JOBS, ARC_ORDER, ARCS, CHARACTERS } from '../content/story/arcs.ts';
-import { findMark, LASTING_MARKS, MARK_LIMITS, type LastingMark } from '../content/story/marks.ts';
+import { MARK_LIMITS, type LastingMark } from '../content/story/marks.ts';
 import type { Line } from '../content/story/types.ts';
 import type { Issue } from '../content/validate.ts';
 import { jumpsFrom } from '../content/world/network.ts';
@@ -11,6 +11,7 @@ import { getFront } from './border.ts';
 import { JOBS, LIFELINE_ID, type JobDef, type Objective } from './jobs.ts';
 import { LAWFUL } from './law.ts';
 import { marketTables } from './markets.ts';
+import { allMarks, markById } from './marks.ts';
 import { objectiveSystem } from './story.ts';
 
 /** How far a story mission may send the player from where it is given. */
@@ -85,7 +86,7 @@ export function validateStory(arcJobs: readonly JobDef[] = ARC_JOBS): Issue[] {
       }
       if (story.leaves) {
         if (!story.finale) report('chain', subject, 'only a finale leaves a lasting mark');
-        if (!findMark(story.leaves)) report('chain', subject, `no lasting mark ${story.leaves}`);
+        if (!markById(story.leaves)) report('chain', subject, `no lasting mark ${story.leaves}`);
         else if (leftBy.has(story.leaves)) report('chain', subject, `${story.leaves} is already left by ${leftBy.get(story.leaves)}`);
         leftBy.set(story.leaves, job.id);
       }
@@ -208,35 +209,45 @@ export function validateStory(arcJobs: readonly JobDef[] = ARC_JOBS): Issue[] {
 }
 
 /**
- * Lasting-mark guardrails (docs/PROCGEN.md §14.7): a mark changes an open station with a market
- * and a job board, on goods it trades, within the bounds of a world event; its standing run
- * carries the station's own produce to a station within freight reach that takes it, paid within
- * reason; marks on one station never touch the same goods; and every mark is left by a finale.
+ * Lasting-mark guardrails (docs/PROCGEN.md §14.7, §20.7): a mark changes an open station (or a
+ * raider den) with a market, on goods it trades, within the bounds of a world event; a standing run
+ * needs a job board, and carries the station's own produce to another open station within freight
+ * reach that takes it, paid within reason; marks on one station never touch the same goods unless
+ * no ending can leave both; and every mark is left either by exactly one finale or by the endings
+ * of real border fronts.
  */
-export function validateMarks(marks: readonly LastingMark[] = LASTING_MARKS, arcJobs: readonly JobDef[] = ARC_JOBS): Issue[] {
+export function validateMarks(marks: readonly LastingMark[] = allMarks(), arcJobs: readonly JobDef[] = ARC_JOBS): Issue[] {
   const issues: Issue[] = [];
   const report = (rule: string, subject: string, message: string) => issues.push({ rule, subject, message });
-  const open = (id: string) => ALL_LOCATIONS.some((l) => l.id === id && l.status === 'functional' && l.stationType !== 'pirate-den');
+  const live = (id: string) => ALL_LOCATIONS.some((l) => l.id === id && l.status === 'functional');
+  const open = (id: string) => live(id) && getLocation(id).stationType !== 'pirate-den';
   const within = ([lo, hi]: readonly [number, number], x: number) => x >= lo && x <= hi;
+  // Two marks can both be left unless they answer the same front with different endings.
+  const exclusive = (a: LastingMark, b: LastingMark) => !!a.front && !!b.front && a.front.ending !== b.front.ending && a.front.ids.some((id) => b.front!.ids.includes(id));
   const seen = new Set<string>();
   for (const m of marks) {
     if (seen.has(m.id)) report('marks', m.id, 'duplicate id');
     seen.add(m.id);
-    if (!arcJobs.some((j) => j.story?.leaves === m.id && j.story.finale)) report('marks', m.id, 'no finale leaves it');
+    if (m.front) {
+      if (!m.front.ids.length || m.front.ids.some((id) => !getFront(id))) report('marks', m.id, 'left by a border front that does not exist');
+      if (arcJobs.some((j) => j.story?.leaves === m.id)) report('marks', m.id, 'left by a front and by a finale');
+    } else if (arcJobs.filter((j) => j.story?.leaves === m.id && j.story.finale).length !== 1) report('marks', m.id, 'no finale leaves it');
     if (!m.headline.trim() || m.headline.length > 80 || !m.detail.trim() || m.detail.length > LINE_MAX) report('text', m.id, 'headline or detail empty or too long');
-    if (!m.run.title.trim() || !m.run.why.trim() || m.run.why.length > LINE_MAX) report('text', m.id, 'the run needs a title and a reason');
-    if (!open(m.locationId)) {
+    if (!live(m.locationId)) {
       report('places', m.id, `${m.locationId} is not an open station`);
       continue;
     }
     const loc = getLocation(m.locationId);
     const here = marketTables().get(m.locationId);
-    if (!here || !loc.services.includes('contracts')) report('places', m.id, `${m.locationId} needs a market and a job board`);
+    if (!here) report('places', m.id, `${m.locationId} has no market`);
     if (!m.market.goods.length || m.market.goods.some((c) => !here?.entries.has(c))) report('market', m.id, 'changes goods the station does not trade');
     if (!within(MARK_LIMITS.price, m.market.price) || !within(MARK_LIMITS.stock, m.market.stock)) report('market', m.id, 'price or stock out of bounds');
     for (const other of marks) {
-      if (other !== m && other.locationId === m.locationId && other.market.goods.some((c) => m.market.goods.includes(c))) report('market', m.id, `touches the same goods as ${other.id}`);
+      if (other !== m && other.locationId === m.locationId && !exclusive(m, other) && other.market.goods.some((c) => m.market.goods.includes(c))) report('market', m.id, `touches the same goods as ${other.id}`);
     }
+    if (!m.run) continue;
+    if (!m.run.title.trim() || !m.run.why.trim() || m.run.why.length > LINE_MAX) report('text', m.id, 'the run needs a title and a reason');
+    if (!loc.services.includes('contracts') || loc.stationType === 'pirate-den') report('places', m.id, `${m.locationId} has no job board for the run`);
     if (here?.entries.get(m.run.commodity)?.role !== 'produce') report('run', m.id, `the station does not make ${m.run.commodity}`);
     if (!open(m.run.to) || m.run.to === m.locationId) report('run', m.id, `${m.run.to} is not another open station`);
     else {

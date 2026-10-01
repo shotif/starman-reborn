@@ -409,9 +409,9 @@ describe('First Harvest leaves its mark on Harrow Farmstead (docs/PROCGEN.md §1
     expect(rules([{ ...a, market: { ...a.market, goods: ['luxuries'] } }, b])).toContain('market');
     expect(rules([{ ...a, market: { ...a.market, price: 0.3 } }, b])).toContain('market');
     expect(rules([a, { ...b, market: { ...b.market, goods: ['food'] } }])).toContain('market');
-    expect(rules([{ ...a, run: { ...a.run, commodity: 'machinery' } }, b])).toContain('run');
-    expect(rules([{ ...a, run: { ...a.run, to: 'earth-port' } }, b])).toContain('run');
-    expect(rules([{ ...a, run: { ...a.run, premium: 3 } }, b])).toContain('run');
+    expect(rules([{ ...a, run: { ...a.run!, commodity: 'machinery' } }, b])).toContain('run');
+    expect(rules([{ ...a, run: { ...a.run!, to: 'earth-port' } }, b])).toContain('run');
+    expect(rules([{ ...a, run: { ...a.run!, premium: 3 } }, b])).toContain('run');
     expect(rules([a, b, { ...a, id: 'nobody.leaves.this' }])).toContain('marks');
     // In the arcs: only a finale leaves a mark, a real one, and each mark is left once.
     const story = (patch: (j: (typeof ARC_JOBS)[number]) => (typeof ARC_JOBS)[number]) => validateStory(ARC_JOBS.map(patch)).map((i) => i.message);

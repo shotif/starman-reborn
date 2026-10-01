@@ -7,8 +7,8 @@ This is an honest list of what the prototype does not do yet, or what has not be
 1. **Real-device testing has started on one phone.** The automated tests run in headless Chromium
    with emulated phone and tablet viewports, touch events, multi-touch and a gamepad (see
    [TEST_RECORD.md](TEST_RECORD.md)). One real phone, the owner's Android, has passed the hands-on
-   checklist (1 October 2026); nothing has run on a physical iPhone, iPad or mid-range phone yet, or
-   with a physical controller. Please run the checklist in the test record on one, over HTTPS, at
+   checklist (1 October 2026); nothing has run on a physical iPhone, iPad or mid-range phone yet
+   (none was to hand, so increment 13 closed without one), or with a physical controller. Please run the checklist in the test record on one, over HTTPS, at
    <https://shotif.github.io/starman-reborn/>, and paste the device report
    (Settings → **Copy report**) with your notes: it carries the load times, the frame rate and
    whether offline play is ready. On the Android phone (a recent high-end one): 99 fps on average
@@ -68,15 +68,17 @@ snapshot branch only when the archives changed.
   is generated. The faction arcs know about each other only through standing and through
   Kettering, whose briefings follow the choices made in them. The lasting marks an arc leaves on
   the world are a dark den (for six hours), the Ross 154 – Wolf 1061 front, settled for good by
-  The Long Border, and Harrow Farmstead's market and board, changed for good by First Harvest's
-  ending; the three faction arcs change standing and words, not stations.
+  The Long Border (with the markets and boards around it), and Harrow Farmstead's market and board,
+  changed for good by First Harvest's ending; the three faction arcs change standing and words, not
+  stations.
 - The frontier's own events (harvests, survey seasons, drive failures) follow the clock like the
   others; a stranded hauler waits for the player's rescue however long it takes, and only the
   player's rescue is flown. A survey season's readings never settle a contested planet: the
   archives do.
 - The border war is a tide on the clock plus the player's deeds, not a simulation of fleets. It
-  runs only on the five lanes where a den's system touches lawful space, and only The Long Border
-  settles a front; the other four swing for ever.
+  runs only on the five lanes where a den's system touches lawful space. The Long Border settles its
+  front, and the player's decisive operations settle the other four; a front swings with the tide
+  until then, and nobody but the player ever settles one. A settled front cannot be reopened.
 - Goods move between stations out of sight as a spill along the lanes, not as individual ships;
   only the player's own system has traders flying.
 - Traffic and raider packs exist only around the player. Packs that saw the player and cargo pods

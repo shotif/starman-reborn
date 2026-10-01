@@ -20,4 +20,23 @@ export const BORDER = {
   newsJumps: 3,
   /** Traffic: a skirmish brings a patrol wing and a raider pack more to each side; a blockade more packs. */
   traffic: { skirmishWings: 1, skirmishPacks: 1, blockadePacks: 2 },
+  /**
+   * Fronts that end (§20.7). Once the player's own deeds on a front come to `momentum` one side's
+   * way (two or three war contracts close together; they fade like any deed), that side offers its
+   * decisive operation; done, it settles the front for good. A front a story settles is left to it.
+   */
+  campaign: {
+    momentum: 40,
+    /** The law's: knock out the den across the line, with a wing of the front's faction. */
+    law: { pay: 3_200, wakeStanding: -20, maxJumps: 2 },
+    /** The Wake's: hold the den against the faction's last sweep, this many of its ships destroyed. */
+    wake: { sweep: 5, pay: 2_800, wakeStanding: 20 },
+  },
+  /** What a front settled for good leaves on the stations around it (lasting marks, §14.7). */
+  settled: {
+    /** The law holds it: the lawful system's own stations ship more of what they make, and post a run of it. */
+    law: { price: 0.9, stock: 1.4, premium: 1.1, goods: 3 },
+    /** The Wake holds it: the lawful system's supplies come rarely, and the den is full of plunder. */
+    wake: { scarcePrice: 1.15, scarceStock: 0.7, plunderPrice: 0.85, plunderStock: 1.6, goods: 3 },
+  },
 } as const;

@@ -9,11 +9,11 @@ After the scripted opening (10–20 minutes), the neighbourhood is an open sandb
 systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
 of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
 packs in lawless space; 39 ships and 139 pieces of equipment; and generated contracts on every job
-board. Increments 1–12, 14 and 15 (under [Done so far](#done-so-far)) added world events and
-news, contracts of every kind, the law and the outlaw path, goals, five story arcs, combat depth,
-people in the bars and a trade computer, a world that answers, a fleet of your own, mining in the
-real belts, the frontier with a life of its own, a border war, and escorts and convoys across
-jumps.
+board. Increments 1–16 (under [Done so far](#done-so-far)) added world events and news, contracts
+of every kind, the law and the outlaw path, goals, five story arcs, combat depth, people in the
+bars and a trade computer, a world that answers, a fleet of your own, mining in the real belts,
+the frontier with a life of its own, a border war whose fronts can be won for good, escorts and
+convoys across jumps, and a game measured and tuned on a real phone.
 
 What it lacks now:
 
@@ -25,7 +25,43 @@ What it lacks now:
 
 Candidates for what comes next, in the order I would build them:
 
-### 13. Phones, measured and tuned 🔨 (M)
+### Traders you can see ⏳ (L)
+
+Haulers carrying real cargo between systems along the lanes, instead of goods drifting between
+stations out of sight: shortages fill with ships you can watch, raids hit real convoys, and you can
+escort, rob or race them.
+
+### The faction arcs leave their marks ⏳ (S)
+
+The three faction arcs each change a station for good when they end, as First Harvest and the
+settled border fronts now do: a market that moves and a standing run on the board.
+
+### Remappable controls ⏳ (M)
+
+Rebind keys and gamepad buttons in Settings, and a colour-blind-safe option for markers and the
+HUD.
+
+### How an increment ships
+
+Rules go in data files with guardrails ([PROCGEN.md](PROCGEN.md)). Each increment adds unit tests
+for its rules, a browser test for the player's path, and layout screenshots at every test size
+when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS), and it deploys
+to the live site once CI passes.
+
+## Done so far
+
+### 16. Border wars that end ✅
+
+The four border fronts no story settles can now be won. Once the player's war work on a front adds
+up (two or three contracts close together), that side offers a decisive operation: for the
+Frontier Cooperative, knock out the den across the line with a wing of its own; for the Hollow
+Wake, hold the den against the Cooperative's last sweep. Done, the front is settled for good: the
+law holds it, or the Wake holds the lanes and the station that can fall. Settled fronts, The Long
+Border's included, leave lasting marks: the stations around a front the law holds ship more and
+post a run of it; where the Wake holds it, the lawful stations go short and the den does well
+([PROCGEN.md §20.7](PROCGEN.md#207-fronts-that-end)).
+
+### 13. Phones, measured and tuned ✅
 
 - ✅ **A first load that shows the title at once.** A 15 KB first screen draws the title with a bar
   where Play will be, and the game (three.js, the world, the sky and the game code, 609 KB in all)
@@ -42,16 +78,8 @@ Candidates for what comes next, in the order I would build them:
   play retries a failed download (it had kept 13 of 15 files), and Auto quality starts at Medium
   instead of Low on every phone, stepping down only where frames stay slow; half-rate docked and
   menu screens no longer lower the resolution on 60 Hz screens.
-- ⏳ The same checklist on an iPhone or iPad, and on a mid-range phone (this needs you).
-
-### How an increment ships
-
-Rules go in data files with guardrails ([PROCGEN.md](PROCGEN.md)). Each increment adds unit tests
-for its rules, a browser test for the player's path, and layout screenshots at every test size
-when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS), and it deploys
-to the live site once CI passes.
-
-## Done so far
+- Not done: the checklist on an iPhone or iPad and on a mid-range phone (no such device to hand;
+  see [KNOWN_GAPS.md](KNOWN_GAPS.md)).
 
 ### First Harvest leaves its mark ✅
 

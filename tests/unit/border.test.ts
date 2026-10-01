@@ -9,12 +9,18 @@ import { LAW } from '../../src/content/law/rules.ts';
 import { ARC_JOBS, CHARACTERS, LONG_BORDER_FRONT } from '../../src/content/story/arcs.ts';
 import { jumpsFrom } from '../../src/content/world/network.ts';
 import { ALL_LOCATIONS, getLocation, isFrontier, SYSTEMS, WORLD } from '../../src/data/systems.ts';
-import { atWar, borderNews, deedsAt, EXPOSED, FRONTS, frontState, getFront, occupied, pushFront, recordDeed, tideAt, type Front } from '../../src/economy/border.ts';
-import { boardFor } from '../../src/economy/contracts.ts';
+import { atWar, borderNews, deedsAt, EXPOSED, FRONTS, frontState, getFront, occupied, pushFront, recordDeed, STORY_FRONTS, tideAt, type Front } from '../../src/economy/border.ts';
+import { markSettledFronts } from '../../src/economy/answers.ts';
+import { boardEpoch, boardFor, contractBlock } from '../../src/economy/contracts.ts';
+import { MAX_REWARD } from '../../src/economy/contractGuards.ts';
 import { welcomeText } from '../../src/economy/dockText.ts';
 import { useWorldLog } from '../../src/economy/events.ts';
 import { acceptJob, advanceJobs, countPiracy, currentObjective, escortArrived, escortsIn, jobsAt, type JobDef } from '../../src/economy/jobs.ts';
 import { dockAccess } from '../../src/economy/law.ts';
+import { quote } from '../../src/economy/markets.ts';
+import { allMarks } from '../../src/economy/marks.ts';
+import { validateMarks } from '../../src/economy/storyGuards.ts';
+import { marketContext } from '../../src/economy/trade.ts';
 import { checkMilestones } from '../../src/economy/progress.ts';
 import { arcStatus, briefingFor, makeChoice, optionLock } from '../../src/economy/story.ts';
 import { trafficFor } from '../../src/world/traffic/setup.ts';
@@ -337,6 +343,164 @@ describe('The Long Border', () => {
     expect(done(s, 'arc.border.5.truce')).toBe(true);
     expect(frontState(longBorder, s.clock + 50_000)).toMatchObject({ phase: 'truce', ending: 'truce' });
     expect(borderNews('ross-154', s.clock).find((n) => n.state.front.id === longBorder.id)!.headline).toMatch(/truce/i);
+  });
+});
+
+describe('fronts that end (docs/PROCGEN.md §20.7)', () => {
+  const ended = FRONTS.filter((f) => !STORY_FRONTS.has(f.id));
+  /** Boards that may post a front's law operation: its faction's stations with a job board within reach of the lawful system. */
+  const lawPosters = (f: Front) =>
+    ALL_LOCATIONS.filter(
+      (l) => l.status === 'functional' && l.services.includes('contracts') && l.factionId === f.faction && (jumpsFrom(WORLD.links, l.systemId).get(f.lawSystem) ?? 99) <= BORDER.campaign.law.maxJumps,
+    );
+  const decisiveAt = (locationId: string, epoch: number) => boardFor(locationId, epoch).filter((c) => c.contract?.decisive);
+  /** A pilot whose war work on a front came to `amount` (three contracts' worth) at clock 0; the boards of time slot 1 see it. */
+  function earned(f: Front, amount: number): GameState {
+    const s = pilot();
+    for (let i = 0; i < 3; i++) pushFront(s, f.id, amount / 3);
+    s.clock = CONTRACTS.epochSeconds;
+    return s;
+  }
+  /** Takes a posted contract on and flies it through. */
+  function fly(s: GameState, job: JobDef): void {
+    s.contracts[job.id] = structuredClone(job);
+    s.jobs[job.id] = { status: 'active', objectiveIndex: 0, acceptedAt: s.clock };
+    const o = job.objectives[0]!;
+    if (o.kind === 'assault') s.jobs[job.id]!.assault = 'done';
+    if (o.kind === 'defend') s.jobs[job.id]!.kills = o.count;
+    if (o.kind !== 'assault' && o.kind !== 'defend') throw new Error(`unexpected ${o.kind}`);
+    s.location = { systemId: o.systemId, dockedAt: null, flight: null, lastDockId: s.location.lastDockId };
+    advanceJobs(s, { dockedAt: null, systemId: o.systemId });
+  }
+
+  it('are the four fronts no story settles, each with a law station to ask and a den to answer', () => {
+    expect(STORY_FRONTS).toEqual(new Set([LONG_BORDER_FRONT]));
+    expect(ended).toHaveLength(4);
+    for (const f of ended) expect(lawPosters(f).length, f.id).toBeGreaterThan(0);
+  });
+
+  it('offer each side its decisive operation only once the pilot’s own deeds have earned it', () => {
+    for (const f of ended) {
+      // Nothing without the momentum, on any board, in any time slot.
+      pilot();
+      for (let e = 0; e < 40; e++) for (const l of [...lawPosters(f), getLocation(f.denId)]) expect(decisiveAt(l.id, e)).toEqual([]);
+      useWorldLog(null);
+      // The law's: its stations ask for the den across the line knocked out, with a wing of theirs.
+      earned(f, 54);
+      for (const l of lawPosters(f)) {
+        const [op] = decisiveAt(l.id, 1);
+        expect(op, `${f.id} at ${l.id}`).toBeDefined();
+        expect(op!.contract).toMatchObject({ kind: 'war', front: f.id, side: 'law', decisive: true });
+        expect(op!.objectives).toEqual([expect.objectContaining({ kind: 'assault', systemId: f.wakeSystem, locationId: f.denId })]);
+        expect(op!.difficulty).toBe(3);
+        expect(op!.repReward['hollow-wake']).toBe(BORDER.campaign.law.wakeStanding);
+        expect(op!.reward).toBeGreaterThanOrEqual(BORDER.campaign.law.pay * CONTRACTS.payVariation[0]);
+        expect(op!.reward).toBeLessThanOrEqual(MAX_REWARD);
+      }
+      expect(decisiveAt(f.denId, 1)).toEqual([]);
+      useWorldLog(null);
+      // The Wake's: the den asks a pilot it trusts to hold it against the faction's last sweep.
+      earned(f, -54);
+      const [hold] = decisiveAt(f.denId, 1);
+      expect(hold?.contract).toMatchObject({ kind: 'war', front: f.id, side: 'wake', decisive: true });
+      expect(hold!.objectives).toEqual([expect.objectContaining({ kind: 'defend', systemId: f.wakeSystem, locationId: f.denId, count: BORDER.campaign.wake.sweep, faction: f.faction })]);
+      expect(hold!.repReward).toEqual({ 'hollow-wake': BORDER.campaign.wake.wakeStanding });
+      expect(hold!.reward).toBeLessThanOrEqual(MAX_REWARD);
+      for (const l of lawPosters(f)) expect(decisiveAt(l.id, 1)).toEqual([]);
+      useWorldLog(null);
+    }
+    // Too little, or faded with time, is not enough.
+    const f = ended[0]!;
+    earned(f, 30);
+    expect(decisiveAt(lawPosters(f)[0]!.id, 1)).toEqual([]);
+    const s = earned(f, 54);
+    const later = Math.ceil((BORDER.fadeSeconds * Math.log(54 / BORDER.campaign.momentum)) / CONTRACTS.epochSeconds) + 2;
+    expect(decisiveAt(lawPosters(f)[0]!.id, later)).toEqual([]);
+    // The Long Border's front is left to its story, whatever the pilot does there.
+    pushFront(s, LONG_BORDER_FRONT, 200);
+    for (const l of ALL_LOCATIONS.filter((x) => x.systemId === longBorder.lawSystem || x.id === longBorder.denId)) expect(decisiveAt(l.id, 1)).toEqual([]);
+  });
+
+  it('done for the law, hold the front for good: the den’s raids stop, war work ends, and the lanes around it prosper', () => {
+    const f = getFront('gj-1~yz-ceti')!;
+    const s = earned(f, 54);
+    s.reputation.frontier = 30;
+    const [op] = decisiveAt(lawPosters(f)[0]!.id, 1);
+    // Knocking out a den asks for a combat record, as any den assault does.
+    expect(acceptJob(s, op!.id)).toEqual({ ok: false, message: expect.stringMatching(/combat rating/) });
+    const before = quote('hearthstone-works', 'machinery', s.reputation, marketContext(s)).buy!;
+    fly(s, op!);
+    expect(done(s, op!.id)).toBe(true);
+    expect(s.world.border[f.id]?.ending).toBe('law');
+    for (let t = 0; t < BORDER.tide.periodSeconds; t += 3_600) {
+      expect(frontState(f, s.clock + t).phase).toBe('pushed-back');
+      expect(occupied('hearthstone-works', s.clock + t)).toBeNull();
+    }
+    // Its marks: the lawful system's stations and the free port across the line ship more, for good.
+    expect(Object.keys(s.world.marks ?? {}).sort()).toEqual(['front.law.hearthstone-works', 'front.law.heather-smelter', 'front.law.hitching-freeport']);
+    expect(quote('hearthstone-works', 'machinery', s.reputation, marketContext(s)).buy!).toBeLessThan(before);
+    const epoch = boardEpoch(s.clock) + 1;
+    expect(boardFor('hearthstone-works', epoch).some((c) => c.title.startsWith('Reopened lanes: '))).toBe(true);
+    // No more war work on it, and no second decisive operation.
+    for (let e = epoch; e < epoch + 40; e++) {
+      for (const l of [...lawPosters(f), getLocation(f.denId)]) expect(boardFor(l.id, e).filter((c) => c.contract?.front === f.id)).toEqual([]);
+    }
+    expect(borderNews('yz-ceti', s.clock).find((n) => n.state.front.id === f.id)?.headline).toMatch(/holds the YZ Ceti – GJ 1 line/);
+  });
+
+  it('done for the Wake, give it the line for good: a station falls, or the lanes stay blockaded', () => {
+    const yz = getFront('gj-1~yz-ceti')!;
+    const s = earned(yz, -54);
+    s.reputation['hollow-wake'] = 30;
+    const [hold] = decisiveAt(yz.denId, 1);
+    fly(s, hold!);
+    expect(done(s, hold!.id)).toBe(true);
+    expect(s.world.border[yz.id]?.ending).toBe('wake');
+    expect(occupied('hearthstone-works', s.clock + BORDER.tide.periodSeconds / 3)?.id).toBe(yz.id);
+    expect(Object.keys(s.world.marks ?? {}).sort()).toEqual(['front.wake.cutlass-nest', 'front.wake.heather-smelter']);
+    // A front with no station to lose is blockaded for good instead, and the news says so.
+    const wise = getFront('yz-canis-minoris~wise-0722-0540')!;
+    useWorldLog(null);
+    const t = earned(wise, -54);
+    t.reputation['hollow-wake'] = 30;
+    const [hold2] = decisiveAt(wise.denId, 1);
+    fly(t, hold2!);
+    expect(frontState(wise, t.clock + 12_345)).toMatchObject({ phase: 'blockade', ending: 'wake' });
+    const words = borderNews('wise-0722-0540', t.clock).find((n) => n.state.front.id === wise.id)!;
+    expect(words.headline).toMatch(/holds the lanes into WISE 0722−0540/);
+    expect(words.detail).toMatch(/For good/);
+  });
+
+  it('are never offered on a front once it is settled, and a settled front left before them gets its marks on load', () => {
+    const f = getFront('gj-1~yz-ceti')!;
+    const s = earned(f, 54);
+    s.reputation.frontier = 30;
+    const [op] = decisiveAt(lawPosters(f)[0]!.id, 1);
+    s.world.border[f.id] = { deeds: s.world.border[f.id]!.deeds, ending: 'wake' };
+    expect(contractBlock(s, op!)).toBe('That front is settled');
+    // The Long Border settled the line before fronts left marks: on load, the marks come.
+    const old = pilot();
+    old.world.border[LONG_BORDER_FRONT] = { deeds: [], ending: 'law' };
+    markSettledFronts(old);
+    expect(Object.keys(old.world.marks ?? {}).sort()).toEqual(['front.law.flotsam-diggings', 'front.law.jackpot-stillworks', 'front.law.regent-concourse', 'front.law.waymark-waypoint']);
+    const truce = pilot();
+    truce.world.border[LONG_BORDER_FRONT] = { deeds: [], ending: 'truce' };
+    markSettledFronts(truce);
+    expect(truce.world.marks).toBeUndefined();
+  });
+
+  it('leave marks that pass the guardrails, and broken ones are caught', () => {
+    const marks = allMarks().filter((m) => m.front);
+    expect(validateMarks()).toEqual([]);
+    for (const f of FRONTS) {
+      expect(marks.some((m) => m.front!.ending === 'law' && m.front!.ids.includes(f.id)), `${f.id} law`).toBe(true);
+      expect(marks.some((m) => m.front!.ending === 'wake' && m.front!.ids.includes(f.id)), `${f.id} wake`).toBe(true);
+    }
+    const m = marks[0]!;
+    const rules = (broken: typeof m) => validateMarks([...allMarks().filter((x) => x.id !== m.id), broken]).map((i) => i.message);
+    expect(rules({ ...m, front: { ids: ['nowhere~nothing'], ending: 'law' } })).toContain('left by a border front that does not exist');
+    expect(rules({ ...m, market: { ...m.market, price: 0.4 } })).toContain('price or stock out of bounds');
+    expect(rules({ ...m, locationId: 'maw-roost', market: { ...m.market, goods: ['habitat-modules'] } })).toContain('changes goods the station does not trade');
   });
 });
 

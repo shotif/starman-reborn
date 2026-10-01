@@ -1015,8 +1015,9 @@ bringing in its first harvest. It is given after the opening delivery and asks n
 
 ### 14.7 Lasting marks
 
-A story's ending can change a station for good (`src/content/story/marks.ts`). When a finale that
-leaves a mark is done, the mark is written to the save's world log (§17.5), once. From then on:
+A story's ending can change a station for good (`src/content/story/marks.ts`), and so can a
+border front settled for good (§20.7). When a finale that leaves a mark is done, or a front is
+settled, the mark is written to the save's world log (§17.5), once. From then on:
 
 - **its market** moves as under a world event that never ends: the goods concerned have their
   price and normal stock multiplied, on top of any event there (§11);
@@ -1031,11 +1032,13 @@ First Harvest's two endings each leave one on Harrow Farmstead (fiction):
 | Sold at Doppler Freeport: machinery for new fields and a second hauler | food and fine food: price ×0.85, stock ×1.6 | Harvest run: fine food to Doppler Freeport (Achird), usual pay |
 | Fed to Squall Relay's crews, who answer Harrow's calls first | medicine: price ×0.85, stock ×1.6 | The relay's share: staple food to Squall Relay (EV Lacertae), pay ×1.25 |
 
-Guardrails (`validateMarks`, `src/economy/storyGuards.ts`, run in `tests/unit/story.test.ts`): a
-mark changes an open station with a market and a job board, only goods it trades, with price
-×0.7–1.2 and stock ×0.6–2; its run carries the station's own produce to another open station within
-freight reach that takes it, at a premium of ×1–1.5; marks on one station never touch the same
-goods; every mark is left by exactly one finale, and only finales leave them.
+Guardrails (`validateMarks`, `src/economy/storyGuards.ts`, run in `tests/unit/story.test.ts` and
+`tests/unit/border.test.ts`): a mark changes an open station (or a den) with a market, only goods it
+trades, with price ×0.7–1.2 and stock ×0.6–2; a run needs a job board, and carries the station's
+own produce to another open station within freight reach that takes it, at a premium of ×1–1.5;
+marks on one station never touch the same goods, unless they answer one front with different
+endings (only one can be left); a story mark is left by exactly one finale, and only finales leave
+them; a front's marks name real fronts.
 
 ## 15. Combat depth
 
@@ -1342,7 +1345,7 @@ world log (§17.5) and read back from it, so another save's world is untouched.
 - `ended`: the events the player ended early, with the time;
 - `lingering`: what is still out there, by system (§17.3);
 - `border`: the player's deeds on each border front, and how The Long Border ended there (§20);
-- `marks`: the lasting marks a story's ending left on a station, with the time (§14.7; optional,
+- `marks`: the lasting marks a story's ending or a settled front left on a station, with the time (§14.7, §20.7; optional,
   so a save from before them simply has none).
 
 The event engine reads the log of the save being played (`useWorldLog`), so events stay a pure
@@ -1660,7 +1663,7 @@ front is a function of the seed and the game clock, plus a short log of what the
 - **The Wake's**: destroy two or three of the front faction's haulers in the lawful system (450 cr
   + 240 a ship), +12 standing with the Wake. Each hauler is a crime, as in piracy.
 - Done, a war contract pushes its front 18 its way (the pay message says so). A front that The
-  Long Border has settled posts no war work.
+  Long Border or a decisive operation (§20.7) has settled posts no war work.
 - A station that can fall is never the destination of a delivery (generated parcels, hauls and
   supply runs go elsewhere, and such stations post no supply runs or mining claims, whose loads
   come back to them), so a contract never waits on a station the Wake might hold. A wreck's find may still be brought back to one: that is a visit,
@@ -1710,3 +1713,40 @@ Wolf 1061 line for good.
 - **Deterministic**: the tide repeats every 48 hours, deeds fade and only 24 are kept, boards are
   cached per save (the log is the save's own), and the log round-trips through the save and is
   checked when loaded.
+
+### 20.7 Fronts that end
+
+The four fronts no story settles (the Frontier Cooperative's, at Lacaille 9352, YZ Ceti and WISE
+0722−0540) can now be settled by the player, either way (`BORDER.campaign`):
+
+- **Momentum**: the player's own deeds on a front (§20.2), as they stand after fading. Once they
+  come to 40 one side's way (two or three war contracts close together), that side offers its
+  **decisive operation**; as the deeds fade below 40, the offer goes. A front a story settles (The
+  Long Border's) is left to its story.
+- **The law's** is posted at every station of the front's faction with a job board within two
+  jumps of the lawful system: knock out the den across the line, turrets then reactor, with a wing
+  of the faction's flying alongside (as a den assault, §15; it asks the same combat record). Pay
+  3,200 cr and the jump fees; −20 standing with the Wake.
+- **The Wake's** is posted at the den, for pilots it trusts: hold the den against the faction's last
+  sweep, five of its ships destroyed (each a crime). Pay 2,800 cr; +20 with the Wake.
+- **Done, the front is settled for good** that side's way, as The Long Border's endings settle
+  theirs (§20.5): the law holds it pushed back, or the Wake holds it, its exposed station fallen for
+  good (a front with none, WISE 0722−0540's, stays blockaded for good, and the news says so). War
+  work on it stops, and a second decisive operation for it cannot be taken.
+- **Settled fronts leave lasting marks** (§14.7), made from the front's stations and their markets
+  (`src/economy/marks.ts`, rules in `BORDER.settled`):
+
+| Ending | Where | Market, for good | Board |
+| --- | --- | --- | --- |
+| The law's | every open station of the front's faction, or independent, on either side of the line | what it makes (a relay: what it trades), up to three goods: price ×0.9, stock ×1.4 | a standing run of its first good to the nearest station that takes it, clear of the fronts, pay ×1.1 ("Reopened lanes") |
+| The Wake's | the faction's stations in the lawful system that do not fall | what it needs, up to three goods: price ×1.15, stock ×0.7 (scarce, so they pay more) | none |
+| The Wake's | the den across the line | its own wares: price ×0.85, stock ×1.6 | none |
+
+  The Long Border's endings leave the Ross 154 front's marks too (its truce leaves none), and a save
+  in which it ended before marks existed gets them when loaded.
+- **Guardrails** (`tests/unit/border.test.ts`): every one of the four fronts has a law station to
+  ask and a den to answer; nothing is offered without the momentum, or once it has faded, or for The
+  Long Border's front; each operation names its front's den and system, pays within the contract
+  ceiling and moves Wake standing as said; each ending holds for a whole tide, leaves exactly its
+  marks and stops the front's war work; every front has marks for both endings, and they pass the
+  lasting-mark guardrails (a broken front, price or goods is caught).

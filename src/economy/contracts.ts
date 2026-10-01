@@ -1,6 +1,7 @@
 import type { CommodityId, GameState } from '../app/state.ts';
 import { shipModel } from '../content/catalog.ts';
 import { ACE_NAMES, BOARD_KINDS, CONTRACTS, CONVOY_NAMES, CURATED_BOARD_KINDS, DEN_BOARD_KINDS, FRONTIER_SURVEY_WEIGHT, RECOVERY_ITEMS, WAR_BOARD_WEIGHT, type ContractKind, type KindWeights } from '../content/contracts/rules.ts';
+import { BORDER } from '../content/border/rules.ts';
 import { LAW } from '../content/law/rules.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
 import { beltGoods } from '../content/mining/rules.ts';
@@ -13,7 +14,7 @@ import type { FactionId, FictionalLocation, SystemId } from '../data/types.ts';
 import { findRoute } from '../galaxy/routing.ts';
 import { FLEETS } from '../world/traffic/plan.ts';
 import { trafficFor } from '../world/traffic/setup.ts';
-import { atWar, EXPOSED, FRONTS, frontState, occupied, type FrontState } from './border.ts';
+import { atWar, decisiveOpen, EXPOSED, FRONTS, frontState, momentum, occupied, settledKey, type FrontState } from './border.ts';
 import { itemsThatFit } from './cargo.ts';
 import { baseThreat, marksAt, marksKey, priceMultiplier, stationEventAt, systemEventAt, worldLogKey, type WorldEvent } from './events.ts';
 import { FACTIONS } from './factions.ts';
@@ -125,8 +126,8 @@ const boardCache = new Map<string, JobDef[]>();
 
 /** The contracts a station posts in a time slot (hand-made jobs are separate, in jobs.ts). */
 export function boardFor(locationId: string, epoch: number): JobDef[] {
-  // The border war and lasting marks are the save's own, so boards are kept per save.
-  const key = `${locationId}|${epoch}|${worldLogKey()}|${marksKey()}`;
+  // The border war, its settled fronts and lasting marks are the save's own, so boards are kept per save.
+  const key = `${locationId}|${epoch}|${worldLogKey()}|${marksKey()}|${settledKey()}`;
   const cached = boardCache.get(key);
   if (cached) return cached;
   const loc = getLocation(locationId);
@@ -157,9 +158,13 @@ export function boardFor(locationId: string, epoch: number): JobDef[] {
     // Work answering a world event, from its own stream so the rest of the board does not move.
     const e = eventContract(loc, rng(WORLD_SEED, 'contracts', 'event', locationId, epoch), `${CONTRACT_PREFIX}${locationId}.${epoch}.${out.length}`, clock);
     if (e && !out.some((o) => same(o, e))) out.push(e);
+    // A side's decisive operation on a front, once the player has earned it (docs/PROCGEN.md §20.7).
+    const d = decisive(loc, rng(WORLD_SEED, 'contracts', 'decisive', locationId, epoch), `${CONTRACT_PREFIX}${locationId}.${epoch}.${out.length}`, clock);
+    if (d) out.push(d);
     // Standing runs a story's ending left here (docs/PROCGEN.md §14.7), each from its own stream.
     for (const mark of marksAt(locationId)) {
-      const run = freight(loc, rng(WORLD_SEED, 'contracts', 'mark', mark.id, epoch), `${CONTRACT_PREFIX}${locationId}.${epoch}.${out.length}`, clock, { mark });
+      if (!mark.run) continue;
+      const run = freight(loc, rng(WORLD_SEED, 'contracts', 'mark', mark.id, epoch), `${CONTRACT_PREFIX}${locationId}.${epoch}.${out.length}`, clock, { run: mark.run });
       if (run) out.push(run);
     }
   }
@@ -338,19 +343,19 @@ function freight(
   r: Rng,
   id: string,
   clock: number,
-  opts: { commodity?: CommodityId; event?: WorldEvent; mark?: LastingMark } = {},
+  opts: { commodity?: CommodityId; event?: WorldEvent; run?: NonNullable<LastingMark['run']> } = {},
 ): JobDef | null {
   const markets = marketTables();
   const here = markets.get(giver.id);
   if (!here) return null;
   const made = [...here.entries.values()].filter((e) => e.role === 'produce' && isLegalCargo(e.commodity)).map((e) => e.commodity);
-  const wanted = opts.mark?.run.commodity ?? opts.commodity;
+  const wanted = opts.run?.commodity ?? opts.commodity;
   if (!made.length || (wanted && !made.includes(wanted))) return null;
   const commodity = wanted ?? r.pick(made);
   // A mark's run always goes to the same place.
   const dests = openStations().filter((l) => {
     if (l.id === giver.id || jumpsBetween(giver.systemId, l.systemId) > CONTRACTS.maxJumps.freight) return false;
-    if (opts.mark && l.id !== opts.mark.run.to) return false;
+    if (opts.run && l.id !== opts.run.to) return false;
     const e = markets.get(l.id)?.entries.get(commodity);
     return !!e && e.role !== 'produce';
   });
@@ -365,15 +370,15 @@ function freight(
   const reward = pay(
     r,
     routeFeeBetween(giver.systemId, dest.systemId),
-    (rw.base + rw.danger * (1 - security(dest.systemId)) + rw.cargoShare * qty * good.basePrice) * premium(opts.event) * (opts.mark?.run.premium ?? 1),
+    (rw.base + rw.danger * (1 - security(dest.systemId)) + rw.cargoShare * qty * good.basePrice) * premium(opts.event) * (opts.run?.premium ?? 1),
   );
   const difficulty = difficultyFor(giver.systemId, dest.systemId);
   const name = good.name.toLowerCase();
-  const why = opts.mark ? `${opts.mark.run.why} ` : opts.event ? `${opts.event.headline}. ` : '';
+  const why = opts.run ? `${opts.run.why} ` : opts.event ? `${opts.event.headline}. ` : '';
   const job: JobDef = {
     ...common(giver, id, difficulty),
-    title: opts.mark
-      ? `${opts.mark.run.title}: ${qty} ${name} to ${dest.name}`
+    title: opts.run
+      ? `${opts.run.title}: ${qty} ${name} to ${dest.name}`
       : opts.event
         ? `${opts.event.kind === 'harvest' ? 'Harvest' : 'Surplus'} haul: ${qty} ${name} to ${dest.name}`
         : `Haul ${qty} ${name} to ${dest.name}`,
@@ -384,7 +389,7 @@ function freight(
     destinationLocationId: dest.id,
     contract: { kind: 'freight', cargo: { commodity, qty }, deposit, ...(opts.event ? { event: opts.event.id } : {}) },
   };
-  return !opts.event && !opts.mark && r.next() < CONTRACTS.urgent.chance ? makeUrgent(job, giver.systemId, dest.systemId) : job;
+  return !opts.event && !opts.run && r.next() < CONTRACTS.urgent.chance ? makeUrgent(job, giver.systemId, dest.systemId) : job;
 }
 
 function supply(giver: FictionalLocation, r: Rng, id: string, clock: number, opts: { commodity?: CommodityId; event?: WorldEvent } = {}): JobDef | null {
@@ -820,6 +825,56 @@ function war(giver: FictionalLocation, r: Rng, id: string, clock: number): JobDe
 }
 
 /** Open stations in a system, the front-line ones included (a bounty is flown near one, not docked at). */
+/**
+ * A side's decisive operation on a front (docs/PROCGEN.md §20.7), once the player's own deeds there
+ * have come to the campaign's momentum its way. The front's faction asks, at its stations within
+ * reach of the lawful system, for the den across the line knocked out, a wing of its own flying
+ * with the pilot; the den asks a pilot it trusts to hold it against the faction's last sweep. Done,
+ * either settles the front for good, that side's way.
+ */
+function decisive(giver: FictionalLocation, r: Rng, id: string, clock: number): JobDef | null {
+  const c = BORDER.campaign;
+  const den = giver.stationType === 'pirate-den';
+  const open = FRONTS.filter((f) =>
+    den
+      ? f.denId === giver.id && decisiveOpen(f, 'wake', clock)
+      : giver.factionId === f.faction && jumpsBetween(giver.systemId, f.lawSystem) <= c.law.maxJumps && decisiveOpen(f, 'law', clock),
+  );
+  if (!open.length) return null;
+  // The front the player has done most for.
+  const f = open.reduce((a, b) => (Math.abs(momentum(b, clock)) > Math.abs(momentum(a, clock)) ? b : a));
+  const target = getLocation(f.denId);
+  const side = FACTIONS[f.faction];
+  const law = getSystem(f.lawSystem).displayName;
+  const wake = getSystem(f.wakeSystem).displayName;
+  if (den) {
+    const count = c.wake.sweep;
+    return {
+      ...common(giver, id, 3),
+      repReward: { 'hollow-wake': c.wake.wakeStanding },
+      title: `Hold ${target.name}: the last sweep`,
+      briefing: `You have hurt the ${side.shortName} on ${f.name}, and it is throwing its last sweep at ${target.name} to end the fight. Destroy ${count} of its ships and the lanes into ${law} are the Wake’s for good. Every ship is a crime: expect fines.`,
+      objectives: [{ kind: 'defend', systemId: f.wakeSystem, locationId: target.id, count, faction: f.faction, text: `Destroy ${count} ships of the ${side.shortName} sweep at ${target.name} (${wake})` }],
+      reward: pay(r, 0, c.wake.pay),
+      difficultyNote: `The decisive fight for ${f.name}, for the Wake`,
+      destinationLocationId: target.id,
+      contract: { kind: 'war', front: f.id, side: 'wake', decisive: true },
+    };
+  }
+  const common_ = common(giver, id, 3);
+  return {
+    ...common_,
+    repReward: { ...common_.repReward, 'hollow-wake': c.law.wakeStanding },
+    title: `End it at ${target.name}`,
+    briefing: `Your work on ${f.name} has the Hollow Wake reeling. Knock out ${target.name}, the den across the line at ${wake}: its turrets, then its reactor, with a ${side.shortName} wing at your side. Then ${law} is safe for good.`,
+    objectives: [{ kind: 'assault', systemId: f.wakeSystem, locationId: target.id, text: `Knock out ${target.name}: its turrets, then its reactor` }],
+    reward: pay(r, routeFeeBetween(giver.systemId, f.wakeSystem), c.law.pay),
+    difficultyNote: `The decisive fight for ${f.name}; ${routeNote(giver.systemId, f.wakeSystem).toLowerCase()}`,
+    destinationLocationId: target.id,
+    contract: { kind: 'war', front: f.id, side: 'law', decisive: true },
+  };
+}
+
 function openStationsIn(systemId: SystemId): FictionalLocation[] {
   return ALL_LOCATIONS.filter((l) => l.systemId === systemId && l.status === 'functional' && l.dockable !== false);
 }
@@ -864,6 +919,7 @@ export function contractBlock(state: GameState, job: JobDef): string | null {
     return `Needs ${c.cargo.qty * COMMODITIES[c.cargo.commodity].unitSize} free hold units`;
   }
   if (c.deposit && state.credits < c.deposit) return `Needs ${c.deposit} cr for the deposit`;
+  if (c.decisive && c.front && state.world.border[c.front]?.ending && !state.jobs[job.id]) return 'That front is settled';
   const o = job.objectives[0];
   if (c.kind === 'survey' && o?.kind === 'scan' && state.discoveredBodies.includes(o.bodyId)) return 'You have already scanned this planet';
   return null;

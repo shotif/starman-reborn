@@ -3,7 +3,7 @@ import { BOOMS, EVENTS, FRONTIER_EVENTS, GLUT_CAUSES, SHORTAGE_CAUSES, STRANDED_
 import { COMMODITIES } from '../content/economy/goods.ts';
 import { CURATED_MARKETS, ECONOMY } from '../content/economy/rules.ts';
 import { hashString, rng, type Rng } from '../content/random.ts';
-import { findMark, type LastingMark } from '../content/story/marks.ts';
+import type { LastingMark } from '../content/story/marks.ts';
 import { jumpsFrom } from '../content/world/network.ts';
 import { WORLD_SEED } from '../content/world/rules.ts';
 import { ALL_LOCATIONS, getLocation, getSystem, isFrontier, SYSTEMS, WORLD } from '../data/systems.ts';
@@ -11,6 +11,7 @@ import type { SystemId } from '../data/types.ts';
 import { trafficPlan } from '../world/traffic/plan.ts';
 import { FACTIONS } from './factions.ts';
 import { marketTables } from './markets.ts';
+import { markById } from './marks.ts';
 
 /**
  * World events (docs/PROCGEN.md §11): shortages, gluts, booms and strikes at stations, raids and
@@ -338,7 +339,7 @@ export function marksLeft(): LastingMark[] {
   if (!marks) return [];
   return Object.entries(marks)
     .sort((a, b) => a[1] - b[1])
-    .map(([id]) => findMark(id))
+    .map(([id]) => markById(id))
     .filter((m): m is LastingMark => !!m);
 }
 

@@ -21,7 +21,7 @@ pardons, and an outlaw path of piracy and smuggling that opens the raider dens' 
 The bars have people who sell true rumours for the price of a round, and a trade computer plans
 routes from the prices you know. The world answers: a shortage you fill ends sooner, raids break,
 and goods spill along the lanes. Where lawful space meets a raider den, a border war swings back
-and forth, and your work tips it. Five hand-written story arcs give the sandbox a spine: three
+and forth, and your work tips it, until you win a front for good, for the law or for the Wake. Five hand-written story arcs give the sandbox a spine: three
 faction arcs; The Long Border, which reads the choices made in the other three and settles a
 front for good, as a lawful pilot, an outlaw or neither; and First Harvest, out among the
 frontier's farms, whose ending changes a farm's market and job board for good. Pilot ratings, a codex of 361 real bodies, 24 milestones and a hint of what to

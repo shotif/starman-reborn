@@ -1,13 +1,15 @@
-import { applyCredits, type CommodityId, type GameState } from '../app/state.ts';
+import { applyCredits, type BorderEnding, type CommodityId, type GameState } from '../app/state.ts';
 import { EVENTS } from '../content/events/rules.ts';
-import { findMark, type LastingMark } from '../content/story/marks.ts';
+import type { LastingMark } from '../content/story/marks.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
 import { getLocation, getSystem } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
+import { endFront } from './border.ts';
 import { stationEventAt, systemEventAt, type WorldEvent } from './events.ts';
 import { adjustReputation, FACTIONS } from './factions.ts';
 import { lawIn } from './law.ts';
 import { marketEntry } from './markets.ts';
+import { markById, marksForFront } from './marks.ts';
 
 /**
  * The world answers the player (docs/PROCGEN.md §17): a shortage the player helps fill ends
@@ -16,11 +18,27 @@ import { marketEntry } from './markets.ts';
  */
 
 /**
+ * A border front settled for good (docs/PROCGEN.md §20.5, §20.7): its ending holds it, and leaves
+ * its lasting marks on the stations around it. Returns the marks newly left.
+ */
+export function settleFront(state: GameState, frontId: string, ending: BorderEnding): LastingMark[] {
+  endFront(state, frontId, ending);
+  return marksForFront(frontId, ending).filter((m) => leaveMark(state, m.id));
+}
+
+/** A save from before fronts left marks: the marks of the fronts already settled in it. */
+export function markSettledFronts(state: GameState): void {
+  for (const [frontId, log] of Object.entries(state.world.border)) {
+    if (log.ending) for (const m of marksForFront(frontId, log.ending)) leaveMark(state, m.id);
+  }
+}
+
+/**
  * A story's ending leaves a lasting mark on a station (docs/PROCGEN.md §14.7), once and for good.
  * Returns the mark, or null if it was already left.
  */
 export function leaveMark(state: GameState, id: string): LastingMark | null {
-  const mark = findMark(id);
+  const mark = markById(id);
   if (!mark) return null;
   const marks = (state.world.marks ??= {});
   if (marks[id] !== undefined) return null;

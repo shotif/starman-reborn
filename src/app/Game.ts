@@ -1,9 +1,9 @@
 import { BORDER } from '../content/border/rules.ts';
-import { atWar, borderNews, occupied, recordDeed } from '../economy/border.ts';
+import { atWar, borderNews, occupied, pushFront, recordDeed } from '../economy/border.ts';
 import { gameJulianDate } from '../data/solar.ts';
 import type { Lingering } from './state.ts';
 import { TRAFFIC } from '../world/traffic/plan.ts';
-import { leaveMark, raidKill } from '../economy/answers.ts';
+import { leaveMark, markSettledFronts, raidKill, settleFront } from '../economy/answers.ts';
 import { useWorldLog } from '../economy/events.ts';
 import { fleetNews, settleFleet, type FleetSettlement } from '../economy/fleet.ts';
 import { lastView } from '../ui/station/lastView.ts';
@@ -44,6 +44,7 @@ import {
   wrecksIn,
   type JobEvent,
 } from '../economy/jobs.ts';
+import { postedContract } from '../economy/contracts.ts';
 import { briefingFor, choiceHere, denDown, isStoryJob, knockOutDen, makeChoice, markSeen, optionLock, pendingBeats, speakerName } from '../economy/story.ts';
 import { DENS } from '../content/dens/rules.ts';
 import { showChoice, showDialogue } from '../ui/story.ts';
@@ -476,6 +477,8 @@ export class Game {
     this.minedRocks.clear();
     // The fleet catches up with the clock the save was made at (docs/PROCGEN.md §18).
     useWorldLog(this.state.world);
+    // A save from before settled fronts left their marks gets them now (docs/PROCGEN.md §20.7).
+    markSettledFronts(this.state);
     const fleet = settleFleet(this.state);
     if (fleet.steps) this.persist();
     const loc = state.location;
@@ -1816,10 +1819,15 @@ export class Game {
       completeJobs: (ids: string[]) => {
         if (!this.state) return;
         for (const id of ids) {
+          // A contract still on a board is taken first, as accepting it would.
+          const posted = this.state.contracts[id] ? null : postedContract(id);
+          if (posted) this.state.contracts[id] = structuredClone(posted);
           const job = getJob(id, this.state);
           this.state.jobs[id] = { status: 'complete', objectiveIndex: job.objectives.length, acceptedAt: this.state.clock, completedAt: this.state.clock };
-          // A finale's lasting mark comes with it, as when it is flown (docs/PROCGEN.md §14.7).
+          // A finale's lasting mark, or a decisive operation's settled front, comes with it, as when it is flown.
           if (job.story?.leaves) leaveMark(this.state, job.story.leaves);
+          const c = job.contract;
+          if (c?.decisive && c.front && !this.state.world.border[c.front]?.ending) settleFront(this.state, c.front, c.side === 'wake' ? 'wake' : 'law');
         }
         this.state.flags.clearance = true;
         this.station?.render();
@@ -1850,6 +1858,12 @@ export class Game {
         this.announceFleet(settleFleet(this.state));
         this.persist();
         this.station?.render();
+      },
+      /** Test-only: a deed on a border front (+ the law's way, − the Wake's), as war work done there now. */
+      borderDeed: (frontId: string, amount: number) => {
+        if (!this.state) return;
+        pushFront(this.state, frontId, amount);
+        this.persist();
       },
       /** Test-only: the open 3D star map's camera distance and where its stars are on screen. */
       mapView: () => this.map?.debugView() ?? null,
