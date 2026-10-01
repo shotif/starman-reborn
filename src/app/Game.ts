@@ -84,6 +84,7 @@ import { trafficFor } from '../world/traffic/setup.ts';
 import { generatedInteriorStyle } from '../world/systems/interiors.ts';
 import { SystemScene } from '../world/SystemScene.ts';
 import type { Target } from '../world/targets.ts';
+import { collectDeviceFacts, formatReport, FrameRateLog } from './deviceReport.ts';
 import { GameRenderer, isTouchDevice, resolveQuality } from './GameRenderer.ts';
 import { Loop } from './Loop.ts';
 import { discoverBody, dockAt, jumpReadiness, performJump, rescueAfterDefeat, routeFee, undock } from './rules.ts';
@@ -127,6 +128,8 @@ export class Game {
   readonly audio = new AudioEngine();
   /** Music, station ambience and local radio, kept in step with where the player is. */
   private readonly soundscape = new Soundscape(this.audio);
+  /** Frame rate over the current or last flight, for the device report (Settings). */
+  private readonly flightFrames = new FrameRateLog();
   readonly saves: SaveManager;
   settings: Settings;
   state: GameState | null = null;
@@ -956,6 +959,7 @@ export class Game {
     const { width, height } = this.renderer.size;
     this.flight.setViewport(width, height);
     this.flight.start(spawn);
+    this.flightFrames.start();
     this.mode = 'flight';
     this.loop.lowPower = false;
     this.objectiveTimer = 0;
@@ -1451,10 +1455,25 @@ export class Game {
       settingsContent(this.settings, {
         onChange: (next) => this.applySettings(next),
         onResetSave: () => void this.resetSave(),
+        deviceReport: () => this.deviceReport(),
       }),
       () => this.sheetsOpen--,
       'settings-sheet',
     );
+  }
+
+  /** The device report in Settings: this device, its browser and how the game runs on it. */
+  private async deviceReport(): Promise<string> {
+    const facts = await collectDeviceFacts({
+      build: __BUILD_ID__,
+      graphics: this.renderer.graphicsInfo(),
+      quality: { setting: this.settings.quality, preset: this.renderer.quality, pixelRatio: this.renderer.pixelRatio, bloom: this.renderer.useBloom },
+      frameRate: this.flightFrames.summary(),
+      sound: { state: this.audio.state === 'running' ? 'on' : this.audio.state === 'locked' ? 'waiting for a first tap or key press' : 'unavailable', muted: this.settings.muted },
+      textScale: this.settings.textScale,
+      reducedMotion: this.settings.reducedMotion,
+    });
+    return formatReport(facts);
   }
 
   /** The autosave and the save slots, with export and import: from the title, the pause menu or the station menu. */
@@ -1569,6 +1588,7 @@ export class Game {
   private tick(rawDt: number): void {
     const dt = rawDt * this.timeScale;
     this.renderer.recordFrame(rawDt);
+    if (this.mode === 'flight' && !this.paused) this.flightFrames.frame(rawDt);
     this.onResizeIfNeeded();
     this.fpsTimer -= rawDt;
     if (this.settings.showFps && this.fpsTimer <= 0) {

@@ -114,6 +114,11 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   fleeing is evasion); the autopilot, cruising, holds for a scan coming up from behind instead of
   carrying the pilot away from it; bounty hunters come for big fines in secure space and pay nothing when
   downed; raiders spare a pilot the Wake trusts until provoked; the dens take that pilot in.
+- `deviceReport.test.ts`: the device report: a flight's average frame rate and its slowest second,
+  nothing before a second of flight, a minute behind another app left out, a new flight starting
+  afresh; the report's text line by line for a phone, and plainly what is missing (no graphics, no
+  flight yet, a load from the cache, no network details, offline play part-kept, not supported,
+  off in tests, needing HTTPS or not set up yet).
 - `progress.test.ts`: the codex lists exactly the catalogued stars, confirmed planets and the Solar
   System's bodies, each scannable in its scene; a scan counts once and off-catalogue bodies are
   ignored; research stations buy a completed survey once; ratings follow the career record;
@@ -363,11 +368,16 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   over the network once (the game's imports find them in the cache). A download that fails shows
   the message and **Try again**, which brings the title.
 - `offline.spec.ts`: **offline after one visit**: the build served from `localhost` so the service
-  worker registers; after one visit the page and every file of the build are in its cache; then the
-  server is switched off and the browser goes offline (a fetch of anything else fails), and a
-  reload brings the title, Play starts a game and the star map opens.
+  worker registers; after one visit the page and every file of the build are in its cache, and the
+  device report says so; then the server is switched off and the browser goes offline (a fetch of
+  anything else fails), and a reload brings the title, Play starts a game and the star map opens.
+- `device.spec.ts`: **the device report** in Settings, from the title: the build, the load times
+  (the loading title and Play), WebGL 2 and its texture size, the safe-area insets (set as a
+  notched phone's), touch or mouse as the device has, no flight yet and offline play off in test
+  runs; **Copy report** puts exactly that text on the clipboard; after a few seconds of flight, the
+  report from the pause menu has the flight's average frame rate and its slowest second.
 - `screenshots.spec.ts`: the loading title (caught part-way, with the game's largest file held
-  back), title, job board, buy dialog, station deck, shipyard, outfitter, fleet,
+  back), title, Settings at its device report, job board, buy dialog, station deck, shipyard, outfitter, fleet,
   flight HUD, star map and its Missions and Find dialogs at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
   zoom). Saved in `docs/screenshots/` once any smooth scrolling has come to rest. Each is audited
@@ -402,10 +412,14 @@ title uses them) instead of after the title appeared.
 ## Real-device checklist (partly run — please run the rest)
 
 Open <https://shotif.github.io/starman-reborn/> (or serve over HTTPS with `npm run dev:https` or a
-tunnel; see the README), then on an actual **Android phone** and an **iPhone/iPad**:
+tunnel; see the README), then on an actual **Android phone** and an **iPhone/iPad**. The **device
+report** (Settings, at the bottom: **Copy report**) answers steps 1, 5 and 11 by itself (the load
+times, the last flight's frame rate, and whether the game is kept for offline play) along with the
+phone, browser, screen, safe areas and graphics chip: copy it at the end and paste it with your
+notes.
 
 1. Open the site. The title should appear within a second or two, with a bar where **Play** will
-   be filling as the game loads; note roughly how long until Play appears, and on which network.
+   be filling as the game loads; note which network you are on (the report has the times).
    Tap **Play**. Sound starts after the first tap (iPhone: Ring/Silent switch set to Ring).
 2. In flight, **steer with the left thumb and aim/fire with the right thumb at the same time**.
    Boost, Cruise, Target and the green action button should all be reachable without letting go
@@ -413,8 +427,9 @@ tunnel; see the README), then on an actual **Android phone** and an **iPhone/iPa
 3. Rotate the device mid-flight in both directions. The ship keeps flying and the controls
    re-layout without a reload.
 4. Check that nothing sits under the notch, rounded corners or home bar, in both orientations.
-5. Settings → **Show frame rate**. During the Mars raider fight, note the fps (target ≥ 30 on a
-   mid-range phone with Auto quality).
+5. Fight the Mars raiders (target ≥ 30 fps on a mid-range phone with Auto quality), then open
+   Settings from the pause menu: the report's frame rate is that flight's. **Show frame rate**
+   shows it live.
 6. Dock at Mars and check the voyage report shows a profit.
 7. Jump to Alpha Centauri, discover **Proxima b** and open its citation, then dock at Meridian
    Outpost and deliver.
@@ -424,8 +439,10 @@ tunnel; see the README), then on an actual **Android phone** and an **iPhone/iPa
 8. **Refresh** the page and press Continue. Everything should be as you left it.
 9. Switch to another app and back mid-flight. The game should not jump ahead.
 10. On a tablet with a keyboard or mouse attached, the desktop controls should take over.
-11. Optional (offline stretch goal): after one visit (wait until Play appears), turn on flight mode
-    and reload. The title should come back, a game should start, and the star map should open.
+11. Optional (offline stretch goal): after one visit (wait until Play appears, then check that the
+    report says offline play is ready), turn on flight mode and reload. The title should come back,
+    a game should start, and the star map should open.
+12. Settings → **Copy report**, and paste it with your results.
 
 Record results here (device, OS, browser, fps, issues):
 

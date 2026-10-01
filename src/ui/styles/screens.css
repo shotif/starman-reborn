@@ -239,6 +239,23 @@
   color: var(--text-muted);
 }
 
+/* The device report: plain text to copy, selectable even though the game's text is not. */
+.device-report {
+  width: 100%;
+  min-height: 12rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--panel-border-strong);
+  background: var(--panel-solid);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.45;
+  resize: vertical;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 .controls-help .table td:first-child {
   color: var(--text-muted);
   width: 45%;

@@ -162,6 +162,12 @@ Other balance guardrails:
   Fonts (71 KB, already compressed) and what loads on demand (the star map, the science notes,
   bloom: 35 KB) are reported, not budgeted. Going over is a decision to make, not an accident: raise
   the budget in the same change, with the reason.
+- **On a real device**, the device report (Settings; `src/app/deviceReport.ts`) shows what the
+  phone or computer and its browser tell the game: the screen and safe areas, the input, the
+  graphics chip, the quality in use, the load times (the loading title and the title leave marks in
+  the browser's performance timeline), the last flight's average frame rate and slowest second,
+  the network, and whether the game is kept for offline play. It is only shown, never sent: the
+  tester copies it.
 
 ## 5. Testing
 

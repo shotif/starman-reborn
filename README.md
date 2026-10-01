@@ -100,6 +100,10 @@ installability behave best over HTTPS. Pick one:
 3. **A tunnel.** Run `npm run preview`, then expose port 4173 with any HTTPS tunnel, for example
    `npx cloudflared tunnel --url http://localhost:4173`.
 
+On the device, **Settings → Device report → Copy report** gives the phone, browser, screen, load
+times, the last flight's frame rate and whether the game is kept for offline play, ready to paste
+into the real-device checklist ([TEST_RECORD.md](docs/TEST_RECORD.md)). Nothing is sent anywhere.
+
 ## Controls
 
 | Action | Mouse and keyboard | Touch | Gamepad |

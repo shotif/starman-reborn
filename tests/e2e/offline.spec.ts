@@ -37,6 +37,10 @@ test('after one visit the game starts and the star map opens with no network', a
       { timeout: 60_000 },
     )
     .toBe(0);
+  // The device report says so.
+  await press(page, 'title-settings');
+  await expect(page.getByTestId('device-report')).toHaveValue(new RegExp(`^Offline play: ready: all ${wanted.length} files kept$`, 'm'));
+  await press(page, 'sheet-close');
 
   // No network at all: the server is gone and the browser is offline.
   await server.close();

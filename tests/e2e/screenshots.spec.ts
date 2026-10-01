@@ -183,6 +183,12 @@ for (const size of SIZES) {
       await openFresh(page);
       await loadingShot(page, `${size.name}-0-loading`, size.touch, results);
       await shot(page, `${size.name}-1-title`, size.touch, results);
+      // Settings, scrolled down to the device report.
+      await press(page, 'title-settings');
+      await expect(page.getByTestId('device-report')).toHaveValue(/^Starman Reborn device report/);
+      await page.getByTestId('device-report-copy').scrollIntoViewIfNeeded();
+      await shot(page, `${size.name}-1b-settings`, size.touch, results);
+      await press(page, 'sheet-close');
       await press(page, 'title-play');
       await press(page, 'intro-ok');
       await shot(page, `${size.name}-2-contracts`, size.touch, results);

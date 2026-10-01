@@ -177,6 +177,56 @@ export function controlsContent(steering: SteeringMode, scheme: InputScheme = 'd
 export interface SettingsCallbacks {
   onChange(next: Settings): void;
   onResetSave(): void;
+  /** The device report's text (docs/TEST_RECORD.md, the real-device checklist). */
+  deviceReport?(): Promise<string>;
+}
+
+/** The device report: made when Settings opens, shown as text, and copied with one tap. */
+function deviceReportSection(make: () => Promise<string>): Child {
+  const text = h('textarea', {
+    class: 'device-report',
+    readonly: true,
+    rows: '14',
+    spellcheck: 'false',
+    'aria-label': 'Device report',
+    'data-testid': 'device-report',
+  }) as HTMLTextAreaElement;
+  text.value = 'Gathering…';
+  const status = h('p', { class: 'muted small', role: 'status', 'data-testid': 'device-report-status' });
+  const copy = button('Copy report', {
+    icon: 'copy',
+    disabled: true,
+    testId: 'device-report-copy',
+    onClick: () => {
+      const done = () => (status.textContent = 'Copied. Paste it into a message or the test record.');
+      const byHand = () => {
+        // Clipboard refused (an old browser, or not over HTTPS): leave it selected to copy by hand.
+        text.focus();
+        text.select();
+        status.textContent = 'Selected: copy it with your browser’s Copy.';
+      };
+      if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text.value).then(done, byHand);
+      else byHand();
+    },
+  });
+  make().then(
+    (report) => {
+      text.value = report;
+      copy.disabled = false;
+    },
+    () => (text.value = 'This browser could not make the report.'),
+  );
+  return [
+    h('h3', null, 'Device report'),
+    h(
+      'p',
+      { class: 'muted small' },
+      'For testing on a real phone or tablet: what this device and its browser tell the game, the load time, the frame rate of your last flight and whether the game is kept for offline play. Nothing is sent anywhere; copy it to share it.',
+    ),
+    text,
+    h('div', { class: 'row' }, copy),
+    status,
+  ];
 }
 
 export function settingsContent(settings: Settings, cb: SettingsCallbacks): HTMLElement {
@@ -258,6 +308,7 @@ export function settingsContent(settings: Settings, cb: SettingsCallbacks): HTML
     h('h3', null, 'Save data'),
     h('p', { class: 'muted small' }, 'Progress is saved automatically in this browser on this device.'),
     button('Reset save…', { variant: 'danger', testId: 'reset-save', onClick: () => cb.onResetSave() }),
+    cb.deviceReport ? deviceReportSection(cb.deviceReport) : null,
   );
 }
 

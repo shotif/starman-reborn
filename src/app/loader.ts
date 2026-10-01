@@ -1,5 +1,6 @@
 import { renderLoadingTitle, type LoadingTitle } from '../ui/screens/TitleScreen.ts';
 import { BOOT_FILES_ID, downloadAll, parseBootFiles } from './download.ts';
+import { LOAD_MARKS } from './loadMarks.ts';
 import { detectBackend, type SaveBackend } from './save/backend.ts';
 import { applyDocumentSettings, loadSettings, type Settings } from './settings.ts';
 
@@ -44,6 +45,7 @@ export async function startGame(): Promise<boolean> {
   ui.appendChild(layer);
   shell = renderLoadingTitle(layer, { systemCount: __SYSTEM_COUNT__ });
   shell.progress(latest);
+  performance.mark(LOAD_MARKS.firstScreen);
 
   let boot: typeof import('./boot.ts').boot;
   try {
@@ -62,6 +64,7 @@ export async function startGame(): Promise<boolean> {
     done: () => {
       layer.remove();
       canvas.classList.remove('awaiting-game');
+      performance.mark(LOAD_MARKS.title);
     },
   });
   return true;

@@ -34,6 +34,9 @@ Candidates for what comes next, in the order I would build them:
   whole behind the title rather than the data alone; the star map's code already loaded on first
   open. A first-load budget runs after every build ([PROCGEN.md §4.6](PROCGEN.md#46-performance)).
 - ✅ **Offline after one visit**, and **WebGL context loss**, both forced in browser tests.
+- ✅ **A device report** in Settings: the phone, browser, screen, safe areas and graphics chip,
+  the load times, the last flight's frame rate and whether the game is kept for offline play, as
+  text to copy with one tap, so the checklist below takes minutes to report.
 - ⏳ The real-device checklist in [TEST_RECORD.md](TEST_RECORD.md) on an Android phone and an
   iPhone (this needs you; pinch zoom is confirmed on Android), then tuning from what it finds.
 

@@ -87,6 +87,19 @@ export class GameRenderer {
     return this.dpr;
   }
 
+  /** What the browser says about its WebGL, for the device report (null while the context is lost). */
+  graphicsInfo(): { webgl2: boolean; gpu: string; maxTexture: number } | null {
+    if (this.contextLost) return null;
+    const gl = this.renderer.getContext();
+    let gpu = String(gl.getParameter(gl.RENDERER));
+    // Chrome only says "WebKit WebGL" there; its debug extension names the chip where it is allowed.
+    if (/webgl/i.test(gpu)) {
+      const ext = gl.getExtension('WEBGL_debug_renderer_info');
+      if (ext) gpu = String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL));
+    }
+    return { webgl2: typeof WebGL2RenderingContext !== 'undefined' && gl instanceof WebGL2RenderingContext, gpu, maxTexture: this.renderer.capabilities.maxTextureSize };
+  }
+
   setQuality(quality: QualityLevel, bloomAllowed: boolean): void {
     this.quality = quality;
     this.bloomAllowed = bloomAllowed;
@@ -96,7 +109,8 @@ export class GameRenderer {
     this.resize(true);
   }
 
-  private get useBloom(): boolean {
+  /** Whether the bloom glow is drawn (High preset, allowed in Settings). */
+  get useBloom(): boolean {
     return this.preset.bloom && this.bloomAllowed;
   }
 
