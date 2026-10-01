@@ -17,7 +17,7 @@ import { boardEpoch, postedContracts } from '../../src/economy/contracts.ts';
 import { eventEnd, useWorldLog } from '../../src/economy/events.ts';
 import { haulReliefEnd, reliefEnd } from '../../src/economy/hauls.ts';
 import { marketEntry, stockNow } from '../../src/economy/markets.ts';
-import { sampleRuns, validateRivals } from '../../src/economy/rivalGuards.ts';
+import { sampleRuns, validateRivals, type RivalRules } from '../../src/economy/rivalGuards.ts';
 import {
   buyClaim,
   buyRivalRound,
@@ -81,9 +81,13 @@ describe('the six', () => {
   });
 
   it('catch broken ones: a turn too short, a name the bars use, a line with a number, a run that overruns', () => {
-    const rules = (x: Parameters<typeof validateRivals>[0]) => validateRivals(x, ROSTER, []).map((i) => i.rule);
-    expect(rules({ ...RIVALS, turnSeconds: 1_000 })).toContain('rules');
-    expect(rules({ ...RIVALS, standing: { ...RIVALS.standing, shot: 5 } })).toContain('rules');
+    const broken = (patch: (r: RivalRules) => void) => {
+      const r = structuredClone(RIVALS) as RivalRules;
+      patch(r);
+      return validateRivals(r, ROSTER, []).map((i) => i.rule);
+    };
+    expect(broken((r) => ((r as { turnSeconds: number }).turnSeconds = 1_000))).toContain('rules');
+    expect(broken((r) => ((r.standing as { shot: number }).shot = 5))).toContain('rules');
     const named = validateRivals(RIVALS, [...ROSTER.slice(1), { ...ROSTER[0]!, last: 'Vance' }], []);
     expect(named.map((i) => i.rule)).toContain('roster');
     expect(validateRivals(RIVALS, [...ROSTER.slice(1), { ...ROSTER[0]!, home: 'earth-port' }], []).map((i) => i.rule)).toContain('roster');
