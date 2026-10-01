@@ -13,9 +13,9 @@ export interface Handover {
 
 /**
  * The first thing on screen: the title, with a bar where Play will be, while the game itself
- * (three.js, the world, the sky and the game code) arrives behind it.
+ * (three.js, the world, the sky and the game code) arrives behind it. True once the game is up.
  */
-export async function startGame(): Promise<void> {
+export async function startGame(): Promise<boolean> {
   const ui = document.getElementById('ui')!;
   const canvas = document.getElementById('scene') as HTMLCanvasElement;
   const files = parseBootFiles(document.getElementById(BOOT_FILES_ID)?.textContent);
@@ -53,7 +53,7 @@ export async function startGame(): Promise<void> {
   } catch (err) {
     console.error('Starman Reborn did not finish loading', err);
     shell.failed(() => window.location.reload());
-    return;
+    return false;
   }
   await boot({
     backend,
@@ -63,4 +63,5 @@ export async function startGame(): Promise<void> {
       canvas.classList.remove('awaiting-game');
     },
   });
+  return true;
 }

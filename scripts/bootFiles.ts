@@ -87,7 +87,22 @@ export function measureBootFiles(outDir: string): void {
   writeFileSync(page, html.replace(LIST, (_all, open: string, _list, close: string) => open + JSON.stringify(files) + close));
 }
 
-/** Writes the boot files into index.html as `<script type="application/json" id="boot-files">`. */
+/**
+ * Every file of the build a player can need (scripts, styles and the fonts the browser uses),
+ * for the offline cache to keep after one visit (public/sw.js).
+ */
+export function offlineFiles(bundle: BundleLike): string[] {
+  return Object.values(bundle)
+    .map((b) => b.fileName)
+    .filter((f) => /\.(js|css|woff2)$/.test(f))
+    .map((f) => `./${f}`)
+    .sort();
+}
+
+/**
+ * Writes the boot files into index.html as `<script type="application/json" id="boot-files">`,
+ * and the offline files as `id="offline-files"`.
+ */
 export function bootFilesPlugin(bootModule = 'src/app/boot.ts'): Plugin {
   const isBoot = (id: string) => id.replaceAll('\\', '/').endsWith(bootModule);
   let outDir = 'dist';
@@ -104,18 +119,14 @@ export function bootFilesPlugin(bootModule = 'src/app/boot.ts'): Plugin {
       order: 'post',
       handler(html, ctx) {
         if (!ctx.bundle) return html;
-        const files = bootFiles(ctx.bundle as unknown as BundleLike, isBoot);
-        return {
-          html,
-          tags: [
-            {
-              tag: 'script',
-              attrs: { type: 'application/json', id: 'boot-files' },
-              children: JSON.stringify(files),
-              injectTo: 'head',
-            },
-          ],
-        };
+        const bundle = ctx.bundle as unknown as BundleLike;
+        const list = (id: string, value: unknown) => ({
+          tag: 'script',
+          attrs: { type: 'application/json', id },
+          children: JSON.stringify(value),
+          injectTo: 'head' as const,
+        });
+        return { html, tags: [list('boot-files', bootFiles(bundle, isBoot)), list('offline-files', offlineFiles(bundle))] };
       },
     },
   };

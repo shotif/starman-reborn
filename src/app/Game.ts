@@ -1681,7 +1681,7 @@ export class Game {
     this.persist();
     this.contextLostEl = h(
       'section',
-      { class: 'screen context-lost', role: 'alertdialog', 'aria-label': 'Graphics interrupted' },
+      { class: 'screen context-lost', role: 'alertdialog', 'aria-label': 'Graphics interrupted', 'data-testid': 'context-lost' },
       h(
         'div',
         { class: 'panel panel-pad stack', style: 'max-width: 26rem' },
@@ -1711,6 +1711,7 @@ export class Game {
       hud: () => (this.flight ? structuredClone(this.flight.hud) : null),
       scheme: () => this.scheme,
       audioState: () => this.audio.state,
+      framesDrawn: () => this.renderer.framesDrawn,
       setTimeScale: (s: number) => {
         this.timeScale = Math.max(0.1, Math.min(8, s));
       },

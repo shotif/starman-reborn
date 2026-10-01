@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bootFiles, systemCount, type BundleLike } from '../../scripts/bootFiles.ts';
+import { bootFiles, offlineFiles, systemCount, type BundleLike } from '../../scripts/bootFiles.ts';
 import { LOAD_BUDGET, overBudget, total, type LoadReport } from '../../scripts/load-budget.ts';
 import { downloadAll, parseBootFiles, type BootFile } from '../../src/app/download.ts';
 import { SYSTEMS } from '../../src/data/systems.ts';
@@ -138,6 +138,25 @@ describe('the build’s list of what the game needs beyond the loading title', (
 
   it('refuses a bundle without the boot chunk', () => {
     expect(() => bootFiles(bundle, () => false)).toThrow(/no entry or no boot chunk/);
+  });
+
+  it('lists every script, style and font for the offline cache, the on-demand ones too, and no source maps', () => {
+    const withExtras: BundleLike = {
+      ...bundle,
+      'assets/font-6.woff2': asset('assets/font-6.woff2', 18),
+      'assets/font-6.woff': asset('assets/font-6.woff', 15),
+      'assets/boot-2.js.map': asset('assets/boot-2.js.map', 4000),
+    };
+    expect(offlineFiles(withExtras)).toEqual([
+      './assets/addons-4.js',
+      './assets/boot-2.css',
+      './assets/boot-2.js',
+      './assets/font-6.woff2',
+      './assets/index-1.css',
+      './assets/index-1.js',
+      './assets/map-5.js',
+      './assets/three-3.js',
+    ]);
   });
 });
 

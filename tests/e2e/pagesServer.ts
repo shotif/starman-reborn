@@ -28,7 +28,8 @@ export interface PagesServer {
   close(): Promise<void>;
 }
 
-export async function servePages(root = 'dist', port = 0): Promise<PagesServer> {
+/** `host` 'localhost' gives an origin where the service worker registers (src/main.ts). */
+export async function servePages(root = 'dist', port = 0, host: '127.0.0.1' | 'localhost' = '127.0.0.1'): Promise<PagesServer> {
   const base = resolve(root);
   const cache = new Map<string, { body: Buffer; gz: Buffer | null; etag: string }>();
   const server: Server = createServer((req, res) => {
@@ -77,8 +78,14 @@ export async function servePages(root = 'dist', port = 0): Promise<PagesServer> 
   await new Promise<void>((done) => server.listen(port, '127.0.0.1', done));
   const address = server.address();
   const actual = typeof address === 'object' && address ? address.port : port;
+  let closed: Promise<void> | null = null;
   return {
-    url: `http://127.0.0.1:${actual}`,
-    close: () => new Promise<void>((done) => server.close(() => done())),
+    url: `http://${host}:${actual}`,
+    // Kept-alive connections go too, so nothing more can be served once it returns.
+    close: () =>
+      (closed ??= new Promise<void>((done) => {
+        server.close(() => done());
+        server.closeAllConnections();
+      })),
   };
 }

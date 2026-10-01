@@ -36,6 +36,8 @@ export class GameRenderer {
   quality: QualityLevel;
   /** Multiplier applied on top of the capped DPR (0.55..1), driven by frame time. */
   dynamicScale = 1;
+  /** Frames drawn so far (the browser tests watch it stop and start with the WebGL context). */
+  framesDrawn = 0;
   onContextLost: (() => void) | null = null;
   onContextRestored: (() => void) | null = null;
   contextLost = false;
@@ -121,6 +123,7 @@ export class GameRenderer {
 
   render(scene: THREE.Scene, camera: THREE.Camera): void {
     if (this.contextLost) return;
+    this.framesDrawn++;
     if (this.useBloom && this.bloom) {
       this.bloom.renderPass.scene = scene;
       this.bloom.renderPass.camera = camera;

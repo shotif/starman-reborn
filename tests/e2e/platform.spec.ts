@@ -143,6 +143,61 @@ test.describe('platform behaviour', () => {
     expect(jump).toBeLessThan(120);
   });
 
+  test('losing the graphics freezes the game, saves it and says so; it carries on when they return', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(String(e)));
+    await openFresh(page);
+    await newGameAndLaunch(page, 6);
+    // Fly forward, so a frozen game is told from a ship sitting still.
+    if (await isTouch(page)) {
+      const track = (await page.getByTestId('touch-throttle').boundingBox())!;
+      await page.touchscreen.tap(track.x + track.width / 2, track.y + 4);
+    } else {
+      await page.keyboard.down('KeyW');
+      await page.waitForTimeout(1500);
+      await page.keyboard.up('KeyW');
+    }
+    await waitUntil(page, 'under way', async () => (await api<PlayerInfo>(page, 'player'))!.speed > 20);
+    // What a phone low on memory does: the browser takes the WebGL context away.
+    await page.evaluate(() => {
+      const gl = (document.getElementById('scene') as HTMLCanvasElement).getContext('webgl2')!;
+      const lose = gl.getExtension('WEBGL_lose_context')!;
+      (window as unknown as { __lose: WEBGL_lose_context }).__lose = lose;
+      lose.loseContext();
+    });
+    await expect(page.getByTestId('context-lost')).toBeVisible();
+    await expect(page.getByTestId('context-lost')).toContainText('Your progress is saved');
+    const atLoss = (await api<PlayerInfo>(page, 'player'))!;
+    const framesAtLoss = await api<number>(page, 'framesDrawn');
+    await page.waitForTimeout(1500);
+    expect((await api<PlayerInfo>(page, 'player'))!.position).toEqual(atLoss.position);
+    expect(await api<number>(page, 'framesDrawn')).toBe(framesAtLoss);
+    // The save was written as the graphics went.
+    await api(page, 'flush');
+    const saved = await page.evaluate(
+      () =>
+        new Promise<{ ship: { cargo: Record<string, number> } } | undefined>((resolve, reject) => {
+          const open = indexedDB.open('starman-reborn');
+          open.onerror = () => reject(open.error);
+          open.onsuccess = () => {
+            const get = open.result.transaction('kv').objectStore('kv').get('save:main');
+            get.onsuccess = () => resolve(get.result);
+            get.onerror = () => reject(get.error);
+          };
+        }),
+    );
+    expect(saved?.ship.cargo.medical).toBe(6);
+    // The graphics come back: the notice goes, drawing and flying carry on.
+    await page.evaluate(() => (window as unknown as { __lose: WEBGL_lose_context }).__lose.restoreContext());
+    await expect(page.getByTestId('context-lost')).toBeHidden();
+    await waitUntil(page, 'drawing again', async () => (await api<number>(page, 'framesDrawn')) > framesAtLoss + 10);
+    await waitUntil(page, 'flying again', async () => {
+      const now = (await api<PlayerInfo>(page, 'player'))!;
+      return Math.hypot(...now.position.map((v, i) => v - atLoss.position[i]!)) > 5;
+    });
+    expect(errors).toEqual([]);
+  });
+
   test('safe-area insets keep HUD and controls clear of notches and home bars', async ({ page }) => {
     await openFresh(page);
     await page.addStyleTag({ content: ':root{--safe-top:44px!important;--safe-bottom:34px!important;--safe-left:30px!important;--safe-right:30px!important}' });
