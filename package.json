@@ -24,7 +24,8 @@
     "data:build": "node scripts/build-dataset.ts",
     "data:validate": "node scripts/validate-data.ts",
     "screenshots": "playwright test --project=screenshots",
-    "check": "npm run typecheck && npm run data:validate && npm test && npm run build"
+    "size": "node scripts/load-budget.ts",
+    "check": "npm run typecheck && npm run data:validate && npm test && npm run build && npm run size"
   },
   "dependencies": {
     "@fontsource/saira-condensed": "5.3.0",

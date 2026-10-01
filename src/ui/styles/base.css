@@ -101,6 +101,12 @@ body {
   /* The flight view is a control surface: no browser panning or zooming. */
   touch-action: none;
   outline: none;
+  transition: opacity 0.6s ease-out;
+}
+
+/* Black behind the loading title until the game draws the scene there. */
+#scene.awaiting-game {
+  opacity: 0;
 }
 
 #ui {

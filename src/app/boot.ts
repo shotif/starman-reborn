@@ -3,10 +3,9 @@ import type { SystemId } from '../data/types.ts';
 import { button, setModalRoot, setToastRoot } from '../ui/components.ts';
 import { h } from '../ui/dom.ts';
 import '../ui/styles/screens.css';
-import { applyDocumentSettings, Game } from './Game.ts';
-import { detectBackend } from './save/backend.ts';
+import { Game } from './Game.ts';
+import type { Handover } from './loader.ts';
 import { SaveManager } from './save/SaveManager.ts';
-import { sanitizeSettings } from './settings.ts';
 import { detectWebGL2 } from './webgl.ts';
 
 /** Friendly fallback when WebGL 2 is missing: the 2D star map and the science notes still work. */
@@ -57,14 +56,15 @@ async function renderCompat(ui: HTMLElement, reason: string | undefined): Promis
   draw();
 }
 
-export async function boot(): Promise<void> {
+/** Starts the game behind the loading title (src/app/loader.ts), which goes once the title is up. */
+export async function boot(handover: Handover): Promise<void> {
   const ui = document.getElementById('ui')!;
   const canvas = document.getElementById('scene') as HTMLCanvasElement;
-  const saves = new SaveManager(await detectBackend());
-  const settings = sanitizeSettings(await saves.loadSettings());
-  applyDocumentSettings(settings);
+  const saves = new SaveManager(handover.backend);
+  const settings = handover.settings;
   const support = detectWebGL2();
   if (!support.webgl2) {
+    handover.done();
     canvas.style.display = 'none';
     const toasts = h('div', { class: 'toasts' });
     ui.appendChild(toasts);
@@ -79,4 +79,5 @@ export async function boot(): Promise<void> {
     (window as unknown as { __starman: ReturnType<Game['testApi']> }).__starman = game.testApi();
   }
   await game.showTitle();
+  handover.done();
 }

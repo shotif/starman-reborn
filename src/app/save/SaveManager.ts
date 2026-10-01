@@ -1,3 +1,4 @@
+import { SETTINGS_KEY } from '../settings.ts';
 import type { GameState } from '../state.ts';
 import type { SaveBackend } from './backend.ts';
 import { migrateSave, SaveFormatError } from './migrate.ts';
@@ -6,7 +7,7 @@ import { assertSlot, readSlot, SLOT_COUNT, slotGame, slotKey, summarize, type Sa
 /** The autosave: the running game's own save (it keeps this key from before there were slots). */
 export const SAVE_KEY = 'save:main';
 export const BACKUP_KEY = 'save:backup';
-export const SETTINGS_KEY = 'settings';
+export { SETTINGS_KEY };
 
 export interface LoadResult {
   state: GameState | null;

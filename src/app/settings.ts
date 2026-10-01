@@ -1,3 +1,5 @@
+import type { SaveBackend } from './save/backend.ts';
+
 export type QualitySetting = 'auto' | 'low' | 'medium' | 'high';
 export type AimAssist = 'off' | 'low' | 'medium';
 export type Difficulty = 'relaxed' | 'standard' | 'veteran';
@@ -75,6 +77,21 @@ export function sanitizeSettings(raw: unknown): Settings {
     swapTouchSides: typeof r.swapTouchSides === 'boolean' ? r.swapTouchSides : d.swapTouchSides,
     showFps: typeof r.showFps === 'boolean' ? r.showFps : d.showFps,
   };
+}
+
+/** Where the settings are kept, beside the saves. */
+export const SETTINGS_KEY = 'settings';
+
+/** The stored settings, made valid (defaults when there are none or storage fails). */
+export async function loadSettings(backend: SaveBackend): Promise<Settings> {
+  return sanitizeSettings(await backend.get(SETTINGS_KEY).catch(() => undefined));
+}
+
+/** Text size and reduced motion apply to the whole page, the loading title included. */
+export function applyDocumentSettings(settings: Settings): void {
+  const root = document.documentElement;
+  root.style.setProperty('--text-scale', String(settings.textScale));
+  root.classList.toggle('reduced-motion', settings.reducedMotion);
 }
 
 export const DIFFICULTY = {

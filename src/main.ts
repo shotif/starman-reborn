@@ -1,7 +1,8 @@
 import './ui/styles/base.css';
-import { boot } from './app/boot.ts';
+import { startGame } from './app/loader.ts';
 
-boot();
+// The loading title first; the game arrives behind it (src/app/loader.ts).
+void startGame();
 
 // Offline support (stretch goal): production builds over HTTPS or localhost, never in test runs.
 if (

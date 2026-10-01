@@ -77,6 +77,55 @@
   padding: 0.45rem 0.7rem;
 }
 
+/* The loading title: a bar where Play will be, filling as the game arrives. */
+.title-progress {
+  cursor: progress;
+  color: var(--amber);
+  overflow: hidden;
+}
+
+.title-progress:hover,
+.title-progress:active {
+  background: linear-gradient(180deg, rgba(60, 98, 176, 0.55), rgba(14, 26, 60, 0.9));
+}
+
+.title-progress-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--amber-deep), var(--amber));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.2s linear;
+}
+
+.title-progress.indeterminate .title-progress-bar {
+  transform: scaleX(0.3);
+  animation: title-progress-sweep 1.4s ease-in-out infinite;
+}
+
+@keyframes title-progress-sweep {
+  from {
+    translate: -100% 0;
+  }
+  to {
+    translate: 340% 0;
+  }
+}
+
+.title-progress-value:empty {
+  display: none;
+}
+
+.title-load-error {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  color: var(--text);
+}
+
 .title-build {
   position: absolute;
   right: calc(var(--safe-right) + 1rem);

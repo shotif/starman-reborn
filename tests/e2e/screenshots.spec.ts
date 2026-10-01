@@ -3,9 +3,10 @@ import { mkdirSync } from 'node:fs';
 import { api, newGameAndLaunch, openFresh, press, waitUntil } from './helpers.ts';
 
 /**
- * Captures every required layout (spec section 10) and audits for common layout failures:
- * page scroll capture, buttons clipped off-screen, content cut off inside a box, unreadably small
- * text, undersized touch targets and overlapping HUD panels. Screenshots go to docs/screenshots/.
+ * Captures every required layout (spec section 10), from the loading title on, and audits for
+ * common layout failures: page scroll capture, buttons clipped off-screen, content cut off inside a
+ * box, unreadably small text, undersized touch targets and overlapping HUD panels. Screenshots go
+ * to docs/screenshots/.
  *
  * Two extra cases reproduce large-text phones: Android text scaling (rem sizes at 130%) and
  * accessibility page zoom (a 411-wide phone at 130% zoom is a 316-wide CSS viewport).
@@ -139,6 +140,24 @@ async function shot(page: Page, name: string, touch: boolean, results: Record<st
   results[name] = await audit(page, touch);
 }
 
+/** The loading title, caught part-way: the game's largest file is held back until the shot is taken. */
+async function loadingShot(page: Page, name: string, touch: boolean, results: Record<string, AuditResult>): Promise<void> {
+  let release = () => {};
+  const held = new Promise<void>((done) => (release = done));
+  const bootFile = /\/assets\/boot-[^/]+\.js$/;
+  await page.route(bootFile, async (route) => {
+    await held;
+    await route.continue();
+  });
+  await page.reload();
+  await expect(page.getByTestId('title-loading')).toBeVisible();
+  await expect(page.getByTestId('title-progress')).toHaveAttribute('aria-valuenow', /^[1-9]\d?$/);
+  await shot(page, name, touch, results);
+  release();
+  await expect(page.getByTestId('title-screen')).toBeVisible();
+  await page.unroute(bootFile);
+}
+
 for (const size of SIZES) {
   test.describe(size.name, () => {
     test.use({
@@ -162,6 +181,7 @@ for (const size of SIZES) {
         }, px);
       }
       await openFresh(page);
+      await loadingShot(page, `${size.name}-0-loading`, size.touch, results);
       await shot(page, `${size.name}-1-title`, size.touch, results);
       await press(page, 'title-play');
       await press(page, 'intro-ok');

@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import basicSsl from '@vitejs/plugin-basic-ssl';
+import { bootFilesPlugin, systemCount } from './scripts/bootFiles.ts';
 
 // `--mode https` serves dev/preview over a self-signed certificate so phones on
 // the same network can open the game (see README "Testing on real devices").
@@ -9,8 +10,10 @@ export default defineConfig(({ mode }) => ({
   base: './',
   define: {
     __BUILD_ID__: JSON.stringify((process.env.GITHUB_SHA ?? '').slice(0, 7) || 'local'),
+    // The loading title counts the systems before the sky data has arrived.
+    __SYSTEM_COUNT__: JSON.stringify(systemCount()),
   },
-  plugins: mode === 'https' ? [basicSsl({ name: 'starman-reborn-dev' })] : [],
+  plugins: [bootFilesPlugin(), ...(mode === 'https' ? [basicSsl({ name: 'starman-reborn-dev' })] : [])],
   build: {
     target: 'es2022',
     sourcemap: true,

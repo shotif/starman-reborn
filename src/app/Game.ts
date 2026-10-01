@@ -11,7 +11,7 @@ import { fill, PAYMENT } from '../content/people/lines.ts';
 import * as THREE from 'three';
 import { AudioEngine } from '../audio/AudioEngine.ts';
 import type { MusicMood, SfxId } from '../audio/types.ts';
-import { ALL_LOCATIONS, getComponent, getLocation, getPlanet, getSystem, SYSTEMS, WORLD } from '../data/systems.ts';
+import { ALL_LOCATIONS, getComponent, getLocation, getPlanet, getSystem, hasProvisionalData, SYSTEMS, WORLD } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { addCargo, cargoUsed, itemsThatFit } from '../economy/cargo.ts';
 import { COMMODITIES } from '../economy/commodities.ts';
@@ -85,7 +85,7 @@ import { GameRenderer, isTouchDevice, resolveQuality } from './GameRenderer.ts';
 import { Loop } from './Loop.ts';
 import { discoverBody, dockAt, jumpReadiness, performJump, rescueAfterDefeat, routeFee, undock } from './rules.ts';
 import type { SaveManager } from './save/SaveManager.ts';
-import type { Settings } from './settings.ts';
+import { applyDocumentSettings, type Settings } from './settings.ts';
 import { Soundscape } from './soundscape.ts';
 import { applyCredits, createNewGame, type GameState } from './state.ts';
 
@@ -118,12 +118,6 @@ function moodFor(systemId: SystemId): MusicMood {
   const primary = getComponent(getSystem(systemId).componentIds[0] ?? '');
   const cls = primary ? spectralClass(primary.spectralType) : 'M';
   return cls === 'M' ? 'barnard' : cls === 'D' || cls === 'A' || cls === 'B' ? 'sirius' : cls === 'K' ? 'epsilon-eridani' : 'alpha-centauri';
-}
-
-export function applyDocumentSettings(settings: Settings): void {
-  const root = document.documentElement;
-  root.style.setProperty('--text-scale', String(settings.textScale));
-  root.classList.toggle('reduced-motion', settings.reducedMotion);
 }
 
 export class Game {
@@ -363,6 +357,8 @@ export class Game {
       ? `${getSystem(s.location.systemId).displayName}${s.location.dockedAt ? ` · ${getLocation(s.location.dockedAt).name}` : ' · in flight'} · ${formatCredits(s.credits)}`
       : null;
     this.titleEl = renderTitle(this.screenLayer, {
+      systemCount: SYSTEMS.length,
+      provisional: hasProvisionalData(),
       saveSummary: summary,
       onPlay: () => void this.newGame(!!s),
       onContinue: () => void this.continueGame(),
