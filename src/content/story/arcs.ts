@@ -1039,6 +1039,7 @@ export const ARC_JOBS: readonly JobDef[] = [
       finale: true,
       comms: [{ at: 0, lines: [{ who: 'fenwick', text: 'Fenwick to the convoy: slow and steady, and stay off Blackflag’s channel. We’ve waited three years. We can wait another hour.' }] }],
       debrief: [{ who: 'fenwick', text: 'Doppler paid in machinery, and the dock crews clapped the Wrenna in. Harrow has a second hauler on order and fields for two harvests. Out here that counts as a fortune. Come back at sowing: there’s always soup.' }],
+      leaves: 'harvest.freeport',
     },
   },
   {
@@ -1064,6 +1065,7 @@ export const ARC_JOBS: readonly JobDef[] = [
       finale: true,
       comms: [{ at: 0, lines: [{ who: 'halloway', text: 'Squall Relay to the harvest convoy: we see you. Half the relay is at the windows. Bring them in.' }] }],
       debrief: [{ who: 'halloway', text: 'Fresh bread on a relay. I’d forgotten. The crews have put Harrow’s calls on the first channel, so nobody out there goes unanswered again. Tell Orla she has friends at the edge.' }],
+      leaves: 'harvest.relay',
     },
   },
 ];

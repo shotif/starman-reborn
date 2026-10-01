@@ -4,7 +4,7 @@ import type { GameState } from '../app/state.ts';
 import { borderNews, type FrontPhase } from '../economy/border.ts';
 import { densDownNear } from '../economy/dens.ts';
 import type { SystemId } from '../data/types.ts';
-import { eventEnd, minutes, newsAt, type NewsItem, type WorldEvent } from '../economy/events.ts';
+import { eventEnd, marksNear, minutes, newsAt, type NewsItem, type WorldEvent } from '../economy/events.ts';
 import { h } from './dom.ts';
 import { glyph, type GlyphName } from './glyphs.ts';
 import { COMMODITY_GLYPH } from './station/trader.ts';
@@ -62,6 +62,31 @@ export function denNews(state: GameState, systemId: SystemId): HTMLElement | nul
           h('span', { class: 'row-name' }, `${loc.name} knocked out`),
           h('span', { class: 'row-sub' }, `Raider den · ${d.jumps === 0 ? 'this system' : `${getSystem(loc.systemId).displayName}, ${d.jumps} jump${d.jumps > 1 ? 's' : ''}`} · dark for about ${hours} h more`),
           h('span', { class: 'news-detail' }, `Its reactor is down: no raider packs at ${getSystem(loc.systemId).displayName} until the Wake rebuilds it.`),
+        ),
+      );
+    }),
+  );
+}
+
+/** Stations a story's ending changed for good, within reach (docs/PROCGEN.md §14.7). */
+export function markNews(systemId: SystemId): HTMLElement | null {
+  const near = marksNear(systemId);
+  if (!near.length) return null;
+  return h(
+    'ul',
+    { class: 'list news-list', 'data-testid': 'mark-news' },
+    near.map(({ mark, jumps }) => {
+      const loc = getLocation(mark.locationId);
+      return h(
+        'li',
+        { class: 'news-item kind-mark', 'data-testid': `mark-${mark.id}` },
+        glyph(COMMODITY_GLYPH[mark.market.goods[0]!]),
+        h(
+          'span',
+          { class: 'news-text' },
+          h('span', { class: 'row-name' }, mark.headline),
+          h('span', { class: 'row-sub' }, `For good · ${loc.name} · ${jumps === 0 ? 'this system' : `${getSystem(loc.systemId).displayName}, ${jumps} jump${jumps > 1 ? 's' : ''}`}`),
+          h('span', { class: 'news-detail' }, mark.detail),
         ),
       );
     }),

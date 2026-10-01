@@ -203,6 +203,8 @@ export interface WorldLog {
    * pressure], + for the law, − for the Wake; newest last), and how The Long Border ended there.
    */
   border: Record<string, BorderLog>;
+  /** Lasting marks a story's ending left on a station (docs/PROCGEN.md §14.7): mark id → game clock. */
+  marks?: Record<string, number>;
 }
 
 export type BorderEnding = 'law' | 'wake' | 'truce';

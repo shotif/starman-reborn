@@ -49,6 +49,15 @@ to the live site once CI passes.
 
 ## Done so far
 
+### First Harvest leaves its mark ✅
+
+How First Harvest ends now changes Harrow Farmstead for good. Sold at Doppler Freeport, the
+harvest pays for new fields: food is plentiful at Harrow, and its board posts a harvest run of
+fine food to Doppler in every time slot. Given to Squall Relay's crews, Harrow keeps a share for
+the edge: medicine is plentiful there, and its board sends the relay's share, paid better. The
+news within two jumps says so. Lasting marks are data with guardrails, so later stories can leave
+their own ([PROCGEN.md §14.7](PROCGEN.md#147-lasting-marks)).
+
 ### A smarter hint, and station art rough edges ✅
 
 The what-next hint now also says when the ship needs a mechanic first, when a better ship is

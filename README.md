@@ -24,7 +24,7 @@ and goods spill along the lanes. Where lawful space meets a raider den, a border
 and forth, and your work tips it. Five hand-written story arcs give the sandbox a spine: three
 faction arcs; The Long Border, which reads the choices made in the other three and settles a
 front for good, as a lawful pilot, an outlaw or neither; and First Harvest, out among the
-frontier's farms. Pilot ratings, a codex of 361 real bodies, 24 milestones and a hint of what to
+frontier's farms, whose ending changes a farm's market and job board for good. Pilot ratings, a codex of 361 real bodies, 24 milestones and a hint of what to
 do next give it goals. Fights have seekers and decoy
 flares, mines, damage to a ship's systems, loot, wingmen for hire, and raider dens that defend
 themselves and can be knocked out.

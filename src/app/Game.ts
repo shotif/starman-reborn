@@ -3,7 +3,7 @@ import { atWar, borderNews, occupied, recordDeed } from '../economy/border.ts';
 import { gameJulianDate } from '../data/solar.ts';
 import type { Lingering } from './state.ts';
 import { TRAFFIC } from '../world/traffic/plan.ts';
-import { raidKill } from '../economy/answers.ts';
+import { leaveMark, raidKill } from '../economy/answers.ts';
 import { useWorldLog } from '../economy/events.ts';
 import { fleetNews, settleFleet, type FleetSettlement } from '../economy/fleet.ts';
 import { lastView } from '../ui/station/lastView.ts';
@@ -1807,6 +1807,8 @@ export class Game {
         for (const id of ids) {
           const job = getJob(id, this.state);
           this.state.jobs[id] = { status: 'complete', objectiveIndex: job.objectives.length, acceptedAt: this.state.clock, completedAt: this.state.clock };
+          // A finale's lasting mark comes with it, as when it is flown (docs/PROCGEN.md §14.7).
+          if (job.story?.leaves) leaveMark(this.state, job.story.leaves);
         }
         this.state.flags.clearance = true;
         this.station?.render();

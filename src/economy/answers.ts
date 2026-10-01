@@ -1,5 +1,6 @@
 import { applyCredits, type CommodityId, type GameState } from '../app/state.ts';
 import { EVENTS } from '../content/events/rules.ts';
+import { findMark, type LastingMark } from '../content/story/marks.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
 import { getLocation, getSystem } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
@@ -13,6 +14,19 @@ import { marketEntry } from './markets.ts';
  * sooner and pays a relief bonus; destroying raiders in a raided system breaks the raid. Both are
  * written to the save's world log, which the event engine reads (economy/events.ts useWorldLog).
  */
+
+/**
+ * A story's ending leaves a lasting mark on a station (docs/PROCGEN.md §14.7), once and for good.
+ * Returns the mark, or null if it was already left.
+ */
+export function leaveMark(state: GameState, id: string): LastingMark | null {
+  const mark = findMark(id);
+  if (!mark) return null;
+  const marks = (state.world.marks ??= {});
+  if (marks[id] !== undefined) return null;
+  marks[id] = state.clock;
+  return mark;
+}
 
 export interface Answer {
   text: string;

@@ -5,6 +5,7 @@ import { LAW } from '../content/law/rules.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
 import { beltGoods } from '../content/mining/rules.ts';
 import { hashString, rng, type Rng } from '../content/random.ts';
+import type { LastingMark } from '../content/story/marks.ts';
 import { jumpsFrom } from '../content/world/network.ts';
 import { WORLD_SEED } from '../content/world/rules.ts';
 import { ALL_LOCATIONS, BELTS, getLocation, getSystem, isFrontier, SYSTEMS, WORLD } from '../data/systems.ts';
@@ -14,7 +15,7 @@ import { FLEETS } from '../world/traffic/plan.ts';
 import { trafficFor } from '../world/traffic/setup.ts';
 import { atWar, EXPOSED, FRONTS, frontState, occupied, type FrontState } from './border.ts';
 import { itemsThatFit } from './cargo.ts';
-import { baseThreat, priceMultiplier, stationEventAt, systemEventAt, worldLogKey, type WorldEvent } from './events.ts';
+import { baseThreat, marksAt, marksKey, priceMultiplier, stationEventAt, systemEventAt, worldLogKey, type WorldEvent } from './events.ts';
 import { FACTIONS } from './factions.ts';
 import { dockAccess, lawIn, scansOnDocking, wakeFriendly } from './law.ts';
 import type { JobDef } from './jobs.ts';
@@ -124,8 +125,8 @@ const boardCache = new Map<string, JobDef[]>();
 
 /** The contracts a station posts in a time slot (hand-made jobs are separate, in jobs.ts). */
 export function boardFor(locationId: string, epoch: number): JobDef[] {
-  // The border war is the save's own, so boards are kept per save.
-  const key = `${locationId}|${epoch}|${worldLogKey()}`;
+  // The border war and lasting marks are the save's own, so boards are kept per save.
+  const key = `${locationId}|${epoch}|${worldLogKey()}|${marksKey()}`;
   const cached = boardCache.get(key);
   if (cached) return cached;
   const loc = getLocation(locationId);
@@ -156,6 +157,11 @@ export function boardFor(locationId: string, epoch: number): JobDef[] {
     // Work answering a world event, from its own stream so the rest of the board does not move.
     const e = eventContract(loc, rng(WORLD_SEED, 'contracts', 'event', locationId, epoch), `${CONTRACT_PREFIX}${locationId}.${epoch}.${out.length}`, clock);
     if (e && !out.some((o) => same(o, e))) out.push(e);
+    // Standing runs a story's ending left here (docs/PROCGEN.md §14.7), each from its own stream.
+    for (const mark of marksAt(locationId)) {
+      const run = freight(loc, rng(WORLD_SEED, 'contracts', 'mark', mark.id, epoch), `${CONTRACT_PREFIX}${locationId}.${epoch}.${out.length}`, clock, { mark });
+      if (run) out.push(run);
+    }
   }
   if (boardCache.size > 4_000) boardCache.clear();
   boardCache.set(key, out);
@@ -327,15 +333,24 @@ function parcel(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
   return r.next() < CONTRACTS.urgent.chance ? makeUrgent(job, giver.systemId, dest.systemId) : job;
 }
 
-function freight(giver: FictionalLocation, r: Rng, id: string, clock: number, opts: { commodity?: CommodityId; event?: WorldEvent } = {}): JobDef | null {
+function freight(
+  giver: FictionalLocation,
+  r: Rng,
+  id: string,
+  clock: number,
+  opts: { commodity?: CommodityId; event?: WorldEvent; mark?: LastingMark } = {},
+): JobDef | null {
   const markets = marketTables();
   const here = markets.get(giver.id);
   if (!here) return null;
   const made = [...here.entries.values()].filter((e) => e.role === 'produce' && isLegalCargo(e.commodity)).map((e) => e.commodity);
-  if (!made.length || (opts.commodity && !made.includes(opts.commodity))) return null;
-  const commodity = opts.commodity ?? r.pick(made);
+  const wanted = opts.mark?.run.commodity ?? opts.commodity;
+  if (!made.length || (wanted && !made.includes(wanted))) return null;
+  const commodity = wanted ?? r.pick(made);
+  // A mark's run always goes to the same place.
   const dests = openStations().filter((l) => {
     if (l.id === giver.id || jumpsBetween(giver.systemId, l.systemId) > CONTRACTS.maxJumps.freight) return false;
+    if (opts.mark && l.id !== opts.mark.run.to) return false;
     const e = markets.get(l.id)?.entries.get(commodity);
     return !!e && e.role !== 'produce';
   });
@@ -347,13 +362,21 @@ function freight(giver: FictionalLocation, r: Rng, id: string, clock: number, op
   // The deposit is a little more than the cargo fetches at its destination (events included), so selling it pays less than delivering.
   const deposit = round5(qty * destEntry.mid * (1 - destEntry.spread / 2) * 1.1 * Math.max(1, priceMultiplier(dest.id, commodity, clock)));
   const rw = CONTRACTS.reward.freight;
-  const reward = pay(r, routeFeeBetween(giver.systemId, dest.systemId), (rw.base + rw.danger * (1 - security(dest.systemId)) + rw.cargoShare * qty * good.basePrice) * premium(opts.event));
+  const reward = pay(
+    r,
+    routeFeeBetween(giver.systemId, dest.systemId),
+    (rw.base + rw.danger * (1 - security(dest.systemId)) + rw.cargoShare * qty * good.basePrice) * premium(opts.event) * (opts.mark?.run.premium ?? 1),
+  );
   const difficulty = difficultyFor(giver.systemId, dest.systemId);
   const name = good.name.toLowerCase();
-  const why = opts.event ? `${opts.event.headline}. ` : '';
+  const why = opts.mark ? `${opts.mark.run.why} ` : opts.event ? `${opts.event.headline}. ` : '';
   const job: JobDef = {
     ...common(giver, id, difficulty),
-    title: opts.event ? `${opts.event.kind === 'harvest' ? 'Harvest' : 'Surplus'} haul: ${qty} ${name} to ${dest.name}` : `Haul ${qty} ${name} to ${dest.name}`,
+    title: opts.mark
+      ? `${opts.mark.run.title}: ${qty} ${name} to ${dest.name}`
+      : opts.event
+        ? `${opts.event.kind === 'harvest' ? 'Harvest' : 'Surplus'} haul: ${qty} ${name} to ${dest.name}`
+        : `Haul ${qty} ${name} to ${dest.name}`,
     briefing: `${why}${giver.name} has ${qty} ${name} (${qty * good.unitSize} hold units) bound for ${place(dest)}. We load it on acceptance against a deposit of ${deposit} cr, returned with your pay on delivery.`,
     objectives: [{ kind: 'deliver', commodity, qty, locationId: dest.id, text: `Deliver ${qty} ${name} to ${place(dest)}` }],
     reward,
@@ -361,7 +384,7 @@ function freight(giver: FictionalLocation, r: Rng, id: string, clock: number, op
     destinationLocationId: dest.id,
     contract: { kind: 'freight', cargo: { commodity, qty }, deposit, ...(opts.event ? { event: opts.event.id } : {}) },
   };
-  return !opts.event && r.next() < CONTRACTS.urgent.chance ? makeUrgent(job, giver.systemId, dest.systemId) : job;
+  return !opts.event && !opts.mark && r.next() < CONTRACTS.urgent.chance ? makeUrgent(job, giver.systemId, dest.systemId) : job;
 }
 
 function supply(giver: FictionalLocation, r: Rng, id: string, clock: number, opts: { commodity?: CommodityId; event?: WorldEvent } = {}): JobDef | null {

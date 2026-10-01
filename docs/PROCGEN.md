@@ -1006,7 +1006,33 @@ bringing in its first harvest. It is given after the opening delivery and asks n
 
 - **Honest about the sky**: the readings of HD 219134 f settle nothing (§1): the planet stays
   contested, with what each archive says, and the words say so.
-- Its finale earns a milestone. The arc's ending changes standing and words, not the world.
+- Its finale earns a milestone, and its ending changes Harrow Farmstead for good (§14.7).
+
+### 14.7 Lasting marks
+
+A story's ending can change a station for good (`src/content/story/marks.ts`). When a finale that
+leaves a mark is done, the mark is written to the save's world log (§17.5), once. From then on:
+
+- **its market** moves as under a world event that never ends: the goods concerned have their
+  price and normal stock multiplied, on top of any event there (§11);
+- **its job board** posts a standing run in every time slot, after the rest of the board (which is
+  as it was): the station's own produce to one place, paid a premium on the usual freight;
+- **the news** within two jumps says so, for good.
+
+First Harvest's two endings each leave one on Harrow Farmstead (fiction):
+
+| Ending | Market | Standing run |
+| --- | --- | --- |
+| Sold at Doppler Freeport: machinery for new fields and a second hauler | food and fine food: price ×0.85, stock ×1.6 | Harvest run: fine food to Doppler Freeport (Achird), usual pay |
+| Fed to Squall Relay's crews, who answer Harrow's calls first | medicine: price ×0.85, stock ×1.6 | The relay's share: staple food to Squall Relay (EV Lacertae), pay ×1.25 |
+
+Guardrails (`validateMarks`, `src/economy/storyGuards.ts`, run in `tests/unit/story.test.ts`): a
+mark changes an open station with a market and a job board, only goods it trades, with price
+×0.7–1.2 and stock ×0.6–2; its run carries the station's own produce to another open station within
+freight reach that takes it, at a premium of ×1–1.5; marks on one station never touch the same
+goods; every mark is left by exactly one finale, and only finales leave them.
+
+## 15. Combat depth
 
 What a fight is made of beyond guns and shields (`src/content/combat/rules.ts`, the phrase pools in
 `src/content/combat/chatter.ts`, the economy side in `src/economy/combat.ts`). The numbers are game
@@ -1310,10 +1336,12 @@ world log (§17.5) and read back from it, so another save's world is untouched.
 - `relief`: units sold into each shortage; `raidKills`: raiders downed in each raid;
 - `ended`: the events the player ended early, with the time;
 - `lingering`: what is still out there, by system (§17.3);
-- `border`: the player's deeds on each border front, and how The Long Border ended there (§20).
+- `border`: the player's deeds on each border front, and how The Long Border ended there (§20);
+- `marks`: the lasting marks a story's ending left on a station, with the time (§14.7; optional,
+  so a save from before them simply has none).
 
 The event engine reads the log of the save being played (`useWorldLog`), so events stay a pure
-function of the clock except for the endings recorded there. `tidyWorldLog` runs at every docking:
+function of the clock except for the endings and marks recorded there. `tidyWorldLog` runs at every docking:
 endings over a day old are forgotten, and the relief and raid tallies keep their 40 newest events.
 The crimes whose news is still travelling, and each faction's last crime, are in `GameState.law`
 (§17.4). A version 9 save keeps its fines on record, counts them as committed at its own clock for

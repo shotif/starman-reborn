@@ -142,7 +142,15 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   Harvest is given at Squall Relay after the opening delivery to anyone, and played through both
   ways (the drive parts handed over to the Wrenna in Achird, HD 219134 d and f scanned with f still
   contested, the harvest convoy across one jump to Doppler Freeport or to Squall Relay, and its
-  milestone); v7 saves gain an empty story, damaged story data rejected.
+  milestone); First Harvest's lasting marks pass their guardrails, and broken ones are caught (a
+  den, goods not traded, a price out of bounds, two marks on the same goods, a run of goods not
+  made there, out of reach or overpaid, a mark no finale leaves, one left by a step before the
+  finale, by two finales or unknown); ended at Doppler Freeport, food and fine food are cheaper at
+  Harrow and medicine is not, and every board after carries one harvest run of fine food to
+  Doppler after the rest of the board, unchanged; ended at Squall Relay, medicine is cheaper and
+  food is not, and the board carries the relay's share; nowhere else changes, and the news within
+  two jumps tells of it; a mark is left once, kept in the save, and damaged marks are refused;
+  v7 saves gain an empty story, damaged story data rejected.
 - `flightStory.test.ts`: a real `FlightSession` in node flies a convoy of three that sets off
   together, is ambushed in two waves along its route and reports each ship lost; a den assault
   with three turrets that fire on a pilot in range, a reactor that shrugs off hits until the
@@ -337,7 +345,9 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 - `frontier.spec.ts`: **First Harvest**: Ines Halloway's call at Squall Relay, Orla Fenwick at
   Harrow Farmstead and the drive parts loaded; in Achird the Wrenna drifts far from any dock and the
   HUD steers to her; alongside her the parts go aboard and the HUD sends the player back to
-  Fenwick, whose debrief follows; the journal lists the arc.
+  Fenwick, whose debrief follows; the journal lists the arc. With the arc ended at Doppler
+  Freeport, the save holds Harrow's lasting mark, the news there says it farms for two harvests,
+  for good, and its board posts a harvest run of fine food to Doppler Freeport.
 - `combat.spec.ts`: salvaged equipment fitted from the stash, damaged systems repaired and a decoy
   bought at the outfitter, then a wingman hired in the bar who launches with the player and forms
   up alongside.

@@ -3,6 +3,7 @@ import { BOOMS, EVENTS, FRONTIER_EVENTS, GLUT_CAUSES, SHORTAGE_CAUSES, STRANDED_
 import { COMMODITIES } from '../content/economy/goods.ts';
 import { CURATED_MARKETS, ECONOMY } from '../content/economy/rules.ts';
 import { hashString, rng, type Rng } from '../content/random.ts';
+import { findMark, type LastingMark } from '../content/story/marks.ts';
 import { jumpsFrom } from '../content/world/network.ts';
 import { WORLD_SEED } from '../content/world/rules.ts';
 import { ALL_LOCATIONS, getLocation, getSystem, isFrontier, SYSTEMS, WORLD } from '../data/systems.ts';
@@ -321,12 +322,44 @@ function systemEventIn(systemId: SystemId, index: number): WorldEvent | null {
 
 /**
  * Events stay a pure function of the clock, except that the player can end one early (relieving a
- * shortage, breaking a raid). The game points this at the save's world log; tests may too.
+ * shortage, breaking a raid), and a story's ending can leave a lasting mark on a station (§14.7).
+ * The game points this at the save's world log; tests may too.
  */
-let worldLog: (Pick<WorldLog, 'ended'> & Partial<Pick<WorldLog, 'border'>>) | null = null;
+type ActiveLog = Pick<WorldLog, 'ended'> & Partial<Pick<WorldLog, 'border' | 'marks'>>;
+let worldLog: ActiveLog | null = null;
 
-export function useWorldLog(log: (Pick<WorldLog, 'ended'> & Partial<Pick<WorldLog, 'border'>>) | null): void {
+export function useWorldLog(log: ActiveLog | null): void {
   worldLog = log;
+}
+
+/** The lasting marks left in the save the game points at, in the order they were left. */
+export function marksLeft(): LastingMark[] {
+  const marks = worldLog?.marks;
+  if (!marks) return [];
+  return Object.entries(marks)
+    .sort((a, b) => a[1] - b[1])
+    .map(([id]) => findMark(id))
+    .filter((m): m is LastingMark => !!m);
+}
+
+/** The lasting marks on one station. */
+export function marksAt(locationId: string): LastingMark[] {
+  return worldLog?.marks ? marksLeft().filter((m) => m.locationId === locationId) : [];
+}
+
+/** Lasting marks within news reach of a system (EVENTS.newsJumps), nearest first. */
+export function marksNear(systemId: SystemId): { mark: LastingMark; jumps: number }[] {
+  if (!worldLog?.marks) return [];
+  const jumps = jumpsFrom(WORLD.links, systemId);
+  return marksLeft()
+    .map((mark) => ({ mark, jumps: jumps.get(getLocation(mark.locationId).systemId) ?? 99 }))
+    .filter((n) => n.jumps <= EVENTS.newsJumps)
+    .sort((a, b) => a.jumps - b.jumps);
+}
+
+/** Which marks are left, as text, for caches of what depends on them (job boards). */
+export function marksKey(): string {
+  return worldLog?.marks ? Object.keys(worldLog.marks).sort().join(',') : '';
 }
 
 /** The border war's log in the save the game points at (docs/PROCGEN.md §20), or null. */
@@ -440,10 +473,14 @@ export function newsAt(systemId: SystemId, clock: number): NewsItem[] {
     .sort((a, b) => Number(b.active) - Number(a.active) || a.jumps - b.jumps || b.event.start - a.event.start);
 }
 
-/** Price and normal-stock multipliers on one good at a station right now (1 and 1 without an event). */
+/** Price and normal-stock multipliers on one good at a station right now (1 and 1 without an event or a lasting mark). */
 export function marketEffect(locationId: string, commodity: CommodityId, clock: number): { price: number; stock: number } {
   const e = stationEventAt(locationId, clock);
-  return e && e.goods.includes(commodity) ? { price: e.price, stock: e.stock } : NEUTRAL;
+  const event = e && e.goods.includes(commodity) ? e : null;
+  // A lasting mark (§14.7) works like an event that never ends, on top of any event.
+  const mark = worldLog?.marks ? marksAt(locationId).find((m) => m.market.goods.includes(commodity))?.market : undefined;
+  if (!event && !mark) return NEUTRAL;
+  return { price: (event?.price ?? 1) * (mark?.price ?? 1), stock: (event?.stock ?? 1) * (mark?.stock ?? 1) };
 }
 
 /** How an event moves a good's price at a station right now, all effects together (1 without one). */

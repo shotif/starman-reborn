@@ -65,6 +65,8 @@ export interface StoryMeta {
   echoes?: readonly { choiceId: string; said: Readonly<Record<string, string>> }[];
   /** Done, the mission settles a border front for good (economy/border.ts). */
   settles?: { front: string; ending: 'law' | 'wake' | 'truce' };
+  /** Done, the mission leaves a lasting mark on a station: its market and board change for good (marks.ts). */
+  leaves?: string;
 }
 
 export interface Arc {

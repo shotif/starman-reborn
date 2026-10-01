@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { dockAt } from '../../src/app/rules.ts';
 import { migrateSave } from '../../src/app/save/migrate.ts';
 import { createNewGame, type GameState } from '../../src/app/state.ts';
@@ -13,6 +13,13 @@ import { checkMilestones } from '../../src/economy/progress.ts';
 import { arcStatus, briefingFor, choiceHere, debriefFor, denDown, knockOutDen, makeChoice, markSeen, pendingBeats, storyWaiting } from '../../src/economy/story.ts';
 import { validateStory } from '../../src/economy/storyGuards.ts';
 import { DENS } from '../../src/content/dens/rules.ts';
+import { LASTING_MARKS, type LastingMark } from '../../src/content/story/marks.ts';
+import { leaveMark } from '../../src/economy/answers.ts';
+import { boardEpoch, boardFor } from '../../src/economy/contracts.ts';
+import { marksNear, stationEventAt, useWorldLog } from '../../src/economy/events.ts';
+import { quote } from '../../src/economy/markets.ts';
+import { validateMarks } from '../../src/economy/storyGuards.ts';
+import { marketContext } from '../../src/economy/trade.ts';
 
 /** Story arcs (docs/PROCGEN.md §14): three faction arcs played through with the game's own rules. */
 
@@ -344,6 +351,143 @@ describe('First Harvest, out among the frontier farms (docs/PROCGEN.md §14.6)',
     for (let i = 0; i < 3; i++) escortArrived(s, 'arc.harvest.5.relay');
     expect(done(s, 'arc.harvest.5.relay')).toBe(true);
     expect(debriefFor(s, getJob('arc.harvest.5.relay', s))[0]!.who).toBe('halloway');
+  });
+});
+
+describe('First Harvest leaves its mark on Harrow Farmstead (docs/PROCGEN.md §14.7)', () => {
+  afterEach(() => useWorldLog(null));
+
+  /** Plays First Harvest through to the end it is given (the steps are checked above). */
+  function harvestEndsAt(s: GameState, way: 'freeport' | 'relay') {
+    dock(s, 'squall-relay');
+    acceptJob(s, 'arc.harvest.1');
+    dock(s, 'harrow-farmstead');
+    acceptJob(s, 'arc.harvest.2');
+    inSpace(s, 'achird');
+    handOver(s, 'arc.harvest.2');
+    dock(s, 'harrow-farmstead');
+    acceptJob(s, 'arc.harvest.3');
+    s.discoveredBodies.push('hd-219134-d', 'hd-219134-f');
+    inSpace(s, 'hd-219134');
+    dock(s, 'curlew-institute');
+    dock(s, 'harrow-farmstead');
+    acceptJob(s, 'arc.harvest.4');
+    expect(makeChoice(s, 'arc.harvest.4', way).ok).toBe(true);
+    const finale = `arc.harvest.5.${way}`;
+    expect(acceptJob(s, finale).ok).toBe(true);
+    s.location.dockedAt = null;
+    const route = findRoute(SYSTEMS, 'hd-219134', way === 'freeport' ? 'achird' : 'ev-lacertae')!;
+    performJump(s, route, route.totalFee);
+    for (let i = 0; i < 3; i++) escortArrived(s, finale);
+    expect(done(s, finale)).toBe(true);
+  }
+
+  /** Harrow's market and board as the player finds them, at a quiet moment (no world event there). */
+  function harrow(s: GameState) {
+    const ctx = marketContext(s);
+    const price = (c: 'food' | 'fine-food' | 'medical') => quote('harrow-farmstead', c, s.reputation, ctx).buy!;
+    return { food: price('food'), fineFood: price('fine-food'), medical: price('medical'), board: boardFor('harrow-farmstead', boardEpoch(s.clock)) };
+  }
+
+  /** The same, as if no mark had been left. */
+  function unmarked(s: GameState) {
+    useWorldLog({ ...s.world, marks: {} });
+    const out = harrow(s);
+    useWorldLog(s.world);
+    return out;
+  }
+
+  function quietMoment(s: GameState) {
+    while (stationEventAt('harrow-farmstead', s.clock)) s.clock += 600;
+  }
+
+  it('pass their guardrails, and broken marks are caught', () => {
+    expect(validateMarks()).toEqual([]);
+    const [a, b] = LASTING_MARKS as [LastingMark, LastingMark];
+    const rules = (marks: LastingMark[]) => validateMarks(marks).map((i) => i.rule);
+    expect(rules([{ ...a, locationId: 'maw-roost' }, b])).toContain('places');
+    expect(rules([{ ...a, market: { ...a.market, goods: ['luxuries'] } }, b])).toContain('market');
+    expect(rules([{ ...a, market: { ...a.market, price: 0.3 } }, b])).toContain('market');
+    expect(rules([a, { ...b, market: { ...b.market, goods: ['food'] } }])).toContain('market');
+    expect(rules([{ ...a, run: { ...a.run, commodity: 'machinery' } }, b])).toContain('run');
+    expect(rules([{ ...a, run: { ...a.run, to: 'earth-port' } }, b])).toContain('run');
+    expect(rules([{ ...a, run: { ...a.run, premium: 3 } }, b])).toContain('run');
+    expect(rules([a, b, { ...a, id: 'nobody.leaves.this' }])).toContain('marks');
+    // In the arcs: only a finale leaves a mark, a real one, and each mark is left once.
+    const story = (patch: (j: (typeof ARC_JOBS)[number]) => (typeof ARC_JOBS)[number]) => validateStory(ARC_JOBS.map(patch)).map((i) => i.message);
+    expect(story((j) => (j.id === 'arc.harvest.3' ? { ...j, story: { ...j.story!, leaves: 'harvest.freeport' } } : j))).toContain('only a finale leaves a lasting mark');
+    expect(story((j) => (j.id === 'arc.harvest.5.relay' ? { ...j, story: { ...j.story!, leaves: 'harvest.nowhere' } } : j))).toContain('no lasting mark harvest.nowhere');
+    expect(story((j) => (j.id === 'arc.harvest.5.relay' ? { ...j, story: { ...j.story!, leaves: 'harvest.freeport' } } : j))).toContain('harvest.freeport is already left by arc.harvest.5.freeport');
+  });
+
+  it('sold at Doppler Freeport, the harvest leaves food plentiful at Harrow for good, and a fine-food run to Doppler on its board', () => {
+    const s = pilot();
+    useWorldLog(s.world);
+    quietMoment(s);
+    const before = harrow(s);
+    expect(before.board.some((j) => j.title.startsWith('Harvest run'))).toBe(false);
+    harvestEndsAt(s, 'freeport');
+    expect(Object.keys(s.world.marks ?? {})).toEqual(['harvest.freeport']);
+    quietMoment(s);
+    const after = harrow(s);
+    expect(after.food).toBeLessThan(before.food);
+    expect(after.fineFood).toBeLessThan(before.fineFood);
+    expect(after.medical).toBe(unmarked(s).medical);
+    expect(after.food).toBeLessThan(unmarked(s).food);
+    // Every board from now on carries the run, after the rest of the board, which is as it was.
+    for (let k = 0; k < 12; k++) {
+      const epoch = boardEpoch(s.clock) + k;
+      const board = boardFor('harrow-farmstead', epoch);
+      const runs = board.filter((j) => j.title.startsWith('Harvest run'));
+      expect(runs).toHaveLength(1);
+      expect(runs[0]!.title).toMatch(/^Harvest run: \d+ fine food to Doppler Freeport$/);
+      expect(runs[0]!.destinationLocationId).toBe('doppler-freeport');
+      expect(runs[0]!.contract?.urgent).toBeUndefined();
+      expect(board.at(-1)).toBe(runs[0]);
+      useWorldLog(null);
+      const plain = boardFor('harrow-farmstead', epoch);
+      useWorldLog(s.world);
+      expect(board.slice(0, -1).map((j) => j.id)).toEqual(plain.map((j) => j.id));
+    }
+    // Nowhere else changes, and the news within two jumps says so.
+    expect(boardFor('curlew-institute', boardEpoch(s.clock)).some((j) => j.title.startsWith('Harvest run'))).toBe(false);
+    expect(marksNear('hd-219134')).toEqual([{ mark: LASTING_MARKS[0], jumps: 0 }]);
+    expect(marksNear('achird')[0]?.jumps).toBe(1);
+    expect(marksNear('sol')).toEqual([]);
+  });
+
+  it('fed to Squall Relay’s crews, it leaves medicine plentiful at Harrow, and a better-paid run of the relay’s share', () => {
+    const s = pilot();
+    useWorldLog(s.world);
+    quietMoment(s);
+    const before = harrow(s);
+    harvestEndsAt(s, 'relay');
+    expect(Object.keys(s.world.marks ?? {})).toEqual(['harvest.relay']);
+    quietMoment(s);
+    const after = harrow(s);
+    expect(after.medical).toBeLessThan(before.medical);
+    expect(after.food).toBe(unmarked(s).food);
+    expect(after.medical).toBeLessThan(unmarked(s).medical);
+    const run = boardFor('harrow-farmstead', boardEpoch(s.clock)).find((j) => j.title.startsWith('The relay’s share'));
+    expect(run?.title).toMatch(/^The relay’s share: \d+ staple food to Squall Relay$/);
+    expect(run?.briefing).toMatch(/answer Harrow’s calls first/);
+  });
+
+  it('is left once, kept in the save, and damaged marks are refused', () => {
+    const s = pilot();
+    expect(leaveMark(s, 'harvest.relay')?.id).toBe('harvest.relay');
+    const at = s.world.marks!['harvest.relay'];
+    s.clock += 500;
+    expect(leaveMark(s, 'harvest.relay')).toBeNull();
+    expect(s.world.marks!['harvest.relay']).toBe(at);
+    expect(leaveMark(s, 'harvest.nowhere')).toBeNull();
+    const saved = migrateSave(structuredClone(s));
+    expect(saved.world.marks).toEqual({ 'harvest.relay': at });
+    expect(() => migrateSave({ ...structuredClone(s), world: { ...s.world, marks: { 'harvest.nowhere': 1 } } })).toThrow();
+    expect(() => migrateSave({ ...structuredClone(s), world: { ...s.world, marks: { 'harvest.relay': 'soon' } } })).toThrow();
+    // A save from before marks has none, and that is fine.
+    const { marks: _m, ...older } = s.world;
+    expect(migrateSave({ ...structuredClone(s), world: older }).world.marks).toBeUndefined();
   });
 });
 

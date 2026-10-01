@@ -4,7 +4,8 @@ import { api, openFresh, press, waitUntil } from './helpers.ts';
 /**
  * The frontier's own story (docs/PROCGEN.md §14.6): First Harvest from Squall Relay, at the core's
  * edge, out to Harrow Farmstead, then the Wrenna, a hauler stranded far from any dock in Achird,
- * rescued in flight by handing her drive parts over alongside.
+ * rescued in flight by handing her drive parts over alongside; and how the arc's ending changes Harrow
+ * Farmstead for good (§14.7).
  */
 
 type Hooks = { __starman: { completeJobs(ids: string[]): void; dockAt(id: string): void; warp(id: string): void } };
@@ -72,4 +73,24 @@ test('First Harvest: the call from the far farms, and the Wrenna rescued far fro
   expect((await api<JobsState>(page, 'state')).jobs['arc.harvest.2']?.status).toBe('complete');
   await press(page, 'station-journal');
   await expect(page.getByTestId('arc-harvest')).toContainText('First Harvest');
+});
+
+test('First Harvest’s ending changes Harrow Farmstead for good: in the news, and a harvest run on its board', async ({ page }) => {
+  await openFresh(page);
+  await press(page, 'title-play');
+  await press(page, 'intro-ok');
+  // The arc flown to its end at Doppler Freeport (the flight itself is the test above's and story.test.ts's).
+  await page.evaluate(() =>
+    (window as unknown as Hooks).__starman.completeJobs(['lifeline', 'arc.harvest.1', 'arc.harvest.2', 'arc.harvest.3', 'arc.harvest.4', 'arc.harvest.5.freeport']),
+  );
+  expect(Object.keys((await api<{ world: { marks?: Record<string, number> } }>(page, 'state')).world.marks ?? {})).toEqual(['harvest.freeport']);
+
+  await dockAt(page, 'harrow-farmstead');
+  await hearOut(page);
+  await press(page, 'room-bar');
+  if (!(await page.getByTestId('news-window').isVisible().catch(() => false))) await press(page, 'station-news');
+  await expect(page.getByTestId('mark-harvest.freeport')).toContainText('Harrow Farmstead farms for two harvests');
+  await expect(page.getByTestId('mark-harvest.freeport')).toContainText('For good');
+  await openJobs(page);
+  await expect(page.getByTestId('jobs-window')).toContainText(/Harvest run: \d+ fine food to Doppler Freeport/);
 });
