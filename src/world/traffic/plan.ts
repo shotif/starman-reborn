@@ -17,10 +17,8 @@ export interface TrafficInput {
 }
 
 export interface TrafficPlan {
-  /** Traders in flight at once. */
+  /** Haulers shown in flight at once, at most: the timetable's (docs/PROCGEN.md §21) decides which, and when. */
   traders: number;
-  /** Seconds between trader launches while under the limit. */
-  traderInterval: readonly [number, number];
   /** Patrol wings (of `wingSize` fighters) flying between stations. */
   patrolWings: number;
   wingSize: number;
@@ -29,10 +27,9 @@ export interface TrafficPlan {
 }
 
 export const TRAFFIC = {
-  /** Traders per open station, scaled by security (lawless lanes are quiet), capped. */
+  /** Haulers shown per open station, scaled by security (lawless lanes are quiet), capped. */
   tradersPerStation: 1.1,
   maxTraders: 6,
-  traderInterval: [10, 26] as const,
   /** Patrols fly in claimed space at or above this security; two wings in the core. */
   patrolSecurity: 0.4,
   twoWingsSecurity: 0.75,
@@ -77,7 +74,7 @@ export function trafficPlan(input: TrafficInput, qualityScale = 1): TrafficPlan 
       interval: [TRAFFIC.packInterval[0] * scale, TRAFFIC.packInterval[1] * scale],
     };
   }
-  return { traders, traderInterval: TRAFFIC.traderInterval, patrolWings, wingSize: TRAFFIC.wingSize, packs };
+  return { traders, patrolWings, wingSize: TRAFFIC.wingSize, packs };
 }
 
 /** Who flies what: haulers and patrol fighters by owner (catalogue ship ids). */

@@ -484,11 +484,12 @@ world and for other world seeds; the unit tests also check live prices over many
 
 Every system has traffic that fits it (`src/world/traffic/plan.ts`, flown by `FlightSession`):
 
-- **Traders** fly between the system's open stations, or arrive through the jump beacon, in
-  haulers of the owner's makers (independents in unclaimed space). About one per station, fewer
-  where security is low, at most six; half the traffic is already under way when you arrive.
-  They fly around planets and stations, and when shot at they call a mayday and run for the
-  nearest station. A lost freighter spills salvage.
+- **Traders** are the haulers of the timetable (§21) flying in the system: out of a dock to the
+  jump beacon, in from the jump to a dock, across on their way elsewhere, or from one station to
+  another. The plan caps how many are shown at once (about one per station, fewer where security
+  is low, at most six; fewer on the Medium and Low presets), relief for a shortage first. They fly
+  around planets and stations, and when shot at they call a mayday and run for the nearest
+  station. A lost hauler spills salvage and half its cargo.
 - **Patrols** (wings of two fighters of the owner's makers) fly between the stations and the jump
   beacon in claimed space with security 0.4 or more (two wings in the core). They engage raiders
   within 4 km. They leave the scripted opening raid near Mars to the player.
@@ -733,11 +734,9 @@ transit, so the world moves on while you travel.
   recovers toward the event's normal stock).
 - **Traffic**: raids and sweeps change the traffic plan when the player arrives or launches, and
   the HUD says so.
-- **Traders**: a hauler docking in the player's system moves a small load (6–14 units) of something
-  its destination wants or trades, taken from its origin when it came from a station that makes
-  it. Deliveries top short stock up to at most 1.2 × normal and never take a maker below 0.8 ×
-  normal, so traffic refills markets without flooding them. Elsewhere, stock recovers toward
-  normal on its own.
+- **Haulers**: a shortage draws relief haulers from the stations that make what it lacks; their
+  cargo fills its stock as each arrives, and all of it arriving ends it (§21). A haul lost to a
+  raid is missed where it was bound. Otherwise stock recovers toward normal on its own.
 
 ### 11.3 News and work
 
@@ -806,7 +805,8 @@ Hollow Wake keeps none, but remembers (`src/economy/law.ts`; rules in `src/conte
 
 ### 12.3 The outlaw path
 
-- **Piracy**: a destroyed hauler spills one or two pods of its cargo (3–8 units each) to tractor in.
+- **Piracy**: a destroyed hauler spills half its real cargo (§21) in pods of four to nine units to
+  tractor in; where it was bound goes without (a relief hauler's shortage runs on).
 - **Smuggling runs** (free ports and dens, open to anyone): contraband loaded against a deposit, for
   a buyer in claimed space within three jumps, never at a dock whose customs scans every ship. Pay:
   the fees, 300 cr, danger, and 30% of the goods' base value; +6 standing with the Wake, nothing
@@ -1367,7 +1367,8 @@ world log (§17.5) and read back from it, so another save's world is untouched.
 - `lingering`: what is still out there, by system (§17.3);
 - `border`: the player's deeds on each border front, and how The Long Border ended there (§20);
 - `marks`: the lasting marks a story's ending or a settled front left on a station, with the time (§14.7, §20.7; optional,
-  so a save from before them simply has none).
+  so a save from before them simply has none);
+- `hauls`: what became of the haulers the player saw (§21.4), kept three hours (optional too).
 
 The event engine reads the log of the save being played (`useWorldLog`), so events stay a pure
 function of the clock except for the endings and marks recorded there. `tidyWorldLog` runs at every docking:
@@ -1771,3 +1772,94 @@ The four fronts no story settles (the Frontier Cooperative's, at Lacaille 9352, 
   ceiling and moves Wake standing as said; each ending holds for a whole tide, leaves exactly its
   marks and stops the front's war work; every front has marks for both endings, and they pass the
   lasting-mark guardrails (a broken front, price or goods is caught).
+
+## 21. Haulers on the lanes
+
+The stations send each other freight as ships with names, cargo and a timetable
+(`src/economy/hauls.ts`, rules in `HAULS` in `src/content/economy/hauls.ts`). Like the world's
+events (§11), every haul is a function of the seed, the game clock and the save's world log:
+nothing runs in the background, and every device sees the same haulers at the same moment. The
+haulers, their names and their owners are fiction; the stars they fly between are real.
+
+### 21.1 The timetable
+
+- **Trade**: every open station with a market that makes goods (no contraband) may send one haul
+  in each five-minute slot (`slotSeconds`), more likely where its system is secure (a chance of
+  0.3 + 0.5 × security). It carries one of the goods it makes to an open station within two jumps
+  (`maxJumps`) that uses or trades it, nearer ones more often, a quarter of that station's normal
+  stock (8–40 units, `load`). Nobody sends a hauler out of a raided system, or into one.
+- **Relief**: a shortage (§11.1) draws two hauls (`relief.hauls`) from the nearest stations within
+  three jumps that make what it lacks, sent four to fifteen minutes after it starts, each carrying
+  30% of what the station lacks (`relief.share`, at least eight units).
+- **The way**: the fewest jumps, ties to the first lane in name order; the haulers' drives reach the
+  frontier's long lanes. A haul flies five minutes from its dock to the jump beacon, two minutes per
+  jump (as the player's jumps take, §11), three minutes across each system on its way, and five
+  from the jump to its dock (`legs`); between two stations of one system, six minutes.
+- **Who flies it**: a hauler of its sender's owner's fleet (§9; independents' where the sender has
+  no lawful owner), with a name from a list (`HAULER_NAMES`, all invented).
+- Ids: `h.<station>.<slot>` for trade, `h.<shortage event id>.<k>` for relief.
+
+### 21.2 What becomes of a haul
+
+- **Raids**: in the lanes of a system with a raid on (§11.1), where the player is not, a haul is
+  lost with a chance by the raid's threat level (`raidLoss`: 20%, 35%, 50%), at the middle of its
+  leg there; a raid broken early by the player loses none after it ends.
+- **In the player's sight** the flight decides: a hauler destroyed is lost (whoever destroyed it),
+  and one that flew through the player's system past the middle of its leg there, or docked or
+  jumped out, gets through, whatever a raid there would have done (§21.4).
+- Otherwise it is delivered when its timetable says.
+
+### 21.3 How the world feels them
+
+- **Shortages fill**: each relief haul that arrives adds its cargo to the station's stock while the
+  shortage lasts, fading as the market recovers (30 minutes); what the relief has delivered counts toward the shortage's
+  relief with what the player sells (§17.1), and all of it arriving (60% of what the station lacks)
+  ends the shortage at once. The news says it was relieved by its haulers. A pilot who gets there
+  first sells at the shortage's prices; one who destroys a relief hauler leaves the shortage to run
+  on.
+- **Losses are missed**: a trade haul lost to a raid, or destroyed where the player saw it, takes
+  its cargo off the stock where it was bound, from when it was due, fading the same way. The rest
+  of the trade is the markets' normal flow (§8), already in their prices.
+- **The News** (§11.3) lists each shortage's relief under it (loading, on its way and due in so
+  many minutes, in, or lost to raiders or to a pirate), and the hauls lost to raiders within two
+  jumps over the last half hour, at most three (`news`).
+- **In flight** (§9) the haulers flying in the player's system are the timetable's: those under way
+  when the scene starts, wherever they are along their leg, then each as its leg begins (out of a
+  dock, or out of the jump), never popping in near the player. Each is named, with its owner, its
+  cargo and where it is going (*The Bramble · Transit Authority · 18 food for Halcyon Ring*). A
+  hauler destroyed spills half its cargo in pods of four to nine units (`spill`), whoever
+  destroyed it; destroying one is piracy (§12.1).
+- **Standing by**: a hauler that called a mayday and got away after the player destroyed at least
+  one raider since its call (and was never hit by the player) sends thanks: 6 cr a unit it carries,
+  at least 80 cr, and a point of standing with its owner (`thanks`).
+
+### 21.4 The world log
+
+`GameState.world.hauls` (optional) holds, by haul id, what became of the hauls the player saw:
+`safe` through a system (and which), or `lost` (and by whom), with the time. A lost haul stays
+lost. Records older than three hours (`keepSeconds`) are dropped when the next is written. A save
+with a damaged record (an unknown fate or system) is rejected.
+
+### 21.5 Guardrails
+
+`validateHauls` (`src/economy/haulGuards.ts`, run in `tests/unit/hauls.test.ts` over a day of
+every station's hauls and the relief of every shortage under way) checks that every haul goes from
+an open station that makes its cargo to another that takes it, within reach, over real lanes; that
+its legs run through the systems of its way, as long as the rules say, with a jump's time between
+them; that its load is within bounds; that its name is a hauler's and its ship one of its owner's
+fleet; and that the rules make sense (all of a shortage's relief arriving relieves it, chances
+between 0 and 1, no name twice or shared with a station). Broken hauls (to a den, from where the
+cargo is not made, contraband, overloaded, along a lane that does not exist, a leg out of time, an
+unknown name or a raider's ship) are caught. The tests also check that a station's haul in a slot
+never changes; that the core's lanes have a hauler or more on average; that nobody sets off into
+or out of a raid; that a shortage's relief comes from makers, all of it arriving ends the
+shortage, each arrival fills its stock, and with the player's sales it counts toward the relief
+bonus; that a raid loses hauls, the loss is missed where they were bound and in the news, a hauler
+seen safe through the raided system gets through (but not if seen elsewhere), and a destroyed one
+stays lost and leaves its shortage to run on; that the world log keeps three hours and refuses
+damaged records; and, in a real `FlightSession` in node, that the haulers shown are the
+timetable's, named with their cargo and capped by the plan, that one destroyed by the player is
+lost and spills its real cargo, that they leave the scene safe at their dock or the jump beacon and
+others join as their legs begin, and that one kept alive through an attack by the player's guns
+sends thanks, and one the player fired on does not.
+

@@ -10,6 +10,7 @@ import { ALL_LOCATIONS, getLocation, getSystem, isFrontier, SYSTEMS, WORLD } fro
 import type { SystemId } from '../data/types.ts';
 import { trafficPlan } from '../world/traffic/plan.ts';
 import { FACTIONS } from './factions.ts';
+import { reliefEnd } from './hauls.ts';
 import { marketTables } from './markets.ts';
 import { markById } from './marks.ts';
 
@@ -143,8 +144,15 @@ function pickKind<K extends string>(r: Rng, odds: Record<K, number>): K | null {
  * Each station's and system's windows are shifted by their own phase, so the neighbourhood never
  * goes quiet all at once at a window boundary.
  */
+const phases = new Map<string, number>();
 export function windowPhase(key: string, window: number): number {
-  return (hashString(`events|${key}`) % (window / 60)) * 60;
+  const k = `${window}|${key}`;
+  let phase = phases.get(k);
+  if (phase === undefined) {
+    phase = (hashString(`events|${key}`) % (window / 60)) * 60;
+    phases.set(k, phase);
+  }
+  return phase;
 }
 
 function windowIndex(key: string, window: number, clock: number): number {
@@ -326,7 +334,7 @@ function systemEventIn(systemId: SystemId, index: number): WorldEvent | null {
  * shortage, breaking a raid), and a story's ending can leave a lasting mark on a station (§14.7).
  * The game points this at the save's world log; tests may too.
  */
-type ActiveLog = Pick<WorldLog, 'ended'> & Partial<Pick<WorldLog, 'border' | 'marks'>>;
+type ActiveLog = Pick<WorldLog, 'ended'> & Partial<Pick<WorldLog, 'border' | 'marks' | 'hauls'>>;
 let worldLog: ActiveLog | null = null;
 
 export function useWorldLog(log: ActiveLog | null): void {
@@ -363,6 +371,11 @@ export function marksKey(): string {
   return worldLog?.marks ? Object.keys(worldLog.marks).sort().join(',') : '';
 }
 
+/** What became of the hauls the player saw, in the save the game points at (docs/PROCGEN.md §21), or null. */
+export function activeHaulLog(): WorldLog['hauls'] | null {
+  return worldLog?.hauls ?? null;
+}
+
 /** The border war's log in the save the game points at (docs/PROCGEN.md §20), or null. */
 export function activeBorderLog(): WorldLog['border'] | null {
   return worldLog?.border ?? null;
@@ -378,10 +391,11 @@ export function worldLogKey(): number {
   return key;
 }
 
-/** When an event really ends: its scheduled end, or earlier if the player ended it. */
+/** When an event really ends: its scheduled end, or earlier if the player ended it, or a shortage's relief hauls did (§21). */
 export function eventEnd(e: WorldEvent): number {
   const early = worldLog?.ended[e.id];
-  return early !== undefined ? Math.min(e.end, early) : e.end;
+  const end = early !== undefined ? Math.min(e.end, early) : e.end;
+  return e.kind === 'shortage' ? Math.min(end, reliefEnd(e)) : end;
 }
 
 /** Whether the player ended this event early. */
@@ -403,6 +417,38 @@ export function stationEventAt(locationId: string, clock: number): WorldEvent | 
 export function systemEventAt(systemId: SystemId, clock: number): WorldEvent | null {
   const e = systemEventIn(systemId, windowIndex(systemId, EVENTS.systemWindow, clock));
   return within(e, clock) ? e : null;
+}
+
+/** The events at a station whose scheduled times overlap `from`–`to`, oldest first. */
+export function stationEventsBetween(locationId: string, from: number, to: number): WorldEvent[] {
+  const out: WorldEvent[] = [];
+  const last = windowIndex(locationId, EVENTS.stationWindow, to);
+  for (let w = windowIndex(locationId, EVENTS.stationWindow, from); w <= last; w++) {
+    const e = stationEventIn(locationId, w);
+    if (e && e.start <= to && e.end >= from) out.push(e);
+  }
+  return out;
+}
+
+/** The raids, sweeps and drive failures in a system whose scheduled times overlap `from`–`to`, oldest first. */
+export function systemEventsBetween(systemId: SystemId, from: number, to: number): WorldEvent[] {
+  const out: WorldEvent[] = [];
+  const last = windowIndex(systemId, EVENTS.systemWindow, to);
+  for (let w = windowIndex(systemId, EVENTS.systemWindow, from); w <= last; w++) {
+    const e = systemEventIn(systemId, w);
+    if (e && e.start <= to && e.end >= from) out.push(e);
+  }
+  return out;
+}
+
+/** A station's event by its id (`e.<station>.<window>`), or null. */
+export function stationEventById(id: string): WorldEvent | null {
+  const dot = id.lastIndexOf('.');
+  const locationId = id.slice(2, dot);
+  const index = Number(id.slice(dot + 1));
+  if (!id.startsWith('e.') || !Number.isInteger(index) || !marketTables().has(locationId)) return null;
+  const e = stationEventIn(locationId, index);
+  return e?.id === id ? e : null;
 }
 
 /** Every event under way at a moment, stations first. */

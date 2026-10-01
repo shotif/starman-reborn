@@ -443,7 +443,7 @@ function installCanvasStub(): void {
   };
 }
 
-const QUIET: TrafficPlan = { traders: 0, traderInterval: [60, 60], patrolWings: 0, wingSize: 2, packs: null };
+const QUIET: TrafficPlan = { traders: 0, patrolWings: 0, wingSize: 2, packs: null };
 const LASER = 'gear.mining-laser.1.eridani';
 const PROSPECTOR = 'gear.prospector.1.eridani';
 

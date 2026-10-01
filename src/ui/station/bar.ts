@@ -11,7 +11,7 @@ import { button, dataBadge } from '../components.ts';
 import { formatCredits, h, signed } from '../dom.ts';
 import { glyph, type GlyphName } from '../glyphs.ts';
 import { icon } from '../icons.ts';
-import { borderNewsList, denNews, markNews, newsList } from '../news.ts';
+import { borderNewsList, denNews, haulNews, markNews, newsList } from '../news.ts';
 import { fineOwed, isLawful, pardonCost, payFines } from '../../economy/law.ts';
 import { buysSurveys, sellSurvey, surveysForSale, surveyValue } from '../../economy/progress.ts';
 import { toast } from '../components.ts';
@@ -313,6 +313,7 @@ export function newsContent(ctx: StationContext): HTMLElement {
     borderNewsList(loc.systemId, state.clock),
     denNews(state, loc.systemId),
     newsList(loc.systemId, state.clock),
+    haulNews(loc.systemId, state.clock),
   );
 }
 

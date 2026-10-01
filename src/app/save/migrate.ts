@@ -323,6 +323,12 @@ export function assertValidState(s: GameState): void {
     if (b.ending !== undefined && !['law', 'wake', 'truce'].includes(b.ending)) fail('border');
   }
   if (w.marks !== undefined && (!isRecord(w.marks) || !Object.entries(w.marks).every(([id, t]) => !!markById(id) && Number.isFinite(t)))) fail('world');
+  if (w.hauls !== undefined) {
+    if (!isRecord(w.hauls)) fail('world');
+    for (const r of Object.values(w.hauls)) {
+      if (!isRecord(r) || !Number.isFinite(r.at) || !['safe', 'lost'].includes(r.fate) || !SYSTEM_IDS.includes(r.systemId) || (r.by !== undefined && !['raiders', 'player'].includes(r.by))) fail('world');
+    }
+  }
   for (const [sys, l] of Object.entries(w.lingering)) {
     if (!SYSTEM_IDS.includes(sys) || !isRecord(l) || !Number.isFinite(l.at) || !Array.isArray(l.packs) || !Array.isArray(l.pods)) fail('world');
     const v3 = (p: unknown) => Array.isArray(p) && p.length === 3 && p.every(Number.isFinite);

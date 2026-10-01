@@ -40,7 +40,7 @@ function installCanvasStub(): void {
   };
 }
 
-const QUIET = { traders: 0, traderInterval: [60, 60] as const, patrolWings: 0, wingSize: 2, packs: null };
+const QUIET = { traders: 0, patrolWings: 0, wingSize: 2, packs: null };
 
 interface Npc {
   name: string;

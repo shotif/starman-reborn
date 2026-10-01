@@ -223,6 +223,18 @@ for (const size of SIZES) {
       await shot(page, `${size.name}-5c-map-search`, size.touch, results);
       await page.getByTestId('map-search-input').press('Escape');
       await expect(page.getByTestId('map-search-dialog')).toBeHidden();
+      // The News where a shortage's relief haulers are on their way (docs/PROCGEN.md §21).
+      await press(page, 'map-close');
+      const clock = (await api<{ clock: number }>(page, 'state')).clock;
+      const relief = (await api<{ at: string; haul: { depart: number } } | null>(page, 'findRelief', clock + 3_600))!;
+      await api(page, 'advanceClock', relief.haul.depart + 40 - clock);
+      await api(page, 'dockAt', relief.at);
+      await waitUntil(page, 'docked', async () => (await api(page, 'mode')) === 'docked');
+      for (let i = 0; i < 6 && (await page.getByTestId('story-continue').isVisible().catch(() => false)); i++) await press(page, 'story-continue');
+      await press(page, 'room-bar');
+      if (!(await page.getByTestId('news-window').isVisible().catch(() => false))) await press(page, 'station-news');
+      await page.locator('.news-relief').first().scrollIntoViewIfNeeded();
+      await shot(page, `${size.name}-6-news`, size.touch, results);
       for (const [name, r] of Object.entries(results)) {
         expect.soft(r.overflow, `${name}: page overflow`).toBe(false);
         expect.soft(r.clipped, `${name}: clipped controls`).toEqual([]);

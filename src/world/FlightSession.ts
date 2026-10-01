@@ -61,6 +61,8 @@ import {
 import { clearShipArtCache, createCatalogShipArt } from './art/shipgen/index.ts';
 import type { ShipArt } from './art/ships.ts';
 import { bountyFor, FLEETS, RAIDERS, TRAFFIC, type TrafficPlan } from './traffic/plan.ts';
+import { HAULS } from '../content/economy/hauls.ts';
+import { haulsIn, type Haul, type HaulHere, type HaulLeg } from '../economy/hauls.ts';
 import type { StationOwner } from '../content/world/types.ts';
 import type { ArtContext, ArtObject } from './art/types.ts';
 import { seededRandom } from './art/util.ts';
@@ -85,8 +87,13 @@ export interface FlightCallbacks {
   onBounty(credits: number, name: string): void;
   /** A raider of a bounty contract's pack was destroyed. */
   onContractKill(jobId: string): void;
-  /** A trader docked at `to`, coming from the station `from` (null: through the jump beacon). */
-  onTraderArrived?(from: string | null, to: string, shipId: string): void;
+  /**
+   * A scheduled hauler (docs/PROCGEN.md §21) left the scene: docked or out through the jump beacon
+   * (`safe` through this system), or destroyed (`lost`, by the player or by raiders).
+   */
+  onHaul?(id: string, fate: 'safe' | 'lost', by?: 'player' | 'raiders'): void;
+  /** A hauler the player kept alive through a raiders' attack got away: it sends thanks. */
+  onHaulThanks?(haul: Haul): void;
   /** The ship of an escort contract docked at its destination. */
   onEscortArrived?(jobId: string): void;
   /** The ship of an escort contract was destroyed. */
@@ -140,8 +147,8 @@ interface NpcShip {
   /** Combat behaviour (raiders, and patrols when they engage). */
   brain: PirateBrain;
   trader?: TraderBrain;
-  /** Traders: the station it launched from (null: it came through the jump beacon). */
-  origin?: string | null;
+  /** A scheduled hauler (docs/PROCGEN.md §21): its haul, the leg it flies here, and the raiders the player had downed when it called for help. */
+  haul?: { haul: Haul; leg: HaulLeg; downedAtMayday?: number };
   patrol?: { brain: PatrolBrain; offset: THREE.Vector3 };
   controls: ShipControls;
   target: Target;
@@ -399,7 +406,11 @@ export class FlightSession {
   private readonly missileTargetCache = new Map<string, MissileTarget>();
   private readonly npcShots = new Map<string, number>();
   private readonly traffic: TrafficSetup | null;
-  private trafficTimers = { trader: 3, pack: 0, patrolsLaunched: false, populated: false, contractsSpawned: false, huntersSpawned: false, serial: 0 };
+  private trafficTimers = { haulCheck: 0, pack: 0, patrolsLaunched: false, populated: false, contractsSpawned: false, huntersSpawned: false, serial: 0 };
+  /** Hauls of the timetable already brought into this scene (or gone from it). */
+  private readonly haulsHere = new Set<string>();
+  /** Raiders the player has destroyed in this scene (a hauler that called for help counts the ones after its call). */
+  private raidersDowned = 0;
   /** The raider dens take this pilot in (the Wake trusts them), checked live. */
   private get denOpen(): boolean {
     return wakeFriendly(this.state);
@@ -1760,6 +1771,7 @@ export class FlightSession {
     }
     if (n.escort) this.callbacks.onEscortLost?.(n.escort.jobId);
     if (n.stranded && !n.stranded.handed) this.callbacks.onRescueLost?.(n.stranded.jobId);
+    else if (n.haul) this.callbacks.onMessage(`The ${n.haul.haul.name} was destroyed, with ${n.haul.haul.qty} ${COMMODITIES[n.haul.haul.commodity].name.toLowerCase()} aboard.`, 'bad');
     else if (n.role === 'trader') this.callbacks.onMessage(`${n.name} was destroyed.`, 'bad');
     if (n.side === 'raider' && !n.den && !n.hunter && !n.encounter) this.dropLoot(n);
     if (n.wingman?.crewId) {
@@ -1770,9 +1782,21 @@ export class FlightSession {
     if (killer?.wingman?.crewId && n.side === 'raider') this.chatter('wing-kill', killer.name);
     else if (n.side === 'raider' && !n.den && this.inRadioRange(n) && this.rand() < 0.35) this.chatter('raider-down', 'Wake raider');
     const byPlayer = this.time - n.playerHitAt < 30;
+    if (n.side === 'raider' && byPlayer) this.raidersDowned++;
+    // A scheduled hauler's hold spills a share of its real cargo (docs/PROCGEN.md §21), whoever destroyed it.
+    if (n.haul) {
+      this.callbacks.onHaul?.(n.haul.haul.id, 'lost', byPlayer ? 'player' : 'raiders');
+      const { share, pod } = HAULS.spill;
+      let left = Math.round(n.haul.haul.qty * share);
+      while (left > 0) {
+        const qty = Math.min(left, pod[0] + Math.floor(this.rand() * (pod[1] - pod[0] + 1)));
+        left -= qty;
+        this.spawnLoot(n.body.position.clone().add(this.tmp.set((this.rand() - 0.5) * 40, (this.rand() - 0.5) * 20, (this.rand() - 0.5) * 40)), 0, { cargo: { commodity: n.haul.haul.commodity, qty } });
+      }
+    }
     if (byPlayer && n.side === 'lawful' && n.role !== 'raider') {
-      // Piracy: a hauler's hold spills a pod or two of its cargo.
-      if (n.role === 'trader') {
+      // Piracy: a hauler's hold spills a pod or two of its cargo (a scheduled hauler's did above).
+      if (n.role === 'trader' && !n.haul) {
         const goods: CommodityId[] = ['consumer-goods', 'electronics', 'machinery', 'medical', 'food', 'metals', 'polymers', 'luxuries'];
         for (let i = 0; i < 1 + Math.floor(this.rand() * 2); i++) {
           this.spawnLoot(n.body.position.clone().add(this.tmp.set((this.rand() - 0.5) * 40, (this.rand() - 0.5) * 20, (this.rand() - 0.5) * 40)), 0, {
@@ -1980,14 +2004,12 @@ export class FlightSession {
     if (!t) return;
     const { plan } = t;
     const timers = this.trafficTimers;
-    if (!timers.populated) {
+    // The timetable's haulers: those flying here now when the scene starts, then each as its leg here begins.
+    timers.haulCheck -= dt;
+    if (timers.haulCheck <= 0) {
+      timers.haulCheck = 2;
+      this.updateHauls(plan.traders, !timers.populated);
       timers.populated = true;
-      for (let i = 0; i < Math.ceil(plan.traders / 2); i++) this.spawnTrader(t, true);
-    }
-    timers.trader -= dt;
-    if (timers.trader <= 0 && this.npcs.filter((n) => n.role === 'trader').length < plan.traders) {
-      this.spawnTrader(t);
-      timers.trader = THREE.MathUtils.lerp(plan.traderInterval[0], plan.traderInterval[1], this.rand());
     }
     if (!timers.contractsSpawned && this.time > 2) {
       timers.contractsSpawned = true;
@@ -2154,29 +2176,49 @@ export class FlightSession {
     return (this.system.def.beacons.find((b) => b.kind === 'jump') ?? { position: this.system.def.arrival.position }).position;
   }
 
-  private spawnTrader(t: TrafficSetup, midRoute = false): void {
-    const docks = this.openDocks();
-    if (!docks.length) return;
-    const owner: StationOwner = t.owner ?? 'independent';
-    const fleet = FLEETS[owner].traders.length ? FLEETS[owner].traders : FLEETS.independent.traders;
-    const model = fleet[Math.floor(this.rand() * fleet.length)]!;
-    // Some arrive through the jump beacon, the rest launch from a station.
-    const fromBeacon = docks.length < 2 || this.rand() < 0.4;
-    const from = fromBeacon ? null : docks[Math.floor(this.rand() * docks.length)]!;
-    const choices = docks.filter((d) => d !== from);
-    const dest = choices[Math.floor(this.rand() * choices.length)]!;
-    let position = from
-      ? from.dockPoint.clone().addScaledVector(from.approach, 320)
-      : this.jumpPoint().clone().add(this.tmp.set(this.rand() - 0.5, (this.rand() - 0.5) * 0.3, this.rand() - 0.5).multiplyScalar(1_400));
-    // The traffic already under way when the player arrives: somewhere along its route.
-    if (midRoute) position = position.lerp(dest.dockPoint, 0.15 + this.rand() * 0.6).add(this.tmp.set(0, (this.rand() - 0.5) * 800, 0));
-    // Never pop in right next to the player.
-    if (position.distanceTo(this.player.position) < 1_200) return;
-    const forward = from && !midRoute ? from.approach.clone() : dest.dockPoint.clone().sub(position).normalize();
-    const faction = owner === 'hollow-wake' ? 'independent' : owner;
-    const npc = this.makeNpc(model, 'trader', faction, position, forward, `${faction === 'independent' ? 'Independent' : FACTIONS[faction].shortName} hauler · bound for ${dest.name}`);
-    npc.trader = new TraderBrain({ id: dest.def.locationId, point: dest.dockPoint }, npc.durability);
-    npc.origin = from ? from.def.locationId : null;
+  /**
+   * Brings the timetable's hauls flying here now into the scene (docs/PROCGEN.md §21), as many as
+   * the traffic plan shows at once: at the scene's start wherever they are along their leg, later as
+   * each leg begins (out of a dock, or out of the jump), or once there is room, if well clear of the
+   * player.
+   */
+  private updateHauls(cap: number, first: boolean): void {
+    const here = haulsIn(this.state.location.systemId, this.state.clock);
+    for (const h of here) {
+      if (this.haulsHere.has(h.haul.id)) continue;
+      if (this.npcs.filter((n) => n.haul).length >= cap) return;
+      if (this.spawnHaul(h, first)) this.haulsHere.add(h.haul.id);
+    }
+  }
+
+  private dockOf(locationId: string): DockSite | undefined {
+    return this.openDocks().find((d) => d.def.locationId === locationId);
+  }
+
+  /** One haul into the scene, along its leg here; false when it would appear too close to the player (it is tried again later). */
+  private spawnHaul(h: HaulHere, first: boolean): boolean {
+    const { haul, leg } = h;
+    const fromDock = leg.kind === 'out' || leg.kind === 'local' ? this.dockOf(haul.from) : undefined;
+    const toDock = leg.kind === 'in' || leg.kind === 'local' ? this.dockOf(haul.to) : undefined;
+    const r = hashString(haul.id);
+    const scatter = this.tmp.set(((r % 97) / 97 - 0.5) * 1_200, (((r >> 7) % 89) / 89 - 0.5) * 300, (((r >> 14) % 83) / 83 - 0.5) * 1_200);
+    const start = fromDock ? fromDock.dockPoint.clone().addScaledVector(fromDock.approach, 320) : this.system.def.arrival.position.clone().add(scatter);
+    const end = toDock ? toDock.dockPoint.clone() : this.jumpPoint().clone();
+    const position = start.clone().lerp(end, Math.min(0.9, h.progress));
+    // Never pop in right next to the player, unless out of a dock at the scene's start.
+    if (h.progress > 0.02 && position.distanceTo(this.player.position) < 1_200 && !first) return false;
+    if (position.distanceTo(this.player.position) < 600) return false;
+    const forward = fromDock && h.progress < 0.02 ? fromDock.approach.clone() : end.clone().sub(position).normalize();
+    const dest = getLocation(haul.to);
+    const where = dest.systemId === this.state.location.systemId ? dest.name : `${dest.name} (${getSystem(dest.systemId).displayName})`;
+    const owner = haul.faction === 'independent' ? 'Independent' : FACTIONS[haul.faction].shortName;
+    const npc = this.makeNpc(haul.model, 'trader', haul.faction, position, forward, `The ${haul.name} · ${owner} · ${haul.qty} ${COMMODITIES[haul.commodity].name.toLowerCase()} for ${where}`);
+    // Its own name ("the Bramble" in messages, which put the article in), and on the HUD with it.
+    npc.name = haul.name;
+    npc.target.name = `The ${haul.name}`;
+    npc.trader = new TraderBrain({ id: toDock ? haul.to : 'jump', point: end }, npc.durability);
+    npc.haul = { haul, leg };
+    return true;
   }
 
   private spawnPatrolWing(t: TrafficSetup, wing: number): void {
@@ -2253,6 +2295,14 @@ export class FlightSession {
       npc.bounty = bounty;
       npc.patrol = { brain: new PatrolBrain(route, 0), offset: new THREE.Vector3((i - p.count / 2) * 140, (i % 2) * 60, (i % 3) * 90) };
     }
+  }
+
+  /**
+   * The scheduled haulers still flying when the player leaves (docs/PROCGEN.md §21) that are past
+   * the middle of their leg here: the player saw them through, whatever a raid here would have done.
+   */
+  haulsSeenThrough(): string[] {
+    return this.npcs.filter((n) => n.haul && n.durability.hull > 0 && this.state.clock >= (n.haul.leg.start + n.haul.leg.end) / 2).map((n) => n.haul!.haul.id);
   }
 
   /**
@@ -2355,7 +2405,6 @@ export class FlightSession {
       npc.name = name;
       npc.target.name = `${name} (${e.convoy ? 'convoy' : 'escort'})`;
       npc.trader = new TraderBrain({ id: e.to, point: dest.dockPoint }, npc.durability);
-      npc.origin = null;
       npc.escort = { jobId: e.jobId, start: position.clone(), ambushAt: a + this.rand() * (b - a), ambushed: false, level: e.level, ...(e.convoy ? { convoy: true } : {}) };
     });
     if (e.convoy) {
@@ -2382,7 +2431,6 @@ export class FlightSession {
       npc.name = name;
       npc.target.name = `${name} (${e.convoy ? 'convoy' : 'escort'})`;
       npc.target.hostile = false;
-      npc.origin = null;
       npc.escort = { jobId: e.jobId, start: position.clone(), ambushAt: Infinity, ambushed: true, level: e.level, ...(e.convoy ? { convoy: true } : {}), follow: { offset } };
     });
     const who = e.convoy ? `The ${e.name} (${names.length} ships) is` : `The ${e.name} is`;
@@ -2462,7 +2510,6 @@ export class FlightSession {
     npc.target.name = `${rescue.name} (stranded)`;
     npc.target.id = strandedTargetId(rescue.jobId);
     npc.target.hostile = false;
-    npc.origin = null;
     npc.stranded = { jobId: rescue.jobId, handed: false, told: false };
     // Dead in space: no drive, no drift.
     npc.body.velocity.set(0, 0, 0);
@@ -2550,12 +2597,18 @@ export class FlightSession {
     } else n.body.requestCruise(cruise);
     if (brain.attacked && !n.maydaySent) {
       n.maydaySent = true;
-      if (n.body.position.distanceTo(this.player.position) < 15_000) this.callbacks.onMessage(`Mayday from the ${n.name}: raiders attacking!`, 'bad');
+      if (n.haul) n.haul.downedAtMayday = this.raidersDowned;
+      if (n.body.position.distanceTo(this.player.position) < 15_000) this.callbacks.onMessage(`Mayday from the ${n.haul ? n.haul.haul.name : n.name}: raiders attacking!`, 'bad');
     }
-    // Docked at its destination: it unloads (the markets feel it) and leaves the scene.
+    // Docked (or out through the jump beacon): it leaves the scene.
     if (brain.state === 'arrived') {
       if (n.escort) this.callbacks.onEscortArrived?.(n.escort.jobId);
-      else this.callbacks.onTraderArrived?.(n.origin ?? null, brain.destination.id, n.id);
+      else if (n.haul) {
+        this.callbacks.onHaul?.(n.haul.haul.id, 'safe');
+        // Kept alive through an attack by the player's guns (and never hit by them): its owners send thanks.
+        const helped = n.haul.downedAtMayday !== undefined && this.raidersDowned > n.haul.downedAtMayday && n.playerHitAt === -Infinity;
+        if (helped) this.callbacks.onHaulThanks?.(n.haul.haul);
+      }
       this.removeNpc(n);
     }
   }
@@ -3698,6 +3751,14 @@ export class FlightSession {
     hud.warnings = warnings;
   }
 
+  /** Test-only: destroy a ship outright, as the player's guns (or someone else's) would. */
+  debugDestroy(id: string, byPlayer: boolean): boolean {
+    const n = this.npcs.find((x) => x.id === id);
+    if (!n) return false;
+    this.damageNpc(n, 1e9, n.body.position.clone(), undefined, byPlayer);
+    return true;
+  }
+
   /** Debug snapshot of NPC state for automated tests. */
   debugNpcs(): {
     id: string;
@@ -3708,6 +3769,9 @@ export class FlightSession {
     escort: string | null;
     following: boolean;
     prey: string | null;
+    /** The timetable's haul it flies (docs/PROCGEN.md §21), and what it carries. */
+    haul: string | null;
+    subtitle: string;
     state: string;
     hull: number;
     shield: number;
@@ -3723,6 +3787,8 @@ export class FlightSession {
       escort: n.escort?.jobId ?? null,
       following: !!n.escort?.follow,
       prey: n.prey?.name ?? null,
+      haul: n.haul?.haul.id ?? null,
+      subtitle: n.target.subtitle ?? '',
       state: n.trader?.state ?? (n.patrol && n.foe === null ? n.patrol.brain.state : n.brain.state),
       hull: n.durability.hull,
       shield: n.durability.shield,

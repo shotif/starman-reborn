@@ -9,12 +9,12 @@ After the scripted opening (10–20 minutes), the neighbourhood is an open sandb
 systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
 of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
 packs in lawless space; 39 ships and 139 pieces of equipment; and generated contracts on every job
-board. Increments 1–17 (under [Done so far](#done-so-far)) added world events and news, contracts
+board. Increments 1–18 (under [Done so far](#done-so-far)) added world events and news, contracts
 of every kind, the law and the outlaw path, goals, five story arcs, combat depth, people in the
 bars and a trade computer, a world that answers, a fleet of your own, mining in the real belts,
 the frontier with a life of its own, a border war whose fronts can be won for good, story endings
-that change stations for good, escorts and convoys across jumps, and a game measured and tuned on
-a real phone.
+that change stations for good, escorts and convoys across jumps, haulers with real cargo on a
+timetable, and a game measured and tuned on a real phone.
 
 What it lacks now:
 
@@ -26,11 +26,15 @@ What it lacks now:
 
 Candidates for what comes next, in the order I would build them:
 
-### Traders you can see ⏳ (L)
+### Your captains on the lanes ⏳ (M)
 
-Haulers carrying real cargo between systems along the lanes, instead of goods drifting between
-stations out of sight: shortages fill with ships you can watch, raids hit real convoys, and you can
-escort, rob or race them.
+The hauls of the player's own fleet fly the timetable like the stations' haulers: meet them on the
+way, guard them through a raid, or lose them to one.
+
+### Gluts that ship out ⏳ (S)
+
+A glut sends its surplus out in haulers, as a shortage draws relief, and boards post escorts for
+relief bound through raided lanes.
 
 ### Remappable controls ⏳ (M)
 
@@ -45,6 +49,17 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 18. Traders you can see ✅
+
+The stations' freight now flies the lanes as named haulers with real cargo, on a timetable every
+device shares. A shortage draws relief from the stations that make what it lacks: the News says
+who is on the way and when they are due, each arrival fills the station's stock, and all of it
+arriving ends the shortage, so a pilot who gets there first sells at the shortage's prices. Raids
+take haulers in their lanes, and the station they were bound for goes without. In flight, the
+haulers about you are the timetable's, named with their cargo and where it is going; destroy one
+and half its cargo spills (and its shortage runs on), or stand by one under attack and its owners
+send thanks ([PROCGEN.md §21](PROCGEN.md#21-haulers-on-the-lanes)).
 
 ### 17. The faction arcs leave their marks ✅
 

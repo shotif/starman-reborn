@@ -2,11 +2,11 @@ import type { CommodityId, MarketState, PriceQuote } from '../app/state.ts';
 import { COMMODITIES, COMMODITY_IDS, PRICE_BAND } from '../content/economy/goods.ts';
 import { buildMarkets, type MarketEntry, type StationMarket } from '../content/economy/markets.ts';
 import { ECONOMY } from '../content/economy/rules.ts';
-import { rng } from '../content/random.ts';
 import { WORLD_SEED } from '../content/world/rules.ts';
 import { ALL_LOCATIONS, getLocation, WORLD } from '../data/systems.ts';
 import type { FactionId } from '../data/types.ts';
 import { marketEffect } from './events.ts';
+import { haulStock } from './hauls.ts';
 import { standingPriceModifier } from './factions.ts';
 
 /**
@@ -121,11 +121,11 @@ function spillIn(locationId: string, entry: MarketEntry, ctx: MarketContext): nu
   return total;
 }
 
-/** Stock now: the station's own, plus what drifts in from its neighbours. */
+/** Stock now: the station's own, plus what drifts in from its neighbours and what the hauls bring or miss (§21). */
 export function stockNow(locationId: string, entry: MarketEntry, ctx: MarketContext): number {
   const own = ownStock(locationId, entry, ctx);
-  const drift = spillIn(locationId, entry, ctx);
-  return drift === 0 ? own : Math.max(0, own + drift);
+  const moved = spillIn(locationId, entry, ctx) + haulStock(locationId, entry.commodity, ctx.clock);
+  return moved === 0 ? own : Math.max(0, own + moved);
 }
 
 function drift(entry: MarketEntry, clock: number): number {
@@ -227,23 +227,3 @@ export function moveStock(markets: MarketState, locationId: string, commodity: C
   markets[locationId] = { t: clock, stock: next };
 }
 
-/**
- * A trader docking in the player's system moves goods for real (docs/PROCGEN.md §11.2): a small
- * load of something its destination wants or trades, taken from its origin when it launched from a
- * station that makes it. Traders top short stock up and never flood a market or empty a maker.
- */
-export function traderDelivery(from: string | null, to: string, shipKey: string, markets: MarketState, clock: number): { commodity: CommodityId; qty: number } | null {
-  const dest = marketTables().get(to);
-  if (!dest) return null;
-  const origin = from ? marketTables().get(from) : undefined;
-  const options = [...dest.entries.values()].filter((e) => e.role !== 'produce' && (!origin || origin.entries.get(e.commodity)?.role === 'produce'));
-  if (!options.length) return null;
-  const r = rng(WORLD_SEED, 'trader-cargo', to, shipKey, Math.floor(clock));
-  const e = r.pick(options);
-  const ctx = { clock, markets };
-  const room = normalStock(to, e, clock) * 1.2 - stockNow(to, e, ctx);
-  let qty = Math.min(r.int(6, 14), Math.floor(room));
-  const made = origin?.entries.get(e.commodity);
-  if (from && made) qty = Math.min(qty, Math.floor(stockNow(from, made, ctx) - normalStock(from, made, clock) * 0.8));
-  return qty >= 1 ? { commodity: e.commodity, qty } : null;
-}

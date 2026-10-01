@@ -9,7 +9,7 @@ import { endFront } from './border.ts';
 import { stationEventAt, systemEventAt, type WorldEvent } from './events.ts';
 import { adjustReputation, FACTIONS } from './factions.ts';
 import { lawIn } from './law.ts';
-import { marketEntry } from './markets.ts';
+import { reliefDelivered, shortfall } from './hauls.ts';
 import { markById, marksForFront } from './marks.ts';
 
 /**
@@ -62,8 +62,7 @@ export interface Answer {
 
 /** How many units of its goods a shortage leaves a station short of. */
 export function shortageDeficit(e: WorldEvent): number {
-  if (!e.locationId) return 0;
-  return e.goods.reduce((sum, c) => sum + (marketEntry(e.locationId!, c)?.target ?? 0) * Math.max(0, 1 - e.stock), 0);
+  return shortfall(e);
 }
 
 /**
@@ -77,7 +76,8 @@ export function relieveShortage(state: GameState, locationId: string, commodity:
   const log = state.world.relief;
   log[e.id] = (log[e.id] ?? 0) + qty;
   const deficit = shortageDeficit(e);
-  if (deficit <= 0 || log[e.id]! < deficit * EVENTS.react.relief) return null;
+  // What the relief hauls brought counts with what the player sold (docs/PROCGEN.md §21).
+  if (deficit <= 0 || log[e.id]! + reliefDelivered(e, state.clock) < deficit * EVENTS.react.relief) return null;
   state.world.ended[e.id] = state.clock;
   const units = log[e.id]!;
   const paid = Math.round(units * COMMODITIES[commodity].basePrice * EVENTS.react.reliefBonus);

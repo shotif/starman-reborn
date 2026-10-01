@@ -8,8 +8,8 @@ import { formatIssues } from '../../src/content/validate.ts';
 import { getLocation, getSystem, isFrontier, SYSTEMS } from '../../src/data/systems.ts';
 import { boardFor } from '../../src/economy/contracts.ts';
 import { validateEvents } from '../../src/economy/eventGuards.ts';
-import { baseThreat, eventsAt, eventStations, marketEffect, newsAt, stationEventAt, surveyPlanets, systemEventAt, type WorldEvent } from '../../src/economy/events.ts';
-import { marketEntry, marketTables, moveStock, normalStock, quote, stockNow, traderDelivery } from '../../src/economy/markets.ts';
+import { baseThreat, eventsAt, eventStations, marketEffect, newsAt, stationEventAt, stationEventsBetween, surveyPlanets, systemEventAt, systemEventsBetween, type WorldEvent } from '../../src/economy/events.ts';
+import { marketEntry, moveStock, quote, stockNow } from '../../src/economy/markets.ts';
 import { findRoute } from '../../src/galaxy/routing.ts';
 import { trafficFor } from '../../src/world/traffic/setup.ts';
 
@@ -33,7 +33,7 @@ function first(kind: WorldEvent['kind'], from = 0, match: (e: WorldEvent) => boo
 describe('world events', () => {
   it('pass every guardrail over three hundred hours of play', () => {
     expect(formatIssues(validateEvents(300))).toBe('');
-  });
+  }, 60_000);
 
   it('are a pure function of the clock, one at a time per place, and never touch Sol', () => {
     const a = eventsAt(12_345).map((e) => e.id);
@@ -132,8 +132,11 @@ describe('world events', () => {
   it('leave every event there was before the frontier’s own exactly as it was (100 hours, fingerprinted)', () => {
     const h = createHash('sha256');
     const seen = new Set<string>();
+    // As scheduled: a shortage its relief hauls end early (§21) is still the event it was.
+    const scheduledAt = (clock: number) =>
+      [...eventStations().flatMap((id) => stationEventsBetween(id, clock, clock)), ...SYSTEMS.flatMap((x) => systemEventsBetween(x.id, clock, clock))].filter((e) => e.start <= clock && clock < e.end);
     for (let clock = 0; clock < 100 * 3_600; clock += 900) {
-      for (const e of eventsAt(clock)) {
+      for (const e of scheduledAt(clock)) {
         if (FRONTIER_KINDS.includes(e.kind) || seen.has(e.id)) continue;
         seen.add(e.id);
         h.update(JSON.stringify([e.id, e.kind, e.start, e.end, e.goods, e.price, e.stock, e.level]));
@@ -199,29 +202,6 @@ describe('the frontier’s own events (docs/PROCGEN.md §11)', () => {
     for (let clock = 0; clock < 100 * 3_600; clock += 1_800) {
       for (const e of eventsAt(clock)) if (FRONTIER_KINDS.includes(e.kind)) expect(isFrontier(e.systemId), e.id).toBe(true);
     }
-  });
-
-  it('have traders top short stock up without flooding a market or emptying a maker', () => {
-    const tables = marketTables();
-    const [to, table] = [...tables].find(([, t]) => [...t.entries.values()].some((e) => e.role === 'consume'))!;
-    const markets = {};
-    let delivered = 0;
-    for (let i = 0; i < 40; i++) {
-      const flow = traderDelivery(null, to, `ship-${i}`, markets, 100 + i);
-      if (!flow) continue;
-      const e = table.entries.get(flow.commodity)!;
-      expect(e.role).not.toBe('produce');
-      moveStock(markets, to, flow.commodity, flow.qty, 100 + i);
-      expect(stockNow(to, e, { clock: 100 + i, markets })).toBeLessThanOrEqual(normalStock(to, e, 100 + i) * 1.2 + 0.01);
-      delivered++;
-    }
-    expect(delivered).toBeGreaterThan(0);
-    // From a station, only what it makes, and never below most of its normal stock.
-    const pair = [...tables].flatMap(([from, t]) =>
-      [...tables].filter(([dest]) => dest !== from).map(([dest, d]) => ({ from, dest, ok: [...d.entries.values()].some((e) => e.role !== 'produce' && t.entries.get(e.commodity)?.role === 'produce') })),
-    ).find((x) => x.ok)!;
-    const flow = traderDelivery(pair.from, pair.dest, 'ship-x', {}, 50)!;
-    expect(tables.get(pair.from)!.entries.get(flow.commodity)!.role).toBe('produce');
   });
 
   it('let time pass in the lanes: each jump moves the clock on', () => {

@@ -5,6 +5,8 @@ import { borderNews, type FrontPhase } from '../economy/border.ts';
 import { densDownNear } from '../economy/dens.ts';
 import type { SystemId } from '../data/types.ts';
 import { eventEnd, marksNear, minutes, newsAt, type NewsItem, type WorldEvent } from '../economy/events.ts';
+import { haulsLostNear, reliefNews } from '../economy/hauls.ts';
+import { COMMODITIES } from '../content/economy/goods.ts';
 import { h } from './dom.ts';
 import { glyph, type GlyphName } from './glyphs.ts';
 import { COMMODITY_GLYPH } from './station/trader.ts';
@@ -35,6 +37,7 @@ function when(n: NewsItem, clock: number): string {
   const e = n.event;
   const end = eventEnd(e);
   if (n.endedEarly) return `${e.kind === 'raid' ? 'broken' : 'relieved'} by a pilot ${minutes(clock - end)} min ago`;
+  if (end < e.end && end <= clock) return `relieved by its haulers ${minutes(clock - end)} min ago`;
   return n.active ? `for ${minutes(clock - e.start)} min, about ${minutes(e.end - clock)} min to go` : `over ${minutes(clock - end)} min ago`;
 }
 
@@ -138,8 +141,51 @@ export function newsList(systemId: SystemId, clock: number): HTMLElement {
           h('span', { class: 'row-name' }, n.event.headline),
           h('span', { class: 'row-sub' }, `${EVENT_LABEL[n.event.kind]} · ${where(n)} · ${when(n, clock)}`),
           h('span', { class: 'news-detail' }, n.event.detail),
+          n.event.kind === 'shortage' ? reliefLine(n.event, clock) : null,
         ),
       ),
     ),
+  );
+}
+
+const units = (qty: number, c: keyof typeof COMMODITIES) => `${qty} ${COMMODITIES[c].name.toLowerCase()}`;
+
+/** The haulers a shortage drew (docs/PROCGEN.md §21): on their way, in, or lost. */
+function reliefLine(e: WorldEvent, clock: number): HTMLElement | null {
+  const relief = reliefNews(e);
+  if (!relief.length) return null;
+  const said = relief.map(({ haul, fate }) => {
+    const from = getLocation(haul.from).name;
+    if (!fate.delivered && fate.at <= clock) return `the ${haul.name} (${units(haul.qty, haul.commodity)} from ${from}) was lost to ${fate.by === 'player' ? 'a pirate' : 'raiders'} in ${getSystem(fate.lostIn!).displayName}`;
+    if (fate.delivered && fate.at <= clock) return `the ${haul.name} brought ${units(haul.qty, haul.commodity)} from ${from}`;
+    if (haul.depart > clock) return `the ${haul.name} is loading ${units(haul.qty, haul.commodity)} at ${from}`;
+    return `the ${haul.name} is on its way from ${from} with ${units(haul.qty, haul.commodity)}, due in about ${minutes(haul.arrive - clock)} min`;
+  });
+  const text = said.join('; ');
+  return h('span', { class: 'news-relief', 'data-testid': `relief-${e.id}` }, `Relief: ${text.charAt(0).toUpperCase()}${text.slice(1)}.`);
+}
+
+/** Hauls lost to raiders within reach, lately (docs/PROCGEN.md §21). */
+export function haulNews(systemId: SystemId, clock: number): HTMLElement | null {
+  const lost = haulsLostNear(systemId, clock);
+  if (!lost.length) return null;
+  return h(
+    'ul',
+    { class: 'list news-list', 'data-testid': 'haul-news' },
+    lost.map(({ haul, fate, jumps }) => {
+      const to = getLocation(haul.to);
+      return h(
+        'li',
+        { class: 'news-item kind-raid over', 'data-testid': `haul-${haul.id}` },
+        glyph(COMMODITY_GLYPH[haul.commodity]),
+        h(
+          'span',
+          { class: 'news-text' },
+          h('span', { class: 'row-name' }, `The ${haul.name} lost to raiders`),
+          h('span', { class: 'row-sub' }, `Hauler · ${jumps === 0 ? 'this system' : `${getSystem(fate.lostIn!).displayName}, ${jumps} jump${jumps > 1 ? 's' : ''}`} · ${minutes(clock - fate.at)} min ago`),
+          h('span', { class: 'news-detail' }, `It was carrying ${units(haul.qty, haul.commodity)} from ${getLocation(haul.from).name} to ${to.name}, which will miss ${haul.qty > 1 ? 'them' : 'it'}.`),
+        ),
+      );
+    }),
   );
 }

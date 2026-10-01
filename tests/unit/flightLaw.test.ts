@@ -40,7 +40,7 @@ function installCanvasStub(): void {
   };
 }
 
-const QUIET: TrafficPlan = { traders: 0, traderInterval: [60, 60], patrolWings: 0, wingSize: 2, packs: null };
+const QUIET: TrafficPlan = { traders: 0, patrolWings: 0, wingSize: 2, packs: null };
 
 interface Npc {
   id: string;

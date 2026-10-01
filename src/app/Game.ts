@@ -19,7 +19,7 @@ import { getCatalog, shipModel } from '../content/catalog.ts';
 import { hashString } from '../content/random.ts';
 import { cargoCapacity, performanceOf } from '../economy/loadout.ts';
 import { adjustReputation, FACTIONS, standingTier, TIER_LABEL } from '../economy/factions.ts';
-import { newsAt, systemEventAt } from '../economy/events.ts';
+import { eventsAt, newsAt, systemEventAt } from '../economy/events.ts';
 import {
   acceptJob,
   activeJobIds,
@@ -49,7 +49,8 @@ import { briefingFor, choiceHere, denDown, isStoryJob, knockOutDen, makeChoice, 
 import { DENS } from '../content/dens/rules.ts';
 import { showChoice, showDialogue } from '../ui/story.ts';
 import { denBounty, payCrew, stashGear, wingmanLost } from '../economy/combat.ts';
-import { moveStock, traderDelivery } from '../economy/markets.ts';
+import { haulFate, recordHaul, reliefHauls } from '../economy/hauls.ts';
+import { HAULS } from '../content/economy/hauls.ts';
 import { commitCrime, customsScan, dockAccess, finesTravelling, isLawful, scansOnDocking, settleLaw, totalFines } from '../economy/law.ts';
 import { whatNext } from '../economy/advisor.ts';
 import { catalogue, checkMilestones, codexProgress } from '../economy/progress.ts';
@@ -958,11 +959,15 @@ export class Game {
         },
         onBounty: (credits, name) => this.onBounty(credits, name),
         onContractKill: (jobId) => this.onContractKill(jobId),
-        onTraderArrived: (from, to, shipId) => {
-          const flow = traderDelivery(from, to, shipId, state.markets, state.clock);
-          if (!flow) return;
-          if (from) moveStock(state.markets, from, flow.commodity, -flow.qty, state.clock);
-          moveStock(state.markets, to, flow.commodity, flow.qty, state.clock);
+        onHaul: (id, fate, by) => recordHaul(state.world, id, { at: state.clock, fate, systemId: state.location.systemId, ...(by ? { by } : {}) }),
+        onHaulThanks: (haul) => {
+          const { perUnit, min, standing } = HAULS.thanks;
+          const paid = Math.max(min, haul.qty * perUnit);
+          applyCredits(state, paid, 'reward', `Thanks from the ${haul.name}`);
+          state.stats.rewards += paid;
+          if (haul.faction !== 'independent') adjustReputation(state.reputation, haul.faction, standing);
+          this.sfx('ui-confirm');
+          toast(`The ${haul.name} got away: its owners send ${formatCredits(paid)} for the escort.`, 'good', 5000);
         },
         onMessage: (text, tone) => toast(text, tone, 2600),
       },
@@ -1013,11 +1018,12 @@ export class Game {
     return state.clock - l.at <= TRAFFIC.linger.seconds ? { packs: l.packs, pods: l.pods } : undefined;
   }
 
-  /** Remembers what the player leaves in this system: packs that saw them, and pods adrift. */
+  /** Remembers what the player leaves in this system: packs that saw them, pods adrift, and the haulers they saw through. */
   private rememberLingering(): void {
     const state = this.state;
     const flight = this.flight;
     if (!state || !flight) return;
+    for (const id of flight.haulsSeenThrough()) recordHaul(state.world, id, { at: state.clock, fate: 'safe', systemId: state.location.systemId });
     const l = flight.lingering();
     const all = state.world.lingering;
     const here = state.location.systemId;
@@ -1860,6 +1866,22 @@ export class Game {
         this.persist();
         this.station?.render();
       },
+      /**
+       * Test-only: the first shortage from `from` on (hour by hour) whose first relief hauler gets
+       * through on the timetable, and that hauler (docs/PROCGEN.md §21).
+       */
+      findRelief: (from: number) => {
+        for (let t = from; t < from + 400 * 3_600; t += 3_600) {
+          for (const e of eventsAt(t)) {
+            const h = reliefHauls(e)[0];
+            if (!h || !haulFate(h).delivered || h.depart < t) continue;
+            return { eventId: e.id, at: e.locationId!, haul: { id: h.id, name: h.name, from: h.from, fromName: getLocation(h.from).name, to: h.to, path: h.path, depart: h.depart, arrive: h.arrive, qty: h.qty } };
+          }
+        }
+        return null;
+      },
+      /** Test-only: destroy a ship in flight outright (`byPlayer`: as the player's guns would). */
+      destroyNpc: (arg: { id: string; byPlayer: boolean }) => this.flight?.debugDestroy(arg.id, arg.byPlayer) ?? false,
       /** Test-only: what a station's board posts now (as the Jobs window lists it, before what the pilot holds). */
       board: (locationId: string) => (this.state ? postedContracts(this.state, locationId).map((c) => ({ id: c.id, title: c.title })) : []),
       /** Test-only: a deed on a border front (+ the law's way, − the Wake's), as war work done there now. */

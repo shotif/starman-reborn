@@ -80,8 +80,11 @@ snapshot branch only when the archives changed.
   runs only on the five lanes where a den's system touches lawful space. The Long Border settles its
   front, and the player's decisive operations settle the other four; a front swings with the tide
   until then, and nobody but the player ever settles one. A settled front cannot be reopened.
-- Goods move between stations out of sight as a spill along the lanes, not as individual ships;
-  only the player's own system has traders flying.
+- The stations' freight is a timetable of haulers: they fly as ships only in the player's system,
+  and elsewhere a raid loses them by its odds. Only shortages draw relief (not gluts, booms or
+  strikes), and haulers avoid raids but not border blockades. What the player leaves at a dock
+  still evens out with its neighbours as a spill out of sight, and the player's own captains' hauls
+  (§18 of PROCGEN) are not on the lanes.
 - Traffic and raider packs exist only around the player. Packs that saw the player and cargo pods
   left adrift wait for 30 minutes of game clock (in the last six systems), as do the packs and
   wrecks of the player's own contracts; everything else is generated again on arrival.

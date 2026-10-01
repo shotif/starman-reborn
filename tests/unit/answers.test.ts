@@ -180,13 +180,13 @@ describe('encounters that persist', () => {
         ctx: { quality: 'low', reducedMotion: true },
         audio: { play() {}, setCombatIntensity() {}, setEngine() {} } as never,
         callbacks: { onDocked() {}, onPlayerDestroyed() {}, onDiscovery() {}, onScanInfo() {}, onEncounterStart() {}, onEncounterEnd() {}, onLoot() {}, onBounty() {}, onContractKill() {}, onMessage() {} },
-        traffic: { plan: { traders: 0, traderInterval: [60, 60], patrolWings: 0, wingSize: 2, packs: null }, owner: null, ...traffic },
+        traffic: { plan: { traders: 0, patrolWings: 0, wingSize: 2, packs: null }, owner: null, ...traffic },
       });
       f.start({ kind: 'arrival' });
       return f;
     };
     const packs = { max: 1, level: 2 as const, size: [2, 2] as const, firstDelay: 1, interval: [999, 999] as const };
-    const f = make({ plan: { traders: 0, traderInterval: [60, 60], patrolWings: 0, wingSize: 2, packs } });
+    const f = make({ plan: { traders: 0, patrolWings: 0, wingSize: 2, packs } });
     const inner = f as unknown as { npcs: { side: string; body: { position: THREE.Vector3 } }[]; spawnLoot(p: THREE.Vector3, v: number, x?: object): void };
     for (let t = 0; t < 3; t += 0.05) f.update(0.05, emptyInput());
     for (const n of inner.npcs.filter((x) => x.side === 'raider')) n.body.position.copy(f.player.position).add(new THREE.Vector3(800, 0, 0));

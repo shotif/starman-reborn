@@ -205,6 +205,17 @@ export interface WorldLog {
   border: Record<string, BorderLog>;
   /** Lasting marks a story's ending left on a station (docs/PROCGEN.md §14.7): mark id → game clock. */
   marks?: Record<string, number>;
+  /** What became of the hauls the player saw (docs/PROCGEN.md §21), by haul id; kept three hours. */
+  hauls?: Record<string, HaulRecord>;
+}
+
+/** A haul the player saw: through a system `safe` (whatever a raid there would have done), or `lost` (destroyed). */
+export interface HaulRecord {
+  at: number;
+  fate: 'safe' | 'lost';
+  systemId: SystemId;
+  /** Who destroyed it (lost hauls). */
+  by?: 'raiders' | 'player';
 }
 
 export type BorderEnding = 'law' | 'wake' | 'truce';

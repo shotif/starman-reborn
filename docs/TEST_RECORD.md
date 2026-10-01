@@ -316,6 +316,24 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   which The Long Border ended before marks gets the Ross 154 front's marks on load (a truce leaves
   none); every front has marks for both endings, every run a mark promises is on its station's
   board in every time slot once the mark is left, and broken marks are caught; border saves.
+- `hauls.test.ts`: the haul timetable passes its guardrails over a day of every station's hauls and
+  every shortage's relief, and broken hauls are caught (to a den, from where the cargo is not made,
+  contraband, overloaded, along a lane that does not exist, a leg out of time, an unknown name, a
+  raider's ship); a station's haul in a slot never changes; Sol, Procyon and Tau Ceti have more
+  than one hauler in their lanes on average over six hours, each on a leg in that system; nobody
+  sets off into or out of a raid; a shortage's relief comes from makers, sets off in time, carries
+  its share, and all of it arriving ends the shortage, the station's stock filling as each arrives
+  and its price no higher, and once it is over, its stock is back to normal (the relief part of
+  that); with the first hauler in, the player selling the rest relieves it and is
+  paid the bonus; a raid loses a hauler in its lanes, which leaves those lanes, is missed where it
+  was bound and is in the news there; seen safe through that system it gets through (seen elsewhere,
+  it does not), and lost stays lost; a relief hauler destroyed leaves its shortage to run on; the
+  world log keeps three hours, older saves have none, and damaged records are refused; in a real
+  `FlightSession` in node, the haulers shown in Sol are the timetable's, named, with their cargo and
+  where it is going, as many as the plan allows; one destroyed by the player is lost and spills
+  exactly half its cargo, of its own good; they leave the scene safe and others join as their legs
+  begin; one kept alive through an attack by the player's guns sends thanks when it gets away, and
+  one the player fired on sends none; stock the hauls move stays within reason.
 
 ### Browser tests (Playwright)
 
@@ -420,9 +438,15 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   notched phone's), touch or mouse as the device has, no flight yet and offline play off in test
   runs; **Copy report** puts exactly that text on the clipboard; after a few seconds of flight, the
   report from the pause menu has the flight's average frame rate and its slowest second.
+- `hauls.spec.ts`: **a shortage's relief hauler**: a little after it sets off, the News at the
+  station that is short names it on its way, from where and with how much; in the system it sets off
+  from, it flies, named, with its cargo; destroyed by the player's guns, the save remembers it lost
+  and its cargo is adrift; back at the station, the News says it was lost to a pirate and the
+  shortage runs on.
 - `screenshots.spec.ts`: the loading title (caught part-way, with the game's largest file held
   back), title, Settings at its device report, job board, buy dialog, station deck, shipyard, outfitter, fleet,
-  flight HUD, star map and its Missions and Find dialogs at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
+  flight HUD, star map and its Missions and Find dialogs, and the News with a shortage's relief
+  haulers on their way, at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
   zoom). Saved in `docs/screenshots/` once any smooth scrolling has come to rest. Each is audited
   for page scroll overflow, clipped controls (controls inside a scrolling panel count only if the
