@@ -14,9 +14,9 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | Unit tests | `npm test` | Pass: 693 tests in 44 files |
 | Production build | `npm run build` | Pass |
 | First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 632 KB of 700 (gzipped) |
-| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 33 passed (5 touch-only tests skipped) |
-| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 33 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
-| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 126 screenshots, no audit findings |
+| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 34 passed (5 touch-only tests skipped) |
+| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 34 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
+| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 135 screenshots, no audit findings |
 
 ### Unit tests (Vitest)
 
