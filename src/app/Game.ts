@@ -44,7 +44,7 @@ import {
   wrecksIn,
   type JobEvent,
 } from '../economy/jobs.ts';
-import { postedContract } from '../economy/contracts.ts';
+import { postedContract, postedContracts } from '../economy/contracts.ts';
 import { briefingFor, choiceHere, denDown, isStoryJob, knockOutDen, makeChoice, markSeen, optionLock, pendingBeats, speakerName } from '../economy/story.ts';
 import { DENS } from '../content/dens/rules.ts';
 import { showChoice, showDialogue } from '../ui/story.ts';
@@ -1859,6 +1859,8 @@ export class Game {
         this.persist();
         this.station?.render();
       },
+      /** Test-only: what a station's board posts now (as the Jobs window lists it, before what the pilot holds). */
+      board: (locationId: string) => (this.state ? postedContracts(this.state, locationId).map((c) => ({ id: c.id, title: c.title })) : []),
       /** Test-only: a deed on a border front (+ the law's way, − the Wake's), as war work done there now. */
       borderDeed: (frontId: string, amount: number) => {
         if (!this.state) return;

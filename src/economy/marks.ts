@@ -3,7 +3,7 @@ import { CONTRACTS } from '../content/contracts/rules.ts';
 import { COMMODITIES, type CommodityId } from '../content/economy/goods.ts';
 import { LASTING_MARKS, type LastingMark } from '../content/story/marks.ts';
 import { jumpsFrom } from '../content/world/network.ts';
-import { ALL_LOCATIONS, getSystem, WORLD } from '../data/systems.ts';
+import { ALL_LOCATIONS, getSystem, isFrontier, WORLD } from '../data/systems.ts';
 import type { FictionalLocation } from '../data/types.ts';
 import { EXPOSED, FRONTS, type Front } from './border.ts';
 import { marketTables } from './markets.ts';
@@ -26,12 +26,17 @@ function list(goods: readonly CommodityId[]): string {
 const isOpen = (l: FictionalLocation) => l.status === 'functional' && l.dockable !== false;
 const postsBoard = (l: FictionalLocation) => isOpen(l) && l.services.includes('contracts') && l.stationType !== 'pirate-den';
 
-/** Where a run of `commodity` from `from` can go: the nearest open station that takes it, within freight reach and clear of the fronts. */
+/**
+ * Where a run of `commodity` from `from` can go: the nearest open station that takes it, within
+ * freight reach and clear of the fronts, and not out in the frontier unless the run starts there
+ * (as no board outside the frontier sends a pilot into it, economy/contracts.ts).
+ */
 function runTo(from: FictionalLocation, commodity: CommodityId, avoid: ReadonlySet<string>): FictionalLocation | null {
   const jumps = jumpsFrom(WORLD.links, from.systemId);
   const tables = marketTables();
   const options = ALL_LOCATIONS.filter((l) => {
     if (l.id === from.id || !isOpen(l) || l.stationType === 'pirate-den' || EXPOSED.has(l.id) || avoid.has(l.systemId)) return false;
+    if (isFrontier(l.systemId) && !isFrontier(from.systemId)) return false;
     if ((jumps.get(l.systemId) ?? Infinity) > CONTRACTS.maxJumps.freight) return false;
     const e = tables.get(l.id)?.entries.get(commodity);
     return !!e && e.role !== 'produce';

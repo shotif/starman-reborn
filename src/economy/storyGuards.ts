@@ -6,7 +6,7 @@ import { MARK_LIMITS, type LastingMark } from '../content/story/marks.ts';
 import type { Line } from '../content/story/types.ts';
 import type { Issue } from '../content/validate.ts';
 import { jumpsFrom } from '../content/world/network.ts';
-import { ALL_LOCATIONS, getLocation, WORLD } from '../data/systems.ts';
+import { ALL_LOCATIONS, getLocation, isFrontier, WORLD } from '../data/systems.ts';
 import { getFront } from './border.ts';
 import { JOBS, LIFELINE_ID, type JobDef, type Objective } from './jobs.ts';
 import { LAWFUL } from './law.ts';
@@ -255,6 +255,7 @@ export function validateMarks(marks: readonly LastingMark[] = allMarks(), arcJob
       if (!there || there.role === 'produce') report('run', m.id, `${m.run.to} does not take ${m.run.commodity}`);
       const jumps = jumpsFrom(WORLD.links, loc.systemId).get(getLocation(m.run.to).systemId) ?? Infinity;
       if (jumps > CONTRACTS.maxJumps.freight) report('run', m.id, `${m.run.to} is beyond freight reach`);
+      if (isFrontier(getLocation(m.run.to).systemId) && !isFrontier(loc.systemId)) report('run', m.id, `${m.run.to} is out in the frontier, where no board outside it sends a pilot`);
     }
     if (!within(MARK_LIMITS.premium, m.run.premium)) report('run', m.id, 'pays out of bounds');
   }

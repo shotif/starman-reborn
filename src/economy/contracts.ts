@@ -158,13 +158,16 @@ export function boardFor(locationId: string, epoch: number): JobDef[] {
     // Work answering a world event, from its own stream so the rest of the board does not move.
     const e = eventContract(loc, rng(WORLD_SEED, 'contracts', 'event', locationId, epoch), `${CONTRACT_PREFIX}${locationId}.${epoch}.${out.length}`, clock);
     if (e && !out.some((o) => same(o, e))) out.push(e);
+    // These come and go within a time slot (a front settled, a mark left), so their ids are their
+    // own: a contract that appears never takes the id of one that went, which a pilot may hold.
     // A side's decisive operation on a front, once the player has earned it (docs/PROCGEN.md §20.7).
-    const d = decisive(loc, rng(WORLD_SEED, 'contracts', 'decisive', locationId, epoch), `${CONTRACT_PREFIX}${locationId}.${epoch}.${out.length}`, clock);
+    const d = decisive(loc, rng(WORLD_SEED, 'contracts', 'decisive', locationId, epoch), `${CONTRACT_PREFIX}${locationId}.${epoch}.decisive`, clock);
     if (d) out.push(d);
-    // Standing runs a story's ending left here (docs/PROCGEN.md §14.7), each from its own stream.
+    // Standing runs a lasting mark left here (docs/PROCGEN.md §14.7), each from its own stream.
     for (const mark of marksAt(locationId)) {
       if (!mark.run) continue;
-      const run = freight(loc, rng(WORLD_SEED, 'contracts', 'mark', mark.id, epoch), `${CONTRACT_PREFIX}${locationId}.${epoch}.${out.length}`, clock, { run: mark.run });
+      const id = `${CONTRACT_PREFIX}${locationId}.${epoch}.run-${mark.id.replace(/\./g, '-')}`;
+      const run = freight(loc, rng(WORLD_SEED, 'contracts', 'mark', mark.id, epoch), id, clock, { run: mark.run });
       if (run) out.push(run);
     }
   }
@@ -173,7 +176,7 @@ export function boardFor(locationId: string, epoch: number): JobDef[] {
   return out;
 }
 
-/** Finds a posted contract by id (ids are `c.<station>.<time slot>.<index>`). */
+/** Finds a posted contract by id (ids are `c.<station>.<time slot>.<index>`, or `.decisive` / `.run-<mark>` for those that come and go within a slot). */
 export function postedContract(id: string): JobDef | null {
   if (!id.startsWith(CONTRACT_PREFIX)) return null;
   const [locationId, epochText] = id.slice(CONTRACT_PREFIX.length).split('.');

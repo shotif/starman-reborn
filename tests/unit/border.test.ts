@@ -429,9 +429,13 @@ describe('fronts that end (docs/PROCGEN.md §20.7)', () => {
     // Knocking out a den asks for a combat record, as any den assault does.
     expect(acceptJob(s, op!.id)).toEqual({ ok: false, message: expect.stringMatching(/combat rating/) });
     const before = quote('hearthstone-works', 'machinery', s.reputation, marketContext(s)).buy!;
+    const slot = Number(op!.id.split('.')[2]);
+    const posted = new Map(boardFor(lawPosters(f)[0]!.id, slot).map((c) => [c.id, c.title]));
     fly(s, op!);
     expect(done(s, op!.id)).toBe(true);
     expect(s.world.border[f.id]?.ending).toBe('law');
+    // The same time slot's board changes (the operation goes, a run comes), and no id is reused for another contract.
+    for (const c of boardFor(lawPosters(f)[0]!.id, slot)) if (posted.has(c.id)) expect(c.title).toBe(posted.get(c.id));
     for (let t = 0; t < BORDER.tide.periodSeconds; t += 3_600) {
       expect(frontState(f, s.clock + t).phase).toBe('pushed-back');
       expect(occupied('hearthstone-works', s.clock + t)).toBeNull();
@@ -495,6 +499,16 @@ describe('fronts that end (docs/PROCGEN.md §20.7)', () => {
     for (const f of FRONTS) {
       expect(marks.some((m) => m.front!.ending === 'law' && m.front!.ids.includes(f.id)), `${f.id} law`).toBe(true);
       expect(marks.some((m) => m.front!.ending === 'wake' && m.front!.ids.includes(f.id)), `${f.id} wake`).toBe(true);
+    }
+    // Every run a mark promises is on its station's board once the mark is left (its fronts settled that way).
+    for (const mark of allMarks().filter((x) => x.run)) {
+      const s = pilot();
+      s.world.marks = { [mark.id]: 0 };
+      for (const id of mark.front?.ids ?? []) s.world.border[id] = { deeds: [], ending: mark.front!.ending };
+      const runs = [0, 1, 2].flatMap((e) => boardFor(mark.locationId, e)).filter((c) => c.title.startsWith(`${mark.run!.title}: `));
+      expect(runs.length, mark.id).toBe(3);
+      expect(runs.every((c) => c.destinationLocationId === mark.run!.to), mark.id).toBe(true);
+      useWorldLog(null);
     }
     const m = marks[0]!;
     const rules = (broken: typeof m) => validateMarks([...allMarks().filter((x) => x.id !== m.id), broken]).map((i) => i.message);

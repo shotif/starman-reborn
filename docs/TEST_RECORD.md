@@ -303,11 +303,12 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   little, once it has faded, or on The Long Border's front; the law's names the den across the line
   and the Wake's the faction's sweep at it, within the pay ceiling; done for the law, the YZ Ceti
   line holds for a whole tide, its stations ship more (machinery at Hearthstone Works is cheaper),
-  its board posts the reopened lanes, war work on it stops and the news says the Cooperative holds
-  it; done for the Wake, Hearthstone Works falls for good, and WISE 0722−0540, with no station to
+  its board posts the reopened lanes (and the same time slot's board, changed, reuses no id for
+  another contract), war work on it stops and the news says the Cooperative holds it; done for the Wake, Hearthstone Works falls for good, and WISE 0722−0540, with no station to
   lose, is blockaded for good in the news; a settled front's operation cannot be taken; a save in
   which The Long Border ended before marks gets the Ross 154 front's marks on load (a truce leaves
-  none); every front has marks for both endings, and broken ones are caught; border saves.
+  none); every front has marks for both endings, every run a mark promises is on its station's
+  board in every time slot once the mark is left, and broken marks are caught; border saves.
 
 ### Browser tests (Playwright)
 

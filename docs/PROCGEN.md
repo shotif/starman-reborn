@@ -521,7 +521,9 @@ hand-made stations join in once the opening delivery is done.
 - A board is a pure function of the station, its time slot and the world, world events included
   as they stand when it is posted (`rng(WORLD_SEED, "contracts", station, slot)`). Boards change
   every 25 minutes of play (the game clock). Ids are `c.<station>.<slot>.<index>`, so a contract
-  can be found again from its id.
+  can be found again from its id; a decisive operation (§20.7) is `c.<station>.<slot>.decisive` and a
+  lasting mark's run (§14.7) `c.<station>.<slot>.run-<mark>`, because they come and go within a time
+  slot and must never take the id of a contract a pilot already holds.
 - Two contracts per board, one more at large stations and one more at trade ports and military
   bases (at most four), plus at most one that answers a world event (§11.3). No board posts two
   contracts of a kind to the same place.
@@ -1738,7 +1740,7 @@ The four fronts no story settles (the Frontier Cooperative's, at Lacaille 9352, 
 
 | Ending | Where | Market, for good | Board |
 | --- | --- | --- | --- |
-| The law's | every open station of the front's faction, or independent, on either side of the line | what it makes (a relay: what it trades), up to three goods: price ×0.9, stock ×1.4 | a standing run of its first good to the nearest station that takes it, clear of the fronts, pay ×1.1 ("Reopened lanes") |
+| The law's | every open station of the front's faction, or independent, on either side of the line | what it makes (a relay: what it trades), up to three goods: price ×0.9, stock ×1.4 | a standing run of its first good to the nearest station that takes it, clear of the fronts (and not into the frontier from outside it), pay ×1.1 ("Reopened lanes") |
 | The Wake's | the faction's stations in the lawful system that do not fall | what it needs, up to three goods: price ×1.15, stock ×0.7 (scarce, so they pay more) | none |
 | The Wake's | the den across the line | its own wares: price ×0.85, stock ×1.6 | none |
 
