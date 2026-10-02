@@ -27,7 +27,7 @@ import { carriesPassengers, frighten, passengerFright, passengerGoodbye, passeng
 import { claimFor, holdsOf, metRival, nextRun, rivalById, rivalDestroyed, rivalHello, rivalKnockedOut, rivalName, rivalShot, rivalWhere, shift, standingWith, turnOf } from '../economy/rivals.ts';
 import { allyLost, ambushIn, duelIn, duelLost, duelStarted, duelWon, settleRivalStories, spendAmbush, spendTipoff, storyOffer, storyStatus, tipoffIn, tippedPatrols, type StoryNote } from '../economy/rivalStories.ts';
 import { STORY, STORY_NOTES } from '../content/rivals/storyLines.ts';
-import { defenceOf, guardsOnPost, nextRaid, outpostSystem, raidIn, raidNote, raidWarning, settleRaid, turretsUp } from '../economy/outpostRaids.ts';
+import { defenceOf, foughtPlan, guardsOnPost, nextRaid, outpostSystem, raidNote, raidWarning, settleRaid, turretsUp } from '../economy/outpostRaids.ts';
 import { RAID_WATCH } from '../content/outposts/raidLines.ts';
 import { outpostId } from '../content/outposts/sites.ts';
 import { farStar, farStarLook, recordObservation, scheduleSky, skyComm, skyMoment, skyTimeline } from '../economy/stellar.ts';
@@ -587,9 +587,7 @@ export class Game {
     const o = state?.world.outpost;
     const r = this.flight?.outpostRaidStatus();
     if (!state || !o || r?.state !== 'on') return;
-    const plan = raidIn(state, o, r.window);
-    if (!plan) return;
-    const { raid, events } = settleRaid(state, o, plan, 'away', { downed: r.downed });
+    const { raid, events } = settleRaid(state, o, foughtPlan(state, o, r.setup), 'away', { downed: r.downed });
     const note = raidNote(o, raid);
     toast(note.text, note.tone, 7000);
     this.announceJobEvents(events);
@@ -1078,8 +1076,9 @@ export class Game {
         },
         onOutpostRaid: (window, what, downed) => {
           const o = state.world.outpost;
-          const plan = o ? raidIn(state, o, window) : null;
-          if (!o || !plan) return;
+          const setup = this.flight?.outpostRaidStatus()?.setup;
+          if (!o || !setup) return;
+          const plan = foughtPlan(state, o, setup);
           if (what === 'struck') {
             this.comm(`${o.name} watch`, RAID_WATCH.struck[window % RAID_WATCH.struck.length]!, 5000);
             return;

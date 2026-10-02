@@ -118,6 +118,11 @@ export function raidIn(state: GameState, o: OutpostRecord, n: number): RaidPlan 
   return { window: n, at, warnAt: at - (probe ? R.probe.warning : R.warning), threat, ships: threat + 1, probe, odds: sure ? 1 : odds };
 }
 
+/** The raid a flight fought, as its window holds it (or as the flight had it, should the window no longer hold it). */
+export function foughtPlan(state: GameState, o: OutpostRecord, f: { window: number; at: number; threat: 1 | 2 | 3; ships: number }): RaidPlan {
+  return raidIn(state, o, f.window) ?? { window: f.window, at: f.at, warnAt: f.at - R.warning, threat: f.threat, ships: f.ships, probe: false, odds: 0 };
+}
+
 /** The next raid not yet settled: from the window settled to, through the present and `ahead` windows on; or null. */
 export function nextRaid(state: GameState, o: OutpostRecord, ahead = 2): RaidPlan | null {
   if (o.stage <= 0) return null;

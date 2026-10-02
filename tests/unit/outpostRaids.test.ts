@@ -413,7 +413,7 @@ describe('in flight', () => {
     expect(raiders).toHaveLength(3);
     expect(raiders.filter((n) => n.prey === 'Stores')).toHaveLength(2);
     expect(f.npcs().find((n) => n.own === 'stores')).toMatchObject({ name: 'Stores', hull: OUTPOST_RAIDS.fight.stores[2] });
-    expect(f.flight.outpostRaidStatus()).toEqual({ window: 7, state: 'on', downed: 0 });
+    expect(f.flight.outpostRaidStatus()).toMatchObject({ window: 7, state: 'on', downed: 0, setup: { window: 7, threat: 2, ships: 3 } });
     // A turret turns its guns on a raider in range.
     const turret = f.npcs().find((n) => n.own === 'turret')!;
     f.raw(raiders[1]!.id).body.position.copy(f.raw(turret.id).body.position).add(new THREE.Vector3(0, 0, -400));

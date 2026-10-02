@@ -2911,9 +2911,9 @@ export class FlightSession {
   }
 
   /** The raid on the outpost here, if one is due or under way (leaving one under way leaves it to the clock). */
-  outpostRaidStatus(): { window: number; state: 'pending' | 'on' | 'held' | 'lost' | 'timeout'; downed: number } | null {
+  outpostRaidStatus(): { window: number; state: 'pending' | 'on' | 'held' | 'lost' | 'timeout'; downed: number; setup: OutpostRaidSetup } | null {
     const r = this.outpostRaid;
-    return r ? { window: r.setup.window, state: r.state, downed: r.downed } : null;
+    return r ? { window: r.setup.window, state: r.state, downed: r.downed, setup: r.setup } : null;
   }
 
   /** The duel here, if a rival waits for one or is fighting it (the game counts leaving a duel under way as forfeit). */
