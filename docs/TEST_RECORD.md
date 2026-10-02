@@ -454,6 +454,22 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   even when caught by the explosion, first light counted only within minutes of arriving and from
   two systems the second farther out, the hole read where it is; its stations' own markets; its
   status line and its stations' welcomes.
+- `lanes.test.ts`: **lane encounters**. The guardrails pass, and a pilot touring the lanes meets one
+  every 15–25 minutes, every kind somewhere; broken rules are caught (chances falling with
+  lawlessness, bait in secure space, tolls falling with the threat, a hail too brief, a number in a
+  line). Odds read in words. The world's slots hold the same encounter every time, never in Sol or
+  at Pyre, a toll at the packs' threat. The pilot's gate: after the opening, once a slot and a
+  cooldown, the first never a toll, customs or a trap, customs only with contraband aboard, no toll
+  for a pilot the Wake trusts. Every kind's choices and what they bring: a mayday's reward or bait's
+  raiders (the card naming the odds); a lifepod's survivor aboard for a fare paid on docking, closed
+  without a berth; a toll paid (the pass), refused or let lapse (raiders), closed to a pilot who
+  cannot pay; customs declared (half the fine), bribed (looked away, or a sting with its own fine and
+  standing lost), dumped (standing lost), or ignored (a full scan); a scientist's berth with a data
+  core, helium-3 for pay, a tow; cargo returned and paid on delivery, kept, or bait (raiders, nothing
+  aboard); a lost trader's fix and charts; every card's words filled with no number written in, a
+  choice for each line. The save keeps what was met, tidily, and refuses damaged records. In a real
+  flight: the hail comes once the ship flies quietly, is written into the save, offers Answer, calls
+  the card, and lapses after its time; a refused toll brings raiders, a paid one leaves the ship be.
 
 ### Browser tests (Playwright)
 
@@ -611,6 +627,12 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   (*Invented black hole*); inside its tides the hull strains (*Tidal zone*); outside them the action
   button reads *Scan*, and pressed, the science card shows the event horizon and the Fiction line,
   and the job turns for home; docked at the institute, it pays in full.
+- `lanes.spec.ts`: **lane encounters** (turned on for this test; they are off in other browser
+  tests, which would otherwise meet them): a lost trader's hail on the HUD, the action button
+  reading *Answer*, the card (paused, with the Fiction line) and a fix sold; a Hollow Wake toll, the
+  card naming the risk, paid; back in the same system in the same slot, nothing more to meet; a
+  customs patrol with contraband aboard, the risk named, bribed, the cargo kept; and a real mayday
+  answered with a pad (A on the action, the D-pad to the first choice, A to take it) and paid.
 - `screenshots.spec.ts`: the loading title (caught part-way, with the game's largest file held
   back), title, Settings at its device report, job board, buy dialog, station deck, shipyard, outfitter, fleet
   (with a captain loading for a run), flight HUD, the player's own captain targeted in flight, star
@@ -619,8 +641,8 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   the rival in a bar, the News at a research station telling of Betelgeuse's supernova, and the
   supernova in flight, targeted with *Observe* offered, the News at a station with a glut listing its
   shipments, the News at Pyre Observatory telling of its alarm, Pyre in flight, the card when the
-  ship is carried out of its system, its black hole, Pyre's card on the star map, and the News with a
-  shortage's relief
+  ship is carried out of its system, its black hole, Pyre's card on the star map, a mayday's hail on
+  the HUD and its card, and the News with a shortage's relief
   haulers on their way, at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
   zoom). Saved in `docs/screenshots/` once any smooth scrolling has come to rest. Each is audited
