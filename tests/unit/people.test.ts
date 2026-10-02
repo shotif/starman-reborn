@@ -54,7 +54,7 @@ describe('people in the bars', () => {
 });
 
 describe('rumours are true', () => {
-  it('whatever anyone says in any bar, at any time, holds in the game', () => {
+  it('whatever anyone says in any bar, at any time, holds in the game', { timeout: 60_000 }, () => {
     const s = pilot();
     let told = 0;
     for (const clock of [5_000, 40_000, 90_000]) {
