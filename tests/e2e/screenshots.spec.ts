@@ -331,8 +331,8 @@ for (const size of SIZES) {
       await press(page, 'dock-launch');
       if (await page.getByTestId('sheet-close').isVisible().catch(() => false)) await press(page, 'sheet-close');
       await waitUntil(page, 'undocked', async () => {
-        const ok = page.getByTestId('discovery-ok');
-        if (await ok.isVisible().catch(() => false)) await ok.click().catch(() => {});
+        const ok = page.getByTestId('discovery-ok').last();
+        if (await ok.isVisible().catch(() => false)) await ok.click({ timeout: 2_000 }).catch(() => {});
         return (await api<{ autopilot: string } | null>(page, 'player'))?.autopilot === 'none';
       });
       await api(page, 'selectTarget', 'sky:betelgeuse');

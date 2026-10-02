@@ -330,7 +330,13 @@ export class Game {
   private comm(speaker: string, text: string, ms: number): void {
     this.sfx('radio-blip');
     commToast(speaker, text, ms);
+    // The last few lines said, for the tests (a toast comes and goes on its own time).
+    this.said.push(text);
+    if (this.said.length > 20) this.said.shift();
   }
+
+  /** What the radio has said lately (test hook `comms`). */
+  private readonly said: string[] = [];
 
   private setScheme(scheme: InputScheme): void {
     if (!this.schemes.use(scheme)) return;
@@ -1874,6 +1880,8 @@ export class Game {
   testApi() {
     return {
       mode: () => this.mode,
+      /** Test-only: the last lines the radio said, oldest first. */
+      comms: () => [...this.said],
       paused: () => this.paused,
       state: () => (this.state ? structuredClone(this.state) : null),
       hud: () => (this.flight ? structuredClone(this.flight.hud) : null),

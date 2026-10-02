@@ -11,12 +11,12 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | --- | --- | --- |
 | TypeScript typecheck (app + scripts/tests) | `npm run typecheck` | Pass |
 | Astronomy data validation | `npm run data:validate` | Pass (22 warnings: the contested planets this edition keeps) |
-| Unit tests | `npm test` | Pass: 739 tests in 48 files |
+| Unit tests | `npm test` | Pass: 751 tests in 49 files |
 | Production build | `npm run build` | Pass |
-| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 655 KB of 700 (gzipped) |
-| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 38 passed (5 touch-only tests skipped) |
-| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 38 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
-| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 198 screenshots, no audit findings |
+| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 656 KB of 700 (gzipped) |
+| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 39 passed (5 touch-only tests skipped) |
+| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 39 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
+| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 207 screenshots, no audit findings |
 
 ### Unit tests (Vitest)
 
@@ -568,7 +568,8 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 - `stellar.spec.ts`: **a supernova**: in a save whose neutrino alert has just come, the News at
   Ledger Institute (Wolf 359) tells of the burst from Betelgeuse, marked *Fiction* and saying the star
   has not exploded; the bar's job to catch its first light is taken; once its light has come, the
-  stations say it has exploded as the ship undocks; targeted, Betelgeuse's box reads *Fiction*,
+  stations say it has exploded as the ship undocks (read from the game's log of what the radio said,
+  as its message comes and goes while the ship undocks); targeted, Betelgeuse's box reads *Fiction*,
   *Supernova · magnitude −…* and *498 ly*; the action button reads *Observe*, and pressed, the
   reading is taken (*readings recorded*) and the job turns for home; docked at the institute again,
   it pays in full.
