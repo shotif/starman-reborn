@@ -158,7 +158,8 @@ Other balance guardrails:
   build time, and a unit test holds it to the game's.
 - **Budgets**, in gzipped kilobytes, checked after every build by `npm run size`
   (`scripts/load-budget.ts`, in `npm run check` and CI): the first screen at most **32 KB** (16 KB
-  on 1 October 2026) and the whole first load, first screen and game, at most **700 KB** (621 KB).
+  on 1 October 2026) and the whole first load, first screen and game, at most **800 KB** (621 KB on
+  1 October; the owner raised it from 700 KB on 2 October 2026, when Your crew took it to 704 KB).
   Fonts (71 KB, already compressed) and what loads on demand (the star map, the science notes,
   bloom: 35 KB) are reported, not budgeted. Going over is a decision to make, not an accident: raise
   the budget in the same change, with the reason.
