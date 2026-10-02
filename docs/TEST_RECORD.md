@@ -11,12 +11,12 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | --- | --- | --- |
 | TypeScript typecheck (app + scripts/tests) | `npm run typecheck` | Pass |
 | Astronomy data validation | `npm run data:validate` | Pass (22 warnings: the contested planets this edition keeps) |
-| Unit tests | `npm test` | Pass: 751 tests in 49 files |
+| Unit tests | `npm test` | Pass: 777 tests in 50 files |
 | Production build | `npm run build` | Pass |
-| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 656 KB of 700 (gzipped) |
-| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 39 passed (5 touch-only tests skipped) |
-| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 39 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
-| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 207 screenshots, no audit findings |
+| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 666 KB of 700 (gzipped) |
+| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 40 passed (5 touch-only tests skipped) |
+| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 40 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
+| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 252 screenshots, no audit findings |
 
 ### Unit tests (Vitest)
 
@@ -431,6 +431,28 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   posted no more, and is delivered when the escort sees it docked; lost with the escort, and back on
   its timetable when the job is given up; gone once the haul has set off alone. Saves keep an
   escorted haul and refuse a damaged record.
+- `doomed.test.ts`: **Pyre, the invented star**. Its guardrails pass (apart from everything real,
+  beyond the census, near its frontier anchor, a red supergiant), and broken rules are caught
+  (inside the census, a catalogue-like or taken name, the wrong anchor, a lane that opens too soon,
+  a number in a line, pay over the ceiling, a crowd of observers, first light nobody can outrun, gas
+  that fades too soon, tides that do nothing); its id and name are in none of the real sky's data
+  files; its brightness, size and black hole are what the physics makes them (−7.0 from Earth,
+  −10.7 from GJ 915, a peak of −16.7, about 1,180 solar radii, a 29.5 km horizon radius, tides within
+  6,000–7,000 km). Its warning is set once Antares has gone and the frontier reached, and never
+  moves; its timeline runs forward and its light crosses the map a light-year a minute; how it looks
+  in each sky changes only once its light arrives there. The News, radio and research prices tell
+  each moment; saves keep the warning and refuse one before Antares has gone. In flight: its own
+  system (the star marked as fiction, its observatory, no traffic), Pyre in GJ 915's sky counting
+  down to its light, its black hole once gone (no star, the hole a fiction target, its remnant
+  station, its tides an obstacle the autopilot keeps out of), the gas's glow fading as t^−5/3, the
+  hull strained inside the tides as 1/r³ and the ship lost at the shadow, the autopilot stopping
+  short, the scan offered from outside; a ship still there at the breakout carried out once; the
+  lane closed to arrivals from the collapse until the debris thins (counting the jump's time); the
+  rescue dock and docking refusals; its work posted where and when the rules say, sound by the
+  contract guardrails and shown only while posted, the last record paid, the observers carried out
+  even when caught by the explosion, first light counted only within minutes of arriving and from
+  two systems the second farther out, the hole read where it is; its stations' own markets; its
+  status line and its stations' welcomes.
 
 ### Browser tests (Playwright)
 
@@ -578,6 +600,16 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   or shipment bound through a raid, the bar posts an escort for it under the hauler's own name,
   taken on (the haul waits for the pilot); launched, the hauler sets off alongside, named as the
   haul, and the objective names it.
+- `doomed.spec.ts`: **Pyre**: in a save whose far stars' story is over, Pyre's alarm comes; docked at
+  Pyre Observatory, the News tells of it (*Neutrino alarm at Pyre*, *Fiction: there is no star called
+  Pyre.*); the observers' passage (*Out of Pyre's reach*) is taken with a cabin fitted; launched,
+  Pyre is targeted (*Invented red supergiant*, *Fiction*); when it explodes the rescue card says the
+  ship is carried out to GJ 915 Freeport and that this is fiction; docked there, the observers are
+  paid for (less the rescue); the News at GJ 915 tells of its light arriving; once the lane is open,
+  GJ 884 Institute's job to read the black hole is taken; at Pyre the black hole is a target
+  (*Invented black hole*); inside its tides the hull strains (*Tidal zone*); outside them the action
+  button reads *Scan*, and pressed, the science card shows the event horizon and the Fiction line,
+  and the job turns for home; docked at the institute, it pays in full.
 - `screenshots.spec.ts`: the loading title (caught part-way, with the game's largest file held
   back), title, Settings at its device report, job board, buy dialog, station deck, shipyard, outfitter, fleet
   (with a captain loading for a run), flight HUD, the player's own captain targeted in flight, star
@@ -585,7 +617,9 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   site, a party's job open at a bar with a cabin fitted, a bounty taken by a rival on a job board and
   the rival in a bar, the News at a research station telling of Betelgeuse's supernova, and the
   supernova in flight, targeted with *Observe* offered, the News at a station with a glut listing its
-  shipments, and the News with a shortage's relief
+  shipments, the News at Pyre Observatory telling of its alarm, Pyre in flight, the card when the
+  ship is carried out of its system, its black hole, Pyre's card on the star map, and the News with a
+  shortage's relief
   haulers on their way, at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
   zoom). Saved in `docs/screenshots/` once any smooth scrolling has come to rest. Each is audited
