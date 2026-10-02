@@ -759,7 +759,7 @@ describe('in flight', () => {
     const jobId = 'rs.two-bells.duel';
     const f = storyFlight(LAWLESS(), { duel: { jobId, rivalId: 'two-bells', started: false } });
     f.run(3);
-    const duelist = f.npcs().find((n) => n.duel)!;
+    expect(f.npcs().some((n) => n.duel)).toBe(true);
     f.flight.placeNear(`duel:${jobId}`, 1_000);
     expect(f.run(2, () => f.flight.duelStatus()?.state === 'on')).toBe(true);
     f.flight.debugHurt(1e6);
