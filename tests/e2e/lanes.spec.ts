@@ -100,8 +100,9 @@ test('lane encounters: a trader helped, a toll paid, a slot met once, a bribe, a
   await meet(page, trader);
   const banner = page.getByTestId('hail-banner');
   await expect(banner).toContainText('Lost trader');
-  if (!touch) await expect(page.getByTestId('hud-context')).toContainText('Answer');
-  await press(page, 'hail-answer');
+  // The action button reads Answer; on touch it is the way to answer (the HUD lies under the thumb zones).
+  await expect(page.getByTestId(touch ? 'touch-context' : 'hud-context')).toContainText('Answer');
+  await press(page, touch ? 'touch-context' : 'hail-answer');
   const card = page.getByTestId('lane-dialog');
   await expect(card).toBeVisible();
   await expect(card).toContainText('Fiction: the people, ships and events of the lanes are fiction.');
@@ -117,7 +118,7 @@ test('lane encounters: a trader helped, a toll paid, a slot met once, a bribe, a
   const toll = (await api<Offer | null>(page, 'findLane', { from: s.clock + 1_200, kind: 'toll' }))!;
   await meet(page, toll);
   await expect(banner).toContainText('Hollow Wake');
-  await press(page, 'hail-answer');
+  await press(page, touch ? 'touch-context' : 'hail-answer');
   await expect(page.getByTestId('lane-risk')).toContainText('they attack');
   const credits = (await api<State>(page, 'state')).credits;
   await press(page, 'lane-pay');
@@ -137,7 +138,7 @@ test('lane encounters: a trader helped, a toll paid, a slot met once, a bribe, a
   await api(page, 'setCargo', { stims: 2 });
   await meet(page, customs);
   await expect(banner).toContainText('Customs patrol');
-  await press(page, 'hail-answer');
+  await press(page, touch ? 'touch-context' : 'hail-answer');
   await expect(page.getByTestId('lane-risk')).toContainText('sting');
   await press(page, 'lane-bribe');
   await waitUntil(page, 'the bribe taken', async () => (await api<Lanes>(page, 'lanes')).met[customs.id]?.pick === 'bribe', 10_000);

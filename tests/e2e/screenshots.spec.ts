@@ -411,7 +411,7 @@ for (const size of SIZES) {
       await waitUntil(page, 'a hail', async () => (await api<{ hail: { id: string } | null }>(page, 'lanes')).hail?.id === hail.id, 60_000);
       await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
       await shot(page, `${size.name}-13-hail`, size.touch, results);
-      await press(page, 'hail-answer');
+      await press(page, size.touch ? 'touch-context' : 'hail-answer');
       await expect(page.getByTestId('lane-dialog')).toBeVisible();
       await shot(page, `${size.name}-13b-lane-card`, size.touch, results);
       await press(page, 'lane-later');

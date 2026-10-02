@@ -384,7 +384,10 @@ export class Hud {
     setText(this.hailText, hail.text);
     this.hailAnswer.disabled = hail.held;
     this.hailKey.hidden = this.scheme !== 'desktop';
-    setText(this.hailLeft, hail.held ? 'Not now: hostile contact' : `${Math.ceil(hail.left)} s`);
+    // On touch the HUD lies under the thumb zones: the action button answers (it reads Answer).
+    const touch = this.scheme === 'touch';
+    this.hailAnswer.hidden = touch;
+    setText(this.hailLeft, hail.held ? 'Not now: hostile contact' : touch ? `${Math.ceil(hail.left)} s · tap Answer` : `${Math.ceil(hail.left)} s`);
   }
 
   setEncounterBanner(visible: boolean): void {

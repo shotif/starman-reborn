@@ -2564,7 +2564,8 @@ slots and the cooldown, a pilot touring the lanes meets one about every twenty m
 The hail never pauses the game (the owner's choice, 2 October 2026): it shows on the HUD under the
 objective (violet for a call, red for the Wake, blue for the law), with **Answer** and how long it
 waits: 45 seconds of quiet flight (`hailSeconds`), held while hostiles are near (*Not now: hostile
-contact*). Answering (Q, the banner's button, the action button, or A on a pad) opens its card, which
+contact*). Answering (Q, the banner's button, the action button, or A on a pad; on touch, the action
+button, as the HUD lies under the thumb zones) opens its card, which
 pauses: who calls and what is happening, the risk the rules name, each choice with what it does or
 why this pilot cannot take it (no berth, no room in the hold, not enough credits, no helium-3
 aboard), and the fiction line. A number key chooses; *Not now* leaves the hail waiting. Let lapse,
