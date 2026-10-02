@@ -52,6 +52,7 @@ import {
   nextRun,
   patchOf,
   rivalById,
+  rivalNews,
   rivalShot,
   rivalWhere,
   runOf,
@@ -322,6 +323,11 @@ describe('a friend', () => {
     expect(story.ended).toEqual({ at: deed.at + F.rescue.giveUp, how: 'towed' });
     expect(rivalWhere(r, story.ended!.at + 1)).toEqual({ kind: 'docked', locationId: r.home });
     expect(storyStatus(s, r)).toMatch(/^Towed home/);
+    // The News tells of it near where it happened, for a while.
+    const news = () => rivalNews(deed.systemId!, s.clock).filter((n) => n.rival.id === 'sundown');
+    expect(news().map((n) => n.text)).toContain(`Saoirse “Sundown” Kalu’s Late Light was towed home from ${getSystem(deed.systemId!).displayName} after a drive failure.`);
+    s.clock += 2 * 3_600;
+    expect(news().some((n) => /towed home/.test(n.text))).toBe(false);
   });
 
   it('done, the deed makes an ally: asked at their table, they fly on the wing until the player next docks, once in a while', () => {
@@ -448,6 +454,7 @@ describe('an enemy', () => {
     expect(s.contracts['rs.tally.duel']!.objectives[0]).toMatchObject({ kind: 'duel', systemId: sys, rival: 'tally' });
     expect(duelIn(s, sys)).toEqual({ rival: r, jobId: 'rs.tally.duel', started: false });
     expect(rivalWhere(r, posted + 60)).toMatchObject({ kind: 'held', hold: { kind: 'duel', systemId: sys } });
+    expect(rivalNews(sys, posted + 60).some((n) => n.rival.id === 'tally' && n.text === `Bastian “Tally” Okonjo has called a pilot out to a duel at the beacon in ${getSystem(sys).displayName}.`)).toBe(true);
     expect(storyStatus(s, r)).toMatch(/^Waiting for you at the beacon in /);
   });
 
@@ -494,6 +501,7 @@ describe('an enemy', () => {
     expect(story.ended).toEqual({ at: s.clock, how: 'won' });
     expect(duelIn(s, duelSystem(r))).toBeNull();
     expect(storyStatus(s, r)).toBe('Lost a duel to you. You are square.');
+    expect(rivalNews(duelSystem(r), s.clock + 60).some((n) => n.rival.id === r.id && /lost a duel at the beacon/.test(n.text))).toBe(true);
     expect(rivalWhere(r, s.clock + 1)).toEqual({ kind: 'docked', locationId: r.home });
     const other = feud('halfpenny');
     runTo(other.s, holdsOf(other.r).find((h) => h.kind === 'duel')!.from + 5);
