@@ -13,6 +13,7 @@ what is uncertain.
 | Catalogue systems (202 beyond the hand-authored five: 27 from HYG and the Open Exoplanet Catalogue, 175 added by the snapshot) | `src/data/generated/catalog-systems.json` | **Snapshot** of 2026-09-30 |
 | Belts and debris discs (9) | `src/data/generated/belts.json` | **Snapshot** of 2026-09-30, each citing its source |
 | The Solar System's orbital elements (8 planets) | `src/data/generated/solar-elements.json` | JPL, retrieved 2026-09-30 and checked against Horizons |
+| Far stars beyond the map (2: Betelgeuse and Antares) | `src/data/generated/far-stars.json` | **Provisional**: HYG v4.0 (Hipparcos), until a snapshot checks them (see *Far stars*) |
 
 The development container cannot reach the archives: the ESA Gaia archive, NASA Exoplanet Archive,
 SIMBAD and VizieR hosts are blocked by its network policy. The snapshot is therefore fetched on
@@ -21,7 +22,8 @@ snapshot the game ran on stopgap values in `data/provisional/`: transcriptions o
 catalogs, not machine-verified retrievals, flagged `verification: "provisional"` and shown with a
 **Pending verification** badge (title screen, star map, encyclopedia, discovery cards). Those files
 remain the game's own record of its stars and planets, which every snapshot checks; a record a
-snapshot does not cover is still flagged and badged (none is today).
+snapshot does not cover is still flagged and badged (today only the two far stars, which no
+snapshot has been asked for yet: see *Far stars*).
 
 To take a new snapshot:
 
@@ -87,6 +89,40 @@ stars and confirmed planets and never add a body that is not in the catalogues. 
 are the world's core, generated from frozen seeds, so a better value for a star moves it on the map
 but never moves a station, lane or owner (PROCGEN.md §7.6).
 
+## Far stars
+
+Two real stars far beyond the map, **Betelgeuse** (Alpha Orionis, HIP 27989) and **Antares** (Alpha
+Scorpii, HIP 80763), shine in every system's sky in their true direction, as bright as their
+magnitude. They are there for a piece of game fiction (their deaths: see *Fiction* below and
+[PROCGEN.md §25](PROCGEN.md#25-stellar-death-as-fiction)); the values themselves are real and
+cited like the map's stars, in `src/data/generated/far-stars.json`.
+
+- **Source.** Until a snapshot verifies them, `scripts/extract-far-stars.ts` reads them from the HYG
+  star database v4.0 (above): position (J2000), proper motion, distance (from the Hipparcos
+  parallax), spectral type and visual magnitude, into `data/provisional/far-stars-input.json`, each
+  value citing the HYG record. They are flagged provisional and shown with the **Pending
+  verification** badge. Licence: the derived values are shared under CC BY-SA 4.0
+  ([data/provisional/NOTICE.md](../data/provisional/NOTICE.md)).
+- **Checked by the snapshot.** The fetch asks SIMBAD for them with the game's stars (by HIP number
+  and name), and Hipparcos for their HIP numbers. Processing takes their astrometry the same way as
+  the map's stars (Gaia DR3 when its solution passes the cuts, which these very bright stars are not
+  expected to, else SIMBAD's adopted values cited by bibcode), their spectral type and V magnitude
+  from SIMBAD, and writes `data/snapshot/far-stars-input.json`; the report lists how far each moved.
+  If SIMBAD gives nothing usable for either star, both keep their provisional values, and the report
+  says why.
+- **Checks.** `validateFarStars` (run by `npm run data:validate`): ids unlike any star of the map,
+  ICRS at the map's epoch, positions consistent with their parallaxes, more than three times the
+  map's radius away, a catalogue id and https sources.
+- **Uncertainty.** Betelgeuse's distance is poorly known: published values run from about 500 to over
+  700 light-years, and its brightness varies by about a magnitude. The game shows the cited value
+  with its error, when the source gives one.
+
+To regenerate the provisional file (the raw catalogue is not committed):
+
+```bash
+node scripts/extract-far-stars.ts data/raw/hygdata_v40.csv && npm run data:build && npm run data:validate
+```
+
 ## Pipeline: the sky snapshot
 
 1. **Fetch** (`scripts/sky-fetch.ts`) is the only step that needs the network. It saves raw
@@ -94,7 +130,7 @@ but never moves a station, lane or owner (PROCGEN.md §7.6).
    it, and a `manifest.json` of what was asked, of whom, and whether it worked. A busy archive is
    asked again before the query becomes an asynchronous job. It asks:
    - **SIMBAD** (TAP): every star in the game by its HIP, Gliese and Gaia DR3 identifiers and its
-     names; everything with a parallax of at least 120 mas (about 27 ly), with identifiers, fluxes
+     names, and the far stars beyond the map (see *Far stars*) the same way; everything with a parallax of at least 120 mas (about 27 ly), with identifiers, fluxes
      and multiple-star links (`h_link`, following only parents that are multiple stars, not
      clusters or moving groups); and, from its bibliography, papers on debris discs, dust belts and
      infrared excesses for every star in the neighbourhood.
@@ -126,8 +162,9 @@ but never moves a station, lane or owner (PROCGEN.md §7.6).
 2. **Process** (`scripts/sky-process.ts`) runs offline and deterministically on the latest raw
    snapshot (or the date given). It reads the game's own records in `data/provisional/` and writes
    `data/snapshot/astrometry-input.json`, `systems-input.json`, `exoplanets-input.json`,
-   `belts-input.json` and `solar-elements.json`, and `data/snapshot/REPORT.md`, which lists every
-   change star by star and planet by planet. The rules:
+   `belts-input.json`, `solar-elements.json` and (once the fetch has asked for them)
+   `far-stars-input.json`, and `data/snapshot/REPORT.md`, which lists every change star by star and
+   planet by planet. The rules:
    - **Nothing already in the game is removed.** Stars keep their ids, names and colours.
    - **The game's stars**: each is matched to one SIMBAD object (a star without a match stops the
      run). Its astrometry comes from Gaia DR3 when the solution passes the quality cuts: five or six
@@ -156,7 +193,8 @@ but never moves a station, lane or owner (PROCGEN.md §7.6).
    - **The Solar System**: JPL's elements for the eight planets, the accuracy JPL states for them,
      and the Horizons positions to test them (see *The Solar System on the real date*).
 3. **Build** (`scripts/build-dataset.ts`) writes `src/data/generated/astrometry.json`,
-   `exoplanets.json`, `catalog-systems.json`, `belts.json` and `solar-elements.json`. It takes
+   `exoplanets.json`, `catalog-systems.json`, `belts.json`, `solar-elements.json` and
+   `far-stars.json`. It takes
    `data/snapshot/*-input.json` when present, else `data/provisional/`, plus the catalogue extras
    (always provisional) for any star or planet the primary input does not cover. It propagates
    every position to one epoch (**ICRS, J2016.0**) using linear proper motion, converts parallax to
@@ -279,3 +317,13 @@ Stations, factions, trade lanes, jump links, jump fees, transit times, markets, 
 story text are original game fiction. They always carry a **Fiction** badge in the UI. The map
 legend reads: *"Star positions and distances based on astronomical data; travel technology and
 local scale are fictional."*
+
+**Stellar death** is the one place the game invents an astronomical event, an exception chosen by
+the owner: in each save Betelgeuse explodes as a supernova, and later Antares collapses into a black
+hole and goes out ([PROCGEN.md §25](PROCGEN.md#25-stellar-death-as-fiction)). Neither has happened.
+The stars' places, distances and brightness stay the catalogue's; the event is applied on top in the
+save's own timeline and is never written into the data or its sources. Every story in the News wears
+the **Fiction** badge and says that the star is real and has not exploded (or collapsed); the dying
+star's target in flight wears the **Fiction** badge; and the encyclopedia's *Far stars* says what is
+fiction. The supernova's peak brightness is worked out, not invented: a typical Type II-P supernova's
+peak absolute magnitude, −16.75 (Richardson et al. 2014, AJ 147, 118), at the star's cited distance.

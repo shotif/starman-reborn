@@ -12,6 +12,11 @@ Attribution-ShareAlike 4.0 International licence (CC BY-SA 4.0,
 `src/data/generated/astrometry.json`, are shared under the same licence. Changes: a subset of rows
 was selected by star, converted to the project's schema and combined with the other stopgap values.
 
+`far-stars-input.json` (Betelgeuse and Antares: positions, proper motions, distances, spectral types
+and visual magnitudes) is derived from the same database under the same licence, as are its copies
+in `src/data/generated/far-stars.json`. Changes: two rows selected by HIP number and converted to
+the project's schema, with the parallax worked out from the distance and a display colour added.
+
 ## Open Exoplanet Catalogue
 
 `catalog-exoplanets-input.json` (planet names, hosts, discovery years, methods, masses and orbits)

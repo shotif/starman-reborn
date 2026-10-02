@@ -119,11 +119,15 @@ export function farStarLook(id: string, clock: number, from: number | null = act
 
 /** Whether a far star's death is under way at a moment (from its light until it has faded or gone). */
 export function dying(id: string, clock: number, from: number | null = activeSkyFrom()): boolean {
-  if (from === null) return false;
+  return skyPhase(id, clock, from) === 'dying';
+}
+
+/** Where a far star is in the fiction: as the catalogue has it, dying (from its light until it has faded or gone), or after. */
+export function skyPhase(id: string, clock: number, from: number | null = activeSkyFrom()): 'catalogue' | 'dying' | 'after' {
+  if (from === null) return 'catalogue';
   const t = skyTimeline(from);
-  if (id === STELLAR.supernova.star) return clock >= t.light && clock < t.fadeEnd;
-  if (id === STELLAR.blackHole.star) return clock >= t.bhLight && clock < t.bhGone;
-  return false;
+  const [start, end] = id === STELLAR.supernova.star ? [t.light, t.fadeEnd] : id === STELLAR.blackHole.star ? [t.bhLight, t.bhGone] : [Infinity, Infinity];
+  return clock < start ? 'catalogue' : clock < end ? 'dying' : 'after';
 }
 
 const OBLIQUITY = (23.4392911 * Math.PI) / 180;

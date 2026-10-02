@@ -310,6 +310,36 @@ for (const size of SIZES) {
       await page.getByTestId(`rival-${claim.rival}`).scrollIntoViewIfNeeded();
       await expect(page.locator('.toast')).toHaveCount(0, { timeout: 15_000 });
       await shot(page, `${size.name}-9b-rival-bar`, size.touch, results);
+      // Stellar death, as fiction (docs/PROCGEN.md §25): Betelgeuse's supernova in the News at Ledger Institute, a job
+      // there to watch it, and the supernova in flight, picked out and marked as fiction.
+      const skyNow = (await api<{ clock: number }>(page, 'state')).clock;
+      await api(page, 'skyFrom', skyNow - 1_200);
+      await docked('ledger-institute');
+      await press(page, 'room-bar');
+      if (!(await page.getByTestId('jobs-window').isVisible().catch(() => false))) await press(page, 'station-jobs');
+      const watch = page.locator('[data-testid^="job-c.ledger-institute."][data-testid$=".sky-first"]');
+      const watchId = (await watch.getAttribute('data-testid'))!.slice('job-'.length);
+      if (size.touch) await watch.locator('.job-head').tap();
+      else await watch.locator('.job-head').click();
+      await press(page, `accept-${watchId}`);
+      await press(page, 'station-news');
+      await page.getByTestId('sky-news').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 15_000 });
+      await shot(page, `${size.name}-10-sky-news`, size.touch, results);
+      const sky = (await api<{ timeline: { peak: number } }>(page, 'sky'))!;
+      await api(page, 'advanceClock', sky.timeline.peak + 60 - (await api<{ clock: number }>(page, 'state')).clock);
+      await press(page, 'dock-launch');
+      if (await page.getByTestId('sheet-close').isVisible().catch(() => false)) await press(page, 'sheet-close');
+      await waitUntil(page, 'undocked', async () => {
+        const ok = page.getByTestId('discovery-ok');
+        if (await ok.isVisible().catch(() => false)) await ok.click().catch(() => {});
+        return (await api<{ autopilot: string } | null>(page, 'player'))?.autopilot === 'none';
+      });
+      await api(page, 'selectTarget', 'sky:betelgeuse');
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      // Nose a little under the star, so it shows above the ship (less on short screens, under the target panel).
+      expect(await api<boolean>(page, 'face', { id: 'sky:betelgeuse', below: size.height < 500 ? 4 : 9 })).toBe(true);
+      await shot(page, `${size.name}-10b-supernova`, size.touch, results);
       for (const [name, r] of Object.entries(results)) {
         expect.soft(r.overflow, `${name}: page overflow`).toBe(false);
         expect.soft(r.clipped, `${name}: clipped controls`).toEqual([]);

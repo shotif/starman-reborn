@@ -2195,3 +2195,122 @@ beaten to it, standing through rounds, shots and amends, a knock-out (the run lo
 at work from home), the flight scene (a rival met, named, shot and destroyed with the crimes that
 go with it; a hostile one in lawless space as a raider with no bounty), and saves that keep it all
 and refuse damaged ones.
+
+## 25. Stellar death, as fiction
+
+Two real red supergiants far beyond the map die in the game's sky: Betelgeuse explodes as a
+supernova, and later Antares collapses quietly into a black hole and goes out
+(`src/economy/stellar.ts`; the rules in `STELLAR`, `src/content/stellar/rules.ts`; what is said in
+`src/content/stellar/lines.ts`). This is an exception to the rule that real astronomy is never
+invented, chosen by the owner, and it is kept apart from the real sky: the stars, their places,
+distances and brightness are the catalogue's (`src/data/generated/far-stars.json`;
+[ASTRONOMY_SOURCES.md, *Far stars*](ASTRONOMY_SOURCES.md#far-stars)); that they die, and when and
+how, is fiction, applied on top in each save's own timeline and never written into the data. It is
+labelled wherever it shows: each story in the News wears the **Fiction** badge and says that the
+star is real and has not exploded (or collapsed); in flight, the star's target wears the
+**Fiction** badge from the moment its light arrives; the encyclopedia's *Far stars* says so too.
+
+The idea is that the sky itself can change under the player, with the science told straight. An
+invented star at the edge of the map whose death leaves a black hole to fly to is a later increment
+of its own (ROADMAP).
+
+### 25.1 The far stars
+
+| Star | Designation | Spectral type | Distance | Brightness (V) |
+| --- | --- | --- | --- | --- |
+| Betelgeuse | Alpha Orionis | M2Ib | 498 ly | 0.45 |
+| Antares | Alpha Scorpii | M1Ib + B2.5V | 554 ly | 1.06 |
+
+Both are in every system's sky in their true direction from the system's real position, drawn as
+bright as their magnitude (`src/world/art/farStars.ts`). They are some 500 light-years away and the
+map reaches 27, so their direction shifts across the map by up to about 3° (the parallax that the
+distance job below measures). The values are provisional (HYG v4.0, from Hipparcos) and badged
+*Pending verification* until the monthly archive snapshot checks them against SIMBAD.
+
+### 25.2 The timeline
+
+Each save holds one number for it in its world log (`world.sky.from`): when the first neutrino alert
+comes, 90 minutes of game time after the opening delivery is done (`alertAfterOpening`), or 30
+minutes after loading a save already past it (`alertAfterLoad`). Everything follows from it and the
+clock, the same in every save:
+
+| Moment | After the alert | What happens |
+| --- | --- | --- |
+| Alert | 0 | Neutrino detectors at the research stations catch a burst from Betelgeuse |
+| Light | 15 min | Its light arrives; it brightens over ten minutes (`rise`) |
+| Peak | 25 min | Magnitude −10.8, the brightest light in every sky; it holds near it for an hour, dimming half a magnitude (`plateau`) |
+| Fading | 1 h 25 min | Past its brightest, it fades over four hours (`fade`) |
+| Remnant | 5 h 25 min | A faint glow of magnitude 4.5 is left where it shone, for good |
+| Antares' alert | 3 h 15 min | A weaker burst from Antares |
+| Antares' light | 3 h 25 min | It brightens by a magnitude (`brighten`) and holds ten minutes, with no explosion |
+| Gone | 4 h 20 min | It has faded out of sight over 45 minutes, for good |
+
+Real time is compressed throughout: SN 1987A's neutrinos came some three hours before its light,
+and a Type II-P supernova holds near its peak for about a hundred days. How bright the supernova
+gets is worked out, not written in: a typical Type II-P supernova's peak absolute magnitude, −16.75
+(the mean of the sample in Richardson et al. 2014, *Absolute-magnitude distributions of
+supernovae*, AJ 147, 118), at Betelgeuse's real distance, m = M + 5 log₁₀(d / 10 pc), gives −10.8:
+brighter than every star and planet, fainter than the full Moon. A red supergiant that collapses
+without a bright supernova, a *failed supernova*, is how some astronomers think such a star can end
+(the candidate N6946-BH1 is the best known); in the game it is Antares.
+
+In the sky the supernova grows with its brightness, and from magnitude −3 it has a halo with faint
+spikes and casts a faint light on the ships from its side of the sky (never more than a fill). Its
+colours at the peak and as a remnant are artistic.
+
+### 25.3 What the world says
+
+- **The News** at every station tells each moment as it comes, newest first, for six hours after
+  each star's story is over, every number in it from the catalogue (the star's distance, how long
+  its light has been on its way, its peak).
+- **The research station network** calls the big moments over the radio: the alert, the light,
+  Antares' burst and its going out (in flight, or on the next launch).
+- **Markets**: research stations pay 1.3 times the price for data cores and electronics from
+  Betelgeuse's alert until it has faded, and from Antares' alert until it has gone (`market`).
+
+### 25.4 Observation work
+
+While a star dies, every research station posts observation jobs, in the postings its windows
+overlap:
+
+| Job | Window | Pay |
+| --- | --- | --- |
+| Catch the first light of Betelgeuse | From its light to the end of the peak | 2,200 cr |
+| Watch Betelgeuse fade | From the end of the peak until it has faded | 1,200 cr |
+| Measure the distance to Betelgeuse | From its light until it has faded: readings from two systems at least 20 ly apart (`baselineLy`) | 4,200 cr |
+| Watch Antares go out | From Antares' light until it has gone | 1,600 cr |
+
+In flight a dying star is a target (and a star a job wants watched, while it shows): picked like
+any other, at its distance in light-years, never flown to (*Go to* does nothing). With a job's window
+open, the action button reads **Observe**: one press takes a reading from that system (one a minute
+per system is kept). Then the readings go back to the station that posted the job. The distance
+job is parallax, as astronomers measure every star's distance: seen from two systems 20 light-years
+apart, Betelgeuse shifts by about 2.3° against the far sky.
+
+### 25.5 One save's own
+
+The alert time is kept in the save's world log, so a game loaded again has the same sky, the same
+News and the same jobs. Saves keep the readings taken for each job, and refuse a damaged timeline or
+reading (`src/app/save/migrate.ts`).
+
+### 25.6 Guardrails
+
+`validateStellar` (`src/economy/stellarGuards.ts`) and `validateFarStars` (`src/data/validate.ts`,
+also run by `npm run data:validate`), both run in `tests/unit/stellar.test.ts`: the far stars with
+unique ids, in the map's frame and epoch, positions consistent with their parallaxes, more than
+three times the map's radius away, with a catalogue id and https sources; the timeline running
+forward, with Antares stirring only after the supernova's peak; two different far stars; a peak
+brighter than Sirius and every star and fainter than the full Moon, and brighter than the star was;
+a remnant fainter than the plateau and still in sight; a failed supernova that brightens a little;
+a parallax baseline that shifts the star by at least a degree and that the map can give; rewards
+positive and within what any contract pays; a price effect between 1 and 2; at least three research
+stations; every direction in the sky a unit vector within the parallax the map allows; and no line
+with a number of its own or a field it cannot fill. The contract guardrails check every observation
+job (posted by a research station, a far star, a window that opens, back to the station that posted
+it). The tests also break the rules, the data and a line to see them caught, and check the
+timeline (scheduled once the opening is done, or for an old save), how the stars look through it,
+the News and the radio, the markets, the jobs (posted only at research stations while a star dies,
+accepted, a reading taken in the window and not stored twice, paid on return), parallax only from
+systems far enough apart, saves that keep it and refuse damaged ones, and the flight scene (the
+star a target with its distance in light-years and the Fiction badge, Observe offered and taken,
+never flown to, labelled fiction after it has faded).

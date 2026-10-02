@@ -107,7 +107,7 @@ describe('the rules', () => {
     expect(peak).toBeGreaterThan(-12.7);
   });
 
-  it('catch broken ones: a peak brighter than the Moon, a timeline that runs back, a line with a number, an unpaid observation', () => {
+  it('catch broken ones: a peak brighter than the Moon, a timeline that runs back, Antares stirring before the peak, a line with a number, an unpaid observation', () => {
     const broken = (patch: (r: StellarRules) => void) => {
       const r = structuredClone(STELLAR) as StellarRules;
       patch(r);
@@ -115,6 +115,7 @@ describe('the rules', () => {
     };
     expect(broken((r) => ((r.supernova as { peakAbsoluteMagnitude: number }).peakAbsoluteMagnitude = -24))).toContain('brightness');
     expect(broken((r) => ((r.supernova as { rise: number }).rise = -5))).toContain('rules');
+    expect(broken((r) => ((r.blackHole as { alertAfterSupernova: number }).alertAfterSupernova = 60))).toContain('rules');
     expect(broken((r) => ((r.observe.reward as { first: number }).first = 0))).toContain('observe');
     expect(broken((r) => ((r.observe as { baselineLy: number }).baselineLy = 2))).toContain('observe');
     const keep = SKY_NEWS.light.detail;
@@ -345,8 +346,12 @@ describe('in flight', () => {
     // Never flown to: Go to does nothing.
     flight.beginGoTo(target.id, false);
     expect(flight.autopilotMode).not.toBe('goto');
-    // Once the supernova has faded, the star is the catalogue's again.
+    // Once it has faded, what is left is fiction too; before its light, the star was the catalogue's.
     s.clock = T.fadeEnd + 1;
+    run(0.6);
+    expect(target.dataClass).toBe('fictional');
+    expect(target.subtitle).toBe(`Supernova remnant · magnitude ${STELLAR.supernova.remnantMagnitude.toFixed(1)}`);
+    s.clock = T.alert;
     run(0.6);
     expect(target.dataClass).toBe('observed');
     expect(target.subtitle).toBe(`${FAR_STARS.stars[0]!.spectralType} · ${Math.round(FAR_STARS.stars[0]!.distanceLightYears)} ly`);

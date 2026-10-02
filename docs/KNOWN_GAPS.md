@@ -110,6 +110,13 @@ snapshot branch only when the archives changed.
   lawless space. Out of the player's sight they are never lost to raids. A hunter's claim only takes
   the job off the board: the pack it hunts is not destroyed for anyone else. Rivals' trades move
   stock at each end, but they do not buy or sell at the player's own outpost.
+- Stellar death (PROCGEN §25) happens once a save, to the two far stars only, on a timeline compressed
+  from months to hours: the supernova changes nothing in the world beyond the News, the radio,
+  research stations' prices and observation work (no radiation, no new nebula to fly to, no change
+  to the star map). The far stars appear in the sky and the encyclopedia but not on the star map.
+  Their values are provisional (HYG v4.0) until a snapshot checks them. A reading is taken with the
+  action button from anywhere in flight, whichever way the ship is pointing. The doomed star at the
+  edge, with a black hole to fly to, is still to come (ROADMAP).
 - Traffic and raider packs exist only around the player. Packs that saw the player and cargo pods
   left adrift wait for 30 minutes of game clock (in the last six systems), as do the packs and
   wrecks of the player's own contracts; everything else is generated again on arrival.

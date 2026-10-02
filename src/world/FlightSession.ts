@@ -65,7 +65,7 @@ import { HAULS } from '../content/economy/hauls.ts';
 import { sightInView } from './sightseeing.ts';
 import { createFarStars, type FarStarsArt } from './art/farStars.ts';
 import { STELLAR } from '../content/stellar/rules.ts';
-import { dying, farStarLook, magnitudeText, observationsWanted, skyDirection } from '../economy/stellar.ts';
+import { farStarLook, magnitudeText, observationsWanted, skyDirection, skyPhase } from '../economy/stellar.ts';
 import { haulsIn, type Haul, type HaulHere, type HaulLeg } from '../economy/hauls.ts';
 import { FLEET } from '../content/fleet/rules.ts';
 import { captainsIn, type CaptainHere, type RunRaid } from '../economy/fleet.ts';
@@ -333,6 +333,7 @@ const AVOID_MARGIN = 700;
 const DEFAULT_SCAN_RANGE = 9_000;
 /** Far stars' targets sit this far from the camera, in their direction (docs/PROCGEN.md §25). */
 const SKY_TARGET_DISTANCE = 800_000;
+const WORLD_UP = new THREE.Vector3(0, 1, 0);
 const HOSTILE_RADIUS = 3_500;
 /** An escorted ship holds position while the player is further away than this, and jumps with them only within it. */
 const ESCORT_WAIT = CONTRACTS.escort.keepUpM;
@@ -3571,13 +3572,14 @@ export class FlightSession {
     const looks = this.skyStars.map((s) => farStarLook(s.id, this.state.clock) ?? { magnitude: Infinity, colour: '#ffffff' });
     this.farSky.set(this.skyStars.map((s, i) => ({ dir: s.dir, magnitude: looks[i]!.magnitude, colour: looks[i]!.colour })));
     this.skyStars.forEach((s, i) => {
-      const death = dying(s.id, this.state.clock);
-      const show = looks[i]!.magnitude < STELLAR.nakedEye && (death || observationsWanted(this.state, s.id).length > 0);
+      const phase = skyPhase(s.id, this.state.clock);
+      const show = looks[i]!.magnitude < STELLAR.nakedEye && (phase === 'dying' || observationsWanted(this.state, s.id).length > 0);
       s.target.alive = show;
       s.target.cycle = show;
-      // The star is real; its death is fiction, and the target says so while it lasts.
-      s.target.dataClass = death ? 'fictional' : 'observed';
-      s.target.subtitle = death ? `${s.id === STELLAR.supernova.star ? 'Supernova' : 'Collapsing'} · magnitude ${magnitudeText(looks[i]!.magnitude)}` : s.base;
+      // The star is real; its death, and what is left after, are fiction, and the target says so.
+      const what = s.id !== STELLAR.supernova.star ? 'Collapsing' : phase === 'dying' ? 'Supernova' : 'Supernova remnant';
+      s.target.dataClass = phase === 'catalogue' ? 'observed' : 'fictional';
+      s.target.subtitle = phase === 'catalogue' ? s.base : `${what} · magnitude ${magnitudeText(looks[i]!.magnitude)}`;
       if (!show && this.selectedId === s.target.id) this.selectedId = null;
     });
   }
@@ -3805,7 +3807,8 @@ export class FlightSession {
   placeNear(targetId: string, distance: number): boolean {
     this.mining.update(0, this.player.position, this.state.clock, this.camera, this.beam?.rockId ?? null);
     const t = this.findTarget(targetId);
-    if (!t || this.busy) return false;
+    // The far stars are in the sky, never somewhere to be.
+    if (!t || this.busy || t.kind === 'sky') return false;
     const away = this.tmp.copy(this.player.position).sub(t.position);
     if (away.lengthSq() < 1) away.set(0, 0, 1);
     away.normalize();
@@ -3815,6 +3818,23 @@ export class FlightSession {
     this.player.lookAlong(away.negate());
     this.throttle = 0;
     this.autopilot = { mode: 'none' };
+    this.chase.snap(this.player);
+    return true;
+  }
+
+  /** Test-only: turns the ship where it is to face a target (a far star in the sky among them), its nose `belowDeg` under it. */
+  face(targetId: string, belowDeg = 0): boolean {
+    const t = this.findTarget(targetId);
+    if (!t || this.busy) return false;
+    const dir = this.tmp.copy(t.position).sub(this.player.position);
+    if (dir.lengthSq() < 1) return false;
+    dir.normalize();
+    const right = this.tmp2.crossVectors(dir, WORLD_UP);
+    if (belowDeg && right.lengthSq() > 1e-6) dir.applyAxisAngle(right.normalize(), (-belowDeg * Math.PI) / 180);
+    this.player.velocity.set(0, 0, 0);
+    this.player.angularVelocity.set(0, 0, 0);
+    this.player.lookAlong(dir);
+    this.throttle = 0;
     this.chase.snap(this.player);
     return true;
   }

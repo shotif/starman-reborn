@@ -2071,6 +2071,8 @@ export class Game {
       },
       /** Test-only: put the ship at rest `distance` metres from a target's surface, facing it. */
       placeNear: (arg: { id: string; distance: number }) => this.flight?.placeNear(arg.id, arg.distance) ?? false,
+      /** Test-only: turns the ship to face a target (for screenshots of the sky). */
+      face: (arg: string | { id: string; below?: number }) => (typeof arg === 'string' ? this.flight?.face(arg) : this.flight?.face(arg.id, arg.below)) ?? false,
       /** Test-only: the mining laser, the rocks near the player and any pack hunting the miner. */
       mining: () => this.flight?.debugMining() ?? null,
       renderInfo: () => ({ quality: this.renderer.quality, pixelRatio: this.renderer.pixelRatio, fps: this.renderer.fps }),

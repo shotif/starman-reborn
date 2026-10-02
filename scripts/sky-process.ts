@@ -1296,16 +1296,22 @@ const farOid = (f: FarStarInput) => {
   const oids = candidateIdents(f as unknown as StarInput).flatMap((id) => [...(byIdent.get(norm(id)) ?? [])]);
   return oids.find((o) => otypeOf(o) !== '**') ?? oids[0];
 };
-/** A snapshot from before the far stars were asked for leaves their provisional values in place. */
+/**
+ * A snapshot from before the far stars were asked for leaves their provisional values in place. So
+ * does one where SIMBAD gave nothing usable for any of them (the file's kind says whether all its
+ * stars are verified, so it is all of them or none), and the report says which.
+ */
 const farAsked = farProvisional.length > 0 && farProvisional.some((f) => farOid(f) !== undefined);
+const farMissing = farProvisional.filter((f) => {
+  const oid = farOid(f);
+  return oid === undefined || !astrometryOf(oid);
+});
 const farVerified: FarStarInput[] = [];
 const farNotes: string[] = [];
-if (farAsked) {
+if (farAsked && !farMissing.length) {
   for (const f of farProvisional) {
-    const oid = farOid(f);
-    if (oid === undefined) throw new Error(`SIMBAD has no object for the far star ${f.name} (${candidateIdents(f as unknown as StarInput).join(' / ')})`);
-    const astro = astrometryOf(oid);
-    if (!astro) throw new Error(`SIMBAD gives no astrometry for the far star ${f.name}`);
+    const oid = farOid(f)!;
+    const astro = astrometryOf(oid)!;
     const sp = spectralOf(oid);
     const vFlux = load('simbad-fluxes').find((r) => num(r.oidref) === oid && str(r.filter) === 'V' && num(r.flux) !== null);
     const vBib = vFlux ? str(vFlux.bibcode) : null;
@@ -1362,7 +1368,7 @@ write('belts-input.json', {
   belts,
 });
 if (solar) write('solar-elements.json', { retrieved, ...solar });
-if (farAsked) {
+if (farVerified.length) {
   write('far-stars-input.json', {
     kind: 'snapshot',
     retrieved,
@@ -1402,7 +1408,8 @@ if (skipped.length) lines.push('', 'Not added:', '', ...skipped.map((x) => `- ${
 lines.push('', '## Belts and debris discs', '');
 for (const b of belts) lines.push(`- **${b.name}** (${b.systemId}): ${b.sources.map((s) => (s.bibcode ? `[${s.bibcode}](${s.url})` : `[${s.label}](${s.url})`)).join(', ')}`);
 lines.push('', '## Far stars', '');
-if (farAsked) for (const n of farNotes) lines.push(`- ${n}`);
+if (farVerified.length) for (const n of farNotes) lines.push(`- ${n}`);
+else if (farAsked) lines.push(`SIMBAD gave no usable astrometry for ${farMissing.map((f) => f.name).join(' and ')}: every far star keeps its provisional values (HYG v4.0) until that is put right.`);
 else lines.push('Not asked for in this snapshot: their provisional values (HYG v4.0) stay until the next one.');
 lines.push('', '## The Solar System', '');
 if (solar) {

@@ -399,6 +399,25 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   flight scene: a rival met, named, with its ship and cargo, shot and destroyed (an attack and a
   crime, as for a trader); hostile in a lawless system, it fights as a raider with no bounty and no
   crime. Saves keep standing, knock-outs and claims bought, and refuse damaged ones.
+- `stellar.test.ts`: **stellar death, as fiction**. The far stars' data passes its checks (and one
+  placed inside the map is caught); their directions in the sky are their ecliptic places (Betelgeuse
+  about 16° south of the ecliptic, Antares about 4.6°), within the parallax the map allows. The
+  stellar guardrails pass, the supernova's peak is a typical Type II-P peak at Betelgeuse's distance
+  (magnitude −10.8), and broken rules are caught (a peak brighter than the full Moon, a stretch of
+  the timeline that runs back, Antares stirring before the peak, an unpaid observation, a baseline
+  too short to measure, a number written into a line). The timeline is
+  set once the opening is done (and for an old save past it, from loading), and runs in order; the
+  stars look the catalogue's until the light comes, then the supernova rises, holds, fades to its
+  remnant, and Antares brightens and is gone. The News tells each moment newest first, from the
+  catalogue's numbers, and moves on long after; the stations call the big moments. Research stations
+  pay more for data cores while a star dies, nowhere else and not after. Observation jobs: posted at
+  research stations only while a star dies, passing the contract guardrails; accepted, nothing to
+  read before the light; a reading in the window counted, a second from the same system a moment
+  later not stored twice; back at the station, paid in full. A parallax only from two systems far
+  enough apart, both in the window; Antares has a watch of its own. Saves keep the timeline and the
+  readings, and refuse damaged ones. In a flight scene: Betelgeuse a target with its distance in
+  light-years and the Fiction badge, Antares not yet; Observe offered and taken; never flown to; its
+  remnant still labelled fiction, and before its light the catalogue's star.
 
 ### Browser tests (Playwright)
 
@@ -533,12 +552,20 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   brings it back to *Neutral*; out in flight, Mara “Quickstep” Venn's ship flies its leg in the
   scene, named, with the *Merry Dancer* and what it carries, and targeted, the target box names the
   rival.
+- `stellar.spec.ts`: **a supernova**: in a save whose neutrino alert has just come, the News at
+  Ledger Institute (Wolf 359) tells of the burst from Betelgeuse, marked *Fiction* and saying the star
+  has not exploded; the bar's job to catch its first light is taken; once its light has come, the
+  stations say it has exploded as the ship undocks; targeted, Betelgeuse's box reads *Fiction*,
+  *Supernova · magnitude −…* and *498 ly*; the action button reads *Observe*, and pressed, the
+  reading is taken (*readings recorded*) and the job turns for home; docked at the institute again,
+  it pays in full.
 - `screenshots.spec.ts`: the loading title (caught part-way, with the game's largest file held
   back), title, Settings at its device report, job board, buy dialog, station deck, shipyard, outfitter, fleet
   (with a captain loading for a run), flight HUD, the player's own captain targeted in flight, star
   map and its Missions and Find dialogs, the charter of an outpost and the Outpost window at its
   site, a party's job open at a bar with a cabin fitted, a bounty taken by a rival on a job board and
-  the rival in a bar, and the News with a shortage's relief
+  the rival in a bar, the News at a research station telling of Betelgeuse's supernova, and the
+  supernova in flight, targeted with *Observe* offered, and the News with a shortage's relief
   haulers on their way, at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
   zoom). Saved in `docs/screenshots/` once any smooth scrolling has come to rest. Each is audited

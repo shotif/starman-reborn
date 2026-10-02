@@ -30,7 +30,7 @@ export const STELLAR = {
     plateau: 3_600,
     fade: 14_400,
     remnantMagnitude: 4.5,
-    /** Its colour at the peak and as a remnant (artistic; labelled estimated). */
+    /** Its colour at the peak and as a remnant: artistic, like the rest of the event. */
     peakColour: '#e2ebff',
     remnantColour: '#ffb3a6',
   },

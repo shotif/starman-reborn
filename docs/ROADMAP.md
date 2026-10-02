@@ -9,13 +9,14 @@ After the scripted opening (10–20 minutes), the neighbourhood is an open sandb
 systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
 of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
 packs in lawless space; 39 ships and 146 pieces of equipment; and generated contracts on every job
-board. Increments 1–22 (under [Done so far](#done-so-far)) added world events and news, contracts
+board. Increments 1–23 (under [Done so far](#done-so-far)) added world events and news, contracts
 of every kind, the law and the outlaw path, goals, five story arcs, combat depth, people in the
 bars and a trade computer, a world that answers, a fleet of your own whose captains fly the lanes,
-a station of your own, passengers and sightseers, rival pilots with careers of their own, mining
-in the real belts, the frontier with a life of its own, a border war whose fronts can be won for
-good, story endings that change stations for good, escorts and convoys across jumps, haulers with
-real cargo on a timetable, and a game measured and tuned on a real phone.
+a station of your own, passengers and sightseers, rival pilots with careers of their own, a
+supernova in every sky (as fiction), mining in the real belts, the frontier with a life of its own,
+a border war whose fronts can be won for good, story endings that change stations for good, escorts
+and convoys across jumps, haulers with real cargo on a timetable, and a game measured and tuned on a
+real phone.
 
 What it lacks now:
 
@@ -27,21 +28,23 @@ What it lacks now:
 
 Candidates for what comes next, in the order they will be built. Stellar death was chosen by the
 owner on 1 October 2026 (with A station of your own, Passengers and sightseers and Rival pilots, all
-now done); Lane encounters, Rival stories, Defend your outpost and Your crew on 2 October 2026, to
-make the game more engaging.
-
-### Stellar death, as fiction ⏳ (M–L)
-
-Supernovae and black holes forming. No real star within the map can go supernova (none is massive
-enough), and the nearest known black hole, Gaia BH1, is about 1,560 light-years away, so these
-events are invented: an exception to the rule that real astronomy is never invented, chosen by the
-owner. They will be labelled as fiction in the game wherever they appear, and never written into
-the real sky's data or its sources.
+now done), the far stars first (done, increment 23) and a doomed star at the edge later, as an
+increment of its own; Lane encounters, Rival stories, Defend your outpost and Your crew on
+2 October 2026, to make the game more engaging.
 
 ### Gluts that ship out ⏳ (S)
 
 A glut sends its surplus out in haulers, as a shortage draws relief, and boards post escorts for
 relief bound through raided lanes.
+
+### Stellar death: a doomed star at the edge ⏳ (L)
+
+The second half of stellar death. No real star within the map can go supernova (none is massive
+enough), and the nearest known black hole, Gaia BH1, is about 1,560 light-years away, so this one
+is invented outright: a massive star at the edge of the map, labelled as fiction wherever it
+appears and never written into the real sky's data or its sources, whose death leaves a black hole
+the player can fly to. The real far stars' deaths (increment 23) show how such an event is told
+and labelled.
 
 ### Lane encounters ⏳ (M)
 
@@ -79,6 +82,22 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 23. Stellar death, as fiction ✅
+
+Some time after the opening, the research stations catch a neutrino burst from Betelgeuse, a real
+red supergiant some 500 light-years away; a quarter of an hour later its light arrives, and the
+supernova outshines everything in every sky, in the star's true direction from wherever you fly,
+then fades to a faint remnant. Hours later Antares flickers and goes out, collapsing into a black
+hole without exploding. The stars and their places, distances and brightness are the catalogue's;
+their deaths are fiction, an exception to the rule that real astronomy is never invented, chosen by
+the owner and labelled as fiction wherever they show. How bright the supernova gets is worked out
+from a typical supernova's peak and the star's real distance (magnitude −10.8). The News and the
+research stations' radio tell it as it happens, research stations pay more for data cores and
+electronics, and post observation work: catch the first light, watch it fade, watch Antares go
+out, or measure Betelgeuse's distance by parallax from two systems 20 light-years apart. In flight
+the dying star is a target you observe with the action button
+([PROCGEN.md §25](PROCGEN.md#25-stellar-death-as-fiction)).
 
 ### 22. Rival pilots ✅
 

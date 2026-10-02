@@ -228,7 +228,7 @@ function farStarsSection(id: string): HTMLElement {
           dataBadge('fictional'),
           ' ',
           f.id === STELLAR.supernova.star
-            ? `In this game, ${f.name} explodes as a supernova, rising to magnitude ${magnitudeText(peakMagnitude(f))}: a typical Type II-P supernova's peak (Richardson et al. 2014) at its real distance. In reality it has not exploded.`
+            ? `In this game, ${f.name} explodes as a supernova, rising to magnitude ${magnitudeText(peakMagnitude(f))}: a typical Type II-P supernova’s peak (Richardson et al. 2014) at its real distance. In reality it has not exploded.`
             : `In this game, ${f.name} collapses into a black hole without exploding and goes out. In reality it shines on.`,
         ),
       ),

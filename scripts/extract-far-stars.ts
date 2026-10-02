@@ -53,7 +53,7 @@ function readCsv(path: string): Row[] {
   });
 }
 
-/** Display colour inspired by the spectral class (an artistic choice, labelled estimated in the game). */
+/** Display colour inspired by the spectral class (an artistic choice, like every star colour in the game). */
 function colourFor(spect: string): string {
   const c = spect.trim().toUpperCase()[0] ?? 'M';
   return ({ O: '#b8c8ff', B: '#c8d6ff', A: '#eef2ff', F: '#fff6e6', G: '#fff1d6', K: '#ffd9a8', M: '#ffb27a' } as Record<string, string>)[c] ?? '#ffb27a';

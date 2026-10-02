@@ -47,13 +47,19 @@ record of them when they see them. A fight with passengers aboard costs you some
 And you are not the only pilot out there: six rivals with careers of their own trade the best
 routes, take bounties off the boards (buy the claim back if you want the job) and race relief to
 shortages. Meet them in the bars, the News and in flight; buy them a round, outbid them, or fight.
+And one day the sky changes: Betelgeuse, a real red supergiant some 500 light-years away, explodes
+as a supernova that outshines everything in every sky, and later Antares quietly goes dark. Both
+are fiction, labelled so in the game (neither star has died): the News and the research stations
+tell it as it happens, and research stations pay pilots to observe it, down to measuring
+Betelgeuse's distance by parallax from two systems far apart.
 Ships, equipment, the world, the economy, events, contracts and the law are generated from rule
 files and checked by automated guardrails ([docs/PROCGEN.md](docs/PROCGEN.md)).
 
 Star positions, distances, planets and debris belts come from the astronomical archives, checked
 by a workflow on GitHub's runners (see [docs/ASTRONOMY_SOURCES.md](docs/ASTRONOMY_SOURCES.md)).
 Planets an archive disputes are kept in this edition and say so. Stations, factions, jump travel,
-trade lanes and all story text are original fiction and are labelled that way in the game.
+trade lanes and all story text are original fiction and are labelled that way in the game, and so is
+the one invented astronomical event, the deaths of Betelgeuse and Antares.
 
 **Play now: <https://shotif.github.io/starman-reborn/>**
 
@@ -183,15 +189,17 @@ src/content/   rule-driven generators and guardrails (docs/PROCGEN.md): ships an
                event rules (src/content/events), the law (src/content/law), progress
                (src/content/progress), the story arcs (src/content/story), dens under fire
                (src/content/dens), combat depth (src/content/combat), people in the bars
-               (src/content/people), the fleet (src/content/fleet), mining (src/content/mining)
-               and the border war (src/content/border)
+               (src/content/people), the fleet (src/content/fleet), mining (src/content/mining),
+               the border war (src/content/border) and stellar death (src/content/stellar)
 src/economy/   live markets, world events and the world's answers, trade, cargo, outfitter and
                shipyard, factions, jobs and generated contracts, the law, ratings, the codex,
-               milestones, the story, people and rumours, the fleet, mining and the border war
+               milestones, the story, people and rumours, the fleet, mining, the border war and
+               the far stars' deaths
 src/audio/     procedural Web Audio music and sound effects
 src/ui/        HUD, touch controls, station screens, encyclopedia, styles
 scripts/       the sky snapshot (sky-fetch on GitHub's runners, sky-process here), catalogue
-               extraction (HYG, Open Exoplanet Catalogue), dataset build and validation
+               extraction (HYG, Open Exoplanet Catalogue, the far stars), dataset build and
+               validation
 tests/         unit tests (Vitest) and browser journeys (Playwright)
 docs/          sources, design notes, test record, known gaps, screenshots
 ```
@@ -217,8 +225,9 @@ and the Extrasolar Planets Encyclopaedia, and pushes the raw answers to the `sky
 `npm run data:process` turns them into `data/snapshot/` with a report, `npm run data:build`
 regenerates the bundled dataset, and `npm run data:validate` checks it. It runs by hand from the
 Actions tab and once a month. The first 27 catalogue systems came from the HYG star database v4.0
-(CC BY-SA 4.0) and the Open Exoplanet Catalogue (MIT) through `scripts/extract-catalogs.ts`; the
-derived data keep those licences ([data/provisional/NOTICE.md](data/provisional/NOTICE.md)). The
+(CC BY-SA 4.0) and the Open Exoplanet Catalogue (MIT) through `scripts/extract-catalogs.ts`, and
+the two far stars beyond the map (Betelgeuse and Antares) from HYG through
+`scripts/extract-far-stars.ts`, until a snapshot checks them; the derived data keep those licences ([data/provisional/NOTICE.md](data/provisional/NOTICE.md)). The
 game never calls these services at runtime. Details, exceptions and uncertainty are in
 [docs/ASTRONOMY_SOURCES.md](docs/ASTRONOMY_SOURCES.md).
 
