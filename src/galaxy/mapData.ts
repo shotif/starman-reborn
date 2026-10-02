@@ -4,9 +4,10 @@
  * coincide at map scale (Alpha Centauri A/B, Sirius A/B) but keep Proxima Centauri separate.
  */
 import { distance3 } from '../data/coords.ts';
-import { ASTROMETRY, SYSTEMS, getSystem, isNewSystem, laneNeedsDrive } from '../data/systems.ts';
+import { ASTROMETRY, MAP_SYSTEMS, PYRE_SYSTEM, getSystem, isInventedSystem, isNewSystem, laneNeedsDrive } from '../data/systems.ts';
 import type { SystemId, Vec3Tuple } from '../data/types.ts';
 import { equatorialToMap, type Vec3 } from './mapMath.ts';
+import { DOOMED } from '../content/stellar/doomed.ts';
 
 /** Display colour of the Sun on the map (artistic, like every star colour). */
 export const SUN_COLOR = '#fff1d6';
@@ -32,6 +33,8 @@ export interface MapStar {
   glowPx: number;
   /** Label group this star belongs to. */
   labelKey: string;
+  /** Pyre, the one invented star (docs/PROCGEN.md §26): drawn with a dashed ring and a Fiction tag. */
+  invented?: true;
 }
 
 export interface MapLabel {
@@ -49,6 +52,8 @@ export interface MapLabel {
   primary: boolean;
   /** Largest glow among the grouped stars (label clearance). */
   glowPx: number;
+  /** Pyre, the one invented star: its label says Fiction. */
+  invented?: true;
 }
 
 export interface MapLink {
@@ -58,6 +63,8 @@ export interface MapLink {
   distanceLy: number;
   /** A frontier lane: a long-range jump drive is needed (docs/PROCGEN.md §7.7). */
   drive: boolean;
+  /** The lane to Pyre, the one invented star (docs/PROCGEN.md §26). */
+  invented?: true;
 }
 
 export function glowPxForSpectralType(spectralType: string | null): number {
@@ -108,6 +115,9 @@ function buildStars(): MapStar[] {
       labelKey: c.id,
     });
   }
+  // Pyre, the one invented star, at its invented place (docs/PROCGEN.md §26): a supergiant's glow.
+  const p = PYRE_SYSTEM;
+  stars.push({ key: p.id, systemId: p.id, name: p.displayName, spectralType: null, eq: p.positionLy, pos: equatorialToMap(p.positionLy), colorHex: DOOMED.star.colorHex, glowPx: 34, labelKey: p.id, invented: true });
   return stars;
 }
 
@@ -125,7 +135,7 @@ export function groupName(names: readonly string[]): string {
 
 function buildLabels(stars: MapStar[]): MapLabel[] {
   const labels: MapLabel[] = [];
-  for (const system of SYSTEMS) {
+  for (const system of MAP_SYSTEMS) {
     const members = stars.filter((s) => s.systemId === system.id);
     const groups: MapStar[][] = [];
     for (const star of members) {
@@ -151,6 +161,7 @@ function buildLabels(stars: MapStar[]): MapLabel[] {
         starKeys: group.map((s) => s.key),
         primary: index === 0,
         glowPx: Math.max(...group.map((s) => s.glowPx)),
+        ...(isInventedSystem(system.id) ? { invented: true as const } : {}),
       });
     });
   }
@@ -160,13 +171,14 @@ function buildLabels(stars: MapStar[]): MapLabel[] {
 function buildLinks(): MapLink[] {
   const links: MapLink[] = [];
   const seen = new Set<string>();
-  for (const s of SYSTEMS) {
+  for (const s of MAP_SYSTEMS) {
     for (const other of s.jumpLinks) {
       const [a, b] = s.id < other ? [s.id, other] : [other, s.id];
       const key = `${a}|${b}`;
       if (seen.has(key)) continue;
       seen.add(key);
-      links.push({ a, b, distanceLy: distance3(getSystem(a).positionLy, getSystem(b).positionLy), drive: laneNeedsDrive(a, b) });
+      const invented = isInventedSystem(a) || isInventedSystem(b);
+      links.push({ a, b, distanceLy: distance3(getSystem(a).positionLy, getSystem(b).positionLy), drive: laneNeedsDrive(a, b) || invented, ...(invented ? { invented: true as const } : {}) });
     }
   }
   return links;

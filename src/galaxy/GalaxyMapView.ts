@@ -8,7 +8,7 @@
  */
 import '../ui/styles/map.css';
 import type * as THREE from 'three';
-import { SYSTEMS, getSystem, isNewSystem } from '../data/systems.ts';
+import { MAP_SYSTEMS, getSystem, isNewSystem } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { formatCredits, h, replaceChildren } from '../ui/dom.ts';
 import { openEncyclopedia } from '../ui/encyclopedia.ts';
@@ -248,7 +248,7 @@ export class GalaxyMapView {
       h(
         'ul',
         { class: 'gmap-list-items' },
-        SYSTEMS.map((s) => {
+        MAP_SYSTEMS.map((s) => {
           const star = MAP_STARS.find((m) => m.systemId === s.id)!;
           const marks = h('span', { class: 'gmap-sys-marks' });
           const btn = h(

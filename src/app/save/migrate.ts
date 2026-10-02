@@ -1,7 +1,7 @@
 import { findGear, findShip } from '../../content/catalog.ts';
 import { STARTER_SHIP_ID } from '../../content/rules/index.ts';
 import { ALL_LOCATIONS } from '../../data/systems.ts';
-import { SYSTEM_IDS } from '../../data/systems.ts';
+import { KNOWN_SYSTEM_IDS, PYRE_LOCATIONS, SYSTEM_IDS } from '../../data/systems.ts';
 import { codexEntries } from '../../economy/progress.ts';
 import { skyTimeline } from '../../economy/stellar.ts';
 import type { SystemId } from '../../data/types.ts';
@@ -64,7 +64,8 @@ export interface SaveV1 {
 
 export class SaveFormatError extends Error {}
 
-const SHARED_IDS: ReadonlySet<string> = new Set(ALL_LOCATIONS.filter((l) => l.status === 'functional').map((l) => l.id));
+/** The shared world's stations, and Pyre's two (docs/PROCGEN.md §26). */
+const SHARED_IDS: ReadonlySet<string> = new Set([...ALL_LOCATIONS.filter((l) => l.status === 'functional').map((l) => l.id), ...PYRE_LOCATIONS.map((l) => l.id)]);
 /** Stations a save may name: the shared world's, and its own outpost once it is valid (set as a save is checked). */
 let LOCATION_IDS: ReadonlySet<string> = SHARED_IDS;
 
@@ -342,7 +343,8 @@ export function assertValidState(s: GameState): void {
     assertValidOutpost(own, fail);
     LOCATION_IDS = new Set([...SHARED_IDS, outpostId(own.site)]);
   }
-  if (!SYSTEM_IDS.includes(s.location?.systemId)) fail('unknown system');
+  // The real systems, or Pyre, the invented star (docs/PROCGEN.md §26).
+  if (!KNOWN_SYSTEM_IDS.includes(s.location?.systemId)) fail('unknown system');
   if (s.location.dockedAt !== null && !LOCATION_IDS.has(s.location.dockedAt)) fail('unknown dock');
   if (!LOCATION_IDS.has(s.location.lastDockId)) fail('unknown respawn dock');
   if (!Number.isFinite(s.credits) || s.credits < 0) fail('credits');
@@ -381,7 +383,7 @@ export function assertValidState(s: GameState): void {
     for (const t of Object.values(w.rivals.bought)) if (!Number.isFinite(t)) fail('world');
   }
   for (const [sys, l] of Object.entries(w.lingering)) {
-    if (!SYSTEM_IDS.includes(sys) || !isRecord(l) || !Number.isFinite(l.at) || !Array.isArray(l.packs) || !Array.isArray(l.pods)) fail('world');
+    if (!KNOWN_SYSTEM_IDS.includes(sys) || !isRecord(l) || !Number.isFinite(l.at) || !Array.isArray(l.packs) || !Array.isArray(l.pods)) fail('world');
     const v3 = (p: unknown) => Array.isArray(p) && p.length === 3 && p.every(Number.isFinite);
     if (!l.packs.every((p) => isRecord(p) && [1, 2, 3].includes(p.level) && Number.isInteger(p.count) && p.count > 0 && v3(p.position))) fail('world');
     if (!l.pods.every((p) => isRecord(p) && v3(p.position) && Number.isFinite(p.value) && (!p.cargo || COMMODITY_IDS.includes(p.cargo.commodity)) && (!p.gear || !!findGear(p.gear)))) fail('world');
@@ -427,7 +429,7 @@ export function assertValidState(s: GameState): void {
     // Passengers and sightseers (docs/PROCGEN.md §23): a tour's sight seen, and a fare's fright within 0–1.
     if ((p.seen !== undefined && typeof p.seen !== 'boolean') || (p.fright !== undefined && !(Number.isFinite(p.fright) && p.fright >= 0 && p.fright <= 1))) fail(`job ${id}`);
     // Observations of a dying far star (§25): when, and from a system of the map.
-    if (p.observed !== undefined && !(Array.isArray(p.observed) && p.observed.every((x) => isRecord(x) && Number.isFinite(x.at) && SYSTEM_IDS.includes(x.systemId)))) fail(`job ${id}`);
+    if (p.observed !== undefined && !(Array.isArray(p.observed) && p.observed.every((x) => isRecord(x) && Number.isFinite(x.at) && KNOWN_SYSTEM_IDS.includes(x.systemId)))) fail(`job ${id}`);
   }
   if (s.location.flight) {
     const { position, quaternion } = s.location.flight;

@@ -11,7 +11,7 @@ import { fill, PAYMENT } from '../content/people/lines.ts';
 import * as THREE from 'three';
 import { AudioEngine } from '../audio/AudioEngine.ts';
 import type { MusicMood, SfxId } from '../audio/types.ts';
-import { ALL_LOCATIONS, getComponent, getLocation, getPlanet, getSystem, hasProvisionalData, saveLocationsKey, SYSTEMS, WORLD } from '../data/systems.ts';
+import { ALL_LOCATIONS, getComponent, getLocation, getPlanet, getSystem, hasProvisionalData, MAP_SYSTEMS, saveLocationsKey, SYSTEMS, WORLD } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { addCargo, cargoUsed, itemsThatFit } from '../economy/cargo.ts';
 import { COMMODITIES } from '../economy/commodities.ts';
@@ -629,7 +629,7 @@ export class Game {
   }
 
   private travelCost(from: SystemId, to: SystemId): number {
-    const route = findRoute(SYSTEMS, from, to);
+    const route = findRoute(MAP_SYSTEMS, from, to);
     if (!route) return 0;
     return routeFee(this.state!, route);
   }

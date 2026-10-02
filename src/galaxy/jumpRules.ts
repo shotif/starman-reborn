@@ -2,7 +2,7 @@
  * Jump-button rules for the map (pure). Route distances come from real star positions via
  * routing.ts; fees, coverage and readiness are game fiction supplied by MapState.
  */
-import { laneNeedsDrive, SYSTEMS } from '../data/systems.ts';
+import { laneNeedsDrive, MAP_SYSTEMS } from '../data/systems.ts';
 import type { StarSystemRecord, SystemId } from '../data/types.ts';
 import { formatCredits } from '../ui/dom.ts';
 import { findRoute, type Route } from './routing.ts';
@@ -33,7 +33,7 @@ export interface JumpEvaluation {
 export function evaluateJump(
   state: JumpInputs,
   destination: SystemId,
-  systems: readonly StarSystemRecord[] = SYSTEMS,
+  systems: readonly StarSystemRecord[] = MAP_SYSTEMS,
 ): JumpEvaluation {
   const name = systems.find((s) => s.id === destination)?.displayName ?? destination;
   const base: JumpEvaluation = {

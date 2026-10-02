@@ -4,7 +4,7 @@
  * ignores case, accents and punctuation, takes Greek letters spelled out, and forgives a typo or two
  * in longer words. One hit per system, best first.
  */
-import { BELTS, SOLAR_BODIES, SYSTEMS, componentsOf } from '../data/systems.ts';
+import { BELTS, MAP_SYSTEMS, SOLAR_BODIES, componentsOf } from '../data/systems.ts';
 import type { StarSystemRecord, SystemId } from '../data/types.ts';
 
 export type SearchKind = 'system' | 'star' | 'planet' | 'moon' | 'station' | 'belt' | 'catalogue';
@@ -103,7 +103,7 @@ function glieseVariants(name: string): string[] {
   return m ? [`Gliese ${m[2]}`, `GJ ${m[2]}`, `Gl ${m[2]}`] : [];
 }
 
-export function buildSearchIndex(systems: readonly StarSystemRecord[] = SYSTEMS): SearchEntry[] {
+export function buildSearchIndex(systems: readonly StarSystemRecord[] = MAP_SYSTEMS): SearchEntry[] {
   const out: SearchEntry[] = [];
   for (const s of systems) {
     const seen = new Set<string>();
@@ -240,7 +240,7 @@ export function searchSystems(query: string, opts: SearchOptions = {}, index: re
   // Typos are forgiven only when nothing matches as typed.
   if (best.size === 0) for (const e of index) keep(scoreTypos(e, words));
   const hits = [...best.values()];
-  const byId = new Map(SYSTEMS.map((s) => [s.id, s]));
+  const byId = new Map(MAP_SYSTEMS.map((s) => [s.id, s]));
   const from = byId.get(opts.near ?? 'sol') ?? byId.get('sol');
   const dist = (id: SystemId) => {
     const s = byId.get(id);

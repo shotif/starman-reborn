@@ -7,7 +7,9 @@ import beltsFile from './generated/belts.json' with { type: 'json' };
 import catalogSystemsFile from './generated/catalog-systems.json' with { type: 'json' };
 import exoplanetFile from './generated/exoplanets.json' with { type: 'json' };
 import farStarsFile from './generated/far-stars.json' with { type: 'json' };
-import { distance3 } from './coords.ts';
+import { DOOMED } from '../content/stellar/doomed.ts';
+import { rng } from '../content/random.ts';
+import { distance3, equatorialToCartesian } from './coords.ts';
 import { SOURCES } from './sources.ts';
 import type {
   BeltRecord,
@@ -21,6 +23,7 @@ import type {
   StarSystemRecord,
   StellarComponent,
   SystemId,
+  Vec3Tuple,
   Verification,
 } from './types.ts';
 
@@ -569,7 +572,7 @@ export function hasSystem(id: string): boolean {
 }
 
 export function getSystem(id: SystemId): StarSystemRecord {
-  const s = systemIndex.get(id);
+  const s = systemIndex.get(id) ?? (id === PYRE_ID ? PYRE_SYSTEM : undefined);
   if (!s) throw new Error(`Unknown system ${id}`);
   return s;
 }
@@ -609,7 +612,7 @@ export function saveLocationsKey(): string {
 }
 
 export function getLocation(id: string): FictionalLocation {
-  const loc = locationIndex.get(id) ?? saveIndex.get(id);
+  const loc = locationIndex.get(id) ?? saveIndex.get(id) ?? pyreIndex.get(id);
   if (!loc) throw new Error(`Unknown location ${id}`);
   return loc;
 }
@@ -653,3 +656,70 @@ export function findBelt(id: string): BeltRecord | undefined {
 export function hasProvisionalData(): boolean {
   return ASTROMETRY.verification === 'provisional' || EXOPLANETS.verification === 'provisional';
 }
+
+// ---------------------------------------------------------------- Pyre, the one invented star
+
+/**
+ * Pyre (docs/PROCGEN.md §26): an invented red supergiant beyond the map's edge, and its two
+ * stations. `getSystem` and `getLocation` find them, but they are never in `SYSTEMS`, `SYSTEM_IDS`,
+ * `ALL_LOCATIONS` or the world's jump network, so nothing built from the real map (lanes, owners,
+ * events, boards, timetables, prices) changes with them. The star map and the jump rules use
+ * `MAP_SYSTEMS`, which hold it and its one lane. Nothing about it comes from an archive.
+ */
+export const PYRE_ID = DOOMED.star.id as SystemId;
+
+function pyreStation(s: { id: string; name: string }, description: string): FictionalLocation {
+  return {
+    id: s.id,
+    name: s.name,
+    systemId: PYRE_ID,
+    kind: KIND_OF['research-station'],
+    fictional: true,
+    status: 'functional',
+    description,
+    services: ['market', 'repair', 'contracts'],
+    stationType: 'research-station',
+    look: { type: 'research-station', owner: 'independent', seed: rng(WORLD_SEED, 'pyre-look', s.id).int(0, 1_000_000), starColor: DOOMED.star.colorHex, size: 0.9, wear: 0.45 },
+  };
+}
+
+/** Pyre's observatory while it lives, and the station built after it has gone (whether each is open is the clock's business: economy/doomed.ts). */
+export const PYRE_LOCATIONS: readonly FictionalLocation[] = [
+  pyreStation(DOOMED.stations.observatory, `An observatory watching ${DOOMED.star.name}, the red supergiant it orbits at a wary distance. The star and the station are fiction.`),
+  pyreStation(DOOMED.stations.remnant, `A station well clear of the black hole where ${DOOMED.star.name} was, charting what is left of it. The star and the station are fiction.`),
+];
+
+const pyreIndex = new Map(PYRE_LOCATIONS.map((l) => [l.id, l]));
+
+export const PYRE_SYSTEM: StarSystemRecord = {
+  id: PYRE_ID,
+  displayName: DOOMED.star.name,
+  catalogId: '',
+  raDegrees: DOOMED.star.raDegrees,
+  decDegrees: DOOMED.star.decDegrees,
+  distanceLightYears: DOOMED.star.distanceLy,
+  referenceEpoch: null,
+  positionSourceUrl: null,
+  positionLy: equatorialToCartesian(DOOMED.star.raDegrees, DOOMED.star.decDegrees, DOOMED.star.distanceLy) as Vec3Tuple,
+  componentIds: [],
+  confirmedBodies: [],
+  fictionalLocations: [...PYRE_LOCATIONS],
+  jumpLinks: [DOOMED.star.anchor as SystemId],
+  summary: `An invented red supergiant, ${DOOMED.star.spectralType}: not in the real sky.`,
+  scienceFacts: [],
+  fiction: `${DOOMED.star.name} does not exist: the game invents it, beyond the edge of the real census of the Sun's neighbourhood, so that one star can die where a pilot can go.`,
+};
+
+/** Whether a system is invented (Pyre), not one of the real sky's. */
+export function isInventedSystem(id: string): boolean {
+  return id === PYRE_ID;
+}
+
+/** Every system a save may be in: the real ones, and Pyre. */
+export const KNOWN_SYSTEM_IDS: readonly SystemId[] = [...SYSTEM_IDS, PYRE_ID];
+
+/** The systems the star map shows and its jump rules route over: the real ones (the anchor's with its lane to Pyre), and Pyre. */
+export const MAP_SYSTEMS: readonly StarSystemRecord[] = [
+  ...SYSTEMS.map((s) => (s.id === DOOMED.star.anchor ? { ...s, jumpLinks: [...s.jumpLinks, PYRE_ID] } : s)),
+  PYRE_SYSTEM,
+];

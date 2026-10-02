@@ -9,7 +9,7 @@
  * drawing is only transformed; it is drawn again, labels laid out afresh, when the gesture ends.
  */
 import '../ui/styles/map.css';
-import { isNewSystem, SYSTEMS } from '../data/systems.ts';
+import { isNewSystem, MAP_SYSTEMS } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { h, svg } from '../ui/dom.ts';
 import { GestureTracker } from './gestures.ts';
@@ -159,7 +159,7 @@ export function resetStarMap2D(container: HTMLElement): void {
 export function centreStarMap2D(container: HTMLElement, id: SystemId): void {
   const e = entries.get(container);
   if (!e?.view) return;
-  const sys = SYSTEMS.find((s) => s.id === id);
+  const sys = MAP_SYSTEMS.find((s) => s.id === id);
   if (!sys) return;
   setView(e, e.view.zoom, [sys.positionLy[0], sys.positionLy[1]]);
   draw(container, e);
@@ -424,7 +424,7 @@ function draw(container: HTMLElement, e: Entry): void {
 
   // Fictional jump links (dashed) and the selected route.
   const anchors = new Map<SystemId, [number, number]>();
-  for (const s of SYSTEMS) anchors.set(s.id, project2D(proj, s.positionLy, [0, 0]));
+  for (const s of MAP_SYSTEMS) anchors.set(s.id, project2D(proj, s.positionLy, [0, 0]));
   const links = svg('g', { class: 'map2d-links', 'aria-hidden': 'true' });
   for (const l of MAP_LINKS) {
     const a = anchors.get(l.a)!;
@@ -434,7 +434,7 @@ function draw(container: HTMLElement, e: Entry): void {
   content.append(links);
   const selected = e.selected;
   if (selected && selected !== e.state.currentSystemId) {
-    const route = findRoute(SYSTEMS, e.state.currentSystemId, selected, { canTake: laneTaker(e.state.jumpReach ?? 0) });
+    const route = findRoute(MAP_SYSTEMS, e.state.currentSystemId, selected, { canTake: laneTaker(e.state.jumpReach ?? 0) });
     if (route && route.path.length > 1) {
       const points = route.path.map((id) => anchors.get(id)!.join(',')).join(' ');
       content.append(
@@ -448,7 +448,7 @@ function draw(container: HTMLElement, e: Entry): void {
   const labelEls: { text: SVGTextElement; name: SVGTSpanElement; meta: SVGTSpanElement; def: MapLabel; box: LabelBox; leader: SVGLineElement | null }[] = [];
   // The far shell first and dimmed, so the systems the player knows are drawn over it.
   const knownOf = (id: SystemId) => !isNewSystem(id) || e.state.visited.has(id);
-  const drawOrder = [...SYSTEMS].sort((a, b) => Number(knownOf(a.id)) - Number(knownOf(b.id)));
+  const drawOrder = [...MAP_SYSTEMS].sort((a, b) => Number(knownOf(a.id)) - Number(knownOf(b.id)));
   for (const s of drawOrder) {
     const id = s.id;
     const [ax, ay] = anchors.get(id)!;

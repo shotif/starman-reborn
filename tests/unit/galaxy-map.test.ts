@@ -518,8 +518,10 @@ describe('jump button rules', () => {
 });
 
 describe('plotted neighborhood', () => {
-  it('plots the Sun plus every catalog component at its own position', () => {
-    expect(MAP_STARS).toHaveLength(ASTROMETRY.stars.length + 1);
+  it('plots the Sun plus every catalog component at its own position, and Pyre, the one invented star, marked as such', () => {
+    expect(MAP_STARS).toHaveLength(ASTROMETRY.stars.length + 2);
+    expect(MAP_STARS.filter((s) => s.invented).map((s) => s.key)).toEqual(['pyre']);
+    expect(MAP_LABELS.filter((l) => l.invented).map((l) => l.name)).toEqual(['Pyre']);
     expect(MAP_STARS[0]!.pos).toEqual([0, 0, 0]);
     for (const c of ASTROMETRY.stars) {
       expect(MAP_STARS.find((s) => s.key === c.id)!.pos).toEqual(equatorialToMap(c.positionLy));
@@ -538,9 +540,10 @@ describe('plotted neighborhood', () => {
     expect(formatHeightShort(-3.79)).toBe('3.79 ly below');
   });
 
-  it('draws each fictional jump link once with its real length', () => {
+  it('draws each fictional jump link once with its real length, and the one lane to Pyre', () => {
     const pairs = new Set(SYSTEMS.flatMap((s) => s.jumpLinks.map((t) => [s.id, t].sort().join('|'))));
-    expect(MAP_LINKS).toHaveLength(pairs.size);
+    expect(MAP_LINKS).toHaveLength(pairs.size + 1);
+    expect(MAP_LINKS.filter((l) => l.invented)).toEqual([expect.objectContaining({ a: 'gj-915', b: 'pyre', drive: true })]);
     expect(MAP_LINKS.length).toBeGreaterThan(SYSTEMS.length - 1);
     const solSirius = MAP_LINKS.find((l) => l.a === 'sirius' && l.b === 'sol')!;
     expect(solSirius.distanceLy).toBeCloseTo(getSystem('sirius').distanceLightYears, 9);

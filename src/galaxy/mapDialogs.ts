@@ -3,7 +3,7 @@
  * you to. Each is a modal dialog over the map; choosing a row hands its system back to the map,
  * which selects it and brings it to the centre.
  */
-import { SYSTEMS, getSystem } from '../data/systems.ts';
+import { MAP_SYSTEMS, getSystem } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { h, type Child } from '../ui/dom.ts';
 import { icon } from '../ui/icons.ts';
@@ -197,7 +197,7 @@ export function openSearchDialog(ctx: PickerContext): MapDialog {
     const here = state.currentSystemId;
     const hits = query
       ? searchSystems(query, { near: here })
-      : SYSTEMS.filter((sys) => sys.id !== here)
+      : MAP_SYSTEMS.filter((sys) => sys.id !== here)
           .map((sys) => ({ sys, ly: lyBetween(here, sys.id) }))
           .sort((a, b) => a.ly - b.ly)
           .slice(0, NEAREST_COUNT)
@@ -279,7 +279,7 @@ export function missionSystems(state: Pick<MapState, 'missions' | 'currentSystem
   for (const m of state.missions ?? []) {
     let g = bySystem.get(m.systemId);
     if (!g) {
-      const route = m.systemId === state.currentSystemId ? null : findRoute(SYSTEMS, state.currentSystemId, m.systemId, { canTake: laneTaker(state.jumpReach ?? 0) });
+      const route = m.systemId === state.currentSystemId ? null : findRoute(MAP_SYSTEMS, state.currentSystemId, m.systemId, { canTake: laneTaker(state.jumpReach ?? 0) });
       g = { systemId: m.systemId, missions: [], primary: false, jumps: m.systemId === state.currentSystemId ? 0 : route && route.hops.length ? route.hops.length : null };
       bySystem.set(m.systemId, g);
     }
