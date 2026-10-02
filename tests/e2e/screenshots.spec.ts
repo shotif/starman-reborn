@@ -521,6 +521,8 @@ for (const size of SIZES) {
       await shot(page, `${size.name}-16b-crew`, size.touch, results);
       await press(page, 'crew-engineer');
       await expect(page.getByTestId('crew-favour')).toBeVisible();
+      // The favour and its buttons in view, on a short screen too.
+      await page.getByTestId('crew-favour').evaluate((el) => el.scrollIntoView({ block: 'end' }));
       await shot(page, `${size.name}-16c-crew-favour`, size.touch, results);
       await press(page, 'crew-close');
       for (const [name, r] of Object.entries(results)) {
