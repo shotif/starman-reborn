@@ -12,7 +12,7 @@ import * as THREE from 'three';
 import { AudioEngine } from '../audio/AudioEngine.ts';
 import type { MusicMood, SfxId } from '../audio/types.ts';
 import { ALL_LOCATIONS, getComponent, getLocation, getPlanet, getSystem, hasProvisionalData, isInventedSystem, MAP_SYSTEMS, PYRE_ID, saveLocationsKey, SYSTEMS, WORLD } from '../data/systems.ts';
-import { edgeComm, edgeMoment, hopsToPyre, laneClosedReason, PYRE_HOLE_ID, pyreRefugeId, pyreStage, pyreStatus, scheduleEdge } from '../economy/doomed.ts';
+import { edgeComm, edgeMoment, edgeTimeline, hopsToPyre, laneClosedReason, PYRE_HOLE_ID, pyreRefugeId, pyreStage, pyreStatus, scheduleEdge } from '../economy/doomed.ts';
 import type { EdgeNewsKind } from '../content/stellar/doomedLines.ts';
 import type { SystemId } from '../data/types.ts';
 import { addCargo, cargoUsed, itemsThatFit } from '../economy/cargo.ts';
@@ -2110,6 +2110,19 @@ export class Game {
         if (!this.state || from === null) return null;
         const look = (id: string) => farStarLook(id, this.state!.clock, from);
         return { from, timeline: skyTimeline(from), betelgeuse: look('betelgeuse'), antares: look('antares') };
+      },
+      /** Test-only: when Pyre's warning comes in this save (docs/PROCGEN.md §26); the far stars' story must be set. */
+      edgeAt: (at: number) => {
+        if (!this.state?.world.sky) return false;
+        this.state.world.sky.edge = at;
+        this.station?.render();
+        return true;
+      },
+      /** Test-only: Pyre's timeline in this save, where it is in its story, and its black hole's glow. */
+      pyre: () => {
+        const edge = this.state?.world.sky?.edge;
+        if (!this.state || edge === undefined) return null;
+        return { edge, timeline: edgeTimeline(edge), stage: pyreStage(this.state.clock, edge), refuge: pyreRefugeId(), holeId: PYRE_HOLE_ID };
       },
       /** Test-only: the first bounty a rival hunter takes off a board from `from` on: where, which, when, and who. */
       findRivalClaim: (from: number) => {

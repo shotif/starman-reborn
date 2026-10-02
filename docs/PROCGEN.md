@@ -2268,8 +2268,7 @@ star is real and has not exploded (or collapsed); in flight, the star's target w
 **Fiction** badge from the moment its light arrives; the encyclopedia's *Far stars* says so too.
 
 The idea is that the sky itself can change under the player, with the science told straight. An
-invented star at the edge of the map whose death leaves a black hole to fly to is a later increment
-of its own (ROADMAP).
+invented star at the edge of the map whose death leaves a black hole to fly to is §26.
 
 ### 25.1 The far stars
 
@@ -2371,3 +2370,160 @@ accepted, a reading taken in the window and not stored twice, paid on return), p
 systems far enough apart, saves that keep it and refuse damaged ones, and the flight scene (the
 star a target with its distance in light-years and the Fiction badge, Observe offered and taken,
 never flown to, labelled fiction after it has faded).
+
+## 26. Stellar death II: a doomed star at the edge
+
+**Pyre** is the one star the game invents: a red supergiant just beyond the edge of the map, which
+explodes in each game some time after the pilot first reaches the frontier, its light sweeping
+across the map a light-year a minute, and whose core leaves a black hole a pilot can fly to
+(`src/economy/doomed.ts`, its physics in `src/economy/pyrePhysics.ts`; the rules in `DOOMED`,
+`src/content/stellar/doomed.ts`; what is said in `src/content/stellar/doomedLines.ts`). It is an
+exception chosen by the owner, as §25 is, and kept further apart still: it is held in the rules
+only, never written into the real sky's data (`src/data/generated`, `data/`) or given a source, and
+never in `SYSTEMS`, `ALL_LOCATIONS` or the world's jump network, so nothing built from the real map
+(lanes, owners, events, boards, timetables, prices) changes with it. `getSystem` and `getLocation`
+find it and its two stations; the star map, the jump rules and saves use `MAP_SYSTEMS`,
+`MAP_LINKS` and `KNOWN_SYSTEM_IDS`, which add it and its one lane. Wherever it shows it is labelled:
+each story in the News wears the **Fiction** badge and says *Fiction: there is no star called
+Pyre.*; its target in flight, its science card, its star-map label and card, the jump overlay, the
+map legend and the encyclopedia's *The invented star* all say it is invented.
+
+The idea: a star dies where a pilot can be, with real physics, and what is real behind it told
+straight.
+
+### 26.1 Where it is, and what it is
+
+Its place is invented: toward Phoenix (RA 357.5°, Dec −45.5°), 33 light-years from the Sun, at
+(23.11, −1.01, −23.54) ly in the map's frame. That is beyond the archives' census of the Sun's
+neighbourhood (everything with a parallax of at least 120 mas, out to 27.18 ly), so the map never
+claims a star the census lacks. The nearest real system is GJ 915, a white dwarf at the frontier's
+edge, 6.06 ly away (Fomalhaut B is next, at 11.9); one lane joins them, which needs the long-range
+jump drive. The game's numbers for it are those of a typical M2 supergiant: about 25 solar masses at
+birth, luminosity log L/L☉ = 5.35, a surface at 3,650 K (compare Levesque et al. 2005, ApJ 628, 973,
+for the temperatures of red supergiants), and a bolometric correction of −1.6 in V. From them, with
+the real physics:
+
+| | Worked out | |
+| --- | --- | --- |
+| Absolute magnitude (V) | M = 4.74 − 2.5 log L − BC | −7.0 |
+| Seen from Earth | m = M + 5 log₁₀(d / 10 pc) | −7.0, some seven times brighter than Venus at its brightest |
+| Seen from GJ 915 | | −10.7 |
+| Size | L ∝ R²T⁴ | about 1,180 times the Sun's |
+| Supernova's peak from Earth | Richardson et al. 2014's −16.75 at 33 ly | −16.7, some forty times the full Moon; from GJ 915, −20.4 |
+| Black hole (10 solar masses) | Schwarzschild radius 2GM/c² | 29.5 km (its horizon about 59 km across) |
+| Tides | a 10 m ship pulled apart at 10 g | within about 6,470 km |
+
+Most exploding stars are thought to leave a neutron star; which leave black holes depends on how
+their cores are built, and no supernova has yet been seen for certain to leave one. In this game
+Pyre's core falls back into a black hole, the less certain way, and the game says so.
+
+### 26.2 The timeline
+
+Each save holds one more number in its world log (`world.sky.edge`): when Pyre's warning comes.
+It is set once the far stars' story (§25) is under way and the pilot has reached the frontier: an
+hour after Antares has gone (`afterAntares`) and two hours after the first frontier system
+(`afterFrontier`), or half an hour after loading a save already past both (`afterLoad`). Everything
+follows from it and the clock:
+
+| Moment | After the warning | What happens |
+| --- | --- | --- |
+| Warning | 0 | Detectors at Pyre Observatory catch the neutrinos of a dying core: the observatory evacuates |
+| Collapse | 45 min | The core collapses: the lane closes to arrivals, the observatory closes |
+| Breakout | 50 min | The shock breaks out of the surface: the light leaves Pyre; a ship still in its system is carried out (26.4) |
+| Its light | 50 min + 1 min a light-year | It reaches GJ 915 six minutes later and the far side of the map within the hour (`secondsPerLy`) |
+| Lane open | 2 h | The debris has thinned: ships may jump to where it was (`laneOpensAfterBreakout`) |
+| Station open | 6 h | Pyre Remnant Station opens, well clear of the black hole (`stationOpensAfterBreakout`) |
+
+In each system's sky (§25's far-star art) Pyre shows from its warning, counting down to its light
+(*Its light arrives in m:ss*), then rises to its supernova over the same curve as Betelgeuse's
+(`STELLAR.supernova`), and fades to a remnant glow of absolute magnitude −1. Real time is compressed
+throughout: a core gives its neutrino warning hours to days before it collapses, the shock takes
+about a day to break out of a red supergiant, and light crosses a light-year in a year.
+
+### 26.3 What the world says, and markets
+
+- **The News** at every station tells each moment as it comes there, newest first: the warning, the
+  collapse, its light arriving and fading in that sky, the lane and the station opening (Pyre's own
+  stations tell no light arriving). Each story carries the Fiction line. When its light reaches
+  Sol, Sol's stations add what such a star would mean for Earth: a supernova could thin the ozone
+  layer if it went off within somewhere from 26 to 65 light-years (8 pc through its radiation,
+  Gehrels et al. 2003, ApJ 585, 1169; 20 pc through the cosmic rays that follow it, Fields et al.
+  2020, PNAS 117, 21008), any harm building over years to millennia.
+- **The radio** says the warning, the collapse, its light arriving where the pilot is and the lane
+  opening, in flight.
+- **Markets**: research stations pay 1.3 times the price for data cores and electronics from the
+  warning until it has faded in their own sky (`market`). Pyre's two stations have market tables
+  of their own, priced like everyone's through its one lane, never anyone else's makers.
+- **The star map** marks Pyre: a **Fiction** tag on its label, a dashed ring on the flat map, a legend
+  line (*Pyre: an invented star, not in the real sky*), and a card that shows nothing as observed,
+  says it is invented and how things stand there now (`pyreStatus`). The jump overlay badges its
+  distance *Invented*; a jump that would arrive from the collapse until the lane opens is refused
+  with the reason, counting the time the jump takes (`laneClosedReason`).
+
+### 26.4 Its system, and its black hole
+
+While it lives, its system holds the star (drawn as a red supergiant far smaller than one would be,
+with a slow pulse) and Pyre Observatory at a wary distance; nothing else, no traffic, no raiders.
+After the breakout the scene is the black hole (`PYRE_GONE_SCENE`, `src/world/art/blackHole.ts`):
+a black shadow, the thin bright ring of light bent round it, a disc of the star's gas still falling
+back in, and the glowing cloud of its outer layers all round; and Pyre Remnant Station well clear of
+it. The gas glows less and less: the rate at which a star's gas falls back drops as time to the power
+−5/3 (Chevalier 1989, ApJ 346, 847), and its glow is drawn following it, full when the lane opens
+(`fallbackDecay`). Nothing is pulled in from afar: away from it, its pull is no stronger than that
+of a star of the same mass.
+
+- **Its tides**: a faint dashed ring marks where they begin (drawn at 11,000 units, far nearer than
+  the real 6,470 km would be at the scene's scale). Inside it the hull strains, 3 points a second at
+  its edge and more as the cube of how much nearer the ship goes (`hullStrainPerSecond`); shields are
+  no help. A ship that reaches the shadow is lost. The autopilot never takes a ship inside: flying
+  to the hole it stops 600 units beyond the ring, and it steers round the ring on any other way.
+- **Caught at the breakout**: a ship still in Pyre's system when its light leaves is carried out
+  through the lane to GJ 915 Freeport by its emergency drive, repaired, charged as a rescue (at most
+  150 cr), its cargo and passengers kept; the card says *Fiction: no ship this near an exploding star
+  would live through it.* A pilot whose last dock was Pyre's observatory, lost after it closed, comes
+  round at GJ 915 Freeport too (`rescueDockId`).
+- **Docking**: the observatory refuses ships once evacuated, the remnant station until it opens.
+- **Scanning** Pyre or its black hole opens a science card (`src/ui/screens/pyreCard.ts`) that says
+  it is invented and gives its numbers from 26.1. Neither joins the codex.
+
+### 26.5 Its work
+
+| Job | Posted at | From – until | What | Pay |
+| --- | --- | --- | --- | --- |
+| The last of Pyre | Every research station | Warning – breakout | Observe Pyre from open space anywhere, then back to the station | 1,400 cr |
+| Out of Pyre's reach | Pyre Observatory | Warning – collapse | Carry two or three observers to GJ 915 Freeport (a passage: a berth each) | 2,800 cr |
+| First light, twice | Research stations within three jumps of GJ 915 | Warning – its light reaching the station | See its first light from two systems, each within 3 minutes of its arrival there, the second at least 2 ly farther from Pyre: outrun the light through a lane | 3,600 cr |
+| Read the black hole | Those stations from the lane opening, Pyre Remnant Station once open | Until its gas glows at less than 5% (about 7 hours after the breakout) | Scan the black hole from outside its tides, then back | 2,400 cr |
+
+Each is on a board only from its moment until it lapses (`contract.posted`, `contract.until`), with
+ids of their own (`.pyre-<kind>`). Pyre's stations post only Pyre's work. Observations use §25's
+**Observe** (Pyre in another system's sky) and **Scan** (Pyre in its own system, or its black hole);
+observers carried out with a ship caught at the breakout count as delivered at GJ 915 Freeport.
+
+### 26.6 One save's own
+
+The warning is kept in the save's world log, so a game loaded again has the same story. Saves may be
+in Pyre's system or docked at its stations; they refuse a warning before Antares has gone
+(`src/app/save/migrate.ts`).
+
+### 26.7 Guardrails
+
+`validateDoomed` (`src/economy/doomedGuards.ts`, run in `tests/unit/doomed.test.ts`): kept apart
+(no id or name of the game's, nothing like a catalogue name, not in the jump network); beyond the
+census by three light-years and within 40; its anchor the nearest system, in the frontier, with fewer
+than five lanes, and clearly nearest, within a first long-range drive's reach; a red supergiant's
+mass, absolute magnitude and size, enough mass to leave its black hole; brighter than Venus from
+Earth; its supernova between the full Moon and the Sun in every system's sky, and its remnant fainter;
+tides that tear a ship apart outside the horizon; a hull strain and a fading glow in range; a
+timeline that runs forward, after Antares, its lane opening after the peak and its station after the
+fade, and its light crossing the map within two hours; prices in range; work under the contracts'
+ceiling, a party the passages take, a lane near it a pilot can outrun its light through, and gas
+still glowing when its station opens; Earth's ozone estimates in order; and no line with a number of
+its own or a field it cannot fill. The contract guardrails check every piece of its work (Pyre's
+stations reaching the world through its one lane). The tests also break the rules to see them
+caught, check that its id and name are in none of the real sky's data files, and check the physics,
+the timeline, how it looks from each system, the News, radio and prices, saves, its own system alive
+and gone (the black hole a fiction target, its tides an obstacle, the hull strained inside them, the
+ship lost at the shadow, the autopilot stopping outside), the breakout rescue, the lane closing, the
+rescue dock, its work (where and when posted, sound by the guardrails, shown only while posted, paid,
+first light counted only fresh and farther out), its stations' markets, and its status line.

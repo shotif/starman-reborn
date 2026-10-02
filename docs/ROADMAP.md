@@ -9,12 +9,13 @@ After the scripted opening (10–20 minutes), the neighbourhood is an open sandb
 systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
 of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
 packs in lawless space; 39 ships and 146 pieces of equipment; and generated contracts on every job
-board. Increments 1–24 (under [Done so far](#done-so-far)) added world events and news, contracts
+board. Increments 1–25 (under [Done so far](#done-so-far)) added world events and news, contracts
 of every kind, the law and the outlaw path, goals, five story arcs, combat depth, people in the
 bars and a trade computer, a world that answers, gluts that ship their surplus out and relief to
 escort through raided lanes, a fleet of your own whose captains fly the lanes,
 a station of your own, passengers and sightseers, rival pilots with careers of their own, a
-supernova in every sky (as fiction), mining in the real belts, the frontier with a life of its own,
+supernova in every sky (as fiction), an invented star at the map's edge that explodes and leaves a
+black hole to fly to (fiction too), mining in the real belts, the frontier with a life of its own,
 a border war whose fronts can be won for good, story endings that change stations for good, escorts
 and convoys across jumps, haulers with real cargo on a timetable, and a game measured and tuned on a
 real phone.
@@ -27,20 +28,9 @@ What it lacks now:
 
 ## Proposed next increments
 
-Candidates for what comes next, in the order they will be built. Stellar death was chosen by the
-owner on 1 October 2026 (with A station of your own, Passengers and sightseers and Rival pilots, all
-now done), the far stars first (done, increment 23) and a doomed star at the edge later, as an
-increment of its own; Lane encounters, Rival stories, Defend your outpost and Your crew on
-2 October 2026, to make the game more engaging.
-
-### Stellar death: a doomed star at the edge ⏳ (L)
-
-The second half of stellar death. No real star within the map can go supernova (none is massive
-enough), and the nearest known black hole, Gaia BH1, is about 1,560 light-years away, so this one
-is invented outright: a massive star at the edge of the map, labelled as fiction wherever it
-appears and never written into the real sky's data or its sources, whose death leaves a black hole
-the player can fly to. The real far stars' deaths (increment 23) show how such an event is told
-and labelled.
+Candidates for what comes next, in the order they will be built. Lane encounters, Rival stories,
+Defend your outpost and Your crew were chosen by the owner on 2 October 2026, to make the game more
+engaging.
 
 ### Lane encounters ⏳ (M)
 
@@ -78,6 +68,25 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 25. Stellar death II: a doomed star at the edge ✅
+
+No real star within the map can go supernova, and the nearest known black hole is about 1,560
+light-years away, so this one is invented outright, an exception chosen by the owner: **Pyre**, a
+red supergiant just beyond the edge of the real census of the Sun's neighbourhood, 33 light-years
+away toward Phoenix, reached by one lane from GJ 915 with the long-range drive. It is labelled as
+fiction wherever it shows (*Fiction: there is no star called Pyre.*) and never written into the real
+sky's data. Some hours after you first reach the frontier, its observatory's neutrino alarm sounds:
+the observatory evacuates and wants its last observers carried out, and research stations want a
+last record of the star. Fifty minutes later it explodes; a ship still there is carried out by its
+emergency drive (fiction again). Its light then sweeps across the map a light-year a minute,
+peaking in each sky in turn at magnitude −20.4 at GJ 915 and −16.7 from Earth, every number worked out
+from its invented mass, luminosity and temperature with the real physics; the institutes near it
+want its first light seen twice, outrunning it through a lane. Once the debris has thinned, its lane
+opens on a black hole: a dark shadow ringed with bent light, feeding on a fading disc of the star's
+gas, whose tides strain a hull that goes too near. Read it for the institutes, and later dock at the
+remnant station built well clear of it. The star map, the News, the radio, the markets and the
+encyclopedia all tell it ([PROCGEN.md §26](PROCGEN.md#26-stellar-death-ii-a-doomed-star-at-the-edge)).
 
 ### 24. Gluts that ship out ✅
 

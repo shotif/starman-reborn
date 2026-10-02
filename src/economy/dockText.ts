@@ -1,4 +1,5 @@
 import type { GameState } from '../app/state.ts';
+import { pyreWelcome } from './doomed.ts';
 import { getLocation } from '../data/systems.ts';
 import { standingTier } from './factions.ts';
 import { occupied } from './border.ts';
@@ -50,6 +51,9 @@ export function welcomeText(state: GameState, locationId: string): { text: strin
   if (dockAccess(state, locationId) === 'emergency') {
     return { text: `${loc.name} traffic control: you are flagged. Emergency berth only: repairs, and the customs desk if you mean to settle up.`, improved: false };
   }
+  // Pyre's stations (docs/PROCGEN.md §26), as its story stands.
+  const pyre = pyreWelcome(locationId, state.clock, state.world.sky?.edge ?? null);
+  if (pyre) return { text: pyre, improved: false };
   const lines = WELCOME[locationId];
   if (!lines) return { text: `${getLocation(locationId).name}: docking complete.`, improved: false };
   const faction = getLocation(locationId).factionId;

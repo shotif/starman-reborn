@@ -1,5 +1,5 @@
 import { DOOMED, type DoomedRules } from '../content/stellar/doomed.ts';
-import { EDGE_COMMS, EDGE_EARTH, EDGE_FICTION, EDGE_JOBS, EDGE_NEWS } from '../content/stellar/doomedLines.ts';
+import { EDGE_COMMS, EDGE_EARTH, EDGE_FICTION, EDGE_JOBS, EDGE_NEWS, EDGE_WELCOME } from '../content/stellar/doomedLines.ts';
 import { EVENTS } from '../content/events/rules.ts';
 import { PASSENGERS } from '../content/passengers/rules.ts';
 import { jumpsFrom } from '../content/world/network.ts';
@@ -106,6 +106,7 @@ export function validateDoomed(rules: DoomedRules = DOOMED): Issue[] {
   check('earth', EDGE_EARTH.headline, fields);
   check('earth', EDGE_EARTH.detail, fields);
   check('fiction', EDGE_FICTION, ['star']);
+  for (const [kind, line] of Object.entries(EDGE_WELCOME)) check(`welcome.${kind}`, line, ['star']);
   for (const [kind, l] of Object.entries(EDGE_JOBS)) for (const text of [l.title, l.briefing, l.objective]) check(`jobs.${kind}`, text, ['star', 'anchor', 'refuge', 'party', 'giver', 'firstLight', 'ahead']);
 
   // Its work: under the contracts' ceiling, a party the passages take, a first light a pilot can see

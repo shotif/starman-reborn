@@ -82,5 +82,12 @@ export const EDGE_JOBS = {
   },
 } as const;
 
+/** What Pyre's stations say as a ship docks: the observatory while the star lives, and as it evacuates; the station built after. */
+export const EDGE_WELCOME = {
+  observatory: 'welcome aboard. {star} fills every window on its side of the station: the reddest light you will ever see.',
+  evacuating: 'the neutrino alarm is sounding and we are leaving. If you have berths, our last observers need them.',
+  remnant: 'welcome. We keep well clear of the black hole where {star} was, and so should you.',
+} as const;
+
 /** Said with every story of Pyre. */
 export const EDGE_FICTION = 'Fiction: there is no star called {star}.';

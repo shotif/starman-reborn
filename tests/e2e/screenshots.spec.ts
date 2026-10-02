@@ -351,6 +351,53 @@ for (const size of SIZES) {
       await page.getByTestId(`news-${glut.eventId}`).evaluate((el) => el.scrollIntoView({ block: 'start' }));
       await expect(page.locator('.toast')).toHaveCount(0, { timeout: 15_000 });
       await shot(page, `${size.name}-11-glut-news`, size.touch, results);
+      // Pyre, the invented star (docs/PROCGEN.md §26): its alarm in the News at its observatory, the star in flight
+      // marked as invented, the ship carried out when it explodes, its black hole, and its card on the star map.
+      const sky2 = (await api<{ timeline: { bhGone: number } }>(page, 'sky'))!;
+      const edgeNow = (await api<{ clock: number }>(page, 'state')).clock;
+      expect(await api<boolean>(page, 'edgeAt', Math.max(edgeNow, sky2.timeline.bhGone) + 60)).toBe(true);
+      const pyre = (await api<{ timeline: { warning: number; breakout: number; laneOpens: number }; holeId: string }>(page, 'pyre'))!;
+      await api(page, 'advanceClock', pyre.timeline.warning + 90 - edgeNow);
+      await docked('pyre-observatory');
+      await press(page, 'room-bar');
+      if (!(await page.getByTestId('news-window').isVisible().catch(() => false))) await press(page, 'station-news');
+      await page.getByTestId('edge-news').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 15_000 });
+      await shot(page, `${size.name}-12-pyre-news`, size.touch, results);
+      await press(page, 'dock-launch');
+      if (await page.getByTestId('sheet-close').isVisible().catch(() => false)) await press(page, 'sheet-close');
+      await waitUntil(page, 'undocked', async () => {
+        const ok = page.getByTestId('discovery-ok').last();
+        if (await ok.isVisible().catch(() => false)) await ok.click({ timeout: 2_000 }).catch(() => {});
+        return (await api<{ autopilot: string } | null>(page, 'player'))?.autopilot === 'none';
+      });
+      await api(page, 'selectTarget', 'star:pyre');
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      expect(await api<boolean>(page, 'face', { id: 'star:pyre', below: size.height < 500 ? 4 : 9 })).toBe(true);
+      await shot(page, `${size.name}-12b-pyre-flight`, size.touch, results);
+      await api(page, 'advanceClock', pyre.timeline.breakout + 2 - (await api<{ clock: number }>(page, 'state')).clock);
+      await expect(page.getByTestId('pyre-rescue-dialog')).toBeVisible();
+      await shot(page, `${size.name}-12c-pyre-rescue`, size.touch, results);
+      await press(page, 'pyre-rescue-ok');
+      await waitUntil(page, 'carried out', async () => (await api(page, 'mode')) === 'docked');
+      for (let i = 0; i < 6 && (await page.getByTestId('story-continue').isVisible().catch(() => false)); i++) await press(page, 'story-continue');
+      await api(page, 'advanceClock', pyre.timeline.laneOpens + 60 - (await api<{ clock: number }>(page, 'state')).clock);
+      await api(page, 'warp', 'pyre');
+      await waitUntil(page, 'at Pyre', async () => (await api(page, 'mode')) === 'flight');
+      if (await page.getByTestId('sheet-close').isVisible().catch(() => false)) await press(page, 'sheet-close');
+      await api(page, 'selectTarget', `hole:${pyre.holeId}`);
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      expect(await api<boolean>(page, 'face', { id: `hole:${pyre.holeId}`, below: size.height < 500 ? 3 : 6 })).toBe(true);
+      await shot(page, `${size.name}-12d-black-hole`, size.touch, results);
+      await press(page, 'hud-map');
+      await press(page, 'map-search');
+      await page.getByTestId('map-search-input').fill('pyre');
+      await press(page, 'map-search-result-pyre');
+      await expect(page.locator('.gmap-card-title')).toHaveText('Pyre');
+      await expect(page.getByTestId('gmap-invented')).toBeAttached();
+      await page.waitForTimeout(800);
+      await shot(page, `${size.name}-12e-pyre-map`, size.touch, results);
+      await press(page, 'map-close');
       for (const [name, r] of Object.entries(results)) {
         expect.soft(r.overflow, `${name}: page overflow`).toBe(false);
         expect.soft(r.clipped, `${name}: clipped controls`).toEqual([]);

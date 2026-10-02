@@ -35,6 +35,7 @@ import {
   hopsToPyre,
   nearPyre,
   pyreStatus,
+  pyreWelcome,
   laneClosedReason,
   PYRE_HOLE_ID,
   pyreDockRefusal,
@@ -617,5 +618,10 @@ describe('its work', () => {
     expect(pyreStatus(T.stationOpens + 1, EDGE)).toMatch(/Remnant Station is open/);
     // Its own News tells of no light arriving there.
     expect(edgeNews('pyre' as SystemId, T.stationOpens + 1, EDGE).map((n) => n.kind)).not.toContain('light');
+    // Its stations greet a ship as its story stands.
+    expect(pyreWelcome(DOOMED.stations.observatory.id, EDGE - 1, EDGE)).toMatch(/^Pyre Observatory: .*reddest light/);
+    expect(pyreWelcome(DOOMED.stations.observatory.id, EDGE + 1, EDGE)).toMatch(/alarm is sounding/);
+    expect(pyreWelcome(DOOMED.stations.remnant.id, T.stationOpens, EDGE)).toMatch(/well clear of the black hole where Pyre was/);
+    expect(pyreWelcome('earth-port', EDGE, EDGE)).toBeNull();
   });
 });

@@ -183,19 +183,19 @@ export class InfoCard {
           state.inventedNote ? h('p', { 'data-testid': 'gmap-invented-note' }, state.inventedNote) : null,
         )
       : h(
-      'section',
-      { class: 'gmap-sec gmap-sec-observed', 'aria-labelledby': `${this.ids.title}-obs` },
-      badgeHeading('h3', 'Observed', 'observed', `${this.ids.title}-obs`, observedMark(system, 'all')),
-      h('p', { class: 'gmap-summary' }, system.summary),
-      positionList(system, 'compact'),
-      h('h4', null, systemId === 'sol' ? 'Star' : 'Stars'),
-      componentList(systemId, 'compact'),
-      h('h4', null, systemId === 'sol' ? 'Planets' : 'Confirmed planets'),
-      planetBlock(system, state.discoveredBodies, 'compact'),
-      beltsOf(systemId).length ? [h('h4', null, 'Belts and debris discs'), beltBlock(systemId, 'compact')] : null,
-      h('h4', null, 'Facts'),
-      factList(system),
-    );
+          'section',
+          { class: 'gmap-sec gmap-sec-observed', 'aria-labelledby': `${this.ids.title}-obs` },
+          badgeHeading('h3', 'Observed', 'observed', `${this.ids.title}-obs`, observedMark(system, 'all')),
+          h('p', { class: 'gmap-summary' }, system.summary),
+          positionList(system, 'compact'),
+          h('h4', null, systemId === 'sol' ? 'Star' : 'Stars'),
+          componentList(systemId, 'compact'),
+          h('h4', null, systemId === 'sol' ? 'Planets' : 'Confirmed planets'),
+          planetBlock(system, state.discoveredBodies, 'compact'),
+          beltsOf(systemId).length ? [h('h4', null, 'Belts and debris discs'), beltBlock(systemId, 'compact')] : null,
+          h('h4', null, 'Facts'),
+          factList(system),
+        );
     const fiction = h(
       'section',
       { class: 'gmap-sec gmap-sec-fiction', 'aria-labelledby': `${this.ids.title}-fic` },

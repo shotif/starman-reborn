@@ -120,8 +120,17 @@ snapshot branch only when the archives changed.
   research stations' prices and observation work (no radiation, no new nebula to fly to, no change
   to the star map). The far stars appear in the sky and the encyclopedia but not on the star map.
   Their values are provisional (HYG v4.0) until a snapshot checks them. A reading is taken with the
-  action button from anywhere in flight, whichever way the ship is pointing. The doomed star at the
-  edge, with a black hole to fly to, is still to come (ROADMAP).
+  action button from anywhere in flight, whichever way the ship is pointing.
+- Pyre, the invented star at the edge (PROCGEN §26), dies once a save, on a timeline compressed from
+  days and years to minutes and hours. Its black hole is drawn schematically: a black sphere, a ring
+  and a disc, with no bending of the sky behind it (no gravitational lensing) and no knots or
+  filaments of the remnant to fly through; the remnant is a coloured sky. Its tides are the only
+  danger there: no radiation drains shields, and the explosion does nothing to other systems beyond
+  their sky, the News, the radio, prices and work. Its system has no traffic, raiders or rival pilots,
+  and no hauler, captain or event ever goes there. Its light reaches each system on the map in turn,
+  but Betelgeuse's and Antares' still reach every system at once. On the 3D star map its label says
+  Fiction, but only the flat map draws a dashed ring round it. A pilot docked when a moment comes
+  hears of it in the News, not on the radio (the clock stands still while docked).
 - Traffic and raider packs exist only around the player. Packs that saw the player and cargo pods
   left adrift wait for 30 minutes of game clock (in the last six systems), as do the packs and
   wrecks of the player's own contracts; everything else is generated again on arrival.

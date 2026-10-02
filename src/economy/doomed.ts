@@ -1,7 +1,7 @@
 import type { GameState } from '../app/state.ts';
 import type { CommodityId } from '../content/economy/goods.ts';
 import { DOOMED } from '../content/stellar/doomed.ts';
-import { EDGE_COMMS, EDGE_JOBS, EDGE_NEWS, EDGE_SPEAKER, type EdgeNewsKind } from '../content/stellar/doomedLines.ts';
+import { EDGE_COMMS, EDGE_JOBS, EDGE_NEWS, EDGE_SPEAKER, EDGE_WELCOME, type EdgeNewsKind } from '../content/stellar/doomedLines.ts';
 import { STELLAR } from '../content/stellar/rules.ts';
 import { EVENTS } from '../content/events/rules.ts';
 import { jumpsFrom } from '../content/world/network.ts';
@@ -272,6 +272,14 @@ export function edgeMoment(systemId: SystemId, clock: number, edge: number | nul
   let last: EdgeNewsKind | null = null;
   for (const [kind, at] of moments(systemId, edge)) if (at <= clock) last = kind;
   return last;
+}
+
+/** What one of Pyre's stations says as a ship docks, as the star's story stands; null for any other station. */
+export function pyreWelcome(locationId: string, clock: number, edge: number | null = activeEdge()): string | null {
+  const isObservatory = locationId === DOOMED.stations.observatory.id;
+  if (!isObservatory && locationId !== DOOMED.stations.remnant.id) return null;
+  const line = !isObservatory ? EDGE_WELCOME.remnant : pyreStage(clock, edge) === 'alive' ? EDGE_WELCOME.observatory : EDGE_WELCOME.evacuating;
+  return `${getLocation(locationId).name}: ${fillEdge(line)}`;
 }
 
 /** What the stations say over the radio when a moment comes, if anything. */

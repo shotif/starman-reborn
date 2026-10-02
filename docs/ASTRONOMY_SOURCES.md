@@ -318,8 +318,8 @@ story text are original game fiction. They always carry a **Fiction** badge in t
 legend reads: *"Star positions and distances based on astronomical data; travel technology and
 local scale are fictional."*
 
-**Stellar death** is the one place the game invents an astronomical event, an exception chosen by
-the owner: in each save Betelgeuse explodes as a supernova, and later Antares collapses into a black
+**Stellar death** is the one place the game invents astronomy, two exceptions chosen by the owner.
+First, in each save Betelgeuse explodes as a supernova, and later Antares collapses into a black
 hole and goes out ([PROCGEN.md §25](PROCGEN.md#25-stellar-death-as-fiction)). Neither has happened.
 The stars' places, distances and brightness stay the catalogue's; the event is applied on top in the
 save's own timeline and is never written into the data or its sources. Every story in the News wears
@@ -327,3 +327,20 @@ the **Fiction** badge and says that the star is real and has not exploded (or co
 star's target in flight wears the **Fiction** badge; and the encyclopedia's *Far stars* says what is
 fiction. The supernova's peak brightness is worked out, not invented: a typical Type II-P supernova's
 peak absolute magnitude, −16.75 (Richardson et al. 2014, AJ 147, 118), at the star's cited distance.
+
+Second, **Pyre** is an invented star: a red supergiant placed beyond the archives' census of the
+Sun's neighbourhood (33 light-years away, where the census of everything with a parallax of at
+least 120 mas stops at 27.18), so the map never claims a star the census lacks. Each save, some hours
+after the pilot first reaches the frontier, it explodes and leaves a black hole the pilot can fly to
+([PROCGEN.md §26](PROCGEN.md#26-stellar-death-ii-a-doomed-star-at-the-edge)). It is held in the
+game's rules only (`src/content/stellar/doomed.ts`), never in the sky snapshot, the generated data
+or their sources, and the tests check that none of those files names it. Everything that shows it
+says it is invented: *Fiction: there is no star called Pyre.* Its numbers are worked out with real
+physics from invented values typical of an M2 supergiant (25 solar masses, log L/L☉ = 5.35, 3,650 K;
+compare Levesque et al. 2005, ApJ 628, 973): absolute magnitude −7.0, about 1,180 times the Sun's
+size, a supernova peaking at −16.7 from Earth (Richardson et al. 2014's typical peak), and a black
+hole of ten solar masses 59 km across whose tides would pull a 10 m ship apart within about 6,470 km.
+The fading of its black hole's infalling gas follows the fallback rate's t^−5/3 (Chevalier 1989, ApJ
+346, 847), and what such a supernova would mean for Earth is told as the published estimates: ozone
+thinned within somewhere from 8 pc (Gehrels et al. 2003, ApJ 585, 1169) to 20 pc (Fields et al. 2020,
+PNAS 117, 21008). What is real: no star near enough to harm Earth is known to be about to explode.
