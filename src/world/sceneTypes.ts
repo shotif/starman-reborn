@@ -131,6 +131,27 @@ export interface EncounterDef {
   bounty: number;
 }
 
+/**
+ * The black hole where Pyre was (docs/PROCGEN.md §26), drawn far larger than a real one: its
+ * shadow, the disc of gas still falling back in, and the zone where its tides strain a hull (drawn
+ * far smaller than the real one, like every distance in a scene).
+ */
+export interface SceneBlackHoleDef {
+  /** Body id (its science card). */
+  id: string;
+  name: string;
+  subtitle: string;
+  position: THREE.Vector3;
+  /** Radius of the shadow, units: a ship that reaches it is lost. */
+  shadow: number;
+  /** The disc of gas falling back in: inner and outer radius, units. */
+  disc: readonly [number, number];
+  /** Inside this the tides strain a ship's hull, more the nearer it goes; the autopilot stops outside. */
+  tidalRadius: number;
+  /** The glow of the infalling gas as a light: colour and intensity at full glow. */
+  glow: { color: string; light: number };
+}
+
 /** Harmless target drones for aiming practice (no reward). */
 export interface PracticeRangeDef {
   center: THREE.Vector3;
@@ -153,6 +174,8 @@ export interface SystemSceneDef {
   scanZones: SceneScanZone[];
   encounters: EncounterDef[];
   practice?: PracticeRangeDef;
+  /** A black hole (Pyre's, once it has gone: docs/PROCGEN.md §26). */
+  blackHole?: SceneBlackHoleDef;
   /** Where ships appear after a jump, and what they face. */
   arrival: { position: THREE.Vector3; lookAt: THREE.Vector3 };
   /** Draw faint schematic orbit lines around the host star. */

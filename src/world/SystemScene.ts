@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { Obstacle } from '../flight/autopilot.ts';
 import { getLocation, isInventedSystem } from '../data/systems.ts';
 import { createAsteroidField, createDustRing, type AsteroidFieldArt, type AsteroidHit } from './art/asteroids.ts';
+import { createBlackHole, type BlackHoleArt } from './art/blackHole.ts';
 import { createPlanet, type PlanetArt } from './art/planets.ts';
 import { createSkybox } from './art/skybox.ts';
 import { createStar, type StarArt } from './art/stars.ts';
@@ -9,13 +10,22 @@ import { createStation, type StationArt } from './art/stations.ts';
 import { createGeneratedStation } from './art/stationgen/index.ts';
 import { createJumpBeacon, createLaneRing, createNavBuoy, type LaneRingArt } from './art/structures.ts';
 import type { ArtContext, ArtObject } from './art/types.ts';
-import type { SceneLaneDef, ScenePlanetDef, SceneStarDef, SceneStationDef, SystemSceneDef } from './sceneTypes.ts';
+import type { SceneBlackHoleDef, SceneLaneDef, ScenePlanetDef, SceneStarDef, SceneStationDef, SystemSceneDef } from './sceneTypes.ts';
 import type { Target } from './targets.ts';
 
 export interface StarRuntime {
   def: SceneStarDef;
   art: StarArt;
   light: THREE.DirectionalLight;
+}
+
+/** The black hole where Pyre was (docs/PROCGEN.md §26), and the light of its infalling gas. */
+export interface BlackHoleRuntime {
+  def: SceneBlackHoleDef;
+  art: BlackHoleArt;
+  light: THREE.DirectionalLight;
+  /** How brightly the infalling gas glows now, 0–1 (set by the flight from the clock). */
+  glow: number;
 }
 
 export interface PlanetRuntime {
@@ -60,6 +70,7 @@ export class SystemScene {
   readonly lanes: LaneRuntime[] = [];
   readonly belts: AsteroidFieldArt[] = [];
   readonly targets: Target[] = [];
+  readonly blackHole: BlackHoleRuntime | null = null;
   private readonly arts: ArtObject[] = [];
   private readonly hemi: THREE.HemisphereLight;
   private time = 0;
@@ -108,6 +119,17 @@ export class SystemScene {
         alive: true,
         cycle: true,
       });
+    }
+
+    if (def.blackHole) {
+      const b = def.blackHole;
+      const art = createBlackHole({ shadow: b.shadow, disc: b.disc, zone: b.tidalRadius, seed: 11 }, ctx);
+      art.object.position.copy(b.position);
+      this.add(art);
+      const light = new THREE.DirectionalLight(b.glow.color, b.glow.light);
+      this.scene.add(light, light.target);
+      this.blackHole = { def: b, art, light, glow: 1 };
+      this.targets.push({ id: `hole:${b.id}`, name: b.name, kind: 'hole', position: b.position, radius: b.shadow, subtitle: b.subtitle, dataClass: 'fictional', bodyId: b.id, alive: true, cycle: true });
     }
 
     const starById = new Map(def.stars.map((s) => [s.id, s]));
@@ -330,6 +352,14 @@ export class SystemScene {
       s.light.position.copy(focus).addScaledVector(this.tmp, 1000);
       s.light.target.position.copy(focus);
     }
+    const b = this.blackHole;
+    if (b) {
+      b.art.setFallback(b.glow);
+      b.light.intensity = b.def.glow.light * (0.2 + 0.8 * b.glow);
+      this.tmp.copy(b.def.position).sub(focus).normalize();
+      b.light.position.copy(focus).addScaledVector(this.tmp, 1000);
+      b.light.target.position.copy(focus);
+    }
   }
 
   setLaneActive(laneId: string, active: boolean): void {
@@ -343,6 +373,8 @@ export class SystemScene {
   obstacles(exceptId: string | null): Obstacle[] {
     const list: Obstacle[] = [];
     for (const s of this.stars) list.push({ id: `star:${s.def.id}`, center: s.def.position, radius: s.def.radius * 1.3 });
+    // The autopilot keeps out of a black hole's tides (flying to it, it stops outside them).
+    if (this.blackHole && `hole:${this.blackHole.def.id}` !== exceptId) list.push({ id: `hole:${this.blackHole.def.id}`, center: this.blackHole.def.position, radius: this.blackHole.def.tidalRadius });
     for (const p of this.planets) if (`planet:${p.def.id}` !== exceptId) list.push({ id: `planet:${p.def.id}`, center: p.def.position, radius: p.def.radius });
     for (const d of this.docks) if (`station:${d.def.locationId}` !== exceptId) list.push({ id: `station:${d.def.locationId}`, center: d.def.position, radius: d.radius });
     return list;

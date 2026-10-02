@@ -66,7 +66,7 @@ import { sightInView } from './sightseeing.ts';
 import { createFarStars, type FarStarsArt } from './art/farStars.ts';
 import { STELLAR } from '../content/stellar/rules.ts';
 import { farStarLook, magnitudeText, observationsWanted, skyDirection, skyDirectionTo, skyPhase } from '../economy/stellar.ts';
-import { lightArrives, lyFromPyre, pyreLook } from '../economy/doomed.ts';
+import { fallbackGlow, lightArrives, lyFromPyre, pyreDockRefusal, pyreLook, pyreStage, tidalStrain } from '../economy/doomed.ts';
 import { activeEdge } from '../economy/events.ts';
 import { haulsIn, type Haul, type HaulHere, type HaulLeg } from '../economy/hauls.ts';
 import { FLEET } from '../content/fleet/rules.ts';
@@ -116,6 +116,8 @@ export interface FlightCallbacks {
   onRival?(rivalId: string, what: 'met' | 'shot' | 'destroyed', detail?: { hostile?: boolean; by?: 'player' | 'raiders' }): void;
   /** The player observed a far star (docs/PROCGEN.md §25), its target selected: the game records it for the contracts that want it. */
   onObserve?(starId: string): void;
+  /** Pyre exploded with the player still in its system (docs/PROCGEN.md §26): the game carries the ship out. */
+  onPyreBreakout?(): void;
   /** The ship of an escort contract docked at its destination. */
   onEscortArrived?(jobId: string): void;
   /** The ship of an escort contract was destroyed. */
@@ -373,7 +375,7 @@ function boltKind(type: DamageType, tier: number): ProjectileKind {
 
 /** Targets whose distance is shown to their surface rather than their centre (a belt's is to its band of rock). */
 function surfaced(kind: Target['kind']): boolean {
-  return kind === 'planet' || kind === 'star' || kind === 'rock';
+  return kind === 'planet' || kind === 'star' || kind === 'rock' || kind === 'hole';
 }
 
 function easeInOut(t: number): number {
@@ -464,6 +466,10 @@ export class FlightSession {
   private reactorWarned = -99;
   /** Screen-edge flashes after hits (0–1, fading). */
   private hullFlash = 0;
+  /** In the black hole's tidal zone (docs/PROCGEN.md §26), warned once on the way in. */
+  private inTides = false;
+  /** Caught by Pyre's explosion: the game has been told. */
+  private pyreCaught = false;
   private shieldFlash = 0;
   /** Mines drifting in the system, and decoy flares burning behind the player. */
   private readonly mines: Mine[] = [];
@@ -1017,7 +1023,7 @@ export class FlightSession {
     if (lane && lane.distance < LANE_ENTER_RANGE) return { label: 'Enter lane', action: 'interact', icon: 'cruise' };
     // A far star is observed from wherever the ship is, when a contract wants it now; it is never flown to.
     if (sel?.kind === 'sky') return observationsWanted(this.state, sel.id.slice('sky:'.length)).length ? { label: 'Observe', action: 'scan', icon: 'scan' } : null;
-    if (sel && (sel.kind === 'planet' || sel.kind === 'star') && sel.position.distanceTo(this.player.position) < this.scanRangeFor(sel) * 3) {
+    if (sel && (sel.kind === 'planet' || sel.kind === 'star' || sel.kind === 'hole') && sel.position.distanceTo(this.player.position) < this.scanRangeFor(sel) * 3) {
       return { label: 'Scan', action: 'scan', icon: 'scan' };
     }
     // A rock in scan range that has not been read; a belt once the ship is at it (Go to comes first).
@@ -1062,6 +1068,13 @@ export class FlightSession {
   private beginDock(site: DockSite): void {
     if (this.hostilesNearby(2_200)) {
       this.callbacks.onMessage('Docking refused: hostile contact nearby.', 'bad');
+      this.sfx('ui-error');
+      return;
+    }
+    // Pyre's observatory is evacuated at its collapse; its remnant station opens late (docs/PROCGEN.md §26).
+    const shut = pyreDockRefusal(site.def.locationId, this.state.clock);
+    if (shut) {
+      this.callbacks.onMessage(`Docking refused: ${shut}`, 'bad');
       this.sfx('ui-error');
       return;
     }
@@ -1120,6 +1133,8 @@ export class FlightSession {
       return (def?.scanRange ?? DEFAULT_SCAN_RANGE) * scanner;
     }
     if (t.kind === 'star') return Math.max(20_000, t.radius * 6) * scanner;
+    // A black hole is read from outside its tides (docs/PROCGEN.md §26).
+    if (t.kind === 'hole') return ((this.system.blackHole?.def.tidalRadius ?? 0) + 10_000) * scanner;
     return DEFAULT_SCAN_RANGE * scanner;
   }
 
@@ -1134,7 +1149,7 @@ export class FlightSession {
       this.scanMining(t);
       return;
     }
-    if (!t || (t.kind !== 'planet' && t.kind !== 'star')) {
+    if (!t || (t.kind !== 'planet' && t.kind !== 'star' && t.kind !== 'hole')) {
       this.callbacks.onMessage('Select a planet, star, belt or rock to scan.', 'info');
       return;
     }
@@ -1249,6 +1264,7 @@ export class FlightSession {
     this.updateDrones(dt);
     this.mining.update(dt, this.player.position, this.state.clock, this.camera, this.beam?.rockId ?? null);
     if (this.alive) this.collide(this.player, this.playerDurability, true);
+    this.updateHole(dt);
     for (const n of this.npcs) if (!n.den) this.collide(n.body, n.durability, false);
     regenerate(this.playerDurability, dt);
     for (const n of this.npcs) regenerate(n.durability, dt);
@@ -1260,6 +1276,7 @@ export class FlightSession {
       this.autoScan();
       this.watchSights();
       this.updateSky();
+      this.watchPyre();
     }
     this.updateMissileLock(dt);
     if (this.deathTimer >= 0) {
@@ -1421,7 +1438,9 @@ export class FlightSession {
             ? target.radius + MINING.range * 0.4
             : target.kind === 'belt'
               ? target.radius * 0.5
-              : target.radius + 600;
+              : target.kind === 'hole'
+                ? (this.system.blackHole?.def.tidalRadius ?? target.radius) + 600
+                : target.radius + 600;
     // Round any planet, star or station in the way; the target itself is where we stop.
     const way = avoidObstacles(this.player.position, target.position, this.system.obstacles(target.id), AVOID_MARGIN, this.wayPoint);
     const st = flyTo(this.player, way.point, { arriveDistance: way.detour ? 0 : standoff, allowCruise: true }, this.controls);
@@ -1812,6 +1831,44 @@ export class FlightSession {
     }
     if (this.player.cruise !== 'off') this.player.requestCruise(false);
     if (r.destroyed) this.destroyPlayer();
+  }
+
+  /**
+   * Pyre's black hole (docs/PROCGEN.md §26): the gas falling into it fades with the clock; inside
+   * the zone drawn for its tides they strain the hull, more the nearer the ship goes (as 1/r³), and
+   * its shadow takes a ship whole. Shields are no help against tides.
+   */
+  private updateHole(dt: number): void {
+    const b = this.system.blackHole;
+    if (!b) return;
+    b.glow = fallbackGlow(this.state.clock);
+    if (!this.alive) return;
+    const d = this.player.position.distanceTo(b.def.position);
+    const strain = tidalStrain(d, b.def.tidalRadius);
+    if (strain <= 0) {
+      this.inTides = false;
+      return;
+    }
+    if (!this.inTides) {
+      this.inTides = true;
+      this.callbacks.onMessage('Tidal zone: the black hole’s tides are straining the hull. Turn back.', 'bad');
+      this.sfx('ui-error');
+    }
+    const loss = d <= b.def.shadow + this.player.params.radius ? Infinity : strain * dt;
+    const hull = this.playerDurability;
+    hull.hull = Math.max(0, hull.hull - loss);
+    this.hullFlash = Math.min(1, this.hullFlash + Math.min(1, loss / 25));
+    this.chase.addShake(Math.min(0.4, loss / 12));
+    if (hull.hull <= 0) this.destroyPlayer();
+  }
+
+  /** A ship still in Pyre's system when its light leaves (docs/PROCGEN.md §26) is carried out by the game, once. */
+  private watchPyre(): void {
+    if (this.pyreCaught || this.system.def.blackHole || this.system.def.systemId !== PYRE_ID) return;
+    if (pyreStage(this.state.clock) !== 'gone') return;
+    this.pyreCaught = true;
+    this.autopilot = { mode: 'none' };
+    this.callbacks.onPyreBreakout?.();
   }
 
   private destroyPlayer(): void {

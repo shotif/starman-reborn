@@ -3,10 +3,12 @@ import type { CommodityId } from '../content/economy/goods.ts';
 import { DOOMED } from '../content/stellar/doomed.ts';
 import { EDGE_COMMS, EDGE_NEWS, EDGE_SPEAKER, type EdgeNewsKind } from '../content/stellar/doomedLines.ts';
 import { STELLAR } from '../content/stellar/rules.ts';
-import { equatorialToCartesian } from '../data/coords.ts';
-import { getLocation, getSystem, SYSTEMS } from '../data/systems.ts';
-import type { SystemId, Vec3Tuple } from '../data/types.ts';
+import { EVENTS } from '../content/events/rules.ts';
+import { jumpsFrom } from '../content/world/network.ts';
+import { ALL_LOCATIONS, getLocation, getSystem, SYSTEMS, WORLD } from '../data/systems.ts';
+import type { SystemId } from '../data/types.ts';
 import { activeEdge } from './events.ts';
+import { apparentAt, lyFromPyre, pyreAbsoluteMagnitude } from './pyrePhysics.ts';
 import { magnitudeText, skyTimeline } from './stellar.ts';
 
 /**
@@ -18,48 +20,9 @@ import { magnitudeText, skyTimeline } from './stellar.ts';
  */
 
 const PC_LY = 3.261563777;
-const SUN_TEMPERATURE_K = 5_772;
-const SUN_BOLOMETRIC = 4.74;
-/** The Sun's mass parameter GM (m³/s²) and the speed of light (m/s). */
-const GM_SUN = 1.327_124_400_18e20;
-const C = 299_792_458;
-const G0 = 9.806_65;
 
-/** Pyre's invented place in the map's frame, light-years from the Sun. */
-export function pyrePosition(): Vec3Tuple {
-  return equatorialToCartesian(DOOMED.star.raDegrees, DOOMED.star.decDegrees, DOOMED.star.distanceLy) as Vec3Tuple;
-}
-
-/** Light-years from Pyre to a real system. */
-export function lyFromPyre(systemId: SystemId): number {
-  const p = pyrePosition();
-  const q = getSystem(systemId).positionLy;
-  return Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);
-}
-
-/** Pyre's absolute visual magnitude, from its luminosity and bolometric correction. */
-export function pyreAbsoluteMagnitude(): number {
-  return SUN_BOLOMETRIC - 2.5 * DOOMED.star.logLuminosity - DOOMED.star.bolometricCorrectionV;
-}
-
-/** Pyre's radius in solar radii, from its luminosity and temperature (L ∝ R²T⁴). */
-export function pyreRadiusSolar(): number {
-  return Math.sqrt(10 ** DOOMED.star.logLuminosity) * (SUN_TEMPERATURE_K / DOOMED.star.temperatureK) ** 2;
-}
-
-/** An absolute magnitude seen from this many light-years away. */
-export const apparentAt = (absolute: number, ly: number): number => absolute + 5 * Math.log10(ly / PC_LY / 10);
-
-/** The black hole's Schwarzschild radius, km. */
-export function horizonKm(): number {
-  return (2 * GM_SUN * DOOMED.blackHole.massSolar) / C ** 2 / 1_000;
-}
-
-/** How close a ship of the rules' length can come before the black hole's tides pull it apart at the rules' limit, km. */
-export function tidalLimitKm(): number {
-  const T = DOOMED.blackHole.tides;
-  return Math.cbrt((2 * GM_SUN * DOOMED.blackHole.massSolar * T.shipLengthM) / (T.limitG * G0)) / 1_000;
-}
+// Pyre's physics lives on its own (no game state), so scenes can use it as they load.
+export { apparentAt, horizonKm, lyFromPyre, PYRE_HOLE_ID, pyreAbsoluteMagnitude, pyrePosition, pyreRadiusSolar, tidalLimitKm } from './pyrePhysics.ts';
 
 // ---------------------------------------------------------------- the timeline
 
@@ -124,11 +87,72 @@ export function remnantStationOpen(clock: number, edge: number | null = activeEd
   return edge !== null && clock >= edgeTimeline(edge).stationOpens;
 }
 
+/** Whether a station takes ships at a moment: Pyre's observatory until the collapse, its remnant station once open; any other, always. */
+export function pyreStationOpen(locationId: string, clock: number, edge: number | null = activeEdge()): boolean {
+  if (locationId === DOOMED.stations.observatory.id) return observatoryOpen(clock, edge);
+  if (locationId === DOOMED.stations.remnant.id) return remnantStationOpen(clock, edge);
+  return true;
+}
+
+/** Why docking at one of Pyre's stations is refused now (evacuated, or not open yet), or null. */
+export function pyreDockRefusal(locationId: string, clock: number, edge: number | null = activeEdge()): string | null {
+  if (pyreStationOpen(locationId, clock, edge)) return null;
+  const name = getLocation(locationId).name;
+  return locationId === DOOMED.stations.observatory.id ? `${name} has been evacuated.` : `${name} is not open yet.`;
+}
+
+/**
+ * Why a jump to Pyre is refused, or null: its lane takes no arrivals from the collapse until the
+ * debris has thinned, so neither a jump made then nor one that would arrive then (`hops` lanes on,
+ * each taking the jump's time) is let through.
+ */
+export function laneClosedReason(clock: number, hops: number, edge: number | null = activeEdge()): string | null {
+  if (edge === null) return null;
+  const name = DOOMED.star.name;
+  if (!laneOpen(clock, edge)) return `The lane to ${name} is closed until the debris of its explosion has thinned.`;
+  if (!laneOpen(clock + Math.max(1, hops) * EVENTS.jumpSeconds, edge)) return `The lane to ${name} closes before you would arrive: its core is about to collapse.`;
+  return null;
+}
+
+/** How many lanes a jump from a system to Pyre takes (through its anchor). */
+export function hopsToPyre(from: SystemId): number {
+  if (from === DOOMED.star.id) return 0;
+  return (jumpsFrom(WORLD.links, from).get(DOOMED.star.anchor as SystemId) ?? 0) + 1;
+}
+
 /** Where Pyre is in its story: alive (before or after the warning), collapsed (its light not yet out), or gone (a black hole). */
 export function pyreStage(clock: number, edge: number | null = activeEdge()): 'alive' | 'warned' | 'collapsed' | 'gone' {
   if (edge === null || clock < edge) return 'alive';
   const t = edgeTimeline(edge);
   return clock < t.collapse ? 'warned' : clock < t.breakout ? 'collapsed' : 'gone';
+}
+
+// ---------------------------------------------------------------- its black hole, in flight
+
+/** How brightly the gas falling back into the black hole glows at a moment, 0–1: full when the lane opens, fading as t^−5/3. */
+export function fallbackGlow(clock: number, edge: number | null = activeEdge()): number {
+  if (edge === null) return 0;
+  const since = clock - edgeTimeline(edge).breakout;
+  if (since <= 0) return 0;
+  return Math.min(1, (DOOMED.timeline.laneOpensAfterBreakout / since) ** DOOMED.blackHole.fallbackDecay);
+}
+
+/** Hull lost a second to the black hole's tides at a distance from it (scene units), with the zone drawn this far out: none outside. */
+export function tidalStrain(distance: number, zone: number): number {
+  if (distance >= zone) return 0;
+  return DOOMED.blackHole.hullStrainPerSecond * (zone / Math.max(distance, zone * 0.05)) ** 3;
+}
+
+/** The station a ship goes to when it must leave Pyre's system in a hurry: the first open one at its anchor. */
+export function pyreRefugeId(): string {
+  const refuge = ALL_LOCATIONS.find((l) => l.systemId === DOOMED.star.anchor && l.status === 'functional' && l.dockable !== false && l.stationType !== 'pirate-den');
+  if (!refuge) throw new Error(`No refuge station at ${DOOMED.star.anchor}`);
+  return refuge.id;
+}
+
+/** The last dock a rescued ship is brought back to, unless it is one of Pyre's stations that is shut now: then Pyre's refuge. */
+export function rescueDockId(lastDockId: string, clock: number, edge: number | null = activeEdge()): string {
+  return pyreStationOpen(lastDockId, clock, edge) ? lastDockId : pyreRefugeId();
 }
 
 // ---------------------------------------------------------------- how it looks

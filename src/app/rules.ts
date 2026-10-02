@@ -8,6 +8,7 @@ import { recordMarketVisit } from '../economy/trade.ts';
 import { watchOnDock, type WatchNote } from '../economy/tradeComputer.ts';
 import { settleLaw } from '../economy/law.ts';
 import { tidyWorldLog } from '../economy/answers.ts';
+import { pyreRefugeId, rescueDockId } from '../economy/doomed.ts';
 import { settleFleet, type FleetSettlement } from '../economy/fleet.ts';
 import type { Route } from '../galaxy/routing.ts';
 import type { JumpReadiness } from '../galaxy/types.ts';
@@ -113,17 +114,30 @@ export function discoverBody(state: GameState, bodyId: string): { first: boolean
 
 export const RESCUE_FEE = 150;
 
-/** After losing a fight: towed back to the last dock, repaired, charged a capped fee. Cargo is kept. */
+/**
+ * After losing a fight: towed back to the last dock (or, if that is one of Pyre's stations and shut
+ * now, to Pyre's refuge: docs/PROCGEN.md §26), repaired, charged a capped fee. Cargo is kept.
+ */
 export function rescueAfterDefeat(state: GameState): { fee: number; dockId: string } {
-  const dockId = state.location.lastDockId;
+  const r = rescueTo(state, rescueDockId(state.location.lastDockId, state.clock, state.world.sky?.edge ?? null), 'Rescue tow and repairs');
+  state.stats.deaths += 1;
+  return r;
+}
+
+/** Caught in Pyre's system when it exploded (docs/PROCGEN.md §26): carried out to its refuge, repaired, charged as a rescue. Cargo and passengers stay aboard. */
+export function rescueFromPyre(state: GameState): { fee: number; dockId: string } {
+  return rescueTo(state, pyreRefugeId(), 'Emergency drive and repairs');
+}
+
+function rescueTo(state: GameState, dockId: string, why: string): { fee: number; dockId: string } {
   const dock = getLocation(dockId);
   const fee = Math.min(state.credits, RESCUE_FEE);
-  if (fee > 0) applyCredits(state, -fee, 'rescue', `Rescue tow and repairs to ${dock.name}`);
+  if (fee > 0) applyCredits(state, -fee, 'rescue', `${why} to ${dock.name}`);
   state.ship.hull = hullMax(state.ship);
   rechargeShield(state);
   state.location.systemId = dock.systemId;
   state.location.dockedAt = dockId;
+  state.location.lastDockId = dockId;
   state.location.flight = null;
-  state.stats.deaths += 1;
   return { fee, dockId };
 }

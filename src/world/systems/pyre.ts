@@ -1,6 +1,7 @@
 import { DOOMED } from '../../content/stellar/doomed.ts';
 import { getLocation } from '../../data/systems.ts';
 import type { SystemId } from '../../data/types.ts';
+import { horizonKm, PYRE_HOLE_ID, tidalLimitKm } from '../../economy/pyrePhysics.ts';
 import type { SystemSceneDef } from '../sceneTypes.ts';
 import { dirTo, v } from './helpers.ts';
 
@@ -51,4 +52,51 @@ export const PYRE_ALIVE_SCENE: SystemSceneDef = {
   arrival: { position: arrival, lookAt: STAR },
   orbitLines: false,
   scaleNote: `${DOOMED.star.name} and its observatory are invented. The star is drawn far smaller than a red supergiant would be.`,
+};
+
+/**
+ * Where Pyre was, once it has gone (docs/PROCGEN.md §26): no star, the black hole its core left,
+ * the glowing cloud of its outer layers all round, and the station built well clear of the hole
+ * (open some hours after the lane opens again). The observatory is gone with the star.
+ */
+const HOLE = v(0, 0, 0);
+const remnant = v(52_000, 2_800, -26_000);
+const remnantArrival = remnant.clone().add(v(5_000, 1_200, 7_500));
+const km = (x: number) => Math.round(x).toLocaleString('en-GB');
+
+export const PYRE_GONE_SCENE: SystemSceneDef = {
+  systemId: DOOMED.star.id as SystemId,
+  skybox: { seed: 72, baseColor: '#040309', nebulaColors: ['#5a1830', '#123c48', '#3a0e10'], nebulaIntensity: 0.55, starDensity: 0.5, bandTilt: 0.6 },
+  ambient: { sky: '#e0a890', ground: '#0a0610', intensity: 0.42 },
+  stars: [],
+  blackHole: {
+    id: PYRE_HOLE_ID,
+    name: `${DOOMED.star.name}’s black hole`,
+    subtitle: 'Invented black hole · not in the real sky',
+    position: HOLE,
+    shadow: 900,
+    disc: [1_500, 6_500],
+    tidalRadius: 11_000,
+    glow: { color: '#ffd2a6', light: 1.1 },
+  },
+  planets: [],
+  stations: [
+    {
+      locationId: DOOMED.stations.remnant.id,
+      kind: 'sirius-platform',
+      look: getLocation(DOOMED.stations.remnant.id).look!,
+      position: remnant,
+      approach: dirTo(remnant, remnantArrival),
+    },
+  ],
+  lanes: [],
+  belts: [],
+  dust: [],
+  beacons: [{ id: 'pyre-jump', name: `${DOOMED.star.name} jump beacon`, position: remnantArrival.clone().add(v(250, -120, 300)), kind: 'jump' }],
+  scanZones: [],
+  encounters: [],
+  // Ships come out of the lane facing the hole.
+  arrival: { position: remnantArrival, lookAt: HOLE },
+  orbitLines: false,
+  scaleNote: `${DOOMED.star.name}, its black hole and its station are invented. The hole is drawn far larger than one of ${DOOMED.blackHole.massSolar} Suns would be (about ${km(2 * horizonKm())} km across), and its tides far nearer: they would pull a ship apart within about ${km(tidalLimitKm())} km.`,
 };

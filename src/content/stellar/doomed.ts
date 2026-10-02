@@ -61,6 +61,17 @@ export const DOOMED = {
     massSolar: 10,
     /** Tides would pull a ship this long apart, end to end, at this many g. */
     tides: { shipLengthM: 10, limitG: 10 },
+    /**
+     * In flight, inside the zone drawn for its tides the hull strains: this many points a second at
+     * the zone's edge, growing as the cube of how much nearer the hole the ship is (tides go as 1/r³).
+     */
+    hullStrainPerSecond: 3,
+    /**
+     * Late on, the star's gas falls back onto its core at a rate that drops as the time since the
+     * explosion to the power −5/3 (Chevalier 1989, ApJ 346, 847). Its glow is drawn following that
+     * rate (a simplification), at full glow when the lane opens again.
+     */
+    fallbackDecay: 5 / 3,
   },
   /**
    * How close a supernova would have to be to harm Earth's ozone layer, in parsecs: about 8 through

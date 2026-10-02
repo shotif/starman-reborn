@@ -8,7 +8,7 @@ import { formatCredits } from '../ui/dom.ts';
 import { findRoute, type Route } from './routing.ts';
 import type { MapState } from './types.ts';
 
-export type JumpInputs = Pick<MapState, 'currentSystemId' | 'credits' | 'readiness' | 'feeCoverage' | 'jumpReach'>;
+export type JumpInputs = Pick<MapState, 'currentSystemId' | 'credits' | 'readiness' | 'feeCoverage' | 'jumpReach' | 'closedTo'>;
 
 /** Whether a ship with this drive reach can take a lane: frontier lanes need a long-range jump drive that reaches them. */
 export function laneTaker(reach: number): (a: SystemId, b: SystemId, ly: number) => boolean {
@@ -68,6 +68,8 @@ export function evaluateJump(
   const covered = state.feeCoverage !== null && state.feeCoverage.systemId === destination;
   const fee = covered ? 0 : route.totalFee;
   const reasons: string[] = [];
+  const closed = state.closedTo?.get(destination);
+  if (closed) reasons.push(closed);
   if (!state.readiness.canJump) {
     reasons.push(state.readiness.reason?.trim() || 'The jump drive is not ready.');
   }

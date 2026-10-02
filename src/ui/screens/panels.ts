@@ -4,6 +4,7 @@ import { findBelt, getComponent, getPlanet, SOLAR_BODIES } from '../../data/syst
 import { formatDec, formatRa } from '../../data/coords.ts';
 import type { ConfirmedBody } from '../../data/types.ts';
 import { beltCard } from '../../galaxy/scienceBlocks.ts';
+import { pyreCard } from './pyreCard.ts';
 import { KEY_BINDINGS, keyLabel } from '../../flight/input/DesktopInput.ts';
 import { PAD_FOR, PAD_HOLDS, padLabel, type PadButton } from '../../flight/input/GamepadInput.ts';
 import type { InputScheme } from '../../flight/input/types.ts';
@@ -410,5 +411,8 @@ export function bodyCard(bodyId: string, name: string): HTMLElement {
   if (planet) return planetCard(planet, true);
   const belt = findBelt(bodyId);
   if (belt) return beltCard(belt);
+  // Pyre and its black hole are invented (docs/PROCGEN.md §26).
+  const invented = pyreCard(bodyId);
+  if (invented) return invented;
   return h('p', null, `${name}: no catalogue data bundled.`);
 }

@@ -72,6 +72,8 @@ export function validateDoomed(rules: DoomedRules = DOOMED): Issue[] {
     if (!(apparentAt(rules.timeline.remnantAbsoluteMagnitude, ly) > peak + 0.5)) report('brightness', s.id, 'a remnant as bright as the supernova');
   }
   if (rules === DOOMED && !(tidalLimitKm() > horizonKm())) report('physics', 'blackHole', 'tides that tear a ship apart only inside the horizon');
+  if (!(rules.blackHole.hullStrainPerSecond > 0 && rules.blackHole.hullStrainPerSecond <= 10)) report('physics', 'blackHole', 'a hull strain at the tidal zone’s edge out of 0–10 a second');
+  if (!(rules.blackHole.fallbackDecay > 1 && rules.blackHole.fallbackDecay < 3)) report('physics', 'blackHole', 'its infalling gas does not fade, or fades too fast');
 
   // The story runs forward, after Antares, and crosses the map in good time.
   const T = rules.timeline;

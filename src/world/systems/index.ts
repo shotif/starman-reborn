@@ -7,7 +7,8 @@ import { ALPHA_CENTAURI_SCENE } from './alphaCentauri.ts';
 import { BARNARD_SCENE } from './barnard.ts';
 import { catalogSceneDef } from './generated.ts';
 import { EPSILON_ERIDANI_SCENE } from './epsilonEridani.ts';
-import { PYRE_ALIVE_SCENE } from './pyre.ts';
+import { PYRE_ALIVE_SCENE, PYRE_GONE_SCENE } from './pyre.ts';
+import { pyreStage } from '../../economy/doomed.ts';
 import { SIRIUS_SCENE } from './sirius.ts';
 import { SOL_SCENE, solScene } from './sol.ts';
 
@@ -24,9 +25,11 @@ export const SCENE_DEFS: Record<SystemId, SystemSceneDef> = {
 
 /**
  * The scene of any system: hand-made for the five originals, generated for the catalogue systems.
- * `jd` is the game date (a Julian date): Sol's planets then sit where they really are.
+ * `jd` is the game date (a Julian date): Sol's planets then sit where they really are. `clock` is
+ * the game clock: Pyre's scene is its black hole once the star has gone (docs/PROCGEN.md §26).
  */
-export function sceneDefFor(systemId: SystemId, jd: number | null = null): SystemSceneDef {
+export function sceneDefFor(systemId: SystemId, jd: number | null = null, clock: number | null = null): SystemSceneDef {
+  if (systemId === PYRE_ALIVE_SCENE.systemId) return clock !== null && pyreStage(clock) === 'gone' ? PYRE_GONE_SCENE : PYRE_ALIVE_SCENE;
   const def = systemId === 'sol' && jd !== null ? solScene(jd) : (SCENE_DEFS[systemId] ?? catalogSceneDef(systemId));
   return withOwnStations(def);
 }

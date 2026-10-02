@@ -71,6 +71,7 @@ const TARGET_GLYPH: Record<TargetKind, GlyphName> = {
   belt: 'science',
   rock: 'mining-laser',
   sky: 'scanner',
+  hole: 'scanner',
 };
 
 /** The Mine key (docs/PROCGEN.md §19); on a pad Mine is the context action. */

@@ -5,6 +5,7 @@ import { LAW, type CrimeKind } from '../content/law/rules.ts';
 import { getLocation, WORLD } from '../data/systems.ts';
 import type { FactionId, SystemId } from '../data/types.ts';
 import { occupied } from './border.ts';
+import { pyreStationOpen } from './doomed.ts';
 import { cargoCount, removeCargo } from './cargo.ts';
 import { adjustReputation, FACTIONS, standingTier } from './factions.ts';
 
@@ -173,6 +174,8 @@ export function payFines(state: GameState, faction: LawfulFaction): { ok: boolea
  */
 export function dockAccess(state: GameState, locationId: string): 'full' | 'emergency' | 'refused' {
   const loc = getLocation(locationId);
+  // Pyre's stations take ships only while they are open (docs/PROCGEN.md §26).
+  if (!pyreStationOpen(locationId, state.clock, state.world.sky?.edge ?? null)) return 'refused';
   if (loc.stationType === 'pirate-den') return wakeFriendly(state) ? 'full' : 'refused';
   if (loc.dockable === false) return 'refused';
   // A station the Hollow Wake holds on a broken front (docs/PROCGEN.md §20): its friends dock, others only in an emergency.

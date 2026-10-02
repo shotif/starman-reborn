@@ -34,6 +34,8 @@ export interface MapState {
   catalogued?: ReadonlySet<string>;
   /** Reach of the ship's long-range jump drive, light-years (0: none): frontier lanes need it. */
   jumpReach?: number;
+  /** Systems no jump may end at for now, and why (the lane to Pyre while its debris is thick, docs/PROCGEN.md §26). */
+  closedTo?: ReadonlyMap<SystemId, string>;
 }
 
 export interface MapMission {

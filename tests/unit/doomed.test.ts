@@ -17,8 +17,18 @@ import { STELLAR } from '../../src/content/stellar/rules.ts';
 import { ALL_LOCATIONS, getLocation, SYSTEMS } from '../../src/data/systems.ts';
 import type { SystemId } from '../../src/data/types.ts';
 import { useWorldLog } from '../../src/economy/events.ts';
+import { rescueAfterDefeat, rescueFromPyre, RESCUE_FEE } from '../../src/app/rules.ts';
+import type { FlightCallbacks } from '../../src/world/FlightSession.ts';
 import {
   apparentAt,
+  fallbackGlow,
+  hopsToPyre,
+  laneClosedReason,
+  PYRE_HOLE_ID,
+  pyreDockRefusal,
+  pyreRefugeId,
+  rescueDockId,
+  tidalStrain,
   edgeComm,
   edgeMoment,
   edgeNews,
@@ -224,7 +234,7 @@ function installCanvasStub(): void {
 }
 
 /** A pilot in flight in a system (Pyre among them), the far stars' story set and Pyre's warning at EDGE. */
-function flyIn(systemId: SystemId, clock: number): { s: GameState; flight: FlightSession; run: (seconds: number) => void } {
+function flyIn(systemId: SystemId, clock: number, more: Partial<FlightCallbacks> = {}): { s: GameState; flight: FlightSession; run: (seconds: number) => void } {
   installCanvasStub();
   const s = createNewGame(12);
   s.jobs.lifeline = { status: 'complete', objectiveIndex: 4, acceptedAt: 0, completedAt: 1 };
@@ -235,7 +245,7 @@ function flyIn(systemId: SystemId, clock: number): { s: GameState; flight: Fligh
   useWorldLog(s.world);
   const nothing = () => {};
   const flight = new FlightSession({
-    system: new SystemScene(sceneDefFor(systemId), { quality: 'low', reducedMotion: true }),
+    system: new SystemScene(sceneDefFor(systemId, null, clock), { quality: 'low', reducedMotion: true }),
     camera: new THREE.PerspectiveCamera(),
     state: s,
     settings: defaultSettings(),
@@ -253,6 +263,7 @@ function flyIn(systemId: SystemId, clock: number): { s: GameState; flight: Fligh
       onContractKill: nothing,
       onMessage: nothing,
       onComm: nothing,
+      ...more,
     },
     traffic: trafficFor(systemId, 'low', clock),
   });
@@ -298,6 +309,149 @@ describe('in flight', () => {
     s.clock = lightArrives(near, EDGE) + 5;
     run(0.6);
     expect(pyre.subtitle).toMatch(/^Supernova · magnitude −/);
+    flight.dispose();
+  });
+});
+
+// ---------------------------------------------------------------- its black hole
+
+describe('its black hole', () => {
+  it('is where Pyre was once its light has left: no star, the hole marked as fiction, its remnant station, and its tides an obstacle', () => {
+    const save = createNewGame(5);
+    save.world.sky = { from: 1_000, edge: EDGE };
+    useWorldLog(save.world);
+    expect(sceneDefFor('pyre' as SystemId, null, T.breakout - 1).blackHole).toBeUndefined();
+    expect(sceneDefFor('pyre' as SystemId).blackHole).toBeUndefined();
+    const gone = sceneDefFor('pyre' as SystemId, null, T.breakout + 1);
+    expect(gone.blackHole?.id).toBe(PYRE_HOLE_ID);
+    expect(gone.stars).toEqual([]);
+    expect(gone.stations.map((st) => st.locationId)).toEqual([DOOMED.stations.remnant.id]);
+    expect(gone.scaleNote).toMatch(/invented/);
+    expect(gone.scaleNote).toContain(Math.round(tidalLimitKm()).toLocaleString('en-GB'));
+    const b = gone.blackHole!;
+    expect(b.shadow).toBeLessThan(b.disc[0]);
+    expect(b.disc[1]).toBeLessThan(b.tidalRadius);
+    // Its station well clear of the tides, and ships arriving outside them.
+    expect(gone.stations[0]!.position.length()).toBeGreaterThan(b.tidalRadius * 3);
+    expect(gone.arrival.position.length()).toBeGreaterThan(b.tidalRadius * 3);
+    const scene = new SystemScene(gone, { quality: 'low', reducedMotion: true });
+    const hole = scene.targets.find((t) => t.kind === 'hole')!;
+    expect(hole.dataClass).toBe('fictional');
+    expect(hole.subtitle).toMatch(/^Invented black hole/);
+    expect(scene.obstacles(null).find((o) => o.id === hole.id)?.radius).toBe(b.tidalRadius);
+    expect(scene.obstacles(hole.id).some((o) => o.id === hole.id)).toBe(false);
+    scene.dispose();
+    // Nothing real is called by its id.
+    expect(ALL_LOCATIONS.some((l) => l.id === PYRE_HOLE_ID) || SYSTEMS.some((x) => x.id === PYRE_HOLE_ID)).toBe(false);
+  });
+
+  it('glows while the star’s gas falls back in, fading as the rules say', () => {
+    expect(fallbackGlow(T.breakout - 1, EDGE)).toBe(0);
+    expect(fallbackGlow(T.laneOpens, EDGE)).toBe(1);
+    expect(fallbackGlow(T.breakout + 2 * DOOMED.timeline.laneOpensAfterBreakout, EDGE)).toBeCloseTo(0.5 ** DOOMED.blackHole.fallbackDecay, 6);
+    expect(fallbackGlow(T.breakout + 40 * 3_600, EDGE)).toBeLessThan(0.02);
+    expect(fallbackGlow(T.laneOpens, null)).toBe(0);
+  });
+
+  it('strains a hull inside the zone drawn for its tides, as the cube of how near, and nowhere outside it', () => {
+    expect(tidalStrain(10_001, 10_000)).toBe(0);
+    expect(tidalStrain(10_000 - 1e-6, 10_000)).toBeCloseTo(DOOMED.blackHole.hullStrainPerSecond, 4);
+    expect(tidalStrain(5_000, 10_000)).toBeCloseTo(8 * DOOMED.blackHole.hullStrainPerSecond, 6);
+    expect(tidalStrain(0, 10_000)).toBeLessThan(Infinity);
+  });
+
+  it('closes the lane to arrivals from the collapse until the debris has thinned, counting the time a jump takes', () => {
+    const gj915 = 'gj-915' as SystemId;
+    expect(hopsToPyre(gj915)).toBe(1);
+    expect(hopsToPyre('sol')).toBeGreaterThan(2);
+    expect(laneClosedReason(T.collapse - 3_600, 1, EDGE)).toBeNull();
+    expect(laneClosedReason(T.collapse - 30, 1, EDGE)).toMatch(/closes before you would arrive/);
+    expect(laneClosedReason(T.collapse + 10, 1, EDGE)).toMatch(/closed until the debris/);
+    expect(laneClosedReason(T.laneOpens, 1, EDGE)).toBeNull();
+    expect(laneClosedReason(T.collapse - 30, 1, null)).toBeNull();
+  });
+
+  it('takes rescued ships to its refuge when the last dock was one of its stations and is shut, and says why docking is refused', () => {
+    expect(getLocation(pyreRefugeId()).systemId).toBe(DOOMED.star.anchor);
+    const obs = DOOMED.stations.observatory.id;
+    const rem = DOOMED.stations.remnant.id;
+    expect(rescueDockId(obs, T.collapse - 1, EDGE)).toBe(obs);
+    expect(rescueDockId(obs, T.collapse, EDGE)).toBe(pyreRefugeId());
+    expect(rescueDockId(rem, T.stationOpens - 1, EDGE)).toBe(pyreRefugeId());
+    expect(rescueDockId(rem, T.stationOpens, EDGE)).toBe(rem);
+    expect(rescueDockId('earth-port', T.collapse, EDGE)).toBe('earth-port');
+    expect(pyreDockRefusal(obs, T.collapse, EDGE)).toMatch(/evacuated/);
+    expect(pyreDockRefusal(rem, T.laneOpens, EDGE)).toMatch(/not open yet/);
+    expect(pyreDockRefusal(rem, T.stationOpens, EDGE)).toBeNull();
+
+    // A pilot lost at the hole after its observatory was evacuated comes round at the refuge.
+    const s = createNewGame(3);
+    s.world.sky = { from: 1_000, edge: EDGE };
+    s.clock = T.laneOpens + 100;
+    s.location = { systemId: 'pyre' as SystemId, dockedAt: null, flight: null, lastDockId: obs };
+    const r = rescueAfterDefeat(s);
+    expect(r.dockId).toBe(pyreRefugeId());
+    expect(s.location).toMatchObject({ systemId: DOOMED.star.anchor, dockedAt: pyreRefugeId(), lastDockId: pyreRefugeId() });
+    expect(s.stats.deaths).toBe(1);
+    assertValidState(s);
+
+    // Caught at Pyre when it exploded: carried out, repaired, charged as a rescue, not counted as lost.
+    const c = createNewGame(4);
+    c.world.sky = { from: 1_000, edge: EDGE };
+    c.clock = T.breakout + 1;
+    c.location = { systemId: 'pyre' as SystemId, dockedAt: null, flight: null, lastDockId: obs };
+    c.ship.hull = 10;
+    const credits = c.credits;
+    const out = rescueFromPyre(c);
+    expect(out.fee).toBe(Math.min(credits, RESCUE_FEE));
+    expect(c.credits).toBe(credits - out.fee);
+    expect(c.location.dockedAt).toBe(pyreRefugeId());
+    expect(c.ship.hull).toBeGreaterThan(10);
+    expect(c.stats.deaths).toBe(0);
+    assertValidState(c);
+  });
+
+  it('in flight: a ship still in Pyre’s system when its light leaves is carried out, once', () => {
+    let caught = 0;
+    const { flight, run } = flyIn('pyre' as SystemId, T.breakout - 2, { onPyreBreakout: () => caught++ });
+    run(1);
+    expect(caught).toBe(0);
+    run(3);
+    expect(caught).toBe(1);
+    run(2);
+    expect(caught).toBe(1);
+    flight.dispose();
+  });
+
+  it('in flight: read from outside its tides; the autopilot stops short of them; inside them the hull strains, and the shadow takes the ship', () => {
+    let lost = 0;
+    const said: string[] = [];
+    const { s, flight, run } = flyIn('pyre' as SystemId, T.laneOpens + 60, { onPlayerDestroyed: () => lost++, onMessage: (text: string) => said.push(text) });
+    run(0.6);
+    const hole = flight.allTargets().find((t) => t.kind === 'hole')!;
+    const zone = sceneDefFor('pyre' as SystemId, null, s.clock).blackHole!.tidalRadius;
+    flight.selectTarget(hole.id);
+    expect(flight.contextAction()?.label).toBe('Scan');
+    // Go to the hole: the ship stops outside its tides, its hull whole.
+    const hull = flight.playerDurability.hull;
+    flight.beginGoTo(hole.id, false);
+    run(240);
+    expect(flight.autopilotMode).toBe('none');
+    const d = flight.player.position.distanceTo(hole.position);
+    expect(d).toBeGreaterThan(zone);
+    expect(d).toBeLessThan(zone + 2_000);
+    expect(flight.playerDurability.hull).toBe(hull);
+    // Inside the zone, the hull strains; nearer, faster.
+    flight.placeNear(hole.id, zone - hole.radius - 200);
+    run(2);
+    const lostFar = hull - flight.playerDurability.hull;
+    expect(lostFar).toBeGreaterThan(0);
+    expect(said.some((t) => /Tidal zone/.test(t))).toBe(true);
+    // At its shadow, the ship is lost.
+    flight.placeNear(hole.id, 1);
+    run(4);
+    expect(flight.alive).toBe(false);
+    expect(lost).toBe(1);
     flight.dispose();
   });
 });

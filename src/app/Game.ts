@@ -11,7 +11,8 @@ import { fill, PAYMENT } from '../content/people/lines.ts';
 import * as THREE from 'three';
 import { AudioEngine } from '../audio/AudioEngine.ts';
 import type { MusicMood, SfxId } from '../audio/types.ts';
-import { ALL_LOCATIONS, getComponent, getLocation, getPlanet, getSystem, hasProvisionalData, MAP_SYSTEMS, saveLocationsKey, SYSTEMS, WORLD } from '../data/systems.ts';
+import { ALL_LOCATIONS, getComponent, getLocation, getPlanet, getSystem, hasProvisionalData, isInventedSystem, MAP_SYSTEMS, PYRE_ID, saveLocationsKey, SYSTEMS, WORLD } from '../data/systems.ts';
+import { hopsToPyre, laneClosedReason, pyreRefugeId, pyreStage } from '../economy/doomed.ts';
 import type { SystemId } from '../data/types.ts';
 import { addCargo, cargoUsed, itemsThatFit } from '../economy/cargo.ts';
 import { COMMODITIES } from '../economy/commodities.ts';
@@ -95,7 +96,7 @@ import type { Target } from '../world/targets.ts';
 import { collectDeviceFacts, formatReport, FrameRateLog } from './deviceReport.ts';
 import { GameRenderer, isTouchDevice, resolveQuality } from './GameRenderer.ts';
 import { Loop } from './Loop.ts';
-import { discoverBody, dockAt, jumpReadiness, performJump, rescueAfterDefeat, routeFee, undock } from './rules.ts';
+import { discoverBody, dockAt, jumpReadiness, performJump, rescueAfterDefeat, rescueFromPyre, RESCUE_FEE, routeFee, undock } from './rules.ts';
 import type { SaveManager } from './save/SaveManager.ts';
 import { applyDocumentSettings, type Settings } from './settings.ts';
 import { Soundscape } from './soundscape.ts';
@@ -176,6 +177,8 @@ export class Game {
   private systemDay: number | null = null;
   /** The save's own stations when the system scene was built (the player's outpost, docs/PROCGEN.md §22). */
   private systemOwn = '';
+  /** Pyre's scene: the star, or its black hole once it has gone (docs/PROCGEN.md §26); null elsewhere. */
+  private systemStage: 'alive' | 'gone' | null = null;
   private flight: FlightSession | null = null;
   /** What has been cut from the rocks this session (docs/PROCGEN.md §19): it outlives a flight, not the page. */
   private readonly minedRocks: MiningLedger = new Map();
@@ -538,13 +541,16 @@ export class Game {
     // Sol is laid out for the game date: rebuilt when the day changes (and after the title's schematic Sol).
     const jd = this.gameDate();
     const day = systemId === 'sol' && jd !== null ? Math.floor(jd) : null;
-    if (this.system && this.system.def.systemId === systemId && this.systemDay === day && this.systemOwn === saveLocationsKey()) return;
+    const clock = this.state?.clock ?? null;
+    const stage = systemId === PYRE_ID && clock !== null ? (pyreStage(clock) === 'gone' ? 'gone' : 'alive') : null;
+    if (this.system && this.system.def.systemId === systemId && this.systemDay === day && this.systemOwn === saveLocationsKey() && this.systemStage === stage) return;
     this.disposeFlight();
     this.dockedView = null;
     this.system?.dispose();
-    this.system = new SystemScene(sceneDefFor(systemId, jd), this.artCtx);
+    this.system = new SystemScene(sceneDefFor(systemId, jd, clock), this.artCtx);
     this.systemDay = day;
     this.systemOwn = saveLocationsKey();
+    this.systemStage = stage;
     this.system.scene.add(this.camera);
   }
 
@@ -971,6 +977,7 @@ export class Game {
           this.persist();
         },
         onComm: (speaker, text) => this.comm(speaker, text, 5000),
+        onPyreBreakout: () => void this.onPyreBreakout(),
         // Sightseers at their sight (docs/PROCGEN.md §23): they say so, and the tour heads home.
         onObserve: (starId) => {
           const f = farStar(starId);
@@ -1287,6 +1294,36 @@ export class Game {
     void s;
   }
 
+  /** Jumps to Pyre refused now, and why (docs/PROCGEN.md §26). */
+  private pyreClosed(state: GameState, from: SystemId): { closedTo?: ReadonlyMap<SystemId, string> } {
+    const why = laneClosedReason(state.clock, hopsToPyre(from));
+    return why ? { closedTo: new Map([[PYRE_ID, why]]) } : {};
+  }
+
+  /** Pyre exploded with the ship still in its system (docs/PROCGEN.md §26): its emergency drive carries it out (fiction). */
+  private async onPyreBreakout(): Promise<void> {
+    const state = this.state!;
+    this.flight?.writeBack(state);
+    const refuge = getLocation(pyreRefugeId());
+    await showModal({
+      title: 'Ship disabled',
+      body: h(
+        'div',
+        { class: 'stack' },
+        h('p', null, `The flash of ${getSystem(PYRE_ID).displayName} exploding floods the system and knocks out your ship’s systems. Its emergency drive carries it through the lane to ${refuge.name}.`),
+        h('p', null, `Repairs cost up to ${formatCredits(RESCUE_FEE)} (you have ${formatCredits(state.credits)}). Your cargo is intact.`),
+        h('p', { class: 'muted small' }, dataBadge('fictional'), ' Fiction: no ship this near an exploding star would live through it.'),
+      ),
+      actions: [{ label: 'Continue', value: 'ok', variant: 'primary', testId: 'pyre-rescue-ok' }],
+      dismissValue: 'ok',
+      testId: 'pyre-rescue-dialog',
+    });
+    const r = rescueFromPyre(state);
+    toast(`Carried out of ${getSystem(PYRE_ID).displayName}: −${formatCredits(r.fee)}`, 'bad');
+    await this.saves.save(state);
+    this.enterDocked(r.dockId, {});
+  }
+
   private async onPlayerDestroyed(): Promise<void> {
     const state = this.state!;
     const dock = getLocation(state.location.lastDockId);
@@ -1350,6 +1387,8 @@ export class Game {
         : [],
       ...(state ? { catalogued: new Set(state.codex) } : {}),
       jumpReach: state ? performanceOf(state.ship).jumpReach : 0,
+      // The lane to Pyre takes no arrivals from its collapse until its debris has thinned (docs/PROCGEN.md §26).
+      ...(state ? this.pyreClosed(state, current) : {}),
     };
   }
 
@@ -1429,7 +1468,8 @@ export class Game {
           'dl',
           { class: 'kv' },
           h('dt', null, 'Distance from Sol'),
-          h('dd', null, `${dest.distanceLightYears.toFixed(2)} ly `, dataBadge('observed')),
+          // Pyre's place is invented (docs/PROCGEN.md §26); every other system's is the archives'.
+          h('dd', null, `${dest.distanceLightYears.toFixed(2)} ly `, isInventedSystem(dest.id) ? dataBadge('fictional', 'Invented') : dataBadge('observed')),
           h('dt', null, 'This jump'),
           h('dd', null, `${route.totalDistanceLy.toFixed(2)} ly via ${route.path.map((id) => getSystem(id).displayName).join(' → ')}`),
           h('dt', null, 'Transit time'),
