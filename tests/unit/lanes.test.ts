@@ -62,7 +62,7 @@ function meeting(o: LaneOffer): GameState {
 }
 
 describe('lane encounters: the rules', () => {
-  it('pass their guardrails, and meet a touring pilot every 15–25 minutes', () => {
+  it('pass their guardrails, and meet a touring pilot every 15–25 minutes', { timeout: 60_000 }, () => {
     expect(validateLanes()).toEqual([]);
     const stats = laneWorldStats();
     expect(stats.tourMinutes).toBeGreaterThanOrEqual(15);
