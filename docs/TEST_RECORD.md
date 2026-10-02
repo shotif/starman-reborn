@@ -11,12 +11,12 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | --- | --- | --- |
 | TypeScript typecheck (app + scripts/tests) | `npm run typecheck` | Pass |
 | Astronomy data validation | `npm run data:validate` | Pass (22 warnings: the contested planets this edition keeps) |
-| Unit tests | `npm test` | Pass: 777 tests in 50 files |
+| Unit tests | `npm test` | Pass: 794 tests in 51 files |
 | Production build | `npm run build` | Pass |
-| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 666 KB of 700 (gzipped) |
-| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 40 passed (5 touch-only tests skipped) |
-| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 40 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
-| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 252 screenshots, no audit findings |
+| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 674 KB of 700 (gzipped) |
+| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 41 passed (5 touch-only tests skipped) |
+| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 41 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
+| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 270 screenshots, no audit findings |
 
 ### Unit tests (Vitest)
 
@@ -484,13 +484,14 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   pay and standing, then docked where it was bound and back at work from there; left waiting, they
   go alone and think less of the player. A rescue: the drive fails on a later run (the run cut
   short, the rival adrift in its system), a distress call and a job for four ship components, paid
-  for the parts and more when handed over; given up, a tow home and standing lost. An ally: asked
+  for the parts and more when handed over; given up, a tow home and standing lost, told in the News
+  near where it happened for an hour. An ally: asked
   at their table, on the wing for free (a jump pays them nothing), held while there, leaving the
   wing at the next dock and staying there, not again for three hours, not with the wing full,
   parting ways; a friend's rounds up to an ally's standing, and an ally hunter's claims for nothing.
   A feud: planned when a rival is made hostile, its opening at a turn an hour on and two after they
   met; customs tipped off in lawful space near home, once, then the duel posted off a lawless
-  beacon (a job, the rival held there); hired guns in lawless space near home, a hunter flying with
+  beacon (a job, the rival held there, the News telling of it); hired guns in lawless space near home, a hunter flying with
   one, the rival lying in wait meanwhile; the duel won (the purse, standing back to 0), lost (the
   stake, standing at −10), missed (the feud stands), and under way past its window; amends ending a
   feud before its opening or with a duel posted. A friend made hostile ends their story, leaves the
