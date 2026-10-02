@@ -487,9 +487,15 @@ for (const size of SIZES) {
       await waitUntil(page, 'the raid struck', async () => (await dismissDiscovery(), (await api<{ flight: { state: string } | null }>(page, 'outpostRaid'))!.flight?.state === 'on'), 60_000);
       await dismissDiscovery();
       await api(page, 'selectTarget', 'station:outpost.gj-411-b');
-      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
-      expect(await api<boolean>(page, 'face', { id: 'station:outpost.gj-411-b', below: size.height < 500 ? 2 : 4 })).toBe(true);
-      await shot(page, `${size.name}-15c-outpost-raid`, size.touch, results);
+      // A raid under way keeps the radio busy: a toast may come between the shot and its audit, so
+      // the shot is taken again in a quiet moment (the audit still fails if none comes).
+      const raidShot = `${size.name}-15c-outpost-raid`;
+      for (let i = 0; i < 5; i++) {
+        await expect(page.locator('.toast')).toHaveCount(0, { timeout: 30_000 });
+        expect(await api<boolean>(page, 'face', { id: 'station:outpost.gj-411-b', below: size.height < 500 ? 2 : 4 })).toBe(true);
+        await shot(page, raidShot, size.touch, results);
+        if (!results[raidShot]!.overlaps.some((o) => o.includes('toast'))) break;
+      }
       // Your crew (docs/PROCGEN.md §30): a hand looking for a berth at a bar's table, the crew in the
       // bar (hurt and giving notice, a favour to ask), and the favour in their dialog.
       const hand = (await api<{ locationId: string; offerId: string } | null>(page, 'findCrew', { role: 'engineer', heart: 'soft-hearted' }))!;
