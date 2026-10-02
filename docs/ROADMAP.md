@@ -28,9 +28,33 @@ What it lacks now:
 
 ## Proposed next increments
 
-None for now: the four the owner chose on 2 October 2026 to make the game more engaging (Lane
-encounters, Rival stories, Defend your outpost and Your crew) are all done. New candidates go to the
-owner before anything more is built.
+Candidates for what comes next, in the order they will be built, chosen by the owner on 2 October
+2026 once Lane encounters, Rival stories, Defend your outpost and Your crew were done.
+
+### Wrecks to fly to ⏳ (M)
+
+Lane encounters and scans lead somewhere in flight: a wreck to salvage, a pod to tractor in, a
+derelict (invented, and labelled fiction) to board, with short mysteries that run across a few
+systems. Today a lane encounter is settled at its card, with nothing to fly to.
+
+### Ranks that open doors ⏳ (M)
+
+Standing and ratings change the world: ranks with each lawful faction that bring perks (priority
+docking, discounts at their yards, contracts only for their own, the rank named in the News), and
+ranks with the Hollow Wake for outlaws. Today the ratings change almost nothing but the combat rank
+that ace hunts and den assaults ask for.
+
+### Races on the lanes ⏳ (M)
+
+Timed runs between stations and round real planets and moons, with rival pilots racing too, prizes,
+and a record board in the save: something that asks for flying skill, which the trading loop
+rarely does.
+
+### Wing command ⏳ (M)
+
+More orders for hired wingmen (defend my target, hold here, break off, cover the hauler), and
+wingmen who grow more skilled with each fight, remember the pilot, and can be hurt and treated like
+the crew. Today they take two orders.
 
 ### How an increment ships
 
