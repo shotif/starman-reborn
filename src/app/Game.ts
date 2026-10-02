@@ -27,7 +27,7 @@ import { carriesPassengers, frighten, passengerFright, passengerGoodbye, passeng
 import { claimFor, holdsOf, metRival, nextRun, rivalById, rivalDestroyed, rivalHello, rivalKnockedOut, rivalName, rivalShot, rivalWhere, shift, standingWith, turnOf } from '../economy/rivals.ts';
 import { allyLost, ambushIn, duelIn, duelLost, duelStarted, duelWon, settleRivalStories, spendAmbush, spendTipoff, storyOffer, storyStatus, tipoffIn, tippedPatrols, type StoryNote } from '../economy/rivalStories.ts';
 import { STORY, STORY_NOTES } from '../content/rivals/storyLines.ts';
-import { defenceOf, foughtPlan, guardsOnPost, nextRaid, outpostSystem, raidNote, raidWarning, settleRaid, turretsUp } from '../economy/outpostRaids.ts';
+import { defenceOf, foughtPlan, nextRaid, outpostSystem, raidNote, raidWarning, settleRaid, turretsUp } from '../economy/outpostRaids.ts';
 import { RAID_WATCH } from '../content/outposts/raidLines.ts';
 import { outpostId } from '../content/outposts/sites.ts';
 import { farStar, farStarLook, recordObservation, scheduleSky, skyComm, skyMoment, skyTimeline } from '../economy/stellar.ts';
@@ -1281,7 +1281,8 @@ export class Game {
       locationId: outpostId(o.site),
       stage: o.stage,
       turrets: turretsUp(o, state.clock),
-      guards: guardsOnPost(o, state.clock).map((g) => ({ id: g.id, name: g.name, model: g.model, skill: g.skill })),
+      // Guards on post, and those hired to come on post later (they join the flight at their time).
+      guards: (o.defence?.guards ?? []).filter((g) => g.until > state.clock).map((g) => ({ id: g.id, name: g.name, model: g.model, skill: g.skill, from: g.from, until: g.until })),
       ...(plan && plan.at - state.clock < 2 * 3_600 ? { raid: { window: plan.window, at: plan.at, threat: plan.threat, ships: plan.ships } } : {}),
     };
   }

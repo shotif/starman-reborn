@@ -3,13 +3,13 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { AudioEngine } from '../../src/audio/AudioEngine.ts';
 import { defaultSettings } from '../../src/app/settings.ts';
 import { emptyInput } from '../../src/flight/input/types.ts';
-import { FlightSession } from '../../src/world/FlightSession.ts';
+import { FlightSession, type OutpostGuardSetup } from '../../src/world/FlightSession.ts';
 import { SystemScene } from '../../src/world/SystemScene.ts';
 import { sceneDefFor } from '../../src/world/systems/index.ts';
 import { dockAt } from '../../src/app/rules.ts';
 import { assertValidState } from '../../src/app/save/migrate.ts';
 import { createNewGame, markVisited, type GameState, type OutpostRecord } from '../../src/app/state.ts';
-import { RAID_WATCH } from '../../src/content/outposts/raidLines.ts';
+import { RAID_GUARD, RAID_WATCH } from '../../src/content/outposts/raidLines.ts';
 import { OUTPOST_RAIDS, type OutpostRaidRules } from '../../src/content/outposts/raids.ts';
 import { OUTPOSTS } from '../../src/content/outposts/rules.ts';
 import { outpostId } from '../../src/content/outposts/sites.ts';
@@ -347,7 +347,7 @@ function installCanvasStub(): void {
 }
 
 /** A flight at the outpost (built to a port, in flight in its system) with its defences and a raid due in a few seconds. */
-function raidFlight(raid = { window: 7, threat: 2 as const, ships: 3 }) {
+function raidFlight(raid = { window: 7, threat: 2 as const, ships: 3 }, guards?: (clock: number) => OutpostGuardSetup[]) {
   installCanvasStub();
   const { s, o } = built(3);
   const sys = getLocation(outpostId(PLANET)).systemId;
@@ -377,13 +377,19 @@ function raidFlight(raid = { window: 7, threat: 2 as const, ships: 3 }) {
       onBounty: record('bounty'),
       onContractKill: nothing,
       onMessage: nothing,
-      onComm: nothing,
+      onComm: record('comm'),
       onOutpostRaid: record('raid'),
     },
     traffic: {
       plan: { traders: 0, patrolWings: 0, wingSize: 2, packs: null },
       owner: 'sta',
-      outpost: { locationId: outpostId(PLANET), stage: 3, turrets: 2, guards: [{ id: 'g1', name: 'Signe Okoro', model: 'ship.light-fighter.1.halden', skill: 'sharp' }], raid: { ...raid, at: s.clock + 8 } },
+      outpost: {
+        locationId: outpostId(PLANET),
+        stage: 3,
+        turrets: 2,
+        guards: guards?.(s.clock) ?? [{ id: 'g1', name: 'Signe Okoro', model: 'ship.light-fighter.1.halden', skill: 'sharp', from: s.clock - 600, until: s.clock + 7_200 }],
+        raid: { ...raid, at: s.clock + 8 },
+      },
     },
   });
   flight.start({ kind: 'arrival' });
@@ -424,6 +430,20 @@ describe('in flight', () => {
     expect(f.calls.raid!.at(-1)).toEqual([7, 'held', 3]);
     // Wake raiders: the player's kills pay their bounty.
     expect(f.calls.bounty?.length).toBeGreaterThan(0);
+  });
+
+  it('a guard hired for later comes on post in the flight at their time, and says so; one whose term is over does not', () => {
+    const f = raidFlight(undefined, (clock) => [
+      { id: 'g2', name: 'Ines Halvorsen', model: 'ship.light-fighter.1.halden', skill: 'steady', from: clock + 3, until: clock + 3_600 },
+      { id: 'g3', name: 'Tomas Reyes', model: 'ship.light-fighter.1.halden', skill: 'sharp', from: clock - 7_200, until: clock - 1 },
+    ]);
+    f.run(1);
+    expect(f.npcs().filter((n) => n.own === 'guard')).toEqual([]);
+    expect(f.run(4, () => f.npcs().some((n) => n.own === 'guard'))).toBe(true);
+    expect(f.npcs().filter((n) => n.own === 'guard')).toMatchObject([{ name: 'Ines Halvorsen', subtitle: 'Guarding your outpost' }]);
+    expect(f.calls.comm?.filter(([speaker]) => speaker === 'Ines Halvorsen').map(([, text]) => RAID_GUARD.onPost.includes(text as string))).toEqual([true]);
+    f.run(2);
+    expect(f.npcs().filter((n) => n.own === 'guard')).toHaveLength(1);
   });
 
   it('the stores broken open, the raid is lost and the raiders make off', () => {

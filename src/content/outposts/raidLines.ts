@@ -13,6 +13,11 @@ export const RAID_WATCH = {
   lost: ['They got into the stores. We’re hurt, but we’re still here.', 'They’ve cracked the stores and gone. We’ll mend.'],
 };
 
+/** A guard hired for the outpost coming on post, over the radio (the guard speaks). */
+export const RAID_GUARD = {
+  onPost: ['On post at your outpost. Nobody gets near the stores on my watch.', 'Guard on post. I’ll fly the loop; shout if you see them first.'],
+};
+
 /** What the game says. */
 export const RAID_NOTES = {
   warning: 'Raiders are coming for {outpost}: {ships} ships, in about {minutes} min. {odds}',

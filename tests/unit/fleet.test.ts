@@ -529,9 +529,9 @@ describe('guardrails', () => {
 describe('what the player is told', () => {
   it('a lost ship always, a few reports as they are, many as one summary, and dividends', () => {
     const run = (amount: number) => ({ at: 1, kind: 'run' as const, text: `Sold: ${amount}`, amount });
-    const one = fleetNews({ reports: [run(100)], runs: 1, hauled: 100, dividends: 0, outpost: 0, steps: 3 });
+    const one = fleetNews({ reports: [run(100)], runs: 1, hauled: 100, dividends: 0, outpost: 0, steps: 3, raids: [], raidJobs: [] });
     expect(one).toEqual([{ text: 'Sold: 100', tone: 'good' }]);
-    const many = fleetNews({ reports: [run(100), run(50), { at: 2, kind: 'lost', text: 'Lost it', amount: -900 }, run(20), { at: 3, kind: 'raid', text: 'Raided', amount: -300 }], runs: 4, hauled: -1030, dividends: 42, outpost: 0, steps: 20 });
+    const many = fleetNews({ reports: [run(100), run(50), { at: 2, kind: 'lost', text: 'Lost it', amount: -900 }, run(20), { at: 3, kind: 'raid', text: 'Raided', amount: -300 }], runs: 4, hauled: -1030, dividends: 42, outpost: 0, steps: 20, raids: [], raidJobs: [] });
     expect(many).toHaveLength(3);
     expect(many[0]).toEqual({ text: 'Lost it', tone: 'bad' });
     expect(many[1]!.text).toMatch(/4 runs, 1 raid \(-130 cr\)/);

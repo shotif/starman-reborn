@@ -1,6 +1,6 @@
 import { createNewGame, type GameState, type OutpostRecord } from '../app/state.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
-import { RAID_NEWS, RAID_NOTES, RAID_WATCH, RAID_FICTION } from '../content/outposts/raidLines.ts';
+import { RAID_FICTION, RAID_GUARD, RAID_NEWS, RAID_NOTES, RAID_WATCH } from '../content/outposts/raidLines.ts';
 import { OUTPOST_RAIDS, type OutpostRaidRules, type RaidBand } from '../content/outposts/raids.ts';
 import { OUTPOSTS } from '../content/outposts/rules.ts';
 import { outpostSites } from '../content/outposts/sites.ts';
@@ -49,6 +49,7 @@ export function validateOutpostRaids(rules: OutpostRaidRules = OUTPOST_RAIDS, wi
     for (const [, k] of text.matchAll(/\{(\w+)\}/g)) if (!allowed.includes(k!)) report('lines', subject, `{${k}} it cannot fill`);
   };
   for (const [k, list] of Object.entries(RAID_WATCH)) for (const line of list) check(`watch.${k}`, line, ['ships', 'minutes']);
+  for (const [k, list] of Object.entries(RAID_GUARD)) for (const line of list) check(`guard.${k}`, line, []);
   const noteFields: Record<string, readonly string[]> = { warning: ['outpost', 'ships', 'minutes', 'odds'], held: ['outpost'], lost: ['outpost', 'hours', 'good', 'took'], turretDown: [], guardOnPost: ['guard', 'outpost', 'from'] };
   for (const [k, line] of Object.entries(RAID_NOTES)) check(`note.${k}`, line, noteFields[k] ?? []);
   for (const [k, list] of Object.entries(RAID_NEWS)) for (const line of list) check(`news.${k}`, line, ['outpost', 'system']);

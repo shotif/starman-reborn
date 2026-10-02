@@ -472,7 +472,8 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   pilot. Saves keep it all and refuse damaged defences. In a real flight: the turrets and a guard by
   the outpost, the raid striking at its time with half its raiders for the stores, a turret firing on
   a raider in range, the raid held when the last raider is down (their bounties paid), and lost when
-  the stores are broken open, the raiders making off.
+  the stores are broken open, the raiders making off; a guard hired for later joining the flight at
+  their time and saying so over the radio, one whose term is over not coming.
 - `rivalStories.test.ts`: **rival stories**. The guardrails pass, every rival with a story it can
   play, and broken rules, paths and lines are caught (a yield too low, an ally out of reach, a duel
   window too short, a duel's loss leaving a rival hostile, a rival with no story, a he or she in a line, a

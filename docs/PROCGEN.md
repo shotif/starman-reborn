@@ -2814,8 +2814,9 @@ shows the raid watch and a bar of the odds.
   dark 6 km off (from the system's den if it has one, otherwise from the jump beacon's side), half
   of them for the outpost's stores (a barge moored by it, its hull by stage: 600, 900 or 1,200), the
   rest for whoever defends it. The turrets stand on a ring round the outpost and turn their guns on
-  raiders in range (1.6 km); the guards fly a loop round it and go for raiders near it; the player's
-  guns never hit the outpost's own. Every raider down or gone, the raid is held; the stores broken
+  raiders in range (1.6 km); the guards fly a loop round it and go for raiders near it (a guard hired
+  for later joins the flight when their time on post comes, and says so over the radio); the
+  player's guns never hit the outpost's own. Every raider down or gone, the raid is held; the stores broken
   open, it is lost and the raiders make off. Wake raiders pay their bounty as anywhere (§12).
   Undecided after half an hour, or left (docking, jumping, the ship lost), the clock decides it as
   below, with the raiders already downed counted.

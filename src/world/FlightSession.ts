@@ -75,6 +75,7 @@ import { FLEET } from '../content/fleet/rules.ts';
 import { captainsIn, type CaptainHere, type RunRaid } from '../economy/fleet.ts';
 import { RIVALS } from '../content/rivals/rules.ts';
 import { RIVAL_STORY } from '../content/rivals/stories.ts';
+import { RAID_GUARD } from '../content/outposts/raidLines.ts';
 import { OUTPOST_RAIDS } from '../content/outposts/raids.ts';
 import { rivalById, rivalName, rivalsIn, rivalSubtitle, type RivalLeg, type RivalRun } from '../economy/rivals.ts';
 import type { StationOwner } from '../content/world/types.ts';
@@ -301,7 +302,17 @@ export interface TrafficSetup {
   /** A rival waiting off the jump beacon for a duel (§28), and whether it has started. */
   duel?: { jobId: string; rivalId: string; started: boolean };
   /** The player's outpost here (docs/PROCGEN.md §29): its stage, its turrets up, its guards on post, and a raid due. */
-  outpost?: { locationId: string; stage: number; turrets: number; guards: readonly { id: string; name: string; model: string; skill: 'steady' | 'sharp' }[]; raid?: OutpostRaidSetup };
+  outpost?: { locationId: string; stage: number; turrets: number; guards: readonly OutpostGuardSetup[]; raid?: OutpostRaidSetup };
+}
+
+/** A guard hired for the player's outpost (docs/PROCGEN.md §29): on post from `from` until `until` (the game clock). */
+export interface OutpostGuardSetup {
+  id: string;
+  name: string;
+  model: string;
+  skill: 'steady' | 'sharp';
+  from: number;
+  until: number;
 }
 
 /** A raid due on the player's outpost (docs/PROCGEN.md §29): its window, when it strikes, its threat and ships. */
@@ -2348,6 +2359,7 @@ export class FlightSession {
       if (t.duel) this.spawnDuelist(t.duel);
       if (t.outpost) this.spawnOutpostDefences(t.outpost);
     }
+    this.updateOutpostGuards();
     this.updateOutpostRaid();
     // A rival's hired guns strike a little way into the flight (docs/PROCGEN.md §28).
     const hired = t.rivalAmbush;
@@ -2749,17 +2761,44 @@ export class FlightSession {
       const position = centre.clone().add(new THREE.Vector3(Math.cos(a) * r, 30, Math.sin(a) * r));
       this.makeOwnTurret(position, position.clone().sub(centre).normalize(), centre, a);
     }
-    o.guards.forEach((g, i) => {
-      const a = i * Math.PI;
-      const position = centre.clone().add(new THREE.Vector3(Math.cos(a) * F.guardLoop, 60, Math.sin(a) * F.guardLoop));
-      const npc = this.makeNpc(g.model, 'patrol', 'independent', position, new THREE.Vector3(-Math.sin(a), 0, Math.cos(a)), 'Guarding your outpost');
-      npc.name = g.name;
-      npc.target.name = g.name;
-      npc.target.hostile = false;
-      npc.own = { kind: 'guard', centre, angle: a };
-      npc.wingman = undefined;
-    });
+    // Guards on post now stand by it; those hired for later come on post in the flight, at their time.
+    const clock = this.state.clock;
+    this.outpostGuards = { centre, due: o.guards.filter((g) => g.from > clock && g.until > clock), slot: 0 };
+    for (const g of o.guards) if (g.from <= clock && clock < g.until) this.spawnOutpostGuard(g);
     if (o.raid) this.armOutpostRaid(o.raid);
+  }
+
+  /** The outpost's centre and its guards still to come on post in this flight. */
+  private outpostGuards: { centre: THREE.Vector3; due: OutpostGuardSetup[]; slot: number } | null = null;
+
+  /** A guard on their loop round the outpost: each the other side of it from the last. */
+  private spawnOutpostGuard(g: OutpostGuardSetup): NpcShip | null {
+    const og = this.outpostGuards;
+    if (!og) return null;
+    const F = OUTPOST_RAIDS.fight;
+    const a = og.slot++ * Math.PI;
+    const position = og.centre.clone().add(new THREE.Vector3(Math.cos(a) * F.guardLoop, 60, Math.sin(a) * F.guardLoop));
+    const npc = this.makeNpc(g.model, 'patrol', 'independent', position, new THREE.Vector3(-Math.sin(a), 0, Math.cos(a)), 'Guarding your outpost');
+    npc.name = g.name;
+    npc.target.name = g.name;
+    npc.target.hostile = false;
+    npc.own = { kind: 'guard', centre: og.centre, angle: a };
+    npc.wingman = undefined;
+    return npc;
+  }
+
+  /** A guard hired for later comes on post at their time, in the flight too, and says so over the radio. */
+  private updateOutpostGuards(): void {
+    const og = this.outpostGuards;
+    if (!og?.due.length) return;
+    const clock = this.state.clock;
+    const now = og.due.filter((g) => g.from <= clock);
+    if (!now.length) return;
+    og.due = og.due.filter((g) => g.from > clock);
+    for (const g of now) {
+      if (clock >= g.until || !this.spawnOutpostGuard(g)) continue;
+      this.callbacks.onComm?.(g.name, RAID_GUARD.onPost[hashString(g.id) % RAID_GUARD.onPost.length]!);
+    }
   }
 
   /** A raid due on the outpost (from the scene's start, or warned of in flight): it strikes at its time. */
