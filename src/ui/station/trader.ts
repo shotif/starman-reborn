@@ -268,6 +268,7 @@ async function openBuyDialog(ctx: StationContext, c: CommodityId, refresh: Refre
   if (r.ok) {
     ctx.sfx('credits');
     toast(`Bought ${r.qty} ${COMMODITIES[c].name} for ${formatCredits(r.total)}`, 'good');
+    if (r.relief) toast(r.relief.text, 'info', 6000);
   } else {
     ctx.sfx('ui-error');
     toast(r.message, 'bad');

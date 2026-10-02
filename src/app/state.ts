@@ -261,10 +261,14 @@ export interface OutpostRecord {
   earned: number;
 }
 
-/** A haul the player saw: through a system `safe` (whatever a raid there would have done), or `lost` (destroyed). */
+/**
+ * A haul the player saw: through a system `safe` (whatever a raid there would have done), or `lost`
+ * (destroyed). One the player took on to escort (docs/PROCGEN.md §21.7) is `escort` from when the
+ * job was taken (`systemId` its sender's) until it is `arrived` (`systemId` its destination's) or lost.
+ */
 export interface HaulRecord {
   at: number;
-  fate: 'safe' | 'lost';
+  fate: 'safe' | 'lost' | 'escort' | 'arrived';
   systemId: SystemId;
   /** Who destroyed it (lost hauls). */
   by?: 'raiders' | 'player';

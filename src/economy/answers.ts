@@ -9,7 +9,7 @@ import { endFront } from './border.ts';
 import { stationEventAt, systemEventAt, type WorldEvent } from './events.ts';
 import { adjustReputation, FACTIONS } from './factions.ts';
 import { lawIn } from './law.ts';
-import { reliefDelivered, shortfall } from './hauls.ts';
+import { reliefDelivered, shippedOut, shipsOut, shortfall, surplus } from './hauls.ts';
 import { markById, marksForFront } from './marks.ts';
 
 /**
@@ -86,6 +86,23 @@ export function relieveShortage(state: GameState, locationId: string, commodity:
   state.stats.rewards += paid;
   if (loc.factionId) adjustReputation(state.reputation, loc.factionId, EVENTS.react.standing);
   return { paid, text: `Shortage relieved: ${loc.name} is supplied again, and pays a relief bonus of ${paid} cr.` };
+}
+
+/**
+ * Buying out of a glut (or a harvest) counts toward clearing it, with what its haulers have shipped
+ * out (docs/PROCGEN.md §21.6); once the share the rules ask for has gone, it is over and prices are
+ * back to normal. No bonus: the low prices were the reward. Returns what happened, if anything did.
+ */
+export function clearGlut(state: GameState, locationId: string, commodity: CommodityId, qty: number): Answer | null {
+  const e = stationEventAt(locationId, state.clock);
+  if (!e || !shipsOut(e) || e.goods[0] !== commodity || state.world.ended[e.id] !== undefined) return null;
+  const log = state.world.relief;
+  log[e.id] = (log[e.id] ?? 0) + qty;
+  const extra = surplus(e);
+  if (extra <= 0 || log[e.id]! + shippedOut(e, state.clock) < extra * EVENTS.react.relief) return null;
+  state.world.ended[e.id] = state.clock;
+  const loc = getLocation(locationId);
+  return { paid: 0, text: `Glut cleared: ${loc.name} has no more ${COMMODITIES[commodity].name.toLowerCase()} than it can store, and its prices are back to normal.` };
 }
 
 /** Raiders destroyed during a raid count toward breaking it. */

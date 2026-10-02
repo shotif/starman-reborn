@@ -5,7 +5,7 @@ import { borderNews, type FrontPhase } from '../economy/border.ts';
 import { densDownNear } from '../economy/dens.ts';
 import type { SystemId } from '../data/types.ts';
 import { eventEnd, marksNear, minutes, newsAt, type NewsItem, type WorldEvent } from '../economy/events.ts';
-import { haulsLostNear, reliefNews } from '../economy/hauls.ts';
+import { haulsLostNear, reliefNews, shipsOut } from '../economy/hauls.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
 import type { RivalStyle } from '../content/rivals/rules.ts';
 import { rivalName, rivalNews } from '../economy/rivals.ts';
@@ -40,8 +40,10 @@ export function eventGlyph(e: Pick<WorldEvent, 'kind' | 'goods'>): GlyphName {
 function when(n: NewsItem, clock: number): string {
   const e = n.event;
   const end = eventEnd(e);
-  if (n.endedEarly) return `${e.kind === 'raid' ? 'broken' : 'relieved'} by a pilot ${minutes(clock - end)} min ago`;
-  if (end < e.end && end <= clock) return `relieved by its haulers ${minutes(clock - end)} min ago`;
+  // A glut is cleared: bought up by a pilot, or shipped out by its haulers (docs/PROCGEN.md §21.6).
+  const glut = shipsOut(e);
+  if (n.endedEarly) return `${e.kind === 'raid' ? 'broken' : glut ? 'bought up' : 'relieved'} by a pilot ${minutes(clock - end)} min ago`;
+  if (end < e.end && end <= clock) return `${glut ? 'shipped out' : 'relieved'} by its haulers ${minutes(clock - end)} min ago`;
   return n.active ? `for ${minutes(clock - e.start)} min, about ${minutes(e.end - clock)} min to go` : `over ${minutes(clock - end)} min ago`;
 }
 
@@ -145,7 +147,7 @@ export function newsList(systemId: SystemId, clock: number): HTMLElement {
           h('span', { class: 'row-name' }, n.event.headline),
           h('span', { class: 'row-sub' }, `${EVENT_LABEL[n.event.kind]} · ${where(n)} · ${when(n, clock)}`),
           h('span', { class: 'news-detail' }, n.event.detail),
-          n.event.kind === 'shortage' ? reliefLine(n.event, clock) : null,
+          n.event.kind === 'shortage' ? reliefLine(n.event, clock) : shipsOut(n.event) ? shipmentLine(n.event, clock) : null,
         ),
       ),
     ),
@@ -161,12 +163,30 @@ function reliefLine(e: WorldEvent, clock: number): HTMLElement | null {
   const said = relief.map(({ haul, fate }) => {
     const from = getLocation(haul.from).name;
     if (!fate.delivered && fate.at <= clock) return `the ${haul.name} (${units(haul.qty, haul.commodity)} from ${from}) was lost to ${fate.by === 'player' ? 'a pirate' : 'raiders'} in ${getSystem(fate.lostIn!).displayName}`;
+    if (fate.escort) return `the ${haul.name} is with its escort, bringing ${units(haul.qty, haul.commodity)} from ${from}`;
     if (fate.delivered && fate.at <= clock) return `the ${haul.name} brought ${units(haul.qty, haul.commodity)} from ${from}`;
     if (haul.depart > clock) return `the ${haul.name} is loading ${units(haul.qty, haul.commodity)} at ${from}`;
     return `the ${haul.name} is on its way from ${from} with ${units(haul.qty, haul.commodity)}, due in about ${minutes(haul.arrive - clock)} min`;
   });
   const text = said.join('; ');
   return h('span', { class: 'news-relief', 'data-testid': `relief-${e.id}` }, `Relief: ${text.charAt(0).toUpperCase()}${text.slice(1)}.`);
+}
+
+/** What a glut ships out (docs/PROCGEN.md §21.6): loading, on its way, delivered, or lost. */
+function shipmentLine(e: WorldEvent, clock: number): HTMLElement | null {
+  const out = reliefNews(e);
+  if (!out.length) return null;
+  const said = out.map(({ haul, fate }) => {
+    const to = getLocation(haul.to).name;
+    const cargo = units(haul.qty, haul.commodity);
+    if (!fate.delivered && fate.at <= clock) return `the ${haul.name} (${cargo} for ${to}) was lost to ${fate.by === 'player' ? 'a pirate' : 'raiders'} in ${getSystem(fate.lostIn!).displayName}`;
+    if (fate.escort) return `the ${haul.name} is with its escort, taking ${cargo} to ${to}`;
+    if (fate.delivered && fate.at <= clock) return `the ${haul.name} took ${cargo} to ${to}`;
+    if (haul.depart > clock) return `the ${haul.name} is loading ${cargo} for ${to}, leaving in about ${minutes(haul.depart - clock)} min`;
+    return `the ${haul.name} is on its way to ${to} with ${cargo}, due in about ${minutes(haul.arrive - clock)} min`;
+  });
+  const text = said.join('; ');
+  return h('span', { class: 'news-relief', 'data-testid': `shipments-${e.id}` }, `Shipping out: ${text.charAt(0).toUpperCase()}${text.slice(1)}.`);
 }
 
 /** Hauls lost to raiders within reach, lately (docs/PROCGEN.md §21). */

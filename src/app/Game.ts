@@ -50,12 +50,12 @@ import {
   wrecksIn,
   type JobEvent,
 } from '../economy/jobs.ts';
-import { boardEpoch, partyName, postedContract, postedContracts } from '../economy/contracts.ts';
+import { boardEpoch, boardFor, partyName, postedContract, postedContracts } from '../economy/contracts.ts';
 import { briefingFor, choiceHere, denDown, isStoryJob, knockOutDen, makeChoice, markSeen, optionLock, pendingBeats, speakerName } from '../economy/story.ts';
 import { DENS } from '../content/dens/rules.ts';
 import { showChoice, showDialogue } from '../ui/story.ts';
 import { denBounty, payCrew, stashGear, wingmanLost } from '../economy/combat.ts';
-import { haulFate, recordHaul, reliefHauls } from '../economy/hauls.ts';
+import { eventHauls, haulFate, raidsOnWay, recordHaul, reliefHauls, shipments, shipsOut } from '../economy/hauls.ts';
 import { HAULS } from '../content/economy/hauls.ts';
 import { commitCrime, customsScan, dockAccess, finesTravelling, isLawful, scansOnDocking, settleLaw, totalFines } from '../economy/law.ts';
 import { whatNext } from '../economy/advisor.ts';
@@ -1991,6 +1991,34 @@ export class Game {
             const h = reliefHauls(e)[0];
             if (!h || !haulFate(h).delivered || h.depart < t) continue;
             return { eventId: e.id, at: e.locationId!, haul: { id: h.id, name: h.name, from: h.from, fromName: getLocation(h.from).name, to: h.to, path: h.path, depart: h.depart, arrive: h.arrive, qty: h.qty } };
+          }
+        }
+        return null;
+      },
+      /** Test-only: the first glut from `from` on (hour by hour) whose first shipment sets off after it (docs/PROCGEN.md §21.6). */
+      findGlut: (from: number) => {
+        for (let t = from; t < from + 400 * 3_600; t += 3_600) {
+          for (const e of eventsAt(t)) {
+            const h = shipsOut(e) ? shipments(e)[0] : undefined;
+            if (!h || e.start < from || !getLocation(e.locationId!).services.includes('market')) continue;
+            return { eventId: e.id, at: e.locationId!, start: e.start, commodity: h.commodity, haul: { id: h.id, name: h.name, to: h.to, toName: getLocation(h.to).name, depart: h.depart, arrive: h.arrive, qty: h.qty } };
+          }
+        }
+        return null;
+      },
+      /**
+       * Test-only: the first relief haul or shipment from `from` on whose way crosses a raid, within an
+       * escort's reach, from a station with a board: its sender posts an escort for it (docs/PROCGEN.md §21.7).
+       */
+      findReliefEscort: (from: number) => {
+        for (let t = from; t < from + 400 * 3_600; t += 3_600) {
+          for (const e of eventsAt(t)) {
+            for (const h of eventHauls(e)) {
+              // A minute after its event begins, its sender's board posts an escort for it.
+              const at = e.start + 60;
+              if (e.start < from || h.depart <= at || !raidsOnWay(h).length || !boardFor(h.from, boardEpoch(at)).some((c) => c.contract?.haul === h.id)) continue;
+              return { eventId: e.id, start: e.start, at, giver: h.from, haul: { id: h.id, name: h.name, to: h.to, toName: getLocation(h.to).name, depart: h.depart, path: h.path, qty: h.qty } };
+            }
           }
         }
         return null;

@@ -16,10 +16,11 @@ import { rivalRelief } from './rivals.ts';
 /**
  * Haulers on the lanes (docs/PROCGEN.md §21). The stations send each other freight as ships with
  * names, cargo and a timetable: every open station that makes goods may send a haul in each time
- * slot, to a station within reach that takes them, and a shortage draws relief from the nearest
- * stations that make what it lacks. A haul in a raided system's lanes may be lost. All of it is a
+ * slot, to a station within reach that takes them; a shortage draws relief from the nearest
+ * stations that make what it lacks, and a glut ships its surplus out to the nearest that take it.
+ * A haul in a raided system's lanes may be lost, unless the player escorts it. All of it is a
  * function of the seed, the clock and the save's world log (which keeps what became of the hauls
- * the player saw); FlightSession flies the ones in the player's system.
+ * the player saw, and those the player escorts); FlightSession flies the ones in the player's system.
  */
 
 export type HaulLegKind = 'out' | 'transit' | 'in' | 'local';
@@ -33,9 +34,9 @@ export interface HaulLeg {
 }
 
 export interface Haul {
-  /** `h.<station>.<slot>` for trade, `h.<shortage event id>.<k>` for relief. */
+  /** `h.<station>.<slot>` for trade, `h.<event id>.<k>` for a shortage's relief or a glut's shipment. */
   id: string;
-  kind: 'trade' | 'relief';
+  kind: 'trade' | 'relief' | 'shipment';
   name: string;
   /** Catalogue ship id. */
   model: string;
@@ -51,14 +52,21 @@ export interface Haul {
   arrive: number;
   /** The shortage it relieves. */
   relief?: string;
+  /** The glut (or harvest) it ships out of. */
+  glut?: string;
 }
 
-/** What becomes of a haul: delivered at `at`, or lost at `at` (in a raided system's lanes, or in the player's sight). */
+/**
+ * What becomes of a haul: delivered at `at`, or lost at `at` (in a raided system's lanes, or in the
+ * player's sight). One waiting for the player's escort, or under it, has neither yet (`escort`,
+ * delivered at Infinity).
+ */
 export interface HaulFate {
   delivered: boolean;
   at: number;
   lostIn?: SystemId;
   by?: 'raiders' | 'player';
+  escort?: true;
 }
 
 // ---------------------------------------------------------------- places and ways
@@ -227,9 +235,9 @@ function makeTradeHaul(stationId: string, slot: number): Haul | null {
 }
 
 const reliefCache = new Map<string, Haul[]>();
-/** The relief a shortage draws: hauls from the nearest stations that make what it lacks. */
+/** The relief a shortage draws: hauls from the nearest stations that make what it lacks (none to a raider den, or a closed dock). */
 export function reliefHauls(e: WorldEvent): readonly Haul[] {
-  if (e.kind !== 'shortage' || !e.locationId) return [];
+  if (e.kind !== 'shortage' || !e.locationId || !isOpen(getLocation(e.locationId))) return [];
   let out = reliefCache.get(e.id);
   if (out) return out;
   const to = getLocation(e.locationId);
@@ -273,8 +281,91 @@ export function shortfall(e: WorldEvent): number {
   return e.goods.reduce((sum, c) => sum + (marketTables().get(e.locationId!)?.entries.get(c)?.target ?? 0) * Math.max(0, 1 - e.stock), 0);
 }
 
+/** Whether an event ships its surplus out (docs/PROCGEN.md §21.6): a glut, or a frontier harvest. */
+export const shipsOut = (e: Pick<WorldEvent, 'kind'>): boolean => e.kind === 'glut' || e.kind === 'harvest';
+
+/** How many units of its good (a harvest's first) a glut leaves a station with beyond its normal stock. */
+export function surplus(e: WorldEvent): number {
+  const good = e.goods[0];
+  if (!e.locationId || !good || !shipsOut(e)) return 0;
+  return (marketTables().get(e.locationId)?.entries.get(good)?.target ?? 0) * Math.max(0, e.stock - 1);
+}
+
+const shipmentCache = new Map<string, Haul[]>();
+/**
+ * What a glut ships out (docs/PROCGEN.md §21.6): hauls to the nearest stations within reach that use
+ * or trade its good, a different one each while there are, each with a share of the surplus. One
+ * that would set off after the glut was due to end is not sent.
+ */
+export function shipments(e: WorldEvent): readonly Haul[] {
+  if (!shipsOut(e) || !e.locationId || !e.goods[0]) return [];
+  let out = shipmentCache.get(e.id);
+  if (out) return out;
+  const from = getLocation(e.locationId);
+  const commodity = e.goods[0];
+  const S = HAULS.shipOut;
+  const takers = takersOf(from, commodity);
+  const qty = Math.max(HAULS.load.min, Math.round(surplus(e) * S.share));
+  out = [];
+  if (isOpen(from) && takers.length && made(from.id).includes(commodity)) {
+    for (let k = 0; k < S.hauls; k++) {
+      const r = rng(WORLD_SEED, 'ship-out', e.id, k);
+      const depart = e.start + Math.round(r.range(S.dispatch[0], S.dispatch[1]));
+      if (depart >= e.end) continue;
+      const to = takers[k % takers.length]!;
+      const path = waysFrom(from.systemId).get(to.systemId)!;
+      const legs = legsOf(path, depart);
+      const faction = owner(from);
+      out.push({
+        id: `h.${e.id}.${k}`,
+        kind: 'shipment',
+        name: r.pick(HAULER_NAMES),
+        model: ship(r, faction),
+        faction,
+        from: from.id,
+        to: to.id,
+        commodity,
+        qty,
+        path,
+        legs,
+        depart,
+        arrive: legs.at(-1)!.end,
+        glut: e.id,
+      });
+    }
+  }
+  if (shipmentCache.size > 4_000) shipmentCache.clear();
+  shipmentCache.set(e.id, out);
+  return out;
+}
+
+/** The hauls a station event sends: a shortage's relief, or a glut's shipments. */
+export function eventHauls(e: WorldEvent): readonly Haul[] {
+  return e.kind === 'shortage' ? reliefHauls(e) : shipsOut(e) ? shipments(e) : [];
+}
+
+/** Units of its good a glut has shipped out by a moment (its cargo leaves as each sets off). */
+export function shippedOut(e: WorldEvent, clock: number): number {
+  let sum = 0;
+  for (const h of shipments(e)) if (h.depart <= clock) sum += h.qty;
+  return sum;
+}
+
+/** When a glut's shipments between them have carried off what clears it (EVENTS.react.relief of its surplus), or Infinity. */
+export function shipOutEnd(e: WorldEvent): number {
+  const need = surplus(e) * EVENTS.react.relief;
+  let sum = 0;
+  for (const h of [...shipments(e)].sort((a, b) => a.depart - b.depart)) {
+    sum += h.qty;
+    if (need > 0 && sum >= need - 1e-9) return h.depart;
+  }
+  return Infinity;
+}
+
 /** The longest a haul takes from setting off to docking (relief included). */
 const LONGEST = HAULS.legs.dock * 2 + (HAULS.relief.maxJumps - 1) * HAULS.legs.transit + HAULS.relief.maxJumps * EVENTS.jumpSeconds;
+/** The latest an event's hauls set off after it starts (relief or shipments). */
+const EVENT_DISPATCH = Math.max(HAULS.relief.dispatch[1], HAULS.shipOut.dispatch[1]);
 
 const sendersNear = new Map<SystemId, FictionalLocation[]>();
 function sendersWithin(systemId: SystemId, jumps: number): FictionalLocation[] {
@@ -314,13 +405,13 @@ function tradeHaulsNear(systemId: SystemId, from: number, to: number): Haul[] {
   return out;
 }
 
-/** Every haul with any part of its way between `from` and `to` in `systemId` (trade and relief). */
+/** Every haul with any part of its way between `from` and `to` in `systemId` (trade, relief and shipments). */
 function haulsNear(systemId: SystemId, from: number, to: number): Haul[] {
   const out = tradeHaulsNear(systemId, from, to);
-  // Relief for shortages within reach that started recently enough to be on its way.
+  // Relief for shortages, and shipments out of gluts, within reach that started recently enough to be on their way.
   for (const l of marketsWithin(systemId)) {
-    for (const e of stationEventsBetween(l, from - LONGEST - HAULS.relief.dispatch[1], to)) {
-      for (const h of reliefHauls(e)) if (h.depart <= to && h.arrive >= from && h.path.includes(systemId)) out.push(h);
+    for (const e of stationEventsBetween(l, from - LONGEST - EVENT_DISPATCH, to)) {
+      for (const h of eventHauls(e)) if (h.depart <= to && h.arrive >= from && h.path.includes(systemId)) out.push(h);
     }
   }
   return out;
@@ -340,6 +431,9 @@ function seen(id: string): HaulRecord | undefined {
 export function haulFate(h: Haul): HaulFate {
   const rec = seen(h.id);
   if (rec?.fate === 'lost') return { delivered: false, at: rec.at, lostIn: rec.systemId, by: rec.by ?? 'raiders' };
+  // Escorted by the player (docs/PROCGEN.md §21.7): in when the escort saw it docked; until then, waiting or under way with it.
+  if (rec?.fate === 'arrived') return { delivered: true, at: rec.at };
+  if (rec?.fate === 'escort') return { delivered: true, at: Infinity, escort: true };
   for (const leg of h.legs) {
     if (rec?.fate === 'safe' && rec.systemId === leg.systemId) continue;
     const mid = (leg.start + leg.end) / 2;
@@ -357,18 +451,21 @@ export interface HaulHere {
   progress: number;
 }
 
-/** The hauls flying in a system at a moment (not lost by then), relief first, for the flight scene. */
+/**
+ * The hauls flying in a system at a moment (not lost by then), relief and shipments first, for the
+ * flight scene. One the player escorts flies with the player instead, never on its timetable.
+ */
 export function haulsIn(systemId: SystemId, clock: number): HaulHere[] {
   const out: HaulHere[] = [];
   for (const h of haulsNear(systemId, clock, clock)) {
     const leg = h.legs.find((l) => l.systemId === systemId && clock >= l.start && clock < l.end);
     if (!leg) continue;
     const fate = haulFate(h);
-    if (!fate.delivered && fate.at <= clock) continue;
+    if (fate.escort || (fate.at <= clock && (!fate.delivered || fate.at < h.arrive))) continue;
     out.push({ haul: h, leg, progress: (clock - leg.start) / (leg.end - leg.start) });
   }
-  // Relief first (the haulers the news speaks of), then in timetable order.
-  return out.sort((a, b) => Number(b.haul.kind === 'relief') - Number(a.haul.kind === 'relief') || (a.haul.id < b.haul.id ? -1 : 1));
+  // Relief and shipments first (the haulers the news speaks of), then in timetable order.
+  return out.sort((a, b) => Number(b.haul.kind !== 'trade') - Number(a.haul.kind !== 'trade') || (a.haul.id < b.haul.id ? -1 : 1));
 }
 
 /** The relief a shortage has had by a moment: units delivered by hauls (and rival runners, §24) that arrived. */
@@ -410,9 +507,9 @@ export function haulReliefEnd(e: WorldEvent): number {
 
 // ---------------------------------------------------------------- news
 
-/** A shortage's relief as the news tells it: each haul, and what becomes of it. */
+/** A shortage's relief, or a glut's shipments, as the news tells them: each haul, and what becomes of it. */
 export function reliefNews(e: WorldEvent): { haul: Haul; fate: HaulFate }[] {
-  return reliefHauls(e).map((haul) => ({ haul, fate: haulFate(haul) }));
+  return eventHauls(e).map((haul) => ({ haul, fate: haulFate(haul) }));
 }
 
 /**
@@ -493,7 +590,7 @@ function raidsAround(systemId: SystemId, clock: number): WorldEvent[] {
   return out;
 }
 
-/** The haul with this id: a station's trade haul (`h.<station>.<slot>`), or a shortage's relief (`h.<event id>.<k>`). */
+/** The haul with this id: a station's trade haul (`h.<station>.<slot>`), or an event's relief or shipment (`h.<event id>.<k>`). */
 export function haulById(id: string): Haul | null {
   const dot = id.lastIndexOf('.');
   const head = id.slice(2, dot);
@@ -501,27 +598,84 @@ export function haulById(id: string): Haul | null {
   if (!id.startsWith('h.') || !Number.isInteger(n)) return null;
   if (head.startsWith('e.')) {
     const e = stationEventById(head);
-    return (e && reliefHauls(e)[n]) ?? null;
+    return (e && eventHauls(e).find((h) => h.id === id)) ?? null;
   }
   return marketTables().has(head) ? tradeHaul(head, n) : null;
 }
 
+let shipIndex: Map<string, string[]> | null = null;
 /**
- * Stock the hauls move at a station (docs/PROCGEN.md §21.3), fading as its market recovers: the
- * relief that arrived for a shortage adds its cargo while it lasts, and a trade haul bound here that was lost
- * (in a raid's lanes, or where the player saw it destroyed) is missed. The rest of the trade is the
- * market's normal flow, already in its prices.
+ * The stations whose gluts can ship to a station: it is among the nearest takers of a good they
+ * make (`shipments` sends to those). Worked out once, from the market tables and the lanes.
+ */
+function shipSources(locationId: string): readonly string[] {
+  if (!shipIndex) {
+    const index = new Map<string, string[]>();
+    for (const from of haulSenders()) {
+      for (const good of made(from.id)) {
+        for (const to of takersOf(from, good).slice(0, HAULS.shipOut.hauls)) {
+          const list = index.get(to.id) ?? [];
+          if (!list.includes(from.id)) list.push(from.id);
+          index.set(to.id, list);
+        }
+      }
+    }
+    shipIndex = index;
+  }
+  return shipIndex.get(locationId) ?? [];
+}
+
+const shipmentsToCache = new Map<string, Haul[]>();
+/** Shipments out of gluts bound for a station that may still be felt there around a moment (looked up by the hour). */
+function shipmentsTo(locationId: string, clock: number): Haul[] {
+  const bucket = Math.floor(clock / RAID_BUCKET);
+  const key = `${locationId}|${bucket}`;
+  let out = shipmentsToCache.get(key);
+  if (!out) {
+    const to = (bucket + 1) * RAID_BUCKET;
+    out = [];
+    for (const l of shipSources(locationId)) {
+      for (const e of stationEventsBetween(l, to - RAID_BUCKET - FELT - LONGEST - EVENT_DISPATCH, to)) {
+        for (const h of shipments(e)) if (h.to === locationId) out.push(h);
+      }
+    }
+    if (shipmentsToCache.size > 8_000) shipmentsToCache.clear();
+    shipmentsToCache.set(key, out);
+  }
+  return out;
+}
+
+/**
+ * Stock the hauls move at a station (docs/PROCGEN.md §21.3, §21.6), fading as its market recovers:
+ * the relief that arrived for a shortage adds its cargo while it lasts; a glut's shipments take
+ * theirs away as they set off while it lasts, and add it where they arrive; and a trade haul bound
+ * here that was lost (in a raid's lanes, or where the player saw it destroyed) is missed. The rest
+ * of the trade is the market's normal flow, already in its prices.
  */
 export function haulStock(locationId: string, commodity: CommodityId, clock: number): number {
   let total = 0;
-  // Only what a station uses runs short (economy/events.ts), so only that draws relief.
-  const uses = marketTables().get(locationId)?.entries.get(commodity)?.role === 'consume';
-  if (uses) for (const e of stationEventsBetween(locationId, clock - FELT - LONGEST - HAULS.relief.dispatch[1], clock)) {
-    // Once the shortage is over, its normal stock is back: the relief it had is part of that.
-    if (e.kind !== 'shortage' || e.goods[0] !== commodity || eventEnd(e) <= clock) continue;
-    for (const h of reliefHauls(e)) {
+  const role = marketTables().get(locationId)?.entries.get(commodity)?.role;
+  // Only what a station uses runs short (economy/events.ts), so only that draws relief; only what it makes runs over.
+  if (role === 'consume' || role === 'produce') {
+    for (const e of stationEventsBetween(locationId, clock - FELT - LONGEST - EVENT_DISPATCH, clock)) {
+      // Once the event is over, its normal stock is back: what its hauls brought or took is part of that.
+      if (e.goods[0] !== commodity || eventEnd(e) <= clock) continue;
+      if (e.kind === 'shortage' && role === 'consume') {
+        for (const h of reliefHauls(e)) {
+          const fate = haulFate(h);
+          if (fate.delivered && fate.at <= clock) total += h.qty * fade(clock - fate.at);
+        }
+      } else if (shipsOut(e) && role === 'produce') {
+        for (const h of shipments(e)) if (h.depart <= clock) total -= h.qty * fade(clock - h.depart);
+      }
+    }
+  }
+  // A glut's surplus where it lands.
+  if (role && role !== 'produce') {
+    for (const h of shipmentsTo(locationId, clock)) {
+      if (h.commodity !== commodity) continue;
       const fate = haulFate(h);
-      if (fate.delivered && fate.at <= clock) total += h.qty * fade(clock - fate.at);
+      if (fate.delivered && fate.at <= clock && clock - fate.at <= FELT) total += h.qty * fade(clock - fate.at);
     }
   }
   const missed = new Set<string>();
@@ -538,10 +692,49 @@ export function haulStock(locationId: string, commodity: CommodityId, clock: num
 
 // ---------------------------------------------------------------- the world log
 
-/** Writes what became of a haul the player saw (`safe` through this system, or `lost`), and forgets old records. */
+/**
+ * Writes what became of a haul the player saw (`safe` through this system, or `lost`), or one the
+ * player escorts, and forgets old records (never one still waiting for its escort). A lost haul stays lost.
+ */
 export function recordHaul(log: { hauls?: Record<string, HaulRecord> }, id: string, rec: HaulRecord): void {
   const all = (log.hauls ??= {});
   if (all[id]?.fate === 'lost') return;
   all[id] = rec;
-  for (const [k, r] of Object.entries(all)) if (rec.at - r.at > HAULS.keepSeconds) delete all[k];
+  for (const [k, r] of Object.entries(all)) if (r.fate !== 'escort' && rec.at - r.at > HAULS.keepSeconds) delete all[k];
+}
+
+/** A haul whose escort was given up goes back to its timetable (docs/PROCGEN.md §21.7). */
+export function releaseHaul(log: { hauls?: Record<string, HaulRecord> }, id: string): void {
+  if (log.hauls?.[id]?.fate === 'escort') delete log.hauls[id];
+}
+
+// ---------------------------------------------------------------- escorts for relief (§21.7)
+
+/** The raids a haul's way crosses, at the middle of its leg in each system, worst first. */
+export function raidsOnWay(h: Haul): { systemId: SystemId; level: 1 | 2 | 3 }[] {
+  const out: { systemId: SystemId; level: 1 | 2 | 3 }[] = [];
+  for (const leg of h.legs) {
+    const raid = systemEventAt(leg.systemId, (leg.start + leg.end) / 2);
+    if (raid?.kind === 'raid' && raid.level) out.push({ systemId: leg.systemId, level: raid.level });
+  }
+  return out.sort((a, b) => b.level - a.level);
+}
+
+/**
+ * The relief and shipments a station sends whose time on its board (from their event's start until
+ * they are due to set off) overlaps `from`–`to`, with their events.
+ */
+export function eventHaulsFrom(locationId: string, from: number, to: number): { haul: Haul; event: WorldEvent }[] {
+  if (!made(locationId).length) return [];
+  const out: { haul: Haul; event: WorldEvent }[] = [];
+  const on = (e: WorldEvent, h: Haul) => h.from === locationId && e.start < to && h.depart > from;
+  for (const e of stationEventsBetween(locationId, from - EVENT_DISPATCH, to)) {
+    if (shipsOut(e)) for (const h of shipments(e)) if (on(e, h)) out.push({ haul: h, event: e });
+  }
+  for (const l of marketsWithin(getLocation(locationId).systemId)) {
+    for (const e of stationEventsBetween(l, from - EVENT_DISPATCH, to)) {
+      if (e.kind === 'shortage') for (const h of reliefHauls(e)) if (on(e, h)) out.push({ haul: h, event: e });
+    }
+  }
+  return out.sort((a, b) => (a.haul.id < b.haul.id ? -1 : 1));
 }

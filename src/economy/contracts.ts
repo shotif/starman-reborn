@@ -29,6 +29,7 @@ import { FACTIONS } from './factions.ts';
 import { dockAccess, lawIn, scansOnDocking, wakeFriendly } from './law.ts';
 import type { JobDef } from './jobs.ts';
 import { cargoCapacity } from './loadout.ts';
+import { eventHaulsFrom, raidsOnWay } from './hauls.ts';
 import { berths } from './passengers.ts';
 import { marketTables } from './markets.ts';
 
@@ -174,6 +175,8 @@ export function boardFor(locationId: string, epoch: number): JobDef[] {
     if (d) out.push(d);
     // Observations of a dying far star, at research stations (docs/PROCGEN.md §25).
     out.push(...skyContracts(loc, epoch));
+    // Escorts for this station's relief and shipments bound through raided lanes (docs/PROCGEN.md §21.7).
+    out.push(...reliefEscorts(loc, epoch));
     // Standing runs a lasting mark left here (docs/PROCGEN.md §14.7), each from its own stream.
     for (const mark of marksAt(locationId)) {
       if (!mark.run) continue;
@@ -277,6 +280,64 @@ function skyContracts(giver: FictionalLocation, epoch: number): JobDef[] {
       destinationLocationId: giver.id,
       contract: { kind: 'observe' },
     };
+  });
+}
+
+/**
+ * Escorts for relief and shipments bound through raided lanes (docs/PROCGEN.md §21.7): a haul this
+ * station sends for a shortage, or out of its own glut, whose way crosses a raid, on its board from
+ * when its event begins until the haul is due to set off. Taken on, the haul waits for the pilot
+ * and flies with them; its ids are its own, as it comes and goes within a time slot.
+ */
+function reliefEscorts(giver: FictionalLocation, epoch: number): JobDef[] {
+  if (!giver.services.includes('contracts')) return [];
+  const start = epoch * CONTRACTS.epochSeconds;
+  return eventHaulsFrom(giver.id, start, start + CONTRACTS.epochSeconds).flatMap(({ haul: h, event }) => {
+    const raids = raidsOnWay(h);
+    const jumps = h.path.length - 1;
+    // A board outside the frontier never sends a pilot into it (docs/PROCGEN.md §11): the haulers' drives reach it, a young pilot's do not.
+    if (!raids.length || jumps > CONTRACTS.maxJumps.escort || (!isFrontier(giver.systemId) && h.path.some(isFrontier))) return [];
+    const level = raids[0]!.level;
+    const dest = getLocation(h.to);
+    const r = rng(WORLD_SEED, 'contracts', 'relief-escort', h.id);
+    const rw = CONTRACTS.reward.escort;
+    const reward = pay(r, routeFeeBetween(giver.systemId, dest.systemId), (rw.base + rw.perLevel * level + rw.perJump * jumps) * CONTRACTS.eventPremium);
+    const through = [...new Set(raids.map((x) => getSystem(x.systemId).displayName))];
+    const where = through.length > 1 ? `${through.slice(0, -1).join(', ')} and ${through.at(-1)}` : through[0]!;
+    const cargo = `${h.qty} ${COMMODITIES[h.commodity].name.toLowerCase()}`;
+    const what =
+      h.kind === 'shipment'
+        ? `The ${h.name} is shipping ${cargo} out of ${giver.name}’s glut to ${place(dest)}`
+        : `The ${h.name} is taking ${cargo} to ${place(dest)}, which is short of it`;
+    const ec = CONTRACTS.escort;
+    const how =
+      jumps === 0
+        ? 'It sets off when you launch: stay close and see it docked.'
+        : `It sets off when you launch and keeps with you; jump when it is within ${ec.keepUpM / 1000} km and it jumps with you.`;
+    return [
+      {
+        ...common(giver, `${CONTRACT_PREFIX}${giver.id}.${epoch}.escort-${h.id.replace(/\./g, '-')}`, clampDifficulty(level + (jumps >= 2 ? 1 : 0))),
+        title: `Escort the ${h.name} to ${dest.name}`,
+        briefing: `${what}, and raiders swarm ${where} on its way. It waits for an escort until it is due to set off, then goes alone. ${how} If it is lost, the contract fails, and its cargo with it.`,
+        objectives: [
+          {
+            kind: 'escort',
+            systemId: dest.systemId,
+            fromLocationId: giver.id,
+            locationId: dest.id,
+            model: h.model,
+            shipName: h.name,
+            level,
+            haul: h.id,
+            text: `Escort the ${h.name} to ${dest.name}${jumps ? ` (${getSystem(dest.systemId).displayName})` : ''}`,
+          },
+        ],
+        reward,
+        difficultyNote: `Raiders swarm ${where}: threat ${level} of 3${jumps ? `; ${routeNote(giver.systemId, dest.systemId).toLowerCase()}` : ''}`,
+        destinationLocationId: dest.id,
+        contract: { kind: 'escort', event: event.id, haul: h.id, until: h.depart },
+      },
+    ];
   });
 }
 
@@ -1067,6 +1128,9 @@ export function postedContracts(state: GameState, locationId: string): JobDef[] 
   return boardFor(locationId, boardEpoch(state.clock)).filter((c) => {
     if (state.jobs[c.id]) return true;
     if (taken.has(c.id)) return false;
+    // An escort for a haul goes once it has set off alone, or once it has an escort (docs/PROCGEN.md §21.7).
+    const haul = c.contract?.haul;
+    if (haul && (state.clock >= (c.contract!.until ?? Infinity) || state.world.hauls?.[haul])) return false;
     const o = c.objectives[0];
     return !(c.contract?.kind === 'survey' && o?.kind === 'scan' && state.discoveredBodies.includes(o.bodyId));
   });

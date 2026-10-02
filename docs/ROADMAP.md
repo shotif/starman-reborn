@@ -9,9 +9,10 @@ After the scripted opening (10–20 minutes), the neighbourhood is an open sandb
 systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
 of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
 packs in lawless space; 39 ships and 146 pieces of equipment; and generated contracts on every job
-board. Increments 1–23 (under [Done so far](#done-so-far)) added world events and news, contracts
+board. Increments 1–24 (under [Done so far](#done-so-far)) added world events and news, contracts
 of every kind, the law and the outlaw path, goals, five story arcs, combat depth, people in the
-bars and a trade computer, a world that answers, a fleet of your own whose captains fly the lanes,
+bars and a trade computer, a world that answers, gluts that ship their surplus out and relief to
+escort through raided lanes, a fleet of your own whose captains fly the lanes,
 a station of your own, passengers and sightseers, rival pilots with careers of their own, a
 supernova in every sky (as fiction), mining in the real belts, the frontier with a life of its own,
 a border war whose fronts can be won for good, story endings that change stations for good, escorts
@@ -31,11 +32,6 @@ owner on 1 October 2026 (with A station of your own, Passengers and sightseers a
 now done), the far stars first (done, increment 23) and a doomed star at the edge later, as an
 increment of its own; Lane encounters, Rival stories, Defend your outpost and Your crew on
 2 October 2026, to make the game more engaging.
-
-### Gluts that ship out ⏳ (S)
-
-A glut sends its surplus out in haulers, as a shortage draws relief, and boards post escorts for
-relief bound through raided lanes.
 
 ### Stellar death: a doomed star at the edge ⏳ (L)
 
@@ -82,6 +78,20 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 24. Gluts that ship out ✅
+
+A glut, or a frontier farm's harvest, now ships its surplus out, as a shortage draws relief: two
+named haulers load it for the nearest stations that take the good, and leave fifteen to forty-five
+minutes after it starts. The News at the station lists them, loading and leaving in so many
+minutes, on their way, delivered or lost. Their cargo leaves as they set off, and with both gone
+the glut is over, so cheap goods do not last; buying it up yourself clears it sooner. Where they
+land, the good is a little cheaper for a while. And a relief hauler or a shipment bound through a
+raided system now asks for an escort: its sender's bar posts the job under the hauler's own name
+until it is due to leave. Take it and the hauler waits for you, then flies with you and jumps with
+you; see it docked and its cargo arrives, relieving the shortage it was meant for. Along the way, a
+shortage at a raider den no longer draws lawful relief haulers to a dock nobody can enter
+([PROCGEN.md §21.6–21.7](PROCGEN.md#216-gluts-that-ship-out)).
 
 ### 23. Stellar death, as fiction ✅
 

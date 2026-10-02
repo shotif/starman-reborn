@@ -15,7 +15,8 @@ import { FLEETS } from '../world/traffic/plan.ts';
 import { occupied } from './border.ts';
 import { boardFor, CONTRACT_PREFIX, escortDanger, expectedTrip, followUpFor, postsClaims, routeFeeBetween } from './contracts.ts';
 import { LAW } from '../content/law/rules.ts';
-import { baseThreat, priceMultiplier, stationEventAt, systemEventAt } from './events.ts';
+import { baseThreat, priceMultiplier, stationEventAt, stationEventById, systemEventAt } from './events.ts';
+import { haulById, raidsOnWay } from './hauls.ts';
 import { lawIn, scansOnDocking } from './law.ts';
 import type { JobDef } from './jobs.ts';
 import { marketTables } from './markets.ts';
@@ -48,6 +49,7 @@ export function validateContracts(epochs = 40): Issue[] {
   let urgent = 0;
   let chains = 0;
   const escorts = { local: 0, across: 0, convoy: 0 };
+  let reliefEscorts = 0;
   for (const giver of givers) {
     let empty = 0;
     const jumps = jumpsFrom(WORLD.links, giver.systemId);
@@ -65,7 +67,9 @@ export function validateContracts(epochs = 40): Issue[] {
         const clock = epoch * CONTRACTS.epochSeconds;
         checkContract(c, giver.systemId, jumps, markets, report, clock);
         if (c.contract) kinds.add(c.contract.kind);
-        if (c.contract?.event) answering++;
+        // An escort for a haul (docs/PROCGEN.md §21.7) is posted beside the board's own event work.
+        if (c.contract?.event && !c.contract.haul) answering++;
+        if (c.contract?.haul) reliefEscorts++;
         if (c.contract?.urgent) urgent++;
         const o = c.objectives[0];
         if (o?.kind === 'escort') escorts[o.convoy ? 'convoy' : o.systemId === giver.systemId ? 'local' : 'across']++;
@@ -90,7 +94,18 @@ export function validateContracts(epochs = 40): Issue[] {
   if (!urgent) report('coverage', 'urgent', 'no board ever posts an urgent job');
   if (!chains) report('coverage', 'chains', 'no delivery ever leads to a follow-up');
   for (const [k, n] of Object.entries(escorts)) if (!n) report('coverage', 'escorts', `no board ever posts a ${k === 'local' ? 'local escort' : k === 'across' ? 'escort across jumps' : 'convoy'}`);
+  if (!reliefEscorts) report('coverage', 'escorts', 'no board ever posts an escort for relief or a shipment through a raid');
   return issues;
+}
+
+/**
+ * An escort for a haul answers the haul's own event while it is posted (docs/PROCGEN.md §21.7): the
+ * event begun by the end of the time slot, and the haul not yet set off.
+ */
+function escortsFor(haulId: string, eventId: string, clock: number): boolean {
+  const h = haulById(haulId);
+  const e = h ? stationEventById(h.relief ?? h.glut ?? '') : null;
+  return !!h && !!e && e.id === eventId && e.start < clock + CONTRACTS.epochSeconds && h.depart > clock;
 }
 
 /** The guardrails' findings for one posted contract (as posted in the time slot of `clock`). */
@@ -163,6 +178,20 @@ function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, numbe
       const dest = getLocation(o.locationId);
       if (o.fromLocationId !== c.giverLocationId || dest.systemId !== o.systemId) report('escort', c.id, 'an escort sets off from the posting station for a station of its own system');
       if (dest.dockable === false || dest.status !== 'functional' || dest.id === c.giverLocationId) report('escort', c.id, `${dest.id} is not another open station`);
+      // An escort for a haul of the timetable (docs/PROCGEN.md §21.7): its own ship and name, posted by its
+      // sender until it sets off, through a raid on its way that sets the threat.
+      if (o.haul || c.contract?.haul) {
+        const h = o.haul ? haulById(o.haul) : null;
+        if (!h || c.contract?.haul !== h.id || h.from !== c.giverLocationId || h.to !== o.locationId || h.model !== o.model || h.name !== o.shipName || c.contract.until !== h.depart) {
+          report('escort', c.id, 'not the haul of the timetable it names');
+          break;
+        }
+        const raids = raidsOnWay(h);
+        if (!raids.length) report('escort', c.id, `no raid on the ${h.name}’s way`);
+        else if (o.level !== raids[0]!.level || c.difficulty !== Math.min(3, o.level + (j >= 2 ? 1 : 0))) report('escort', c.id, 'threat does not match the worst raid on its way');
+        if (o.convoy) report('escort', c.id, 'a haul of the timetable is one ship');
+        break;
+      }
       if (!escortDanger(o.systemId)) report('escort', c.id, `nothing to fear in ${o.systemId}`);
       const threat = baseThreat(o.systemId);
       if (o.level !== (threat ?? 1) || c.difficulty !== Math.min(3, o.level + (j >= 2 ? 1 : 0))) report('escort', c.id, 'ambush threat does not match the destination');
@@ -303,7 +332,8 @@ function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, numbe
       (kind === 'freight' && station?.id === eventId && (station.kind === 'glut' || station.kind === 'harvest') && !!good && station.goods.includes(good)) ||
       (kind === 'survey' && station?.id === eventId && station.kind === 'survey' && o.kind === 'scan' && o.bodyId === station.bodyId) ||
       (kind === 'bounty' && raid?.id === eventId && raid.kind === 'raid') ||
-      (kind === 'rescue' && o.kind === 'rescue' && systemEventAt(o.systemId, clock)?.id === eventId);
+      (kind === 'rescue' && o.kind === 'rescue' && systemEventAt(o.systemId, clock)?.id === eventId) ||
+      (kind === 'escort' && o.kind === 'escort' && !!o.haul && escortsFor(o.haul, eventId, clock));
     if (!answers) report('events', c.id, `does not answer the event ${eventId} under way`);
   }
   // Urgent terms: only parcels and hauls, with a time limit that can be kept and a real bonus.

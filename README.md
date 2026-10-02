@@ -21,7 +21,9 @@ pardons, and an outlaw path of piracy and smuggling that opens the raider dens' 
 The bars have people who sell true rumours for the price of a round, and a trade computer plans
 routes from the prices you know. The world answers: a shortage you fill ends sooner, raids break,
 and the stations' freight flies the lanes in named haulers on a timetable: a shortage draws relief
-you can watch arrive (or race, or rob), and raids take haulers whose cargo never arrives. Where lawful space meets a raider den, a border war swings back
+you can watch arrive (or race, or rob), a glut ships its surplus out (buy it up before it goes),
+raids take haulers whose cargo never arrives, and a hauler bound through raided lanes will wait
+for an escort. Where lawful space meets a raider den, a border war swings back
 and forth, and your work tips it, until you win a front for good, for the law or for the Wake.
 Five hand-written story arcs give the sandbox a spine: three faction arcs; The Long Border, which
 reads the choices made in the other three and settles a front for good, as a lawful pilot, an

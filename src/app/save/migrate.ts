@@ -368,7 +368,7 @@ export function assertValidState(s: GameState): void {
   if (w.hauls !== undefined) {
     if (!isRecord(w.hauls)) fail('world');
     for (const r of Object.values(w.hauls)) {
-      if (!isRecord(r) || !Number.isFinite(r.at) || !['safe', 'lost'].includes(r.fate) || !SYSTEM_IDS.includes(r.systemId) || (r.by !== undefined && !['raiders', 'player'].includes(r.by))) fail('world');
+      if (!isRecord(r) || !Number.isFinite(r.at) || !['safe', 'lost', 'escort', 'arrived'].includes(r.fate) || !SYSTEM_IDS.includes(r.systemId) || (r.by !== undefined && !['raiders', 'player'].includes(r.by))) fail('world');
     }
   }
   if (w.sky !== undefined && !(isRecord(w.sky) && Number.isFinite(w.sky.from) && w.sky.from >= 0)) fail('world');

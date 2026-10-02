@@ -1855,14 +1855,17 @@ haulers, their names and their owners are fiction; the stars they fly between ar
   stock (8–40 units, `load`). Nobody sends a hauler out of a raided system, or into one.
 - **Relief**: a shortage (§11.1) draws two hauls (`relief.hauls`) from the nearest stations within
   three jumps that make what it lacks, sent four to fifteen minutes after it starts, each carrying
-  30% of what the station lacks (`relief.share`, at least eight units).
+  30% of what the station lacks (`relief.share`, at least eight units). A raider den's shortage, or
+  a closed dock's, draws none.
+- **Shipments**: a glut ships its surplus out (§21.6).
 - **The way**: the fewest jumps, ties to the first lane in name order; the haulers' drives reach the
   frontier's long lanes. A haul flies five minutes from its dock to the jump beacon, two minutes per
   jump (as the player's jumps take, §11), three minutes across each system on its way, and five
   from the jump to its dock (`legs`); between two stations of one system, six minutes.
 - **Who flies it**: a hauler of its sender's owner's fleet (§9; independents' where the sender has
   no lawful owner), with a name from a list (`HAULER_NAMES`, all invented).
-- Ids: `h.<station>.<slot>` for trade, `h.<shortage event id>.<k>` for relief.
+- Ids: `h.<station>.<slot>` for trade, `h.<event id>.<k>` for a shortage's relief or a glut's
+  shipments.
 
 ### 21.2 What becomes of a haul
 
@@ -1927,7 +1930,61 @@ damaged records; and, in a real `FlightSession` in node, that the haulers shown 
 timetable's, named with their cargo and capped by the plan, that one destroyed by the player is
 lost and spills its real cargo, that they leave the scene safe at their dock or the jump beacon and
 others join as their legs begin, and that one kept alive through an attack by the player's guns
-sends thanks, and one the player fired on does not.
+sends thanks, and one the player fired on does not. The shipments and escorts of §21.6–21.7 are
+checked in `tests/unit/gluts.test.ts`.
+
+### 21.6 Gluts that ship out
+
+A glut (§11.1), and a frontier harvest (a glut of food at a farm), ships its surplus out, as a
+shortage draws relief (`HAULS.shipOut`):
+
+- **The shipments**: two hauls (`hauls`) to the nearest open stations within two jumps that use or
+  trade the good (a different one each, while there are), each carrying 30% of the surplus
+  (`share`; the surplus is what the glut leaves the station with beyond its normal stock: four
+  fifths of it for a glut, all of it for a harvest; at least eight units). They are sent fifteen to
+  forty-five minutes after it starts (`dispatch`), never after it was due to end, and fly the lanes
+  like any haul. A harvest ships its first good. A raider den's glut, or a closed dock's, ships
+  nothing.
+- **Clearing**: a shipment's cargo leaves the station as it sets off, and when 60% of the surplus
+  has gone (`EVENTS.react.relief`: both shipments), the glut is over and the station's prices are
+  back to normal. Every unit the player buys there while it lasts counts too (with what has been
+  shipped), so a pilot can clear it sooner (`clearGlut` in `src/economy/answers.ts`); there is no
+  bonus for it, as the low prices were the reward. A toast says so.
+- **Stock**: while the glut lasts, each shipment takes its cargo off the station's stock as it
+  sets off, fading as the market recovers (30 minutes); once the glut is over, the station's normal
+  stock is back. Where a shipment arrives, its cargo adds to the stock the same way, so the good is a
+  little cheaper there for a while. A shipment lost to raiders (or to the player's guns) brings
+  nothing; the glut is not the worse for it, as the cargo had left.
+- **The News** (§11.3) lists each glut's shipments under it: loading and leaving in so many
+  minutes, on its way and due in so many, delivered, or lost to raiders or a pirate. A glut cleared
+  says *shipped out by its haulers*, or *bought up by a pilot*, and how long ago.
+- **In flight** the shipments are flown as relief is: named, with their owner and cargo.
+
+### 21.7 Escorts for relief through raided lanes
+
+A relief haul or a shipment whose way crosses a raid (one on in a system of its way at the middle
+of its leg there), within two jumps (`CONTRACTS.maxJumps.escort`), gets an escort posted on its
+sender's board, if the sender has one: *Escort the Bramble to Dogwood Port*. It is posted from when
+the event begins until the haul is due to set off (`until`); its id is its own
+(`c.<station>.<slot>.escort-<haul id>`), as it comes and goes within a time slot.
+
+- **The work**: an escort (§10.2) of the haul's own ship, under its own name, to the station it is
+  bound for. Its threat is the worst raid on the way, and its difficulty one more for two jumps; it
+  pays as an escort does, with the premium of work answering an event (`eventPremium`). The briefing
+  says what it carries and why, and where the raiders are.
+- **Taken on**, the haul waits for the pilot: it is off its timetable (not flown in the lanes, and
+  not posted again), and sets off with the player like any escorted ship, jumping with them. The
+  world log (§21.4) keeps it as `escort` until the escort sees it docked (`arrived`: its cargo
+  delivered from that moment, relieving its shortage or reaching its buyer) or it is destroyed
+  (`lost`). An escort given up or failed for another reason (left behind) lets the haul go on its
+  timetable as if nobody had taken the job.
+- **The News** says a haul is with its escort while it is.
+- An escort for a haul is posted beside a board's own event work (§11), so a board may have both.
+
+The guardrails (§21.5) also check that a glut's shipments leave a glut of their cargo at their
+sender, in their time, and that all of them gone clears it; and the contract guardrails (§10.4) that
+an escort for a haul names a haul of the timetable from its sender, with its ship and name, through
+a raid that sets its threat, posted while its event is on and before it sets off.
 
 
 ## 22. A station of your own

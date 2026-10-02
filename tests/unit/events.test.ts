@@ -111,7 +111,8 @@ describe('world events', () => {
       for (const id of eventStations()) {
         for (const c of boardFor(id, epoch)) {
           const ev = c.contract?.event;
-          if (!ev) continue;
+          // An escort for a haul answers its haul's event, often at another station (checked in gluts.test.ts).
+          if (!ev || c.contract!.haul) continue;
           if (c.contract!.kind === 'bounty') {
             const o = c.objectives[0]!;
             if (o.kind !== 'bounty') throw new Error('raid work hunts raiders');

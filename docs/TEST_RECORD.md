@@ -418,6 +418,19 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   readings, and refuse damaged ones. In a flight scene: Betelgeuse a target with its distance in
   light-years and the Fiction badge, Antares not yet; Observe offered and taken; never flown to; its
   remnant still labelled fiction, and before its light the catalogue's star.
+- `gluts.test.ts`: **gluts that ship out**. A glut's shipments go to the nearest stations that take
+  its good, a share of its surplus each, in their time, on the timetable (their ids, sender, cargo,
+  loads and departures, each found by its id), and pass the haul guardrails; the glut clears once
+  both have gone (each counted as it sets off), and sooner as the player buys it up (another good
+  does not count, nor does buying once it is over). Shipments take their cargo off the glut station
+  as they leave, and add it where they arrive; the News lists them, and they fly the lanes. A
+  harvest ships its first good; a raider den's shortage draws no relief. Broken shipments are caught
+  (not out of a glut, out of their time, too small to send). Escorts for relief and shipments
+  through raided lanes: posted by the sender from the event's start until the haul is due to set
+  off, passing the contract guardrails; taken on, the haul waits for the pilot, off its timetable and
+  posted no more, and is delivered when the escort sees it docked; lost with the escort, and back on
+  its timetable when the job is given up; gone once the haul has set off alone. Saves keep an
+  escorted haul and refuse a damaged record.
 
 ### Browser tests (Playwright)
 
@@ -559,13 +572,19 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   *Supernova · magnitude −…* and *498 ly*; the action button reads *Observe*, and pressed, the
   reading is taken (*readings recorded*) and the job turns for home; docked at the institute again,
   it pays in full.
+- `gluts.spec.ts`: **a glut and an escort**: a minute after a glut starts, the News at its station
+  lists its shipments loading (*Shipping out: … is loading … for …*); at the sender of a relief haul
+  or shipment bound through a raid, the bar posts an escort for it under the hauler's own name,
+  taken on (the haul waits for the pilot); launched, the hauler sets off alongside, named as the
+  haul, and the objective names it.
 - `screenshots.spec.ts`: the loading title (caught part-way, with the game's largest file held
   back), title, Settings at its device report, job board, buy dialog, station deck, shipyard, outfitter, fleet
   (with a captain loading for a run), flight HUD, the player's own captain targeted in flight, star
   map and its Missions and Find dialogs, the charter of an outpost and the Outpost window at its
   site, a party's job open at a bar with a cabin fitted, a bounty taken by a rival on a job board and
   the rival in a bar, the News at a research station telling of Betelgeuse's supernova, and the
-  supernova in flight, targeted with *Observe* offered, and the News with a shortage's relief
+  supernova in flight, targeted with *Observe* offered, the News at a station with a glut listing its
+  shipments, and the News with a shortage's relief
   haulers on their way, at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
   zoom). Saved in `docs/screenshots/` once any smooth scrolling has come to rest. Each is audited

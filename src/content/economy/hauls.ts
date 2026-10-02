@@ -25,6 +25,14 @@ export const HAULS = {
    * starts. All of them arriving relieves it (EVENTS.react.relief of what it lacks).
    */
   relief: { hauls: 2, share: 0.3, maxJumps: 3, dispatch: [240, 900] as const },
+  /**
+   * A glut, or a frontier harvest, ships its surplus out (docs/PROCGEN.md §21.6): `hauls` hauls to
+   * the nearest stations within `maxJumps` that use or trade the good (a different one each, while
+   * there are), each carrying `share` of the surplus, sent `dispatch` seconds after it starts (none
+   * after it was due to end). Its cargo leaves the station as it sets off: all of them gone clears
+   * the glut (EVENTS.react.relief of its surplus), as does the player buying up the rest.
+   */
+  shipOut: { hauls: 2, share: 0.3, dispatch: [900, 2_700] as const },
   /** A haul in a raided system's lanes, where the player is not, is lost with this chance by the raid's threat level. */
   raidLoss: { 1: 0.2, 2: 0.35, 3: 0.5 } as Record<1 | 2 | 3, number>,
   /** No station sends a trade haul out of a raided system, or into one. */

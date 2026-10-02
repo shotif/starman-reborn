@@ -5,7 +5,7 @@ import { addCargo, cargoCount, itemsThatFit, removeCargo } from './cargo.ts';
 import { COMMODITIES, COMMODITY_IDS } from './commodities.ts';
 import { cargoCapacity } from './loadout.ts';
 import { allQuotes, moveStock, orderTotal, quote, stockAvailable, type MarketContext } from './markets.ts';
-import { relieveShortage, type Answer } from './answers.ts';
+import { clearGlut, relieveShortage, type Answer } from './answers.ts';
 
 export type TradeError =
   | 'invalid-quantity'
@@ -66,7 +66,9 @@ export function buyCommodity(state: GameState, locationId: string, commodity: Co
   addCargo(state.ship.cargo, commodity, qty, capacity);
   moveStock(state.markets, locationId, commodity, -qty, state.clock);
   applyCredits(state, -total, 'buy', `Bought ${qty} ${COMMODITIES[commodity].name}`);
-  return { ok: true, qty, unitPrice: Math.round(total / qty), total };
+  // Buying out of a glut helps clear it (docs/PROCGEN.md §21.6).
+  const relief = clearGlut(state, locationId, commodity, qty);
+  return { ok: true, qty, unitPrice: Math.round(total / qty), total, ...(relief ? { relief } : {}) };
 }
 
 export function sellCommodity(state: GameState, locationId: string, commodity: CommodityId, qty: number): TradeResult {

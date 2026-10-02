@@ -19,6 +19,7 @@ import { BORDER } from '../content/border/rules.ts';
 import { getFront, pushFront } from './border.ts';
 import { leaveMark, settleFront, storyMark } from './answers.ts';
 import { observeBaseline, observeDone, type ObserveObjective } from './stellar.ts';
+import { haulById, recordHaul, releaseHaul } from './hauls.ts';
 
 export type Objective =
   | { kind: 'have-cargo'; commodity: CommodityId; qty: number; text: string }
@@ -52,6 +53,8 @@ export type Objective =
       level: 1 | 2 | 3;
       text: string;
       convoy?: { names: readonly string[]; need: number; waves: number };
+      /** A relief haul or a glut's shipment of the timetable, bound through raided lanes (docs/PROCGEN.md §21.7). */
+      haul?: string;
     }
   /** Tractor an item in from a wreck near a location, perhaps guarded by raiders of threat `guard` (JobProgress.recovered). */
   | { kind: 'recover'; systemId: SystemId; locationId: string; item: string; guard: 1 | 2 | 3 | null; text: string }
@@ -115,6 +118,12 @@ export interface JobDef {
     decisive?: true;
     /** Passages and tours (docs/PROCGEN.md §23): the party aboard, by name (fiction); each takes a berth. */
     party?: readonly string[];
+    /**
+     * An escort for a relief haul or a glut's shipment (docs/PROCGEN.md §21.7): the haul, and when it
+     * sets off alone if nobody has taken the job (game clock).
+     */
+    haul?: string;
+    until?: number;
   };
   /** Story arc missions (content/story/arcs.ts): arc, step, speaker and beats. */
   story?: StoryMeta;
@@ -236,6 +245,13 @@ export function jobLockReason(state: GameState, job: JobDef): string | null {
   }
   const assault = job.objectives[0];
   if (strike && assault?.kind === 'assault' && !state.jobs[job.id] && denDown(state, assault.locationId)) return `${getLocation(assault.locationId).name} is already dark`;
+  // An escort for a haul of the timetable (docs/PROCGEN.md §21.7): only before it sets off alone, and once.
+  const haul = job.contract?.haul;
+  if (haul && !state.jobs[job.id]) {
+    const name = haulById(haul)?.name ?? 'hauler';
+    if (state.clock >= (job.contract!.until ?? Infinity)) return `The ${name} has set off without an escort`;
+    if (state.world.hauls?.[haul]) return `The ${name} already has an escort`;
+  }
   // A lawful faction that is wary of you only trusts you with the easiest work.
   if (job.contract && job.factionId && job.factionId !== 'hollow-wake' && job.difficulty >= 2) {
     const tier = standingTier(state.reputation[job.factionId] ?? 0);
@@ -315,6 +331,8 @@ export function acceptJob(state: GameState, jobId: string): { ok: boolean; messa
   // A story mission may hand over cargo to carry (it was checked to fit).
   if (job.story?.cargo) addCargo(state.ship.cargo, job.story.cargo.commodity, job.story.cargo.qty, cargoCapacity(state.ship));
   state.jobs[jobId] = { status: 'active', objectiveIndex: 0, acceptedAt: state.clock };
+  // The haul waits for its escort, off its timetable (docs/PROCGEN.md §21.7).
+  if (job.contract?.haul) recordHaul(state.world, job.contract.haul, { at: state.clock, fate: 'escort', systemId: getLocation(job.giverLocationId).systemId });
   if (job.briefingPrices) {
     const existing = state.knownMarkets[job.briefingPrices.locationId];
     if (!existing || existing.source === 'briefing') {
@@ -339,6 +357,8 @@ export function abandonJob(state: GameState, jobId: string): { ok: boolean; mess
   if (!job || progress?.status !== 'active') return { ok: false, message: 'Only generated contracts in progress can be abandoned.' };
   progress.status = 'abandoned';
   progress.completedAt = state.clock;
+  // A haul whose escort is given up goes on alone, on its timetable (docs/PROCGEN.md §21.7).
+  if (job.contract?.haul) releaseHaul(state.world, job.contract.haul);
   const lost = job.factionId ? -adjustReputation(state.reputation, job.factionId, -CONTRACTS.abandonStanding) : 0;
   const deposit = job.contract?.deposit;
   const costs = [deposit ? `deposit of ${deposit} cr forfeit` : '', lost && job.factionId ? `standing with the ${FACTIONS[job.factionId].name} −${lost}` : ''].filter(Boolean);
@@ -362,6 +382,8 @@ export function failJob(state: GameState, jobId: string, reason: string): JobEve
   if (!job || progress?.status !== 'active') return null;
   progress.status = 'failed';
   progress.completedAt = state.clock;
+  // A haul left behind by its escort goes on alone; one destroyed was recorded lost (escortLost).
+  if (job.contract?.haul) releaseHaul(state.world, job.contract.haul);
   if (job.factionId) adjustReputation(state.reputation, job.factionId, -CONTRACTS.failStanding);
   return { jobId, kind: 'failed', text: `${job.title} failed: ${reason}` };
 }
@@ -887,6 +909,8 @@ export function escortArrived(state: GameState, jobId: string): JobEvent[] {
   if (!progress || progress.status !== 'active' || o?.kind !== 'escort') return [];
   if (o.convoy) progress.escorted = (progress.escorted ?? 0) + 1;
   else progress.escort = 'arrived';
+  // A haul of the timetable is in, with its cargo (docs/PROCGEN.md §21.7).
+  if (o.haul) recordHaul(state.world, o.haul, { at: state.clock, fate: 'arrived', systemId: o.systemId });
   return advanceJobs(state, { dockedAt: state.location.dockedAt, systemId: state.location.systemId });
 }
 
@@ -896,6 +920,8 @@ export function escortLost(state: GameState, jobId: string): JobEvent[] {
   const o = currentObjective(state, jobId);
   if (!progress || progress.status !== 'active' || o?.kind !== 'escort') return [];
   if (!o.convoy) {
+    // A haul of the timetable is lost with its cargo (docs/PROCGEN.md §21.7).
+    if (o.haul) recordHaul(state.world, o.haul, { at: state.clock, fate: 'lost', systemId: state.location.systemId, by: 'raiders' });
     const ev = failJob(state, jobId, `the ${o.shipName} was destroyed`);
     return ev ? [ev] : [];
   }

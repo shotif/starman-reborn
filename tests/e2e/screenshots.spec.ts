@@ -340,6 +340,17 @@ for (const size of SIZES) {
       // Nose a little under the star, so it shows above the ship (less on short screens, under the target panel).
       expect(await api<boolean>(page, 'face', { id: 'sky:betelgeuse', below: size.height < 500 ? 4 : 9 })).toBe(true);
       await shot(page, `${size.name}-10b-supernova`, size.touch, results);
+      // Gluts that ship out (docs/PROCGEN.md §21.6): the News at a station with a glut, its shipments loading.
+      const glutFrom = (await api<{ clock: number }>(page, 'state')).clock + 600;
+      const glut = (await api<{ eventId: string; at: string; start: number } | null>(page, 'findGlut', glutFrom))!;
+      expect(glut, 'a glut that ships out').not.toBeNull();
+      await api(page, 'advanceClock', glut.start + 60 - (await api<{ clock: number }>(page, 'state')).clock);
+      await docked(glut.at);
+      await press(page, 'room-bar');
+      if (!(await page.getByTestId('news-window').isVisible().catch(() => false))) await press(page, 'station-news');
+      await page.getByTestId(`news-${glut.eventId}`).evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 15_000 });
+      await shot(page, `${size.name}-11-glut-news`, size.touch, results);
       for (const [name, r] of Object.entries(results)) {
         expect.soft(r.overflow, `${name}: page overflow`).toBe(false);
         expect.soft(r.clipped, `${name}: clipped controls`).toEqual([]);

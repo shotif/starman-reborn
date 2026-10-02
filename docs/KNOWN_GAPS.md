@@ -84,6 +84,11 @@ snapshot branch only when the archives changed.
   and elsewhere a raid loses them by its odds. Only shortages draw relief (not gluts, booms or
   strikes), and haulers avoid raids but not border blockades. What the player leaves at a dock
   still evens out with its neighbours as a spill out of sight.
+- A glut ships out (PROCGEN §21.6) its first good only (a harvest of food and fine food ships its
+  food), to the two nearest stations that take it, and only a shipment's arrival moves the market
+  where it lands. An escort for relief or a shipment (§21.7) goes at most two jumps and never into
+  the frontier from outside it; an escort given up lets the hauler go on its timetable as if it
+  had left on time, so it may already be in, or lost, by then.
 - The player's own captains fly the lanes too (PROCGEN §18.6), but only the run's one raid, where
   and when its luck says, can be flown in sight; a timetable raid's odds (§21.2) do not apply to
   them, and the star map does not show them (the Fleet window says which system each one is in).

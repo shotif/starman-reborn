@@ -11,7 +11,7 @@ import { ALL_LOCATIONS, getLocation, getSystem, isFrontier, setSaveLocations, SY
 import type { SystemId } from '../data/types.ts';
 import { trafficPlan } from '../world/traffic/plan.ts';
 import { FACTIONS } from './factions.ts';
-import { reliefEnd } from './hauls.ts';
+import { reliefEnd, shipOutEnd, shipsOut } from './hauls.ts';
 import { marketTables } from './markets.ts';
 import { markById } from './marks.ts';
 import { skyPrice } from './stellar.ts';
@@ -421,11 +421,11 @@ export function worldLogKey(): number {
   return key;
 }
 
-/** When an event really ends: its scheduled end, or earlier if the player ended it, or a shortage's relief hauls did (§21). */
+/** When an event really ends: its scheduled end, or earlier if the player ended it, or a shortage's relief hauls or a glut's shipments did (§21). */
 export function eventEnd(e: WorldEvent): number {
   const early = worldLog?.ended[e.id];
   const end = early !== undefined ? Math.min(e.end, early) : e.end;
-  return e.kind === 'shortage' ? Math.min(end, reliefEnd(e)) : end;
+  return e.kind === 'shortage' ? Math.min(end, reliefEnd(e)) : shipsOut(e) ? Math.min(end, shipOutEnd(e)) : end;
 }
 
 /** Whether the player ended this event early. */
