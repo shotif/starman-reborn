@@ -377,6 +377,7 @@ for (const size of SIZES) {
       await shot(page, `${size.name}-12b-pyre-flight`, size.touch, results);
       await api(page, 'advanceClock', pyre.timeline.breakout + 2 - (await api<{ clock: number }>(page, 'state')).clock);
       await expect(page.getByTestId('pyre-rescue-dialog')).toBeVisible();
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
       await shot(page, `${size.name}-12c-pyre-rescue`, size.touch, results);
       await press(page, 'pyre-rescue-ok');
       await waitUntil(page, 'carried out', async () => (await api(page, 'mode')) === 'docked');
