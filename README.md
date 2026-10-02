@@ -57,7 +57,9 @@ Betelgeuse's distance by parallax from two systems far apart. Later, once you ha
 frontier, Pyre dies: the one star the game invents, labelled so wherever it shows, a red supergiant
 just beyond the edge of the map. Carry its observers out before it explodes, outrun its light
 through the lanes, then fly to the black hole it leaves, read it from outside its tides, and keep
-clear of them.
+clear of them. And between the docks, the lanes call: a mayday that may be bait, a lifepod, a Wake
+toll gate, a customs patrol open to a bribe, a stranded scientist, cargo adrift or a lost trader,
+each a choice with consequences.
 Ships, equipment, the world, the economy, events, contracts and the law are generated from rule
 files and checked by automated guardrails ([docs/PROCGEN.md](docs/PROCGEN.md)).
 
@@ -196,11 +198,12 @@ src/content/   rule-driven generators and guardrails (docs/PROCGEN.md): ships an
                (src/content/progress), the story arcs (src/content/story), dens under fire
                (src/content/dens), combat depth (src/content/combat), people in the bars
                (src/content/people), the fleet (src/content/fleet), mining (src/content/mining),
-               the border war (src/content/border) and stellar death (src/content/stellar)
+               the border war (src/content/border), stellar death (src/content/stellar) and lane
+               encounters (src/content/lanes)
 src/economy/   live markets, world events and the world's answers, trade, cargo, outfitter and
                shipyard, factions, jobs and generated contracts, the law, ratings, the codex,
                milestones, the story, people and rumours, the fleet, mining, the border war,
-               the far stars' deaths and Pyre's (the invented star)
+               the far stars' deaths and Pyre's (the invented star), and lane encounters
 src/audio/     procedural Web Audio music and sound effects
 src/ui/        HUD, touch controls, station screens, encyclopedia, styles
 scripts/       the sky snapshot (sky-fetch on GitHub's runners, sky-process here), catalogue

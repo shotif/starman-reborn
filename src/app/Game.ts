@@ -181,6 +181,8 @@ export class Game {
   private systemDay: number | null = null;
   /** The save's own stations when the system scene was built (the player's outpost, docs/PROCGEN.md §22). */
   private systemOwn = '';
+  /** Browser tests that want lane encounters turn them on (docs/PROCGEN.md §27). */
+  private lanesInTests = false;
   /** Pyre's scene: the star, or its black hole once it has gone (docs/PROCGEN.md §26); null elsewhere. */
   private systemStage: 'alive' | 'gone' | null = null;
   private flight: FlightSession | null = null;
@@ -901,6 +903,8 @@ export class Game {
       settings: this.settings,
       ctx: this.artCtx,
       audio: this.audio,
+      // Lane encounters (docs/PROCGEN.md §27) would come up in every browser test's flights: tests turn them on when they want them.
+      lanes: !TEST_RUN || this.lanesInTests,
       callbacks: {
         onDocked: (id) => this.onDocked(id),
         onPlayerDestroyed: () => void this.onPlayerDestroyed(),
@@ -2182,6 +2186,11 @@ export class Game {
           }
         }
         return null;
+      },
+      /** Test-only: lets lane encounters hail in this browser test (they are off in tests otherwise). */
+      meetLanes: (on: boolean) => {
+        this.lanesInTests = on;
+        this.flight?.setLanes(on);
       },
       /** Test-only: the lane encounters this save has met, the hail waiting in flight, and what the pilot would meet here now. */
       lanes: () => ({

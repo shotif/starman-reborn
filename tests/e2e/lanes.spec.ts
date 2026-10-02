@@ -90,6 +90,8 @@ test('lane encounters: a trader helped, a toll paid, a slot met once, a bribe, a
   await press(page, 'title-play');
   await press(page, 'intro-ok');
   await api(page, 'completeJobs', ['lifeline']);
+  // Lane encounters are off in browser tests unless one wants them.
+  await api(page, 'meetLanes', true);
   const touch = await isTouch(page);
 
   // A lost trader (the first encounter is never a trap): the banner, the card, a fix sold.

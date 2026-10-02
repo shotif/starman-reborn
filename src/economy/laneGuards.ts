@@ -56,7 +56,7 @@ export function validateLanes(rules: LaneRules = LANES, slots = 240): Issue[] {
   if (!(K.toll.toll[1] > 0 && K.toll.toll[1] < K.toll.toll[2] && K.toll.toll[2] < K.toll.toll[3])) report('rules', 'toll', 'tolls not rising with the threat');
   const pays = [K.mayday.reward[1], K.lifepod.fare[1], K.toll.toll[3], K.trader.fix];
   if (pays.some((p) => !(p > 0 && p <= MAX_REWARD)) || K.mayday.reward[0] > K.mayday.reward[1] || K.lifepod.fare[0] > K.lifepod.fare[1]) report('rules', 'pay', 'pay out of range');
-  if (!(K.cargo.returnShare > 0 && K.cargo.returnShare < 1 && K.cargo.qty[0] >= 1 && K.cargo.qty[0] <= K.cargo.qty[1])) report('rules', 'cargo', 'a return share or a quantity out of range');
+  if (!(K.cargo.returnShare > 0 && K.cargo.returnShare < 1 && K.cargo.returnStanding > 0 && K.cargo.qty[0] >= 1 && K.cargo.qty[0] <= K.cargo.qty[1])) report('rules', 'cargo', 'a return share, its standing or a quantity out of range');
   if (ADRIFT_GOODS.some((g) => LAW.contraband.includes(g))) report('rules', 'cargo', 'contraband adrift');
   if (PASSENGERS.passage.party[0] > 1) report('rules', 'passage', 'passages do not take one passenger');
 

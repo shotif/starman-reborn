@@ -131,6 +131,12 @@ snapshot branch only when the archives changed.
   but Betelgeuse's and Antares' still reach every system at once. On the 3D star map its label says
   Fiction, but only the flat map draws a dashed ring round it. A pilot docked when a moment comes
   hears of it in the News, not on the radio (the clock stands still while docked).
+- Lane encounters (PROCGEN §27) are settled at their card: there is no wreck, pod or ship to fly to,
+  and raiders called by bait or a refused toll drop out of the dark a few kilometres off rather than
+  waiting at the spot. A hail counts down only while no hostiles are near, and one in a system the
+  pilot leaves goes with them unanswered (it is not met again). The Wake's toll covers only the
+  system it was paid in, until the next dock or jump. A lost trader's tip is a price within reach of
+  the system's first station. In browser tests encounters are off unless a test turns them on.
 - Traffic and raider packs exist only around the player. Packs that saw the player and cargo pods
   left adrift wait for 30 minutes of game clock (in the last six systems), as do the packs and
   wrecks of the player's own contracts; everything else is generated again on arrival.

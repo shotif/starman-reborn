@@ -9,13 +9,13 @@ After the scripted opening (10–20 minutes), the neighbourhood is an open sandb
 systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
 of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
 packs in lawless space; 39 ships and 146 pieces of equipment; and generated contracts on every job
-board. Increments 1–25 (under [Done so far](#done-so-far)) added world events and news, contracts
+board. Increments 1–26 (under [Done so far](#done-so-far)) added world events and news, contracts
 of every kind, the law and the outlaw path, goals, five story arcs, combat depth, people in the
 bars and a trade computer, a world that answers, gluts that ship their surplus out and relief to
 escort through raided lanes, a fleet of your own whose captains fly the lanes,
 a station of your own, passengers and sightseers, rival pilots with careers of their own, a
 supernova in every sky (as fiction), an invented star at the map's edge that explodes and leaves a
-black hole to fly to (fiction too), mining in the real belts, the frontier with a life of its own,
+black hole to fly to (fiction too), encounters on the lanes between the docks, mining in the real belts, the frontier with a life of its own,
 a border war whose fronts can be won for good, story endings that change stations for good, escorts
 and convoys across jumps, haulers with real cargo on a timetable, and a game measured and tuned on a
 real phone.
@@ -31,14 +31,6 @@ What it lacks now:
 Candidates for what comes next, in the order they will be built. Lane encounters, Rival stories,
 Defend your outpost and Your crew were chosen by the owner on 2 October 2026, to make the game more
 engaging.
-
-### Lane encounters ⏳ (M)
-
-Short choices that come up in flight and at the jump beacons: a distress call, a lifepod adrift, a
-Hollow Wake toll gate, a customs officer open to a bribe, a stranded scientist. Each leads somewhere:
-cargo, credits, standing, a contract or an ambush. They are written as data with guardrails, worked
-out from the system and the clock, and labelled as fiction. Today the flight between docks is quiet
-unless a raid or a hauler happens to be there.
 
 ### Rival stories ⏳ (M)
 
@@ -68,6 +60,21 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 26. Lane encounters ✅
+
+The flight between docks is no longer quiet. About every twenty minutes of flight, outside Sol,
+someone hails: a mayday, a lifepod from a hauler raiders destroyed there, a Hollow Wake toll gate at
+the beacon, a customs patrol when there is contraband in the hold, a scientist stranded by a sight of
+the real sky, cargo adrift, or a lost trader. The hail waits on the HUD and never pauses the game;
+answering (Q, the banner, the action button or a pad's A) opens a card that does, with what each
+choice does or why it is closed to you. Some hails are traps, and the card names the odds but never
+whether this one is: a mayday or cargo may be bait that brings raiders, a bribe may be a sting. Pay
+the Wake's toll and its packs let you be until you dock or jump; refuse or ignore it and they attack.
+Survivors and scientists ride to a station for a fare, returned cargo pays and earns standing, a lost
+trader shares what they know of the markets. Each system's time is cut into slots, so a loaded game
+meets the same, and the journal keeps what you met. A pad now works every dialog: the D-pad moves
+between its buttons, A presses, B closes ([PROCGEN.md §27](PROCGEN.md#27-lane-encounters)).
 
 ### 25. Stellar death II: a doomed star at the edge ✅
 

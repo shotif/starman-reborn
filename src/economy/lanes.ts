@@ -388,7 +388,7 @@ function takeReturn(state: GameState, o: LaneOffer): string {
     briefing: `${o.qty} units of ${good} lost by a hauler bound for ${dest.name}, found adrift and picked up in flight. Its owners pay for its return.`,
     objectives: [{ kind: 'deliver', commodity: o.good!, qty: o.qty!, locationId: dest.id, text: `Deliver ${o.qty} ${good} to ${dest.name}` }],
     reward: o.credits ?? 0,
-    repReward: {},
+    repReward: isLawful(dest.factionId) ? { [dest.factionId]: LANES.kinds.cargo.returnStanding } : {},
     difficulty: 1,
     difficultyNote: 'Picked up in flight',
     destinationLocationId: dest.id,

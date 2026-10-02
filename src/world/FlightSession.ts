@@ -485,6 +485,8 @@ export class FlightSession {
   private tollPaid = false;
   /** How this flight began: a hail waits a little longer after a launch than after an arrival. */
   private spawnKind: SpawnSpec['kind'] = 'arrival';
+  /** Whether lane encounters hail in this flight. */
+  private lanesOn: boolean;
   private shieldFlash = 0;
   /** Mines drifting in the system, and decoy flares burning behind the player. */
   private readonly mines: Mine[] = [];
@@ -533,7 +535,10 @@ export class FlightSession {
     traffic?: TrafficSetup | null;
     /** What has been cut from rocks, kept between flights (never saved). */
     minedRocks?: MiningLedger;
+    /** Whether lane encounters hail (docs/PROCGEN.md §27); browser tests turn them on only when they want them. */
+    lanes?: boolean;
   }) {
+    this.lanesOn = opts.lanes ?? true;
     this.system = opts.system;
     this.camera = opts.camera;
     this.state = opts.state;
@@ -1893,7 +1898,7 @@ export class FlightSession {
    * it waits for an answer while no hostiles are near, and lapses when its time runs out.
    */
   private watchLanes(): void {
-    if (this.hail) return;
+    if (!this.lanesOn || this.hail) return;
     if (!this.alive || this.busy || this.deathTimer >= 0 || this.scanStatus) return;
     if (this.time < (this.spawnKind === 'arrival' ? LANES.grace.afterArrival : LANES.grace.afterLaunch)) return;
     if (this.hostilesNearby(LANES.quiet.hostileRange)) return;
@@ -1936,6 +1941,11 @@ export class FlightSession {
     if (this.hail?.offer.id === offerId) this.hail = null;
     if (out.ambush) this.spawnPack({ max: 1, level: out.ambush, size: [2, 3], firstDelay: 0, interval: [0, 0] }, true);
     if (out.pass) this.tollPaid = true;
+  }
+
+  /** Test-only: turns lane encounters on or off for this flight. */
+  setLanes(on: boolean): void {
+    this.lanesOn = on;
   }
 
   /** Test-only: the hail waiting, if any. */

@@ -2527,3 +2527,86 @@ and gone (the black hole a fiction target, its tides an obstacle, the hull strai
 ship lost at the shadow, the autopilot stopping outside), the breakout rescue, the lane closing, the
 rescue dock, its work (where and when posted, sound by the guardrails, shown only while posted, paid,
 first light counted only fresh and farther out), its stations' markets, and its status line.
+
+## 27. Lane encounters
+
+Short choices that come up in flight, between the docks (`src/economy/lanes.ts`; the rules in
+`LANES`, `src/content/lanes/rules.ts`; what is said in `src/content/lanes/lines.ts`). Like every
+event in the world they are worked out, not rolled: each system's time is cut into slots of nine
+minutes (`slotSeconds`), and a slot holds one encounter or none, with a chance by the system's
+security (`chance`: 45% in secure space, 55% patrolled, 60% lawless), its kind one that fits the
+system as it stood when the slot began, and everything about it (who, which ship, the pay, whether it
+is a trap) drawn from the world's seed and the slot. A loaded game meets the same. The people, ships
+and events are fiction, and every card says so.
+
+| Kind | Where | Choices |
+| --- | --- | --- |
+| Mayday | Any system with a station | Go to them (a reward, 220–520 cr, and standing with the system's law; or, if it was bait, raiders); fly on |
+| Lifepod | Where raiders destroyed a hauler in the half hour before (§21) | Take the survivor aboard (a passage to a station there, 260–420 cr; needs a berth); call it in (standing); leave it |
+| Toll | Lawless systems where raider packs roam | Pay the toll (150/300/500 cr by the packs' threat): the Wake's packs there let the ship be until it docks, jumps or fires on them; refuse (they attack) |
+| Customs | Systems with a law and security of 0.5 or more, a hold with contraband in it | Declare it (taken, half the fine); bribe the officer (35% of the fine; a sting one time in five: taken, a 600 cr fine, standing −8); dump it (standing −3) |
+| Stranded scientist | Systems with a sight of the real sky (§23) and a research station within two jumps | A berth to the station (a passage at 1.25 times the usual fare, and a data core); spare them helium-3 (paid twice its base price); call a tow (standing) |
+| Cargo adrift | Any system with a station | Return it (aboard, and a delivery to its owner for 60% of its base value and standing with its law); keep it (worth its full price); leave it. Bait brings raiders instead |
+| Lost trader | Any system with a station | Share your charts (they tell you a true price within reach, as a round in a bar would, §16); sell them a fix (60 cr); ignore them |
+
+### 27.1 Meeting one
+
+A pilot meets an encounter only once the opening delivery is done, never in Sol or at Pyre, at most
+one a slot and one in fifteen minutes (`cooldown`), and only what fits the pilot too: a customs
+patrol hails only a hold with contraband in it, and the Wake does not toll a pilot it trusts. The
+first a pilot ever meets is never a trap, a toll or a customs patrol. In flight it hails only when
+the ship is flying quietly: twenty seconds after a launch (eight after an arrival), no hostiles within
+6 km, clear of the docks, not docking, in a lane or under a patrol's scan (`grace`, `quiet`). With
+slots and the cooldown, a pilot touring the lanes meets one about every twenty minutes of flight.
+
+### 27.2 The hail and the card
+
+The hail never pauses the game (the owner's choice, 2 October 2026): it shows on the HUD under the
+objective (violet for a call, red for the Wake, blue for the law), with **Answer** and how long it
+waits: 45 seconds of quiet flight (`hailSeconds`), held while hostiles are near (*Not now: hostile
+contact*). Answering (Q, the banner's button, the action button, or A on a pad) opens its card, which
+pauses: who calls and what is happening, the risk the rules name, each choice with what it does or
+why this pilot cannot take it (no berth, no room in the hold, not enough credits, no helium-3
+aboard), and the fiction line. A number key chooses; *Not now* leaves the hail waiting. Let lapse,
+most encounters just go; the Wake takes silence as a no and attacks, and a customs patrol scans
+anyway (confiscating and fining in full, §12). Where an encounter may be a trap, the card names the
+odds from the rules (*Maydays out here are sometimes bait: about one in four*), never whether this one
+is (the owner's choice).
+
+A pad works every card (and every other dialog): the D-pad moves between its buttons, A presses the
+one in focus, B closes it.
+
+### 27.3 What follows
+
+Answers act at once: credits, standing, cargo in or out of the hold, fines on the record (§12), a job
+taken on (a passage for a survivor or a scientist, §23; cargo to return, delivered at its owner's
+dock), a price learned. Raiders called by bait or a refused toll drop out of the dark a few
+kilometres off and hunt the ship (a pack at the system's threat, §5). The journal keeps the last
+twelve encounters, where, and what came of each.
+
+### 27.4 One save's own
+
+The save's world log keeps the encounters met (`world.lanes`, by slot): when, what, and the choice
+made, the newest forty and none older than a day (`keep`). A slot met is never met again. Saves
+refuse a record of an unknown kind or system, or one whose id does not name its slot.
+
+### 27.5 Guardrails
+
+`validateLanes` (`src/economy/laneGuards.ts`, run in `tests/unit/lanes.test.ts`): chances rising with
+lawlessness; slots, cooldown and the hail's time in range; bait never in secure space and at most
+three times in five; a sting, a declared share and a bribe in range, and a sting and a dump that cost
+something; tolls rising with the threat; pay positive and under the contracts' ceiling; no contraband
+adrift; lines with no number written in or field they cannot fill, short enough for the HUD (160
+characters) and the card, and choices the engine knows; ship names their own. Over every system and
+many slots: none in Sol, each kind only where it fits (a toll only in lawless space at the packs'
+toll, customs only under a law, stations open and where they should be, a scientist bound for a
+research station), traps only where the kind can be one, every kind somewhere, 25–65% of slots
+holding one; and a quiet pilot touring the lanes meeting one every 15–25 minutes (the owner's
+choice). The tests also break the rules and a line to see them caught, and check the world's slots
+(the same every time, never in Sol or at Pyre), the pilot's gate, every kind's choices and what they
+bring (rewards and bait, berths and fares, tolls and passes, declarations, bribes, stings and dumps,
+berths and helium-3, cargo returned, kept or bait, fixes and tips), the words, the save, the hail in a
+real flight (when it comes, written into the save, answered, lapsing) and its raiders and pass.
+
+In browser tests lane encounters are off unless a test turns them on (the lanes test and the
+screenshot audit do), since they would otherwise come up in other tests' flights.

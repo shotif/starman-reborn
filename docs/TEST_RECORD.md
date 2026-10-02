@@ -253,8 +253,9 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   quiet systems and faint under the comm blip.
 - `gamepad.test.ts`: one job per button with Xbox and PlayStation names; sticks with a dead zone,
   inverted pitch and a springing reticle; each press acting once, held buttons repeating, Start and
-  Back heard by the pause menu and the map; connections and disconnections reported once; the last
-  device used owns the HUD, and a drifting stick never takes it.
+  Back heard by the pause menu and the map; presses for a dialog (the D-pad, A and B) read once;
+  connections and disconnections reported once; the last device used owns the HUD, and a drifting
+  stick never takes it.
 - `portraits.test.ts`: portraits are a pure function of seed and look, differ between seeds, keep
   the face when only the clothes change, dress each role and faction, grey with age, give the eight
   story characters faces of their own, stay well-formed and light, and describe themselves to screen

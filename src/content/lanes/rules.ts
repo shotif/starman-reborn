@@ -34,8 +34,12 @@ export const LANES = {
     customs: { weight: 3, declare: 0.5, bribe: 0.35, sting: 0.2, stingFine: 600, stingStanding: -8, dumpStanding: -3 },
     /** A scientist stranded near a sight of the real sky wants a berth to a research station near by. */
     scientist: { weight: 2, maxJumps: 2, fare: 1.25, gift: { commodity: 'data-cores' as CommodityId, qty: 1 }, fuel: { commodity: 'helium-3' as CommodityId, price: 2 }, standing: 1 },
-    /** Cargo adrift from a hauler, worth returning to its owner. In lawless space it is sometimes bait. */
-    cargo: { weight: 3, bait: { secure: 0, patrolled: 0.15, lawless: 0.4 }, qty: [2, 4] as const, returnShare: 0.3 },
+    /**
+     * Cargo adrift from a hauler. Returned to its owner it pays this share of its base value and
+     * standing with the owner's law (kept, it is worth its full price, and nothing more). In lawless
+     * space it is sometimes bait.
+     */
+    cargo: { weight: 3, bait: { secure: 0, patrolled: 0.15, lawless: 0.4 }, qty: [2, 4] as const, returnShare: 0.6, returnStanding: 2 },
     /** A trader who has lost their way: share your charts for a price tip, or sell them a fix. */
     trader: { weight: 2, fix: 60 },
   },

@@ -399,6 +399,22 @@ for (const size of SIZES) {
       await page.waitForTimeout(800);
       await shot(page, `${size.name}-12e-pyre-map`, size.touch, results);
       await press(page, 'map-close');
+      // Lane encounters (docs/PROCGEN.md §27): a mayday's hail on the HUD, and its card once answered.
+      await api(page, 'meetLanes', true);
+      const laneFrom = (await api<{ clock: number }>(page, 'state')).clock + 1_200;
+      const hail = (await api<{ id: string; systemId: string; start: number } | null>(page, 'findLane', { from: laneFrom, kind: 'mayday', trap: false }))!;
+      expect(hail, 'a mayday').not.toBeNull();
+      await api(page, 'advanceClock', hail.start + 5 - (await api<{ clock: number }>(page, 'state')).clock);
+      await api(page, 'warp', hail.systemId);
+      await waitUntil(page, 'flying there', async () => (await api(page, 'mode')) === 'flight');
+      if (await page.getByTestId('sheet-close').isVisible().catch(() => false)) await press(page, 'sheet-close');
+      await waitUntil(page, 'a hail', async () => (await api<{ hail: { id: string } | null }>(page, 'lanes')).hail?.id === hail.id, 60_000);
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-13-hail`, size.touch, results);
+      await press(page, 'hail-answer');
+      await expect(page.getByTestId('lane-dialog')).toBeVisible();
+      await shot(page, `${size.name}-13b-lane-card`, size.touch, results);
+      await press(page, 'lane-later');
       for (const [name, r] of Object.entries(results)) {
         expect.soft(r.overflow, `${name}: page overflow`).toBe(false);
         expect.soft(r.clipped, `${name}: clipped controls`).toEqual([]);
