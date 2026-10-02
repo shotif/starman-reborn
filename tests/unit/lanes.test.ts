@@ -211,7 +211,7 @@ describe('choices and what they bring', () => {
     const st = meeting(sting);
     addCargo(st.ship.cargo, good, 3);
     const standing = st.reputation[sting.owner!] ?? 0;
-    expect(answerLane(st, sting, 'bribe')!.text).toMatch(/sting/);
+    expect(answerLane(st, sting, 'bribe')!.text).toMatch(new RegExp(`sting.*fined ${LANES.kinds.customs.stingFine} cr`));
     expect(cargoCount(st.ship.cargo, good)).toBe(0);
     expect((st.reputation[sting.owner!] ?? 0) - standing).toBe(LANES.kinds.customs.stingStanding);
     expect(st.law.pending.some((c) => c.amount === LANES.kinds.customs.stingFine)).toBe(true);

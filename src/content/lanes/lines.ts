@@ -5,7 +5,7 @@ import type { LaneKind } from './rules.ts';
  * risk the card names (with odds from the rules, never whether this one is a trap), each choice and
  * what came of it. Fiction, like the people and ships in them. Every number comes from the rules or
  * the world through a field, never written here: {ship}, {name}, {station}, {system}, {owner},
- * {credits}, {good}, {qty}, {toll}, {fine}, {bribe}, {odds}, {sight}, {fare}.
+ * {credits}, {good}, {qty}, {toll}, {fine}, {bribe}, {sting}, {odds}, {sight}, {fare}.
  */
 
 export interface LaneOptionLines {
@@ -69,7 +69,7 @@ export const LANE_LINES: Record<LaneKind, LaneLines> = {
     risk: 'A bribe is sometimes a sting: {odds}.',
     options: {
       declare: { label: 'Declare it', outcome: 'You declare it. The patrol takes it and fines you {fine}.' },
-      bribe: { label: 'Offer a bribe', outcome: 'The officer takes your {bribe} and looks the other way.', trap: 'The officer was waiting for a bribe: it is a sting. Your contraband is taken, and you are fined {fine} for the bribe.' },
+      bribe: { label: 'Offer a bribe', outcome: 'The officer takes your {bribe} and looks the other way.', trap: 'The officer was waiting for a bribe: it is a sting. Your contraband is taken, and you are fined {sting} for the bribe.' },
       dump: { label: 'Dump it', outcome: 'You dump it out of the hold. The patrol saw, and the {owner} will remember.' },
     },
     lapse: 'You say nothing, so the patrol scans you anyway.',

@@ -268,6 +268,7 @@ function fields(state: GameState, o: LaneOffer): Record<string, string> {
     qty: String(o.qty ?? 0),
     fine: `${fine.declare.toLocaleString('en-GB')} cr`,
     bribe: `${fine.bribe.toLocaleString('en-GB')} cr`,
+    sting: `${LANES.kinds.customs.stingFine.toLocaleString('en-GB')} cr`,
     sight: o.sight ?? '',
     odds: oddsText(odds),
   };

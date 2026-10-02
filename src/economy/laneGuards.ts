@@ -20,7 +20,7 @@ const FIELDS: Record<LaneKind, readonly string[]> = {
   mayday: ['ship', 'name', 'credits', 'odds', 'system'],
   lifepod: ['ship', 'name', 'station', 'owner', 'fare', 'system'],
   toll: ['toll', 'system'],
-  customs: ['owner', 'fine', 'bribe', 'odds', 'system'],
+  customs: ['owner', 'fine', 'bribe', 'sting', 'odds', 'system'],
   scientist: ['name', 'sight', 'station', 'fare', 'credits', 'system'],
   cargo: ['qty', 'good', 'station', 'credits', 'odds', 'system'],
   trader: ['ship', 'name', 'credits', 'system'],
