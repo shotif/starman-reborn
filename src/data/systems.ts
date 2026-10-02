@@ -723,3 +723,9 @@ export const MAP_SYSTEMS: readonly StarSystemRecord[] = [
   ...SYSTEMS.map((s) => (s.id === DOOMED.star.anchor ? { ...s, jumpLinks: [...s.jumpLinks, PYRE_ID] } : s)),
   PYRE_SYSTEM,
 ];
+
+/** The world's jump network with Pyre's one lane added (for anything that must reach Pyre: its work's guardrails). */
+export const MAP_LINKS: ReadonlyMap<SystemId, readonly SystemId[]> = new Map<SystemId, readonly SystemId[]>([
+  ...[...WORLD.links].map(([id, links]): [SystemId, readonly SystemId[]] => [id, id === DOOMED.star.anchor ? [...links, PYRE_ID] : links]),
+  [PYRE_ID, [DOOMED.star.anchor as SystemId]],
+]);

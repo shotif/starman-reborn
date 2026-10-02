@@ -15,6 +15,7 @@ import { reliefEnd, shipOutEnd, shipsOut } from './hauls.ts';
 import { marketTables } from './markets.ts';
 import { markById } from './marks.ts';
 import { skyPrice } from './stellar.ts';
+import { edgePrice } from './doomed.ts';
 
 /**
  * World events (docs/PROCGEN.md §11): shortages, gluts, booms and strikes at stations, raids and
@@ -566,8 +567,10 @@ export function marketEffect(locationId: string, commodity: CommodityId, clock: 
   const mark = worldLog?.marks ? marksAt(locationId).find((m) => m.market.goods.includes(commodity))?.market : undefined;
   // A dying far star (§25, fiction): research stations want data and instruments.
   const sky = worldLog?.sky ? skyPrice(locationId, commodity, clock, worldLog.sky.from) : 1;
-  if (!event && !mark && sky === 1) return NEUTRAL;
-  return { price: (event?.price ?? 1) * (mark?.price ?? 1) * sky, stock: (event?.stock ?? 1) * (mark?.stock ?? 1) };
+  // Pyre's death (§26, fiction): the same, from its warning until it has faded in each sky.
+  const edge = worldLog?.sky?.edge !== undefined ? edgePrice(locationId, commodity, clock, worldLog.sky.edge) : 1;
+  if (!event && !mark && sky === 1 && edge === 1) return NEUTRAL;
+  return { price: (event?.price ?? 1) * (mark?.price ?? 1) * sky * edge, stock: (event?.stock ?? 1) * (mark?.stock ?? 1) };
 }
 
 /** How an event moves a good's price at a station right now, all effects together (1 without one). */

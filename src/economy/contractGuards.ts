@@ -4,9 +4,10 @@ import { beltGoods } from '../content/mining/rules.ts';
 import { PASSENGERS } from '../content/passengers/rules.ts';
 import { sightById } from '../content/passengers/sights.ts';
 import { farStar } from './stellar.ts';
+import { PYRE_HOLE_ID } from './pyrePhysics.ts';
 import type { Issue } from '../content/validate.ts';
 import { jumpsFrom } from '../content/world/network.ts';
-import { ALL_LOCATIONS, findBelt, getLocation, getSystem, isFrontier, WORLD } from '../data/systems.ts';
+import { ALL_LOCATIONS, findBelt, getLocation, getSystem, isFrontier, isInventedSystem, MAP_LINKS, PYRE_ID, WORLD } from '../data/systems.ts';
 import { inViewFromGates, inViewFromStation } from '../world/sightseeing.ts';
 import { trafficFor } from '../world/traffic/setup.ts';
 import { shipModel } from '../content/catalog.ts';
@@ -112,7 +113,8 @@ function escortsFor(haulId: string, eventId: string, clock: number): boolean {
 export function contractIssues(c: JobDef, clock: number): Issue[] {
   const issues: Issue[] = [];
   const from = getLocation(c.giverLocationId).systemId;
-  checkContract(c, from, jumpsFrom(WORLD.links, from), marketTables(), (rule, subject, message) => issues.push({ rule, subject, message }), clock);
+  // Pyre's stations reach the world through its one lane (docs/PROCGEN.md §26).
+  checkContract(c, from, jumpsFrom(isInventedSystem(from) ? MAP_LINKS : WORLD.links, from), marketTables(), (rule, subject, message) => issues.push({ rule, subject, message }), clock);
   return issues;
 }
 
@@ -316,7 +318,8 @@ function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, numbe
       const back = c.objectives[1];
       if (o.kind !== 'observe' || back?.kind !== 'visit' || back.locationId !== c.giverLocationId) return report('objectives', c.id, 'an observation, then back with the readings');
       if (getLocation(c.giverLocationId).stationType !== 'research-station') report('observe', c.id, 'posted by a station that is not a research station');
-      if (!farStar(o.star) || !(o.to > o.from)) report('observe', c.id, `${o.star}: not a far star, or a window that never opens`);
+      if (!(farStar(o.star) || o.star === PYRE_ID || o.star === PYRE_HOLE_ID) || !(o.to > o.from)) report('observe', c.id, `${o.star}: not a far star or Pyre, or a window that never opens`);
+      if (o.firstLight !== undefined && (o.star !== PYRE_ID || !(o.firstLight > 0) || !((o.aheadLy ?? 0) > 0))) report('observe', c.id, 'first light wanted of a star that is not Pyre, or with no time or distance');
       if (o.baselineLy !== undefined && !(o.baselineLy > 0)) report('observe', c.id, 'a baseline that is not positive');
       break;
     }

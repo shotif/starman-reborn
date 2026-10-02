@@ -3,7 +3,9 @@
  * the fictional route with the Jump button. Desktop/landscape: side panel. Portrait: bottom sheet
  * whose details collapse; the header and the jump footer stay visible.
  */
-import { beltsOf, getSystem, saveLocations } from '../data/systems.ts';
+import { beltsOf, getSystem, isInventedSystem, saveLocations } from '../data/systems.ts';
+import { EDGE_FICTION } from '../content/stellar/doomedLines.ts';
+import { DOOMED } from '../content/stellar/doomed.ts';
 import type { SystemId } from '../data/types.ts';
 import { dataBadge } from '../ui/components.ts';
 import { formatCredits, h, replaceChildren } from '../ui/dom.ts';
@@ -25,6 +27,7 @@ let uid = 0;
 function systemKindText(id: SystemId): string {
   const s = getSystem(id);
   if (id === 'sol') return 'Our Solar System';
+  if (isInventedSystem(id)) return 'Invented star';
   const n = s.componentIds.length;
   return n === 1 ? 'Single star' : n === 2 ? 'Binary star system' : n === 3 ? 'Triple star system' : `${n} stars`;
 }
@@ -169,8 +172,17 @@ export class InfoCard {
       tags.childElementCount ? tags : null,
     );
 
-    // Body: observed, fiction, route
-    const observed = h(
+    // Body: observed, fiction, route. Pyre is invented (docs/PROCGEN.md §26): nothing about it is observed.
+    const observed = isInventedSystem(systemId)
+      ? h(
+          'section',
+          { class: 'gmap-sec gmap-sec-fiction', 'aria-labelledby': `${this.ids.title}-obs`, 'data-testid': 'gmap-invented' },
+          badgeHeading('h3', 'Invented star', 'fictional', `${this.ids.title}-obs`),
+          h('p', { class: 'gmap-summary' }, system.summary),
+          h('p', null, h('strong', null, EDGE_FICTION.replace('{star}', DOOMED.star.name))),
+          state.inventedNote ? h('p', { 'data-testid': 'gmap-invented-note' }, state.inventedNote) : null,
+        )
+      : h(
       'section',
       { class: 'gmap-sec gmap-sec-observed', 'aria-labelledby': `${this.ids.title}-obs` },
       badgeHeading('h3', 'Observed', 'observed', `${this.ids.title}-obs`, observedMark(system, 'all')),

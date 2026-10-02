@@ -6,7 +6,10 @@
 import './styles/encyclopedia.css';
 import { LY_PER_PARSEC } from '../data/coords.ts';
 import { SOURCES } from '../data/sources.ts';
-import { ASTROMETRY, BELTS, EXOPLANETS, FAR_STARS, SYSTEMS, beltsOf, getSystem, hasProvisionalData, saveLocations } from '../data/systems.ts';
+import { ASTROMETRY, BELTS, EXOPLANETS, FAR_STARS, SYSTEMS, beltsOf, getSystem, hasProvisionalData, isInventedSystem, PYRE_ID, saveLocations } from '../data/systems.ts';
+import { DOOMED } from '../content/stellar/doomed.ts';
+import { PYRE_HOLE_ID } from '../economy/pyrePhysics.ts';
+import { pyreCard } from './screens/pyreCard.ts';
 import type { SourceRef, StarSystemRecord, SystemId } from '../data/types.ts';
 import { MAP_LINKS, formatLy } from '../galaxy/mapData.ts';
 import { MAP_LEGEND_TEXT, formatDistanceWithError, formatEpoch } from '../galaxy/mapText.ts';
@@ -236,6 +239,32 @@ function farStarsSection(id: string): HTMLElement {
   );
 }
 
+/**
+ * Pyre, the one invented star (docs/PROCGEN.md §26): said to be invented, its numbers worked out
+ * with the real physics, and what is real behind it.
+ */
+function inventedSection(id: string): HTMLElement {
+  const name = DOOMED.star.name;
+  return h(
+    'section',
+    { class: 'enc-section', id, 'aria-labelledby': `${id}-h`, 'data-testid': 'enc-invented', 'data-system-id': PYRE_ID },
+    h('h3', { id: `${id}-h`, tabindex: '-1' }, 'The invented star ', dataBadge('fictional')),
+    h(
+      'p',
+      null,
+      `${name} does not exist. It is the one star the game invents: a red supergiant placed just beyond the edge of the real census of the Sun’s neighbourhood, so that a pilot can be near when a star dies. In each game it explodes some time after the pilot first reaches the frontier, its light crosses the map a light-year a minute, and its core leaves a black hole. Its size, brightness and black hole are worked out from its invented mass, luminosity and temperature with the real physics.`,
+    ),
+    pyreCard(DOOMED.star.id),
+    pyreCard(PYRE_HOLE_ID),
+    h(
+      'p',
+      null,
+      dataBadge('observed'),
+      ' What is real: no star near enough to harm Earth is known to be about to explode. The nearest stars massive enough to end as supernovae are a few hundred light-years away or more, and nobody can say when any of them will go.',
+    ),
+  );
+}
+
 function dataSection(id: string): HTMLElement {
   const provisional = hasProvisionalData();
   const epochs = [...new Set(ASTROMETRY.stars.map((s) => s.referenceEpoch))].map(formatEpoch).join(', ');
@@ -343,12 +372,14 @@ export function openEncyclopedia(root: HTMLElement, opts: EncyclopediaOptions): 
     intro: `enc-${uid}-intro`,
     data: `enc-${uid}-data`,
     far: `enc-${uid}-far`,
+    invented: `enc-${uid}-invented`,
     system: (id: SystemId) => `enc-${uid}-${id}`,
   };
   const sections: { id: string; label: string }[] = [
     { id: ids.intro, label: 'How to read this' },
     ...SYSTEMS.map((s) => ({ id: ids.system(s.id), label: s.displayName })),
     { id: ids.far, label: 'Far stars' },
+    { id: ids.invented, label: 'The invented star' },
     { id: ids.data, label: 'Data and sources' },
   ];
 
@@ -358,6 +389,7 @@ export function openEncyclopedia(root: HTMLElement, opts: EncyclopediaOptions): 
     introSection(ids.intro),
     SYSTEMS.map((s) => systemSection(s, ids.system(s.id), opts.discoveredBodies, opts.catalogued)),
     farStarsSection(ids.far),
+    inventedSection(ids.invented),
     dataSection(ids.data),
   );
   const navButtons = new Map<string, HTMLButtonElement>();
@@ -472,7 +504,8 @@ export function openEncyclopedia(root: HTMLElement, opts: EncyclopediaOptions): 
   document.addEventListener('keydown', onKey, true);
   root.appendChild(backdrop);
   body.addEventListener('scroll', onScroll, { passive: true });
-  if (opts.initialSystemId) goTo(ids.system(opts.initialSystemId), false);
+  // Pyre is in its own section (docs/PROCGEN.md §26).
+  if (opts.initialSystemId) goTo(isInventedSystem(opts.initialSystemId) ? ids.invented : ids.system(opts.initialSystemId), false);
   else {
     setCurrent(ids.intro);
     title.focus({ preventScroll: true });

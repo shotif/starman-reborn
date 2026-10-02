@@ -923,6 +923,8 @@ export class GalaxyMapView {
         marks.length ? h('span', { class: 'gmap-label-marks' }, marks) : null,
         h('span', { class: 'gmap-label-name' }, def.name),
         def.distanceLy !== null ? h('span', { class: 'gmap-label-dist' }, ` · ${formatLy(def.distanceLy)}`) : null,
+        // Pyre, the one invented star (docs/PROCGEN.md §26), says so on its label.
+        def.invented ? h('span', { class: 'gmap-label-fiction' }, ' · Fiction') : null,
       );
       // The first catalogue's systems and those you have been to win space over the far shell.
       const known = !isNewSystem(id) || state.visited.has(id);

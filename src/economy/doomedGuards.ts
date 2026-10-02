@@ -1,5 +1,9 @@
 import { DOOMED, type DoomedRules } from '../content/stellar/doomed.ts';
-import { EDGE_COMMS, EDGE_EARTH, EDGE_FICTION, EDGE_NEWS } from '../content/stellar/doomedLines.ts';
+import { EDGE_COMMS, EDGE_EARTH, EDGE_FICTION, EDGE_JOBS, EDGE_NEWS } from '../content/stellar/doomedLines.ts';
+import { EVENTS } from '../content/events/rules.ts';
+import { PASSENGERS } from '../content/passengers/rules.ts';
+import { jumpsFrom } from '../content/world/network.ts';
+import { MAX_REWARD } from './contractGuards.ts';
 import { STELLAR } from '../content/stellar/rules.ts';
 import type { Issue } from '../content/validate.ts';
 import { ALL_LOCATIONS, ASTROMETRY, BELTS, EXOPLANETS, FAR_STARS, isFrontier, SYSTEMS, WORLD } from '../data/systems.ts';
@@ -102,6 +106,26 @@ export function validateDoomed(rules: DoomedRules = DOOMED): Issue[] {
   check('earth', EDGE_EARTH.headline, fields);
   check('earth', EDGE_EARTH.detail, fields);
   check('fiction', EDGE_FICTION, ['star']);
+  for (const [kind, l] of Object.entries(EDGE_JOBS)) for (const text of [l.title, l.briefing, l.objective]) check(`jobs.${kind}`, text, ['star', 'anchor', 'refuge', 'party', 'giver', 'firstLight', 'ahead']);
+
+  // Its work: under the contracts' ceiling, a party the passages take, a first light a pilot can see
+  // twice by outrunning it through a lane near it, and a black hole that still glows once its station opens.
+  const J = rules.jobs;
+  for (const [kind, j] of Object.entries(J)) if (!(j.reward > 0 && j.reward <= MAX_REWARD)) report('jobs', kind, `a reward of ${j.reward}, out of 1–${MAX_REWARD}`);
+  const [lo, hi] = J.evacuate.party;
+  if (!(lo >= 1 && lo <= hi && lo >= PASSENGERS.passage.party[0] && hi <= PASSENGERS.passage.party[1])) report('jobs', 'evacuate', 'a party the passages do not take');
+  const lyOf = (id: SystemId) => {
+    const q = SYSTEMS.find((s) => s.id === id)!.positionLy;
+    return Math.hypot(q[0] - p[0], q[1] - p[1], q[2] - p[2]);
+  };
+  const reach = jumpsFrom(WORLD.links, star.anchor as SystemId);
+  const within = (id: SystemId) => (reach.get(id) ?? Infinity) <= J.twice.reach + 1;
+  const outrun = [...WORLD.links].some(([a, lanes]) =>
+    within(a) && lanes.some((b) => within(b) && lyOf(b) - lyOf(a) >= J.twice.aheadLy && EVENTS.jumpSeconds <= T.secondsPerLy * (lyOf(b) - lyOf(a)) + J.twice.firstLight),
+  );
+  if (!(J.twice.firstLight > 0 && J.twice.aheadLy > 0 && J.twice.reach >= 1) || !outrun) report('jobs', 'twice', 'no lane near it lets a pilot outrun its light');
+  const glowsUntil = T.laneOpensAfterBreakout * J.hole.glowAbove ** (-1 / rules.blackHole.fallbackDecay);
+  if (!(J.hole.glowAbove > 0 && J.hole.glowAbove < 1) || glowsUntil <= T.stationOpensAfterBreakout) report('jobs', 'hole', 'its gas has faded before its station opens');
   if (!(rules.earth.ozoneNearPc > 0 && rules.earth.ozoneFarPc > rules.earth.ozoneNearPc)) report('earth', 'ozone', 'estimates out of order');
   return issues;
 }

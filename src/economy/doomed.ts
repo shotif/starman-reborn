@@ -1,13 +1,14 @@
 import type { GameState } from '../app/state.ts';
 import type { CommodityId } from '../content/economy/goods.ts';
 import { DOOMED } from '../content/stellar/doomed.ts';
-import { EDGE_COMMS, EDGE_NEWS, EDGE_SPEAKER, type EdgeNewsKind } from '../content/stellar/doomedLines.ts';
+import { EDGE_COMMS, EDGE_JOBS, EDGE_NEWS, EDGE_SPEAKER, type EdgeNewsKind } from '../content/stellar/doomedLines.ts';
 import { STELLAR } from '../content/stellar/rules.ts';
 import { EVENTS } from '../content/events/rules.ts';
 import { jumpsFrom } from '../content/world/network.ts';
 import { ALL_LOCATIONS, getLocation, getSystem, SYSTEMS, WORLD } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { activeEdge } from './events.ts';
+import type { ObserveObjective } from './stellar.ts';
 import { apparentAt, lyFromPyre, pyreAbsoluteMagnitude } from './pyrePhysics.ts';
 import { magnitudeText, skyTimeline } from './stellar.ts';
 
@@ -120,6 +121,17 @@ export function hopsToPyre(from: SystemId): number {
   return (jumpsFrom(WORLD.links, from).get(DOOMED.star.anchor as SystemId) ?? 0) + 1;
 }
 
+/** How things stand at Pyre now, in a line (the star map's card). */
+export function pyreStatus(clock: number, edge: number | null = activeEdge()): string {
+  const stage = pyreStage(clock, edge);
+  const name = DOOMED.star.name;
+  if (stage === 'alive') return `${name} burns on, a red supergiant near the end of its life. Its observatory watches it.`;
+  if (stage === 'warned') return `${name}’s core is about to collapse: its observatory is evacuating.`;
+  if (stage === 'collapsed') return `${name}’s core has collapsed, and the lane is closed. The light of its explosion is minutes away.`;
+  if (!laneOpen(clock, edge)) return `${name} has exploded. The lane is closed until the debris has thinned.`;
+  return `${name} has exploded: a black hole is all that is left of it.${remnantStationOpen(clock, edge) ? ` ${DOOMED.stations.remnant.name} is open.` : ''}`;
+}
+
 /** Where Pyre is in its story: alive (before or after the warning), collapsed (its light not yet out), or gone (a black hole). */
 export function pyreStage(clock: number, edge: number | null = activeEdge()): 'alive' | 'warned' | 'collapsed' | 'gone' {
   if (edge === null || clock < edge) return 'alive';
@@ -223,17 +235,17 @@ export function fillEdge(text: string, systemId?: SystemId): string {
   return text.replace(/\{(\w+)\}/g, (_, k: string) => values[k] ?? '');
 }
 
-/** The moments of Pyre's story as told in a system, oldest first. */
+/** The moments of Pyre's story as told in a system, oldest first (at Pyre itself, no light arriving or fading: it is where it left). */
 function moments(systemId: SystemId, edge: number): [EdgeNewsKind, number][] {
   const t = edgeTimeline(edge);
   const S = STELLAR.supernova;
   const arrive = lightArrives(systemId, edge);
+  const own = systemId === DOOMED.star.id;
   return (
     [
       ['warning', t.warning],
       ['collapse', t.collapse],
-      ['light', arrive],
-      ['fading', arrive + S.rise + S.plateau],
+      ...(own ? [] : [['light', arrive], ['fading', arrive + S.rise + S.plateau]]),
       ['lane', t.laneOpens],
       ['station', t.stationOpens],
     ] as [EdgeNewsKind, number][]
@@ -276,4 +288,100 @@ export function edgePrice(locationId: string, commodity: CommodityId, clock: num
   const loc = getLocation(locationId);
   if (loc.stationType !== 'research-station' || !SYSTEMS.some((s) => s.id === loc.systemId)) return 1;
   return clock >= edge && clock < fadedIn(loc.systemId, edge) ? DOOMED.market.price : 1;
+}
+
+// ---------------------------------------------------------------- its work
+
+export type PyreJobKind = keyof typeof EDGE_JOBS;
+
+/** One piece of Pyre's work on offer at a station: posted from `posted` until `until`, its observation window `from`–`to`. */
+export interface PyreOffer {
+  kind: PyreJobKind;
+  posted: number;
+  until: number;
+  /** The observation window (not for the evacuation). */
+  from: number;
+  to: number;
+}
+
+/** When the gas falling into the black hole has faded below the hole job's threshold. */
+export function holeReadUntil(edge: number): number {
+  const B = edgeTimeline(edge).breakout;
+  return B + DOOMED.timeline.laneOpensAfterBreakout * DOOMED.jobs.hole.glowAbove ** (-1 / DOOMED.blackHole.fallbackDecay);
+}
+
+/** When Pyre's light has crossed the whole map. */
+function lightCrossed(edge: number): number {
+  return edgeTimeline(edge).breakout + DOOMED.timeline.secondsPerLy * Math.max(...SYSTEMS.map((s) => lyFromPyre(s.id)));
+}
+
+/** Whether a station is near enough Pyre's anchor to post the work that sends pilots to it. */
+export function nearPyre(locationId: string): boolean {
+  const loc = getLocation(locationId);
+  if (loc.systemId === DOOMED.star.id) return true;
+  return (jumpsFrom(WORLD.links, DOOMED.star.anchor as SystemId).get(loc.systemId) ?? Infinity) <= DOOMED.jobs.twice.reach;
+}
+
+/**
+ * Pyre's work a station posts between two moments (docs/PROCGEN.md §26.5): every research station
+ * wants its last record; its observatory, its observers carried out; research stations near its
+ * anchor, its first light seen twice and its black hole read; its remnant station, the hole read.
+ */
+export function pyreOffers(locationId: string, start: number, end: number, edge: number | null = activeEdge()): PyreOffer[] {
+  if (edge === null) return [];
+  const loc = getLocation(locationId);
+  const t = edgeTimeline(edge);
+  const out: PyreOffer[] = [];
+  const add = (o: PyreOffer) => {
+    if (o.posted < end && o.until > start) out.push(o);
+  };
+  const research = loc.stationType === 'research-station' && loc.status === 'functional';
+  if (locationId === DOOMED.stations.observatory.id) {
+    add({ kind: 'evacuate', posted: t.warning, until: t.collapse, from: t.warning, to: t.collapse });
+    return out;
+  }
+  if (locationId === DOOMED.stations.remnant.id) {
+    add({ kind: 'hole', posted: t.stationOpens, until: holeReadUntil(edge), from: t.laneOpens, to: holeReadUntil(edge) });
+    return out;
+  }
+  if (!research || loc.dockable === false) return out;
+  add({ kind: 'record', posted: t.warning, until: t.breakout, from: t.warning, to: t.breakout });
+  if (nearPyre(locationId)) {
+    add({ kind: 'twice', posted: t.warning, until: t.breakout + DOOMED.timeline.secondsPerLy * lyFromPyre(loc.systemId), from: t.breakout, to: lightCrossed(edge) });
+    add({ kind: 'hole', posted: t.laneOpens, until: holeReadUntil(edge), from: t.laneOpens, to: holeReadUntil(edge) });
+  }
+  return out;
+}
+
+/** The readings an observation of Pyre's first light counts: within the rules' minutes of its light arriving where it was made. */
+function firstLightReadings(o: ObserveObjective, observed: readonly { at: number; systemId: SystemId }[], edge: number): { at: number; systemId: SystemId; ly: number }[] {
+  return observed
+    .filter((x) => x.systemId !== DOOMED.star.id && x.at >= o.from && x.at <= o.to)
+    .filter((x) => {
+      const since = x.at - lightArrives(x.systemId, edge);
+      return since >= 0 && since <= (o.firstLight ?? 0);
+    })
+    .map((x) => ({ ...x, ly: lyFromPyre(x.systemId) }));
+}
+
+/** How many systems the first light has been seen from so far that count (1 at most until a second one far enough out). */
+export function firstLightSeen(o: ObserveObjective, observed: readonly { at: number; systemId: SystemId }[], edge: number | null = activeEdge()): number {
+  if (edge === null) return 0;
+  const seen = firstLightReadings(o, observed, edge);
+  if (!seen.length) return 0;
+  return seen.some((a) => seen.some((b) => b.ly - a.ly >= (o.aheadLy ?? 0) && b.systemId !== a.systemId)) ? 2 : 1;
+}
+
+/** Fills one of Pyre's job lines. */
+export function fillPyreJob(text: string, values: { giver: string; refuge?: string; party?: string }): string {
+  const fields: Record<string, string> = {
+    star: DOOMED.star.name,
+    anchor: getSystem(DOOMED.star.anchor).displayName,
+    refuge: values.refuge ?? getLocation(pyreRefugeId()).name,
+    party: values.party ?? '',
+    giver: values.giver,
+    firstLight: String(Math.round(DOOMED.jobs.twice.firstLight / 60)),
+    ahead: String(DOOMED.jobs.twice.aheadLy),
+  };
+  return text.replace(/\{(\w+)\}/g, (_, k: string) => fields[k] ?? '');
 }

@@ -3,7 +3,7 @@ import { COMMODITIES, COMMODITY_IDS, PRICE_BAND } from '../content/economy/goods
 import { buildMarkets, type MarketEntry, type MarketStationInput, type StationMarket } from '../content/economy/markets.ts';
 import { ECONOMY } from '../content/economy/rules.ts';
 import { WORLD_SEED } from '../content/world/rules.ts';
-import { ALL_LOCATIONS, getLocation, saveLocations, saveLocationsKey, WORLD } from '../data/systems.ts';
+import { ALL_LOCATIONS, getLocation, MAP_LINKS, PYRE_LOCATIONS, saveLocations, saveLocationsKey, WORLD } from '../data/systems.ts';
 import type { FactionId, FictionalLocation } from '../data/types.ts';
 import { marketEffect } from './events.ts';
 import { haulStock } from './hauls.ts';
@@ -45,11 +45,11 @@ const MIN_SPREAD = 0.04;
  */
 class Tables extends Map<string, StationMarket> {
   override get(id: string): StationMarket | undefined {
-    return super.get(id) ?? saveTable(id);
+    return super.get(id) ?? saveTable(id) ?? pyreTable(id);
   }
 
   override has(id: string): boolean {
-    return super.has(id) || !!saveTable(id);
+    return super.has(id) || !!saveTable(id) || !!pyreTable(id);
   }
 }
 
@@ -90,6 +90,22 @@ function saveTable(id: string): StationMarket | undefined {
     saved = { key, tables: new Map(own.flatMap((l) => (built.has(l.id) ? [[l.id, built.get(l.id)!] as const] : []))) };
   }
   return saved.tables.get(id);
+}
+
+let pyreTables: Map<string, StationMarket> | null = null;
+
+/**
+ * Pyre's stations' tables (docs/PROCGEN.md §26), answered by id like a save's own: priced by the
+ * same rules as everyone's, reaching the world through its one lane, never anyone else's makers.
+ */
+function pyreTable(id: string): StationMarket | undefined {
+  if (!PYRE_LOCATIONS.some((l) => l.id === id)) return undefined;
+  if (!pyreTables) {
+    marketTables();
+    const built = buildMarkets([...stationInputs, ...PYRE_LOCATIONS.map(inputOf)], MAP_LINKS, WORLD_SEED);
+    pyreTables = new Map(PYRE_LOCATIONS.flatMap((l) => (built.has(l.id) ? [[l.id, built.get(l.id)!] as const] : [])));
+  }
+  return pyreTables.get(id);
 }
 
 export function hasMarket(locationId: string): boolean {

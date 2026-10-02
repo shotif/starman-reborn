@@ -10,6 +10,9 @@ import { COMMODITIES } from '../content/economy/goods.ts';
 import type { RivalStyle } from '../content/rivals/rules.ts';
 import { rivalName, rivalNews } from '../economy/rivals.ts';
 import { skyNews } from '../economy/stellar.ts';
+import { edgeNews, fillEdge } from '../economy/doomed.ts';
+import { EDGE_EARTH, EDGE_FICTION } from '../content/stellar/doomedLines.ts';
+import { DOOMED } from '../content/stellar/doomed.ts';
 import { dataBadge } from './components.ts';
 import { h } from './dom.ts';
 import { glyph, type GlyphName } from './glyphs.ts';
@@ -275,3 +278,35 @@ export function skyNewsList(clock: number): HTMLElement | null {
   );
 }
 
+
+/**
+ * Pyre, the invented star (docs/PROCGEN.md §26), as told at a station: each moment as it comes
+ * there, marked as fiction and said to be about a star that does not exist; at Sol's stations, once
+ * its light has come, what it would mean for Earth.
+ */
+export function edgeNewsList(systemId: SystemId, clock: number): HTMLElement | null {
+  const items = edgeNews(systemId, clock);
+  if (!items.length) return null;
+  const fiction = fillEdge(EDGE_FICTION);
+  const ago = (at: number) => (clock - at < 60 ? 'just now' : `${minutes(clock - at)} min ago`);
+  const light = systemId === 'sol' ? items.find((n) => n.kind === 'light') : undefined;
+  const item = (kind: string, headline: string, detail: string, at: number) =>
+    h(
+      'li',
+      { class: `news-item kind-sky${kind === 'fading' ? ' over' : ''}`, 'data-edge': kind },
+      glyph('scanner'),
+      h(
+        'span',
+        { class: 'news-text' },
+        h('span', { class: 'row-name' }, headline, ' ', dataBadge('fictional')),
+        h('span', { class: 'row-sub' }, `${DOOMED.star.name} · ${ago(at)}`),
+        h('span', { class: 'news-detail' }, detail, ' ', h('em', null, fiction)),
+      ),
+    );
+  return h(
+    'ul',
+    { class: 'list news-list', 'data-testid': 'edge-news' },
+    light ? item('earth', fillEdge(EDGE_EARTH.headline), fillEdge(EDGE_EARTH.detail), light.at) : null,
+    items.map((n) => item(n.kind, n.headline, n.detail, n.at)),
+  );
+}

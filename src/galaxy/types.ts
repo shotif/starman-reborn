@@ -36,6 +36,8 @@ export interface MapState {
   jumpReach?: number;
   /** Systems no jump may end at for now, and why (the lane to Pyre while its debris is thick, docs/PROCGEN.md §26). */
   closedTo?: ReadonlyMap<SystemId, string>;
+  /** How things stand at Pyre, the invented star, for its card (docs/PROCGEN.md §26). */
+  inventedNote?: string;
 }
 
 export interface MapMission {

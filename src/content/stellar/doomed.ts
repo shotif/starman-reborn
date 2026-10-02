@@ -81,6 +81,24 @@ export const DOOMED = {
   earth: { ozoneNearPc: 8, ozoneFarPc: 20 },
   /** Research stations pay more for these goods from the warning until Pyre has faded in their own sky. */
   market: { goods: ['data-cores', 'electronics'] as readonly CommodityId[], price: 1.3 },
+  /**
+   * Its work (fiction, like every contract), each reward under the contracts' ceiling:
+   * - record: every research station wants Pyre observed, from open space anywhere, between its
+   *   warning and its light leaving: the last record of the star as it was;
+   * - evacuate: its observatory's last observers (a party of this size), carried out to the station
+   *   at its anchor, posted from the warning until the collapse;
+   * - twice: research stations within `reach` jumps of its anchor want its first light seen from two
+   *   systems, each within `firstLight` seconds of its light arriving there, the second at least
+   *   `aheadLy` light-years farther from Pyre: outrunning its light through the lanes;
+   * - hole: the same stations, and the remnant station once open, want its black hole read while the
+   *   gas falling into it still glows brighter than `glowAbove` of its glow when the lane opened.
+   */
+  jobs: {
+    record: { reward: 1_400 },
+    evacuate: { reward: 2_800, party: [2, 3] as const },
+    twice: { reward: 3_600, reach: 3, firstLight: 180, aheadLy: 2 },
+    hole: { reward: 2_400, glowAbove: 0.05 },
+  },
 } as const;
 
 export type DoomedRules = typeof DOOMED;

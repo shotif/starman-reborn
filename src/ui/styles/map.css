@@ -107,6 +107,10 @@
   font-variant-numeric: tabular-nums;
 }
 
+.gmap-label-fiction {
+  color: var(--fiction);
+}
+
 .gmap-label.is-selected {
   background: rgba(12, 22, 44, 0.9);
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.55);
@@ -830,6 +834,11 @@
   stroke-dasharray: 3 2;
 }
 
+.gmap-swatch-invented {
+  stroke: var(--fiction);
+  stroke-dasharray: 4 2.5;
+}
+
 .gmap-swatch-drop {
   stroke: var(--text-muted);
   fill: var(--text-muted);
@@ -1431,6 +1440,13 @@
   stroke: var(--success);
   stroke-width: 1.6;
   stroke-dasharray: 3 2.5;
+}
+
+.map2d-invented {
+  fill: none;
+  stroke: var(--fiction);
+  stroke-width: 1.6;
+  stroke-dasharray: 4 3;
 }
 
 .map2d-objective {

@@ -1,10 +1,10 @@
 /** Map legend shared by the 3D view and the 2D SVG map. */
-import { hasProvisionalData } from '../data/systems.ts';
+import { hasProvisionalData, PYRE_SYSTEM } from '../data/systems.ts';
 import { dataBadge } from '../ui/components.ts';
 import { h, svg } from '../ui/dom.ts';
 import { MAP_LEGEND_TEXT } from './mapText.ts';
 
-function swatch(kind: 'link' | 'frontier' | 'route' | 'current' | 'objective' | 'visited' | 'drop'): SVGSVGElement {
+function swatch(kind: 'link' | 'frontier' | 'route' | 'current' | 'objective' | 'visited' | 'drop' | 'invented'): SVGSVGElement {
   const el = svg('svg', { class: `gmap-swatch gmap-swatch-${kind}`, viewBox: '0 0 28 16', 'aria-hidden': 'true' });
   switch (kind) {
     case 'link':
@@ -16,6 +16,7 @@ function swatch(kind: 'link' | 'frontier' | 'route' | 'current' | 'objective' | 
       break;
     case 'current':
     case 'visited':
+    case 'invented':
       el.append(svg('circle', { cx: 14, cy: 8, r: 6 }));
       break;
     case 'objective':
@@ -51,6 +52,8 @@ export function buildLegend(mode: '3d' | '2d', tag: 'div' | 'figcaption' = 'div'
     h('li', null, swatch('current'), h('span', null, 'You are here')),
     h('li', null, swatch('objective'), h('span', null, 'Objective')),
     h('li', null, swatch('visited'), h('span', null, 'Visited')),
+    // Pyre, the one invented star (docs/PROCGEN.md §26).
+    h('li', null, swatch('invented'), h('span', null, `${PYRE_SYSTEM.displayName}: an invented star, not in the real sky `, dataBadge('fictional'))),
     mode === '3d'
       ? h('li', null, swatch('drop'), h('span', null, 'Line down to the celestial equator plane (the grid); rings every 2 ly from Sol'))
       : h('li', null, h('span', null, 'Seen from above the north celestial pole; rings every 2 ly from Sol; labels give height above or below the plane')),

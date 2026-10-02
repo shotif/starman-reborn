@@ -12,7 +12,8 @@ import * as THREE from 'three';
 import { AudioEngine } from '../audio/AudioEngine.ts';
 import type { MusicMood, SfxId } from '../audio/types.ts';
 import { ALL_LOCATIONS, getComponent, getLocation, getPlanet, getSystem, hasProvisionalData, isInventedSystem, MAP_SYSTEMS, PYRE_ID, saveLocationsKey, SYSTEMS, WORLD } from '../data/systems.ts';
-import { hopsToPyre, laneClosedReason, pyreRefugeId, pyreStage } from '../economy/doomed.ts';
+import { edgeComm, edgeMoment, hopsToPyre, laneClosedReason, PYRE_HOLE_ID, pyreRefugeId, pyreStage, pyreStatus, scheduleEdge } from '../economy/doomed.ts';
+import type { EdgeNewsKind } from '../content/stellar/doomedLines.ts';
 import type { SystemId } from '../data/types.ts';
 import { addCargo, cargoUsed, itemsThatFit } from '../economy/cargo.ts';
 import { COMMODITIES } from '../economy/commodities.ts';
@@ -200,6 +201,8 @@ export class Game {
   private lastFright = -Infinity;
   /** The far stars' latest moment the stations have spoken of (docs/PROCGEN.md §25). */
   private skySaid: SkyNewsKind | null = null;
+  /** The last moment of Pyre's story the radio told, and where (docs/PROCGEN.md §26). */
+  private edgeSaid: { kind: EdgeNewsKind | null; systemId: SystemId } | null = null;
   /** When this flight began (a rival counts the player's shots against standing once a flight). */
   private flightStart = 0;
   private objectiveText: string | null = null;
@@ -503,7 +506,10 @@ export class Game {
     // A save past the opening gets its far stars' timeline (docs/PROCGEN.md §25); what has already happened is not said again.
     const scheduled = scheduleSky(this.state);
     this.skySaid = skyMoment(this.state.clock);
-    if (fleet.steps || scheduled) this.persist();
+    // Pyre's warning is set once the player has reached the frontier (docs/PROCGEN.md §26); what has happened is not said again.
+    const edged = scheduleEdge(this.state);
+    this.edgeSaid = { kind: edgeMoment(this.state.location.systemId, this.state.clock), systemId: this.state.location.systemId };
+    if (fleet.steps || scheduled || edged) this.persist();
     const loc = state.location;
     if (loc.dockedAt) this.enterDocked(loc.dockedAt, { titleCard: true });
     else if (loc.flight) {
@@ -576,8 +582,9 @@ export class Game {
     const state = this.state!;
     // Events the player ended early (docs/PROCGEN.md §17) are in this save's world log.
     useWorldLog(state.world);
-    // Once the opening delivery is done, the far stars' timeline is set (docs/PROCGEN.md §25).
+    // Once the opening delivery is done, the far stars' timeline is set (docs/PROCGEN.md §25), and Pyre's once at the frontier (§26).
     scheduleSky(state);
+    scheduleEdge(state);
     this.clearScreens();
     if (this.map?.isOpen) this.map.close();
     this.loadSystem(state.location.systemId);
@@ -980,13 +987,14 @@ export class Game {
         onPyreBreakout: () => void this.onPyreBreakout(),
         // Sightseers at their sight (docs/PROCGEN.md §23): they say so, and the tour heads home.
         onObserve: (starId) => {
-          const f = farStar(starId);
+          // A far star (docs/PROCGEN.md §25), or Pyre (§26).
+          const name = starId === PYRE_ID ? getSystem(PYRE_ID).displayName : farStar(starId)?.name;
           const jobs = recordObservation(state, starId, state.location.systemId);
           if (!jobs.length) {
-            toast(`No contract wants ${f?.name ?? 'that star'} observed now.`, 'info', 2600);
+            toast(`No contract wants ${name ?? 'that star'} observed now.`, 'info', 2600);
             return;
           }
-          toast(`${f?.name ?? 'The star'} observed from ${getSystem(state.location.systemId).displayName}: readings recorded.`, 'good', 3000);
+          toast(`${name ?? 'The star'} observed from ${getSystem(state.location.systemId).displayName}: readings recorded.`, 'good', 3000);
           this.announceJobEvents(advanceJobs(state, { dockedAt: null, systemId: state.location.systemId }));
           this.persist();
         },
@@ -1133,9 +1141,24 @@ export class Game {
   private watchSky(state: GameState): void {
     if (scheduleSky(state)) this.persist();
     const now = skyMoment(state.clock);
-    if (now === this.skySaid) return;
-    this.skySaid = now;
-    const line = now ? skyComm(now) : null;
+    if (now !== this.skySaid) {
+      this.skySaid = now;
+      const line = now ? skyComm(now) : null;
+      if (line) this.comm(line.speaker, line.text, 7000);
+    }
+    this.watchEdge(state);
+  }
+
+  /** Pyre (docs/PROCGEN.md §26): its warning set once the player is at the frontier, and the stations' word as each moment comes where the player is. */
+  private watchEdge(state: GameState): void {
+    if (scheduleEdge(state)) this.persist();
+    const here = state.location.systemId;
+    const now = edgeMoment(here, state.clock);
+    const said = this.edgeSaid;
+    this.edgeSaid = { kind: now, systemId: here };
+    // A new system: its moments so far are its News, not the radio's.
+    if (!said || said.systemId !== here || now === said.kind || !now) return;
+    const line = edgeComm(now, here);
     if (line) this.comm(line.speaker, line.text, 7000);
   }
 
@@ -1283,6 +1306,15 @@ export class Game {
   private onScanInfo(t: Target): void {
     if (!t.bodyId) return;
     const state = this.state!;
+    // Pyre and its black hole (docs/PROCGEN.md §26.5): a scan is a reading for the work that wants one.
+    if (t.bodyId === PYRE_ID || t.bodyId === PYRE_HOLE_ID) {
+      const jobs = recordObservation(state, t.bodyId, state.location.systemId);
+      if (jobs.length) {
+        toast(`${t.name}: readings recorded.`, 'good', 3000);
+        this.announceJobEvents(advanceJobs(state, { dockedAt: null, systemId: state.location.systemId }));
+        this.persist();
+      }
+    }
     if (catalogue(state, t.bodyId)) {
       const { done, total } = codexProgress(state);
       this.hint = null;
@@ -1320,6 +1352,8 @@ export class Game {
     });
     const r = rescueFromPyre(state);
     toast(`Carried out of ${getSystem(PYRE_ID).displayName}: −${formatCredits(r.fee)}`, 'bad');
+    // Observers carried out with the ship are where they wanted to be.
+    this.announceJobEvents(advanceJobs(state, { dockedAt: r.dockId, systemId: getLocation(r.dockId).systemId }));
     await this.saves.save(state);
     this.enterDocked(r.dockId, {});
   }
@@ -1389,6 +1423,7 @@ export class Game {
       jumpReach: state ? performanceOf(state.ship).jumpReach : 0,
       // The lane to Pyre takes no arrivals from its collapse until its debris has thinned (docs/PROCGEN.md §26).
       ...(state ? this.pyreClosed(state, current) : {}),
+      ...(state ? { inventedNote: pyreStatus(state.clock) } : {}),
     };
   }
 

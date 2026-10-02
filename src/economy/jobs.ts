@@ -19,6 +19,8 @@ import { BORDER } from '../content/border/rules.ts';
 import { getFront, pushFront } from './border.ts';
 import { leaveMark, settleFront, storyMark } from './answers.ts';
 import { observeBaseline, observeDone, type ObserveObjective } from './stellar.ts';
+import { firstLightSeen, PYRE_HOLE_ID } from './doomed.ts';
+import { DOOMED } from '../content/stellar/doomed.ts';
 import { haulById, recordHaul, releaseHaul } from './hauls.ts';
 
 export type Objective =
@@ -123,6 +125,8 @@ export interface JobDef {
      * sets off alone if nobody has taken the job (game clock).
      */
     haul?: string;
+    /** Work that comes and goes within a time slot: on the board from `posted` until `until` (game clock). */
+    posted?: number;
     until?: number;
   };
   /** Story arc missions (content/story/arcs.ts): arc, step, speaker and beats. */
@@ -453,6 +457,8 @@ function objectiveSatisfied(state: GameState, jobId: string, o: Objective, ctx: 
     case 'sight':
       return !!state.jobs[jobId]?.seen;
     case 'observe':
+      // Pyre's first light (docs/PROCGEN.md §26.5) wants two fresh readings, the second farther out.
+      if (o.firstLight) return firstLightSeen(o, state.jobs[jobId]?.observed ?? [], state.world.sky?.edge ?? null) >= 2;
       return observeDone(o, state.jobs[jobId]?.observed ?? []);
     case 'deliver':
       // Deliveries complete only when the player turns the cargo in (see deliverJob).
@@ -660,6 +666,15 @@ function describeCurrent(state: GameState, jobId: string): ObjectiveSummary | nu
       const now = state.clock;
       const mins = (s: number) => Math.max(1, Math.round(s / 60));
       const when = now < o.from ? `opens in ${mins(o.from - now)} min` : now <= o.to ? `${mins(o.to - now)} min left` : 'closed';
+      // Pyre's black hole is read where it is (docs/PROCGEN.md §26.5).
+      if (o.star === PYRE_HOLE_ID) {
+        const pyre = DOOMED.star.id as SystemId;
+        return { ...base, text: inOtherSystem(pyre, `${o.text} (${when})`), targetSystemId: pyre, targetLocationId: null, targetId: `hole:${PYRE_HOLE_ID}` };
+      }
+      if (o.firstLight) {
+        const seen = firstLightSeen(o, state.jobs[jobId]?.observed ?? [], state.world.sky?.edge ?? null);
+        return { ...base, text: `${o.text} (${when}; ${seen} of 2 seen)`, targetSystemId: here, targetLocationId: null, targetId: `sky:${o.star}` };
+      }
       const best = o.baselineLy ? observeBaseline(o, state.jobs[jobId]?.observed ?? []) : 0;
       const progress = o.baselineLy ? `; widest baseline so far ${best.toFixed(1)} of ${o.baselineLy} ly` : '';
       return { ...base, text: `${o.text} (${when}${progress})`, targetSystemId: here, targetLocationId: null, targetId: `sky:${o.star}` };

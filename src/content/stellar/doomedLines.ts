@@ -54,5 +54,33 @@ export const EDGE_EARTH = {
     'Were {star} real, at {distance} light-years it would be close enough to matter: astronomers reckon a supernova could thin the ozone layer if it went off within somewhere from {ozoneNear} to {ozoneFar} light-years, through its radiation or the cosmic rays that follow it for centuries. Any harm would build over years to millennia, not hours.',
 };
 
+/**
+ * Pyre's work (docs/PROCGEN.md §26.5): title, briefing and the objective. {star}, {anchor},
+ * {refuge} (its station), {party} (the observers, by name), {firstLight} (minutes), {ahead}
+ * (light-years), {giver} (the station posting it).
+ */
+export const EDGE_JOBS = {
+  record: {
+    title: 'The last of {star}',
+    briefing: '{giver} wants the last record of {star} as it was: observe it from open space, from any system, before it explodes, and bring the readings back.',
+    objective: 'Observe {star} from open space before it explodes',
+  },
+  evacuate: {
+    title: 'Out of {star}’s reach',
+    briefing: 'The neutrino alarm has sounded. {party} stayed to the last to record {star}; carry them out to {refuge} before the star collapses.',
+    objective: 'Carry {party} to {refuge}',
+  },
+  twice: {
+    title: 'First light, twice',
+    briefing: 'When {star} explodes its light crosses the map a light-year a minute. {giver} wants its first light seen twice: from one system within {firstLight} minutes of it arriving, then from another at least {ahead} light-years farther out, before it arrives there too. Watch the countdown in the sky, and outrun the light through the lanes.',
+    objective: 'See the first light of {star} from two systems, the second farther out',
+  },
+  hole: {
+    title: 'Read the black hole',
+    briefing: 'What is left of {star} is a black hole, still feeding on the star’s gas. {giver} wants it read while that gas still glows: scan it from outside its tides, and bring the readings back.',
+    objective: 'Scan the black hole of {star} from outside its tides',
+  },
+} as const;
+
 /** Said with every story of Pyre. */
 export const EDGE_FICTION = 'Fiction: there is no star called {star}.';

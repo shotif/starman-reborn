@@ -263,10 +263,15 @@ export function skyOffers(clock0: number, clock1: number, from: number | null = 
 /** An observe objective, as jobs.ts holds it. */
 export interface ObserveObjective {
   kind: 'observe';
+  /** A far star's id; or Pyre's, or its black hole's (docs/PROCGEN.md §26.5). */
   star: string;
   from: number;
   to: number;
   baselineLy?: number;
+  /** Pyre's first light (§26.5): each reading counts only within this many seconds of its light arriving where it was made. */
+  firstLight?: number;
+  /** ...from two systems, the second at least this many light-years farther from Pyre. */
+  aheadLy?: number;
   text: string;
 }
 

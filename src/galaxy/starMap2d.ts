@@ -9,7 +9,7 @@
  * drawing is only transformed; it is drawn again, labels laid out afresh, when the gesture ends.
  */
 import '../ui/styles/map.css';
-import { isNewSystem, MAP_SYSTEMS } from '../data/systems.ts';
+import { isInventedSystem, isNewSystem, MAP_SYSTEMS } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { h, svg } from '../ui/dom.ts';
 import { GestureTracker } from './gestures.ts';
@@ -341,6 +341,7 @@ function systemAriaLabel(id: SystemId, state: MapState): string {
 }
 
 function labelMeta(l: MapLabel): string {
+  if (l.invented) return `${formatLy(l.distanceLy ?? 0)} · fiction`;
   return l.distanceLy === null ? 'origin' : `${formatLy(l.distanceLy)} · ${formatHeightShort(l.heightLy)}`;
 }
 
@@ -472,6 +473,8 @@ function draw(container: HTMLElement, e: Entry): void {
     if (isSel) g.append(svg('circle', { class: 'map2d-selected', cx: ax, cy: ay, r: 14 }));
     if (isCur) g.append(svg('circle', { class: 'map2d-current', cx: ax, cy: ay, r: 11 }));
     if (isVis) g.append(svg('circle', { class: 'map2d-visited', cx: ax, cy: ay, r: 11 }));
+    // Pyre, the one invented star (docs/PROCGEN.md §26): a dashed ring in the fiction colour.
+    if (isInventedSystem(id)) g.append(svg('circle', { class: 'map2d-invented', cx: ax, cy: ay, r: 15 }));
     if (isObj) {
       g.append(svg('path', { class: 'map2d-objective', d: `M${ax} ${ay - 19}L${ax + 19} ${ay}L${ax} ${ay + 19}L${ax - 19} ${ay}Z` }));
     }

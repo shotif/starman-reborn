@@ -12,7 +12,7 @@ import { hashString, rng, type Rng } from '../content/random.ts';
 import type { LastingMark } from '../content/story/marks.ts';
 import { jumpsFrom } from '../content/world/network.ts';
 import { WORLD_SEED } from '../content/world/rules.ts';
-import { ALL_LOCATIONS, BELTS, getLocation, getSystem, isFrontier, saveLocationsKey, SYSTEMS, WORLD } from '../data/systems.ts';
+import { ALL_LOCATIONS, BELTS, getLocation, getSystem, isFrontier, PYRE_LOCATIONS, saveLocationsKey, SYSTEMS, WORLD } from '../data/systems.ts';
 import type { FactionId, FictionalLocation, SystemId } from '../data/types.ts';
 import { findRoute } from '../galaxy/routing.ts';
 import { FLEETS } from '../world/traffic/plan.ts';
@@ -20,11 +20,14 @@ import { inViewFromStation, tourSights } from '../world/sightseeing.ts';
 import { takenIds } from './rivals.ts';
 import { farStar, fillSky, skyOffers } from './stellar.ts';
 import { OBSERVE_LINES } from '../content/stellar/lines.ts';
+import { DOOMED } from '../content/stellar/doomed.ts';
+import { EDGE_JOBS } from '../content/stellar/doomedLines.ts';
+import { fillPyreJob, pyreOffers, pyreRefugeId, PYRE_HOLE_ID } from './doomed.ts';
 import { STELLAR } from '../content/stellar/rules.ts';
 import { trafficFor } from '../world/traffic/setup.ts';
 import { atWar, decisiveOpen, EXPOSED, FRONTS, frontState, momentum, occupied, settledKey, type FrontState } from './border.ts';
 import { itemsThatFit } from './cargo.ts';
-import { activeSkyFrom, baseThreat, marksAt, marksKey, priceMultiplier, stationEventAt, systemEventAt, worldLogKey, type WorldEvent } from './events.ts';
+import { activeEdge, activeSkyFrom, baseThreat, marksAt, marksKey, priceMultiplier, stationEventAt, systemEventAt, worldLogKey, type WorldEvent } from './events.ts';
 import { FACTIONS } from './factions.ts';
 import { dockAccess, lawIn, scansOnDocking, wakeFriendly } from './law.ts';
 import type { JobDef } from './jobs.ts';
@@ -137,11 +140,17 @@ const boardCache = new Map<string, JobDef[]>();
 /** The contracts a station posts in a time slot (hand-made jobs are separate, in jobs.ts). */
 export function boardFor(locationId: string, epoch: number): JobDef[] {
   // The border war, its settled fronts and lasting marks are the save's own, so boards are kept per save.
-  const key = `${locationId}|${epoch}|${worldLogKey()}|${marksKey()}|${settledKey()}|${saveLocationsKey()}|${activeSkyFrom() ?? ''}`;
+  const key = `${locationId}|${epoch}|${worldLogKey()}|${marksKey()}|${settledKey()}|${saveLocationsKey()}|${activeSkyFrom() ?? ''}|${activeEdge() ?? ''}`;
   const cached = boardCache.get(key);
   if (cached) return cached;
   const loc = getLocation(locationId);
   const clock = epoch * CONTRACTS.epochSeconds;
+  // Pyre's stations post only Pyre's own work (docs/PROCGEN.md §26.5).
+  if (PYRE_LOCATIONS.some((l) => l.id === locationId)) {
+    const own = pyreContracts(loc, epoch);
+    boardCache.set(key, own);
+    return own;
+  }
   // A station the Wake holds posts nothing (docs/PROCGEN.md §20).
   const weights = occupied(locationId, clock) ? null : boardKinds(loc, clock);
   const out: JobDef[] = [];
@@ -175,6 +184,8 @@ export function boardFor(locationId: string, epoch: number): JobDef[] {
     if (d) out.push(d);
     // Observations of a dying far star, at research stations (docs/PROCGEN.md §25).
     out.push(...skyContracts(loc, epoch));
+    // Pyre's work, once its warning has come (docs/PROCGEN.md §26.5).
+    out.push(...pyreContracts(loc, epoch));
     // Escorts for this station's relief and shipments bound through raided lanes (docs/PROCGEN.md §21.7).
     out.push(...reliefEscorts(loc, epoch));
     // Standing runs a lasting mark left here (docs/PROCGEN.md §14.7), each from its own stream.
@@ -195,7 +206,7 @@ export function postedContract(id: string): JobDef | null {
   if (!id.startsWith(CONTRACT_PREFIX)) return null;
   const [locationId, epochText] = id.slice(CONTRACT_PREFIX.length).split('.');
   const epoch = Number(epochText);
-  if (!locationId || !Number.isInteger(epoch) || !ALL_LOCATIONS.some((l) => l.id === locationId)) return null;
+  if (!locationId || !Number.isInteger(epoch) || !(ALL_LOCATIONS.some((l) => l.id === locationId) || PYRE_LOCATIONS.some((l) => l.id === locationId))) return null;
   return boardFor(locationId, epoch).find((c) => c.id === id) ?? null;
 }
 
@@ -279,6 +290,53 @@ function skyContracts(giver: FictionalLocation, epoch: number): JobDef[] {
       difficultyNote: o.kind === 'parallax' ? `Two systems ${o.baselineLy} ly apart, before ${star.name} fades` : 'Any system, from open space, while the window is open',
       destinationLocationId: giver.id,
       contract: { kind: 'observe' },
+    };
+  });
+}
+
+/**
+ * Pyre's work (docs/PROCGEN.md §26.5), fiction like the star: its last record wanted at every
+ * research station, its observers carried out of its observatory, its first light seen twice and its
+ * black hole read for the research stations near it, and the hole read for its remnant station. Each
+ * on the board from the moment it is posted until it lapses, within the time slot; ids their own.
+ */
+function pyreContracts(giver: FictionalLocation, epoch: number): JobDef[] {
+  const start = epoch * CONTRACTS.epochSeconds;
+  const J = DOOMED.jobs;
+  return pyreOffers(giver.id, start, start + CONTRACTS.epochSeconds).map((o): JobDef => {
+    const id = `${CONTRACT_PREFIX}${giver.id}.${epoch}.pyre-${o.kind}`;
+    const lines = EDGE_JOBS[o.kind];
+    const timing = { posted: o.posted, until: o.until };
+    if (o.kind === 'evacuate') {
+      const names = party(rng(WORLD_SEED, 'contracts', 'pyre-evacuate', activeEdge() ?? 0), J.evacuate.party);
+      const refuge = getLocation(pyreRefugeId());
+      const fill = (t: string) => fillPyreJob(t, { giver: giver.name, refuge: refuge.name, party: partyName(names) });
+      return {
+        ...common(giver, id, 2),
+        title: fill(lines.title),
+        briefing: `${fill(lines.briefing)} ${BERTHS_NOTE}`,
+        objectives: [{ kind: 'visit', locationId: refuge.id, text: fill(lines.objective) }],
+        reward: J.evacuate.reward,
+        difficultyNote: `One lane, before ${DOOMED.star.name} collapses`,
+        destinationLocationId: refuge.id,
+        contract: { kind: 'passage', party: names, ...timing },
+      };
+    }
+    const fill = (t: string) => fillPyreJob(t, { giver: giver.name });
+    const star = o.kind === 'hole' ? PYRE_HOLE_ID : DOOMED.star.id;
+    const twice = o.kind === 'twice' ? { firstLight: J.twice.firstLight, aheadLy: J.twice.aheadLy } : {};
+    return {
+      ...common(giver, id, o.kind === 'record' ? 1 : 2),
+      title: fill(lines.title),
+      briefing: fill(lines.briefing),
+      objectives: [
+        { kind: 'observe', star, from: o.from, to: o.to, ...twice, text: fill(lines.objective) },
+        { kind: 'visit', locationId: giver.id, text: `Bring the readings back to ${giver.name}` },
+      ],
+      reward: J[o.kind].reward,
+      difficultyNote: o.kind === 'record' ? 'Any system, from open space, before it explodes' : o.kind === 'twice' ? 'Two systems, timed to its light' : `${DOOMED.star.name}, beyond the lane from ${getSystem(DOOMED.star.anchor).displayName}`,
+      destinationLocationId: giver.id,
+      contract: { kind: 'observe', ...timing },
     };
   });
 }
@@ -1128,9 +1186,12 @@ export function postedContracts(state: GameState, locationId: string): JobDef[] 
   return boardFor(locationId, boardEpoch(state.clock)).filter((c) => {
     if (state.jobs[c.id]) return true;
     if (taken.has(c.id)) return false;
-    // An escort for a haul goes once it has set off alone, or once it has an escort (docs/PROCGEN.md §21.7).
+    // Work that comes and goes within a time slot shows only from when it is posted until it lapses:
+    // an escort for a haul until it sets off alone (docs/PROCGEN.md §21.7), Pyre's work (§26.5).
+    if (state.clock < (c.contract?.posted ?? -Infinity) || state.clock >= (c.contract?.until ?? Infinity)) return false;
+    // An escort for a haul goes once it has an escort.
     const haul = c.contract?.haul;
-    if (haul && (state.clock >= (c.contract!.until ?? Infinity) || state.world.hauls?.[haul])) return false;
+    if (haul && state.world.hauls?.[haul]) return false;
     const o = c.objectives[0];
     return !(c.contract?.kind === 'survey' && o?.kind === 'scan' && state.discoveredBodies.includes(o.bodyId));
   });
