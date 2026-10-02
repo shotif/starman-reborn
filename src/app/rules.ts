@@ -10,6 +10,7 @@ import { settleLaw } from '../economy/law.ts';
 import { tidyWorldLog } from '../economy/answers.ts';
 import { pyreRefugeId, rescueDockId } from '../economy/doomed.ts';
 import { settleFleet, type FleetSettlement } from '../economy/fleet.ts';
+import { alliesDock, settleRivalStories, type StoryNote } from '../economy/rivalStories.ts';
 import type { Route } from '../galaxy/routing.ts';
 import type { JumpReadiness } from '../galaxy/types.ts';
 import { applyCredits, markVisited, type GameState } from './state.ts';
@@ -29,6 +30,9 @@ export interface DockOutcome {
   lawNotes: string[];
   /** What the fleet did since the last settle (docs/PROCGEN.md §18). */
   fleet: FleetSettlement;
+  /** Allies who left the wing here, and what rivals' stories said since the last settle (docs/PROCGEN.md §28). */
+  allies: string[];
+  stories: { notes: StoryNote[]; jobs: JobEvent[] };
 }
 
 export function dockAt(state: GameState, locationId: string): DockOutcome {
@@ -52,7 +56,10 @@ export function dockAt(state: GameState, locationId: string): DockOutcome {
     clearanceGranted = true;
   }
   const jobEvents = advanceJobs(state, { dockedAt: locationId, systemId: loc.systemId });
-  return { jobEvents, clearanceGranted, firstVisit, watchNotes, lawNotes, fleet };
+  // Rivals' stories after the jobs: an escort seen in here is done (docs/PROCGEN.md §28).
+  const allies = alliesDock(state, locationId);
+  const stories = settleRivalStories(state);
+  return { jobEvents, clearanceGranted, firstVisit, watchNotes, lawNotes, fleet, allies, stories };
 }
 
 export function undock(state: GameState): void {

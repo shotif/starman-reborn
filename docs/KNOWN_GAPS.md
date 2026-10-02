@@ -111,8 +111,8 @@ snapshot branch only when the archives changed.
   calmed by flying gently afterwards.
 - Rival pilots (PROCGEN §24) are six, with careers on the clock: they do not learn from the player
   or follow the player's own routes (only the best routes of their patches), never die (a rival
-  destroyed ejects and refits), cannot be hired or flown with, and fight only as a hostile rival in
-  lawless space. Out of the player's sight they are never lost to raids. A hunter's claim only takes
+  destroyed ejects and refits), cannot be hired (an ally flies with the player now and then, §28),
+  and fight only as a hostile rival in lawless space, with hired guns, or in a duel. Out of the player's sight they are never lost to raids. A hunter's claim only takes
   the job off the board: the pack it hunts is not destroyed for anyone else. Rivals' trades move
   stock at each end, but they do not buy or sell at the player's own outpost.
 - Stellar death (PROCGEN §25) happens once a save, to the two far stars only, on a timeline compressed
@@ -131,6 +131,14 @@ snapshot branch only when the archives changed.
   but Betelgeuse's and Antares' still reach every system at once. On the 3D star map its label says
   Fiction, but only the flat map draws a dashed ring round it. A pilot docked when a moment comes
   hears of it in the News, not on the radio (the clock stands still while docked).
+- Rival stories (PROCGEN §28) are one a rival a save, along two paths of three steps, and their words
+  are by voice (brash, dry or warm), not each rival's own. A friend's escort is flown as the
+  contracts' escorts are, the rival's ship theirs in name and model only. An ally flies as a hired
+  wingman does, and does not drop in on a fight uninvited. Hired guns come out of the dark a few
+  kilometres off rather than lying in wait at a spot, and an opening that finds nobody is simply
+  over. A duel is one on one as far as the scene can make it: no new raider packs come, the wing
+  holds its fire and patrols leave the rival be, but raiders already there (from an earlier visit, or
+  called by a lane encounter) can still join in. The rival's ship has its stock fittings.
 - Lane encounters (PROCGEN §27) are settled at their card: there is no wreck, pod or ship to fly to,
   and raiders called by bait or a refused toll drop out of the dark a few kilometres off rather than
   waiting at the spot. A hail counts down only while no hostiles are near, and one in a system the

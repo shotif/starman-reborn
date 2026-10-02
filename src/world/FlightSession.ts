@@ -21,7 +21,7 @@ import { CONTRACTS } from '../content/contracts/rules.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
 import { hashString } from '../content/random.ts';
 import { LAW } from '../content/law/rules.ts';
-import { strandedTargetId, type EscortSetup } from '../economy/jobs.ts';
+import { duelTargetId, strandedTargetId, type EscortSetup } from '../economy/jobs.ts';
 import type { Lingering } from '../app/state.ts';
 import { DENS } from '../content/dens/rules.ts';
 import { MINED_GOODS, MINING } from '../content/mining/rules.ts';
@@ -74,7 +74,8 @@ import { haulsIn, type Haul, type HaulHere, type HaulLeg } from '../economy/haul
 import { FLEET } from '../content/fleet/rules.ts';
 import { captainsIn, type CaptainHere, type RunRaid } from '../economy/fleet.ts';
 import { RIVALS } from '../content/rivals/rules.ts';
-import { rivalName, rivalsIn, rivalSubtitle, type RivalLeg, type RivalRun } from '../economy/rivals.ts';
+import { RIVAL_STORY } from '../content/rivals/stories.ts';
+import { rivalById, rivalName, rivalsIn, rivalSubtitle, type RivalLeg, type RivalRun } from '../economy/rivals.ts';
 import type { StationOwner } from '../content/world/types.ts';
 import type { ArtContext, ArtObject } from './art/types.ts';
 import { seededRandom } from './art/util.ts';
@@ -116,6 +117,13 @@ export interface FlightCallbacks {
    * player), shot at by the player, or its ship destroyed (by the player, or by raiders).
    */
   onRival?(rivalId: string, what: 'met' | 'shot' | 'destroyed', detail?: { hostile?: boolean; by?: 'player' | 'raiders' }): void;
+  /** A rival's feud (docs/PROCGEN.md §28): the hired guns they sent struck the player here. */
+  onRivalAmbush?(rivalId: string): void;
+  /**
+   * A rival's duel (§28): it started, the rival yielded (`won`), the player yielded (`lost`) or left
+   * it (`forfeit`), or the player came to it with too little hull (`unfit`).
+   */
+  onDuel?(jobId: string, rivalId: string, what: 'started' | 'won' | 'lost' | 'forfeit' | 'unfit'): void;
   /** The player observed a far star (docs/PROCGEN.md §25), its target selected: the game records it for the contracts that want it. */
   onObserve?(starId: string): void;
   /** Pyre exploded with the player still in its system (docs/PROCGEN.md §26): the game carries the ship out. */
@@ -192,8 +200,12 @@ interface NpcShip {
    * comes, and whether the raid is settled (seen safely past).
    */
   captain?: { shipId: string; key: string; name: string; leg: HaulLeg; way: 'out' | 'back'; qty: number; raid: RunRaid | null; ambush?: number; settled?: boolean };
-  /** A rival pilot (docs/PROCGEN.md §24): who, and the run it flies here. */
-  rival?: { id: string; run: RivalRun; leg: RivalLeg };
+  /** A rival pilot (docs/PROCGEN.md §24): who, and the run it flies here (none for an ally, a duel or hired guns, §28). */
+  rival?: { id: string; run?: RivalRun; leg?: RivalLeg };
+  /** Hired by a rival to find the player (docs/PROCGEN.md §28): they want the player only, and pay no bounty. */
+  hired?: string;
+  /** A rival waiting for a duel off the beacon, fighting it, or done with it (§28): `yielded` (the player won), `won` (the rival did). */
+  duel?: { jobId: string; spot: THREE.Vector3; state: 'waiting' | 'on' | 'yielded' | 'won'; told?: boolean };
   patrol?: { brain: PatrolBrain; offset: THREE.Vector3 };
   controls: ShipControls;
   target: Target;
@@ -262,7 +274,7 @@ export interface TrafficSetup {
   /** Den assaults under way here: the den, its turrets still standing, and whose wing flies with the player. */
   assaults?: readonly { jobId: string; locationId: string; turretsLeft: number; wing?: FactionId | null }[];
   /** Wingmen on the player's pay: they fly alongside wherever the player goes. */
-  crew?: readonly { id: string; name: string; model: string; skill: 'steady' | 'sharp' }[];
+  crew?: readonly { id: string; name: string; model: string; skill: 'steady' | 'sharp'; ally?: string }[];
   /** What the player left here last time (docs/PROCGEN.md §17): packs still hunting, pods adrift. */
   lingering?: Pick<Lingering, 'packs' | 'pods'>;
   /** Den defences under way here: the den, the sweep ships still to destroy, and whose sweep it is (the Authority's unless said). */
@@ -271,6 +283,12 @@ export interface TrafficSetup {
   downDens?: readonly string[];
   /** Sights the player's sightseers want to see here (docs/PROCGEN.md §23): the tour, and the sight's target in the scene. */
   sights?: readonly { jobId: string; targetId: string }[];
+  /** A rival's feud (docs/PROCGEN.md §28): customs tipped off here, so a patrol in range scans the player for sure. */
+  tipped?: boolean;
+  /** Hired guns a rival sends for the player here (§28): when they strike, how many, and whether the rival (a bounty hunter) flies with them. */
+  rivalAmbush?: { rivalId: string; delay: number; guns: number; withRival: boolean; level: 1 | 2 | 3 };
+  /** A rival waiting off the jump beacon for a duel (§28), and whether it has started. */
+  duel?: { jobId: string; rivalId: string; started: boolean };
 }
 
 interface Drone {
@@ -1858,6 +1876,13 @@ export class FlightSession {
       this.callbacks.onMessage('Shields down!', 'bad');
     }
     if (this.player.cruise !== 'off') this.player.requestCruise(false);
+    // In a duel the player yields before the ship is lost (docs/PROCGEN.md §28).
+    const duel = this.duelist;
+    if (duel?.duel?.state === 'on' && this.playerDurability.hull <= this.playerDurability.hullMax * RIVAL_STORY.enemy.duel.yieldAt) {
+      this.playerDurability.hull = Math.max(1, this.playerDurability.hull);
+      this.endDuel(duel, 'lost');
+      return;
+    }
     if (r.destroyed) this.destroyPlayer();
   }
 
@@ -1994,7 +2019,9 @@ export class FlightSession {
       if (n.role === 'patrol') n.foe = 'player';
       this.callbacks.onCrime?.('attack', n.faction, n.name, n.role);
     }
-    if (byPlayer && n.rival) this.callbacks.onRival?.(n.rival.id, 'shot');
+    // Fired on while waiting for the duel, it starts; in the duel, shots are fair (docs/PROCGEN.md §28).
+    if (byPlayer && n.duel?.state === 'waiting') this.startDuel(n);
+    if (byPlayer && n.rival && n.duel?.state !== 'on') this.callbacks.onRival?.(n.rival.id, 'shot');
     const r = applyDamage(n.durability, amount, type);
     const shieldHit = r.absorbedByShield > 0;
     n.art.flashShield(shieldHit ? 0.8 : 0.2);
@@ -2002,6 +2029,12 @@ export class FlightSession {
     const near = byPlayer || at.distanceTo(this.player.position) < 2_500;
     if (near || at.distanceTo(this.player.position) < 8_000) this.spawnEffect(createImpactSpark(at.clone(), shieldHit ? '#7fd8ff' : '#ffb070', this.ctx));
     if (near) this.sfx(shieldHit ? 'hit-shield' : 'hit-hull', 0.55);
+    // A duelist yields before its ship is lost.
+    if (n.duel?.state === 'on' && n.durability.hull <= n.durability.hullMax * RIVAL_STORY.enemy.duel.yieldAt) {
+      n.durability.hull = Math.max(1, n.durability.hull);
+      this.endDuel(n, 'won');
+      return;
+    }
     if (r.destroyed) this.destroyNpc(n);
   }
 
@@ -2024,7 +2057,7 @@ export class FlightSession {
     if (n.stranded && !n.stranded.handed) this.callbacks.onRescueLost?.(n.stranded.jobId);
     else if (n.haul) this.callbacks.onMessage(`The ${n.haul.haul.name} was destroyed, with ${n.haul.haul.qty} ${COMMODITIES[n.haul.haul.commodity].name.toLowerCase()} aboard.`, 'bad');
     else if (n.role === 'trader' && !n.captain && !n.rival) this.callbacks.onMessage(`${n.name} was destroyed.`, 'bad');
-    if (n.side === 'raider' && !n.den && !n.hunter && !n.encounter && !n.rival) this.dropLoot(n);
+    if (n.side === 'raider' && !n.den && !n.hunter && !n.encounter && !n.rival && !n.hired) this.dropLoot(n);
     if (n.wingman?.crewId) {
       this.callbacks.onMessage(`${n.name}’s ship is gone; ${n.name} ejected and leaves your wing.`, 'bad');
       this.callbacks.onWingmanLost?.(n.wingman.crewId);
@@ -2033,12 +2066,13 @@ export class FlightSession {
     if (killer?.wingman?.crewId && n.side === 'raider') this.chatter('wing-kill', killer.name);
     else if (n.side === 'raider' && !n.den && this.inRadioRange(n) && this.rand() < 0.35) this.chatter('raider-down', 'Wake raider');
     const byPlayer = this.time - n.playerHitAt < 30;
-    if (n.side === 'raider' && byPlayer && !n.rival) this.raidersDowned++;
+    if (n.side === 'raider' && byPlayer && !n.rival && !n.hired) this.raidersDowned++;
     // A scheduled hauler's hold spills a share of its real cargo (docs/PROCGEN.md §21), whoever destroyed
     // it; so does one of the player's own (§18.6), whose loss the game reckons first.
     const spill = n.haul ? { commodity: n.haul.haul.commodity, qty: n.haul.haul.qty } : n.captain ? { commodity: this.captainGood(n), qty: this.captainCargo(n) } : n.rival ? this.rivalSpill(n) : null;
     if (n.haul) this.callbacks.onHaul?.(n.haul.haul.id, 'lost', byPlayer ? 'player' : 'raiders');
-    if (n.rival) this.callbacks.onRival?.(n.rival.id, 'destroyed', { by: byPlayer ? 'player' : 'raiders' });
+    // An ally lost on the wing is told of as a wingman (docs/PROCGEN.md §28), unless the player shot them down.
+    if (n.rival && (!n.wingman || byPlayer)) this.callbacks.onRival?.(n.rival.id, 'destroyed', { by: byPlayer ? 'player' : 'raiders' });
     if (n.captain) this.callbacks.onCaptain?.(n.captain.shipId, 'lost', byPlayer ? 'player' : 'raiders');
     if (spill) {
       const { share, pod } = HAULS.spill;
@@ -2065,7 +2099,7 @@ export class FlightSession {
     else if (n.contract) this.callbacks.onContractKill(n.contract);
     else if (n.hunter) {
       if (byPlayer) this.callbacks.onHunterDown?.();
-    } else if (n.side === 'raider' && !n.encounter && !n.rival && byPlayer) this.callbacks.onBounty(n.bounty, n.name);
+    } else if (n.side === 'raider' && !n.encounter && !n.rival && !n.hired && byPlayer) this.callbacks.onBounty(n.bounty, n.name);
     this.removeNpc(n);
     if (this.activeEncounter && this.activeEncounter.npcId === n.id) {
       const def = this.activeEncounter.def;
@@ -2284,6 +2318,13 @@ export class FlightSession {
       for (const a of t.assaults ?? []) this.spawnAssault(a);
       for (const d of t.defences ?? []) this.startSweep(d);
       this.spawnCrew(t.crew ?? []);
+      if (t.duel) this.spawnDuelist(t.duel);
+    }
+    // A rival's hired guns strike a little way into the flight (docs/PROCGEN.md §28).
+    const hired = t.rivalAmbush;
+    if (hired && !this.ambushSprung && this.time >= hired.delay && this.alive && !this.busy) {
+      this.ambushSprung = true;
+      this.spawnHiredGuns(hired);
     }
     // Escorted ships: the ambush comes part-way along the route.
     const along = (n: NpcShip) => 1 - n.body.position.distanceTo(n.trader!.destination.point) / Math.max(1, n.escort!.start.distanceTo(n.trader!.destination.point));
@@ -2317,7 +2358,8 @@ export class FlightSession {
       timers.patrolsLaunched = true;
       for (let w = 0; w < plan.patrolWings; w++) this.spawnPatrolWing(t, w);
     }
-    if (plan.packs) {
+    // No raiders come where a rival waits for a duel: it is one on one.
+    if (plan.packs && !this.traffic?.duel && !this.duelist) {
       timers.pack -= dt;
       const packs = new Set(this.npcs.flatMap((n) => (n.pack === undefined || n.contract ? [] : [n.pack]))).size;
       if (timers.pack <= 0 && packs < plan.packs.max && this.alive && !this.busy && this.autopilot.mode !== 'lane') {
@@ -2343,6 +2385,7 @@ export class FlightSession {
       else if (n.sweep) this.flySweep(n, dt);
       else if (n.escort?.follow) this.flyEscortFollowing(n, dt);
       else if (n.stranded && !n.trader) this.flyStranded(n, dt);
+      else if (n.duel) this.flyDuelist(n, dt);
       else if (n.role === 'trader') this.flyTrader(n);
       else if (n.role === 'patrol') this.flyPatrol(n, dt);
       else this.flyRaider(n, dt);
@@ -2501,6 +2544,10 @@ export class FlightSession {
 
   /** Legs of rivals' runs already brought into this scene (each flies once a flight). */
   private readonly rivalLegs = new Set<string>();
+  /** A rival's hired guns have struck in this flight (docs/PROCGEN.md §28). */
+  private ambushSprung = false;
+  /** A rival waiting here for a duel, or fighting it (§28). */
+  private duelist: NpcShip | null = null;
 
   /** Brings rival pilots flying a leg here into the scene: named, with what they carry, out for the player when hostile in lawless space. */
   private updateRivals(first: boolean): void {
@@ -2530,6 +2577,136 @@ export class FlightSession {
     const run = n.rival?.run;
     if (!run?.commodity || !run.qty || (run.kind === 'race' && this.state.clock < run.loaded)) return null;
     return { commodity: run.commodity, qty: Math.max(1, Math.round(run.qty * RIVALS.spill.share)) };
+  }
+
+  // ---------------------------------------------------------------- rival stories (docs/PROCGEN.md §28)
+
+  /** A rival's hired guns, out of the dark at the player (a bounty hunter flies with them): no bounty, no salvage. */
+  private spawnHiredGuns(a: NonNullable<TrafficSetup['rivalAmbush']>): void {
+    const r = rivalById(a.rivalId);
+    if (!r) return;
+    const angle = this.rand() * Math.PI * 2;
+    const home = this.player.position.clone().add(this.tmp.set(Math.cos(angle), 0.1, Math.sin(angle)).normalize().multiplyScalar(3_500));
+    const pool = RAIDERS[a.level];
+    const count = a.guns + (a.withRival ? 1 : 0);
+    for (let i = 0; i < count; i++) {
+      const position = home.clone().add(new THREE.Vector3(i * 180, i * 40, i * 110));
+      const own = a.withRival && i === 0;
+      const heading = this.player.position.clone().sub(position).normalize();
+      const npc = this.makeNpc(own ? r.ship : pool[i % pool.length]!, 'raider', 'independent', position, heading, own ? `Rival · the ${r.shipName} · out for you` : `Hired gun · paid by ${rivalName(r)}`);
+      npc.hired = r.id;
+      npc.foe = 'player';
+      npc.name = own ? rivalName(r) : 'Hired gun';
+      npc.target.name = npc.name;
+      if (own) {
+        npc.rival = { id: r.id };
+        npc.target.cycle = true;
+      }
+    }
+    this.sfx('alert');
+    if (this.autopilot.mode === 'goto') this.autopilot = { mode: 'none' };
+    this.player.requestCruise(false);
+    this.callbacks.onRivalAmbush?.(r.id);
+  }
+
+  /** Where a rival waits for a duel: off the jump beacon, clear of what is there, the same spot for the same duel. */
+  duelSpot(jobId: string): THREE.Vector3 {
+    const r = seededRandom(hashString(`duel|${jobId}`));
+    const beacon = this.jumpPoint();
+    const off = RIVAL_STORY.enemy.duel.offBeacon;
+    const clear = (p: THREE.Vector3) => this.system.obstacles(null).every((o) => o.center.distanceTo(p) > o.radius + 1_500) && this.system.docks.every((d) => d.dockPoint.distanceTo(p) > 3_000);
+    for (let i = 0; i < 24; i++) {
+      const p = beacon.clone().addScaledVector(new THREE.Vector3(r() - 0.5, (r() - 0.5) * 0.2, r() - 0.5).normalize(), off);
+      if (clear(p)) return p;
+    }
+    return beacon.clone().add(new THREE.Vector3(0, 800, off));
+  }
+
+  /** A rival waiting off the beacon for a duel, in their own ship as it is fitted. */
+  private spawnDuelist(d: NonNullable<TrafficSetup['duel']>): void {
+    const r = rivalById(d.rivalId);
+    if (!r) return;
+    const spot = this.duelSpot(d.jobId);
+    const npc = this.makeNpc(r.ship, 'raider', 'independent', spot.clone(), this.jumpPoint().clone().sub(spot).normalize(), `Rival · the ${r.shipName} · waiting for you: a duel`);
+    npc.name = rivalName(r);
+    npc.target.name = npc.name;
+    npc.target.id = duelTargetId(d.jobId);
+    npc.target.cycle = true;
+    npc.rival = { id: r.id };
+    npc.duel = { jobId: d.jobId, spot, state: d.started ? 'on' : 'waiting' };
+    npc.body.velocity.set(0, 0, 0);
+    this.duelist = npc;
+  }
+
+  /**
+   * A duelist waits at its spot; once the player comes within reach with a sound hull, it fights them
+   * one on one, guns and seekers as its ship is fitted; once it is over it holds its fire.
+   */
+  private flyDuelist(n: NpcShip, dt: number): void {
+    const d = n.duel!;
+    const D = RIVAL_STORY.enemy.duel;
+    const far = n.body.position.distanceTo(this.player.position);
+    if (d.state === 'on' && this.alive) {
+      if (far > D.forfeitRange) {
+        this.endDuel(n, 'forfeit');
+        return;
+      }
+      n.foe = 'player';
+      this.fightNpc(n, this.player, dt, TRAFFIC.npcDamage * DIFFICULTY[this.settings.difficulty].enemyDamage);
+      this.tickSeeker(n, dt);
+      return;
+    }
+    n.foe = null;
+    for (const g of n.guns) g.tick(dt);
+    flyTo(n.body, d.spot, { arriveDistance: 300, allowCruise: false, maxThrottle: 0.35 }, n.controls);
+    n.body.requestCruise(false);
+    if (d.state !== 'waiting' || !this.alive || this.busy || far > D.startWithin) return;
+    if (this.playerDurability.hull < this.playerDurability.hullMax * D.minHull) {
+      if (!d.told) {
+        d.told = true;
+        this.callbacks.onDuel?.(d.jobId, n.rival!.id, 'unfit');
+      }
+      return;
+    }
+    this.startDuel(n);
+  }
+
+  private startDuel(n: NpcShip): void {
+    n.duel!.state = 'on';
+    n.foe = 'player';
+    this.sfx('alert');
+    if (this.autopilot.mode === 'goto') this.autopilot = { mode: 'none' };
+    this.player.requestCruise(false);
+    this.callbacks.onDuel?.(n.duel!.jobId, n.rival!.id, 'started');
+  }
+
+  /** The duel is over: the rival yielded (`won`), the player yielded (`lost`), or left it (`forfeit`). Its seekers in flight fall away. */
+  private endDuel(n: NpcShip, how: 'won' | 'lost' | 'forfeit'): void {
+    n.duel!.state = how === 'won' ? 'yielded' : 'won';
+    n.foe = null;
+    for (let i = this.missiles.length - 1; i >= 0; i--) {
+      const m = this.missiles[i]!;
+      if (m.ownerId !== n.id) continue;
+      this.system.scene.remove(m.art.object);
+      m.art.dispose();
+      this.missiles.splice(i, 1);
+    }
+    this.callbacks.onDuel?.(n.duel!.jobId, n.rival!.id, how);
+  }
+
+  /**
+   * A rival's story posted a job in this system mid-flight (docs/PROCGEN.md §28): its ship comes into
+   * the scene now, a rival adrift or one waiting off the beacon for a duel, rather than on the next visit.
+   */
+  addStoryShip(ship: { rescue?: NonNullable<TrafficSetup['rescues']>[number]; duel?: NonNullable<TrafficSetup['duel']> }): void {
+    if (ship.rescue && !this.npcs.some((n) => n.stranded?.jobId === ship.rescue!.jobId)) this.spawnStranded(ship.rescue);
+    if (ship.duel && !this.duelist) this.spawnDuelist(ship.duel);
+  }
+
+  /** The duel here, if a rival waits for one or is fighting it (the game counts leaving a duel under way as forfeit). */
+  duelStatus(): { jobId: string; rivalId: string; state: 'waiting' | 'on' | 'yielded' | 'won' } | null {
+    const n = this.duelist;
+    return n?.duel && n.rival ? { jobId: n.duel.jobId, rivalId: n.rival.id, state: n.duel.state } : null;
   }
 
   // ---------------------------------------------------------------- your captains on the lanes (docs/PROCGEN.md §18.6)
@@ -3004,7 +3181,7 @@ export class FlightSession {
     const playerFair = this.alive && !this.busy && this.autopilot.mode !== 'lane';
     const onPlayer = playerFair && (n.foe === 'player' || huntedBy(this.state, n.faction)) && n.body.position.distanceTo(this.player.position) < PATROL_HUNT;
     // The opening raid, bounty-contract packs and bounty hunters are the player's fights; patrols leave them alone.
-    const foe = onPlayer ? 'player' : this.nearestShip(n.body.position, 4_000, (x) => x.side === 'raider' && !x.encounter && !x.contract && !x.hunter);
+    const foe = onPlayer ? 'player' : this.nearestShip(n.body.position, 4_000, (x) => x.side === 'raider' && !x.encounter && !x.contract && !x.hunter && !x.duel);
     // Taking on raiders within radio range of the player, a patrol says so.
     if (foe && foe !== 'player' && (n.foe === null || n.foe === 'player') && n.faction !== 'independent' && this.inRadioRange(n)) {
       this.chatter('patrol-engage', `${FACTIONS[n.faction].shortName} patrol`);
@@ -3035,7 +3212,8 @@ export class FlightSession {
     if (!law || n.faction !== law || huntedBy(this.state, law)) return;
     if (n.body.position.distanceTo(this.player.position) > LAW.scans.range) return;
     n.scanRolled = true;
-    if (!contrabandIn(this.state.ship.cargo).length && this.rand() >= LAW.scans.cleanChance) return;
+    // Customs tipped off by a rival (docs/PROCGEN.md §28) scan the player whatever the hold holds.
+    if (!contrabandIn(this.state.ship.cargo).length && !this.traffic?.tipped && this.rand() >= LAW.scans.cleanChance) return;
     this.scan = { npc: n, t: 0 };
     // Out of cruise for the scan: fleeing it is the pilot's choice, never the ship's.
     this.player.requestCruise(false);
@@ -3093,6 +3271,9 @@ export class FlightSession {
   }
 
   private raiderSparesPlayer(n: NpcShip): boolean {
+    // A duelist fights only in the duel; hired guns never spare their mark (docs/PROCGEN.md §28).
+    if (n.duel) return n.duel.state !== 'on';
+    if (n.hired) return false;
     // A pilot the Wake trusts, or one who paid its toll here (docs/PROCGEN.md §27).
     return !n.hunter && !n.encounter && (wakeFriendly(this.state) || this.tollPaid) && !this.provoked(n);
   }
@@ -3267,10 +3448,12 @@ export class FlightSession {
       w.hurtAt = this.time;
       this.chatter('wing-hurt', n.name);
     }
-    const fair = (x: NpcShip) => x.side === 'raider' && !x.hunter && !this.raiderSparesPlayer(x) && !(x.den?.part === 'reactor' && this.turretsStanding(x.den.locationId));
+    const fair = (x: NpcShip) => x.side === 'raider' && !x.hunter && !x.duel && !this.raiderSparesPlayer(x) && !(x.den?.part === 'reactor' && this.turretsStanding(x.den.locationId));
     // Orders (docs/PROCGEN.md §16): the player's target when it is fair game, nothing while formed up.
     const ordered = this.wingOrder === 'attack' ? this.npcs.find((x) => x.target.id === this.selectedId && x.durability.hull > 0 && (fair(x) || x.foe === 'player')) : undefined;
-    const foe = !this.alive || this.busy || this.wingOrder === 'form' ? null : (ordered ?? this.nearestShip(this.player.position, 3_000, fair));
+    // A duel is one on one: the wing holds its fire (docs/PROCGEN.md §28).
+    const dueling = this.duelist?.duel?.state === 'on';
+    const foe = !this.alive || this.busy || this.wingOrder === 'form' || dueling ? null : (ordered ?? this.nearestShip(this.player.position, 3_000, fair));
     n.foe = foe;
     if (foe) {
       this.fightNpc(n, foe.body, dt, w.damage ?? TRAFFIC.npcDamage);
@@ -3565,11 +3748,14 @@ export class FlightSession {
     crew.forEach((w, i) => {
       const offset = new THREE.Vector3(i % 2 === 0 ? -80 : 80, 14, 70 + i * 20);
       const position = offset.clone().applyQuaternion(this.player.quaternion).add(this.player.position);
-      const npc = this.makeNpc(w.model, 'patrol', 'independent', position, this.player.forward(new THREE.Vector3()), 'Your wingman');
+      // A rival flying as an ally (docs/PROCGEN.md §28), in their own ship.
+      const ally = w.ally ? rivalById(w.ally) : undefined;
+      const npc = this.makeNpc(w.model, 'patrol', 'independent', position, this.player.forward(new THREE.Vector3()), ally ? `Your ally · the ${ally.shipName}` : 'Your wingman');
       npc.name = w.name;
       npc.target.name = w.name;
       npc.target.hostile = false;
       npc.wingman = { offset, crewId: w.id, damage: COMBAT.wingmen.skill[w.skill] };
+      if (ally) npc.rival = { id: ally.id };
     });
     if (crew.length) this.chatter('wing-join', crew[0]!.name, true);
   }
@@ -3608,8 +3794,8 @@ export class FlightSession {
   }
 
   private flyRaider(n: NpcShip, dt: number): void {
-    if (n.hunter) {
-      // Hunters want the player and nobody else; they wait out lanes and docking.
+    if (n.hunter || n.hired) {
+      // Hunters (and a rival's hired guns) want the player and nobody else; they wait out lanes and docking.
       n.foe = this.alive && !this.busy ? 'player' : null;
       if (n.foe) {
         this.fightNpc(n, this.player, dt, TRAFFIC.npcDamage * DIFFICULTY[this.settings.difficulty].enemyDamage);
@@ -4227,6 +4413,11 @@ export class FlightSession {
     return true;
   }
 
+  /** Debug: the player's ship takes a hit of this much (shields first), as from a gun. */
+  debugHurt(amount: number): void {
+    this.damagePlayer(amount, this.player.position.clone());
+  }
+
   /** Debug snapshot of NPC state for automated tests. */
   debugNpcs(): {
     id: string;
@@ -4241,8 +4432,10 @@ export class FlightSession {
     haul: string | null;
     /** The player's owned ship it is, flown by a captain (§18.6). */
     captain: string | null;
-    /** The rival pilot flying it (§24). */
+    /** The rival pilot flying it (§24); the rival who hired it, and where a duel stands (§28). */
     rival: string | null;
+    hired: string | null;
+    duel: string | null;
     subtitle: string;
     state: string;
     hull: number;
@@ -4262,6 +4455,8 @@ export class FlightSession {
       haul: n.haul?.haul.id ?? null,
       captain: n.captain?.shipId ?? null,
       rival: n.rival?.id ?? null,
+      hired: n.hired ?? null,
+      duel: n.duel?.state ?? null,
       subtitle: n.target.subtitle ?? '',
       state: n.trader?.state ?? (n.patrol && n.foe === null ? n.patrol.brain.state : n.brain.state),
       hull: n.durability.hull,

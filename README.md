@@ -49,6 +49,9 @@ record of them when they see them. A fight with passengers aboard costs you some
 And you are not the only pilot out there: six rivals with careers of their own trade the best
 routes, take bounties off the boards (buy the claim back if you want the job) and race relief to
 shortages. Meet them in the bars, the News and in flight; buy them a round, outbid them, or fight.
+Each has a story with you: stand well with one and they ask for a loan, an escort or a rescue, and
+end as an ally who flies on your wing; cross one and they set customs on you or send hired guns,
+then call you out to a duel, one on one, each in your own ship.
 And one day the sky changes: Betelgeuse, a real red supergiant some 500 light-years away, explodes
 as a supernova that outshines everything in every sky, and later Antares quietly goes dark. Both
 are fiction, labelled so in the game (neither star has died): the News and the research stations

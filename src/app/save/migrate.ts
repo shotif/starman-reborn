@@ -14,7 +14,7 @@ import { FLEET } from '../../content/fleet/rules.ts';
 import { OUTPOSTS } from '../../content/outposts/rules.ts';
 import { ROSTER } from '../../content/rivals/rules.ts';
 import { outpostId, outpostSite } from '../../content/outposts/sites.ts';
-import { createNewGame, SAVE_VERSION, type CommodityId, type GameState, type OutpostRecord } from '../state.ts';
+import { createNewGame, SAVE_VERSION, type CommodityId, type GameState, type OutpostRecord, type RivalStory } from '../state.ts';
 
 /**
  * Save format history:
@@ -48,7 +48,8 @@ import { createNewGame, SAVE_VERSION, type CommodityId, type GameState, type Out
  *   past its raid (§18.6); `rivals` (standing with rival pilots) and the world log's `rivals`
  *   (rivals knocked out, claims bought back, §24); the world log's `sky` (when a far star's death
  *   begins, §25) and a job's `observed` (its observations), absent in older v10 saves; the world log's `lanes`
- *   (lane encounters met, §27), absent in older v10 saves. See GameState in src/app/state.ts.
+ *   (lane encounters met, §27), absent in older v10 saves; the world log's rival `stories`, a rival's
+ *   `met` and a wingman's `ally` (§28), absent in older v10 saves. See GameState in src/app/state.ts.
  */
 export interface SaveV1 {
   version: 1;
@@ -90,6 +91,26 @@ function assertValidOutpost(o: OutpostRecord, fail: (msg: string) => never): voi
   ) {
     fail('outpost');
   }
+}
+
+const STORY_ENDS = ['friends', 'towed', 'let-down', 'lost-ship', 'fell-out', 'won', 'lost', 'forfeit', 'no-show', 'amends'];
+
+/** A rival's story (docs/PROCGEN.md §28) as a save holds it. */
+function validStory(st: RivalStory): boolean {
+  if (!isRecord(st) || (st.path !== 'friend' && st.path !== 'enemy') || !Number.isFinite(st.began) || st.began < 0) return false;
+  const time = (t: unknown) => t === undefined || (Number.isFinite(t) && (t as number) >= 0);
+  const loan = st.loan;
+  if (loan !== undefined && !(isRecord(loan) && Number.isFinite(loan.amount) && loan.amount > 0 && time(loan.repaid))) return false;
+  const d = st.deed;
+  if (d !== undefined) {
+    if (!isRecord(d) || (d.kind !== 'escort' && d.kind !== 'rescue') || !Number.isFinite(d.at) || typeof d.job !== 'string' || !LOCATION_IDS.has(d.to) || !time(d.end)) return false;
+    if ((d.from !== undefined && !LOCATION_IDS.has(d.from)) || (d.resume !== undefined && !LOCATION_IDS.has(d.resume)) || (d.systemId !== undefined && !SYSTEM_IDS.includes(d.systemId)) || (d.done !== undefined && typeof d.done !== 'boolean')) return false;
+  }
+  if (st.wings !== undefined && !(Array.isArray(st.wings) && st.wings.length <= 12 && st.wings.every((x) => isRecord(x) && Number.isFinite(x.at) && time(x.end) && (x.resume === undefined || LOCATION_IDS.has(x.resume))))) return false;
+  if (!time(st.spent)) return false;
+  if (st.duel !== undefined && !(isRecord(st.duel) && Number.isFinite(st.duel.posted) && time(st.duel.started))) return false;
+  if (st.ended !== undefined && !(isRecord(st.ended) && Number.isFinite(st.ended.at) && STORY_ENDS.includes(st.ended.how))) return false;
+  return true;
 }
 
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -389,6 +410,11 @@ export function assertValidState(s: GameState): void {
     if (!isRecord(w.rivals) || !isRecord(w.rivals.down) || !isRecord(w.rivals.bought)) fail('world');
     for (const [id, d] of Object.entries(w.rivals.down)) if (!ROSTER.some((r) => r.id === id) || !isRecord(d) || !Number.isFinite(d.at) || !SYSTEM_IDS.includes(d.systemId)) fail('world');
     for (const t of Object.values(w.rivals.bought)) if (!Number.isFinite(t)) fail('world');
+    // Rival stories (docs/PROCGEN.md §28): one each for the six, of a known path, at sane moments.
+    if (w.rivals.stories !== undefined) {
+      if (!isRecord(w.rivals.stories)) fail('world');
+      for (const [id, st] of Object.entries(w.rivals.stories)) if (!ROSTER.some((r) => r.id === id) || !validStory(st)) fail(`rival story ${id}`);
+    }
   }
   for (const [sys, l] of Object.entries(w.lingering)) {
     if (!KNOWN_SYSTEM_IDS.includes(sys) || !isRecord(l) || !Number.isFinite(l.at) || !Array.isArray(l.packs) || !Array.isArray(l.pods)) fail('world');
@@ -408,6 +434,8 @@ export function assertValidState(s: GameState): void {
   if (!Array.isArray(s.crew) || s.crew.length > COMBAT.wingmen.max) fail('crew');
   for (const w of s.crew) {
     if (!isRecord(w) || typeof w.id !== 'string' || typeof w.name !== 'string' || !findShip(w.model) || !Number.isFinite(w.fee) || w.fee < 0 || (w.skill !== 'steady' && w.skill !== 'sharp')) fail('crew');
+    // A rival flying as an ally (§28) is one of the six.
+    if (w.ally !== undefined && !ROSTER.some((r) => r.id === w.ally)) fail('crew');
   }
   if (!Array.isArray(s.priceWatch) || !s.priceWatch.every((w) => isRecord(w) && LOCATION_IDS.has(w.locationId) && COMMODITY_IDS.includes(w.commodity))) fail('price watch');
   const kinds = ['price', 'event', 'den', 'ace', 'wreck', 'story', 'front'];
@@ -427,7 +455,7 @@ export function assertValidState(s: GameState): void {
   if (s.rivals !== undefined) {
     if (!isRecord(s.rivals)) fail('rivals');
     for (const [id, r] of Object.entries(s.rivals)) {
-      const ok = ROSTER.some((x) => x.id === id) && isRecord(r) && Number.isFinite(r.standing) && Math.abs(r.standing) <= 100 && (r.round === undefined || Number.isInteger(r.round)) && (r.shot === undefined || Number.isFinite(r.shot));
+      const ok = ROSTER.some((x) => x.id === id) && isRecord(r) && Number.isFinite(r.standing) && Math.abs(r.standing) <= 100 && (r.round === undefined || Number.isInteger(r.round)) && (r.shot === undefined || Number.isFinite(r.shot)) && (r.met === undefined || (Number.isFinite(r.met) && r.met >= 0));
       if (!ok) fail(`rival ${id}`);
     }
   }
@@ -438,6 +466,8 @@ export function assertValidState(s: GameState): void {
     if ((p.seen !== undefined && typeof p.seen !== 'boolean') || (p.fright !== undefined && !(Number.isFinite(p.fright) && p.fright >= 0 && p.fright <= 1))) fail(`job ${id}`);
     // Observations of a dying far star (§25): when, and from a system of the map.
     if (p.observed !== undefined && !(Array.isArray(p.observed) && p.observed.every((x) => isRecord(x) && Number.isFinite(x.at) && KNOWN_SYSTEM_IDS.includes(x.systemId)))) fail(`job ${id}`);
+    // A rival's duel (§28), won.
+    if (p.duel !== undefined && p.duel !== 'won') fail(`job ${id}`);
   }
   if (s.location.flight) {
     const { position, quaternion } = s.location.flight;

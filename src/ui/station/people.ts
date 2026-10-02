@@ -12,7 +12,8 @@ import { personPortrait } from './personPortrait.ts';
 import { hashString } from '../../content/random.ts';
 import type { RivalTier } from '../../content/rivals/lines.ts';
 import { RIVALS, STYLE_LABEL, type RivalDef } from '../../content/rivals/rules.ts';
-import { buyRivalRound, makeAmends, rivalGreeting, rivalName, rivalsDockedAt, rivalTier, roundBlock, standingWith } from '../../economy/rivals.ts';
+import { buyRivalRound, makeAmends, metRival, rivalById, rivalGreeting, rivalName, rivalsDockedAt, rivalTier, roundBlock, standingWith } from '../../economy/rivals.ts';
+import { askAlly, lendTo, partWays, settleRivalStories, storyOffer, storyStatus, storyTag, takeEscort, type StoryAct } from '../../economy/rivalStories.ts';
 import { portraitElement } from '../portraits.ts';
 
 type Refresh = () => void;
@@ -92,7 +93,7 @@ function rivalList(ctx: StationContext, refresh: Refresh): HTMLElement | null {
               { class: 'person-text' },
               h('span', { class: 'row-name' }, rivalName(r)),
               h('span', { class: 'row-sub' }, `${STYLE_LABEL[r.style]} · the ${r.shipName}`),
-              h('span', { class: 'person-tags' }, h('span', { class: 'tag rival-tag' }, 'Rival'), h('span', { class: `tag tier-${tier}` }, TIER_TAG[tier])),
+              h('span', { class: 'person-tags' }, h('span', { class: 'tag rival-tag' }, 'Rival'), h('span', { class: `tag tier-${tier}` }, TIER_TAG[tier]), storyChip(ctx.state, r)),
             ),
           ),
         );
@@ -101,17 +102,70 @@ function rivalList(ctx: StationContext, refresh: Refresh): HTMLElement | null {
   );
 }
 
-/** Sitting down with a rival: what they say (and, friendly, what they do next), a round, or amends. */
+/** A rival's story as a tag in the bar (docs/PROCGEN.md §28): an ally, a feud, or something to talk about. */
+function storyChip(state: StationContext['state'], r: RivalDef): HTMLElement | null {
+  const tag = storyTag(state, r);
+  if (!tag) return null;
+  const cls = tag === 'Ally' ? 'tier-friendly' : tag === 'Feud' ? 'tier-hostile' : 'story-tag';
+  return h('span', { class: `tag ${cls}`, 'data-testid': `rival-tag-${r.id}` }, tag);
+}
+
+/** Sitting down with a rival: what they say (and, friendly, what they do next), their story, a round, or amends. */
 async function sitWithRival(ctx: StationContext, r: RivalDef, refresh: Refresh): Promise<void> {
   const { state } = ctx;
+  // The first meeting is remembered: a friend's story waits until the player has known them a while (§28).
+  if (state.rivals?.[r.id]?.met === undefined) {
+    metRival(state, r.id);
+    ctx.save();
+  }
   const greeting = rivalGreeting(state, r);
   const speech = h('p', { class: 'comm speech', 'data-testid': 'rival-speech' }, greeting.text);
   const tip = h('p', { class: 'comm speech told', 'data-testid': 'rival-tip', hidden: !greeting.tip }, greeting.tip ?? '');
   const standing = h('span', { class: 'row-sub', 'data-testid': 'rival-standing' });
+  const status = h('p', { class: 'muted small', 'data-testid': 'rival-story-status' });
+  const story = h('div', { class: 'rival-story' });
   const actions = h('div', { class: 'row wrap person-actions' });
+  let closeDialog: ((v: string) => void) | null = null;
+  const act = (res: StoryAct, then?: () => void) => {
+    if (res.line) speech.textContent = res.line;
+    ctx.sfx(res.ok ? 'ui-confirm' : 'ui-error');
+    toast(res.message, res.ok ? 'good' : 'bad', 4000);
+    ctx.save();
+    refresh();
+    render();
+    if (res.ok) then?.();
+  };
   const render = () => {
     const tier = rivalTier(state, r.id);
     standing.textContent = `Standing: ${TIER_TAG[tier]} (${signed(standingWith(state, r.id))})`;
+    const said = storyStatus(state, r);
+    status.textContent = said ?? '';
+    status.hidden = !said;
+    // What their story asks of the player now (docs/PROCGEN.md §28).
+    const offer = storyOffer(state, r);
+    replaceChildren(
+      story,
+      offer
+        ? [
+            h(
+              'div',
+              { class: 'callout story-callout stack-tight', 'data-testid': 'rival-offer', 'data-kind': offer.kind },
+              offer.kind === 'ally' ? h('p', null, `${r.first} would fly on your wing, in the ${r.shipName}, until you next dock.`) : h('p', { class: 'comm speech' }, offer.text),
+              offer.lock ? h('p', { class: 'muted small', 'data-testid': 'rival-offer-lock' }, offer.lock) : null,
+              h(
+                'div',
+                { class: 'row wrap' },
+                offer.kind === 'loan'
+                  ? button(`Lend ${formatCredits(offer.amount)}`, { variant: 'primary', testId: 'rival-lend', disabled: !!offer.lock, onClick: () => act(lendTo(state, r)) })
+                  : offer.kind === 'escort'
+                    ? button(`Fly escort · ${formatCredits(offer.reward)}`, { variant: 'primary', testId: 'rival-escort', onClick: () => act(takeEscort(state, r), () => closeDialog?.('escort')) })
+                    : button('Ask to fly with you', { variant: 'primary', testId: 'rival-ally', disabled: !!offer.lock, onClick: () => act(askAlly(state, r)) }),
+                offer.kind === 'ally' ? null : button('Not now', { testId: 'rival-not-now', onClick: () => closeDialog?.('close') }),
+              ),
+            ),
+          ]
+        : [],
+    );
     const items: HTMLElement[] = [];
     const block = roundBlock(state, r);
     items.push(
@@ -145,6 +199,8 @@ async function sitWithRival(ctx: StationContext, r: RivalDef, refresh: Refresh):
             if (res.line) speech.textContent = res.line;
             ctx.sfx(res.ok ? 'ui-confirm' : 'ui-error');
             toast(res.message, res.ok ? 'good' : 'bad', 3000);
+            // Amends end a feud: a duel posted is off (docs/PROCGEN.md §28).
+            for (const e of settleRivalStories(state).jobs) toast(e.text, 'info', 4000);
             ctx.save();
             refresh();
             render();
@@ -157,15 +213,19 @@ async function sitWithRival(ctx: StationContext, r: RivalDef, refresh: Refresh):
   render();
   await showModal({
     title: rivalName(r),
-    body: () =>
-      h(
+    body: (close) => {
+      closeDialog = close;
+      return h(
         'div',
         { class: 'person-dialog' },
         h('div', { class: 'person-head' }, rivalPortrait(r, 'lg'), h('div', { class: 'stack-tight' }, h('span', { class: 'row-sub' }, `${STYLE_LABEL[r.style]} · rival pilot`), h('span', { class: 'row-sub muted' }, `The ${r.shipName}, ${shipModel(r.ship).name}`), standing)),
         speech,
         tip,
+        status,
+        story,
         actions,
-      ),
+      );
+    },
     actions: [{ label: 'Leave the table', value: 'close', testId: 'rival-close' }],
     dismissValue: 'close',
     testId: 'rival-dialog',
@@ -188,12 +248,18 @@ function wingList(ctx: StationContext, refresh: Refresh): HTMLElement | null {
           'li',
           { class: 'trade-row', 'data-testid': `pilot-${w.id}` },
           glyph('gun'),
-          h('span', { class: 'trade-text' }, h('span', { class: 'row-name' }, w.name), h('span', { class: 'row-sub' }, `${shipModel(w.model).name} · ${formatCredits(w.fee)} a jump`)),
-          button('Dismiss', {
+          h(
+            'span',
+            { class: 'trade-text' },
+            h('span', { class: 'row-name' }, w.name),
+            h('span', { class: 'row-sub' }, w.ally ? `Your ally · ${shipModel(w.model).name} · flies free until you next dock` : `${shipModel(w.model).name} · ${formatCredits(w.fee)} a jump`),
+          ),
+          button(w.ally ? 'Part ways' : 'Dismiss', {
             size: 'sm',
             testId: `dismiss-${w.id}`,
             onClick: () => {
-              const r = dismissWingman(state, w.id);
+              const ally = w.ally ? rivalById(w.ally) : undefined;
+              const r = ally ? partWays(state, ally) : dismissWingman(state, w.id);
               toast(r.message, r.ok ? 'good' : 'bad');
               ctx.save();
               refresh();

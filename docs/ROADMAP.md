@@ -9,11 +9,11 @@ After the scripted opening (10–20 minutes), the neighbourhood is an open sandb
 systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
 of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
 packs in lawless space; 39 ships and 146 pieces of equipment; and generated contracts on every job
-board. Increments 1–26 (under [Done so far](#done-so-far)) added world events and news, contracts
+board. Increments 1–27 (under [Done so far](#done-so-far)) added world events and news, contracts
 of every kind, the law and the outlaw path, goals, five story arcs, combat depth, people in the
 bars and a trade computer, a world that answers, gluts that ship their surplus out and relief to
 escort through raided lanes, a fleet of your own whose captains fly the lanes,
-a station of your own, passengers and sightseers, rival pilots with careers of their own, a
+a station of your own, passengers and sightseers, rival pilots with careers and stories of their own, a
 supernova in every sky (as fiction), an invented star at the map's edge that explodes and leaves a
 black hole to fly to (fiction too), encounters on the lanes between the docks, mining in the real belts, the frontier with a life of its own,
 a border war whose fronts can be won for good, story endings that change stations for good, escorts
@@ -28,16 +28,9 @@ What it lacks now:
 
 ## Proposed next increments
 
-Candidates for what comes next, in the order they will be built. Lane encounters, Rival stories,
-Defend your outpost and Your crew were chosen by the owner on 2 October 2026, to make the game more
-engaging.
-
-### Rival stories ⏳ (M)
-
-Each rival pilot gets a short story driven by how the player stands with them. A friend asks for
-help (a loan, an escort, a rescue) and ends as an ally who sometimes flies with the player; an enemy
-sets customs on the player or lays an ambush, ending in a duel. Today the rivals remember the
-player but have no story of their own.
+Candidates for what comes next, in the order they will be built. Defend your outpost and Your crew
+were chosen by the owner on 2 October 2026 (with Lane encounters and Rival stories, now done), to
+make the game more engaging.
 
 ### Defend your outpost ⏳ (M)
 
@@ -60,6 +53,23 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 27. Rival stories ✅
+
+Each of the six rival pilots now has a story in your save, one each, shaped by how you stand with
+them. Stand well with one, known a while, and at their table they ask for a loan, back with interest
+when their next run docks; then for a deed: fly escort on their next run, or, when their drive fails
+out on the lanes, bring the parts before the tow gets there. Done, they are an ally: ask at their
+table and they fly on your wing in their own ship until you next dock, and a bounty hunter among
+them hands you their claims. Cross one until they are hostile and a feud begins: they tip customs
+off about you near their home, or send hired guns after you in lawless space, then call you out to a
+duel off a lawless beacon. It is one on one, each in your own ship as it is fitted, so a weak ship
+should stay away; it starts when you close in with a sound hull and ends when one of you yields,
+before a ship is lost. Win and the purse is yours; yield or run and they take the stake; either way
+the feud is over. Amends end one at any point. While a story holds a rival (waiting for your escort,
+adrift, on your wing, lying in wait, at the duel) their career pauses and picks up from where the
+story left them. The People window tags them, the journal follows each story, and the News and the
+radio tell it ([PROCGEN.md §28](PROCGEN.md#28-rival-stories)).
 
 ### 26. Lane encounters ✅
 

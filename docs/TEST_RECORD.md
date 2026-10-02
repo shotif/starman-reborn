@@ -454,6 +454,35 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   even when caught by the explosion, first light counted only within minutes of arriving and from
   two systems the second farther out, the hole read where it is; its stations' own markets; its
   status line and its stations' welcomes.
+- `rivalStories.test.ts`: **rival stories**. The guardrails pass, every rival with a story it can
+  play, and broken rules, paths and lines are caught (a yield too low, an ally out of reach, a duel
+  window too short, a duel's loss leaving a rival hostile, a rival with no story, a he or she in a line, a
+  number in one). Careers with no story are held to a fingerprint of what they were before stories
+  (every run, where each rival is every few minutes, and the hunters' claims, over three days). A
+  friend asks for a loan only once known two hours and at friendly standing; lent, it comes back
+  with interest as their next run docks. An escort: asked at their table for their next run, a job
+  with their own ship, the rival held (out of the bar, the run never setting off), seen in for the
+  pay and standing, then docked where it was bound and back at work from there; left waiting, they
+  go alone and think less of the player. A rescue: the drive fails on a later run (the run cut
+  short, the rival adrift in its system), a distress call and a job for four ship components, paid
+  for the parts and more when handed over; given up, a tow home and standing lost. An ally: asked
+  at their table, on the wing for free (a jump pays them nothing), held while there, leaving the
+  wing at the next dock and staying there, not again for three hours, not with the wing full,
+  parting ways; a friend's rounds up to an ally's standing, and an ally hunter's claims for nothing.
+  A feud: planned when a rival is made hostile, its opening at a turn an hour on and two after they
+  met; customs tipped off in lawful space near home, once, then the duel posted off a lawless
+  beacon (a job, the rival held there); hired guns in lawless space near home, a hunter flying with
+  one, the rival lying in wait meanwhile; the duel won (the purse, standing back to 0), lost (the
+  stake, standing at −10), missed (the feud stands), and under way past its window; amends ending a
+  feud before its opening or with a duel posted. A friend made hostile ends their story, leaves the
+  wing and gets no feud. Saves keep stories, when a rival was met and an ally on the wing, and refuse
+  damaged ones. In a real flight: an ally on the wing in their own ship, lost there as a wingman;
+  hired guns striking after their delay, wanting the player, paying no bounty, once a flight; a
+  duel's rival waiting off the beacon with no raider packs coming, too battered a player told so,
+  the duel started close in, shots in it costing no standing, the rival yielding before its ship is
+  lost (and a shot after that costing standing); the player yielding before theirs is, and flying
+  off forfeit; customs tipped off scanning a clean hold; and a rescue or a duel posted mid-flight in
+  the player's system bringing its ship into the scene at once.
 - `lanes.test.ts`: **lane encounters**. The guardrails pass, and a pilot touring the lanes meets one
   every 15–25 minutes, every kind somewhere; broken rules are caught (chances falling with
   lawlessness, bait in secure space, tolls falling with the threat, a hail too brief, a number in a
@@ -633,6 +662,16 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   card naming the risk, paid; back in the same system in the same slot, nothing more to meet; a
   customs patrol with contraband aboard, the risk named, bribed, the cargo kept; and a real mayday
   answered with a pad (A on the action, the D-pad to the first choice, A to take it) and paid.
+- `rivalStories.spec.ts`: **rival stories**: Mara “Quickstep” Venn, known a while and friendly,
+  asks for a loan at their table (*1,500 cr*), lent, the credits down and the table saying what is
+  owed; as their next run docks it comes back with interest, said over the radio; at their table
+  again they ask the player to fly escort on their next run, taken (the job active, the rival out of
+  the bar, the journal's *Rival pilots* saying they wait); seen in, they are a friend, and asked,
+  fly on the wing (*Your ally* in the wing list), keeping station in flight in their own ship. Then
+  Ione “Lantern” Sallow, made hostile, has a feud: once its opening has passed, the duel is posted
+  (the job, the challenge over the radio, the table's line); off the lawless beacon the rival waits,
+  the duel is the objective, and closing in starts it (*Begin.*); brought to the yield, the rival
+  gives up: the purse paid, standing back to 0, the feud over.
 - `screenshots.spec.ts`: the loading title (caught part-way, with the game's largest file held
   back), title, Settings at its device report, job board, buy dialog, station deck, shipyard, outfitter, fleet
   (with a captain loading for a run), flight HUD, the player's own captain targeted in flight, star
@@ -642,7 +681,8 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   supernova in flight, targeted with *Observe* offered, the News at a station with a glut listing its
   shipments, the News at Pyre Observatory telling of its alarm, Pyre in flight, the card when the
   ship is carried out of its system, its black hole, Pyre's card on the star map, a mayday's hail on
-  the HUD and its card, and the News with a shortage's relief
+  the HUD and its card, a rival asking for a loan at their table, the journal following two rivals'
+  stories, a rival waiting off a lawless beacon for a duel, and the News with a shortage's relief
   haulers on their way, at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
   zoom). Saved in `docs/screenshots/` once any smooth scrolling has come to rest. Each is audited

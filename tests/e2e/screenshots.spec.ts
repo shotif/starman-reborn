@@ -415,6 +415,41 @@ for (const size of SIZES) {
       await expect(page.getByTestId('lane-dialog')).toBeVisible();
       await shot(page, `${size.name}-13b-lane-card`, size.touch, results);
       await press(page, 'lane-later');
+      await api(page, 'meetLanes', false);
+      // Rival stories (docs/PROCGEN.md §28): a friend's loan asked at their table, the journal following two
+      // stories, and a rival waiting off a lawless beacon for a duel.
+      await api(page, 'setCredits', 20_000);
+      await api(page, 'setRival', { id: 'tally', standing: 20, metAgo: 7_200 });
+      const table = (await api<{ at: number; locationId: string } | null>(page, 'findRivalDocked', { id: 'tally', from: (await api<{ clock: number }>(page, 'state')).clock + 60 }))!;
+      expect(table, 'Tally docked somewhere').not.toBeNull();
+      await api(page, 'advanceClock', table.at - (await api<{ clock: number }>(page, 'state')).clock);
+      await docked(table.locationId);
+      await press(page, 'room-bar');
+      if (!(await page.getByTestId('people-window').isVisible().catch(() => false))) await press(page, 'station-people');
+      await press(page, 'rival-tally');
+      await expect(page.getByTestId('rival-offer')).toBeVisible();
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 15_000 });
+      await shot(page, `${size.name}-14-rival-loan`, size.touch, results);
+      await press(page, 'rival-lend');
+      await press(page, 'rival-close');
+      await api(page, 'setRival', { id: 'lantern', standing: -40, metAgo: 7_200 });
+      const feud = (await api<{ holds: { kind: string; from: number; systemId: string | null }[] }>(page, 'rivalStory', 'lantern'))!;
+      const duel = feud.holds.find((x) => x.kind === 'duel')!;
+      await api(page, 'advanceClock', duel.from + 5 - (await api<{ clock: number }>(page, 'state')).clock);
+      await press(page, 'station-journal');
+      await page.getByTestId('rivals-record').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-14b-rival-journal`, size.touch, results);
+      await api(page, 'warp', duel.systemId!);
+      await waitUntil(page, 'at the duel', async () => (await api(page, 'mode')) === 'flight');
+      if (await page.getByTestId('sheet-close').isVisible().catch(() => false)) await press(page, 'sheet-close');
+      await waitUntil(page, 'the rival waiting', async () => (await api<{ duel: string | null }[]>(page, 'npcs')).some((n) => n.duel === 'waiting'), 30_000);
+      // Off its range, so it waits: the target, and the duel as the objective.
+      await api(page, 'placeNear', { id: 'duel:rs.lantern.duel', distance: 2_500 });
+      await api(page, 'selectTarget', 'duel:rs.lantern.duel');
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      expect(await api<boolean>(page, 'face', { id: 'duel:rs.lantern.duel', below: size.height < 500 ? 2 : 4 })).toBe(true);
+      await shot(page, `${size.name}-14c-duel`, size.touch, results);
       for (const [name, r] of Object.entries(results)) {
         expect.soft(r.overflow, `${name}: page overflow`).toBe(false);
         expect.soft(r.clipped, `${name}: clipped controls`).toEqual([]);

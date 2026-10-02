@@ -24,7 +24,9 @@ import { getCatalog, shipModel } from '../content/catalog.ts';
 import { hashString } from '../content/random.ts';
 import { cargoCapacity, newShipState, performanceOf } from '../economy/loadout.ts';
 import { carriesPassengers, frighten, passengerFright, passengerGoodbye, passengerJobs, seeSight, sightseersArrive, sightsIn } from '../economy/passengers.ts';
-import { claimFor, nextRun, rivalById, rivalDestroyed, rivalHello, rivalKnockedOut, rivalName, rivalShot, rivalWhere, turnOf } from '../economy/rivals.ts';
+import { claimFor, holdsOf, metRival, nextRun, rivalById, rivalDestroyed, rivalHello, rivalKnockedOut, rivalName, rivalShot, rivalWhere, shift, standingWith, turnOf } from '../economy/rivals.ts';
+import { allyLost, ambushIn, duelIn, duelLost, duelStarted, duelWon, settleRivalStories, spendAmbush, spendTipoff, storyOffer, storyStatus, tipoffIn, tippedPatrols, type StoryNote } from '../economy/rivalStories.ts';
+import { STORY, STORY_NOTES } from '../content/rivals/storyLines.ts';
 import { farStar, farStarLook, recordObservation, scheduleSky, skyComm, skyMoment, skyTimeline } from '../economy/stellar.ts';
 import type { SkyNewsKind } from '../content/stellar/lines.ts';
 import { ROSTER } from '../content/rivals/rules.ts';
@@ -514,13 +516,14 @@ export class Game {
     // A save from before settled fronts left their marks gets them now (docs/PROCGEN.md §20.7).
     markSettledFronts(this.state);
     const fleet = settleFleet(this.state);
+    const stories = this.announceStories(settleRivalStories(this.state));
     // A save past the opening gets its far stars' timeline (docs/PROCGEN.md §25); what has already happened is not said again.
     const scheduled = scheduleSky(this.state);
     this.skySaid = skyMoment(this.state.clock);
     // Pyre's warning is set once the player has reached the frontier (docs/PROCGEN.md §26); what has happened is not said again.
     const edged = scheduleEdge(this.state);
     this.edgeSaid = { kind: edgeMoment(this.state.location.systemId, this.state.clock), systemId: this.state.location.systemId };
-    if (fleet.steps || scheduled || edged) this.persist();
+    if (fleet.steps || scheduled || edged || stories) this.persist();
     const loc = state.location;
     if (loc.dockedAt) this.enterDocked(loc.dockedAt, { titleCard: true });
     else if (loc.flight) {
@@ -550,6 +553,36 @@ export class Game {
   /** What the fleet did while the player was away, as toasts (docs/PROCGEN.md §18). */
   private announceFleet(s: FleetSettlement): void {
     for (const n of fleetNews(s)) toast(n.text, n.tone, 6000);
+  }
+
+  /** What rivals' stories said as the clock passed their moments (docs/PROCGEN.md §28), and the jobs they closed. */
+  private announceStories(out: { notes: StoryNote[]; jobs: JobEvent[] }): boolean {
+    const state = this.state;
+    for (const n of out.notes) {
+      toast(n.text, n.tone, 7000);
+      if (n.line) this.comm(rivalName(n.rival), n.line, 7000);
+      // A rescue or a duel posted where the player is flying: its ship comes into the scene now.
+      if (n.job && state && this.flight && this.mode === 'flight' && !state.location.dockedAt) {
+        const here = state.location.systemId;
+        const rescue = rescuesIn(state, here).find((x) => x.jobId === n.job);
+        const duel = duelIn(state, here);
+        this.flight.addStoryShip({ ...(rescue ? { rescue } : {}), ...(duel?.jobId === n.job ? { duel: { jobId: duel.jobId, rivalId: duel.rival.id, started: duel.started } } : {}) });
+      }
+    }
+    this.announceJobEvents(out.jobs);
+    return out.notes.length > 0 || out.jobs.length > 0;
+  }
+
+  /** Leaving a duel under way (docking, jumping, or the ship lost) forfeits it (docs/PROCGEN.md §28). */
+  private leaveDuel(): void {
+    const state = this.state;
+    const d = this.flight?.duelStatus();
+    const r = d?.state === 'on' ? rivalById(d.rivalId) : undefined;
+    if (!state || !r) return;
+    const out = duelLost(state, r, 'forfeit');
+    if (out.text) toast(out.text, 'bad', 6000);
+    if (out.line) this.comm(rivalName(r), out.line, 6000);
+    this.announceJobEvents(out.events);
   }
 
   // ------------------------------------------------------------------ scenes
@@ -960,12 +993,15 @@ export class Game {
         },
         onScan: (result, faction) => {
           if (!isLawful(faction)) return;
+          // A rival's tip-off is spent on the scan, whatever came of it (docs/PROCGEN.md §28).
+          const tip = tipoffIn(state, state.location.systemId);
+          const tipped = tip ? `${spendTipoff(state, tip)} ` : '';
           if (result === 'evaded') {
             const out = commitCrime(state, 'evade', faction, state.location.systemId);
-            toast(`You ran from a cargo scan. ${out.text}`, 'bad', 5000);
+            toast(`${tipped}You ran from a cargo scan. ${out.text}`, 'bad', 5000);
           } else {
             const scan = customsScan(state, faction);
-            toast(scan.text, scan.found.length ? 'bad' : 'info', scan.found.length ? 5000 : 2600);
+            toast(`${tipped}${scan.text}`, scan.found.length ? 'bad' : 'info', scan.found.length || tipped ? 5000 : 2600);
           }
           this.persist();
         },
@@ -993,7 +1029,39 @@ export class Game {
           this.persist();
         },
         onWingmanLost: (id) => {
-          wingmanLost(state, id);
+          // An ally lost on the wing ejects, and is home refitting (docs/PROCGEN.md §28).
+          const ally = state.crew.find((w) => w.id === id)?.ally;
+          const r = ally ? rivalById(ally) : undefined;
+          if (r) allyLost(state, r, state.location.systemId);
+          else wingmanLost(state, id);
+          this.persist();
+        },
+        onRivalAmbush: (id) => {
+          const r = rivalById(id);
+          if (!r) return;
+          toast(spendAmbush(state, r), 'bad', 5000);
+          this.comm(rivalName(r), STORY[r.voice].ambush, 5000);
+          this.persist();
+        },
+        onDuel: (_jobId, id, what) => {
+          const r = rivalById(id);
+          if (!r) return;
+          const name = rivalName(r);
+          if (what === 'unfit') {
+            this.comm(name, STORY[r.voice].duelUnfit, 5000);
+            return;
+          }
+          if (what === 'started') {
+            duelStarted(state, r);
+            toast(STORY_NOTES.started, 'info', 5000);
+            this.comm(name, STORY[r.voice].duelStart, 4000);
+          } else {
+            const out = what === 'won' ? duelWon(state, r) : duelLost(state, r, what);
+            this.sfx(what === 'won' ? 'mission-complete' : 'alert');
+            if (out.text) toast(out.text, what === 'won' ? 'good' : 'bad', 6000);
+            if (out.line) this.comm(name, out.line, 6000);
+            this.announceJobEvents(out.events);
+          }
           this.persist();
         },
         onComm: (speaker, text) => this.comm(speaker, text, 5000),
@@ -1065,7 +1133,10 @@ export class Game {
           const r = rivalById(id);
           if (!r) return;
           const name = rivalName(r);
-          if (what === 'met') this.comm(name, rivalHello(state, r, !!detail?.hostile), 5000);
+          if (what === 'met') {
+            metRival(state, id);
+            this.comm(name, rivalHello(state, r, !!detail?.hostile), 5000);
+          }
           else if (what === 'shot') {
             const line = rivalShot(state, r, this.flightStart);
             if (line) this.comm(name, line, 5000);
@@ -1119,6 +1190,8 @@ export class Game {
     const base = trafficFor(here, this.renderer.quality, state.clock);
     // A knocked-out den sends no packs until it is rebuilt.
     const downDens = ALL_LOCATIONS.filter((l) => l.systemId === here && l.stationType === 'pirate-den' && denDown(state, l.id)).map((l) => l.id);
+    const ambush = ambushIn(state, here);
+    const duel = duelIn(state, here);
     return {
       ...base,
       plan: downDens.length ? { ...base.plan, packs: null } : base.plan,
@@ -1129,9 +1202,13 @@ export class Game {
       assaults: assaultsIn(state, here),
       defences: defencesIn(state, here),
       downDens,
-      crew: state.crew.map((w) => ({ id: w.id, name: w.name, model: w.model, skill: w.skill })),
+      crew: state.crew.map((w) => ({ id: w.id, name: w.name, model: w.model, skill: w.skill, ...(w.ally ? { ally: w.ally } : {}) })),
       sights: sightsIn(state, here),
       lingering: this.takeLingering(),
+      // Rivals' feuds (docs/PROCGEN.md §28): customs tipped off, hired guns waiting, a duel off the beacon.
+      tipped: tippedPatrols(state, here),
+      ...(ambush ? { rivalAmbush: { rivalId: ambush.rival.id, delay: ambush.delay, guns: ambush.guns, withRival: ambush.withRival, level: ambush.level } } : {}),
+      ...(duel ? { duel: { jobId: duel.jobId, rivalId: duel.rival.id, started: duel.started } } : {}),
     };
   }
 
@@ -1189,13 +1266,17 @@ export class Game {
 
   private onDocked(locationId: string): void {
     const state = this.state!;
+    this.leaveDuel();
     this.flight?.writeBack(state);
     this.rememberLingering();
-    // Customs at depots and military bases scan every ship that docks.
-    const customs = scansOnDocking(locationId);
+    // Customs at depots and military bases scan every ship that docks; tipped off by a rival, any lawful dock does (docs/PROCGEN.md §28).
+    const dock = getLocation(locationId);
+    const tip = isLawful(dock.factionId) ? tipoffIn(state, dock.systemId) : null;
+    const customs = scansOnDocking(locationId) ?? (tip && isLawful(dock.factionId) ? dock.factionId : null);
     if (customs) {
+      const tipped = tip ? `${spendTipoff(state, tip)} ` : '';
       const scan = customsScan(state, customs);
-      if (scan.found.length) toast(scan.text, 'bad', 6000);
+      if (scan.found.length || tipped) toast(`${tipped}${scan.text}`, scan.found.length ? 'bad' : 'info', 6000);
     }
     const out = dockAt(state, locationId);
     this.persist();
@@ -1217,6 +1298,8 @@ export class Game {
     for (const n of out.lawNotes) toast(n, 'good', 6000);
     this.announceFleet(out.fleet);
     this.announceJobEvents(out.jobEvents, false);
+    for (const n of out.allies) toast(n, 'info', 5000);
+    this.announceStories(out.stories);
     const deliverable = Object.keys(state.jobs).some((id) => {
       const p = state.jobs[id]!;
       return p.status === 'active' && getJob(id, state).destinationLocationId === locationId;
@@ -1419,6 +1502,7 @@ export class Game {
 
   private async onPlayerDestroyed(): Promise<void> {
     const state = this.state!;
+    this.leaveDuel();
     const dock = getLocation(state.location.lastDockId);
     await showModal({
       title: 'Ship disabled',
@@ -1595,6 +1679,7 @@ export class Game {
       if (j.t >= 1.3) {
         j.phase = 'tunnel';
         const state = this.state!;
+        this.leaveDuel();
         this.flight?.writeBack(state);
         this.rememberLingering();
         this.disposeFlight();
@@ -1606,6 +1691,7 @@ export class Game {
         for (const note of wing.notes) toast(note, 'bad', 5000);
         // The wing is paid first: a hauler loading out of sight never leaves it unpaid.
         this.announceFleet(settleFleet(state));
+        this.announceStories(settleRivalStories(state));
         void this.saves.save(state);
         // Build the tunnel scene, then load the destination while the tunnel plays.
         j.tunnelScene = new THREE.Scene();
@@ -1931,6 +2017,7 @@ export class Game {
         this.announceFleet(fleet);
         this.persist();
       }
+      if (this.announceStories(settleRivalStories(state))) this.persist();
       this.watchSky(state);
     }
     this.objectiveTimer -= dt;
@@ -2115,6 +2202,7 @@ export class Game {
         if (!this.state) return;
         this.state.clock += Math.max(0, seconds);
         this.announceFleet(settleFleet(this.state));
+        this.announceStories(settleRivalStories(this.state));
         this.persist();
         this.station?.render();
       },
@@ -2250,6 +2338,47 @@ export class Game {
         this.station?.render();
         return r?.ok ? id : null;
       },
+      /**
+       * Test-only: a rival's story (docs/PROCGEN.md §28): the record, how it stands, what it offers at
+       * their table now, the holds on their career, standing, and the duel in this flight.
+       */
+      rivalStory: (id: string) => {
+        const r = rivalById(id);
+        const state = this.state;
+        if (!r || !state) return null;
+        const offer = storyOffer(state, r);
+        return {
+          story: state.world.rivals?.stories?.[id] ?? null,
+          status: storyStatus(state, r),
+          offer: offer ? { kind: offer.kind, lock: offer.lock } : null,
+          holds: holdsOf(r).map((x) => ({ kind: x.kind, from: x.from, to: x.to === Infinity ? null : x.to, resume: x.resume, systemId: x.systemId ?? null })),
+          standing: standingWith(state, id),
+          duel: this.flight?.duelStatus() ?? null,
+        };
+      },
+      /** Test-only: standing with a rival, through the rules (falling to hostile starts a feud), and when the player met them (`metAgo` seconds back). */
+      setRival: (arg: { id: string; standing: number; metAgo?: number }) => {
+        const state = this.state;
+        if (!state || !rivalById(arg.id)) return;
+        const rec = ((state.rivals ??= {})[arg.id] ??= { standing: 0 });
+        if (arg.metAgo !== undefined) rec.met = Math.max(0, state.clock - arg.metAgo);
+        shift(state, arg.id, arg.standing - rec.standing);
+        this.station?.render();
+        this.persist();
+      },
+      /** Test-only: the first moment from `from` on when a rival sits docked with a run of its own to fly next: when, and where. */
+      findRivalDocked: (arg: { id: string; from: number }) => {
+        const r = rivalById(arg.id);
+        if (!r) return null;
+        for (let t = Math.ceil(arg.from); t < arg.from + 40 * 3_600; t += 60) {
+          const w = rivalWhere(r, t);
+          const run = nextRun(r, t);
+          if (w.kind === 'docked' && run && run.from === w.locationId && run.to !== w.locationId && run.depart - t > 120) return { at: t, locationId: w.locationId, to: run.to };
+        }
+        return null;
+      },
+      /** Test-only: the player's ship takes a hit in flight (shields first). */
+      hurtPlayer: (amount: number) => this.flight?.debugHurt(amount),
       /** Test-only: destroy a ship in flight outright (`byPlayer`: as the player's guns would). */
       destroyNpc: (arg: { id: string; byPlayer: boolean }) => this.flight?.debugDestroy(arg.id, arg.byPlayer) ?? false,
       /** Test-only: what a station's board posts now (as the Jobs window lists it, before what the pilot holds). */

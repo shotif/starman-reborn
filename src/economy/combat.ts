@@ -206,6 +206,8 @@ export function payCrew(state: GameState, hops = 1): { paid: number; notes: stri
   let paid = 0;
   for (const w of [...state.crew]) {
     const fee = w.fee * hops;
+    // An ally flies free (docs/PROCGEN.md §28).
+    if (fee <= 0) continue;
     if (state.credits >= fee) {
       applyCredits(state, -fee, 'fee', `Wing fee: ${w.name}`);
       paid += fee;

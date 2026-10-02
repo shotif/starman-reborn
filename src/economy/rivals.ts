@@ -1,10 +1,12 @@
-import type { GameState, RivalStanding } from '../app/state.ts';
+import type { GameState, RivalStanding, RivalStory } from '../app/state.ts';
 import { COMMODITIES, type CommodityId } from '../content/economy/goods.ts';
 import { ECONOMY } from '../content/economy/rules.ts';
 import { PEOPLE } from '../content/people/rules.ts';
 import { rng } from '../content/random.ts';
 import { AMENDS, GREET, NEWS, RADIO, REFUSE, ROUND, TIP, type RivalTier } from '../content/rivals/lines.ts';
+import { STORY_NEWS, type StoryNewsKind } from '../content/rivals/storyLines.ts';
 import { RIVALS, ROSTER, type RivalDef } from '../content/rivals/rules.ts';
+import { RIVAL_STORY } from '../content/rivals/stories.ts';
 import { WORLD_SEED } from '../content/world/rules.ts';
 import { jumpsFrom } from '../content/world/network.ts';
 import { ALL_LOCATIONS, getLocation, getSystem, WORLD } from '../data/systems.ts';
@@ -112,7 +114,7 @@ export interface RivalRun {
   claim?: { contract: JobDef; giver: string; at: number };
   /** The shortage a runner races to. */
   shortage?: WorldEvent;
-  /** Destroyed on the way by the player, at this moment. */
+  /** Lost on the way at this moment: destroyed by the player, or adrift after a drive failure (docs/PROCGEN.md §28). */
   lostAt?: number;
 }
 
@@ -218,9 +220,21 @@ function aimOf(r: RivalDef, n: number): string {
   return planOf(r, n).pick;
 }
 
-/** The station a rival is at when turn `n` is over: where the turn took it, or home, refitting. */
+/** When turn `n` of a rival's career sets off (its rest in the bar over). */
+export function departOf(r: RivalDef, n: number): number {
+  return turnStart(n) + planOf(r, n).rest;
+}
+
+/**
+ * The station a rival is at when turn `n` is over: where the turn took it, or home, refitting, or
+ * where a story's hold that ended in the turn left it (docs/PROCGEN.md §28).
+ */
 export function destOf(r: RivalDef, n: number): string {
   if (n < 0 || refitting(r, n)) return r.home;
+  const ended = lastHoldEnding(r, departOf(r, n), departOf(r, n + 1));
+  if (ended) return ended.resume ?? r.home;
+  const held = heldAt(r, departOf(r, n));
+  if (held) return held.resume ?? r.home;
   return aimOf(r, n);
 }
 
@@ -254,7 +268,7 @@ function stretch(from: string, to: string, depart: number): RivalLeg[] {
 
 function logStamp(r: RivalDef): string {
   const d = downOf(r);
-  return `${worldLogKey()}|${d ? d.at : ''}`;
+  return `${worldLogKey()}|${d ? d.at : ''}|${holdStamp(r)}`;
 }
 
 const runCache = new Map<string, RivalRun | null>();
@@ -275,9 +289,11 @@ function makeRun(r: RivalDef, n: number, race: ReturnType<typeof raceFor>): Riva
   const d = downOf(r);
   const s = turnStart(n);
   if (d && s >= d.at && s < d.at + RIVALS.downSeconds) return null;
-  const from = destOf(r, n - 1);
   const plan = planOf(r, n);
   const depart = s + plan.rest;
+  // A run that would set off while a story holds the rival never sets off (docs/PROCGEN.md §28).
+  if (heldAt(r, depart)) return null;
+  const from = destOf(r, n - 1);
   const claim = claimFor(r, n);
   let run: Omit<RivalRun, 'arrive' | 'lostAt'>;
   if (claim) {
@@ -299,7 +315,126 @@ function makeRun(r: RivalDef, n: number, race: ReturnType<typeof raceFor>): Riva
     run = { id: `r.${r.id}.${n}`, rival: r, turn: n, kind: commodity ? 'trade' : 'ferry', from, to, ...(commodity ? { commodity } : {}), qty: commodity ? plan.load : 0, legs: stretch(from, to, depart), depart, loaded: depart };
   }
   const arrive = run.legs.at(-1)!.end;
-  return { ...run, arrive, ...(d && d.at >= depart && d.at < arrive ? { lostAt: d.at } : {}) };
+  // Lost on the way: destroyed by the player, or adrift when a story's hold begins on the way (a drive failure).
+  const cut = holdsOf(r).find((h) => h.from > depart && h.from < arrive)?.from;
+  const lost = Math.min(d && d.at >= depart && d.at < arrive ? d.at : Infinity, cut ?? Infinity);
+  return { ...run, arrive, ...(lost < Infinity ? { lostAt: lost } : {}) };
+}
+
+// ---------------------------------------------------------------- stories' holds (docs/PROCGEN.md §28)
+
+/** What a story holds a rival to, off their career. */
+export type HoldKind = 'escort' | 'adrift' | 'wing' | 'waiting' | 'duel';
+
+export interface RivalHold {
+  kind: HoldKind;
+  from: number;
+  /** When it ends (Infinity while nothing has ended it yet). */
+  to: number;
+  /** The station it leaves them at (null: not known yet). */
+  resume: string | null;
+  /** Where they are meanwhile, when that is a system: adrift, or at the duel's beacon. */
+  systemId?: SystemId;
+}
+
+/** A rival's story in the save the game points at. */
+export function storyOf(r: RivalDef): RivalStory | undefined {
+  return activeRivalLog()?.stories?.[r.id];
+}
+
+/** The first turn of a career that starts at or after a moment. */
+export const turnFrom = (t: number) => Math.max(0, Math.ceil((t - RIVALS.from) / T));
+
+const duelCache = new Map<string, SystemId>();
+/** Where a rival calls the player out to: the lawless system nearest their home (by jumps, then by name). */
+export function duelSystem(r: RivalDef): SystemId {
+  let sys = duelCache.get(r.id);
+  if (!sys) {
+    const home = getLocation(r.home).systemId;
+    const near = [...jumpsFrom(WORLD.links, home).entries()].filter(([s]) => s !== 'sol' && security(s) < RIVALS.hostile.lawless);
+    sys = near.sort((a, b) => a[1] - b[1] || (a[0] < b[0] ? -1 : 1))[0]?.[0] ?? home;
+    duelCache.set(r.id, sys);
+  }
+  return sys;
+}
+
+/** When a feud's opening is over: spent, or its window run out. */
+export function openingOver(r: RivalDef, s: RivalStory): number {
+  const E = RIVAL_STORY.enemy;
+  return s.spent ?? s.began + (RIVAL_STORY.paths[r.id]?.opening === 'ambush' ? E.ambush.seconds : E.tipoff.seconds);
+}
+
+/** When a feud's duel is posted: as it was, or the first turn at least `postedAfter` the opening is over, once they are back in a ship. */
+export function duelPostedAt(r: RivalDef, s: RivalStory): number {
+  if (s.duel) return s.duel.posted;
+  const d = downOf(r);
+  const from = Math.max(openingOver(r, s) + RIVAL_STORY.enemy.duel.postedAfter, d ? d.at + RIVALS.downSeconds : 0);
+  return departOf(r, turnFrom(from));
+}
+
+const NO_HOLDS: readonly RivalHold[] = [];
+const holdCache = new Map<string, readonly RivalHold[]>();
+
+/** The story and knock-out a rival's holds are worked out from, as text (for caches). */
+function holdStamp(r: RivalDef): string {
+  const story = storyOf(r);
+  return story ? `${JSON.stringify(story)}|${downOf(r)?.at ?? ''}` : '';
+}
+
+/**
+ * The holds a rival's story puts on their career, in order, worked out from the story and the rules:
+ * waiting for the player to fly escort, adrift after a drive failure, on the player's wing, lying in
+ * wait with hired guns, at the duel's beacon. A knock-out ends a hold, and sends them home.
+ */
+export function holdsOf(r: RivalDef): readonly RivalHold[] {
+  const story = storyOf(r);
+  if (!story) return NO_HOLDS;
+  const key = `${r.id}|${holdStamp(r)}`;
+  let holds = holdCache.get(key);
+  if (!holds) {
+    holds = makeHolds(r, story);
+    if (holdCache.size > 2_000) holdCache.clear();
+    holdCache.set(key, holds);
+  }
+  return holds;
+}
+
+function makeHolds(r: RivalDef, s: RivalStory): RivalHold[] {
+  const F = RIVAL_STORY.friend;
+  const E = RIVAL_STORY.enemy;
+  const out: RivalHold[] = [];
+  if (s.path === 'friend') {
+    const deed = s.deed;
+    if (deed?.kind === 'escort') out.push({ kind: 'escort', from: deed.at, to: deed.end ?? deed.at + F.escort.wait, resume: deed.resume ?? deed.from ?? r.home });
+    else if (deed?.kind === 'rescue') out.push({ kind: 'adrift', from: deed.at, to: deed.end ?? deed.at + F.rescue.giveUp, resume: deed.resume ?? r.home, ...(deed.systemId ? { systemId: deed.systemId } : {}) });
+    for (const w of s.wings ?? []) out.push({ kind: 'wing', from: w.at, to: w.end ?? Infinity, resume: w.resume ?? null });
+  } else {
+    const end = s.ended?.at ?? Infinity;
+    if (RIVAL_STORY.paths[r.id]?.opening === 'ambush' && s.began < end) out.push({ kind: 'waiting', from: s.began, to: Math.min(openingOver(r, s), end), resume: r.home });
+    const posted = duelPostedAt(r, s);
+    if (posted < end) out.push({ kind: 'duel', from: posted, to: Math.min(posted + E.duel.open, end), resume: r.home, systemId: duelSystem(r) });
+  }
+  // A knock-out ends a hold: they are home, refitting.
+  const d = downOf(r);
+  for (const h of out) {
+    if (d && d.at >= h.from && d.at < h.to) {
+      h.to = d.at;
+      h.resume = r.home;
+    }
+  }
+  return out.sort((a, b) => a.from - b.from);
+}
+
+/** The hold a rival's story has them in at a moment, if any. */
+export function heldAt(r: RivalDef, t: number): RivalHold | undefined {
+  return holdsOf(r).find((h) => t >= h.from && t < h.to);
+}
+
+/** The hold that ended last in (a, b], if any. */
+function lastHoldEnding(r: RivalDef, a: number, b: number): RivalHold | undefined {
+  let last: RivalHold | undefined;
+  for (const h of holdsOf(r)) if (h.to > a && h.to <= b && (!last || h.to >= last.to)) last = h;
+  return last;
 }
 
 // ---------------------------------------------------------------- where they are
@@ -308,24 +443,33 @@ export type RivalWhere =
   | { kind: 'docked'; locationId: string }
   | { kind: 'flying'; run: RivalRun; leg: RivalLeg; progress: number }
   | { kind: 'jumping'; run: RivalRun }
-  | { kind: 'down'; until: number };
+  | { kind: 'down'; until: number }
+  | { kind: 'held'; hold: RivalHold };
 
-/** Where a rival is at a moment: docked (resting in the bar, or done for the turn), flying a leg, in a jump, or refitting. */
+/**
+ * Where a rival is at a moment: docked (resting in the bar, or done for the turn), flying a leg, in a
+ * jump, refitting, or held by their story (docs/PROCGEN.md §28).
+ */
 export function rivalWhere(r: RivalDef, clock: number): RivalWhere {
   const d = downOf(r);
   if (d && clock >= d.at && clock < d.at + RIVALS.downSeconds) return { kind: 'down', until: d.at + RIVALS.downSeconds };
   const n = turnOf(clock);
   if (n < 0) return { kind: 'docked', locationId: r.home };
+  const hold = heldAt(r, clock);
+  if (hold) return { kind: 'held', hold };
   const run = runOf(r, n);
-  if (run && clock >= run.depart && clock < run.arrive) {
+  if (run && clock >= run.depart && clock < Math.min(run.arrive, run.lostAt ?? Infinity)) {
     const leg = run.legs.find((l) => clock >= l.start && clock < l.end);
     if (leg) return { kind: 'flying', run, leg, progress: (clock - leg.start) / (leg.end - leg.start) };
     // Loading at the maker counts as docked there.
     if (run.via && clock < run.loaded && (run.via === run.from || run.legs.some((l) => l.to === run.via && l.end <= clock))) return { kind: 'docked', locationId: run.via };
     return { kind: 'jumping', run };
   }
-  if (run && clock >= run.arrive) return { kind: 'docked', locationId: run.to };
-  return { kind: 'docked', locationId: destOf(r, n - 1) };
+  // Docked: where this turn's run took them, or the turn before left them, unless a hold has ended since.
+  const arrived = run && run.lostAt === undefined && clock >= run.arrive;
+  const ended = lastHoldEnding(r, arrived ? run.arrive : departOf(r, n), clock);
+  if (ended) return { kind: 'docked', locationId: ended.resume ?? r.home };
+  return { kind: 'docked', locationId: arrived ? run.to : destOf(r, n - 1) };
 }
 
 /** The rivals docked at a station now (sitting in its bar). */
@@ -483,8 +627,8 @@ export function claimsAt(state: GameState, locationId: string): Claim[] {
   for (const r of ROSTER) {
     if (r.style !== 'hunter') continue;
     for (const n of [turnOf(state.clock) - 1, turnOf(state.clock)]) {
-      // A hunter knocked out lets its claim go.
-      if (refitting(r, n)) continue;
+      // A hunter knocked out, or held by their story, lets its claim go.
+      if (refitting(r, n) || heldAt(r, departOf(r, n))) continue;
       const c = claimFor(r, n);
       if (!c || c.giver !== locationId || c.at > state.clock || boardEpoch(c.at) !== epoch) continue;
       if (bought[c.contract.id] !== undefined || state.jobs[c.contract.id]) continue;
@@ -495,6 +639,8 @@ export function claimsAt(state: GameState, locationId: string): Claim[] {
 }
 
 function claimPrice(state: GameState, r: RivalDef, c: JobDef): number {
+  // An ally hands the claim over for nothing (docs/PROCGEN.md §28).
+  if (isAlly(state, r)) return 0;
   const share = RIVALS.hunt.claim * (isFriendly(state, r.id) ? RIVALS.friendly.claim : 1);
   return Math.max(1, Math.round(c.reward * share));
 }
@@ -512,8 +658,9 @@ export function buyClaim(state: GameState, locationId: string, contractId: strin
   if (state.credits < claim.price) return { ok: false, message: `You need ${claim.price} cr.` };
   state.credits -= claim.price;
   ((state.world.rivals ??= { down: {}, bought: {} }).bought)[contractId] = state.clock;
-  shift(state, claim.rival.id, RIVALS.standing.outbid);
   forgetOldClaims(state);
+  if (!claim.price) return { ok: true, message: `${rivalName(claim.rival)} hands you the claim, as a friend. The job is yours to take.` };
+  shift(state, claim.rival.id, RIVALS.standing.outbid);
   return { ok: true, message: `You bought the claim from ${rivalName(claim.rival)} for ${claim.price} cr. The job is yours to take.` };
 }
 
@@ -533,9 +680,62 @@ export function standingWith(state: GameState, id: string): number {
   return state.rivals?.[id]?.standing ?? 0;
 }
 
-function shift(state: GameState, id: string, delta: number): void {
+/** Moves standing with a rival; one made hostile by it gets a feud, or ends a friend's story (docs/PROCGEN.md §28). */
+export function shift(state: GameState, id: string, delta: number): void {
   const s = rec(state, id);
+  const was = rivalTier(state, id);
   s.standing = Math.max(-100, Math.min(100, s.standing + delta));
+  if (was !== 'hostile' && rivalTier(state, id) === 'hostile') turnedHostile(state, id);
+}
+
+/** The player has met a rival (in a bar, or in flight): the first time is remembered (docs/PROCGEN.md §28). */
+export function metRival(state: GameState, id: string): void {
+  rec(state, id).met ??= state.clock;
+}
+
+/** The stories of the save, made when first needed. */
+export function storiesOf(state: GameState): Record<string, RivalStory> {
+  return ((state.world.rivals ??= { down: {}, bought: {} }).stories ??= {});
+}
+
+/**
+ * A rival made hostile (docs/PROCGEN.md §28): a friend's story ends there, and an ally on the wing
+ * leaves it. With no story yet, a feud: its opening comes at the first turn of their career at least
+ * `after` from now, `sinceMet` after the player met them, and once they are back in a ship.
+ */
+function turnedHostile(state: GameState, id: string): void {
+  const r = rivalById(id);
+  if (!r) return;
+  const stories = storiesOf(state);
+  const story = stories[id];
+  if (story) {
+    if (story.path !== 'friend') return;
+    if (!story.ended) story.ended = { at: state.clock, how: 'fell-out' };
+    const wing = story.wings?.at(-1);
+    if (wing && wing.end === undefined) {
+      wing.end = state.clock;
+      wing.resume = r.home;
+    }
+    state.crew = state.crew.filter((w) => w.ally !== id);
+    return;
+  }
+  const E = RIVAL_STORY.enemy;
+  const met = state.rivals?.[id]?.met ?? state.clock;
+  const d = state.world.rivals?.down[id];
+  const back = d && d.at + RIVALS.downSeconds > state.clock ? d.at + RIVALS.downSeconds : 0;
+  stories[id] = { path: 'enemy', began: departOf(r, turnFrom(Math.max(state.clock + E.after, met + E.sinceMet, back))) };
+}
+
+/** A friend whose deed is done, standing high enough to fly on the player's wing (docs/PROCGEN.md §28). */
+export function isAlly(state: GameState, r: RivalDef): boolean {
+  const story = state.world.rivals?.stories?.[r.id];
+  return story?.path === 'friend' && !!story.deed?.done && standingWith(state, r.id) >= RIVAL_STORY.friend.ally.standing;
+}
+
+/** How high rounds bought for a rival take standing: a friend whose deed is done, up to an ally's. */
+function roundCap(state: GameState, r: RivalDef): number {
+  const story = state.world.rivals?.stories?.[r.id];
+  return story?.path === 'friend' && story.deed?.done ? RIVAL_STORY.friend.ally.standing : RIVALS.standing.roundsUpTo;
 }
 
 export function rivalTier(state: GameState, id: string): RivalTier {
@@ -577,7 +777,9 @@ export function buyRivalRound(state: GameState, r: RivalDef): { ok: boolean; mes
   state.credits -= PEOPLE.drink;
   const s = rec(state, r.id);
   s.round = barShift(state.clock);
-  if (s.standing < RIVALS.standing.roundsUpTo) s.standing = Math.min(RIVALS.standing.roundsUpTo, s.standing + RIVALS.standing.round);
+  s.met ??= state.clock;
+  const cap = roundCap(state, r);
+  if (s.standing < cap) s.standing = Math.min(cap, s.standing + RIVALS.standing.round);
   return { ok: true, message: `You bought ${r.first} a round.`, line: pick(ROUND[r.voice], `${r.id}|${s.round}`) };
 }
 
@@ -588,6 +790,9 @@ export function makeAmends(state: GameState, r: RivalDef): { ok: boolean; messag
   if (state.credits < price) return { ok: false, message: `Amends cost ${price} cr.` };
   state.credits -= price;
   rec(state, r.id).standing = RIVALS.standing.amendsTo;
+  // Amends end a feud (docs/PROCGEN.md §28).
+  const story = state.world.rivals?.stories?.[r.id];
+  if (story?.path === 'enemy' && !story.ended) story.ended = { at: state.clock, how: 'amends' };
   return { ok: true, message: `You made amends with ${r.first} for ${price} cr.`, line: pick(AMENDS[r.voice], r.id) };
 }
 
@@ -669,5 +874,40 @@ export function rivalNews(systemId: SystemId, clock: number): RivalNews[] {
       }
     }
   }
+  out.push(...storyNews(clock, near));
   return out.sort((a, b) => b.at - a.at || a.rival.id.localeCompare(b.rival.id));
+}
+
+/**
+ * The News of rivals' stories (docs/PROCGEN.md §28): a rescue or a tow after a drive failure, a duel
+ * called (while it is open), and how it went, within news reach of where it happened, lately.
+ */
+function storyNews(clock: number, near: Map<SystemId, number>): RivalNews[] {
+  const out: RivalNews[] = [];
+  const stories = activeRivalLog()?.stories;
+  if (!stories) return out;
+  const since = clock - RIVALS.news.recent;
+  for (const r of ROSTER) {
+    const s = stories[r.id];
+    if (!s) continue;
+    const add = (kind: StoryNewsKind, at: number, systemId: SystemId, open = false) => {
+      const jumps = near.get(systemId) ?? 99;
+      if (at > clock || (!open && at < since) || jumps > RIVALS.news.jumps) return;
+      out.push({ rival: r, at, jumps, text: fill(pick(STORY_NEWS[kind], `${r.id}|${kind}|${at}`), { rival: rivalName(r), ship: r.shipName, system: getSystem(systemId).displayName }) });
+    };
+    const deed = s.deed;
+    if (s.path === 'friend' && deed?.kind === 'rescue' && deed.systemId && deed.end !== undefined) {
+      if (deed.done) add('rescued', deed.end, deed.systemId);
+      else if (s.ended?.how === 'towed') add('towed', deed.end, deed.systemId);
+    }
+    if (s.path === 'enemy' && s.duel) {
+      const sys = duelSystem(r);
+      const how = s.ended?.how;
+      if (!s.ended) add('challenge', s.duel.posted, sys, clock < s.duel.posted + RIVAL_STORY.enemy.duel.open);
+      else if (how === 'won') add('rivalLost', s.ended.at, sys);
+      else if (how === 'lost' || how === 'forfeit') add('rivalWon', s.ended.at, sys);
+      else if (how === 'no-show') add('noShow', s.ended.at, sys);
+    }
+  }
+  return out;
 }

@@ -2210,7 +2210,8 @@ hunter never takes two from one board.
 
 The player's standing with each rival runs from −100 to 100, from 0, in the factions' tiers
 (hostile, wary, neutral, friendly). A round bought in the bar where a rival sits raises it by 5,
-once a shift, up to 30 (`standing.round`, `roundsUpTo`); a claim bought back lowers it by 6; the
+once a shift, up to 30 (`standing.round`, `roundsUpTo`; up to 40 for a friend whose story's deed is
+done, §28.1); a claim bought back lowers it by 6; the
 player's first shot at a rival in a flight by 25; destroying its ship by 60. A hostile rival will
 not drink with the player, but amends (1,500 cr) bring it to wary. A friendly rival says, in the
 bar, what it is doing next, and sells a claim for half.
@@ -2611,3 +2612,147 @@ real flight (when it comes, written into the save, answered, lapsing) and its ra
 
 In browser tests lane encounters are off unless a test turns them on (the lanes test and the
 screenshot audit do), since they would otherwise come up in other tests' flights.
+
+## 28. Rival stories
+
+Each of the six rival pilots (§24) has one story in a save, along one of two paths by how the player
+stands with them (`src/economy/rivalStories.ts`; the rules in `RIVAL_STORY`,
+`src/content/rivals/stories.ts`; what is said in `src/content/rivals/storyLines.ts`). A friend asks
+for help and ends as an ally; an enemy opens a feud and ends it in a duel. The people, their words
+and their stories are fiction.
+
+| Rival | A friend's deed | An enemy's opening |
+| --- | --- | --- |
+| Mara “Quickstep” Venn | Escort | Customs tipped off |
+| Bastian “Tally” Okonjo | Rescue | Customs tipped off |
+| Ione “Lantern” Sallow | Rescue | Hired guns |
+| Dax “Two Bells” Corrigan | Escort | Hired guns |
+| Pell “Halfpenny” Arkwright | Escort | Customs tipped off |
+| Saoirse “Sundown” Kalu | Rescue | Hired guns |
+
+The owner chose (2 October 2026) that a story may hold a rival off their career for a while, that a
+duel is fought in each pilot's own ship as it is fitted, and that each rival has one story a save,
+with amends ending a feud.
+
+### 28.1 A friend's story
+
+- **The loan.** At standing 20 or more, once the player has known them two hours (from the first
+  time the player sat at their table or met them in flight, `knownSeconds`), a rival asks at their
+  table for a loan: 1,500 cr for a trader, 1,200 for a hunter, 900 for a runner (`loan.amount`). It
+  comes back with 20% interest (`loan.interest`) when the first run they set off on after it docks;
+  lending is worth 10 standing. *Not now* leaves the offer standing.
+- **The deed**, once the loan is back:
+  - *An escort* (Quickstep, Two Bells, Halfpenny): at their table, they ask the player to fly escort
+    on their next run, to wherever it is bound, for 800 cr (`escort.reward`). It is an escort as the
+    contracts' are (§10.2): their own ship sets off alongside the player, raiders of threat 2 come
+    for it on the way, and it is done when it docks. They wait at their ship for up to three hours
+    (`escort.wait`); left waiting, they fly alone and think less of the player (−10).
+  - *A rescue* (Tally, Lantern, Sundown): their drive fails on the first run that sets off at least
+    half an hour after the loan came back (`rescue.after`), 40% of the way along its longest leg.
+    A distress call comes over the radio and a job with it: bring four ship components alongside
+    within two hours (`rescue.qty`, `giveUp`), paid at their base price and 400 cr besides.
+    Unanswered, they are towed home (−15).
+  Done, either way, is worth 15 standing, and the story ends with a friend.
+- **The ally.** Once the deed is done, at standing 40 (`ally.standing`; rounds bought for them now
+  go up to it, not just to 30), they will fly on the player's wing when asked at their table: free,
+  in a wing place, in their own ship with its stock fittings, until the player next docks, at most
+  once every three hours (`ally.every`). An ally who is a bounty hunter hands their claims over for
+  nothing (§24.4). Lost on the wing, an ally ejects and spends three hours refitting at home, and
+  thinks no less of the player.
+- Made hostile, a friend's story ends there, as a falling-out, and an ally on the wing leaves it.
+
+### 28.2 An enemy's story
+
+- **A feud** begins when something the player does makes a rival hostile (standing −30 or less) and
+  they have no story yet. Its opening comes at the first turn of their career at least an hour
+  later (`after`), at least two hours after the player met them (`sinceMet`), and once they are back
+  in a ship if the player knocked them out.
+- **The opening:**
+  - *Customs tipped off* (Quickstep, Tally, Halfpenny): for two hours, in lawful systems within two
+    jumps of the rival's home (`tipoff`), the next patrol in range scans the player whatever the hold
+    holds, and so does any lawful dock, not only customs depots and military bases (§12). The first
+    scan spends it, and the game says who tipped them off. A pilot with nothing to hide loses
+    nothing.
+  - *Hired guns* (Lantern, Two Bells, Sundown): for three hours, the first flight in a lawless system
+    (security under 0.5) within two jumps of their home meets them 20–40 seconds in (`ambush`): two
+    raiders of threat 2; a bounty hunter hires one and flies with them in their own ship. They want
+    the player only, spare nobody the Wake trusts, pay no bounty and leave no salvage.
+- **The duel** is posted at the first turn of their career half an hour after the opening is over
+  (`duel.postedAfter`), and once they are back in a ship: a call over the radio and a job, open for
+  two hours (`duel.open`). The rival waits 6 km off the jump beacon of the lawless system nearest
+  their home (`offBeacon`). It is one on one: no raider packs come to that system while it is set,
+  the player's wing holds its fire, and patrols leave the rival be. Each pilot flies their own ship as
+  it is fitted (the owner's choice): the rival's with its stock fittings (a heavy fighter's seekers
+  included), the player's with everything fitted. A weak ship would do well to stay away. The duel
+  starts when the player comes within 1.5 km with at least 80% of their hull (`startWithin`,
+  `minHull`; with less, the rival says to patch up first), or fires on the rival. Each side yields at
+  35% of its hull (`yieldAt`), before a ship is lost.
+  - The rival yields: the 1,000 cr purse (the job's pay), standing back to 0, and the feud is over.
+  - The player yields, or leaves the duel once it has started (more than 5 km off, docking, jumping,
+    or losing the ship): the 500 cr stake (all the player has, if less), standing at −10, and the
+    feud is over.
+  - Missed: the feud stands, unsettled, until amends.
+  Firing on a rival who has yielded is a shot like any other (§24.5).
+- **Amends** (1,500 cr, §24.5) end a feud at any point: before its opening nothing comes, and a duel
+  posted is off.
+
+### 28.3 Careers held
+
+While a story holds a rival, their career (§24.2) pauses: waiting at their ship for the escort,
+adrift after the drive failure (the run cut short there, its cargo lost to the markets), on the
+player's wing, lying in wait with hired guns, at the duel's beacon. A run that would set off inside
+a hold never sets off, and a hunter held lets its claim go. Afterwards the career picks up from
+where the hold left them: the escort's destination, where the rescued run was bound (or home, on a
+tow), the dock where the player docked with the ally, home after a feud's wait or its duel, home
+refitting after a knock-out. The holds are worked out from the story and the rules, never stored,
+and a career with no story is exactly what it was before stories.
+
+### 28.4 What the world says
+
+- **At their table**, a line on how the story stands (*Owes you 1,800 cr, back when their next run
+  docks*; *Waiting for you at the beacon in Wolf 1061, until day 1, 14:05: a duel*), and what the
+  story asks now, with its action and *Not now*. In the bar a rival's card carries a tag: *Story*
+  when they have something to ask, *Ally*, or *Feud*.
+- **Over the radio**, the rival: the loan back, the distress call, the challenge, the duel's start,
+  yield or win, and the hired guns' arrival. **As notices**, the game: *Customs were tipped off:
+  Mara “Quickstep” Venn told them to look you over.*, *Hired guns! Ione “Lantern” Sallow paid them to
+  find you.*
+- **The journal** has a *Rival pilots* section: each rival with a story, and how it stands.
+- **The News** (within two jumps, over the last hour): a drive failure ended by a friend's parts or
+  a tow, a duel called (while it is open), and how it went, or that nobody came.
+- **The HUD** shows the duel's job as the objective, with the rival marked. A rescue or a duel
+  posted while the player is flying in its system brings its ship into the scene at once.
+
+### 28.5 One save's own
+
+The save's world log keeps each rival's story (`world.rivals.stories`): its path and when it began;
+a friend's loan (and when it came back), deed (when, its job, where the run was bound, where it left
+them, done or not) and flights on the wing (the latest six); an enemy's opening spent and duel
+posted and started; and how it ended (friends, towed, let down, ship lost, fell out; won, lost,
+forfeit, missed, amends). A rival's standing keeps when the player first met them (`met`), and an
+ally on the wing is a wingman marked `ally`. Saves refuse a story of an unknown rival or path, or
+one with a bad time, station, system or ending.
+
+### 28.6 Guardrails
+
+`validateRivalStories` (`src/economy/rivalStoryGuards.ts`, run in `tests/unit/rivalStories.test.ts`):
+a friend's story opening at friendly standing; an ally within reach of the loan and the deed alone;
+loans and their interest, pay and costs in range; a drive failure on its leg; an ally asked at most
+once a turn; a yield at 20–50% of the hull and a start well above it; a duel that starts closer than
+it is forfeit; a purse under the contracts' ceiling and a stake no larger; a duel's ending that
+leaves nobody hostile; windows (a rescue, an escort's wait, the openings, the duel) at least half
+again the longest trip of any career; every rival with a story it can play (a lawless system within
+three jumps to call the player out to, lawful or lawless space near home for its opening, runs for
+its drive to fail on), every deed and opening among them; lines with no number written in, no he or
+she, no name of their own, only fields they can fill, at most 300 characters; and every career held
+by a story of each path over two days: no run setting off inside a hold, the next run setting off
+from where its hold left the rival, and every run passing the careers' own guardrails (§24.7). The
+tests also break the rules, the paths and a line to see them caught; hold careers with no story to
+a fingerprint of what they were before stories (runs, whereabouts and hunters' claims over three
+days); and check a friend's loan and its repayment, the escort (held, done, waited out), the rescue
+(the drive failure, the distress, the parts handed over, the tow), the ally (asked, on the wing,
+leaving at a dock, not again too soon, the wing full) and a friend's rounds and an ally's claims;
+an enemy's feud (when it begins), the tip-off, the hired guns, the duel (posted, won, lost, missed),
+amends, falling out, saves; and in a real flight an ally on the wing, the hired guns (when they
+strike, who, no bounty), the duel (waiting, no packs, too battered to start, started, the rival's
+yield, the player's yield, forfeit) and customs tipped off scanning a clean hold.

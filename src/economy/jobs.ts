@@ -74,7 +74,9 @@ export type Objective =
    * Bring `qty` of a good to a ship stranded by a drive failure far from any dock, perhaps watched
    * by scavengers of threat `guard`, and hand it over alongside (JobProgress.rescued).
    */
-  | { kind: 'rescue'; systemId: SystemId; shipName: string; model: string; commodity: CommodityId; qty: number; guard: 1 | 2 | 3 | null; text: string };
+  | { kind: 'rescue'; systemId: SystemId; shipName: string; model: string; commodity: CommodityId; qty: number; guard: 1 | 2 | 3 | null; text: string }
+  /** Meet a rival at a beacon for a duel, one on one, and win it (docs/PROCGEN.md §28; JobProgress.duel). */
+  | { kind: 'duel'; systemId: SystemId; rival: string; text: string };
 
 export interface JobDef {
   id: string;
@@ -130,6 +132,8 @@ export interface JobDef {
     until?: number;
     /** A job taken on in flight from a lane encounter (docs/PROCGEN.md §27): the encounter's id. */
     lane?: string;
+    /** A job of a rival's story (docs/PROCGEN.md §28): the rival's id. */
+    rival?: string;
   };
   /** Story arc missions (content/story/arcs.ts): arc, step, speaker and beats. */
   story?: StoryMeta;
@@ -449,6 +453,8 @@ function objectiveSatisfied(state: GameState, jobId: string, o: Objective, ctx: 
       return (state.jobs[jobId]?.mined ?? 0) >= o.qty;
     case 'rescue':
       return !!state.jobs[jobId]?.rescued;
+    case 'duel':
+      return state.jobs[jobId]?.duel === 'won';
     case 'have-cargo':
       return cargoCount(state.ship.cargo, o.commodity) >= o.qty;
     case 'dock':
@@ -705,6 +711,9 @@ function describeCurrent(state: GameState, jobId: string): ObjectiveSummary | nu
       const then = have >= o.qty ? `${o.text}: fly alongside it` : `${o.text} (you have ${have} of ${o.qty} ${name})`;
       return { ...base, text: inOtherSystem(o.systemId, then), targetSystemId: o.systemId, targetLocationId: null, ...(o.systemId === here ? { targetId: strandedTargetId(jobId) } : {}) };
     }
+    case 'duel':
+      // The rival waits off the jump beacon (docs/PROCGEN.md §28).
+      return { ...base, text: inOtherSystem(o.systemId, o.text), targetSystemId: o.systemId, targetLocationId: null, ...(o.systemId === here ? { targetId: duelTargetId(jobId) } : {}) };
     case 'choice': {
       const loc = getLocation(o.locationId);
       const text = state.location.dockedAt === o.locationId ? `${o.text}: open the Jobs window` : `Dock at ${loc.name}: ${o.text.charAt(0).toLowerCase()}${o.text.slice(1)}`;
@@ -856,6 +865,11 @@ export function wrecksIn(state: GameState, systemId: SystemId): { jobId: string;
 /** The flight target of a rescue's stranded ship. */
 export function strandedTargetId(jobId: string): string {
   return `stranded:${jobId}`;
+}
+
+/** The flight target of a rival waiting for a duel (docs/PROCGEN.md §28). */
+export function duelTargetId(jobId: string): string {
+  return `duel:${jobId}`;
 }
 
 /** Ships stranded far from any dock that the player's rescues send them to in a system (not yet helped). */

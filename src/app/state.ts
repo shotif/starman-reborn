@@ -1,4 +1,5 @@
 import type { LaneKind } from '../content/lanes/rules.ts';
+import type { StoryDeed } from '../content/rivals/stories.ts';
 import type { CommodityId } from '../content/economy/goods.ts';
 import type { StationType } from '../content/world/types.ts';
 import { STARTER_SHIP_ID } from '../content/rules/index.ts';
@@ -47,6 +48,8 @@ export interface Wingman {
   /** Credits per jump. */
   fee: number;
   skill: 'steady' | 'sharp';
+  /** A rival flying as the player's ally (docs/PROCGEN.md §28): their id. Allies fly free and leave when the player next docks. */
+  ally?: string;
 }
 
 /** Where the player is when the game is saved. */
@@ -243,6 +246,38 @@ export interface RivalLog {
   down: Record<string, { at: number; systemId: SystemId }>;
   /** Bounty hunters' claims the player bought back: contract id → game clock. */
   bought: Record<string, number>;
+  /** Rival stories (docs/PROCGEN.md §28), by rival id: one each, once begun. */
+  stories?: Record<string, RivalStory>;
+}
+
+/** How a rival's story ended (docs/PROCGEN.md §28). */
+export type RivalStoryEnd = 'friends' | 'towed' | 'let-down' | 'lost-ship' | 'fell-out' | 'won' | 'lost' | 'forfeit' | 'no-show' | 'amends';
+
+/**
+ * A rival's story (docs/PROCGEN.md §28), one per rival per save: what has happened in it. What it
+ * holds the rival to (waiting for an escort, adrift, on the wing, lying in wait, at the duel) is
+ * worked out from this and the rules (economy/rivals.ts), never stored.
+ */
+export interface RivalStory {
+  path: 'friend' | 'enemy';
+  /** Game clock when it began: a friend's loan lent; an enemy's opening comes (set when the feud began). */
+  began: number;
+  /** A friend's loan: how much, and when it came back. */
+  loan?: { amount: number; repaid?: number };
+  /**
+   * A friend's deed: flying escort on their run (from taking it on, at the station it sets off from),
+   * or a rescue (from their drive failing, in that system); the job, the station their run was bound
+   * for, and once it is over, when, where it left them, and whether it was done.
+   */
+  deed?: { kind: StoryDeed; at: number; job: string; from?: string; to: string; systemId?: SystemId; end?: number; resume?: string; done?: boolean };
+  /** An ally's flights on the player's wing (the latest last): asked at; ended (the player docked, or the ship was lost) at, leaving them where. */
+  wings?: { at: number; end?: number; resume?: string }[];
+  /** An enemy's opening, spent (customs scanned the player; the hired guns struck) at. */
+  spent?: number;
+  /** An enemy's duel: when it was posted, and when it started, once it has. */
+  duel?: { posted: number; started?: number };
+  /** How the story ended, and when. */
+  ended?: { at: number; how: RivalStoryEnd };
 }
 
 /** How the player stands with a rival pilot (docs/PROCGEN.md §24). */
@@ -253,6 +288,8 @@ export interface RivalStanding {
   round?: number;
   /** When a shot of the player's last cost standing (once a flight). */
   shot?: number;
+  /** When the player first met them, in a bar or in flight (game clock; docs/PROCGEN.md §28). */
+  met?: number;
 }
 
 /**
@@ -353,6 +390,8 @@ export interface JobProgress {
   fright?: number;
   /** Observations of a dying far star made for this contract (docs/PROCGEN.md §25): when, and from which system. */
   observed?: { at: number; systemId: SystemId }[];
+  /** A rival's duel (docs/PROCGEN.md §28): won by the player. */
+  duel?: 'won';
 }
 
 export type PirateOutcome = 'none' | 'destroyed' | 'bypassed' | 'escaped';
