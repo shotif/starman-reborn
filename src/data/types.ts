@@ -95,6 +95,54 @@ export interface StellarComponent {
   colorHex: string;
 }
 
+/**
+ * A star far beyond the map, seen in every system's sky in its true direction (docs/ASTRONOMY_SOURCES.md,
+ * *Far stars*): its values are real and cited; what happens to it in the game (docs/PROCGEN.md §25)
+ * is fiction, and never written here.
+ */
+export interface FarStar {
+  id: string;
+  name: string;
+  /** Its Bayer designation, e.g. "Alpha Orionis". */
+  designation: string;
+  catalogIds: { hip?: string; simbad?: string; gaiaDr3?: string };
+  spectralType: string;
+  spectralTypeSource: SourceRef;
+  /** ICRS right ascension and declination at `referenceEpoch`, degrees. */
+  raDegrees: number;
+  decDegrees: number;
+  properMotion: { raMasYr: number; decMasYr: number };
+  catalogEpoch: number;
+  parallaxMas: number;
+  /** Absent when the source gives no uncertainty. */
+  parallaxErrorMas?: number;
+  distanceLightYears: number;
+  distanceErrorLightYears?: number;
+  referenceEpoch: number;
+  frame: 'ICRS';
+  astrometrySource: SourceRef;
+  parallaxSource: SourceRef;
+  /** Apparent visual magnitude seen from the Sun. */
+  magnitudeV: number;
+  magnitudeSource: SourceRef;
+  verification: Verification;
+  /** Equatorial Cartesian position in light-years, Sol at the origin (derived). */
+  positionLy: Vec3Tuple;
+  /** Display colour; an artistic choice inspired by the spectral type (estimated). */
+  colorHex: string;
+}
+
+export interface FarStarsDataset {
+  generatedBy: string;
+  input: string;
+  verification: Verification;
+  retrieved: string | null;
+  description: string;
+  frame: 'ICRS';
+  referenceEpoch: number;
+  stars: FarStar[];
+}
+
 /** A belt of asteroids or ice, or a debris disc, that a cited source reports around a star. */
 export interface BeltRecord {
   id: string;

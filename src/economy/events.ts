@@ -14,6 +14,7 @@ import { FACTIONS } from './factions.ts';
 import { reliefEnd } from './hauls.ts';
 import { marketTables } from './markets.ts';
 import { markById } from './marks.ts';
+import { skyPrice } from './stellar.ts';
 
 /**
  * World events (docs/PROCGEN.md §11): shortages, gluts, booms and strikes at stations, raids and
@@ -336,7 +337,7 @@ function systemEventIn(systemId: SystemId, index: number): WorldEvent | null {
  * shortage, breaking a raid), and a story's ending can leave a lasting mark on a station (§14.7).
  * The game points this at the save's world log; tests may too.
  */
-type ActiveLog = Pick<WorldLog, 'ended'> & Partial<Pick<WorldLog, 'border' | 'marks' | 'hauls' | 'outpost' | 'rivals'>>;
+type ActiveLog = Pick<WorldLog, 'ended'> & Partial<Pick<WorldLog, 'border' | 'marks' | 'hauls' | 'outpost' | 'rivals' | 'sky'>>;
 let worldLog: ActiveLog | null = null;
 
 export function useWorldLog(log: ActiveLog | null): void {
@@ -393,6 +394,11 @@ export function activeRivalLog(): WorldLog['rivals'] | null {
 /** How many events the player has ended early, for caches of what depends on them. */
 export function endedKey(): number {
   return worldLog ? Object.keys(worldLog.ended).length : 0;
+}
+
+/** When the first neutrino alert of the save the game points at comes (docs/PROCGEN.md §25), or null before it is set. */
+export function activeSkyFrom(): number | null {
+  return worldLog?.sky?.from ?? null;
 }
 
 /** When the player ended an event early, in the save the game points at. */
@@ -550,8 +556,10 @@ export function marketEffect(locationId: string, commodity: CommodityId, clock: 
   const event = e && e.goods.includes(commodity) ? e : null;
   // A lasting mark (§14.7) works like an event that never ends, on top of any event.
   const mark = worldLog?.marks ? marksAt(locationId).find((m) => m.market.goods.includes(commodity))?.market : undefined;
-  if (!event && !mark) return NEUTRAL;
-  return { price: (event?.price ?? 1) * (mark?.price ?? 1), stock: (event?.stock ?? 1) * (mark?.stock ?? 1) };
+  // A dying far star (§25, fiction): research stations want data and instruments.
+  const sky = worldLog?.sky ? skyPrice(locationId, commodity, clock, worldLog.sky.from) : 1;
+  if (!event && !mark && sky === 1) return NEUTRAL;
+  return { price: (event?.price ?? 1) * (mark?.price ?? 1) * sky, stock: (event?.stock ?? 1) * (mark?.stock ?? 1) };
 }
 
 /** How an event moves a good's price at a station right now, all effects together (1 without one). */

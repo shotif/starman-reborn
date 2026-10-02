@@ -18,6 +18,7 @@ import { dockAccess } from './law.ts';
 import { BORDER } from '../content/border/rules.ts';
 import { getFront, pushFront } from './border.ts';
 import { leaveMark, settleFront, storyMark } from './answers.ts';
+import { observeBaseline, observeDone, type ObserveObjective } from './stellar.ts';
 
 export type Objective =
   | { kind: 'have-cargo'; commodity: CommodityId; qty: number; text: string }
@@ -25,6 +26,8 @@ export type Objective =
   | { kind: 'scan'; bodyId: string; systemId: SystemId; text: string }
   /** Fly sightseers close to a sight of the real sky (docs/PROCGEN.md §23; JobProgress.seen), seen before or not. */
   | { kind: 'sight'; sightId: string; systemId: SystemId; targetId: string; text: string }
+  /** Observe a dying far star from open space while its window is open (docs/PROCGEN.md §25; JobProgress.observed), from two systems far enough apart for a parallax. */
+  | ObserveObjective
   | { kind: 'deliver'; commodity: CommodityId; qty: number; locationId: string; text: string }
   | { kind: 'visit'; locationId: string; text: string }
   /**
@@ -427,6 +430,8 @@ function objectiveSatisfied(state: GameState, jobId: string, o: Objective, ctx: 
       return state.discoveredBodies.includes(o.bodyId);
     case 'sight':
       return !!state.jobs[jobId]?.seen;
+    case 'observe':
+      return observeDone(o, state.jobs[jobId]?.observed ?? []);
     case 'deliver':
       // Deliveries complete only when the player turns the cargo in (see deliverJob).
       return false;
@@ -628,6 +633,15 @@ function describeCurrent(state: GameState, jobId: string): ObjectiveSummary | nu
         targetLocationId: null,
         ...(o.targetId.startsWith('planet:') ? { targetBodyId: o.sightId } : o.systemId === here ? { targetId: o.targetId } : {}),
       };
+    case 'observe': {
+      // Any system will do: the sky is the same everywhere (a parallax wants two, far enough apart).
+      const now = state.clock;
+      const mins = (s: number) => Math.max(1, Math.round(s / 60));
+      const when = now < o.from ? `opens in ${mins(o.from - now)} min` : now <= o.to ? `${mins(o.to - now)} min left` : 'closed';
+      const best = o.baselineLy ? observeBaseline(o, state.jobs[jobId]?.observed ?? []) : 0;
+      const progress = o.baselineLy ? `; widest baseline so far ${best.toFixed(1)} of ${o.baselineLy} ly` : '';
+      return { ...base, text: `${o.text} (${when}${progress})`, targetSystemId: here, targetLocationId: null, targetId: `sky:${o.star}` };
+    }
     case 'bounty': {
       const kills = state.jobs[jobId]?.kills ?? 0;
       const text = o.ace ? o.text : `${o.text} (${kills}/${o.count})`;

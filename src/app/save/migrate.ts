@@ -44,8 +44,9 @@ import { createNewGame, SAVE_VERSION, type CommodityId, type GameState, type Out
  *   saves, which means where they set off); a passenger contract carries its `party`, and its
  *   progress `seen` and `fright` (§23); a hauler may carry `sight`, a run the player saw safely
  *   past its raid (§18.6); `rivals` (standing with rival pilots) and the world log's `rivals`
- *   (rivals knocked out, claims bought back, §24), absent in older v10 saves. See GameState in
- *   src/app/state.ts.
+ *   (rivals knocked out, claims bought back, §24); the world log's `sky` (when a far star's death
+ *   begins, §25) and a job's `observed` (its observations), absent in older v10 saves. See
+ *   GameState in src/app/state.ts.
  */
 export interface SaveV1 {
   version: 1;
@@ -370,6 +371,7 @@ export function assertValidState(s: GameState): void {
       if (!isRecord(r) || !Number.isFinite(r.at) || !['safe', 'lost'].includes(r.fate) || !SYSTEM_IDS.includes(r.systemId) || (r.by !== undefined && !['raiders', 'player'].includes(r.by))) fail('world');
     }
   }
+  if (w.sky !== undefined && !(isRecord(w.sky) && Number.isFinite(w.sky.from) && w.sky.from >= 0)) fail('world');
   if (w.rivals !== undefined) {
     if (!isRecord(w.rivals) || !isRecord(w.rivals.down) || !isRecord(w.rivals.bought)) fail('world');
     for (const [id, d] of Object.entries(w.rivals.down)) if (!ROSTER.some((r) => r.id === id) || !isRecord(d) || !Number.isFinite(d.at) || !SYSTEM_IDS.includes(d.systemId)) fail('world');
@@ -421,6 +423,8 @@ export function assertValidState(s: GameState): void {
     if (!isRecord(p) || (p.escortAt !== undefined && !SYSTEM_IDS.includes(p.escortAt))) fail(`job ${id}`);
     // Passengers and sightseers (docs/PROCGEN.md §23): a tour's sight seen, and a fare's fright within 0–1.
     if ((p.seen !== undefined && typeof p.seen !== 'boolean') || (p.fright !== undefined && !(Number.isFinite(p.fright) && p.fright >= 0 && p.fright <= 1))) fail(`job ${id}`);
+    // Observations of a dying far star (§25): when, and from a system of the map.
+    if (p.observed !== undefined && !(Array.isArray(p.observed) && p.observed.every((x) => isRecord(x) && Number.isFinite(x.at) && SYSTEM_IDS.includes(x.systemId)))) fail(`job ${id}`);
   }
   if (s.location.flight) {
     const { position, quaternion } = s.location.flight;

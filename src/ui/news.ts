@@ -9,6 +9,8 @@ import { haulsLostNear, reliefNews } from '../economy/hauls.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
 import type { RivalStyle } from '../content/rivals/rules.ts';
 import { rivalName, rivalNews } from '../economy/rivals.ts';
+import { skyNews } from '../economy/stellar.ts';
+import { dataBadge } from './components.ts';
 import { h } from './dom.ts';
 import { glyph, type GlyphName } from './glyphs.ts';
 import { COMMODITY_GLYPH } from './station/trader.ts';
@@ -217,3 +219,38 @@ export function rivalNewsList(systemId: SystemId, clock: number): HTMLElement | 
     ),
   );
 }
+
+/**
+ * The far stars' deaths (docs/PROCGEN.md §25), told the same in every station: fiction, marked so,
+ * about real stars whose catalogue values are marked as real (or pending verification).
+ */
+export function skyNewsList(clock: number): HTMLElement | null {
+  const items = skyNews(clock);
+  if (!items.length) return null;
+  return h(
+    'ul',
+    { class: 'list news-list', 'data-testid': 'sky-news' },
+    items.map((n) =>
+      h(
+        'li',
+        { class: `news-item kind-sky${n.kind.endsWith('gone') || n.kind === 'remnant' ? ' over' : ''}`, 'data-sky': n.kind },
+        glyph('scanner'),
+        h(
+          'span',
+          { class: 'news-text' },
+          h('span', { class: 'row-name' }, n.headline, ' ', dataBadge('fictional')),
+          h('span', { class: 'row-sub' }, `The sky · ${clock - n.at < 60 ? 'just now' : `${minutes(clock - n.at)} min ago`}`),
+          h(
+            'span',
+            { class: 'news-detail' },
+            n.detail,
+            ' ',
+            h('em', null, `Fiction: ${n.star.name} is a real star, and has not ${n.kind.startsWith('bh') ? 'collapsed' : 'exploded'}. `),
+            dataBadge(n.star.verification === 'provisional' ? 'provisional' : 'observed', `${n.star.name}: ${n.star.spectralType}, ${Math.round(n.star.distanceLightYears).toLocaleString('en-GB')} ly`),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+

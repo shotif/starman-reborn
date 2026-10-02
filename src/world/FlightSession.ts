@@ -10,7 +10,7 @@ import { MISSILE_LOCK_CONE, MISSILE_LOCK_RANGE, updateMissile, type Missile, typ
 import { PirateBrain } from '../combat/PirateAI.ts';
 import { PatrolBrain, TraderBrain } from '../combat/TrafficAI.ts';
 import { Gun, ProjectileSystem, segmentHitsSphere, withinArc } from '../combat/weapons.ts';
-import { EXOPLANETS, getLocation, getSystem } from '../data/systems.ts';
+import { EXOPLANETS, FAR_STARS, getLocation, getSystem } from '../data/systems.ts';
 import type { FactionId } from '../data/types.ts';
 import type { DamageType } from '../content/types.ts';
 import type { ShipPerformance } from '../content/loadout.ts';
@@ -63,6 +63,9 @@ import type { ShipArt } from './art/ships.ts';
 import { bountyFor, FLEETS, RAIDERS, TRAFFIC, type TrafficPlan } from './traffic/plan.ts';
 import { HAULS } from '../content/economy/hauls.ts';
 import { sightInView } from './sightseeing.ts';
+import { createFarStars, type FarStarsArt } from './art/farStars.ts';
+import { STELLAR } from '../content/stellar/rules.ts';
+import { dying, farStarLook, magnitudeText, observationsWanted, skyDirection } from '../economy/stellar.ts';
 import { haulsIn, type Haul, type HaulHere, type HaulLeg } from '../economy/hauls.ts';
 import { FLEET } from '../content/fleet/rules.ts';
 import { captainsIn, type CaptainHere, type RunRaid } from '../economy/fleet.ts';
@@ -109,6 +112,8 @@ export interface FlightCallbacks {
    * player), shot at by the player, or its ship destroyed (by the player, or by raiders).
    */
   onRival?(rivalId: string, what: 'met' | 'shot' | 'destroyed', detail?: { hostile?: boolean; by?: 'player' | 'raiders' }): void;
+  /** The player observed a far star (docs/PROCGEN.md §25), its target selected: the game records it for the contracts that want it. */
+  onObserve?(starId: string): void;
   /** The ship of an escort contract docked at its destination. */
   onEscortArrived?(jobId: string): void;
   /** The ship of an escort contract was destroyed. */
@@ -326,6 +331,8 @@ const LANE_ENTER_RANGE = 450;
 /** Clearance the autopilot keeps from planets, stars and stations it flies around. */
 const AVOID_MARGIN = 700;
 const DEFAULT_SCAN_RANGE = 9_000;
+/** Far stars' targets sit this far from the camera, in their direction (docs/PROCGEN.md §25). */
+const SKY_TARGET_DISTANCE = 800_000;
 const HOSTILE_RADIUS = 3_500;
 /** An escorted ship holds position while the player is further away than this, and jumps with them only within it. */
 const ESCORT_WAIT = CONTRACTS.escort.keepUpM;
@@ -414,6 +421,9 @@ export class FlightSession {
   private drift = false;
   private selectedId: string | null = null;
   private objective: { locationId: string | null; bodyId: string | null; targetId: string | null } = { locationId: null, bodyId: null, targetId: null };
+  /** The far stars in this system's sky (docs/PROCGEN.md §25), and their targets once their death is under way or wanted. */
+  private readonly farSky: FarStarsArt;
+  private readonly skyStars: { id: string; dir: THREE.Vector3; base: string; target: Target }[] = [];
   /** Hulls of wrecks (recovery contracts), scenery that drifts and turns. */
   private readonly wreckHulls: { art: ShipArt; spin: THREE.Vector3 }[] = [];
   private readonly aim = new THREE.Vector2();
@@ -515,6 +525,31 @@ export class FlightSession {
       if (t.kind === 'station' && t.locationId && getLocation(t.locationId).stationType === 'pirate-den') this.denTargets.push(t);
     }
     this.refreshDenTargets();
+    // The far stars, in their true direction from this system (fiction: how they die).
+    this.farSky = createFarStars(FAR_STARS.stars.length, opts.ctx);
+    this.system.scene.add(this.farSky.object);
+    for (const f of FAR_STARS.stars) {
+      const dir = new THREE.Vector3(...skyDirection(opts.state.location.systemId, f.id));
+      const base = `${f.spectralType} · ${Math.round(f.distanceLightYears).toLocaleString('en-GB')} ly`;
+      this.skyStars.push({
+        id: f.id,
+        dir,
+        base,
+        target: {
+          id: `sky:${f.id}`,
+          name: f.name,
+          kind: 'sky',
+          position: new THREE.Vector3(),
+          radius: 0,
+          subtitle: base,
+          dataClass: 'observed',
+          distanceLabel: `${Math.round(f.distanceLightYears).toLocaleString('en-GB')} ly`,
+          alive: false,
+          cycle: false,
+        },
+      });
+    }
+    this.updateSky();
     this.rand = seededRandom((opts.state.seed ^ (opts.state.stats.jumps * 7919) ^ Math.floor(opts.state.clock)) >>> 0);
     this.chase = new ChaseCamera(opts.camera);
     this.applyCameraSettings();
@@ -644,7 +679,7 @@ export class FlightSession {
 
   private objectiveTargetId(): string | null {
     const id = this.objective.targetId;
-    if (id && (this.loot.some((l) => l.target.id === id) || this.mining.find(id) || this.npcs.some((n) => n.target.id === id && n.target.alive) || (id.startsWith('star:') && this.findTarget(id)))) return id;
+    if (id && (this.loot.some((l) => l.target.id === id) || this.mining.find(id) || this.npcs.some((n) => n.target.id === id && n.target.alive) || ((id.startsWith('star:') || id.startsWith('sky:')) && this.findTarget(id)))) return id;
     if (this.objective.locationId) return `station:${this.objective.locationId}`;
     if (this.objective.bodyId) return `planet:${this.objective.bodyId}`;
     return null;
@@ -697,6 +732,7 @@ export class FlightSession {
     for (const d of this.drones) if (d.target.alive) list.push(d.target);
     for (const m of this.mines) if (m.target.alive) list.push(m.target);
     for (const t of this.mining.targets()) if (t.alive) list.push(t);
+    for (const s of this.skyStars) if (s.target.alive) list.push(s.target);
     return list;
   }
 
@@ -792,6 +828,7 @@ export class FlightSession {
     if (!id) return null;
     for (const t of this.system.targets) if (t.id === id && t.alive) return t;
     for (const n of this.npcs) if (n.target.id === id && n.target.alive) return n.target;
+    for (const s of this.skyStars) if (s.target.id === id && s.target.alive) return s.target;
     for (const l of this.loot) if (l.target.id === id && l.target.alive) return l.target;
     for (const d of this.drones) if (d.target.id === id && d.target.alive) return d.target;
     return this.mining.find(id);
@@ -849,7 +886,8 @@ export class FlightSession {
       }
       case 'goto': {
         const t = this.selectedTarget ?? this.objectiveTarget();
-        if (t) this.beginGoTo(t.id, t.kind === 'station');
+        if (t?.kind === 'sky') this.callbacks.onMessage(`${t.name} is ${t.distanceLabel ?? 'light-years'} away: observe it from where you are.`, 'info');
+        else if (t) this.beginGoTo(t.id, t.kind === 'station');
         break;
       }
       case 'scan':
@@ -962,6 +1000,8 @@ export class FlightSession {
     }
     const lane = this.nearestLaneEntrance();
     if (lane && lane.distance < LANE_ENTER_RANGE) return { label: 'Enter lane', action: 'interact', icon: 'cruise' };
+    // A far star is observed from wherever the ship is, when a contract wants it now; it is never flown to.
+    if (sel?.kind === 'sky') return observationsWanted(this.state, sel.id.slice('sky:'.length)).length ? { label: 'Observe', action: 'scan', icon: 'scan' } : null;
     if (sel && (sel.kind === 'planet' || sel.kind === 'star') && sel.position.distanceTo(this.player.position) < this.scanRangeFor(sel) * 3) {
       return { label: 'Scan', action: 'scan', icon: 'scan' };
     }
@@ -970,7 +1010,7 @@ export class FlightSession {
     const goal = sel ?? this.objectiveTarget();
     const headingTo = this.autopilotTargetId();
     const far = !goal ? false : goal.kind === 'rock' ? this.surfaceDistance(goal) > MINING.range : goal.kind === 'belt' ? this.surfaceDistance(goal) > 1_500 : goal.position.distanceTo(this.player.position) > 1_500;
-    if (goal && far && goal.id !== headingTo) {
+    if (goal && goal.kind !== 'sky' && far && goal.id !== headingTo) {
       return { label: sel ? 'Go to' : 'Go to goal', action: 'goto', icon: 'goto' };
     }
     if (this.autopilot.mode === 'goto') return { label: 'Stop', action: 'cancel-autopilot', icon: 'close' };
@@ -1001,7 +1041,7 @@ export class FlightSession {
       return;
     }
     const sel = this.selectedTarget;
-    if (sel) this.beginGoTo(sel.id, sel.kind === 'station');
+    if (sel && sel.kind !== 'sky') this.beginGoTo(sel.id, sel.kind === 'station');
   }
 
   private beginDock(site: DockSite): void {
@@ -1025,7 +1065,8 @@ export class FlightSession {
   /** Plans a route to a target, using a trade lane when it saves time, then flies it. */
   beginGoTo(targetId: string, dockAtEnd: boolean): void {
     const target = this.findTarget(targetId);
-    if (!target) return;
+    // A far star is light-years off: it is observed, never flown to.
+    if (!target || target.kind === 'sky') return;
     const legs: Leg[] = [];
     const from = this.player.position;
     const dest = target.position;
@@ -1069,6 +1110,11 @@ export class FlightSession {
 
   private manualScan(): void {
     const t = this.selectedTarget;
+    if (t?.kind === 'sky') {
+      this.sfx('scan');
+      this.callbacks.onObserve?.(t.id.slice('sky:'.length));
+      return;
+    }
     if (t && (t.kind === 'belt' || t.kind === 'rock')) {
       this.scanMining(t);
       return;
@@ -1198,6 +1244,7 @@ export class FlightSession {
       this.scanTimer = 0.5;
       this.autoScan();
       this.watchSights();
+      this.updateSky();
     }
     this.updateMissileLock(dt);
     if (this.deathTimer >= 0) {
@@ -1239,6 +1286,9 @@ export class FlightSession {
     }
     this.camera.updateMatrixWorld();
     this.system.update(dt, this.camera, this.player.position);
+    this.camera.getWorldPosition(this.tmp2);
+    for (const s of this.skyStars) s.target.position.copy(this.tmp2).addScaledVector(s.dir, SKY_TARGET_DISTANCE);
+    this.farSky.update?.(dt, 0, this.camera);
     this.audio.setEngine(this.engineSound());
     this.audio.setCombatIntensity(this.activeEncounter || this.packEngaged() ? 1 : 0);
     // Hit flashes fade in under half a second.
@@ -3513,6 +3563,25 @@ export class FlightSession {
   /** Tours seen here already, this flight. */
   private readonly sightsSeen = new Set<string>();
 
+  /**
+   * The far stars (docs/PROCGEN.md §25): how bright they are now, and their targets, which show
+   * while a star's death is under way or a contract wants it watched (and never while it is gone).
+   */
+  private updateSky(): void {
+    const looks = this.skyStars.map((s) => farStarLook(s.id, this.state.clock) ?? { magnitude: Infinity, colour: '#ffffff' });
+    this.farSky.set(this.skyStars.map((s, i) => ({ dir: s.dir, magnitude: looks[i]!.magnitude, colour: looks[i]!.colour })));
+    this.skyStars.forEach((s, i) => {
+      const death = dying(s.id, this.state.clock);
+      const show = looks[i]!.magnitude < STELLAR.nakedEye && (death || observationsWanted(this.state, s.id).length > 0);
+      s.target.alive = show;
+      s.target.cycle = show;
+      // The star is real; its death is fiction, and the target says so while it lasts.
+      s.target.dataClass = death ? 'fictional' : 'observed';
+      s.target.subtitle = death ? `${s.id === STELLAR.supernova.star ? 'Supernova' : 'Collapsing'} · magnitude ${magnitudeText(looks[i]!.magnitude)}` : s.base;
+      if (!show && this.selectedId === s.target.id) this.selectedId = null;
+    });
+  }
+
   /** Sightseers' sights (docs/PROCGEN.md §23.2): seen once each, scanned before or not. */
   private watchSights(): void {
     if (!this.alive) return;
@@ -3867,6 +3936,7 @@ export class FlightSession {
         kind: sel.kind,
         subtitle: sel.subtitle,
         distance: this.shownDistance(sel, dist),
+        ...(sel.distanceLabel ? { distanceLabel: sel.distanceLabel } : {}),
         hostile: !!sel.hostile,
         ...(sel.faction ? { faction: sel.faction } : {}),
         ...(sel.own ? { own: true } : {}),
@@ -3886,7 +3956,7 @@ export class FlightSession {
       ? `station:${this.objective.locationId}`
       : this.objective.bodyId
         ? `planet:${this.objective.bodyId}`
-        : this.objective.targetId && this.mining.find(this.objective.targetId)
+        : this.objective.targetId && (this.mining.find(this.objective.targetId) || this.objective.targetId.startsWith('sky:'))
           ? this.objective.targetId
           : null;
     for (const t of this.allTargets()) {
@@ -3912,6 +3982,7 @@ export class FlightSession {
         onScreen: pr.onScreen,
         edgeAngle: pr.angle,
         distance: this.shownDistance(t, dist),
+        ...(t.distanceLabel ? { distanceLabel: t.distanceLabel } : {}),
         hostile: !!t.hostile,
         ...(t.faction ? { faction: t.faction } : {}),
         ...(t.own ? { own: true } : {}),
@@ -4031,6 +4102,8 @@ export class FlightSession {
   }
 
   dispose(): void {
+    this.system.scene.remove(this.farSky.object);
+    this.farSky.dispose();
     this.audio.setEngine(null);
     this.audio.setCombatIntensity(0);
     this.stopMining(null);

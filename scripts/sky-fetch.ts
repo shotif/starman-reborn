@@ -191,6 +191,12 @@ function gameStars(): GameStar[] {
   return out;
 }
 
+/** The far stars beyond the map (docs/ASTRONOMY_SOURCES.md, *Far stars*), asked for by identifier with the game's stars. */
+function farStars(): GameStar[] {
+  const path = resolve(root, 'data/provisional/far-stars-input.json');
+  return existsSync(path) ? (JSON.parse(readFileSync(path, 'utf8')) as { stars: GameStar[] }).stars : [];
+}
+
 /** SIMBAD identifiers to try for a star: its HIP and Gliese numbers in SIMBAD's spelling, its Gaia id and names. */
 function candidateIds(s: GameStar): string[] {
   const ids = new Set<string>();
@@ -222,8 +228,10 @@ async function main(): Promise<void> {
   const stars = gameStars();
   console.log(`The game has ${stars.length} stars.`);
 
-  // SIMBAD: the game's stars by identifier.
-  const gameIds = stars.flatMap(candidateIds);
+  // SIMBAD: the game's stars by identifier, and the far stars (their identifiers, fluxes and Hipparcos values follow).
+  const far = farStars();
+  console.log(`And ${far.length} far stars beyond the map.`);
+  const gameIds = [...stars, ...far].flatMap(candidateIds);
   const gameRows = await tap(
     'simbad',
     `SELECT i.id AS query_id, b.oid, b.main_id, b.otype, b.ra, b.dec, b.coo_bibcode, b.plx_value, b.plx_err, b.plx_bibcode, b.pmra, b.pmdec, b.pm_bibcode, b.rvz_radvel, b.sp_type, b.sp_bibcode FROM ident AS i JOIN basic AS b ON i.oidref = b.oid WHERE i.id IN (${quote(gameIds)})`,
@@ -272,7 +280,7 @@ async function main(): Promise<void> {
   // Gaia DR3 by source id, for every Gaia DR3 identifier found.
   const gaiaIds = new Set<string>();
   const hips = new Set<number>();
-  for (const s of stars) {
+  for (const s of [...stars, ...far]) {
     if (s.catalogIds.gaiaDr3) gaiaIds.add(s.catalogIds.gaiaDr3.replace(/\D/g, ''));
     if (s.catalogIds.hip) hips.add(Number(s.catalogIds.hip.replace(/\D/g, '')));
   }

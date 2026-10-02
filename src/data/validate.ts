@@ -1,6 +1,6 @@
 import { equatorialToCartesian, parallaxToLightYears } from './coords.ts';
 import type { AstrometryDataset, ExoplanetDataset } from './systems.ts';
-import type { SourceRef, StarSystemRecord, SystemId } from './types.ts';
+import type { FarStarsDataset, SourceRef, StarSystemRecord, SystemId } from './types.ts';
 
 export interface ValidationIssue {
   level: 'error' | 'warning';
@@ -193,3 +193,39 @@ export function validateDataset({ systems, astrometry, exoplanets }: ValidationI
   }
   return issues;
 }
+
+/**
+ * The far stars beyond the map (docs/ASTRONOMY_SOURCES.md, *Far stars*): cited, in the same frame and
+ * epoch as the map's stars, consistent with their own parallaxes, and far beyond the map, so none of
+ * them can be mistaken for a system to fly to.
+ */
+export function validateFarStars(farStars: FarStarsDataset, systems: readonly StarSystemRecord[], astrometry: AstrometryDataset): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const error = (code: string, message: string) => issues.push({ level: 'error', code, message });
+  const taken = new Set<string>([...systems.map((s) => s.id), ...astrometry.stars.map((c) => c.id)]);
+  const mapRadius = Math.max(...systems.map((s) => Math.hypot(...s.positionLy)));
+  const seen = new Set<string>();
+  if (farStars.verification === 'snapshot' && !(farStars.retrieved && ISO_DATE.test(farStars.retrieved))) error('far-snapshot-date', 'far stars snapshot has no valid retrieved date');
+  for (const f of farStars.stars) {
+    const where = `far star ${f.id}`;
+    if (seen.has(f.id) || taken.has(f.id)) error('far-duplicate-id', `${where}: id used twice`);
+    seen.add(f.id);
+    if (f.frame !== 'ICRS' || f.referenceEpoch !== astrometry.referenceEpoch) error('far-frame', `${where}: not ICRS at the map's epoch J${astrometry.referenceEpoch}`);
+    if (!(f.raDegrees >= 0 && f.raDegrees < 360) || !(f.decDegrees >= -90 && f.decDegrees <= 90)) error('far-range', `${where}: RA/Dec out of range`);
+    if (!(f.parallaxMas > 0)) error('far-parallax', `${where}: parallax must be positive`);
+    else {
+      if (Math.abs(parallaxToLightYears(f.parallaxMas) - f.distanceLightYears) > 1e-9) error('far-distance-mismatch', `${where}: distance does not match parallax`);
+      const [x, y, z] = equatorialToCartesian(f.raDegrees, f.decDegrees, f.distanceLightYears);
+      if (Math.hypot(x - f.positionLy[0], y - f.positionLy[1], z - f.positionLy[2]) > 1e-9) error('far-position-mismatch', `${where}: Cartesian position disagrees with RA/Dec/distance`);
+    }
+    if (!(f.distanceLightYears > 3 * mapRadius)) error('far-near', `${where}: ${f.distanceLightYears.toFixed(1)} ly is not far beyond the map (${mapRadius.toFixed(1)} ly)`);
+    if (!Number.isFinite(f.magnitudeV)) error('far-magnitude', `${where}: no visual magnitude`);
+    if (!f.catalogIds.hip && !f.catalogIds.simbad && !f.catalogIds.gaiaDr3) error('far-catalog-id', `${where}: no catalog identifier`);
+    for (const [what, src] of [['astrometry', f.astrometrySource], ['parallax', f.parallaxSource], ['spectral type', f.spectralTypeSource], ['magnitude', f.magnitudeSource]] as const) {
+      if (!src.label?.trim() || !isHttpsUrl(src.url)) error('far-source', `${where} ${what}: source needs a label and an https URL`);
+      if (src.retrieved && !ISO_DATE.test(src.retrieved)) error('far-source-date', `${where} ${what}: retrieved date is not YYYY-MM-DD`);
+    }
+  }
+  return issues;
+}
+

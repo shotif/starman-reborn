@@ -11,7 +11,7 @@ import { button, dataBadge } from '../components.ts';
 import { formatCredits, h, signed } from '../dom.ts';
 import { glyph, type GlyphName } from '../glyphs.ts';
 import { icon } from '../icons.ts';
-import { borderNewsList, denNews, haulNews, markNews, newsList, rivalNewsList } from '../news.ts';
+import { borderNewsList, denNews, haulNews, markNews, newsList, rivalNewsList, skyNewsList } from '../news.ts';
 import { fineOwed, isLawful, pardonCost, payFines } from '../../economy/law.ts';
 import { buysSurveys, sellSurvey, surveysForSale, surveyValue } from '../../economy/progress.ts';
 import { toast } from '../components.ts';
@@ -19,6 +19,7 @@ import type { StationContext } from './context.ts';
 import { sightById } from '../../content/passengers/sights.ts';
 import { berths } from '../../economy/passengers.ts';
 import { buyClaim, claimsAt, rivalName, rivalTier } from '../../economy/rivals.ts';
+import { farStar } from '../../economy/stellar.ts';
 
 export function pips(level: number, of = 3): HTMLElement {
   return h('span', { class: 'pips', role: 'img', 'aria-label': `Difficulty ${level} of ${of}` }, Array.from({ length: of }, (_, i) => h('span', { class: i < level ? 'on' : '' })));
@@ -63,6 +64,7 @@ const CATEGORY: Record<ContractKind, BoardFilter> = {
   rescue: 'other',
   passage: 'hauling',
   tour: 'other',
+  observe: 'other',
 };
 
 /** Jumps from a dock to where a job ends (0 in the same system). */
@@ -212,6 +214,7 @@ const KIND_GLYPH: Record<ContractKind, GlyphName> = {
   rescue: 'shipparts',
   passage: 'cabin',
   tour: 'science',
+  observe: 'scanner',
 };
 const KIND_LABEL: Record<ContractKind, string> = {
   freight: 'Freight',
@@ -230,6 +233,7 @@ const KIND_LABEL: Record<ContractKind, string> = {
   rescue: 'Rescue',
   passage: 'Passage',
   tour: 'Sightseers',
+  observe: 'Observation',
 };
 
 /** Where a job sends you, for the card's subtitle. */
@@ -254,6 +258,7 @@ function whereTo(job: JobDef): string {
   if (o?.kind === 'piracy') return `in ${getSystem(o.systemId).displayName}`;
   if (o?.kind === 'mine') return `in the ${findBelt(o.beltId)?.name ?? 'belt'}, ${getSystem(o.systemId).displayName}`;
   if (o?.kind === 'sight') return `${sightById(o.sightId)?.name ?? o.sightId}, ${getSystem(o.systemId).displayName}`;
+  if (o?.kind === 'observe') return o.baselineLy ? `${farStar(o.star)?.name ?? o.star}, from two systems ${o.baselineLy} ly apart` : `${farStar(o.star)?.name ?? o.star}, from any system`;
   const near = o?.kind === 'bounty' || o?.kind === 'recover';
   const loc = getLocation(near ? o.locationId : job.destinationLocationId);
   return `${near ? 'near' : 'to'} ${loc.name}, ${getSystem(loc.systemId).displayName}`;
@@ -360,6 +365,7 @@ export function newsContent(ctx: StationContext): HTMLElement {
     faction ? h('p', null, h('strong', null, faction.name), ` runs this dock. Your standing: ${TIER_LABEL[standingTier(standing)]} (${signed(standing)}).`) : null,
     customsDesk(ctx),
     surveyOffice(ctx),
+    skyNewsList(state.clock),
     h('div', { class: 'list-head' }, h('span', null, 'Local news'), h('span', null, 'within two jumps')),
     markNews(loc.systemId),
     borderNewsList(loc.systemId, state.clock),

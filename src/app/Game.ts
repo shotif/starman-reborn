@@ -20,6 +20,8 @@ import { hashString } from '../content/random.ts';
 import { cargoCapacity, newShipState, performanceOf } from '../economy/loadout.ts';
 import { carriesPassengers, frighten, passengerFright, passengerGoodbye, passengerJobs, seeSight, sightseersArrive, sightsIn } from '../economy/passengers.ts';
 import { claimFor, nextRun, rivalById, rivalDestroyed, rivalHello, rivalKnockedOut, rivalName, rivalShot, rivalWhere, turnOf } from '../economy/rivals.ts';
+import { farStar, farStarLook, recordObservation, scheduleSky, skyComm, skyMoment, skyTimeline } from '../economy/stellar.ts';
+import type { SkyNewsKind } from '../content/stellar/lines.ts';
 import { ROSTER } from '../content/rivals/rules.ts';
 import { recordMarketVisit } from '../economy/trade.ts';
 import { adjustReputation, FACTIONS, standingTier, TIER_LABEL } from '../economy/factions.ts';
@@ -193,6 +195,8 @@ export class Game {
   private fleetTimer = 0;
   /** Game clock when passengers last said they were frightened (docs/PROCGEN.md §23). */
   private lastFright = -Infinity;
+  /** The far stars' latest moment the stations have spoken of (docs/PROCGEN.md §25). */
+  private skySaid: SkyNewsKind | null = null;
   /** When this flight began (a rival counts the player's shots against standing once a flight). */
   private flightStart = 0;
   private objectiveText: string | null = null;
@@ -493,7 +497,10 @@ export class Game {
     // A save from before settled fronts left their marks gets them now (docs/PROCGEN.md §20.7).
     markSettledFronts(this.state);
     const fleet = settleFleet(this.state);
-    if (fleet.steps) this.persist();
+    // A save past the opening gets its far stars' timeline (docs/PROCGEN.md §25); what has already happened is not said again.
+    const scheduled = scheduleSky(this.state);
+    this.skySaid = skyMoment(this.state.clock);
+    if (fleet.steps || scheduled) this.persist();
     const loc = state.location;
     if (loc.dockedAt) this.enterDocked(loc.dockedAt, { titleCard: true });
     else if (loc.flight) {
@@ -563,6 +570,8 @@ export class Game {
     const state = this.state!;
     // Events the player ended early (docs/PROCGEN.md §17) are in this save's world log.
     useWorldLog(state.world);
+    // Once the opening delivery is done, the far stars' timeline is set (docs/PROCGEN.md §25).
+    scheduleSky(state);
     this.clearScreens();
     if (this.map?.isOpen) this.map.close();
     this.loadSystem(state.location.systemId);
@@ -963,6 +972,17 @@ export class Game {
         },
         onComm: (speaker, text) => this.comm(speaker, text, 5000),
         // Sightseers at their sight (docs/PROCGEN.md §23): they say so, and the tour heads home.
+        onObserve: (starId) => {
+          const f = farStar(starId);
+          const jobs = recordObservation(state, starId, state.location.systemId);
+          if (!jobs.length) {
+            toast(`No contract wants ${f?.name ?? 'that star'} observed now.`, 'info', 2600);
+            return;
+          }
+          toast(`${f?.name ?? 'The star'} observed from ${getSystem(state.location.systemId).displayName}: readings recorded.`, 'good', 3000);
+          this.announceJobEvents(advanceJobs(state, { dockedAt: null, systemId: state.location.systemId }));
+          this.persist();
+        },
         onSight: (jobId) => {
           const line = seeSight(state, jobId);
           if (!line) return;
@@ -1100,6 +1120,16 @@ export class Game {
     all[here] = { at: state.clock, ...l };
     const keys = Object.keys(all);
     if (keys.length > TRAFFIC.linger.maxSystems) delete all[keys.sort((a, b) => all[a]!.at - all[b]!.at)[0]!];
+  }
+
+  /** The far stars (docs/PROCGEN.md §25): the timeline set once the opening is done, and the stations' word as each moment comes. */
+  private watchSky(state: GameState): void {
+    if (scheduleSky(state)) this.persist();
+    const now = skyMoment(state.clock);
+    if (now === this.skySaid) return;
+    this.skySaid = now;
+    const line = now ? skyComm(now) : null;
+    if (line) this.comm(line.speaker, line.text, 7000);
   }
 
   private onDocked(locationId: string): void {
@@ -1766,6 +1796,7 @@ export class Game {
         this.announceFleet(fleet);
         this.persist();
       }
+      this.watchSky(state);
     }
     this.objectiveTimer -= dt;
     if (this.objectiveTimer <= 0) {
@@ -1963,6 +1994,19 @@ export class Game {
           }
         }
         return null;
+      },
+      /** Test-only: sets when the far stars' first neutrino alert comes (docs/PROCGEN.md §25). */
+      skyFrom: (at: number) => {
+        if (!this.state) return;
+        this.state.world.sky = { from: at };
+        this.station?.render();
+      },
+      /** Test-only: the far stars' timeline in this save, and how they look now. */
+      sky: () => {
+        const from = this.state?.world.sky?.from ?? null;
+        if (!this.state || from === null) return null;
+        const look = (id: string) => farStarLook(id, this.state!.clock, from);
+        return { from, timeline: skyTimeline(from), betelgeuse: look('betelgeuse'), antares: look('antares') };
       },
       /** Test-only: the first bounty a rival hunter takes off a board from `from` on: where, which, when, and who. */
       findRivalClaim: (from: number) => {

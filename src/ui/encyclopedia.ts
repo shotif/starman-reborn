@@ -6,10 +6,12 @@
 import './styles/encyclopedia.css';
 import { LY_PER_PARSEC } from '../data/coords.ts';
 import { SOURCES } from '../data/sources.ts';
-import { ASTROMETRY, BELTS, EXOPLANETS, SYSTEMS, beltsOf, getSystem, hasProvisionalData, saveLocations } from '../data/systems.ts';
+import { ASTROMETRY, BELTS, EXOPLANETS, FAR_STARS, SYSTEMS, beltsOf, getSystem, hasProvisionalData, saveLocations } from '../data/systems.ts';
 import type { SourceRef, StarSystemRecord, SystemId } from '../data/types.ts';
 import { MAP_LINKS, formatLy } from '../galaxy/mapData.ts';
-import { MAP_LEGEND_TEXT, formatEpoch } from '../galaxy/mapText.ts';
+import { MAP_LEGEND_TEXT, formatDistanceWithError, formatEpoch } from '../galaxy/mapText.ts';
+import { STELLAR } from '../content/stellar/rules.ts';
+import { magnitudeText, peakMagnitude } from '../economy/stellar.ts';
 import {
   badgeHeading,
   beltBlock,
@@ -195,6 +197,45 @@ function handlingNotes(): Child[] {
   return notes;
 }
 
+/**
+ * The far stars beyond the map (docs/ASTRONOMY_SOURCES.md, *Far stars*): their catalogue values,
+ * cited, and what the game makes of them, marked as fiction (docs/PROCGEN.md §25).
+ */
+function farStarsSection(id: string): HTMLElement {
+  return h(
+    'section',
+    { class: 'enc-section', id, 'aria-labelledby': `${id}-h`, 'data-testid': 'enc-far-stars' },
+    h('h3', { id: `${id}-h`, tabindex: '-1' }, 'Far stars'),
+    h('p', null, 'Two red supergiants far beyond the map, seen in every system’s sky in their true direction. Massive stars like these end as supernovae, or perhaps collapse straight into black holes.'),
+    FAR_STARS.stars.map((f) =>
+      h(
+        'div',
+        { class: 'enc-far-star' },
+        h('h4', null, `${f.name} (${f.designation}) `, dataBadge(f.verification === 'provisional' ? 'provisional' : 'observed')),
+        h(
+          'dl',
+          { class: 'kv' },
+          h('dt', null, 'Spectral type'),
+          h('dd', null, f.spectralType, ' ', sourceLink(f.spectralTypeSource)),
+          h('dt', null, 'Distance'),
+          h('dd', null, formatDistanceWithError(f.distanceLightYears, f.distanceErrorLightYears), ' ', sourceLink(f.parallaxSource)),
+          h('dt', null, 'Brightness'),
+          h('dd', null, `Visual magnitude ${f.magnitudeV.toFixed(2)} from the Sun`, ' ', sourceLink(f.magnitudeSource)),
+        ),
+        h(
+          'p',
+          null,
+          dataBadge('fictional'),
+          ' ',
+          f.id === STELLAR.supernova.star
+            ? `In this game, ${f.name} explodes as a supernova, rising to magnitude ${magnitudeText(peakMagnitude(f))}: a typical Type II-P supernova's peak (Richardson et al. 2014) at its real distance. In reality it has not exploded.`
+            : `In this game, ${f.name} collapses into a black hole without exploding and goes out. In reality it shines on.`,
+        ),
+      ),
+    ),
+  );
+}
+
 function dataSection(id: string): HTMLElement {
   const provisional = hasProvisionalData();
   const epochs = [...new Set(ASTROMETRY.stars.map((s) => s.referenceEpoch))].map(formatEpoch).join(', ');
@@ -301,11 +342,13 @@ export function openEncyclopedia(root: HTMLElement, opts: EncyclopediaOptions): 
     title: `enc-${uid}-title`,
     intro: `enc-${uid}-intro`,
     data: `enc-${uid}-data`,
+    far: `enc-${uid}-far`,
     system: (id: SystemId) => `enc-${uid}-${id}`,
   };
   const sections: { id: string; label: string }[] = [
     { id: ids.intro, label: 'How to read this' },
     ...SYSTEMS.map((s) => ({ id: ids.system(s.id), label: s.displayName })),
+    { id: ids.far, label: 'Far stars' },
     { id: ids.data, label: 'Data and sources' },
   ];
 
@@ -314,6 +357,7 @@ export function openEncyclopedia(root: HTMLElement, opts: EncyclopediaOptions): 
     { class: 'enc-body scroll', tabindex: '-1' },
     introSection(ids.intro),
     SYSTEMS.map((s) => systemSection(s, ids.system(s.id), opts.discoveredBodies, opts.catalogued)),
+    farStarsSection(ids.far),
     dataSection(ids.data),
   );
   const navButtons = new Map<string, HTMLButtonElement>();

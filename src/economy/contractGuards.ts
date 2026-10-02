@@ -3,6 +3,7 @@ import { COMMODITIES, PRICE_BAND } from '../content/economy/goods.ts';
 import { beltGoods } from '../content/mining/rules.ts';
 import { PASSENGERS } from '../content/passengers/rules.ts';
 import { sightById } from '../content/passengers/sights.ts';
+import { farStar } from './stellar.ts';
 import type { Issue } from '../content/validate.ts';
 import { jumpsFrom } from '../content/world/network.ts';
 import { ALL_LOCATIONS, findBelt, getLocation, getSystem, isFrontier, WORLD } from '../data/systems.ts';
@@ -83,7 +84,8 @@ export function validateContracts(epochs = 40): Issue[] {
     }
     if (empty > epochs * 0.1) report('boards', giver.id, `empty board in ${empty} of ${epochs} time slots`);
   }
-  for (const k of Object.keys(CONTRACTS.maxJumps) as ContractKind[]) if (!kinds.has(k)) report('coverage', k, 'no board ever posts this kind');
+  // Observations are posted only while a far star dies, in a save's own timeline (docs/PROCGEN.md §25): their tests check them.
+  for (const k of Object.keys(CONTRACTS.maxJumps) as ContractKind[]) if (k !== 'observe' && !kinds.has(k)) report('coverage', k, 'no board ever posts this kind');
   if (!eventWork) report('coverage', 'events', 'no board ever posts work answering a world event');
   if (!urgent) report('coverage', 'urgent', 'no board ever posts an urgent job');
   if (!chains) report('coverage', 'chains', 'no delivery ever leads to a follow-up');
@@ -109,7 +111,7 @@ function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, numbe
   const gated = !!c.requires?.minRep;
   if (gated !== (c.difficulty >= CONTRACTS.gatedDifficulty && c.factionId !== null)) report('standing', c.id, 'standing gate does not match the difficulty');
   const o = c.objectives[0];
-  const expected = kind === 'recovery' || kind === 'claim' || kind === 'tour' ? 2 : 1;
+  const expected = kind === 'recovery' || kind === 'claim' || kind === 'tour' || kind === 'observe' ? 2 : 1;
   if (!o || c.objectives.length !== expected) return report('objectives', c.id, `expected ${expected} objective(s)`);
 
   // Where it sends you, and what the trip costs.
@@ -277,6 +279,16 @@ function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, numbe
         // A trip out: never to a sight in view from where the pilot jumps in or undocks.
         else if (inViewFromGates(sight) || inViewFromStation(sight, c.giverLocationId)) report('tour', c.id, `${o.sightId} is in view from a jump beacon or ${c.giverLocationId}`);
       }
+      break;
+    }
+    // Observing a dying far star (docs/PROCGEN.md §25): from a research station, a star of the far
+    // stars, a window that opens and closes, and back to the station with the readings.
+    case 'observe': {
+      const back = c.objectives[1];
+      if (o.kind !== 'observe' || back?.kind !== 'visit' || back.locationId !== c.giverLocationId) return report('objectives', c.id, 'an observation, then back with the readings');
+      if (getLocation(c.giverLocationId).stationType !== 'research-station') report('observe', c.id, 'posted by a station that is not a research station');
+      if (!farStar(o.star) || !(o.to > o.from)) report('observe', c.id, `${o.star}: not a far star, or a window that never opens`);
+      if (o.baselineLy !== undefined && !(o.baselineLy > 0)) report('observe', c.id, 'a baseline that is not positive');
       break;
     }
   }

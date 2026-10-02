@@ -2,12 +2,12 @@
  * Validates the bundled astronomy + location dataset.
  * Usage: node scripts/validate-data.ts   (exit code 1 on any error)
  */
-import { ASTROMETRY, EXOPLANETS, SYSTEMS } from '../src/data/systems.ts';
-import { reachableSystems, validateDataset } from '../src/data/validate.ts';
+import { ASTROMETRY, EXOPLANETS, FAR_STARS, SYSTEMS } from '../src/data/systems.ts';
+import { reachableSystems, validateDataset, validateFarStars } from '../src/data/validate.ts';
 import { validateBundledWorld } from '../src/content/world/bundled.ts';
 import { WORLD } from '../src/data/systems.ts';
 
-const issues = validateDataset({ systems: SYSTEMS, astrometry: ASTROMETRY, exoplanets: EXOPLANETS });
+const issues = [...validateDataset({ systems: SYSTEMS, astrometry: ASTROMETRY, exoplanets: EXOPLANETS }), ...validateFarStars(FAR_STARS, SYSTEMS, ASTROMETRY)];
 for (const w of validateBundledWorld()) issues.push({ level: 'error', code: `world-${w.rule}`, message: `${w.subject}: ${w.message}` });
 const errors = issues.filter((i) => i.level === 'error');
 const warnings = issues.filter((i) => i.level === 'warning');
@@ -15,6 +15,7 @@ const warnings = issues.filter((i) => i.level === 'warning');
 console.log(`Dataset: ${SYSTEMS.length} systems, ${ASTROMETRY.stars.length} stellar components, ${EXOPLANETS.planets.length} confirmed planets`);
 console.log(`Astrometry: ${ASTROMETRY.verification}${ASTROMETRY.retrieved ? ` (retrieved ${ASTROMETRY.retrieved})` : ''}, ${ASTROMETRY.frame} epoch J${ASTROMETRY.referenceEpoch.toFixed(1)}`);
 console.log(`Exoplanets: ${EXOPLANETS.verification}, as of ${EXOPLANETS.asOfDate}`);
+console.log(`Far stars: ${FAR_STARS.stars.map((f) => `${f.name} (${f.distanceLightYears.toFixed(0)} ly)`).join(', ')}, ${FAR_STARS.verification}`);
 console.log(`Jump graph: ${[...reachableSystems(SYSTEMS, 'sol')].length}/${SYSTEMS.length} systems reachable from Sol`);
 const dens = WORLD.stations.filter((s) => !s.dockable).length;
 console.log(`World: ${WORLD.stations.length - dens} generated stations and ${dens} pirate dens (fiction)`);

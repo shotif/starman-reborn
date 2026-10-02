@@ -6,10 +6,12 @@ import astrometryFile from './generated/astrometry.json' with { type: 'json' };
 import beltsFile from './generated/belts.json' with { type: 'json' };
 import catalogSystemsFile from './generated/catalog-systems.json' with { type: 'json' };
 import exoplanetFile from './generated/exoplanets.json' with { type: 'json' };
+import farStarsFile from './generated/far-stars.json' with { type: 'json' };
 import { distance3 } from './coords.ts';
 import { SOURCES } from './sources.ts';
 import type {
   BeltRecord,
+  FarStarsDataset,
   ConfirmedBody,
   FictionalLocation,
   LocationKind,
@@ -45,6 +47,8 @@ export interface ExoplanetDataset {
 
 export const ASTROMETRY = astrometryFile as unknown as AstrometryDataset;
 export const EXOPLANETS = exoplanetFile as unknown as ExoplanetDataset;
+/** Stars far beyond the map, seen in every system's sky (docs/ASTRONOMY_SOURCES.md, *Far stars*). */
+export const FAR_STARS = farStarsFile as unknown as FarStarsDataset;
 
 /** Solar System bodies shown in the information view. Names per NASA's planet reference. */
 export const SOLAR_BODIES: readonly SolarBody[] = [

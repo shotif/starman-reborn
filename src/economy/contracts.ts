@@ -18,10 +18,13 @@ import { findRoute } from '../galaxy/routing.ts';
 import { FLEETS } from '../world/traffic/plan.ts';
 import { inViewFromStation, tourSights } from '../world/sightseeing.ts';
 import { takenIds } from './rivals.ts';
+import { farStar, fillSky, skyOffers } from './stellar.ts';
+import { OBSERVE_LINES } from '../content/stellar/lines.ts';
+import { STELLAR } from '../content/stellar/rules.ts';
 import { trafficFor } from '../world/traffic/setup.ts';
 import { atWar, decisiveOpen, EXPOSED, FRONTS, frontState, momentum, occupied, settledKey, type FrontState } from './border.ts';
 import { itemsThatFit } from './cargo.ts';
-import { baseThreat, marksAt, marksKey, priceMultiplier, stationEventAt, systemEventAt, worldLogKey, type WorldEvent } from './events.ts';
+import { activeSkyFrom, baseThreat, marksAt, marksKey, priceMultiplier, stationEventAt, systemEventAt, worldLogKey, type WorldEvent } from './events.ts';
 import { FACTIONS } from './factions.ts';
 import { dockAccess, lawIn, scansOnDocking, wakeFriendly } from './law.ts';
 import type { JobDef } from './jobs.ts';
@@ -133,7 +136,7 @@ const boardCache = new Map<string, JobDef[]>();
 /** The contracts a station posts in a time slot (hand-made jobs are separate, in jobs.ts). */
 export function boardFor(locationId: string, epoch: number): JobDef[] {
   // The border war, its settled fronts and lasting marks are the save's own, so boards are kept per save.
-  const key = `${locationId}|${epoch}|${worldLogKey()}|${marksKey()}|${settledKey()}|${saveLocationsKey()}`;
+  const key = `${locationId}|${epoch}|${worldLogKey()}|${marksKey()}|${settledKey()}|${saveLocationsKey()}|${activeSkyFrom() ?? ''}`;
   const cached = boardCache.get(key);
   if (cached) return cached;
   const loc = getLocation(locationId);
@@ -169,6 +172,8 @@ export function boardFor(locationId: string, epoch: number): JobDef[] {
     // A side's decisive operation on a front, once the player has earned it (docs/PROCGEN.md §20.7).
     const d = decisive(loc, rng(WORLD_SEED, 'contracts', 'decisive', locationId, epoch), `${CONTRACT_PREFIX}${locationId}.${epoch}.decisive`, clock);
     if (d) out.push(d);
+    // Observations of a dying far star, at research stations (docs/PROCGEN.md §25).
+    out.push(...skyContracts(loc, epoch));
     // Standing runs a lasting mark left here (docs/PROCGEN.md §14.7), each from its own stream.
     for (const mark of marksAt(locationId)) {
       if (!mark.run) continue;
@@ -238,7 +243,41 @@ function makeContract(kind: ContractKind, giver: FictionalLocation, r: Rng, id: 
       return passage(giver, r, id);
     case 'tour':
       return tour(giver, r, id);
+    case 'observe':
+      // Only ever posted while a far star dies (skyContracts).
+      return null;
   }
+}
+
+/**
+ * Observation work at a research station while a far star dies (docs/PROCGEN.md §25), fiction:
+ * watch Betelgeuse's first light and peak, or its fading; measure its distance by parallax; watch
+ * Antares go out. Each from its own id, as they come and go within a time slot.
+ */
+function skyContracts(giver: FictionalLocation, epoch: number): JobDef[] {
+  if (giver.stationType !== 'research-station') return [];
+  const start = epoch * CONTRACTS.epochSeconds;
+  return skyOffers(start, start + CONTRACTS.epochSeconds).map((o) => {
+    const star = farStar(o.star)!;
+    const lines = OBSERVE_LINES[o.kind];
+    const text =
+      o.kind === 'parallax'
+        ? `Observe ${star.name} from two systems at least ${o.baselineLy} ly apart`
+        : `Observe ${star.name} from open space`;
+    return {
+      ...common(giver, `${CONTRACT_PREFIX}${giver.id}.${epoch}.sky-${o.kind}`, o.kind === 'parallax' ? 2 : 1),
+      title: fillSky(lines.title, star),
+      briefing: fillSky(lines.briefing, star),
+      objectives: [
+        { kind: 'observe', star: o.star, from: o.from, to: o.to, ...(o.baselineLy ? { baselineLy: o.baselineLy } : {}), text },
+        { kind: 'visit', locationId: giver.id, text: `Bring the readings back to ${giver.name}` },
+      ],
+      reward: STELLAR.observe.reward[o.kind],
+      difficultyNote: o.kind === 'parallax' ? `Two systems ${o.baselineLy} ly apart, before ${star.name} fades` : 'Any system, from open space, while the window is open',
+      destinationLocationId: giver.id,
+      contract: { kind: 'observe' },
+    };
+  });
 }
 
 /**

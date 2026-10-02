@@ -23,7 +23,7 @@ import {
   parallaxToLightYears,
   propagatePosition,
 } from '../src/data/coords.ts';
-import type { BeltRecord, ConfirmedBody, PlanetStatus, SourceRef, StellarComponent, Verification } from '../src/data/types.ts';
+import type { BeltRecord, ConfirmedBody, FarStar, PlanetStatus, SourceRef, StellarComponent, Verification } from '../src/data/types.ts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -194,6 +194,74 @@ function buildAstrometry() {
   };
 }
 
+interface FarStarInput {
+  id: string;
+  name: string;
+  designation: string;
+  catalogIds: FarStar['catalogIds'];
+  spectralType: string;
+  raDegrees: number;
+  decDegrees: number;
+  epoch: number;
+  pmRaMasYr: number;
+  pmDecMasYr: number;
+  parallaxMas: number;
+  parallaxErrorMas?: number;
+  magnitudeV: number;
+  positionSource: SourceRef;
+  parallaxSource: SourceRef;
+  spectralTypeSource: SourceRef;
+  magnitudeSource: SourceRef;
+  colorHex: string;
+}
+
+/** The far stars beyond the map (docs/ASTRONOMY_SOURCES.md, *Far stars*): the snapshot's when it has them, else provisional. */
+function buildFarStars() {
+  const { path, kind } = pickInput('far-stars-input.json');
+  const input = readJson<Omit<AstrometryInput, 'stars'> & { stars: FarStarInput[] }>(path);
+  const at = (ref: SourceRef) => ({ ...ref, ...(input.retrieved ? { retrieved: input.retrieved } : {}) });
+  const stars: FarStar[] = input.stars.map((s) => {
+    const pos = propagatePosition(s.raDegrees, s.decDegrees, s.pmRaMasYr, s.pmDecMasYr, s.epoch, input.targetEpoch);
+    const distanceLightYears = parallaxToLightYears(s.parallaxMas);
+    return {
+      id: s.id,
+      name: s.name,
+      designation: s.designation,
+      catalogIds: s.catalogIds,
+      spectralType: s.spectralType,
+      spectralTypeSource: at(s.spectralTypeSource),
+      raDegrees: pos.raDeg,
+      decDegrees: pos.decDeg,
+      properMotion: { raMasYr: s.pmRaMasYr, decMasYr: s.pmDecMasYr },
+      catalogEpoch: s.epoch,
+      parallaxMas: s.parallaxMas,
+      ...(s.parallaxErrorMas !== undefined
+        ? { parallaxErrorMas: s.parallaxErrorMas, distanceErrorLightYears: parallaxErrorToLightYears(s.parallaxMas, s.parallaxErrorMas) }
+        : {}),
+      distanceLightYears,
+      referenceEpoch: input.targetEpoch,
+      frame: 'ICRS',
+      astrometrySource: at(s.positionSource),
+      parallaxSource: at(s.parallaxSource),
+      magnitudeV: s.magnitudeV,
+      magnitudeSource: at(s.magnitudeSource),
+      verification: kind,
+      positionLy: equatorialToCartesian(pos.raDeg, pos.decDeg, distanceLightYears),
+      colorHex: s.colorHex,
+    };
+  });
+  return {
+    generatedBy: 'scripts/build-dataset.ts',
+    input: path.replace(root + '/', ''),
+    verification: kind,
+    retrieved: input.retrieved,
+    description: input.description,
+    frame: 'ICRS' as const,
+    referenceEpoch: input.targetEpoch,
+    stars,
+  };
+}
+
 function buildExoplanets() {
   const { path, kind: primaryKind } = pickInput('exoplanets-input.json');
   const input = readJson<ExoplanetInput>(path);
@@ -253,6 +321,7 @@ const astrometry = buildAstrometry();
 const exoplanets = buildExoplanets();
 writeFileSync(resolve(outDir, 'astrometry.json'), JSON.stringify(astrometry, null, 2) + '\n');
 writeFileSync(resolve(outDir, 'exoplanets.json'), JSON.stringify(exoplanets, null, 2) + '\n');
+writeFileSync(resolve(outDir, 'far-stars.json'), JSON.stringify(buildFarStars(), null, 2) + '\n');
 interface SystemEntry {
   id: string;
   displayName: string;

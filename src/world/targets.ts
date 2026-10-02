@@ -2,7 +2,8 @@ import type * as THREE from 'three';
 import type { DataClass, FactionId } from '../data/types.ts';
 
 /** `belt`: a cited belt, at its point nearest the player; `rock`: a rock in it a mining laser can cut. */
-export type TargetKind = 'station' | 'planet' | 'star' | 'lane' | 'beacon' | 'ship' | 'loot' | 'drone' | 'belt' | 'rock';
+/** `sky`: a far star beyond the map, at the sky's distance (docs/PROCGEN.md §25): observed, never flown to. */
+export type TargetKind = 'station' | 'planet' | 'star' | 'lane' | 'beacon' | 'ship' | 'loot' | 'drone' | 'belt' | 'rock' | 'sky';
 
 /** Anything the player can select, bracket, fly to or dock with. */
 export interface Target {
@@ -26,6 +27,8 @@ export interface Target {
   laneId?: string;
   /** Lane entrance at the lane's `to` end (travel runs back toward `from`). */
   laneReverse?: boolean;
+  /** Shown instead of the distance in metres (a far star: its distance in light-years). */
+  distanceLabel?: string;
   /** False once destroyed/collected. */
   alive: boolean;
   /** Shown in the target cycle list (T key / Target button). */

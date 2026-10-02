@@ -1,0 +1,109 @@
+{
+  "generatedBy": "scripts/build-dataset.ts",
+  "input": "data/provisional/far-stars-input.json",
+  "verification": "provisional",
+  "retrieved": null,
+  "description": "Far stars beyond the map (positions J2000, proper motions, distances, spectral types and visual magnitudes) from the HYG star database v4.0 (CC BY-SA 4.0). Extracted by scripts/extract-far-stars.ts; provisional until the archive snapshot verifies it.",
+  "frame": "ICRS",
+  "referenceEpoch": 2016,
+  "stars": [
+    {
+      "id": "betelgeuse",
+      "name": "Betelgeuse",
+      "designation": "Alpha Orionis",
+      "catalogIds": {
+        "hip": "HIP 27989",
+        "simbad": "alf Ori"
+      },
+      "spectralType": "M2Ib",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 27919 (HIP 27989)"
+      },
+      "raDegrees": 88.79305748880836,
+      "decDegrees": 7.407111266666667,
+      "properMotion": {
+        "raMasYr": 27.33,
+        "decMasYr": 10.86
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 6.549998100500551,
+      "distanceLightYears": 497.94881267495083,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 27919 (HIP 27989)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 27919 (HIP 27989)"
+      },
+      "magnitudeV": 0.45,
+      "magnitudeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 27919 (HIP 27989)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        10.401050711518467,
+        493.6839603791412,
+        64.1949020784068
+      ],
+      "colorHex": "#ffb27a"
+    },
+    {
+      "id": "antares",
+      "name": "Antares",
+      "designation": "Alpha Scorpii",
+      "catalogIds": {
+        "hip": "HIP 80763",
+        "simbad": "alf Sco"
+      },
+      "spectralType": "M1Ib + B2.5V",
+      "spectralTypeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 80519 (HIP 80763)"
+      },
+      "raDegrees": 247.35186957294502,
+      "decDegrees": -26.432105155555558,
+      "properMotion": {
+        "raMasYr": -10.16,
+        "decMasYr": -23.21
+      },
+      "catalogEpoch": 2000,
+      "parallaxMas": 5.889999546470035,
+      "distanceLightYears": 553.7460149928428,
+      "referenceEpoch": 2016,
+      "frame": "ICRS",
+      "astrometrySource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 80519 (HIP 80763)"
+      },
+      "parallaxSource": {
+        "label": "HYG v4.0 (Hipparcos distance)",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 80519 (HIP 80763)"
+      },
+      "magnitudeV": 1.06,
+      "magnitudeSource": {
+        "label": "HYG v4.0",
+        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
+        "recordId": "HYG 80519 (HIP 80763)"
+      },
+      "verification": "provisional",
+      "positionLy": [
+        -190.94069346620992,
+        -457.62165269710096,
+        -246.49284712110918
+      ],
+      "colorHex": "#ffb27a"
+    }
+  ]
+}

@@ -70,6 +70,7 @@ const TARGET_GLYPH: Record<TargetKind, GlyphName> = {
   loot: 'trader',
   belt: 'science',
   rock: 'mining-laser',
+  sky: 'scanner',
 };
 
 /** The Mine key (docs/PROCGEN.md §19); on a pad Mine is the context action. */
@@ -492,7 +493,7 @@ export class Hud {
     // Subtitles change under way (a rock scanned and cut, a den's reactor exposed).
     setText(this.targetPanel.querySelector<HTMLElement>('.target-sub')!, t.subtitle);
     const dist = this.targetPanel.querySelector<HTMLElement>('.target-dist')!;
-    setText(dist, `${formatRange(t.distance)}${t.hostile ? (t.inGunRange ? ' · in gun range' : ' · out of range') : ''}`);
+    setText(dist, `${t.distanceLabel ?? formatRange(t.distance)}${t.hostile ? (t.inGunRange ? ' · in gun range' : ' · out of range') : ''}`);
     const bars = this.targetPanel.querySelector<HTMLElement>('.target-bars')!;
     if (t.shield !== undefined && t.hull !== undefined) {
       if (!bars.firstChild) {
@@ -572,8 +573,8 @@ export class Hud {
       const clash = this.placedLabels.some((b) => box.x < b.x + b.w && b.x < box.x + box.w && box.y < b.y + b.h && b.y < box.y + box.h);
       el.classList.toggle('label-hidden', clash && !m.selected);
       if (!clash || m.selected) this.placedLabels.push(box);
-      setText(el.querySelector<HTMLElement>('.marker-dist')!, formatRange(m.distance));
-      el.setAttribute('aria-label', `${m.hostile ? 'Hostile ' : ''}${m.name}, ${formatRange(m.distance)}`);
+      setText(el.querySelector<HTMLElement>('.marker-dist')!, m.distanceLabel ?? formatRange(m.distance));
+      el.setAttribute('aria-label', `${m.hostile ? 'Hostile ' : ''}${m.name}, ${m.distanceLabel ?? formatRange(m.distance)}`);
     }
   }
 }

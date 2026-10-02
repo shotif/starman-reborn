@@ -15,6 +15,8 @@ export interface HudMarker {
   /** Direction (radians, screen space) toward an off-screen marker. */
   edgeAngle: number;
   distance: number;
+  /** Shown instead of the distance (a far star's light-years). */
+  distanceLabel?: string;
   hostile: boolean;
   faction?: FactionId;
   /** One of the player's own ships (docs/PROCGEN.md §18.6). */
@@ -30,6 +32,8 @@ export interface HudTarget {
   kind: TargetKind;
   subtitle: string;
   distance: number;
+  /** Shown instead of the distance (a far star's light-years). */
+  distanceLabel?: string;
   hostile: boolean;
   faction?: FactionId;
   own?: boolean;

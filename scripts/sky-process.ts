@@ -23,7 +23,7 @@
  *
  * Usage: node scripts/sky-process.ts [date]   (then npm run data:build && npm run data:validate)
  */
-import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { equatorialToCartesian, parallaxToLightYears, propagatePosition } from '../src/data/coords.ts';
@@ -1266,6 +1266,71 @@ let solar: { source: SourceRef; validYears: [number, number]; frame: string; ele
   }
 }
 
+// ---------------------------------------------------------------- far stars (docs/ASTRONOMY_SOURCES.md, *Far stars*)
+
+/** A far star as scripts/build-dataset.ts reads it. */
+interface FarStarInput {
+  id: string;
+  name: string;
+  designation: string;
+  catalogIds: { hip?: string; simbad?: string; gaiaDr3?: string };
+  spectralType: string;
+  raDegrees: number;
+  decDegrees: number;
+  epoch: number;
+  pmRaMasYr: number;
+  pmDecMasYr: number;
+  parallaxMas: number;
+  parallaxErrorMas?: number;
+  magnitudeV: number;
+  positionSource: SourceRef;
+  parallaxSource: SourceRef;
+  spectralTypeSource: SourceRef;
+  magnitudeSource: SourceRef;
+  colorHex: string;
+}
+
+const farPath = resolve(root, 'data/provisional/far-stars-input.json');
+const farProvisional = existsSync(farPath) ? readJson<{ stars: FarStarInput[] }>('data/provisional/far-stars-input.json').stars : [];
+const farOid = (f: FarStarInput) => {
+  const oids = candidateIdents(f as unknown as StarInput).flatMap((id) => [...(byIdent.get(norm(id)) ?? [])]);
+  return oids.find((o) => otypeOf(o) !== '**') ?? oids[0];
+};
+/** A snapshot from before the far stars were asked for leaves their provisional values in place. */
+const farAsked = farProvisional.length > 0 && farProvisional.some((f) => farOid(f) !== undefined);
+const farVerified: FarStarInput[] = [];
+const farNotes: string[] = [];
+if (farAsked) {
+  for (const f of farProvisional) {
+    const oid = farOid(f);
+    if (oid === undefined) throw new Error(`SIMBAD has no object for the far star ${f.name} (${candidateIdents(f as unknown as StarInput).join(' / ')})`);
+    const astro = astrometryOf(oid);
+    if (!astro) throw new Error(`SIMBAD gives no astrometry for the far star ${f.name}`);
+    const sp = spectralOf(oid);
+    const vFlux = load('simbad-fluxes').find((r) => num(r.oidref) === oid && str(r.filter) === 'V' && num(r.flux) !== null);
+    const vBib = vFlux ? str(vFlux.bibcode) : null;
+    const main = mainIdOf(oid);
+    const verified: FarStarInput = {
+      ...f,
+      raDegrees: astro.raDegrees,
+      decDegrees: astro.decDegrees,
+      epoch: astro.epoch,
+      pmRaMasYr: astro.pmRaMasYr,
+      pmDecMasYr: astro.pmDecMasYr,
+      parallaxMas: astro.parallaxMas,
+      ...(astro.parallaxErrorMas !== undefined ? { parallaxErrorMas: astro.parallaxErrorMas } : {}),
+      positionSource: astro.positionSource,
+      parallaxSource: astro.parallaxSource,
+      ...(sp ? { spectralType: sp.type, spectralTypeSource: sp.source } : {}),
+      ...(vFlux
+        ? { magnitudeV: num(vFlux.flux)!, magnitudeSource: { label: vBib ? `SIMBAD: ${bibLabel(vBib)}` : 'SIMBAD', url: vBib ? adsUrl(vBib) : simbadUrl(main), recordId: main, retrieved, ...(vBib ? { bibcode: vBib } : {}) } }
+        : {}),
+    };
+    farVerified.push(verified);
+    farNotes.push(`${f.name} (${main}): ${parallaxToLightYears(f.parallaxMas).toFixed(1)} → ${parallaxToLightYears(astro.parallaxMas).toFixed(1)} ly; ${astro.positionSource.label}${astro.notes.length ? `; ${astro.notes.join('; ')}` : ''}`);
+  }
+}
+
 // ---------------------------------------------------------------- writing
 
 const write = (name: string, data: unknown) => writeFileSync(resolve(root, 'data/snapshot', name), typeof data === 'string' ? data : JSON.stringify(data, null, 2) + '\n');
@@ -1297,6 +1362,15 @@ write('belts-input.json', {
   belts,
 });
 if (solar) write('solar-elements.json', { retrieved, ...solar });
+if (farAsked) {
+  write('far-stars-input.json', {
+    kind: 'snapshot',
+    retrieved,
+    description: `Far stars beyond the map checked against SIMBAD on ${retrieved} (scripts/sky-fetch.ts on GitHub's runners, processed by scripts/sky-process.ts): Gaia DR3 when its solution passes the cuts, otherwise SIMBAD's adopted values, each cited.`,
+    targetEpoch: TARGET_EPOCH,
+    stars: farVerified,
+  });
+}
 
 // ---------------------------------------------------------------- the report
 
@@ -1327,6 +1401,9 @@ for (const [sys, ids] of additions) lines.push('', `Joining ${gameSystems.get(sy
 if (skipped.length) lines.push('', 'Not added:', '', ...skipped.map((x) => `- ${x}`));
 lines.push('', '## Belts and debris discs', '');
 for (const b of belts) lines.push(`- **${b.name}** (${b.systemId}): ${b.sources.map((s) => (s.bibcode ? `[${s.bibcode}](${s.url})` : `[${s.label}](${s.url})`)).join(', ')}`);
+lines.push('', '## Far stars', '');
+if (farAsked) for (const n of farNotes) lines.push(`- ${n}`);
+else lines.push('Not asked for in this snapshot: their provisional values (HYG v4.0) stay until the next one.');
 lines.push('', '## The Solar System', '');
 if (solar) {
   lines.push(`JPL's Keplerian elements for 1800–2050 parsed for ${Object.keys(solar.elements).length} planets; ${solar.checks.length} Horizons positions to test them against (tests/unit/solar.test.ts).`);

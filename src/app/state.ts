@@ -217,6 +217,8 @@ export interface WorldLog {
   outpost?: OutpostRecord;
   /** Rival pilots (docs/PROCGEN.md §24): the ones the player knocked out, and the claims bought back. */
   rivals?: RivalLog;
+  /** Stellar death (docs/PROCGEN.md §25), fiction: when the first neutrino alert comes, set once the opening delivery is done. */
+  sky?: { from: number };
 }
 
 /** What the player did to rival pilots' careers (docs/PROCGEN.md §24). */
@@ -329,6 +331,8 @@ export interface JobProgress {
   seen?: boolean;
   /** Passages and tours: the share of the hull lost with the passengers aboard (it cuts the fare). */
   fright?: number;
+  /** Observations of a dying far star made for this contract (docs/PROCGEN.md §25): when, and from which system. */
+  observed?: { at: number; systemId: SystemId }[];
 }
 
 export type PirateOutcome = 'none' | 'destroyed' | 'bypassed' | 'escaped';
