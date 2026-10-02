@@ -44,7 +44,8 @@ function when(n: NewsItem, clock: number): string {
   const glut = shipsOut(e);
   if (n.endedEarly) return `${e.kind === 'raid' ? 'broken' : glut ? 'bought up' : 'relieved'} by a pilot ${minutes(clock - end)} min ago`;
   if (end < e.end && end <= clock) return `${glut ? 'shipped out' : 'relieved'} by its haulers ${minutes(clock - end)} min ago`;
-  return n.active ? `for ${minutes(clock - e.start)} min, about ${minutes(e.end - clock)} min to go` : `over ${minutes(clock - end)} min ago`;
+  // What is left: to when it is due to end, or sooner when its relief or shipments will end it.
+  return n.active ? `for ${minutes(clock - e.start)} min, about ${minutes(end - clock)} min to go` : `over ${minutes(clock - end)} min ago`;
 }
 
 function where(n: NewsItem): string {
