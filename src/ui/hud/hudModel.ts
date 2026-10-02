@@ -47,6 +47,18 @@ export interface HudTarget {
   inGunRange: boolean;
 }
 
+/** A hail on the lanes (docs/PROCGEN.md §27): who calls, what they say, and how long it waits. */
+export interface HudHail {
+  from: string;
+  text: string;
+  /** Seconds before it lapses. */
+  left: number;
+  /** Hostiles near: it waits, and cannot be answered now. */
+  held: boolean;
+  /** Its colour: a call on the comms, the Wake's toll, the law. */
+  tone: 'comms' | 'toll' | 'law';
+}
+
 export interface HudContextAction {
   label: string;
   action: FlightAction;
@@ -98,6 +110,8 @@ export interface HudModel {
   reticle: { x: number; y: number; inArc: boolean; assisted: boolean };
   missileLock: 'none' | 'locking' | 'locked';
   context: HudContextAction | null;
+  /** A hail on the lanes waiting for an answer (docs/PROCGEN.md §27), or null. */
+  hail: HudHail | null;
   warnings: string[];
   /** Rounds left in the active launcher, and what they are ('Seekers'); null without a launcher. */
   missiles: number;
@@ -141,6 +155,7 @@ export function emptyHudModel(): HudModel {
     reticle: { x: 0, y: 0, inArc: true, assisted: false },
     missileLock: 'none',
     context: null,
+    hail: null,
     warnings: [],
     missiles: 0,
     launcher: null,

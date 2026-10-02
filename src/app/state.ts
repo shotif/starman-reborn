@@ -1,3 +1,4 @@
+import type { LaneKind } from '../content/lanes/rules.ts';
 import type { CommodityId } from '../content/economy/goods.ts';
 import type { StationType } from '../content/world/types.ts';
 import { STARTER_SHIP_ID } from '../content/rules/index.ts';
@@ -217,12 +218,23 @@ export interface WorldLog {
   outpost?: OutpostRecord;
   /** Rival pilots (docs/PROCGEN.md §24): the ones the player knocked out, and the claims bought back. */
   rivals?: RivalLog;
-  /** Stellar death (docs/PROCGEN.md §25), fiction: when the first neutrino alert comes, set once the opening delivery is done. */
   /**
    * The deaths in the sky (docs/PROCGEN.md §25–26): when the far stars' first neutrino alert comes,
    * and (once the player has reached the frontier) when the warning of Pyre, the invented star, comes.
    */
   sky?: { from: number; edge?: number };
+  /** Lane encounters met (docs/PROCGEN.md §27), by slot id (`<system>.<slot>`): when, what, and what came of it. */
+  lanes?: Record<string, LaneRecord>;
+}
+
+/** A lane encounter the pilot met (docs/PROCGEN.md §27). */
+export interface LaneRecord {
+  /** Game clock when it hailed. */
+  at: number;
+  kind: LaneKind;
+  systemId: SystemId;
+  /** The choice made (an option id), or `lapsed`; absent while the hail waits. */
+  pick?: string;
 }
 
 /** What the player did to rival pilots' careers (docs/PROCGEN.md §24). */

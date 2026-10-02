@@ -3,6 +3,7 @@ import { STARTER_SHIP_ID } from '../../content/rules/index.ts';
 import { ALL_LOCATIONS } from '../../data/systems.ts';
 import { KNOWN_SYSTEM_IDS, PYRE_LOCATIONS, SYSTEM_IDS } from '../../data/systems.ts';
 import { codexEntries } from '../../economy/progress.ts';
+import { LANE_KINDS, LANES } from '../../content/lanes/rules.ts';
 import { skyTimeline } from '../../economy/stellar.ts';
 import type { SystemId } from '../../data/types.ts';
 import { clampShip, newShipState } from '../../economy/loadout.ts';
@@ -46,8 +47,8 @@ import { createNewGame, SAVE_VERSION, type CommodityId, type GameState, type Out
  *   progress `seen` and `fright` (§23); a hauler may carry `sight`, a run the player saw safely
  *   past its raid (§18.6); `rivals` (standing with rival pilots) and the world log's `rivals`
  *   (rivals knocked out, claims bought back, §24); the world log's `sky` (when a far star's death
- *   begins, §25) and a job's `observed` (its observations), absent in older v10 saves. See
- *   GameState in src/app/state.ts.
+ *   begins, §25) and a job's `observed` (its observations), absent in older v10 saves; the world log's `lanes`
+ *   (lane encounters met, §27), absent in older v10 saves. See GameState in src/app/state.ts.
  */
 export interface SaveV1 {
   version: 1;
@@ -377,6 +378,13 @@ export function assertValidState(s: GameState): void {
   if (w.sky !== undefined && !(isRecord(w.sky) && Number.isFinite(w.sky.from) && w.sky.from >= 0)) fail('world');
   // Pyre's warning (docs/PROCGEN.md §26) comes after Antares has gone out.
   if (w.sky?.edge !== undefined && !(Number.isFinite(w.sky.edge) && w.sky.edge >= skyTimeline(w.sky.from).bhGone)) fail('world');
+  // Lane encounters met (docs/PROCGEN.md §27): each in a real system, of a known kind.
+  if (w.lanes !== undefined) {
+    if (!isRecord(w.lanes)) fail('world');
+    for (const [id, r] of Object.entries(w.lanes)) {
+      if (!isRecord(r) || !Number.isFinite(r.at) || !(LANE_KINDS as readonly string[]).includes(r.kind) || !SYSTEM_IDS.includes(r.systemId) || id !== `${r.systemId}.${Math.floor(r.at / LANES.slotSeconds)}` || (r.pick !== undefined && typeof r.pick !== 'string')) fail('world');
+    }
+  }
   if (w.rivals !== undefined) {
     if (!isRecord(w.rivals) || !isRecord(w.rivals.down) || !isRecord(w.rivals.bought)) fail('world');
     for (const [id, d] of Object.entries(w.rivals.down)) if (!ROSTER.some((r) => r.id === id) || !isRecord(d) || !Number.isFinite(d.at) || !SYSTEM_IDS.includes(d.systemId)) fail('world');

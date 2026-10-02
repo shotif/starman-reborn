@@ -16,6 +16,8 @@ export type FlightAction =
   | 'map'
   | 'pause'
   | 'help'
+  /** Answers a hail on the lanes (docs/PROCGEN.md §27). */
+  | 'answer'
   | 'cancel-autopilot';
 
 /** The device driving the HUD: its layout, where the reticle comes from and which buttons it names. */

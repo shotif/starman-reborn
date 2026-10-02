@@ -12,6 +12,9 @@ import * as THREE from 'three';
 import { AudioEngine } from '../audio/AudioEngine.ts';
 import type { MusicMood, SfxId } from '../audio/types.ts';
 import { ALL_LOCATIONS, getComponent, getLocation, getPlanet, getSystem, hasProvisionalData, isInventedSystem, MAP_SYSTEMS, PYRE_ID, saveLocationsKey, SYSTEMS, WORLD } from '../data/systems.ts';
+import { answerLane, laneEncounter, laneSlot, lapseLane, type LaneOffer } from '../economy/lanes.ts';
+import { LANE_KINDS, type LaneKind } from '../content/lanes/rules.ts';
+import { showLaneCard } from '../ui/lanes.ts';
 import { edgeComm, edgeMoment, edgeTimeline, hopsToPyre, laneClosedReason, PYRE_HOLE_ID, pyreRefugeId, pyreStage, pyreStationsNow, pyreStatus, scheduleEdge } from '../economy/doomed.ts';
 import type { EdgeNewsKind } from '../content/stellar/doomedLines.ts';
 import type { SystemId } from '../data/types.ts';
@@ -991,6 +994,18 @@ export class Game {
         },
         onComm: (speaker, text) => this.comm(speaker, text, 5000),
         onPyreBreakout: () => void this.onPyreBreakout(),
+        // Lane encounters (docs/PROCGEN.md §27): the radio blips as a hail comes; answered, its card; let go, what that brings.
+        onHail: () => {
+          this.sfx('radio-blip');
+          this.persist();
+        },
+        onAnswerHail: (offer) => void this.onAnswerHail(offer),
+        onHailLapsed: (offer) => {
+          const out = lapseLane(state, offer);
+          this.flight?.laneOutcome(offer.id, out);
+          toast(out.text, out.tone, 6000);
+          this.persist();
+        },
         // Sightseers at their sight (docs/PROCGEN.md §23): they say so, and the tour heads home.
         onObserve: (starId) => {
           // A far star (docs/PROCGEN.md §25), or Pyre (§26).
@@ -1330,6 +1345,20 @@ export class Game {
     this.setPaused(true, false);
     const s = sheet(this.screenLayer, t.name, bodyCard(t.bodyId, t.name), () => this.setPaused(false), 'science-sheet');
     void s;
+  }
+
+  /** A hail answered (docs/PROCGEN.md §27): its card, paused; the choice made, and what came of it in the save and the flight. */
+  private async onAnswerHail(offer: LaneOffer): Promise<void> {
+    const state = this.state!;
+    this.setPaused(true, false);
+    const pick = await showLaneCard(state, offer);
+    const out = pick ? answerLane(state, offer, pick) : null;
+    this.setPaused(false);
+    this.flight?.laneOutcome(offer.id, out);
+    if (!out) return;
+    toast(out.text, out.tone, 6000);
+    if (out.jobId) this.announceJobEvents(advanceJobs(state, { dockedAt: null, systemId: state.location.systemId }));
+    this.persist();
   }
 
   /** Jumps to Pyre refused now, and why (docs/PROCGEN.md §26). */
@@ -2119,6 +2148,22 @@ export class Game {
         const look = (id: string) => farStarLook(id, this.state!.clock, from);
         return { from, timeline: skyTimeline(from), betelgeuse: look('betelgeuse'), antares: look('antares') };
       },
+      /**
+       * Test-only: the first lane encounter (docs/PROCGEN.md §27) from a moment on, in the given systems
+       * (or any), of a kind and trap or not if asked: where, when, and what.
+       */
+      findLane: (arg: { from: number; kind?: LaneKind; trap?: boolean; systems?: SystemId[] }) => {
+        const systems = arg.systems ?? SYSTEMS.map((x) => x.id);
+        for (let slot = laneSlot(arg.from) + 1; slot < laneSlot(arg.from) + 400; slot++) {
+          for (const id of systems) {
+            const o = laneEncounter(id, slot);
+            if (o && (!arg.kind || o.kind === arg.kind) && (arg.trap === undefined || o.trap === arg.trap)) return o;
+          }
+        }
+        return null;
+      },
+      /** Test-only: the lane encounters this save has met, and the hail waiting in flight. */
+      lanes: () => ({ met: this.state?.world.lanes ?? {}, hail: this.flight?.hailState ?? null, kinds: LANE_KINDS }),
       /** Test-only: when Pyre's warning comes in this save (docs/PROCGEN.md §26); the far stars' story must be set. */
       edgeAt: (at: number) => {
         if (!this.state?.world.sky) return false;

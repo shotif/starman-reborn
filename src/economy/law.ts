@@ -65,7 +65,7 @@ export function finesTravelling(state: GameState): number {
 }
 
 /** Records a fine where the crime was seen; the news spreads from there. */
-function witness(state: GameState, faction: LawfulFaction, amount: number, systemId: SystemId): void {
+export function witness(state: GameState, faction: LawfulFaction, amount: number, systemId: SystemId): void {
   state.law.pending.push({ faction, amount, systemId, at: state.clock });
   state.law.lastCrimeAt[faction] = state.clock;
 }

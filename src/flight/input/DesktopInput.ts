@@ -23,6 +23,7 @@ export const KEY_BINDINGS = {
   wingOrder: ['KeyV'],
   engineKill: ['KeyZ'],
   help: ['F1', 'Slash'],
+  answer: ['KeyQ'],
   steerLeft: ['ArrowLeft', 'KeyJ'],
   steerRight: ['ArrowRight', 'KeyL'],
   steerUp: ['ArrowUp', 'KeyI'],
@@ -46,6 +47,7 @@ for (const [binding, action] of [
   ['wingOrder', 'wing-order'],
   ['engineKill', 'engine-kill'],
   ['help', 'help'],
+  ['answer', 'answer'],
 ] as const) {
   for (const code of KEY_BINDINGS[binding]) ACTION_KEYS[code] = action;
 }

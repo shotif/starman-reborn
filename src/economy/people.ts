@@ -170,6 +170,11 @@ const where = (locationId: string) => {
   return { station: loc.name, system: getSystem(loc.systemId).displayName };
 };
 
+/** A price worth knowing near a station (a lost trader's tip, docs/PROCGEN.md §27): what a round in its bar would tell. */
+export function priceTipNear(state: GameState, locationId: string, r: Rng): RumourFact | null {
+  return priceFact(state, locationId, r);
+}
+
 /** A price worth a round: the best sale within reach for goods bought here, or a bargain nearby. */
 function priceFact(state: GameState, locationId: string, r: Rng): RumourFact | null {
   const reach = PEOPLE.rumour.reach;

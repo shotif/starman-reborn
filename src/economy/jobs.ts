@@ -128,6 +128,8 @@ export interface JobDef {
     /** Work that comes and goes within a time slot: on the board from `posted` until `until` (game clock). */
     posted?: number;
     until?: number;
+    /** A job taken on in flight from a lane encounter (docs/PROCGEN.md §27): the encounter's id. */
+    lane?: string;
   };
   /** Story arc missions (content/story/arcs.ts): arc, step, speaker and beats. */
   story?: StoryMeta;

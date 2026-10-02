@@ -67,6 +67,8 @@ import { createFarStars, type FarStarsArt } from './art/farStars.ts';
 import { STELLAR } from '../content/stellar/rules.ts';
 import { farStarLook, magnitudeText, observationsWanted, skyDirection, skyDirectionTo, skyPhase } from '../economy/stellar.ts';
 import { fallbackGlow, lightArrives, lyFromPyre, pyreDockRefusal, pyreLook, pyreStage, tidalStrain } from '../economy/doomed.ts';
+import { LANES } from '../content/lanes/rules.ts';
+import { laneOfferFor, laneWords, stageLane, type LaneOffer, type LaneOutcome } from '../economy/lanes.ts';
 import { activeEdge } from '../economy/events.ts';
 import { haulsIn, type Haul, type HaulHere, type HaulLeg } from '../economy/hauls.ts';
 import { FLEET } from '../content/fleet/rules.ts';
@@ -118,6 +120,13 @@ export interface FlightCallbacks {
   onObserve?(starId: string): void;
   /** Pyre exploded with the player still in its system (docs/PROCGEN.md §26): the game carries the ship out. */
   onPyreBreakout?(): void;
+  /**
+   * A hail on the lanes (docs/PROCGEN.md §27): one began (already written into the save), the pilot
+   * answered it (the game shows its card), or it lapsed unanswered.
+   */
+  onHail?(offer: LaneOffer): void;
+  onAnswerHail?(offer: LaneOffer): void;
+  onHailLapsed?(offer: LaneOffer): void;
   /** The ship of an escort contract docked at its destination. */
   onEscortArrived?(jobId: string): void;
   /** The ship of an escort contract was destroyed. */
@@ -470,6 +479,12 @@ export class FlightSession {
   private inTides = false;
   /** Caught by Pyre's explosion: the game has been told. */
   private pyreCaught = false;
+  /** A hail on the lanes waiting for an answer (docs/PROCGEN.md §27): its words, and seconds left. */
+  private hail: { offer: LaneOffer; left: number; held: boolean; from: string; text: string } | null = null;
+  /** The Wake's toll is paid here: its packs let the ship be until it docks, jumps or fires on them. */
+  private tollPaid = false;
+  /** How this flight began: a hail waits a little longer after a launch than after an arrival. */
+  private spawnKind: SpawnSpec['kind'] = 'arrival';
   private shieldFlash = 0;
   /** Mines drifting in the system, and decoy flares burning behind the player. */
   private readonly mines: Mine[] = [];
@@ -638,6 +653,7 @@ export class FlightSession {
   // ---------------------------------------------------------------- setup
 
   start(spawn: SpawnSpec): void {
+    this.spawnKind = spawn.kind;
     const p = this.player;
     p.velocity.set(0, 0, 0);
     p.angularVelocity.set(0, 0, 0);
@@ -938,6 +954,9 @@ export class FlightSession {
       case 'cancel-autopilot':
         this.cancelAutopilot('Autopilot off: free flight');
         break;
+      case 'answer':
+        this.answerHail();
+        break;
       default:
         break;
     }
@@ -1021,6 +1040,8 @@ export class FlightSession {
     }
     const lane = this.nearestLaneEntrance();
     if (lane && lane.distance < LANE_ENTER_RANGE) return { label: 'Enter lane', action: 'interact', icon: 'cruise' };
+    // A hail on the lanes (docs/PROCGEN.md §27) waits for an answer.
+    if (this.hail && !this.hail.held) return { label: 'Answer', action: 'answer', icon: 'info' };
     // A far star is observed from wherever the ship is, when a contract wants it now; it is never flown to.
     if (sel?.kind === 'sky') return observationsWanted(this.state, sel.id.slice('sky:'.length)).length ? { label: 'Observe', action: 'scan', icon: 'scan' } : null;
     if (sel && (sel.kind === 'planet' || sel.kind === 'star' || sel.kind === 'hole') && sel.position.distanceTo(this.player.position) < this.scanRangeFor(sel) * 3) {
@@ -1265,6 +1286,7 @@ export class FlightSession {
     this.mining.update(dt, this.player.position, this.state.clock, this.camera, this.beam?.rockId ?? null);
     if (this.alive) this.collide(this.player, this.playerDurability, true);
     this.updateHole(dt);
+    this.tickHail(dt);
     for (const n of this.npcs) if (!n.den) this.collide(n.body, n.durability, false);
     regenerate(this.playerDurability, dt);
     for (const n of this.npcs) regenerate(n.durability, dt);
@@ -1277,6 +1299,7 @@ export class FlightSession {
       this.watchSights();
       this.updateSky();
       this.watchPyre();
+      this.watchLanes();
     }
     this.updateMissileLock(dt);
     if (this.deathTimer >= 0) {
@@ -1862,6 +1885,65 @@ export class FlightSession {
     if (hull.hull <= 0) this.destroyPlayer();
   }
 
+  // ---------------------------------------------------------------- lane encounters (docs/PROCGEN.md §27)
+
+  /**
+   * A hail on the lanes: met when flying quietly (not just launched or arrived, no hostiles near,
+   * clear of the docks, no autopilot docking or lane, no scan), written into the save as it begins;
+   * it waits for an answer while no hostiles are near, and lapses when its time runs out.
+   */
+  private watchLanes(): void {
+    if (this.hail) return;
+    if (!this.alive || this.busy || this.deathTimer >= 0 || this.scanStatus) return;
+    if (this.time < (this.spawnKind === 'arrival' ? LANES.grace.afterArrival : LANES.grace.afterLaunch)) return;
+    if (this.hostilesNearby(LANES.quiet.hostileRange)) return;
+    if (this.system.docks.some((d) => d.def.position.distanceTo(this.player.position) < LANES.quiet.dockClear + d.radius)) return;
+    const offer = laneOfferFor(this.state, this.state.location.systemId);
+    if (!offer) return;
+    stageLane(this.state, offer);
+    const words = laneWords(this.state, offer);
+    this.hail = { offer, left: LANES.hailSeconds, held: false, from: words.speaker, text: words.hail };
+    this.sfx('alert');
+    this.callbacks.onHail?.(offer);
+  }
+
+  /** A waiting hail's time runs while no hostiles are near; when it runs out, it lapses. */
+  private tickHail(dt: number): void {
+    const h = this.hail;
+    if (!h) return;
+    h.held = this.hostilesNearby(LANES.quiet.hostileRange);
+    if (h.held) return;
+    h.left -= dt;
+    if (h.left > 0) return;
+    this.hail = null;
+    this.callbacks.onHailLapsed?.(h.offer);
+  }
+
+  /** The pilot answers the hail: the game shows its card. Not with hostiles near. */
+  answerHail(): void {
+    const h = this.hail;
+    if (!h) return;
+    if (h.held) {
+      this.callbacks.onMessage('Not now: hostile contact.', 'bad');
+      return;
+    }
+    this.callbacks.onAnswerHail?.(h.offer);
+  }
+
+  /** What came of a hail's answer, in the flight: it is over, raiders drop out of the dark, or the Wake lets the ship be. */
+  laneOutcome(offerId: string, out: LaneOutcome | null): void {
+    if (!out) return;
+    if (this.hail?.offer.id === offerId) this.hail = null;
+    if (out.ambush) this.spawnPack({ max: 1, level: out.ambush, size: [2, 3], firstDelay: 0, interval: [0, 0] }, true);
+    if (out.pass) this.tollPaid = true;
+  }
+
+  /** Test-only: the hail waiting, if any. */
+  get hailState(): { id: string; kind: string; left: number; held: boolean } | null {
+    const h = this.hail;
+    return h ? { id: h.offer.id, kind: h.offer.kind, left: h.left, held: h.held } : null;
+  }
+
   /** A ship still in Pyre's system when its light leaves (docs/PROCGEN.md §26) is carried out by the game, once. */
   private watchPyre(): void {
     if (this.pyreCaught || this.system.def.blackHole || this.system.def.systemId !== PYRE_ID) return;
@@ -1884,6 +1966,8 @@ export class FlightSession {
 
   private damageNpc(n: NpcShip, amount: number, at: THREE.Vector3, type?: DamageType, byPlayer = false): void {
     if (byPlayer) n.playerHitAt = this.time;
+    // Firing on the Wake ends the toll's pass (docs/PROCGEN.md §27).
+    if (byPlayer && n.side === 'raider') this.tollPaid = false;
     if (n.den?.part === 'reactor' && this.turretsStanding(n.den.locationId)) {
       // The reactor's shield holds while any turret stands.
       n.art.flashShield(1);
@@ -2999,7 +3083,8 @@ export class FlightSession {
   }
 
   private raiderSparesPlayer(n: NpcShip): boolean {
-    return !n.hunter && !n.encounter && wakeFriendly(this.state) && !this.provoked(n);
+    // A pilot the Wake trusts, or one who paid its toll here (docs/PROCGEN.md §27).
+    return !n.hunter && !n.encounter && (wakeFriendly(this.state) || this.tollPaid) && !this.provoked(n);
   }
 
   /** Can the player dock here? Open stations, and the raider dens for pilots the Wake trusts. */
@@ -3996,6 +4081,8 @@ export class FlightSession {
     hud.hull = d.hull / d.hullMax;
     hud.shieldValue = d.shield;
     hud.hullValue = d.hull;
+    const hail = this.hail;
+    hud.hail = hail ? { from: hail.from, text: hail.text, left: hail.left, held: hail.held, tone: hail.offer.kind === 'toll' ? 'toll' : hail.offer.kind === 'customs' ? 'law' : 'comms' } : null;
     const launcher = activeLauncher(this.state.ship);
     hud.missiles = launcher?.ammo ?? 0;
     hud.launcher = launcher ? roundsLabel(launcher.stats.kind) : null;

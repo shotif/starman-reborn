@@ -114,6 +114,13 @@ export class Hud {
   readonly toastSlot: HTMLElement;
   private readonly contextHint: HTMLButtonElement;
   private readonly encounterBanner: HTMLElement;
+  /** A hail on the lanes (docs/PROCGEN.md §27): who calls, what they say, Answer, and its time left. */
+  private readonly hailBanner: HTMLElement;
+  private readonly hailFrom: HTMLElement;
+  private readonly hailText: HTMLElement;
+  private readonly hailAnswer: HTMLButtonElement;
+  private readonly hailKey: HTMLElement;
+  private readonly hailLeft: HTMLElement;
   private readonly status: HTMLElement;
   private readonly wallet: HTMLElement;
   private readonly buttons: HTMLElement;
@@ -249,6 +256,12 @@ export class Hud {
       h('span', { class: 'muted' }, 'Fight, or skip it:'),
       h('button', { type: 'button', class: 'btn btn-sm', 'data-testid': 'avoid-combat', onClick: () => callbacks.onAvoidCombat() }, 'Avoid combat'),
     );
+    this.hailFrom = h('strong', { class: 'hail-from' });
+    this.hailText = h('span', { class: 'hail-text' });
+    this.hailKey = h('kbd', { class: 'kbd' }, 'Q');
+    this.hailAnswer = h('button', { type: 'button', class: 'btn btn-sm btn-primary hail-answer', 'data-testid': 'hail-answer', onClick: () => callbacks.onCommand('answer') }, 'Answer', this.hailKey) as HTMLButtonElement;
+    this.hailLeft = h('span', { class: 'hail-left num' });
+    this.hailBanner = h('div', { class: 'frame frame-sm hail-banner', role: 'status', hidden: true, 'data-testid': 'hail-banner' }, this.hailFrom, this.hailText, h('span', { class: 'hail-actions' }, this.hailAnswer, this.hailLeft));
     this.scaleText = h('div', { class: 'hud-scale' });
 
     this.weaponText = h('span', { class: 'load-name' });
@@ -331,7 +344,7 @@ export class Hud {
     this.root.classList.toggle('touch-mode', !full);
     if (full) {
       this.left.replaceChildren(this.wallet, this.scaleText);
-      this.centerColumn.replaceChildren(this.commandRail, this.objectivePanel, this.autopilotText, this.miningText, this.warningText, this.encounterBanner);
+      this.centerColumn.replaceChildren(this.commandRail, this.objectivePanel, this.autopilotText, this.miningText, this.warningText, this.encounterBanner, this.hailBanner);
       this.right.replaceChildren(this.buttons);
       this.bottomLeft.replaceChildren(this.targetPanel);
       this.bottomCenter.replaceChildren(this.contextHint, this.status);
@@ -340,7 +353,7 @@ export class Hud {
       // Touch: the target panel and toasts stack in the centre column under the objective and
       // any alert (never on top of them).
       this.left.replaceChildren(this.status);
-      this.centerColumn.replaceChildren(this.objectivePanel, this.autopilotText, this.miningText, this.warningText, this.encounterBanner, this.targetPanel, this.toastSlot);
+      this.centerColumn.replaceChildren(this.objectivePanel, this.autopilotText, this.miningText, this.warningText, this.encounterBanner, this.hailBanner, this.targetPanel, this.toastSlot);
       this.right.replaceChildren(this.buttons, this.wallet);
       this.bottomLeft.replaceChildren();
       this.bottomCenter.replaceChildren(this.contextHint);
@@ -351,7 +364,7 @@ export class Hud {
   /** The key or pad button named in the context action's hint; none on touch, which has its own button. */
   private contextKey(action: FlightAction): string | null {
     if (this.scheme === 'gamepad') return padLabel(PAD_FOR.interact, this.padStyle);
-    if (this.scheme === 'desktop') return action === 'goto' ? 'G' : action === 'scan' ? 'X' : action === 'mine' ? MINE_KEY : 'E';
+    if (this.scheme === 'desktop') return action === 'goto' ? 'G' : action === 'scan' ? 'X' : action === 'mine' ? MINE_KEY : action === 'answer' ? 'Q' : 'E';
     return null;
   }
 
@@ -359,6 +372,19 @@ export class Hud {
   moveReticle(x: number, y: number): void {
     this.reticleMoved = true;
     this.reticle.style.transform = `translate(${x}px, ${y}px)`;
+  }
+
+  /** The hail banner: shown while a hail waits, its answer closed while hostiles are near. */
+  private updateHail(model: HudModel): void {
+    const hail = model.hail;
+    this.hailBanner.hidden = !hail;
+    if (!hail) return;
+    this.hailBanner.dataset.tone = hail.tone;
+    setText(this.hailFrom, hail.from);
+    setText(this.hailText, hail.text);
+    this.hailAnswer.disabled = hail.held;
+    this.hailKey.hidden = this.scheme !== 'desktop';
+    setText(this.hailLeft, hail.held ? 'Not now: hostile contact' : `${Math.ceil(hail.left)} s`);
   }
 
   setEncounterBanner(visible: boolean): void {
@@ -395,6 +421,7 @@ export class Hud {
       model.nearestDock ? `${status.systemName} · dock ${model.nearestDock.name} ${formatRange(model.nearestDock.distance)}` : status.systemName,
     );
     setText(this.scaleText, status.scaleNote);
+    this.updateHail(model);
     this.objectivePanel.hidden = !status.objective;
     if (status.objective) setText(this.objectiveText, status.objective);
     this.objectivePanel.setAttribute('aria-expanded', String(!this.objectivePanel.classList.contains('collapsed')));
