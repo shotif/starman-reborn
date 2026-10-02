@@ -25,9 +25,10 @@ What it lacks now:
 
 ## Proposed next increments
 
-Candidates for what comes next, in the order they will be built (the first was chosen by the owner
-on 1 October 2026 as a fresh direction, along with A station of your own, Passengers and
-sightseers, and Rival pilots, all now done):
+Candidates for what comes next, in the order they will be built. Stellar death was chosen by the
+owner on 1 October 2026 (with A station of your own, Passengers and sightseers and Rival pilots, all
+now done); Lane encounters, Rival stories, Defend your outpost and Your crew on 2 October 2026, to
+make the game more engaging.
 
 ### Stellar death, as fiction ⏳ (M–L)
 
@@ -41,6 +42,34 @@ the real sky's data or its sources.
 
 A glut sends its surplus out in haulers, as a shortage draws relief, and boards post escorts for
 relief bound through raided lanes.
+
+### Lane encounters ⏳ (M)
+
+Short choices that come up in flight and at the jump beacons: a distress call, a lifepod adrift, a
+Hollow Wake toll gate, a customs officer open to a bribe, a stranded scientist. Each leads somewhere:
+cargo, credits, standing, a contract or an ambush. They are written as data with guardrails, worked
+out from the system and the clock, and labelled as fiction. Today the flight between docks is quiet
+unless a raid or a hauler happens to be there.
+
+### Rival stories ⏳ (M)
+
+Each rival pilot gets a short story driven by how the player stands with them. A friend asks for
+help (a loan, an escort, a rescue) and ends as an ally who sometimes flies with the player; an enemy
+sets customs on the player or lays an ambush, ending in a duel. Today the rivals remember the
+player but have no story of their own.
+
+### Defend your outpost ⏳ (M)
+
+Raiders come for the player's outpost now and then. Fight them off in person, hire guards, or fit
+defence turrets as a new outpost module; a raid lost costs stock and income for a while. Today an
+outpost only earns: nothing threatens it but a raid's dent in its income.
+
+### Your crew ⏳ (L)
+
+People aboard the player's own ship (an engineer, a gunner, a navigator) with skills that matter in
+flight, morale, and small personal stories that react to what the player does. They can be hurt in
+a fight, and leave if treated badly. Today only hired wingmen fly with the player, in ships of
+their own.
 
 ### How an increment ships
 
