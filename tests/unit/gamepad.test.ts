@@ -96,6 +96,32 @@ describe('gamepad mapping', () => {
   });
 });
 
+describe('gamepad dialogs', () => {
+  it('reads a press for a dialog once: the D-pad to move, A to press, B to close', () => {
+    const pad = new FakePad();
+    const { input, frame } = rig(pad);
+    frame();
+    expect(input.menu()).toBeNull();
+    pad.press('down');
+    frame();
+    expect(input.menu()).toBe('down');
+    frame();
+    expect(input.menu()).toBeNull();
+    pad.release('down');
+    pad.press('up');
+    frame();
+    expect(input.menu()).toBe('up');
+    pad.release('up');
+    pad.press('a');
+    frame();
+    expect(input.menu()).toBe('confirm');
+    pad.release('a');
+    pad.press('b');
+    frame();
+    expect(input.menu()).toBe('back');
+  });
+});
+
 describe('gamepad sticks', () => {
   it('steer with the left stick past a dead zone, up lifting the nose', () => {
     const p = new FakePad();

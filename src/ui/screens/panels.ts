@@ -75,6 +75,7 @@ const DESKTOP_ROWS: [string, readonly string[] | string][] = [
   ['Scan target', KEY_BINDINGS.scan],
   ['Mine the selected rock (mining laser, within 600 m)', KEY_BINDINGS.mine],
   ['Engines off (drift)', KEY_BINDINGS.engineKill],
+  ['Answer a hail (then 1, 2, 3 to choose)', KEY_BINDINGS.answer],
   ['Star map', KEY_BINDINGS.map],
   ['Star map: zoom', 'Wheel (toward the cursor), + and −; double-click a star to centre it'],
   ['Star map: find a system', '/ or Find; Missions lists where your missions send you'],

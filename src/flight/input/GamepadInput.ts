@@ -328,6 +328,16 @@ export class GamepadInput {
     }
   }
 
+  /**
+   * A press for a dialog this frame (after `update`): the D-pad up or down to move between its
+   * buttons, A to press the one in focus, B to close it; null for none.
+   */
+  menu(): 'up' | 'down' | 'confirm' | 'back' | null {
+    if (this.reading === 0) return null;
+    const edge = (b: PadButton) => this.down[PAD_BUTTON[b]] === true && this.wasDown[PAD_BUTTON[b]] !== true;
+    return edge('up') ? 'up' : edge('down') ? 'down' : edge('a') ? 'confirm' : edge('b') ? 'back' : null;
+  }
+
   /** Whether the button for `action` was pressed this frame (the pause menu and star map listen for Start and Back). */
   pressed(action: FlightAction): boolean {
     return this.pressedNow.has(action);

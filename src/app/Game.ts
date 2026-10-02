@@ -12,7 +12,7 @@ import * as THREE from 'three';
 import { AudioEngine } from '../audio/AudioEngine.ts';
 import type { MusicMood, SfxId } from '../audio/types.ts';
 import { ALL_LOCATIONS, getComponent, getLocation, getPlanet, getSystem, hasProvisionalData, isInventedSystem, MAP_SYSTEMS, PYRE_ID, saveLocationsKey, SYSTEMS, WORLD } from '../data/systems.ts';
-import { answerLane, laneEncounter, laneSlot, lapseLane, type LaneOffer } from '../economy/lanes.ts';
+import { answerLane, laneEncounter, laneOfferFor, laneSlot, lapseLane, type LaneOffer } from '../economy/lanes.ts';
 import { LANE_KINDS, type LaneKind } from '../content/lanes/rules.ts';
 import { showLaneCard } from '../ui/lanes.ts';
 import { edgeComm, edgeMoment, edgeTimeline, hopsToPyre, laneClosedReason, PYRE_HOLE_ID, pyreRefugeId, pyreStage, pyreStationsNow, pyreStatus, scheduleEdge } from '../economy/doomed.ts';
@@ -1347,6 +1347,26 @@ export class Game {
     void s;
   }
 
+  /**
+   * Dialogs on a pad (a lane encounter's card among them, docs/PROCGEN.md §27): the D-pad moves
+   * between the top dialog's buttons, A presses the one in focus (the first, before any), B closes it.
+   */
+  private padDialogs(): void {
+    const top = [...document.querySelectorAll<HTMLElement>('.modal-backdrop')].at(-1);
+    if (!top) return;
+    const nav = this.gamepad.menu();
+    if (!nav) return;
+    if (nav === 'back') {
+      top.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      return;
+    }
+    const buttons = [...top.querySelectorAll<HTMLButtonElement>('button:not([disabled])')];
+    if (!buttons.length) return;
+    const at = buttons.indexOf(document.activeElement as HTMLButtonElement);
+    if (nav === 'confirm') (buttons[at] ?? buttons[0]!).click();
+    else buttons[at < 0 ? 0 : (at + (nav === 'down' ? 1 : buttons.length - 1)) % buttons.length]!.focus();
+  }
+
   /** A hail answered (docs/PROCGEN.md §27): its card, paused; the choice made, and what came of it in the save and the flight. */
   private async onAnswerHail(offer: LaneOffer): Promise<void> {
     const state = this.state!;
@@ -1826,6 +1846,7 @@ export class Game {
     if (this.renderer.contextLost) return;
     // Pads are read every frame on every screen, so a press counts once and never carries over.
     this.gamepad.update();
+    this.padDialogs();
     switch (this.mode) {
       case 'docked':
         if (this.interior) {
@@ -2162,8 +2183,13 @@ export class Game {
         }
         return null;
       },
-      /** Test-only: the lane encounters this save has met, and the hail waiting in flight. */
-      lanes: () => ({ met: this.state?.world.lanes ?? {}, hail: this.flight?.hailState ?? null, kinds: LANE_KINDS }),
+      /** Test-only: the lane encounters this save has met, the hail waiting in flight, and what the pilot would meet here now. */
+      lanes: () => ({
+        met: this.state?.world.lanes ?? {},
+        hail: this.flight?.hailState ?? null,
+        kinds: LANE_KINDS,
+        now: this.state ? (laneOfferFor(this.state, this.state.location.systemId)?.id ?? null) : null,
+      }),
       /** Test-only: when Pyre's warning comes in this save (docs/PROCGEN.md §26); the far stars' story must be set. */
       edgeAt: (at: number) => {
         if (!this.state?.world.sky) return false;

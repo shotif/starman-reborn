@@ -1,4 +1,6 @@
 import type { GameState } from '../app/state.ts';
+import { LANE_LINES } from '../content/lanes/lines.ts';
+import { getSystem } from '../data/systems.ts';
 import { laneChoices, laneWords, type LaneOffer } from '../economy/lanes.ts';
 import { dataBadge, showModal } from './components.ts';
 import { h } from './dom.ts';
@@ -56,4 +58,30 @@ export async function showLaneCard(state: GameState, offer: LaneOffer): Promise<
   } finally {
     if (onKey) document.removeEventListener('keydown', onKey);
   }
+}
+
+/** The journal's record of the lanes (docs/PROCGEN.md §27): the encounters met lately, newest first, and what came of each. */
+export function lanesRecord(state: GameState): HTMLElement | null {
+  const met = Object.values(state.world.lanes ?? {})
+    .sort((a, b) => b.at - a.at)
+    .slice(0, 12);
+  if (!met.length) return null;
+  const ago = (at: number) => {
+    const m = Math.max(0, Math.round((state.clock - at) / 60));
+    return m < 1 ? 'just now' : m < 120 ? `${m} min ago` : `${Math.round(m / 60)} h ago`;
+  };
+  return h(
+    'section',
+    { class: 'lanes-record', 'aria-label': 'The lanes', 'data-testid': 'lanes-record' },
+    h('div', { class: 'list-head' }, h('span', null, 'The lanes'), h('span', null, dataBadge('fictional'))),
+    h(
+      'ul',
+      { class: 'plain small' },
+      met.map((r) => {
+        const lines = LANE_LINES[r.kind];
+        const what = r.pick === undefined ? 'waiting for an answer' : r.pick === 'lapsed' ? 'let go' : (lines.options[r.pick]?.label.toLowerCase() ?? r.pick);
+        return h('li', null, h('strong', null, lines.speaker), ` · ${getSystem(r.systemId).displayName} · ${ago(r.at)}: ${what}`);
+      }),
+    ),
+  );
 }

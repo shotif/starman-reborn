@@ -1,6 +1,7 @@
 import { getLocation } from '../../data/systems.ts';
 import { voyageTotals, type GameState } from '../../app/state.ts';
 import { storyRecord } from '../story.ts';
+import { lanesRecord } from '../lanes.ts';
 import { cargoCount } from '../../economy/cargo.ts';
 import { COMMODITIES, COMMODITY_IDS } from '../../economy/commodities.ts';
 import { FACTIONS, standingTier, TIER_LABEL } from '../../economy/factions.ts';
@@ -82,6 +83,7 @@ export function journalContent(ctx: StationContext, refresh: Refresh): HTMLEleme
       ]),
     ),
     storyRecord(state),
+    lanesRecord(state),
     heardRecord(state),
     pilotRecord(state),
     voyage ? h('div', { class: 'list-head' }, h('span', null, 'Voyage report'), h('span', null, '')) : null,
