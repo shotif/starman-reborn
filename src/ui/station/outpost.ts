@@ -375,7 +375,12 @@ function defenceSection(ctx: StationContext, o: OutpostRecord, refresh: Refresh)
 /** Hiring a guard: two pilots this posting, a term, paid up front; on post a quarter of an hour on. */
 async function openGuardHire(ctx: StationContext, o: OutpostRecord, refresh: Refresh): Promise<void> {
   const { state } = ctx;
-  const offers = guardOffers(state, o);
+  // Pilots already guarding the outpost are not looking for work.
+  const offers = guardOffers(state, o).filter((g) => !(o.defence?.guards ?? []).some((x) => x.id === g.id && x.until > state.clock));
+  if (!offers.length) {
+    toast('Nobody else is looking for guard work this posting.', 'bad', 4000);
+    return;
+  }
   let pick = offers[0]!.id;
   let hours = OUTPOST_RAIDS.guards.terms[1] ?? OUTPOST_RAIDS.guards.terms[0]!;
   const termSelect = h(
