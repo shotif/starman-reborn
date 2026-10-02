@@ -26,6 +26,10 @@ import { cargoCapacity, newShipState, performanceOf } from '../economy/loadout.t
 import { carriesPassengers, frighten, passengerFright, passengerGoodbye, passengerJobs, seeSight, sightseersArrive, sightsIn } from '../economy/passengers.ts';
 import { claimFor, holdsOf, metRival, nextRun, rivalById, rivalDestroyed, rivalHello, rivalKnockedOut, rivalName, rivalShot, rivalWhere, shift, standingWith, turnOf } from '../economy/rivals.ts';
 import { allyLost, ambushIn, duelIn, duelLost, duelStarted, duelWon, settleRivalStories, spendAmbush, spendTipoff, storyOffer, storyStatus, tipoffIn, tippedPatrols, type StoryNote } from '../economy/rivalStories.ts';
+import { jumpsFrom } from '../content/world/network.ts';
+import { crewAboard, crewEffects, crewOffers, hurtCrew, settleFavours, type CrewNote } from '../economy/crew.ts';
+import { crewDeed } from '../economy/crewDeeds.ts';
+import type { CrewDeed, CrewHeart, CrewRole } from '../content/crew/rules.ts';
 import { STORY, STORY_NOTES } from '../content/rivals/storyLines.ts';
 import { defenceOf, foughtPlan, nextRaid, outpostSystem, raidNote, raidWarning, settleRaid, turretsUp } from '../economy/outpostRaids.ts';
 import { RAID_WATCH } from '../content/outposts/raidLines.ts';
@@ -611,6 +615,16 @@ export class Game {
     return out.notes.length > 0 || out.jobs.length > 0;
   }
 
+  /** What the crew aboard did and said (docs/PROCGEN.md §30): notices, and their own words on the radio. */
+  private announceCrew(out: { notes: CrewNote[]; jobs: JobEvent[] }): void {
+    for (const n of out.notes) {
+      toast(n.text, n.tone, 6000);
+      if (n.name && n.line) this.comm(n.name, n.line, 6000);
+    }
+    if (out.jobs.length) this.announceJobEvents(out.jobs);
+    if (out.notes.length || out.jobs.length) this.persist();
+  }
+
   /** Leaving a duel under way (docking, jumping, or the ship lost) forfeits it (docs/PROCGEN.md §28). */
   private leaveDuel(): void {
     const state = this.state;
@@ -873,6 +887,9 @@ export class Game {
         toast(`Objective complete: ${e.text}`, 'good');
       }
     }
+    // A crew member's favour done or failed: they say so at once (docs/PROCGEN.md §30.6).
+    const state = this.state;
+    if (state && events.some((e) => (e.kind === 'complete' || e.kind === 'failed') && state.contracts[e.jobId]?.contract?.crew)) this.announceCrew(settleFavours(state));
   }
 
   // ------------------------------------------------------------------ story
@@ -1376,6 +1393,7 @@ export class Game {
     this.announceJobEvents(out.jobEvents, false);
     for (const n of out.allies) toast(n, 'info', 5000);
     this.announceStories(out.stories);
+    this.announceCrew(out.crew);
     const deliverable = Object.keys(state.jobs).some((id) => {
       const p = state.jobs[id]!;
       return p.status === 'active' && getJob(id, state).destinationLocationId === locationId;
@@ -1595,6 +1613,8 @@ export class Game {
     });
     const r = rescueAfterDefeat(state);
     toast(`Rescued: −${formatCredits(r.fee)}`, 'bad');
+    // The crew were aboard: hurt and shaken (docs/PROCGEN.md §30.5).
+    if (crewAboard(state).length) toast('Your crew came through, hurt and shaken: a medic at any dock with repairs can treat them.', 'bad', 6000);
     // Passengers leave with the tug's crew: their trips are over (docs/PROCGEN.md §23).
     this.announceJobEvents(passengerJobs(state).flatMap((c) => failJob(state, c.id, `${partyName(c.contract?.party ?? [])} left with the tug’s crew`) ?? []));
     await this.saves.save(state);
@@ -2462,6 +2482,47 @@ export class Game {
         if (!state || !o) return null;
         const next = nextRaid(state, o);
         return { next, warned: o.defence?.warned ?? null, raids: o.defence?.raids ?? [], turrets: o.defence?.turrets ?? 0, flight: this.flight?.outpostRaidStatus() ?? null };
+      },
+      /** Test-only: the crew aboard, what they do for the ship now, the deeds counted, who left (docs/PROCGEN.md §30). */
+      crew: () => {
+        const state = this.state;
+        if (!state) return null;
+        return { members: crewAboard(state), effects: crewEffects(state), deeds: state.aboard?.deeds ?? {}, former: state.aboard?.former ?? [], systems: state.ship.systems };
+      },
+      /** Test-only: the nearest dock (by jumps) whose bar has a hand of this role (and heart) for hire now. */
+      findCrew: (arg: { role: CrewRole; heart?: CrewHeart }) => {
+        const state = this.state;
+        if (!state) return null;
+        const { role, heart } = arg;
+        const jumps = jumpsFrom(WORLD.links, state.location.systemId);
+        const docks = ALL_LOCATIONS.filter((l) => l.status === 'functional' && l.stationType !== 'pirate-den').sort((a, b) => (jumps.get(a.systemId) ?? 99) - (jumps.get(b.systemId) ?? 99) || a.id.localeCompare(b.id));
+        for (const l of docks) {
+          const o = crewOffers(state, l.id).find((x) => x.role === role && (!heart || x.heart === heart));
+          if (o) return { locationId: l.id, systemId: l.systemId, offerId: o.id, name: o.name, heart: o.heart, grade: o.grade };
+        }
+        return null;
+      },
+      /** Test-only: hurts the crew member of a role, as a hit would. */
+      hurtCrew: (role: CrewRole) => {
+        if (!this.state) return null;
+        const m = hurtCrew(this.state, role);
+        this.persist();
+        return m?.id ?? null;
+      },
+      /** Test-only: deeds the crew aboard saw (counted until the next dock). */
+      crewDeed: (arg: { deed: CrewDeed; n?: number }) => {
+        if (!this.state) return;
+        crewDeed(this.state, arg.deed, arg.n ?? 1);
+        this.persist();
+      },
+      /** Test-only: a crew member's morale (0–100). */
+      setCrew: (arg: { role: CrewRole; morale: number }) => {
+        const m = this.state ? crewAboard(this.state).find((x) => x.role === arg.role) : undefined;
+        if (!m) return false;
+        m.morale = Math.max(0, Math.min(100, arg.morale));
+        this.station?.render();
+        this.persist();
+        return true;
       },
       /** Test-only: the player's ship takes a hit in flight (shields first). */
       hurtPlayer: (amount: number) => this.flight?.debugHurt(amount),

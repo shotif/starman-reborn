@@ -2,6 +2,7 @@ import { applyCredits, type GameState, type ShipState } from '../app/state.ts';
 import { gearForSale, resaleValue, shipModel, shipsForSale, shopRule, standingForGear, standingForShip } from '../content/catalog.ts';
 import type { GearItem, ShipModel, ShipSlot, Tier } from '../content/types.ts';
 import { cargoUsed } from './cargo.ts';
+import { quartersBlock } from './crewQuarters.ts';
 import { repairDiscount, standingTier, TIER_LABEL } from './factions.ts';
 import { LAW } from '../content/law/rules.ts';
 import { dockAccess } from './law.ts';
@@ -286,6 +287,7 @@ export function shipOffers(state: GameState, locationId: string): ShipOffer[] {
     if (!blocked && net > state.credits) blocked = 'Not enough credits';
     if (!blocked && performanceOf({ model: model.id, fittings: model.stock }).cargo < cargoUsed(state.ship.cargo)) blocked = 'Sell cargo first: the hold is smaller';
     if (!blocked) blocked = berthBlock(state, performanceOf({ model: model.id, fittings: model.stock }).berths);
+    if (!blocked) blocked = quartersBlock(state, model.id);
     return { model, tradeIn, net, blocked, current };
   });
 }

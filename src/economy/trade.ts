@@ -1,8 +1,10 @@
 import { applyCredits, type CommodityId, type GameState, type MarketObservation } from '../app/state.ts';
 import { getLocation } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
+import { LAW } from '../content/law/rules.ts';
 import { addCargo, cargoCount, itemsThatFit, removeCargo } from './cargo.ts';
 import { COMMODITIES, COMMODITY_IDS } from './commodities.ts';
+import { crewDeed } from './crewDeeds.ts';
 import { cargoCapacity } from './loadout.ts';
 import { allQuotes, moveStock, orderTotal, quote, stockAvailable, type MarketContext } from './markets.ts';
 import { clearGlut, relieveShortage, type Answer } from './answers.ts';
@@ -80,6 +82,8 @@ export function sellCommodity(state: GameState, locationId: string, commodity: C
   moveStock(state.markets, locationId, commodity, qty, state.clock);
   applyCredits(state, total, 'sell', `Sold ${qty} ${COMMODITIES[commodity].name}`);
   state.stats.sales += total;
+  // Contraband sold, seen by the crew aboard (docs/PROCGEN.md §30.4).
+  if (LAW.contraband.includes(commodity)) crewDeed(state, 'smuggle');
   // Selling into a shortage helps end it (docs/PROCGEN.md §17).
   const relief = relieveShortage(state, locationId, commodity, qty);
   return { ok: true, qty, unitPrice: Math.round(total / qty), total, relief };

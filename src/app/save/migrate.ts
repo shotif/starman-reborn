@@ -14,8 +14,9 @@ import { FLEET } from '../../content/fleet/rules.ts';
 import { OUTPOSTS } from '../../content/outposts/rules.ts';
 import { OUTPOST_RAIDS } from '../../content/outposts/raids.ts';
 import { ROSTER } from '../../content/rivals/rules.ts';
+import { CREW, CREW_DEEDS, CREW_HEARTS, CREW_ROLES, type CrewDeed } from '../../content/crew/rules.ts';
 import { outpostId, outpostSite } from '../../content/outposts/sites.ts';
-import { createNewGame, SAVE_VERSION, type CommodityId, type GameState, type OutpostDefence, type OutpostRecord, type RivalStory } from '../state.ts';
+import { createNewGame, SAVE_VERSION, type CommodityId, type CrewLog, type GameState, type OutpostDefence, type OutpostRecord, type RivalStory } from '../state.ts';
 
 /**
  * Save format history:
@@ -51,7 +52,8 @@ import { createNewGame, SAVE_VERSION, type CommodityId, type GameState, type Out
  *   begins, §25) and a job's `observed` (its observations), absent in older v10 saves; the world log's `lanes`
  *   (lane encounters met, §27), absent in older v10 saves; the world log's rival `stories`, a rival's
  *   `met` and a wingman's `ally` (§28), and an outpost's `opened` and `defence` (§29), absent in older
- *   v10 saves. See GameState in src/app/state.ts.
+ *   v10 saves; `aboard`, the crew aboard and who left (§30), and a contract's `crew`, absent in
+ *   older v10 saves. See GameState in src/app/state.ts.
  */
 export interface SaveV1 {
   version: 1;
@@ -128,6 +130,49 @@ function validStory(st: RivalStory): boolean {
   if (st.duel !== undefined && !(isRecord(st.duel) && Number.isFinite(st.duel.posted) && time(st.duel.started))) return false;
   if (st.ended !== undefined && !(isRecord(st.ended) && Number.isFinite(st.ended.at) && STORY_ENDS.includes(st.ended.how))) return false;
   return true;
+}
+
+/** The crew aboard (docs/PROCGEN.md §30): one of each role at most, within the rules, their stories and who left. */
+function assertValidCrew(a: CrewLog, fail: (msg: string) => never): void {
+  const time = (t: unknown) => Number.isFinite(t) && (t as number) >= 0;
+  if (!isRecord(a) || !Array.isArray(a.members) || a.members.length > CREW.max || !time(a.since) || !Number.isInteger(a.kills) || a.kills < 0 || !isRecord(a.deeds)) fail('crew aboard');
+  for (const [d, n] of Object.entries(a.deeds)) if (!CREW_DEEDS.includes(d as CrewDeed) || !Number.isInteger(n) || (n as number) < 0) fail('crew deeds');
+  if (a.round !== undefined && !Number.isInteger(a.round)) fail('crew aboard');
+  const roles = new Set<string>();
+  for (const m of a.members) {
+    const ok =
+      isRecord(m) &&
+      typeof m.id === 'string' &&
+      typeof m.name === 'string' &&
+      !!m.name.trim() &&
+      CREW_ROLES.includes(m.role) &&
+      CREW_HEARTS.includes(m.heart) &&
+      [1, 2, 3].includes(m.grade) &&
+      time(m.hired) &&
+      time(m.paidTo) &&
+      m.paidTo >= m.hired &&
+      Number.isFinite(m.morale) &&
+      m.morale >= 0 &&
+      m.morale <= 100 &&
+      (m.hurt === undefined || (isRecord(m.hurt) && time(m.hurt.at) && time(m.hurt.until) && m.hurt.until >= m.hurt.at && Number.isInteger(m.hurt.docks) && m.hurt.docks >= 0)) &&
+      (m.notice === undefined || time(m.notice)) &&
+      (m.said === undefined || (typeof m.said === 'string' && m.said.length <= 400)) &&
+      !roles.has(m.role);
+    if (!ok) fail(`crew member ${String((m as { id?: unknown })?.id)}`);
+    roles.add(m.role);
+    const st = m.story;
+    if (st === undefined) continue;
+    const f = st.favour;
+    const storyOk =
+      isRecord(st) &&
+      Number.isInteger(st.seen) &&
+      st.seen >= 0 &&
+      (st.told === undefined || time(st.told)) &&
+      (f === undefined || (isRecord(f) && time(f.asked) && time(f.until) && f.until >= f.asked && LOCATION_IDS.has(f.to) && (f.systemId === undefined || SYSTEM_IDS.includes(f.systemId)) && (f.job === undefined || typeof f.job === 'string'))) &&
+      (st.ended === undefined || (isRecord(st.ended) && time(st.ended.at) && ['done', 'failed', 'lapsed'].includes(st.ended.how)));
+    if (!storyOk) fail(`crew story ${m.id}`);
+  }
+  if (a.former !== undefined && !(Array.isArray(a.former) && a.former.length <= CREW.former && a.former.every((x) => isRecord(x) && typeof x.name === 'string' && CREW_ROLES.includes(x.role) && time(x.at) && LOCATION_IDS.has(x.locationId) && (x.why === 'let-go' || x.why === 'unhappy')))) fail('former crew');
 }
 
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -454,6 +499,7 @@ export function assertValidState(s: GameState): void {
     // A rival flying as an ally (§28) is one of the six.
     if (w.ally !== undefined && !ROSTER.some((r) => r.id === w.ally)) fail('crew');
   }
+  if (s.aboard !== undefined) assertValidCrew(s.aboard, fail);
   if (!Array.isArray(s.priceWatch) || !s.priceWatch.every((w) => isRecord(w) && LOCATION_IDS.has(w.locationId) && COMMODITY_IDS.includes(w.commodity))) fail('price watch');
   const kinds = ['price', 'event', 'den', 'ace', 'wreck', 'story', 'front'];
   if (!Array.isArray(s.rumours) || !s.rumours.every((r) => isRecord(r) && typeof r.key === 'string' && typeof r.text === 'string' && kinds.includes(r.kind) && Number.isFinite(r.at))) fail('rumours');

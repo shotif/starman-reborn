@@ -5,6 +5,7 @@ import { LAW, type CrimeKind } from '../content/law/rules.ts';
 import { getLocation, WORLD } from '../data/systems.ts';
 import type { FactionId, SystemId } from '../data/types.ts';
 import { occupied } from './border.ts';
+import { crewDeed } from './crewDeeds.ts';
 import { pyreStationOpen } from './doomed.ts';
 import { cargoCount, removeCargo } from './cargo.ts';
 import { adjustReputation, FACTIONS, standingTier } from './factions.ts';
@@ -118,6 +119,8 @@ export interface CrimeOutcome {
 export function commitCrime(state: GameState, kind: Exclude<CrimeKind, 'contraband'>, against: FactionId | 'independent' | null, systemId: SystemId): CrimeOutcome {
   const faction = isLawful(against) ? against : lawIn(systemId);
   const rule = LAW.crimes[kind];
+  // An attack on a ship, seen by the crew aboard (docs/PROCGEN.md §30.4).
+  if (kind === 'attack' || kind === 'destroy') crewDeed(state, 'crime');
   if ('wake' in rule) adjustReputation(state.reputation, 'hollow-wake', rule.wake);
   if (!faction) return { faction: null, fine: 0, standing: 0, text: 'No law out here to see it.' };
   witness(state, faction, rule.fine, systemId);
@@ -135,6 +138,7 @@ export function contrabandIn(cargo: GameState['ship']['cargo']): { commodity: Co
 export function customsScan(state: GameState, faction: LawfulFaction): { found: { commodity: CommodityId; qty: number }[]; fine: number; text: string } {
   const found = contrabandIn(state.ship.cargo);
   if (!found.length) return { found, fine: 0, text: `${FACTIONS[faction].shortName} cargo scan: clean. Fly safe.` };
+  crewDeed(state, 'caught');
   let value = 0;
   for (const c of found) {
     removeCargo(state.ship.cargo, c.commodity, c.qty);

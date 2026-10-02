@@ -19,6 +19,7 @@ import {
 } from '../../economy/equipment.ts';
 import { fittedItem, fittedLaunchers, gunSummary, performanceOf, roundsLabel, shipSlots } from '../../economy/loadout.ts';
 import { buyDecoy, decoyOffer, fitFromStash, repairSystems, sellFromStash, stashOffers, systemsQuote } from '../../economy/combat.ts';
+import { crewLine, treatCrew, treatQuote } from '../../economy/crew.ts';
 import { COMBAT } from '../../content/combat/rules.ts';
 import { button, showModal, toast } from '../components.ts';
 import { formatCredits, h } from '../dom.ts';
@@ -70,6 +71,22 @@ export function shipStatus(ctx: StationContext, refresh: Refresh, opts: { repair
           bar('Cargo', cargoUsed(ship.cargo), perf.cargo, 'var(--amber)', `${cargoUsed(ship.cargo)}/${perf.cargo}`),
         ],
     systemsLine(ship),
+    // The crew aboard (docs/PROCGEN.md §30), and a medic for the hurt where ships are repaired.
+    crewLine(state) ? h('div', { class: 'statbar', 'data-testid': 'ship-crew' }, 'Crew', h('span', { class: 'ship-guns' }, crewLine(state))) : null,
+    opts.repair && treatQuote(state, locationId) > 0
+      ? button(`Treat the crew · ${formatCredits(treatQuote(state, locationId))}`, {
+          icon: 'repair',
+          testId: 'dock-treat-crew',
+          disabled: state.credits < treatQuote(state, locationId),
+          onClick: () => {
+            const r = treatCrew(state, locationId);
+            ctx.sfx(r.ok ? 'repair' : 'ui-error');
+            toast(r.message, r.ok ? 'good' : 'bad');
+            ctx.save();
+            refresh();
+          },
+        })
+      : null,
     opts.repair && canRepair && systemsQuote(state, locationId) > 0
       ? button(`Repair systems · ${formatCredits(systemsQuote(state, locationId))}`, {
           icon: 'repair',

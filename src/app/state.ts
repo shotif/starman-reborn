@@ -1,3 +1,4 @@
+import type { CrewDeed, CrewGrade, CrewHeart, CrewRole } from '../content/crew/rules.ts';
 import type { LaneKind } from '../content/lanes/rules.ts';
 import type { StoryDeed } from '../content/rivals/stories.ts';
 import type { CommodityId } from '../content/economy/goods.ts';
@@ -453,6 +454,51 @@ export interface LedgerEntry {
   note: string;
 }
 
+/** Someone aboard the ship the player flies (docs/PROCGEN.md §30): an engineer, a gunner or a navigator. */
+export interface CrewMember {
+  /** The offer hired (`crew.<station>.<shift>.<i>`); it seeds the portrait. */
+  id: string;
+  name: string;
+  role: CrewRole;
+  heart: CrewHeart;
+  grade: CrewGrade;
+  /** Game clock when hired, and the wages paid up to then. */
+  hired: number;
+  paidTo: number;
+  /** 0–100. */
+  morale: number;
+  /** Hurt at, well again by (game clock), and the docks passed untreated. */
+  hurt?: { at: number; until: number; docks: number };
+  /** Gave notice at (game clock): leaving at the next dock unless their morale mends. */
+  notice?: number;
+  story?: CrewStory;
+  /** What they said last (their dialog). */
+  said?: string;
+}
+
+/** A crew member's story (docs/PROCGEN.md §30.6): deeds their heart liked, the tale told, the favour, the end. */
+export interface CrewStory {
+  seen: number;
+  told?: number;
+  /** Asked at (game clock), where it goes (a station; a pack's system), its job once taken, and until when it is open. */
+  favour?: { asked: number; to: string; systemId?: SystemId; job?: string; until: number };
+  ended?: { at: number; how: 'done' | 'failed' | 'lapsed' };
+}
+
+/** The crew aboard and what the game remembers of them (docs/PROCGEN.md §30). */
+export interface CrewLog {
+  members: CrewMember[];
+  /** Settled up to (game clock of the last dock), and `stats.kills` then. */
+  since: number;
+  kills: number;
+  /** Deeds hooked since then (lane encounters, smuggling, crimes, customs). */
+  deeds: Partial<Record<CrewDeed, number>>;
+  /** The bar shift of the last round for the crew. */
+  round?: number;
+  /** Who left (the latest few), when, where and why. */
+  former?: { name: string; role: CrewRole; at: number; locationId: string; why: 'let-go' | 'unhappy' }[];
+}
+
 export interface GameState {
   version: typeof SAVE_VERSION;
   createdAt: string;
@@ -500,6 +546,8 @@ export interface GameState {
   stash: string[];
   /** Wingmen on the player's pay. */
   crew: Wingman[];
+  /** The people aboard (docs/PROCGEN.md §30); absent until the first is hired. */
+  aboard?: CrewLog;
   /** Confirmed-planet / body ids the player has scanned. */
   discoveredBodies: string[];
   jobs: Record<string, JobProgress>;

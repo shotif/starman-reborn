@@ -15,6 +15,7 @@ import { tourSights } from '../world/sightseeing.ts';
 import { trafficFor } from '../world/traffic/setup.ts';
 import { addCargo, cargoCount, itemsThatFit, removeCargo } from './cargo.ts';
 import { routeFeeBetween } from './contracts.ts';
+import { laneDeed } from './crewDeeds.ts';
 import { adjustReputation, FACTIONS } from './factions.ts';
 import { haulsLostNear } from './hauls.ts';
 import type { JobDef } from './jobs.ts';
@@ -351,6 +352,8 @@ export function laneChoices(state: GameState, o: LaneOffer): LaneChoice[] {
 function record(state: GameState, o: LaneOffer, pick: string): void {
   const lanes = (state.world.lanes ??= {});
   lanes[o.id] = { ...(lanes[o.id] ?? { at: state.clock, kind: o.kind, systemId: o.systemId }), pick };
+  // The crew aboard saw it (docs/PROCGEN.md §30.4).
+  laneDeed(state, o.kind, pick);
 }
 
 /** A passage for someone picked up in flight (a lifepod's survivor, a stranded scientist), taken on at once. */

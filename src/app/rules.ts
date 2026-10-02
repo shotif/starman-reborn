@@ -11,6 +11,7 @@ import { tidyWorldLog } from '../economy/answers.ts';
 import { pyreRefugeId, rescueDockId } from '../economy/doomed.ts';
 import { settleFleet, type FleetSettlement } from '../economy/fleet.ts';
 import { alliesDock, settleRivalStories, type StoryNote } from '../economy/rivalStories.ts';
+import { crewFee, crewShipLost, settleCrew, type CrewNote } from '../economy/crew.ts';
 import type { Route } from '../galaxy/routing.ts';
 import type { JumpReadiness } from '../galaxy/types.ts';
 import { applyCredits, markVisited, type GameState } from './state.ts';
@@ -33,6 +34,8 @@ export interface DockOutcome {
   /** Allies who left the wing here, and what rivals' stories said since the last settle (docs/PROCGEN.md §28). */
   allies: string[];
   stories: { notes: StoryNote[]; jobs: JobEvent[] };
+  /** What the crew aboard did and said since the last dock (docs/PROCGEN.md §30). */
+  crew: { notes: CrewNote[]; jobs: JobEvent[] };
 }
 
 export function dockAt(state: GameState, locationId: string): DockOutcome {
@@ -59,7 +62,9 @@ export function dockAt(state: GameState, locationId: string): DockOutcome {
   // Rivals' stories after the jobs: an escort seen in here is done (docs/PROCGEN.md §28).
   const allies = alliesDock(state, locationId);
   const stories = settleRivalStories(state);
-  return { jobEvents, clearanceGranted, firstVisit, watchNotes, lawNotes, fleet, allies, stories };
+  // The crew last: wages to now, and what they made of all that happened since the last dock.
+  const crew = settleCrew(state, locationId);
+  return { jobEvents, clearanceGranted, firstVisit, watchNotes, lawNotes, fleet, allies, stories, crew };
 }
 
 export function undock(state: GameState): void {
@@ -86,11 +91,11 @@ export function jumpReadiness(state: GameState, ctx: ReadinessContext): JumpRead
   return { canJump: true };
 }
 
-/** Fee for a route after contract coverage. */
+/** Fee for a route after contract coverage, and the navigator's discount (docs/PROCGEN.md §30.2). */
 export function routeFee(state: GameState, route: Route): number {
   const coverage = activeFeeCoverage(state);
   if (coverage && coverage.systemId === route.to) return 0;
-  return route.totalFee;
+  return crewFee(state, route.totalFee);
 }
 
 export function performJump(state: GameState, route: Route, fee: number): JobEvent[] {
@@ -126,6 +131,8 @@ export const RESCUE_FEE = 150;
  * now, to Pyre's refuge: docs/PROCGEN.md §26), repaired, charged a capped fee. Cargo is kept.
  */
 export function rescueAfterDefeat(state: GameState): { fee: number; dockId: string } {
+  // The crew came through it hurt and shaken (docs/PROCGEN.md §30.5).
+  crewShipLost(state);
   const r = rescueTo(state, rescueDockId(state.location.lastDockId, state.clock, state.world.sky?.edge ?? null), 'Rescue tow and repairs');
   state.stats.deaths += 1;
   return r;

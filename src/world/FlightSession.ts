@@ -78,6 +78,9 @@ import { RIVAL_STORY } from '../content/rivals/stories.ts';
 import { RAID_GUARD } from '../content/outposts/raidLines.ts';
 import { OUTPOST_RAIDS } from '../content/outposts/raids.ts';
 import { rivalById, rivalName, rivalsIn, rivalSubtitle, type RivalLeg, type RivalRun } from '../economy/rivals.ts';
+import { crewEffects, hurtCrew, isHurt, type CrewEffects } from '../economy/crew.ts';
+import { CREW, type CrewRole } from '../content/crew/rules.ts';
+import { CREW_NOTES, CREW_RADIO } from '../content/crew/lines.ts';
 import type { StationOwner } from '../content/world/types.ts';
 import type { ArtContext, ArtObject } from './art/types.ts';
 import { seededRandom } from './art/util.ts';
@@ -547,7 +550,13 @@ export class FlightSession {
   /** The ship's flight, gun rates and shield as fitted, before damage to its systems. */
   private readonly baseFlight: ShipParams;
   private readonly baseGunRates: number[] = [];
+  private readonly baseGunDamage: number[] = [];
   private readonly baseShield: { regen: number; capacity: number };
+  /** What the crew aboard do for the ship now (docs/PROCGEN.md §30.2), the luck of their hurts, and the engineer at work. */
+  private crewNow: CrewEffects;
+  private readonly crewRand: () => number;
+  private crewTick = 0;
+  private crewMending = false;
   /** Session time of the last chatter line (rate limit), and dens whose defences are awake. */
   private chatterAt = -99;
   /** The wing's standing order (docs/PROCGEN.md §16). */
@@ -685,7 +694,11 @@ export class FlightSession {
     // Damage to the ship's systems scales these (docs/PROCGEN.md §15).
     this.baseFlight = { ...this.player.params };
     for (const g of this.guns) this.baseGunRates.push(g.profile.shotsPerSecond);
+    for (const g of this.guns) this.baseGunDamage.push(g.profile.damage);
     this.baseShield = { regen: this.playerDurability.shieldRegen, capacity: this.playerDurability.shieldMax };
+    // The crew's own luck, so a flight without them draws as it always did.
+    this.crewNow = crewEffects(opts.state);
+    this.crewRand = seededRandom(hashString(`crew-hurt|${opts.state.seed}|${Math.floor(opts.state.clock)}|${opts.state.stats.jumps}`));
     this.playerMissileTarget = { id: PLAYER_ID, position: this.player.position, velocity: this.player.velocity, radius: Math.max(6, art.radius), alive: true };
     this.applySystems();
     this.projectileRenderer = createProjectileRenderer(320, opts.ctx);
@@ -1203,7 +1216,7 @@ export class FlightSession {
   }
 
   private scanRangeFor(t: Target): number {
-    const scanner = this.perf.scanRange;
+    const scanner = this.scanner();
     if (t.kind === 'planet') {
       const def = this.system.planets.find((p) => p.def.id === t.bodyId)?.def;
       return (def?.scanRange ?? DEFAULT_SCAN_RANGE) * scanner;
@@ -1256,7 +1269,7 @@ export class FlightSession {
     }
     const guided = launcher.stats.turnRate > 0;
     const npc = t ? this.npcs.find((n) => n.target.id === t.id) : undefined;
-    if (guided && (!t || !t.hostile || !npc || this.missileLockTime < launcher.stats.lockTime)) {
+    if (guided && (!t || !t.hostile || !npc || this.missileLockTime < this.lockTimeNeeded())) {
       this.callbacks.onMessage(`No lock for ${rounds}: target a hostile ahead of you.`, 'bad');
       this.sfx('ui-error');
       return;
@@ -1345,6 +1358,7 @@ export class FlightSession {
     for (const n of this.npcs) if (!n.den) this.collide(n.body, n.durability, false);
     regenerate(this.playerDurability, dt);
     for (const n of this.npcs) regenerate(n.durability, dt);
+    this.updateCrew(dt);
     this.updateEncounters(dt);
     this.updateTraffic(dt);
     this.scanTimer -= dt;
@@ -1737,7 +1751,8 @@ export class FlightSession {
   /** Seconds on target the active launcher needs (0 = unguided or none). */
   private lockTimeNeeded(): number {
     const l = activeLauncher(this.state.ship);
-    return l && l.stats.turnRate > 0 ? l.stats.lockTime : 0;
+    // The gunner locks on sooner (docs/PROCGEN.md §30.2).
+    return l && l.stats.turnRate > 0 ? l.stats.lockTime * (1 - this.crewNow.lock) : 0;
   }
 
   // ---------------------------------------------------------------- projectiles, missiles, loot
@@ -1901,6 +1916,7 @@ export class FlightSession {
       this.callbacks.onHullHit?.(r.hullDamage / Math.max(1, this.playerDurability.hullMax));
       this.hullFlash = Math.min(1, this.hullFlash + 0.35 + r.hullDamage / 40);
       if (!r.destroyed) this.maybeHitSystem(r.hullDamage);
+      if (!r.destroyed && r.hullDamage >= this.playerDurability.hullMax * CREW.hurt.navigatorHit) this.maybeHurtCrew('navigator');
     } else this.shieldFlash = Math.min(1, this.shieldFlash + 0.3);
     this.spawnEffect(createImpactSpark(at.clone(), shieldHit ? '#7fd8ff' : '#ffb070', this.ctx));
     this.sfx(shieldHit ? 'player-hit-shield' : 'player-hit-hull', 0.8);
@@ -3799,9 +3815,11 @@ export class FlightSession {
     const e = 1 - r.engines * sys.engines;
     const b = this.baseFlight;
     this.player.params = { ...b, maxSpeed: b.maxSpeed * e, boostSpeed: b.boostSpeed * e, cruiseSpeed: b.cruiseSpeed * e, strafeSpeed: b.strafeSpeed * e };
-    this.guns.forEach((g, i) => (g.profile = { ...g.profile, shotsPerSecond: this.baseGunRates[i]! * (1 - r.guns * sys.guns) }));
+    // The gunner's guns hit harder, the engineer's shield recharges faster (docs/PROCGEN.md §30.2).
+    const crew = this.crewNow;
+    this.guns.forEach((g, i) => (g.profile = { ...g.profile, shotsPerSecond: this.baseGunRates[i]! * (1 - r.guns * sys.guns), damage: this.baseGunDamage[i]! * (1 + crew.gunDamage) }));
     const d = this.playerDurability;
-    d.shieldRegen = this.baseShield.regen * (1 - r.shields.regen * sys.shields);
+    d.shieldRegen = this.baseShield.regen * (1 - r.shields.regen * sys.shields) * (1 + crew.shieldRegen);
     d.shieldMax = this.baseShield.capacity * (1 - r.shields.capacity * sys.shields);
     d.shield = Math.min(d.shield, d.shieldMax);
   }
@@ -3817,6 +3835,52 @@ export class FlightSession {
     this.applySystems();
     this.sfx('alert', 0.7);
     this.callbacks.onMessage(`${k === 'engines' ? 'Engines' : k === 'guns' ? 'Guns' : 'Shield generator'} damaged (${Math.round(sys[k] * 100)}%)! A repair kit or a dock will fix it.`, 'bad');
+    this.maybeHurtCrew(k === 'guns' ? 'gunner' : 'engineer');
+  }
+
+  /** A hit may hurt the crew member who works what it struck (docs/PROCGEN.md §30.5): out of action until mended. */
+  private maybeHurtCrew(role: CrewRole): void {
+    const m = this.state.aboard?.members.find((x) => x.role === role);
+    if (!m || isHurt(m, this.state.clock) || this.crewRand() >= CREW.hurt.odds[role]) return;
+    const hurt = hurtCrew(this.state, role);
+    if (!hurt) return;
+    this.crewNow = crewEffects(this.state);
+    this.applySystems();
+    this.callbacks.onComm?.(hurt.name, CREW_RADIO.hurt[hashString(`${hurt.id}|${this.state.clock}`) % CREW_RADIO.hurt.length]!);
+    this.callbacks.onMessage(CREW_NOTES.hurt.replace('{name}', hurt.name), 'bad');
+  }
+
+  /** The crew at work (docs/PROCGEN.md §30.2): who is well now, and the engineer mending damaged systems while no hostile is near. */
+  private updateCrew(dt: number): void {
+    if (!this.state.aboard?.members.length) return;
+    this.crewTick -= dt;
+    if (this.crewTick > 0) return;
+    const step = 0.5 - this.crewTick;
+    this.crewTick = 0.5;
+    const before = this.crewNow;
+    const e = (this.crewNow = crewEffects(this.state));
+    let changed = before.gunDamage !== e.gunDamage || before.shieldRegen !== e.shieldRegen;
+    const sys = this.state.ship.systems;
+    const kinds = ['engines', 'guns', 'shields'] as const;
+    if (e.mend > 0 && this.alive && !this.hostilesNearby(e.quiet)) {
+      for (const k of kinds) {
+        if (sys[k] <= e.floor) continue;
+        sys[k] = Math.max(e.floor, sys[k] - e.mend * step);
+        this.crewMending = changed = true;
+      }
+      // Done with what can be done out here: the engineer says so.
+      if (this.crewMending && kinds.every((k) => sys[k] <= e.floor)) {
+        this.crewMending = false;
+        const eng = this.state.aboard.members.find((m) => m.role === 'engineer');
+        if (eng) this.callbacks.onComm?.(eng.name, CREW_RADIO.mended[hashString(`${eng.id}|${Math.floor(this.state.clock)}`) % CREW_RADIO.mended.length]!);
+      }
+    }
+    if (changed) this.applySystems();
+  }
+
+  /** The ship's scanner reach (a factor), the navigator's on top (docs/PROCGEN.md §30.2). */
+  private scanner(): number {
+    return this.perf.scanRange * (1 + this.crewNow.scan);
   }
 
   /** Raiders who carry seekers fire one at the player now and then, when in range and roughly facing. */
@@ -4243,15 +4307,15 @@ export class FlightSession {
 
   /** A belt close enough to scan for its sources, or an unscanned rock close enough to read. */
   private canScanMining(t: Target): boolean {
-    if (t.kind === 'rock') return !this.mining.rock(t.id)?.scanned && this.surfaceDistance(t) <= MINING.scanRange * this.perf.scanRange;
-    if (t.kind === 'belt') return this.surfaceDistance(t) <= DEFAULT_SCAN_RANGE * 3 * this.perf.scanRange;
+    if (t.kind === 'rock') return !this.mining.rock(t.id)?.scanned && this.surfaceDistance(t) <= MINING.scanRange * this.scanner();
+    if (t.kind === 'belt') return this.surfaceDistance(t) <= DEFAULT_SCAN_RANGE * 3 * this.scanner();
     return false;
   }
 
   /** Scanning a belt opens its science card; scanning a rock reads what it holds. */
   private scanMining(t: Target): void {
     const rock = this.mining.rock(t.id);
-    const range = t.kind === 'belt' ? DEFAULT_SCAN_RANGE * 3 * this.perf.scanRange : MINING.scanRange * this.perf.scanRange;
+    const range = t.kind === 'belt' ? DEFAULT_SCAN_RANGE * 3 * this.scanner() : MINING.scanRange * this.scanner();
     if (this.surfaceDistance(t) > range) {
       this.callbacks.onMessage('Out of scan range — fly closer.', 'bad');
       return;
@@ -4651,7 +4715,9 @@ export class FlightSession {
     if (d.hull / d.hullMax < 0.3 && this.alive) warnings.push('Hull critical');
     const sys = this.state.ship.systems;
     const hurt = (['engines', 'guns', 'shields'] as const).filter((k) => sys[k] >= 0.05).map((k) => `${k === 'shields' ? 'shield' : k} ${Math.round(sys[k] * 100)}%`);
-    if (hurt.length && this.alive) warnings.push(`Damaged: ${hurt.join(', ')}`);
+    // The engineer at work says so (docs/PROCGEN.md §30.2).
+    const mending = this.crewNow.mend > 0 && (['engines', 'guns', 'shields'] as const).some((k) => sys[k] > this.crewNow.floor) && !this.hostilesNearby(this.crewNow.quiet);
+    if (hurt.length && this.alive) warnings.push(`Damaged: ${hurt.join(', ')}${mending ? ' (mending)' : ''}`);
     if (this.drift) warnings.push('Engines off (drift)');
     if (hud.encounterActive) warnings.push('Hostile contact');
     hud.warnings = warnings;

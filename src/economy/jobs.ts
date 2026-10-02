@@ -1,5 +1,6 @@
 import { applyCredits, type CommodityId, type GameState, type PriceQuote } from '../app/state.ts';
 import { CONTRACTS, type ContractKind } from '../content/contracts/rules.ts';
+import { CREW } from '../content/crew/rules.ts';
 import { DENS } from '../content/dens/rules.ts';
 import { ACE_COMBAT_RANK, RATINGS } from '../content/progress/rules.ts';
 import { ARC_JOBS, CHARACTERS } from '../content/story/arcs.ts';
@@ -8,6 +9,7 @@ import { getLocation, getSystem } from '../data/systems.ts';
 import type { FactionId, SystemId } from '../data/types.ts';
 import { addCargo, cargoCount, itemsThatFit, removeCargo } from './cargo.ts';
 import { COMMODITIES } from './commodities.ts';
+import { crewDeed } from './crewDeeds.ts';
 import { CONTRACT_PREFIX, contractBlock, escortDanger, followUpFor, postedContract, postedContracts } from './contracts.ts';
 import { adjustReputation, FACTIONS, standingTier, TIER_LABEL } from './factions.ts';
 import { cargoCapacity } from './loadout.ts';
@@ -136,6 +138,8 @@ export interface JobDef {
     lane?: string;
     /** A job of a rival's story (docs/PROCGEN.md §28): the rival's id. */
     rival?: string;
+    /** A favour for someone of the crew (docs/PROCGEN.md §30): their id. */
+    crew?: string;
   };
   /** Story arc missions (content/story/arcs.ts): arc, step, speaker and beats. */
   story?: StoryMeta;
@@ -556,6 +560,8 @@ function payOut(state: GameState, job: JobDef): Payout {
   }
   state.stats.deliveries += 1;
   state.stats.rewards += paid;
+  // A stranded hauler rescued, contraband run: deeds the crew aboard saw (docs/PROCGEN.md §30.4).
+  crewDeed(state, job.contract ? CREW.jobDeeds[job.contract.kind] : undefined);
   // War work pushes its front the poster's way; The Long Border's finale settles its front for good (docs/PROCGEN.md §20).
   const front = job.contract?.front ? getFront(job.contract.front) : undefined;
   if (front) {

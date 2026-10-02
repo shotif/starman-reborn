@@ -15,6 +15,7 @@ import { RIVALS, STYLE_LABEL, type RivalDef } from '../../content/rivals/rules.t
 import { buyRivalRound, makeAmends, metRival, rivalById, rivalGreeting, rivalName, rivalsDockedAt, rivalTier, roundBlock, standingWith } from '../../economy/rivals.ts';
 import { askAlly, lendTo, partWays, settleRivalStories, storyOffer, storyStatus, storyTag, takeEscort, type StoryAct } from '../../economy/rivalStories.ts';
 import { portraitElement } from '../portraits.ts';
+import { crewHands, crewSection } from './crew.ts';
 
 type Refresh = () => void;
 
@@ -55,8 +56,10 @@ export function peopleContent(ctx: StationContext, refresh: Refresh, openJob: (j
           ),
         )
       : h('p', { class: 'list-empty' }, 'The bar is quiet.'),
+    crewHands(ctx, refresh),
     rivalList(ctx, refresh),
     wingList(ctx, refresh),
+    crewSection(ctx, refresh, openJob),
   );
 }
 

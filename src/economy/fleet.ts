@@ -12,6 +12,7 @@ import { findRoute } from '../galaxy/routing.ts';
 import { addCargo, cargoCount, cargoUsed, itemsThatFit, removeCargo } from './cargo.ts';
 import { COMMODITIES, COMMODITY_IDS } from './commodities.ts';
 import { routeFeeBetween } from './contracts.ts';
+import { quartersBlock } from './crewQuarters.ts';
 import { hasShipyard, shipStandingBlock, shipTradeIn, type Result } from './equipment.ts';
 import { stationEventAt, systemEventAt, type WorldEvent } from './events.ts';
 import { legsOf, type HaulLeg } from './hauls.ts';
@@ -103,6 +104,7 @@ export function keepOffer(state: GameState, locationId: string, modelId: string)
   if (!blocked && state.fleet.ships.length >= FLEET.hangar.max) blocked = `Hangar full: you own ${FLEET.hangar.max} other ships`;
   if (!blocked && model.price > state.credits) blocked = 'Not enough credits';
   if (!blocked) blocked = berthBlock(state, performanceOf({ model: model.id, fittings: model.stock }).berths);
+  if (!blocked) blocked = quartersBlock(state, model.id);
   const cargoMoves = performanceOf({ model: model.id, fittings: model.stock }).cargo >= cargoUsed(state.ship.cargo);
   return { model, price: model.price, blocked, cargoMoves };
 }
@@ -140,6 +142,9 @@ export function switchShip(state: GameState, shipId: string): Result {
   // Passengers aboard go with you, and need their berths in the ship you take (docs/PROCGEN.md §23).
   const berths = berthBlock(state, performanceOf(o.ship).berths);
   if (berths) return { ok: false, message: `${berths} in the ${shipName(o.ship)}.` };
+  // So do the crew, who need quarters in it (docs/PROCGEN.md §30.3).
+  const quarters = quartersBlock(state, o.ship.model);
+  if (quarters) return { ok: false, message: `${quarters}.` };
   const flown = state.ship;
   state.ship = o.ship;
   o.ship = flown;
