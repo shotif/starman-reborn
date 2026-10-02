@@ -474,6 +474,26 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   a raider in range, the raid held when the last raider is down (their bounties paid), and lost when
   the stores are broken open, the raiders making off; a guard hired for later joining the flight at
   their time and saying so over the radio, one whose term is over not coming.
+- `crew.test.ts`: **your crew**. The guardrails pass, and broken rules and words are caught (a
+  bonus falling with grade or worth a class step, a wage over a sharp guard's, a deed both liked and
+  hated, quarters not by size, a he or she or a number in a line). Hands sit at a bar by its kind
+  (two engineers at a shipyard, gunners at a military base, a navigator at a relay, nobody at a farm
+  or a station not yet open), the same for every pilot within a shift, and none for a wanted pilot.
+  Signing on costs two hours' wages; one of each role, as many as the ship's quarters (two in the
+  courier), with passengers' berths untouched; a ship with too few quarters cannot be bought or
+  switched to. Bonuses by grade, scaled by morale, gone while hurt; the navigator's cheaper jump.
+  Morale: each heart weighing the deeds since the last dock (held to so much a dock), rest, a round
+  once a shift; wages paid at each dock for the clock flown, an unpaid hand owed and unhappy; notice
+  given at one dock and served at the next, or taken back; letting someone go; settling twice at a
+  dock changing nothing. Hurt: once at a time, untreated docks, a medic, mending with time, the ship
+  lost hurting everyone. Stories: two rescues bring a soft-hearted engineer's tale, an hour on the
+  favour, a letter carried a grade and standing; a rule-bender's crate loaded when taken (refused
+  with a full hold) for a free port; an ex-patrol's tale after three raiders and a pack in a lawless
+  system; a favour untaken lapsing, one taken and not done failing. Saves keep the crew and refuse
+  damaged records. In a real flight: a gunner's guns hit harder and lock sooner, a navigator's scans
+  reach further, an engineer's shield recharges faster; an engineer mends a damaged system at their
+  grade's rate down to the floor and says so over the radio; a hit hurts the gunner at the rules'
+  rate from the crew's own luck.
 - `rivalStories.test.ts`: **rival stories**. The guardrails pass, every rival with a story it can
   play, and broken rules, paths and lines are caught (a yield too low, an ally out of reach, a duel
   window too short, a duel's loss leaving a rival hostile, a rival with no story, a he or she in a line, a
@@ -690,6 +710,13 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   launched, the turret and the guard are out by the outpost and the HUD objective says *Defend*; the
   raiders strike at their time, as many as the raid has, and downed to the last, the raid is held
   with the player there, the job done and the watch saying so.
+- `crew.spec.ts`: **your crew**: a soft-hearted engineer looking for a berth is found and sat with
+  at their bar's table (what they do, the courier's two quarters), signed on (in *Your crew*, the
+  deck's *1 aboard*); launched with damaged engines, they mend them and the HUD's warning says
+  *(mending)*; hurt, they do nothing until treated at the next dock's medic; two rescues bring their
+  tale at the next dock, an hour on their favour, taken in their dialog, and the letter carried to
+  its station brings a grade and *their favour done* in the journal; a reload keeps them aboard; and
+  unhappy, they give notice at one dock and leave at the next, remembered as gone unhappy.
 - `rivalStories.spec.ts`: **rival stories**: Mara “Quickstep” Venn, known a while and friendly,
   asks for a loan at their table (*1,500 cr*), lent, the credits down and the table saying what is
   owed; as their next run docks it comes back with interest, said over the radio; at their table
@@ -711,7 +738,9 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   ship is carried out of its system, its black hole, Pyre's card on the star map, a mayday's hail on
   the HUD and its card, a rival asking for a loan at their table, the journal following two rivals'
   stories, a rival waiting off a lawless beacon for a duel, an outpost's guards' dialog, its defences
-  with the first raid seen coming, the raid on it in flight, and the News with a shortage's relief
+  with the first raid seen coming, the raid on it in flight, a hand looking for a berth at a bar's
+  table, the crew in the bar (hurt, giving notice, with a favour to ask), a crew member's favour in
+  their dialog, and the News with a shortage's relief
   haulers on their way, at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
   zoom). Saved in `docs/screenshots/` once any smooth scrolling has come to rest. Each is audited

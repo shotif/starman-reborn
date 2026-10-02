@@ -138,6 +138,13 @@ snapshot branch only when the archives changed.
   own, and once in the scene they stay until the player leaves it, even past the end of their term;
   a turret or guard shot down in the fight is whole again next time. Away, a raid is decided by odds
   from the defence the outpost had, not flown out.
+- Your crew (PROCGEN §30) have one story each and one hurt at a time, and mend only while the
+  clock runs (in flight). Their deeds are counted from what the save records and a few hooks
+  (lane encounters, contraband sold, rescue and smuggling jobs done, customs finds, attacks on
+  lawful ships, raiders downed), not from everything a pilot might do; the trade computer's route
+  fees leave out the navigator's discount. Crew never stay aboard parked ships or fly with your
+  captains, and those who leave are gone for good. A favour's place is the nearest of its kind,
+  not one of their own choosing.
 - Rival stories (PROCGEN §28) are one a rival a save, along two paths of three steps, and their words
   are by voice (brash, dry or warm), not each rival's own. A friend's escort is flown as the
   contracts' escorts are, the rival's ship theirs in name and model only. An ally flies as a hired

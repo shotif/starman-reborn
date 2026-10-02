@@ -1087,7 +1087,9 @@ balance; every name is invented.
   speed, the guns half their rate of fire, and the shield generator 70% of its recharge and 40% of
   its capacity.
 - A repair kit patches every system up (and restores 40 hull); a dock with repairs fixes them for
-  180 cr per whole system, standing discounts applied. The HUD lists damaged systems.
+  180 cr per whole system, standing discounts applied. The HUD lists damaged systems. An engineer
+  aboard mends them in flight down to 20%, and a hit to a system may hurt whoever of the crew works
+  it (§30).
 
 ### 15.3 Loot
 
@@ -2081,7 +2083,8 @@ three at class 2 and four at class 3, for about 235–565 cr, and it costs a lit
 Three makers build them: Halden's *Snug* (classes 1–2), Toliman's *Bunkhouse* (1–3) and Eridani's
 *Houseboat* (1–2), sold at outfitters as their other gear is. A ship's berths are its cabins'
 total. With passengers aboard, a cabin they need cannot be sold, and the player cannot switch to a
-ship (or keep one) with too few berths for them.
+ship (or keep one) with too few berths for them. The crew (§30) have quarters of their own and
+never take a berth.
 
 ### 23.2 Passages and tours
 
@@ -2868,3 +2871,131 @@ repairs), guards (offers, hire, on post a quarter of an hour on, at the outpost 
 dock, never for a hunted pilot), saves, and in a real flight the turrets and guards by the outpost,
 the raid striking at its time with half for the stores, a turret firing, the raid held to the last
 raider, and lost with the stores, the raiders making off.
+
+## 30. Your crew
+
+Up to three people sign on aboard the ship the player flies: an engineer, a gunner and a navigator
+(`src/economy/crew.ts`; the rules in `CREW`, `src/content/crew/rules.ts`; what they and the game
+say in `src/content/crew/lines.ts`). Each makes a measured difference in flight, by grade and
+morale; morale follows what the pilot does as each one's heart sees it; each has one small story.
+The crew, their names and their stories are fiction, and every crew dialog and the hire dialog say
+so. Hired wingmen (§15.4) are another thing: they fly their own ships.
+
+The owner chose (2 October 2026) that every ship has crew quarters by its size, never shared with
+passengers (fighters one, freighters and gunships three); that nobody dies (the hurt always mend);
+and that three is the most aboard, one of each role.
+
+### 30.1 Who signs on
+
+Hands looking for a berth sit at the tables of a bar that gives full service, drawn per bar shift
+(§16) from the world's seed, the same for every pilot: two engineers at a shipyard, two gunners at
+a military base, a navigator at a relay or research station, an engineer at a mining outpost, a
+gunner at a customs depot, one of any role at a trade port or free port (`offers.where`). A raider
+den's one gunner, always a rule-bender, sits down only with a pilot the Wake trusts. Grades are
+green (half of them), seasoned (35%) or veteran (15%); the three hearts come alike. Nobody signs on
+with a wanted pilot, and stations not yet open have nobody at their tables.
+
+### 30.2 What they do aboard
+
+Each bonus is by grade (green, seasoned, veteran), scaled by morale: Low ×0.5, Steady ×1, High
+×1.25 (`morale.factor`). A hurt crew member's skill does nothing until they mend.
+
+| Role | Green / seasoned / veteran |
+| --- | --- |
+| Engineer | Mends each damaged system (§15.2) by 3 / 5 / 7 points a minute while no hostile is within 3.5 km, down to 20% (the rest wants a kit or a dock); the shield recharges 6 / 9 / 12% faster. |
+| Gunner | Guns hit 5 / 8 / 12% harder; seekers and torpedoes lock on 20 / 30 / 40% sooner. |
+| Navigator | Jump fees 8 / 12 / 16% lower; scans reach 10 / 15 / 20% further. |
+
+At their best (a veteran in high spirits) the gunner and engineer add 15%, under one class step of
+gear (18%, §4). The HUD's damage warning adds *(mending)* while the engineer works, and the engineer
+says over the radio when they have done what can be done out there.
+
+### 30.3 Quarters and wages
+
+Crew quarters by ship class (`quarters`): light and heavy fighters one, couriers and surveyors two,
+freighters and gunships three; never shared with passengers, whose berths are the cabins' (§23.1).
+The player cannot sign on more than the ship has quarters for, nor buy, keep or switch to a ship
+with too few for the crew aboard.
+
+Wages are 30, 45 or 65 cr a game hour by grade (`wage`), all under a sharp outpost guard's (§29.3),
+paid at each dock for the clock flown since the last (the clock stands still while docked).
+Signing on costs two hours' wages. A wage the player cannot pay stays owed, and costs 30 morale at
+each dock it stays unpaid.
+
+### 30.4 Morale
+
+0–100, starting at 55; Low under 35, High from 75 (`morale`). At each dock:
+
+- **Their heart**: each deed since the last dock that it likes, +6; each it hates, −8; at most 15
+  either way a dock. Soft-hearted: likes rescues (a mayday answered, a lifepod or scientist taken
+  aboard or called in, a stranded hauler's rescue done), hates leaving people adrift and attacks on
+  lawful ships. Rule-bender: likes contraband sold and smuggling runs done, hates contraband lost to
+  the law and attacks on lawful ships. Ex-patrol: likes raiders downed, hates tolls and bribes paid
+  and smuggling (`hearts`, `laneDeeds`, `jobDeeds`).
+- **Everyone**: a dock at least ten minutes of clock after the last, +3 (up to 65); a round for the
+  crew in the bar, +5 (30 cr a head, once a shift); treated +5; hurt −10; a dock passed hurt and
+  untreated −5; the ship lost −20; unpaid −30; their story's tale +10, favour done +20, failed −20,
+  let drop −10.
+- **Notice**: Low at a dock, they give notice; still Low at the next, they leave there (their wages
+  paid if they can be); happier, they take it back. Anyone can be let go at a dock. The journal
+  keeps the last six who left, where and why.
+
+### 30.5 Hurt in a fight
+
+A hull hit that damages a system (§15.2) may hurt whoever works it: the gunner when the guns are hit
+(50%), the engineer when the engines or shield generator are (35%); one hit of a tenth of the hull or
+more may hurt the navigator (25%) (`hurt`). The rolls come from the crew's own luck, so a flight
+without crew draws exactly as before. The ship lost (§10) hurts everyone aboard. A hurt crew member
+says so over the radio, and mends after two hours of clock, or at once with the medic of any dock
+that repairs ships (150 cr each). Nobody dies.
+
+### 30.6 Their stories
+
+Each crew member has one story of three beats (`stories`):
+
+1. **Their tale**, told at the first dock after two deeds their heart likes with them aboard (three
+   raiders down for the ex-patrol).
+2. **A favour**, asked at a dock at least an hour on that has a place for it within reach; open to
+   take for three hours and, taken, three more to do. Soft-hearted: carry their letter to the nearest
+   farm or relay within three jumps, which keep lists of the lanes' lost (a visit). Rule-bender: run
+   a sealed crate (two transponder spoofers, loaded when it is taken; a scan will find it) to the
+   nearest free port within three jumps (a delivery). Ex-patrol: break the Wake pack their old wing
+   never caught, three raiders of threat 2 lurking by a station of the nearest lawless system within
+   two jumps (a bounty). A favour is an ordinary job (`cs.<crew id>`), flown with the machinery of its
+   kind; it pays 350, 600 or 650 cr.
+3. **The payoff**: done, a grade (a veteran keeps the pay and the cheer), and for the soft-hearted
+   their friend found alive and standing with the station's owner (+5); failed or let drop, the morale
+   it costs.
+
+### 30.7 What the game says
+
+The bar's *Looking for a berth* (hands with their role, grade, wage and heart; sitting down shows
+what they do, what they care about and their terms), *Your crew* (each with their morale and tags:
+Hurt, Notice, Story, Favour; their dialog has what they said last, what they do now with a morale
+bar, the favour to take, treatment, a round and letting them go), the deck's crew line (*2 aboard ·
+Steady · the gunner hurt, well in 1 h*) and its *Treat the crew* button, the journal's crew record,
+notices at each dock (wages, notice, mending, stories), and the crew on the radio in flight.
+
+### 30.8 One save's own
+
+`aboard` (absent until the first is hired) keeps the crew (who, role, heart, grade, hired, wages
+paid to, morale, hurt, notice, what they last said, their story), the clock and kills of the last
+dock and the deeds counted since, the shift of the last round, and the last six who left. A favour's
+job carries `contract.crew`. Settling twice at one dock changes nothing. Saves refuse an unknown
+role, heart, grade or deed, two of a role or more than three, morale outside 0–100, wages paid
+before hiring, a hurt that ends before it began, a favour to an unknown station, and more than six
+who left.
+
+### 30.9 Guardrails
+
+`validateCrew` (`src/economy/crewGuards.ts`, run in `tests/unit/crew.test.ts`): bonuses positive
+and rising with grade, and at their best under a class step of gear, a quarter off fees at most,
+half again the scan range and half the lock time; a mending floor above nothing (docks still
+matter); morale's bands and factors in order; wages rising and under a sharp guard's; quarters by
+size; hurt odds between nothing and certain, mending between half an hour and six hours and a
+medic no dearer than a system's repair; every heart liking and hating something, never the same
+deed, every deed mattering to some heart, and lane deeds for encounters and choices that exist;
+every role offered at five open stations or more, one in Sol; every favour with somewhere to go
+from at least half the docks, time to get there and pay under the contracts' ceiling; crew names of
+their own (clear of every other pool of names and every place); and lines with no number, no he or
+she, no star, and only fields they can fill.

@@ -9,10 +9,10 @@ After the scripted opening (10–20 minutes), the neighbourhood is an open sandb
 systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
 of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
 packs in lawless space; 39 ships and 146 pieces of equipment; and generated contracts on every job
-board. Increments 1–28 (under [Done so far](#done-so-far)) added world events and news, contracts
+board. Increments 1–29 (under [Done so far](#done-so-far)) added world events and news, contracts
 of every kind, the law and the outlaw path, goals, five story arcs, combat depth, people in the
 bars and a trade computer, a world that answers, gluts that ship their surplus out and relief to
-escort through raided lanes, a fleet of your own whose captains fly the lanes,
+escort through raided lanes, a fleet of your own whose captains fly the lanes, a crew aboard your own ship,
 a station of your own to build and defend, passengers and sightseers, rival pilots with careers and stories of their own, a
 supernova in every sky (as fiction), an invented star at the map's edge that explodes and leaves a
 black hole to fly to (fiction too), encounters on the lanes between the docks, mining in the real belts, the frontier with a life of its own,
@@ -28,16 +28,9 @@ What it lacks now:
 
 ## Proposed next increments
 
-Candidates for what comes next, in the order they will be built. Your crew was chosen by the owner
-on 2 October 2026 (with Lane encounters, Rival stories and Defend your outpost, now done), to make
-the game more engaging.
-
-### Your crew ⏳ (L)
-
-People aboard the player's own ship (an engineer, a gunner, a navigator) with skills that matter in
-flight, morale, and small personal stories that react to what the player does. They can be hurt in
-a fight, and leave if treated badly. Today only hired wingmen fly with the player, in ships of
-their own.
+None for now: the four the owner chose on 2 October 2026 to make the game more engaging (Lane
+encounters, Rival stories, Defend your outpost and Your crew) are all done. New candidates go to the
+owner before anything more is built.
 
 ### How an increment ships
 
@@ -47,6 +40,21 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 29. Your crew ✅
+
+Up to three people now sign on aboard the ship you fly: an engineer, a gunner and a navigator, found
+looking for a berth at the tables of the bigger bars and paid by the hour of flight at each dock.
+Each makes a measured difference by grade and morale: the engineer mends damaged systems in flight
+when no hostile is near and the shield recharges faster; the gunner's guns hit harder and seekers
+lock on sooner; the navigator's jumps cost less and scans reach further. Ships have crew quarters by
+size, never shared with passengers: fighters one, couriers and surveyors two, freighters and
+gunships three. Each has a heart (soft-hearted, rule-bender or ex-patrol) that likes and hates what
+you do, and their morale follows it: unhappy at a dock, they give notice, and leave at the next
+unless things change. A hit to the system they work may hurt them; they mend in two hours of flight
+or with a dock's medic, and nobody dies. Each has one story: their tale, then a favour (a letter, a
+sealed crate, an old quarry's pack) that earns them a grade
+([PROCGEN.md §30](PROCGEN.md#30-your-crew)).
 
 ### 28. Defend your outpost ✅
 

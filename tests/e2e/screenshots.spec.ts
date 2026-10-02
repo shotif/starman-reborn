@@ -490,6 +490,39 @@ for (const size of SIZES) {
       await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
       expect(await api<boolean>(page, 'face', { id: 'station:outpost.gj-411-b', below: size.height < 500 ? 2 : 4 })).toBe(true);
       await shot(page, `${size.name}-15c-outpost-raid`, size.touch, results);
+      // Your crew (docs/PROCGEN.md §30): a hand looking for a berth at a bar's table, the crew in the
+      // bar (hurt and giving notice, a favour to ask), and the favour in their dialog.
+      const hand = (await api<{ locationId: string; offerId: string } | null>(page, 'findCrew', { role: 'engineer', heart: 'soft-hearted' }))!;
+      expect(hand, 'a soft-hearted engineer looking for a berth').not.toBeNull();
+      await docked(hand.locationId);
+      const openPeople = async () => {
+        await press(page, 'room-bar');
+        if (!(await page.getByTestId('people-window').isVisible().catch(() => false))) await press(page, 'station-people');
+      };
+      await openPeople();
+      await press(page, `hand-${hand.offerId}`);
+      await expect(page.getByTestId('hand-dialog')).toBeVisible();
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-16-crew-hire`, size.touch, results);
+      await press(page, 'hand-hire');
+      await api(page, 'crewDeed', { deed: 'rescue', n: 2 });
+      await api(page, 'advanceClock', 600);
+      await docked(hand.locationId);
+      await api(page, 'advanceClock', 3_700);
+      await docked(hand.locationId);
+      await api(page, 'hurtCrew', 'engineer');
+      await api(page, 'setCrew', { role: 'engineer', morale: 20 });
+      await api(page, 'advanceClock', 600);
+      await docked(hand.locationId);
+      await openPeople();
+      await expect(page.getByTestId('crew-tag-engineer-notice')).toBeVisible();
+      await page.getByTestId('your-crew').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-16b-crew`, size.touch, results);
+      await press(page, 'crew-engineer');
+      await expect(page.getByTestId('crew-favour')).toBeVisible();
+      await shot(page, `${size.name}-16c-crew-favour`, size.touch, results);
+      await press(page, 'crew-close');
       for (const [name, r] of Object.entries(results)) {
         expect.soft(r.overflow, `${name}: page overflow`).toBe(false);
         expect.soft(r.clipped, `${name}: clipped controls`).toEqual([]);
