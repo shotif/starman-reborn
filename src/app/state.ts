@@ -312,6 +312,52 @@ export interface OutpostRecord {
   since: number;
   /** Income paid so far. */
   earned: number;
+  /** When it opened, its frame up (docs/PROCGEN.md §29). Absent in older saves: raids count from its founding. */
+  opened?: number;
+  /** Its defences, and the raids it has met (docs/PROCGEN.md §29), once there is something to keep. */
+  defence?: OutpostDefence;
+}
+
+/** A guard hired to fly round the player's outpost (docs/PROCGEN.md §29). */
+export interface OutpostGuard {
+  id: string;
+  name: string;
+  /** Catalogue ship model. */
+  model: string;
+  skill: 'steady' | 'sharp';
+  /** On post from (15 minutes after hiring) until (the end of the term), game clock. */
+  from: number;
+  until: number;
+}
+
+/** A raid the player's outpost met (docs/PROCGEN.md §29). */
+export interface OutpostRaid {
+  /** Its window, and when it struck. */
+  window: number;
+  at: number;
+  threat: 1 | 2 | 3;
+  result: 'held' | 'lost';
+  /** Fought in flight with the player there, or decided while they were away. */
+  where: 'away' | 'flight';
+  /** What a lost raid took from storage, in words. */
+  took?: string;
+}
+
+/** The player's outpost's defences and raids (docs/PROCGEN.md §29). */
+export interface OutpostDefence {
+  /** Turrets built, materials delivered toward the next, and until when each (by index) is knocked out. */
+  turrets: number;
+  delivered: Partial<Record<CommodityId, number>>;
+  down: number[];
+  guards: OutpostGuard[];
+  /** The raids met, the newest last (the last few). */
+  raids: OutpostRaid[];
+  /** Raid windows before this one are settled. */
+  settled: number;
+  /** The window of the raid the player was last warned of. */
+  warned?: number;
+  /** A lost raid's hurt: from when until when its income is cut, and the good its market is short of. */
+  hurt?: { from: number; until: number; good: CommodityId };
 }
 
 /**
@@ -390,6 +436,8 @@ export interface JobProgress {
   fright?: number;
   /** Observations of a dying far star made for this contract (docs/PROCGEN.md §25): when, and from which system. */
   observed?: { at: number; systemId: SystemId }[];
+  /** Defending the player's outpost (docs/PROCGEN.md §29): the raid was held. */
+  outpost?: 'held';
   /** A rival's duel (docs/PROCGEN.md §28): won by the player. */
   duel?: 'won';
 }

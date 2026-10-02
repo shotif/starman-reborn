@@ -16,6 +16,8 @@ import { hasShipyard, shipStandingBlock, shipTradeIn, type Result } from './equi
 import { stationEventAt, systemEventAt, type WorldEvent } from './events.ts';
 import { legsOf, type HaulLeg } from './hauls.ts';
 import { outpostNext, payOldHours, payOutpostHour } from './outposts.ts';
+import { nextRaid, outpostSystem, raidNote, settleRaid, skipQuietWindows, type RaidPlan } from './outpostRaids.ts';
+import type { JobEvent } from './jobs.ts';
 import { berthBlock } from './passengers.ts';
 import { dockAccess } from './law.ts';
 import { cargoCapacity, clampShip, newShipState, performanceOf, shieldCapacity } from './loadout.ts';
@@ -644,6 +646,9 @@ export interface FleetSettlement {
   dividends: number;
   /** Income from the player's outpost (docs/PROCGEN.md §22). */
   outpost: number;
+  /** Raids on the player's outpost settled (docs/PROCGEN.md §29): what is said of each, and the jobs they closed. */
+  raids: { text: string; tone: 'good' | 'bad'; watch: string; speaker: string }[];
+  raidJobs: JobEvent[];
   /** Steps worked out (loads, arrivals, homecomings, looks, hours of dividends): 0 when nothing was due. */
   steps: number;
 }
@@ -825,12 +830,13 @@ function payDividend(state: GameState, k: Stake, out: FleetSettlement): void {
  * clock gives the same result however often it is called, on every device.
  */
 export function settleFleet(state: GameState, opts: SettleOptions = {}): FleetSettlement {
-  const out: FleetSettlement = { reports: [], runs: 0, hauled: 0, dividends: 0, outpost: 0, steps: 0 };
+  const out: FleetSettlement = { reports: [], runs: 0, hauled: 0, dividends: 0, outpost: 0, steps: 0, raids: [], raidJobs: [] };
   const fleet = state.fleet;
   const post = state.world.outpost;
   if (!fleet.stakes.length && !fleet.ships.some((o) => o.hauler) && !post?.stage) return out;
   const now = state.clock;
   if (post) {
+    skipQuietWindows(state, post);
     const old = payOldHours(post, now);
     out.outpost += old.pay;
     out.steps += old.hours;
@@ -852,8 +858,14 @@ export function settleFleet(state: GameState, opts: SettleOptions = {}): FleetSe
   // A raid due where the player watches the ship waits for the flight to decide it.
   const here = state.location.dockedAt ? null : state.location.systemId;
   for (;;) {
-    let next: { t: number; ship?: OwnedShip; raid?: RunRaid; stake?: Stake; outpost?: true } | null = null;
-    if (post && outpostNext(post) <= now) next = { t: outpostNext(post), outpost: true };
+    let next: { t: number; ship?: OwnedShip; raid?: RunRaid; stake?: Stake; outpost?: true; outpostRaid?: RaidPlan } | null = null;
+    // A raid on the outpost (docs/PROCGEN.md §29): with the player flying there it waits for the flight
+    // to decide it, and the outpost's hours after it wait with it.
+    const due = post && post.stage > 0 ? nextRaid(state, post) : null;
+    const strikes = due && due.at <= now ? due : null;
+    const held = !!strikes && here === outpostSystem(post!);
+    if (post && outpostNext(post) <= now && !(held && outpostNext(post) > strikes!.at)) next = { t: outpostNext(post), outpost: true };
+    if (strikes && !held && (!next || strikes.at < next.t)) next = { t: strikes.at, outpostRaid: strikes };
     for (const o of fleet.ships) {
       if (!o.hauler || resting.has(o)) continue;
       let t = haulerNext(o.hauler);
@@ -870,6 +882,13 @@ export function settleFleet(state: GameState, opts: SettleOptions = {}): FleetSe
     }
     if (!next) break;
     out.steps += 1;
+    if (next.outpostRaid) {
+      const { raid, events } = settleRaid(state, post!, next.outpostRaid, 'away');
+      const note = raidNote(post!, raid);
+      out.raids.push({ ...note, speaker: `${post!.name} watch` });
+      out.raidJobs.push(...events);
+      continue;
+    }
     if (next.outpost) {
       const pay = payOutpostHour(post!);
       out.outpost += pay;

@@ -2756,3 +2756,114 @@ an enemy's feud (when it begins), the tip-off, the hired guns, the duel (posted,
 amends, falling out, saves; and in a real flight an ally on the wing, the hired guns (when they
 strike, who, no bounty), the duel (waiting, no packs, too battered to start, started, the rival's
 yield, the player's yield, forfeit) and customs tipped off scanning a clean hold.
+
+## 29. Defend your outpost
+
+Raiders come for the player's own outpost (§22) now and then (`src/economy/outpostRaids.ts`; the
+rules in `OUTPOST_RAIDS`, `src/content/outposts/raids.ts`; what is said in
+`src/content/outposts/raidLines.ts`). The player defends it with turrets built from hauled
+materials, with guards hired by the hour, or in person. The raids, raiders and guards are fiction,
+and the Outpost window and the guards' dialog say so.
+
+The owner chose (2 October 2026) that guards are hired at the outpost or from the Fleet window at
+any full-service dock, taking up their post a quarter of an hour later; that a raid lost takes
+income, market stock, a share of the goods stored there and a turret, never credits; and that
+turrets are built from hauled materials.
+
+### 29.1 When raids come
+
+Like the world's events, raids are worked out, not rolled as the game runs. The outpost's time is
+cut into windows of three hours (`window`), shifted by its site, and a window holds at most one
+raid, striking somewhere in its middle half (`strike`), decided by the save's seed, the site and
+the window. None come until the outpost has been open three hours (`grace`), none in secure space
+(security 0.75 or more), none during a sweep of its system and none while the system's raider den
+is dark (§14.3). The chance a window holds one is set by the system's band, as the trade computer
+reckons routes (`odds`: thin space 30%, lawless 40%; every outpost site is in one or the other),
+times the outpost's stage (`stage`: a frame half that, a port a quarter more); a raid under way in
+its system (§11) raises it by half and the raiders' threat by one; a pilot the Wake trusts sees a
+quarter as many. The raiders' threat is the band's (`threat`: 2), one lower against a frame, and
+they come one more than their threat. The first raid is a probe: a single pair at threat 1, seen
+half an hour off; in thin or lawless space the first window after the grace always holds it.
+
+### 29.2 The watch, and the job
+
+A quarter of an hour before a raid strikes (`warning`; half an hour for the probe), the outpost's
+watch sees it coming: it says so over the radio, a notice gives the ships, the minutes and the odds
+of holding (*Your defences will probably hold (72%).*), and a job, *Defend {outpost}*, shows in the
+journal, on the star map's Missions and as the HUD objective with its countdown. The Outpost window
+shows the raid watch and a bar of the odds.
+
+### 29.3 Defences
+
+- **Turrets**: one for each stage built (three at most), each from materials hauled to the outpost
+  and handed over in its window (`turrets.needs`: ship components, machinery and electronics, then
+  refined metals too), as the stages are. Each costs 15 cr an hour out of the income (`upkeep`). A
+  turret knocked out in a raid is down six hours, or repaired there for 350 cr (`downSeconds`,
+  `repair`).
+- **Guards**, hired by the hour: two pilots looking for the work each posting (§8), with the
+  wingmen's names, in the patrol fighters of the outpost's system's owner, steady (55 cr an hour) or
+  sharp (70); at most two at once, for 2, 4 or 8 hours, paid up front, no refund (`guards`). They are
+  hired at the outpost, or from the Fleet window at any dock with a market, repairs and a job board,
+  and take up their post a quarter of an hour after hiring, just in time for a raid seen coming.
+  Nobody guards for a pilot with a price on their head (fines of 1,500 cr or more, §12).
+- **The system itself**: its patrol wings, and the player's friendly standing with its owner.
+
+### 29.4 How a raid goes
+
+- **With the player there** (in flight in its system when it strikes): the raiders come out of the
+  dark 6 km off (from the system's den if it has one, otherwise from the jump beacon's side), half
+  of them for the outpost's stores (a barge moored by it, its hull by stage: 600, 900 or 1,200), the
+  rest for whoever defends it. The turrets stand on a ring round the outpost and turn their guns on
+  raiders in range (1.6 km); the guards fly a loop round it and go for raiders near it; the player's
+  guns never hit the outpost's own. Every raider down or gone, the raid is held; the stores broken
+  open, it is lost and the raiders make off. Wake raiders pay their bounty as anywhere (§12).
+  Undecided after half an hour, or left (docking, jumping, the ship lost), the clock decides it as
+  below, with the raiders already downed counted.
+- **Away**: the defence it had (`defence`: 2 for each turret up, 1.5 for a steady guard on post and
+  2 for a sharp one, 1.5 for each patrol wing of the system, 1.5 for friendly standing with its
+  owner) against the raiders' strength (`strength`: 2, 4.5 or 8.5 by threat); the chance of holding
+  climbs with their ratio (`hold`: none undefended, 35% at half, 65% at even, 85% at half as much
+  again, 95% at double, and never more). Three turrets against threat 2 hold about four times in
+  five; with two sharp guards too, nearly always.
+- **Lost** (`lost`): its income is halved for two, three or four hours by threat; its market is short
+  of one good it trades as long (stock halved, the price a fifth higher); a quarter of each good
+  stored in a hold leased there (§18) is taken; and a turret is knocked out. Never the player's
+  credits.
+
+### 29.5 What the world says
+
+The watch over the radio (*{outpost} watch*) as a raid is seen coming, as it strikes and as it goes;
+notices of how it went, away or there; the News within two jumps over the last hour; the Fleet
+window's line on the outpost's defences; and in the Outpost window, its turrets (built, down,
+repairs), guards (on post, coming, how long), the raid watch and the odds, and the last raids.
+
+### 29.6 One save's own
+
+The outpost's record keeps when it opened (`opened`) and its defences (`defence`): turrets built and
+the materials toward the next, when each is down until, the guards hired (who, flying what, on post
+from and until), the last eight raids (when, threat, held or lost, there or away, what was taken),
+the window raids are settled to, the raid last warned of, and a lost raid's hurt (from, until, the
+good). Raids are settled with the fleet (§18), in time order with the outpost's hours of income; a
+raid due while the player flies in its system waits for the flight to decide it, and the hours
+after it wait too. Saves refuse defences that do not fit the outpost (more turrets than its
+stages), guards in no ship of the catalogue, and raids or hurts that make no sense.
+
+### 29.7 Guardrails
+
+`validateOutpostRaids` (`src/economy/outpostRaidGuards.ts`, run in `tests/unit/outpostRaids.test.ts`):
+odds rising with lawlessness and the outpost's growth; a raid event and the Wake's trust moving the
+odds the right way; threat and strength rising; a warning long enough to hire a guard in; a turret
+for each stage, each needing something, with upkeep, repairs and knock-outs in range; guards'
+terms and pay in order; a hold table that climbs and never promises more than 95%; a loss that hurts
+without ruining; and the lines with no number written in, no he or she, and only fields they can
+fill. Worked out over many windows of real sites and saves (`raidBalance`): an undefended port away
+loses 10–35% of its income in thin or lawless space, under 10% where patrols fly; and in lawless
+space a port's three turrets pay back their materials in 20–60 hours of income saved. The tests
+also break the rules and a line; check the windows (none before the grace, the probe first, the
+same for the same save, more raids as the outpost grows, a quarter for a pilot the Wake trusts), the
+warning and its job, raids decided away (held by a strong defence, lost by a weak one, and what a
+loss takes, never credits), a raid waiting for the flight, turrets (built one a stage, upkeep,
+repairs), guards (offers, hire, on post a quarter of an hour on, at the outpost or a full-service
+dock, never for a hunted pilot), saves, and in a real flight the turrets and guards by the outpost,
+the raid striking at its time with half for the stores, a turret firing, the raid held to the last
+raider, and lost with the stores, the raiders making off.

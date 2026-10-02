@@ -75,6 +75,7 @@ import { FLEET } from '../content/fleet/rules.ts';
 import { captainsIn, type CaptainHere, type RunRaid } from '../economy/fleet.ts';
 import { RIVALS } from '../content/rivals/rules.ts';
 import { RIVAL_STORY } from '../content/rivals/stories.ts';
+import { OUTPOST_RAIDS } from '../content/outposts/raids.ts';
 import { rivalById, rivalName, rivalsIn, rivalSubtitle, type RivalLeg, type RivalRun } from '../economy/rivals.ts';
 import type { StationOwner } from '../content/world/types.ts';
 import type { ArtContext, ArtObject } from './art/types.ts';
@@ -124,6 +125,12 @@ export interface FlightCallbacks {
    * it (`forfeit`), or the player came to it with too little hull (`unfit`).
    */
   onDuel?(jobId: string, rivalId: string, what: 'started' | 'won' | 'lost' | 'forfeit' | 'unfit'): void;
+  /**
+   * The raid on the player's outpost (docs/PROCGEN.md §29): it struck here, or how it went: held
+   * (every raider down or gone), lost (its stores broken open), or undecided after the time it is
+   * given; with the raiders downed.
+   */
+  onOutpostRaid?(window: number, what: 'struck' | 'held' | 'lost' | 'timeout', downed: number): void;
   /** The player observed a far star (docs/PROCGEN.md §25), its target selected: the game records it for the contracts that want it. */
   onObserve?(starId: string): void;
   /** Pyre exploded with the player still in its system (docs/PROCGEN.md §26): the game carries the ship out. */
@@ -204,6 +211,10 @@ interface NpcShip {
   rival?: { id: string; run?: RivalRun; leg?: RivalLeg };
   /** Hired by a rival to find the player (docs/PROCGEN.md §28): they want the player only, and pay no bounty. */
   hired?: string;
+  /** The player's outpost's own (docs/PROCGEN.md §29): a turret, its stores, or a guard flying its loop round the outpost. */
+  own?: { kind: 'turret' | 'stores' | 'guard'; centre: THREE.Vector3; angle: number };
+  /** A raider of the raid on the player's outpost (its window). */
+  outpostRaid?: number;
   /** A rival waiting for a duel off the beacon, fighting it, or done with it (§28): `yielded` (the player won), `won` (the rival did). */
   duel?: { jobId: string; spot: THREE.Vector3; state: 'waiting' | 'on' | 'yielded' | 'won'; told?: boolean };
   patrol?: { brain: PatrolBrain; offset: THREE.Vector3 };
@@ -289,6 +300,16 @@ export interface TrafficSetup {
   rivalAmbush?: { rivalId: string; delay: number; guns: number; withRival: boolean; level: 1 | 2 | 3 };
   /** A rival waiting off the jump beacon for a duel (§28), and whether it has started. */
   duel?: { jobId: string; rivalId: string; started: boolean };
+  /** The player's outpost here (docs/PROCGEN.md §29): its stage, its turrets up, its guards on post, and a raid due. */
+  outpost?: { locationId: string; stage: number; turrets: number; guards: readonly { id: string; name: string; model: string; skill: 'steady' | 'sharp' }[]; raid?: OutpostRaidSetup };
+}
+
+/** A raid due on the player's outpost (docs/PROCGEN.md §29): its window, when it strikes, its threat and ships. */
+export interface OutpostRaidSetup {
+  window: number;
+  at: number;
+  threat: 1 | 2 | 3;
+  ships: number;
 }
 
 interface Drone {
@@ -1719,6 +1740,8 @@ export class FlightSession {
       // The player's bolts hit a lawful ship only when it is the selected target: attacking one is a choice.
       for (const n of this.npcs) {
         if (n.durability.hull <= 0 || !boltMayHit(byPlayer ? 'player' : side, n.side, n.target.id === this.selectedId, n.foe === 'player')) continue;
+        // The player's own outpost's turrets, stores and guards are never in the line of fire (docs/PROCGEN.md §29).
+        if (byPlayer && n.own) continue;
         if (segmentHitsSphere(from, to, n.body.position, n.art.radius)) {
           if (owner) n.lastHitBy = owner.id;
           this.damageNpc(n, p.damage, to, p.damageType, byPlayer);
@@ -2095,6 +2118,10 @@ export class FlightSession {
       }
       this.callbacks.onCrime?.('destroy', n.faction, n.name, n.role === 'patrol' ? 'patrol' : 'trader');
     }
+    // The raid on the player's outpost (docs/PROCGEN.md §29): its raiders downed, its stores broken open.
+    const raid = this.outpostRaid;
+    if (raid?.state === 'on' && n.outpostRaid === raid.setup.window) raid.downed++;
+    if (raid?.state === 'on' && n.own?.kind === 'stores') this.endOutpostRaid('lost');
     if (n.den?.part === 'reactor') this.knockOutDen(n);
     else if (n.contract) this.callbacks.onContractKill(n.contract);
     else if (n.hunter) {
@@ -2319,7 +2346,9 @@ export class FlightSession {
       for (const d of t.defences ?? []) this.startSweep(d);
       this.spawnCrew(t.crew ?? []);
       if (t.duel) this.spawnDuelist(t.duel);
+      if (t.outpost) this.spawnOutpostDefences(t.outpost);
     }
+    this.updateOutpostRaid();
     // A rival's hired guns strike a little way into the flight (docs/PROCGEN.md §28).
     const hired = t.rivalAmbush;
     if (hired && !this.ambushSprung && this.time >= hired.delay && this.alive && !this.busy) {
@@ -2380,7 +2409,8 @@ export class FlightSession {
       if (n.encounter || n.durability.hull <= 0) continue;
       // Who shows as hostile: raiders (unless the Wake trusts you), hunters, and lawful ships after you.
       n.target.hostile = n.side === 'raider' ? !this.raiderSparesPlayer(n) : n.foe === 'player' || !!n.sweep;
-      if (n.den) this.flyDenPart(n, dt);
+      if (n.own) this.flyOwn(n, dt);
+      else if (n.den) this.flyDenPart(n, dt);
       else if (n.wingman) this.flyWingman(n, dt);
       else if (n.sweep) this.flySweep(n, dt);
       else if (n.escort?.follow) this.flyEscortFollowing(n, dt);
@@ -2548,6 +2578,8 @@ export class FlightSession {
   private ambushSprung = false;
   /** A rival waiting here for a duel, or fighting it (§28). */
   private duelist: NpcShip | null = null;
+  /** The raid on the player's outpost here (docs/PROCGEN.md §29): due, under way, or how it went. */
+  private outpostRaid: { setup: OutpostRaidSetup; state: 'pending' | 'on' | 'held' | 'lost' | 'timeout'; since: number; downed: number; stores: NpcShip | null } | null = null;
 
   /** Brings rival pilots flying a leg here into the scene: named, with what they carry, out for the player when hostile in lawless space. */
   private updateRivals(first: boolean): void {
@@ -2701,6 +2733,187 @@ export class FlightSession {
   addStoryShip(ship: { rescue?: NonNullable<TrafficSetup['rescues']>[number]; duel?: NonNullable<TrafficSetup['duel']> }): void {
     if (ship.rescue && !this.npcs.some((n) => n.stranded?.jobId === ship.rescue!.jobId)) this.spawnStranded(ship.rescue);
     if (ship.duel && !this.duelist) this.spawnDuelist(ship.duel);
+  }
+
+  // ---------------------------------------------------------------- the player's outpost under raid (docs/PROCGEN.md §29)
+
+  /** Its turrets on a ring round it and its guards on their loop; a raid due, armed. */
+  private spawnOutpostDefences(o: NonNullable<TrafficSetup['outpost']>): void {
+    const site = this.system.dock(o.locationId);
+    if (!site) return;
+    const centre = site.def.position.clone();
+    const F = OUTPOST_RAIDS.fight;
+    for (let i = 0; i < o.turrets; i++) {
+      const a = 0.6 + (i / Math.max(1, o.turrets)) * Math.PI * 2;
+      const r = site.radius + F.ring;
+      const position = centre.clone().add(new THREE.Vector3(Math.cos(a) * r, 30, Math.sin(a) * r));
+      this.makeOwnTurret(position, position.clone().sub(centre).normalize(), centre, a);
+    }
+    o.guards.forEach((g, i) => {
+      const a = i * Math.PI;
+      const position = centre.clone().add(new THREE.Vector3(Math.cos(a) * F.guardLoop, 60, Math.sin(a) * F.guardLoop));
+      const npc = this.makeNpc(g.model, 'patrol', 'independent', position, new THREE.Vector3(-Math.sin(a), 0, Math.cos(a)), 'Guarding your outpost');
+      npc.name = g.name;
+      npc.target.name = g.name;
+      npc.target.hostile = false;
+      npc.own = { kind: 'guard', centre, angle: a };
+      npc.wingman = undefined;
+    });
+    if (o.raid) this.armOutpostRaid(o.raid);
+  }
+
+  /** A raid due on the outpost (from the scene's start, or warned of in flight): it strikes at its time. */
+  armOutpostRaid(setup: OutpostRaidSetup): void {
+    if (this.outpostRaid && (this.outpostRaid.setup.window === setup.window || this.outpostRaid.state === 'on')) return;
+    this.outpostRaid = { setup, state: 'pending', since: 0, downed: 0, stores: null };
+  }
+
+  /** One of the outpost's turrets: it never moves, and turns its guns on raiders in range (never the player). */
+  private makeOwnTurret(position: THREE.Vector3, facing: THREE.Vector3, centre: THREE.Vector3, angle: number): NpcShip {
+    const art = createTurretArt(this.ctx, 'own');
+    this.system.scene.add(art.object);
+    const body = new ShipBody({ ...RAIDER_SHIP, maxSpeed: 0, boostSpeed: 0, strafeSpeed: 0, reverseSpeed: 0, cruiseSpeed: 0, radius: art.radius });
+    body.position.copy(position);
+    body.lookAlong(facing);
+    art.object.position.copy(position);
+    art.object.quaternion.copy(body.quaternion);
+    const T = DENS.turret;
+    const F = OUTPOST_RAIDS.fight.turret;
+    const id = `own-turret-${++this.trafficTimers.serial}`;
+    const npc: NpcShip = {
+      id,
+      modelId: 'outpost.turret',
+      name: 'Your turret',
+      faction: 'independent',
+      role: 'patrol',
+      side: 'lawful',
+      body,
+      art,
+      durability: { hull: F.hull, hullMax: F.hull, shield: F.shield, shieldMax: F.shield, shieldRegen: 5, shieldDelay: 4, shieldType: 'deflector', sinceHit: 99 },
+      guns: [new Gun({ damage: T.damage, shotsPerSecond: T.shotsPerSecond, projectileSpeed: T.projectileSpeed, range: F.range, energyPerShot: 0, kind: boltKind('plasma', 1), damageType: 'plasma' })],
+      brain: new PirateBrain(this.rand),
+      controls: neutralControls(),
+      target: { id: `ship:${id}`, name: 'Your turret', kind: 'ship', position: body.position, velocity: body.velocity, radius: art.radius, subtitle: 'Your outpost’s defence', dataClass: 'fictional', hostile: false, alive: true, cycle: true },
+      foe: null,
+      bounty: 0,
+      playerHitAt: -Infinity,
+      idle: 0,
+      maydaySent: false,
+      own: { kind: 'turret', centre, angle },
+    };
+    this.npcs.push(npc);
+    return npc;
+  }
+
+  /** The outpost's own: turrets fire on raiders in range; the stores sit still; guards fly their loop and go for raiders near the outpost. */
+  private flyOwn(n: NpcShip, dt: number): void {
+    const own = n.own!;
+    const F = OUTPOST_RAIDS.fight;
+    const raider = (x: NpcShip) => x.side === 'raider' && !x.duel && x.durability.hull > 0;
+    if (own.kind === 'stores') {
+      for (const g of n.guns) g.tick(dt);
+      n.body.velocity.set(0, 0, 0);
+      return;
+    }
+    if (own.kind === 'turret') {
+      const gun = n.guns[0]!;
+      gun.tick(dt);
+      n.body.energy = n.body.params.energyMax;
+      const foe = this.nearestShip(n.body.position, F.turret.range, raider);
+      n.foe = foe;
+      if (!foe) return;
+      leadPoint(n.body.position, n.body.velocity, foe.body.position, foe.body.velocity, DENS.turret.projectileSpeed, this.aimPoint);
+      this.tmpQ.setFromUnitVectors(new THREE.Vector3(0, 0, -1), this.tmp.copy(this.aimPoint).sub(n.body.position).normalize());
+      n.body.quaternion.rotateTowards(this.tmpQ, 1.2 * dt);
+      if (!withinArc(n.body, this.aimPoint)) return;
+      if (gun.fire(n.body, n.art.muzzles, this.aimPoint, this.projectiles, n.id, 1).fired) this.npcShots.set(n.id, (this.npcShots.get(n.id) ?? 0) + 1);
+      return;
+    }
+    // A guard: raiders near the outpost first; otherwise round its loop.
+    const foe = this.nearestShip(own.centre, F.guardLoop + 1_500, raider);
+    n.foe = foe;
+    if (foe) {
+      this.fightNpc(n, foe.body, dt, TRAFFIC.npcDamage);
+      return;
+    }
+    for (const g of n.guns) g.tick(dt);
+    own.angle += dt * 0.05;
+    const slot = this.tmp2.set(Math.cos(own.angle) * F.guardLoop, 60, Math.sin(own.angle) * F.guardLoop).add(own.centre);
+    flyTo(n.body, slot, { arriveDistance: 200, allowCruise: false, maxThrottle: 0.6 }, n.controls);
+    n.body.requestCruise(false);
+  }
+
+  /** The raid strikes at its time: its stores barge by the outpost, and the raiders out of the dark toward it. */
+  private updateOutpostRaid(): void {
+    const raid = this.outpostRaid;
+    if (!raid) return;
+    if (raid.state === 'pending' && this.state.clock >= raid.setup.at && this.alive && !this.busy) {
+      this.strikeOutpost(raid);
+      return;
+    }
+    if (raid.state !== 'on') return;
+    const left = this.npcs.some((n) => n.outpostRaid === raid.setup.window && n.durability.hull > 0 && n.brain.state !== 'escaped');
+    if (!left) this.endOutpostRaid('held');
+    else if (this.time - raid.since > OUTPOST_RAIDS.fight.cap) this.endOutpostRaid('timeout');
+  }
+
+  private strikeOutpost(raid: NonNullable<FlightSession['outpostRaid']>): void {
+    const o = this.traffic?.outpost;
+    const site = o ? this.system.dock(o.locationId) : undefined;
+    if (!o || !site) {
+      raid.state = 'timeout';
+      return;
+    }
+    const centre = site.def.position.clone();
+    // The stores: a barge moored by the outpost, what the raiders want.
+    const moor = centre.clone().add(new THREE.Vector3(site.radius + 120, -20, site.radius * 0.5));
+    const stores = this.makeNpc('ship.freighter.3.eridani', 'trader', 'independent', moor, new THREE.Vector3(1, 0, 0), 'Your outpost’s stores');
+    stores.name = 'Stores';
+    stores.target.name = 'Stores';
+    stores.target.hostile = false;
+    const hull = OUTPOST_RAIDS.fight.stores[Math.min(o.stage, OUTPOST_RAIDS.fight.stores.length) - 1] ?? 600;
+    stores.durability = { ...stores.durability, hull, hullMax: hull, shield: 0, shieldMax: 0, shieldRegen: 0 };
+    stores.own = { kind: 'stores', centre, angle: 0 };
+    stores.body.velocity.set(0, 0, 0);
+    raid.stores = stores;
+    // The raiders come from the system's den if it has one, else from the jump beacon's side.
+    const den = this.system.docks.find((d) => getLocation(d.def.locationId).stationType === 'pirate-den');
+    const from = den ? den.def.position : this.jumpPoint();
+    const dir = from.clone().sub(centre).normalize();
+    const home = centre.clone().addScaledVector(dir, OUTPOST_RAIDS.fight.from);
+    const pack = ++this.packSerial;
+    this.packHome.set(pack, centre.clone());
+    const pool = RAIDERS[raid.setup.threat];
+    for (let i = 0; i < raid.setup.ships; i++) {
+      const model = pool[i % pool.length]!;
+      const bounty = bountyFor(model);
+      const position = home.clone().add(this.tmp.set(this.rand() - 0.5, this.rand() - 0.5, this.rand() - 0.5).multiplyScalar(600));
+      const npc = this.makeNpc(model, 'raider', 'hollow-wake', position, centre.clone().sub(position).normalize(), `${FACTIONS['hollow-wake'].name} raider · hostile · bounty ${bounty} cr`);
+      npc.pack = pack;
+      npc.bounty = bounty;
+      npc.outpostRaid = raid.setup.window;
+      // Half go for the stores, the rest for whoever defends them.
+      if (i % 2 === 0) npc.prey = stores;
+    }
+    raid.state = 'on';
+    raid.since = this.time;
+    this.sfx('alert');
+    this.callbacks.onOutpostRaid?.(raid.setup.window, 'struck', 0);
+  }
+
+  /** The raid is over: held, lost (the raiders make off), or left to the clock. */
+  private endOutpostRaid(how: 'held' | 'lost' | 'timeout'): void {
+    const raid = this.outpostRaid;
+    if (!raid || raid.state !== 'on') return;
+    raid.state = how;
+    if (how !== 'held') for (const n of this.npcs) if (n.outpostRaid === raid.setup.window && n.durability.hull > 0) n.brain.state = 'flee';
+    this.callbacks.onOutpostRaid?.(raid.setup.window, how, raid.downed);
+  }
+
+  /** The raid on the outpost here, if one is due or under way (leaving one under way leaves it to the clock). */
+  outpostRaidStatus(): { window: number; state: 'pending' | 'on' | 'held' | 'lost' | 'timeout'; downed: number } | null {
+    const r = this.outpostRaid;
+    return r ? { window: r.setup.window, state: r.state, downed: r.downed } : null;
   }
 
   /** The duel here, if a rival waits for one or is fighting it (the game counts leaving a duel under way as forfeit). */
@@ -4436,6 +4649,9 @@ export class FlightSession {
     rival: string | null;
     hired: string | null;
     duel: string | null;
+    /** The player's outpost's own (a turret, its stores, a guard), and a raider of a raid on it (its window; §29). */
+    own: string | null;
+    outpostRaid: number | null;
     subtitle: string;
     state: string;
     hull: number;
@@ -4457,6 +4673,8 @@ export class FlightSession {
       rival: n.rival?.id ?? null,
       hired: n.hired ?? null,
       duel: n.duel?.state ?? null,
+      own: n.own?.kind ?? null,
+      outpostRaid: n.outpostRaid ?? null,
       subtitle: n.target.subtitle ?? '',
       state: n.trader?.state ?? (n.patrol && n.foe === null ? n.patrol.brain.state : n.brain.state),
       hull: n.durability.hull,

@@ -160,8 +160,9 @@ export function repairSystems(state: GameState, locationId: string): { ok: boole
 
 // ---------------------------------------------------------------- wingmen for hire
 
-const FIRST = ['Ilya', 'Maren', 'Tobin', 'Esra', 'Kaito', 'Ruth', 'Anouk', 'Dario', 'Signe', 'Obi', 'Lenka', 'Farid'];
-const LAST = ['Vance', 'Okoro', 'Lindqvist', 'Sato', 'Mercer', 'Adeyemi', 'Kovac', 'Reyes', 'Brandvold', 'Achebe', 'Moreau', 'Halloran'];
+/** Wingmen's names (fiction); an outpost's guards are drawn from them too (docs/PROCGEN.md §29). */
+export const WING_FIRST = ['Ilya', 'Maren', 'Tobin', 'Esra', 'Kaito', 'Ruth', 'Anouk', 'Dario', 'Signe', 'Obi', 'Lenka', 'Farid'];
+export const WING_LAST = ['Vance', 'Okoro', 'Lindqvist', 'Sato', 'Mercer', 'Adeyemi', 'Kovac', 'Reyes', 'Brandvold', 'Achebe', 'Moreau', 'Halloran'];
 
 /** Pilots looking for work at a station in this time slot (the same for everyone). */
 export function pilotsFor(locationId: string, clock: number): Wingman[] {
@@ -177,7 +178,7 @@ export function pilotsFor(locationId: string, clock: number): Wingman[] {
     const tier = Math.min(2, shipModel(model).tier) as 1 | 2;
     const skill: Wingman['skill'] = r.next() < 0.35 ? 'sharp' : 'steady';
     const fee = Math.round((COMBAT.wingmen.fee[tier] * (skill === 'sharp' ? 1.25 : 1)) / 5) * 5;
-    return { id: `w.${locationId}.${epoch}.${i}`, name: `${r.pick(FIRST)} ${r.pick(LAST)}`, model, fee, skill };
+    return { id: `w.${locationId}.${epoch}.${i}`, name: `${r.pick(WING_FIRST)} ${r.pick(WING_LAST)}`, model, fee, skill };
   });
 }
 

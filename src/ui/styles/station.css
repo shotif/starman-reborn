@@ -921,6 +921,23 @@
   white-space: nowrap;
 }
 
+/* The odds of an outpost holding a raid (docs/PROCGEN.md §29): a bar, its fill the chance. */
+.odds-bar {
+  height: 0.5rem;
+  border-radius: 2px;
+  background: rgba(120, 170, 255, 0.14);
+  box-shadow: 0 0 0 1px rgba(2, 6, 16, 0.8);
+  overflow: hidden;
+}
+
+.odds-fill {
+  --fill: 0;
+  display: block;
+  height: 100%;
+  width: calc(var(--fill) * 100%);
+  background: var(--success);
+}
+
 .milestones li {
   display: flex;
   align-items: center;

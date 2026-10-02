@@ -42,7 +42,8 @@ haul your routes (worked out from the game clock, for well under what flying the
 and insurance), lease storage and buy a share of a station's trade. Your captains fly the same lanes
 as everyone else's haulers: meet one on the way, guard it when raiders jump it, or watch it go.
 And after the fleet, a station of your own: charter a site in orbit of a real planet, haul the
-materials there stage by stage, and your outpost opens, trades and pays you by the hour.
+materials there stage by stage, and your outpost opens, trades and pays you by the hour. Raiders
+come for it now and then: build turrets there, hire guards, or be there to fight them off.
 Fit a passenger cabin and the bars offer fares: passages between stations, and sightseers who pay
 to be flown close to the real sky's planets, dwarf stars and belts, and say what the archives
 record of them when they see them. A fight with passengers aboard costs you some of the fare.

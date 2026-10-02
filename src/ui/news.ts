@@ -9,6 +9,7 @@ import { haulsLostNear, reliefNews, shipsOut } from '../economy/hauls.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
 import type { RivalStyle } from '../content/rivals/rules.ts';
 import { rivalName, rivalNews } from '../economy/rivals.ts';
+import { outpostRaidNews } from '../economy/outpostRaids.ts';
 import { skyNews } from '../economy/stellar.ts';
 import { edgeNews, fillEdge } from '../economy/doomed.ts';
 import { EDGE_EARTH, EDGE_FICTION } from '../content/stellar/doomedLines.ts';
@@ -237,6 +238,30 @@ export function rivalNewsList(systemId: SystemId, clock: number): HTMLElement | 
           { class: 'news-text' },
           h('span', { class: 'row-name' }, rivalName(n.rival)),
           h('span', { class: 'row-sub' }, `Rival pilot · ${n.jumps === 0 ? 'this system' : `${n.jumps} jump${n.jumps > 1 ? 's' : ''} away`} · ${clock - n.at < 60 ? 'just now' : `${minutes(clock - n.at)} min ago`}`),
+          h('span', { class: 'news-detail' }, n.text),
+        ),
+      ),
+    ),
+  );
+}
+
+/** Raids on the player's outpost within two jumps, over the last hour (docs/PROCGEN.md §29): fiction, marked so. */
+export function outpostRaidNewsList(systemId: SystemId, clock: number): HTMLElement | null {
+  const items = outpostRaidNews(systemId, clock);
+  if (!items.length) return null;
+  return h(
+    'ul',
+    { class: 'list news-list', 'data-testid': 'outpost-raid-news' },
+    items.map((n) =>
+      h(
+        'li',
+        { class: 'news-item kind-raid' },
+        glyph('gun'),
+        h(
+          'span',
+          { class: 'news-text' },
+          h('span', { class: 'row-name' }, 'Your outpost ', dataBadge('fictional')),
+          h('span', { class: 'row-sub' }, `${n.jumps === 0 ? 'this system' : `${n.jumps} jump${n.jumps > 1 ? 's' : ''} away`} · ${clock - n.at < 60 ? 'just now' : `${minutes(clock - n.at)} min ago`}`),
           h('span', { class: 'news-detail' }, n.text),
         ),
       ),

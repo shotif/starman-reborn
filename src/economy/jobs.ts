@@ -76,7 +76,9 @@ export type Objective =
    */
   | { kind: 'rescue'; systemId: SystemId; shipName: string; model: string; commodity: CommodityId; qty: number; guard: 1 | 2 | 3 | null; text: string }
   /** Meet a rival at a beacon for a duel, one on one, and win it (docs/PROCGEN.md §28; JobProgress.duel). */
-  | { kind: 'duel'; systemId: SystemId; rival: string; text: string };
+  | { kind: 'duel'; systemId: SystemId; rival: string; text: string }
+  /** Hold the player's outpost against a raid (docs/PROCGEN.md §29; JobProgress.outpost): the raid's window and when it strikes. */
+  | { kind: 'outpost'; systemId: SystemId; locationId: string; window: number; at: number; text: string };
 
 export interface JobDef {
   id: string;
@@ -455,6 +457,8 @@ function objectiveSatisfied(state: GameState, jobId: string, o: Objective, ctx: 
       return !!state.jobs[jobId]?.rescued;
     case 'duel':
       return state.jobs[jobId]?.duel === 'won';
+    case 'outpost':
+      return state.jobs[jobId]?.outpost === 'held';
     case 'have-cargo':
       return cargoCount(state.ship.cargo, o.commodity) >= o.qty;
     case 'dock':
@@ -710,6 +714,12 @@ function describeCurrent(state: GameState, jobId: string): ObjectiveSummary | nu
       const name = COMMODITIES[o.commodity].name.toLowerCase();
       const then = have >= o.qty ? `${o.text}: fly alongside it` : `${o.text} (you have ${have} of ${o.qty} ${name})`;
       return { ...base, text: inOtherSystem(o.systemId, then), targetSystemId: o.systemId, targetLocationId: null, ...(o.systemId === here ? { targetId: strandedTargetId(jobId) } : {}) };
+    }
+    case 'outpost': {
+      // The raid on the player's outpost (docs/PROCGEN.md §29): how long until it strikes, or that it has.
+      const left = o.at - state.clock;
+      const when = left > 0 ? `${Math.max(1, Math.round(left / 60))} min` : 'under way';
+      return { ...base, text: inOtherSystem(o.systemId, `${o.text} (${when})`), targetSystemId: o.systemId, targetLocationId: o.locationId };
     }
     case 'duel':
       // The rival waits off the jump beacon (docs/PROCGEN.md §28).

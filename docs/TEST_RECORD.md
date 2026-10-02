@@ -454,6 +454,25 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   even when caught by the explosion, first light counted only within minutes of arriving and from
   two systems the second farther out, the hole read where it is; its stations' own markets; its
   status line and its stations' welcomes.
+- `outpostRaids.test.ts`: **defending your outpost**. The guardrails pass, with raids hurting an
+  undefended port without ruining it (more in lawless space than thin) and three turrets paying for
+  themselves in 20–60 hours; broken rules and lines are caught (odds falling with lawlessness, a hold
+  table that dips, a loss that pays, a guard too slow to arrive, a number in a line). The odds of
+  holding climb with the defence, raiders downed count, and read in words. The windows: none before
+  the outpost has been open three hours, the probe first (one pair at threat 1, seen half an hour
+  off), the same for the same save, full raids after it at the band's threat (a frame one lower),
+  more raids as the outpost grows and a quarter as many for a pilot the Wake trusts. The watch's
+  warning (once, the job posted, its objective counting down). Raids decided away in time order with
+  the income: a weak defence loses them (the income halved for its hours, the market dearer for its
+  good, a quarter of what is stored taken, never the credits), a strong one holds most; a raid due
+  while the player flies in its system waits for the flight, and the outpost's hours with it.
+  Turrets built from materials one a stage, their upkeep out of the income, repaired when knocked
+  out. Guards: two offers a posting, hired for a term paid up front, on post a quarter of an hour
+  later and gone at its end, at most two, from the outpost or a full-service dock, never for a hunted
+  pilot. Saves keep it all and refuse damaged defences. In a real flight: the turrets and a guard by
+  the outpost, the raid striking at its time with half its raiders for the stores, a turret firing on
+  a raider in range, the raid held when the last raider is down (their bounties paid), and lost when
+  the stores are broken open, the raiders making off.
 - `rivalStories.test.ts`: **rival stories**. The guardrails pass, every rival with a story it can
   play, and broken rules, paths and lines are caught (a yield too low, an ally out of reach, a duel
   window too short, a duel's loss leaving a rival hostile, a rival with no story, a he or she in a line, a
@@ -662,6 +681,13 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   card naming the risk, paid; back in the same system in the same slot, nothing more to meet; a
   customs patrol with contraband aboard, the risk named, bribed, the cargo kept; and a real mayday
   answered with a pad (A on the action, the D-pad to the first choice, A to take it) and paid.
+- `outpostRaid.spec.ts`: **defending your outpost**: at Lalande 21185 the charter dialog warns of
+  raids; the outpost's frame goes up; a turret is built from materials handed over in the Outpost
+  window (*1/1 built*, *Up*); a guard is hired for eight hours in the guards' dialog; the watch sees
+  the first raid, a probe, coming (the radio, the job, *Raiders expected in about …* in the window);
+  launched, the turret and the guard are out by the outpost and the HUD objective says *Defend*; the
+  raiders strike at their time, as many as the raid has, and downed to the last, the raid is held
+  with the player there, the job done and the watch saying so.
 - `rivalStories.spec.ts`: **rival stories**: Mara “Quickstep” Venn, known a while and friendly,
   asks for a loan at their table (*1,500 cr*), lent, the credits down and the table saying what is
   owed; as their next run docks it comes back with interest, said over the radio; at their table
@@ -682,7 +708,8 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   shipments, the News at Pyre Observatory telling of its alarm, Pyre in flight, the card when the
   ship is carried out of its system, its black hole, Pyre's card on the star map, a mayday's hail on
   the HUD and its card, a rival asking for a loan at their table, the journal following two rivals'
-  stories, a rival waiting off a lawless beacon for a duel, and the News with a shortage's relief
+  stories, a rival waiting off a lawless beacon for a duel, an outpost's guards' dialog, its defences
+  with the first raid seen coming, the raid on it in flight, and the News with a shortage's relief
   haulers on their way, at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
   zoom). Saved in `docs/screenshots/` once any smooth scrolling has come to rest. Each is audited

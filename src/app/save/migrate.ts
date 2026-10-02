@@ -12,9 +12,10 @@ import { COMBAT } from '../../content/combat/rules.ts';
 import { markById } from '../../economy/marks.ts';
 import { FLEET } from '../../content/fleet/rules.ts';
 import { OUTPOSTS } from '../../content/outposts/rules.ts';
+import { OUTPOST_RAIDS } from '../../content/outposts/raids.ts';
 import { ROSTER } from '../../content/rivals/rules.ts';
 import { outpostId, outpostSite } from '../../content/outposts/sites.ts';
-import { createNewGame, SAVE_VERSION, type CommodityId, type GameState, type OutpostRecord, type RivalStory } from '../state.ts';
+import { createNewGame, SAVE_VERSION, type CommodityId, type GameState, type OutpostDefence, type OutpostRecord, type RivalStory } from '../state.ts';
 
 /**
  * Save format history:
@@ -49,7 +50,8 @@ import { createNewGame, SAVE_VERSION, type CommodityId, type GameState, type Out
  *   (rivals knocked out, claims bought back, §24); the world log's `sky` (when a far star's death
  *   begins, §25) and a job's `observed` (its observations), absent in older v10 saves; the world log's `lanes`
  *   (lane encounters met, §27), absent in older v10 saves; the world log's rival `stories`, a rival's
- *   `met` and a wingman's `ally` (§28), absent in older v10 saves. See GameState in src/app/state.ts.
+ *   `met` and a wingman's `ally` (§28), and an outpost's `opened` and `defence` (§29), absent in older
+ *   v10 saves. See GameState in src/app/state.ts.
  */
 export interface SaveV1 {
   version: 1;
@@ -87,10 +89,25 @@ function assertValidOutpost(o: OutpostRecord, fail: (msg: string) => never): voi
     !Object.entries(o.delivered).every(([c, q]) => COMMODITY_IDS.includes(c as CommodityId) && Number.isFinite(q) && (q as number) >= 0) ||
     !Number.isFinite(o.founded) ||
     !Number.isFinite(o.since) ||
-    !Number.isFinite(o.earned)
+    !Number.isFinite(o.earned) ||
+    (o.opened !== undefined && !Number.isFinite(o.opened)) ||
+    (o.defence !== undefined && !validDefence(o.defence, o.stage))
   ) {
     fail('outpost');
   }
+}
+
+/** An outpost's defences and raids (docs/PROCGEN.md §29): turrets within its stages, guards and raids that make sense. */
+function validDefence(d: OutpostDefence, stage: number): boolean {
+  const time = (t: unknown) => Number.isFinite(t) && (t as number) >= 0;
+  if (!isRecord(d) || !Number.isInteger(d.turrets) || d.turrets < 0 || d.turrets > Math.min(stage, OUTPOST_RAIDS.turrets.needs.length) || !Number.isInteger(d.settled)) return false;
+  if (!isRecord(d.delivered) || !Object.entries(d.delivered).every(([c, q]) => COMMODITY_IDS.includes(c as CommodityId) && Number.isFinite(q) && (q as number) >= 0)) return false;
+  if (!Array.isArray(d.down) || d.down.length > OUTPOST_RAIDS.turrets.needs.length || !d.down.every((t) => t === null || time(t))) return false;
+  if (!Array.isArray(d.guards) || d.guards.length > 8 || !d.guards.every((g) => isRecord(g) && typeof g.id === 'string' && typeof g.name === 'string' && !!findShip(g.model) && (g.skill === 'steady' || g.skill === 'sharp') && time(g.from) && time(g.until) && g.until >= g.from)) return false;
+  if (!Array.isArray(d.raids) || d.raids.length > OUTPOST_RAIDS.keep || !d.raids.every((r) => isRecord(r) && Number.isInteger(r.window) && Number.isFinite(r.at) && [1, 2, 3].includes(r.threat) && (r.result === 'held' || r.result === 'lost') && (r.where === 'away' || r.where === 'flight') && (r.took === undefined || typeof r.took === 'string'))) return false;
+  if (d.warned !== undefined && !Number.isInteger(d.warned)) return false;
+  if (d.hurt !== undefined && !(isRecord(d.hurt) && time(d.hurt.from) && time(d.hurt.until) && d.hurt.until >= d.hurt.from && COMMODITY_IDS.includes(d.hurt.good))) return false;
+  return true;
 }
 
 const STORY_ENDS = ['friends', 'towed', 'let-down', 'lost-ship', 'fell-out', 'won', 'lost', 'forfeit', 'no-show', 'amends'];

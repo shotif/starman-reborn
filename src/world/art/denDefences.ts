@@ -33,35 +33,42 @@ function shieldShell(radius: number, color: string, ctx: ArtContext): { mesh: TH
   };
 }
 
-/** A den gun turret: a squat mount on a strut, a turning head and twin barrels. */
-export function createTurretArt(ctx: ArtContext): ShipArt {
+/** A turret's colours: a den's, or one of the player's own outpost (docs/PROCGEN.md §29). */
+const TURRET_PALETTE = {
+  den: { head: '#6d2f28', cap: '#4a221d', glass: 'glassRed', glow: '#ff5a3c', light: '#ff4a3a', foot: '#ff9a3a', shield: '#ff8a6a' },
+  own: { head: '#2f5878', cap: '#223e55', glass: 'glass', glow: '#5ad0ff', light: '#4ac8ff', foot: '#9ae0ff', shield: '#7fd8ff' },
+} as const;
+
+/** A den gun turret (or the player's outpost's own): a squat mount on a strut, a turning head and twin barrels. */
+export function createTurretArt(ctx: ArtContext, palette: keyof typeof TURRET_PALETTE = 'den'): ShipArt {
+  const c = TURRET_PALETTE[palette];
   const group = new THREE.Group();
-  group.name = 'den-turret';
+  group.name = palette === 'den' ? 'den-turret' : 'outpost-turret';
   const kit = new Kit(2);
   const seg = byQuality(ctx.quality, 8, 10, 14);
   // Mount and strut (below the head: the head turns with the whole group).
   kit.add('metal', latheZ([[0.001, -9], [9, -8], [11, -2], [11, 2], [9, 8], [0.001, 9]], seg), { rotation: [Math.PI / 2, 0, 0], position: [0, -10, 0], color: '#3a3430' });
   kit.add('metal', new THREE.CylinderGeometry(3, 4, 30, seg), { position: [0, -30, 0], color: '#2b2724' });
   // Head.
-  kit.add('hull', new THREE.BoxGeometry(18, 10, 20), { position: [0, 0, 0], color: '#6d2f28' });
-  kit.add('hull', new THREE.BoxGeometry(14, 4, 14), { position: [0, 6, 2], color: '#4a221d' });
+  kit.add('hull', new THREE.BoxGeometry(18, 10, 20), { position: [0, 0, 0], color: c.head });
+  kit.add('hull', new THREE.BoxGeometry(14, 4, 14), { position: [0, 6, 2], color: c.cap });
   // Barrels.
   for (const x of [-5, 5]) {
     kit.add('metal', latheZ([[1.8, 0], [1.6, -18], [1.2, -24]], seg), { position: [x, 1, -8], color: '#242424' });
-    kit.add('emissive', new THREE.SphereGeometry(0.9, 6, 4), { position: [x, 1, -32.5], color: '#ff5a3c', intensity: 1.6 });
+    kit.add('emissive', new THREE.SphereGeometry(0.9, 6, 4), { position: [x, 1, -32.5], color: c.glow, intensity: 1.6 });
   }
-  kit.add('glassRed', new THREE.BoxGeometry(8, 3, 1), { position: [0, 3, -10.2] });
+  kit.add(c.glass, new THREE.BoxGeometry(8, 3, 1), { position: [0, 3, -10.2] });
   kit.build(group, standardSet(ctx.quality));
   const lights = createLightPoints(
     [
-      { p: [0, 9, 4], color: '#ff4a3a', size: 6, intensity: 1.8, blink: 1.3, duty: 0.4, min: 0.2 },
-      { p: [0, -46, 0], color: '#ff9a3a', size: 4, intensity: 1.2 },
+      { p: [0, 9, 4], color: c.light, size: 6, intensity: 1.8, blink: 1.3, duty: 0.4, min: 0.2 },
+      { p: [0, -46, 0], color: c.foot, size: 4, intensity: 1.2 },
     ],
     ctx,
     2.5,
   );
   group.add(lights.points);
-  const shell = shieldShell(24, '#ff8a6a', ctx);
+  const shell = shieldShell(24, c.shield, ctx);
   group.add(shell.mesh);
   return {
     object: group,

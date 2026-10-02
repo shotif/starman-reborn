@@ -27,6 +27,9 @@ import { carriesPassengers, frighten, passengerFright, passengerGoodbye, passeng
 import { claimFor, holdsOf, metRival, nextRun, rivalById, rivalDestroyed, rivalHello, rivalKnockedOut, rivalName, rivalShot, rivalWhere, shift, standingWith, turnOf } from '../economy/rivals.ts';
 import { allyLost, ambushIn, duelIn, duelLost, duelStarted, duelWon, settleRivalStories, spendAmbush, spendTipoff, storyOffer, storyStatus, tipoffIn, tippedPatrols, type StoryNote } from '../economy/rivalStories.ts';
 import { STORY, STORY_NOTES } from '../content/rivals/storyLines.ts';
+import { defenceOf, guardsOnPost, nextRaid, outpostSystem, raidIn, raidNote, raidWarning, settleRaid, turretsUp } from '../economy/outpostRaids.ts';
+import { RAID_WATCH } from '../content/outposts/raidLines.ts';
+import { outpostId } from '../content/outposts/sites.ts';
 import { farStar, farStarLook, recordObservation, scheduleSky, skyComm, skyMoment, skyTimeline } from '../economy/stellar.ts';
 import type { SkyNewsKind } from '../content/stellar/lines.ts';
 import { ROSTER } from '../content/rivals/rules.ts';
@@ -553,6 +556,43 @@ export class Game {
   /** What the fleet did while the player was away, as toasts (docs/PROCGEN.md §18). */
   private announceFleet(s: FleetSettlement): void {
     for (const n of fleetNews(s)) toast(n.text, n.tone, 6000);
+    // Raids on the player's outpost decided while they were away (docs/PROCGEN.md §29).
+    for (const r of s.raids) {
+      toast(r.text, r.tone, 7000);
+      this.comm(r.speaker, r.watch, 6000);
+    }
+    this.announceJobEvents(s.raidJobs);
+    this.watchOutpost();
+  }
+
+  /** The outpost's watch sees a raid coming (docs/PROCGEN.md §29): said once, a job to defend it, and armed in a flight there. */
+  private watchOutpost(): void {
+    const state = this.state;
+    const o = state?.world.outpost;
+    if (!state || !o || o.stage <= 0) return;
+    const w = raidWarning(state, o);
+    if (!w) return;
+    this.sfx('alert');
+    toast(w.text, 'bad', 8000);
+    this.comm(w.speaker, w.watch, 7000);
+    if (this.flight && this.mode === 'flight' && !state.location.dockedAt && state.location.systemId === outpostSystem(o)) {
+      this.flight.armOutpostRaid({ window: w.plan.window, at: w.plan.at, threat: w.plan.threat, ships: w.plan.ships });
+    }
+    this.persist();
+  }
+
+  /** Leaving a raid on the outpost under way (docking, jumping, the ship lost): the clock decides it, the raiders downed counted. */
+  private leaveOutpostRaid(): void {
+    const state = this.state;
+    const o = state?.world.outpost;
+    const r = this.flight?.outpostRaidStatus();
+    if (!state || !o || r?.state !== 'on') return;
+    const plan = raidIn(state, o, r.window);
+    if (!plan) return;
+    const { raid, events } = settleRaid(state, o, plan, 'away', { downed: r.downed });
+    const note = raidNote(o, raid);
+    toast(note.text, note.tone, 7000);
+    this.announceJobEvents(events);
   }
 
   /** What rivals' stories said as the clock passed their moments (docs/PROCGEN.md §28), and the jobs they closed. */
@@ -1036,6 +1076,23 @@ export class Game {
           else wingmanLost(state, id);
           this.persist();
         },
+        onOutpostRaid: (window, what, downed) => {
+          const o = state.world.outpost;
+          const plan = o ? raidIn(state, o, window) : null;
+          if (!o || !plan) return;
+          if (what === 'struck') {
+            this.comm(`${o.name} watch`, RAID_WATCH.struck[window % RAID_WATCH.struck.length]!, 5000);
+            return;
+          }
+          // Fought here: held or lost as it went; undecided, the clock decides with the raiders downed counted.
+          const { raid, events } = settleRaid(state, o, plan, 'flight', what === 'timeout' ? { downed } : { result: what, downed });
+          const note = raidNote(o, raid);
+          this.sfx(raid.result === 'held' ? 'mission-complete' : 'alert');
+          toast(note.text, note.tone, 7000);
+          this.comm(`${o.name} watch`, note.watch, 6000);
+          this.announceJobEvents(events);
+          this.persist();
+        },
         onRivalAmbush: (id) => {
           const r = rivalById(id);
           if (!r) return;
@@ -1192,6 +1249,7 @@ export class Game {
     const downDens = ALL_LOCATIONS.filter((l) => l.systemId === here && l.stationType === 'pirate-den' && denDown(state, l.id)).map((l) => l.id);
     const ambush = ambushIn(state, here);
     const duel = duelIn(state, here);
+    const outpost = this.outpostHere();
     return {
       ...base,
       plan: downDens.length ? { ...base.plan, packs: null } : base.plan,
@@ -1209,6 +1267,23 @@ export class Game {
       tipped: tippedPatrols(state, here),
       ...(ambush ? { rivalAmbush: { rivalId: ambush.rival.id, delay: ambush.delay, guns: ambush.guns, withRival: ambush.withRival, level: ambush.level } } : {}),
       ...(duel ? { duel: { jobId: duel.jobId, rivalId: duel.rival.id, started: duel.started } } : {}),
+      ...(outpost ? { outpost } : {}),
+    };
+  }
+
+  /** The player's outpost in this system, as the flight scene needs it (docs/PROCGEN.md §29): turrets up, guards on post, a raid due. */
+  private outpostHere(): NonNullable<ConstructorParameters<typeof FlightSession>[0]['traffic']>['outpost'] | null {
+    const state = this.state!;
+    const o = state.world.outpost;
+    if (!o || o.stage <= 0 || outpostSystem(o) !== state.location.systemId) return null;
+    defenceOf(o);
+    const plan = nextRaid(state, o);
+    return {
+      locationId: outpostId(o.site),
+      stage: o.stage,
+      turrets: turretsUp(o, state.clock),
+      guards: guardsOnPost(o, state.clock).map((g) => ({ id: g.id, name: g.name, model: g.model, skill: g.skill })),
+      ...(plan && plan.at - state.clock < 2 * 3_600 ? { raid: { window: plan.window, at: plan.at, threat: plan.threat, ships: plan.ships } } : {}),
     };
   }
 
@@ -1267,6 +1342,7 @@ export class Game {
   private onDocked(locationId: string): void {
     const state = this.state!;
     this.leaveDuel();
+    this.leaveOutpostRaid();
     this.flight?.writeBack(state);
     this.rememberLingering();
     // Customs at depots and military bases scan every ship that docks; tipped off by a rival, any lawful dock does (docs/PROCGEN.md §28).
@@ -1503,6 +1579,7 @@ export class Game {
   private async onPlayerDestroyed(): Promise<void> {
     const state = this.state!;
     this.leaveDuel();
+    this.leaveOutpostRaid();
     const dock = getLocation(state.location.lastDockId);
     await showModal({
       title: 'Ship disabled',
@@ -1680,6 +1757,7 @@ export class Game {
         j.phase = 'tunnel';
         const state = this.state!;
         this.leaveDuel();
+        this.leaveOutpostRaid();
         this.flight?.writeBack(state);
         this.rememberLingering();
         this.disposeFlight();
@@ -2376,6 +2454,14 @@ export class Game {
           if (w.kind === 'docked' && run && run.from === w.locationId && run.to !== w.locationId && run.depart - t > 120) return { at: t, locationId: w.locationId, to: run.to };
         }
         return null;
+      },
+      /** Test-only: the player's outpost's next raid, how it stands against it, the raids met, and the raid in this flight (docs/PROCGEN.md §29). */
+      outpostRaid: () => {
+        const state = this.state;
+        const o = state?.world.outpost;
+        if (!state || !o) return null;
+        const next = nextRaid(state, o);
+        return { next, warned: o.defence?.warned ?? null, raids: o.defence?.raids ?? [], turrets: o.defence?.turrets ?? 0, flight: this.flight?.outpostRaidStatus() ?? null };
       },
       /** Test-only: the player's ship takes a hit in flight (shields first). */
       hurtPlayer: (amount: number) => this.flight?.debugHurt(amount),

@@ -131,6 +131,12 @@ snapshot branch only when the archives changed.
   but Betelgeuse's and Antares' still reach every system at once. On the 3D star map its label says
   Fiction, but only the flat map draws a dashed ring round it. A pilot docked when a moment comes
   hears of it in the News, not on the radio (the clock stands still while docked).
+- Raids on the player's outpost (PROCGEN §29) strike only the outpost: never its captains or
+  stakes, and nobody repairs a stores barge between raids (it is whole each time). In flight the
+  raiders come out of the dark rather than flying in from a den the player can see them leave, and
+  a patrol wing joins only if it happens to be near. Guards are in the scene only when the player
+  arrives while they are on post, and fly a loop rather than a patrol of their own. Away, a raid is
+  decided by odds from the defence the outpost had, not flown out.
 - Rival stories (PROCGEN §28) are one a rival a save, along two paths of three steps, and their words
   are by voice (brash, dry or warm), not each rival's own. A friend's escort is flown as the
   contracts' escorts are, the rival's ship theirs in name and model only. An ally flies as a hired

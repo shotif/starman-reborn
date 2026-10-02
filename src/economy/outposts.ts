@@ -9,6 +9,7 @@ import type { Result } from './equipment.ts';
 import { refreshSaveStations } from './events.ts';
 import { dividendFactor } from './fleet.ts';
 import { dockAccess } from './law.ts';
+import { hurtFactor, upkeep } from './outpostRaids.ts';
 
 /**
  * A station of your own (docs/PROCGEN.md §22; rules in src/content/outposts/rules.ts): the player
@@ -49,9 +50,14 @@ export function baseIncome(o: OutpostRecord): number {
   return o.stage > 0 ? OUTPOSTS.stages[Math.min(o.stage, OUTPOSTS.stages.length) - 1]!.income : 0;
 }
 
-/** This hour's income: moved by a raid or sweep in its system, as stakes' dividends are (FLEET.stakes.events). */
+/**
+ * This hour's income: moved by a raid or sweep in its system, as stakes' dividends are
+ * (FLEET.stakes.events), cut while a raid it lost still hurts, less its turrets' upkeep
+ * (docs/PROCGEN.md §29).
+ */
 export function incomeAt(o: OutpostRecord, clock: number): number {
-  return Math.round(baseIncome(o) * dividendFactor(outpostId(o.site), clock).factor);
+  if (o.stage <= 0) return 0;
+  return Math.max(0, Math.round(baseIncome(o) * dividendFactor(outpostId(o.site), clock).factor * hurtFactor(o, clock)) - upkeep(o));
 }
 
 // ---------------------------------------------------------------- the charter
@@ -127,7 +133,10 @@ export function deliverToOutpost(state: GameState, c: CommodityId, qty: number):
   const opened = o.stage === 0;
   o.stage += 1;
   o.delivered = {};
-  if (opened) o.since = state.clock;
+  if (opened) {
+    o.since = state.clock;
+    o.opened = state.clock;
+  }
   refreshSaveStations();
   const what = opened ? `${o.name} is open: its market and repairs are working` : `${o.name} is now a ${stage.name.toLowerCase()}`;
   return { ok: true, message: `Delivered ${qty} ${goodName(c)}. ${what}.`, stageDone: stage.id };
@@ -153,7 +162,7 @@ export function payOldHours(o: OutpostRecord, now: number): { hours: number; pay
   if (o.stage <= 0) return { hours: 0, pay: 0 };
   const hours = Math.floor((now - o.since) / HOUR) - OUTPOSTS.maxHoursPerSettle;
   if (hours <= 0) return { hours: 0, pay: 0 };
-  const pay = hours * baseIncome(o);
+  const pay = hours * Math.max(0, baseIncome(o) - upkeep(o));
   o.since += hours * HOUR;
   o.earned += pay;
   return { hours, pay };

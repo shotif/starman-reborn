@@ -9,11 +9,11 @@ After the scripted opening (10–20 minutes), the neighbourhood is an open sandb
 systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
 of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
 packs in lawless space; 39 ships and 146 pieces of equipment; and generated contracts on every job
-board. Increments 1–27 (under [Done so far](#done-so-far)) added world events and news, contracts
+board. Increments 1–28 (under [Done so far](#done-so-far)) added world events and news, contracts
 of every kind, the law and the outlaw path, goals, five story arcs, combat depth, people in the
 bars and a trade computer, a world that answers, gluts that ship their surplus out and relief to
 escort through raided lanes, a fleet of your own whose captains fly the lanes,
-a station of your own, passengers and sightseers, rival pilots with careers and stories of their own, a
+a station of your own to build and defend, passengers and sightseers, rival pilots with careers and stories of their own, a
 supernova in every sky (as fiction), an invented star at the map's edge that explodes and leaves a
 black hole to fly to (fiction too), encounters on the lanes between the docks, mining in the real belts, the frontier with a life of its own,
 a border war whose fronts can be won for good, story endings that change stations for good, escorts
@@ -28,15 +28,9 @@ What it lacks now:
 
 ## Proposed next increments
 
-Candidates for what comes next, in the order they will be built. Defend your outpost and Your crew
-were chosen by the owner on 2 October 2026 (with Lane encounters and Rival stories, now done), to
-make the game more engaging.
-
-### Defend your outpost ⏳ (M)
-
-Raiders come for the player's outpost now and then. Fight them off in person, hire guards, or fit
-defence turrets as a new outpost module; a raid lost costs stock and income for a while. Today an
-outpost only earns: nothing threatens it but a raid's dent in its income.
+Candidates for what comes next, in the order they will be built. Your crew was chosen by the owner
+on 2 October 2026 (with Lane encounters, Rival stories and Defend your outpost, now done), to make
+the game more engaging.
 
 ### Your crew ⏳ (L)
 
@@ -53,6 +47,19 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 28. Defend your outpost ✅
+
+Raiders now come for your outpost. Every few hours, in thin or lawless space, a raid may be due:
+its watch sees it coming a quarter of an hour off, says so over the radio, and a job asks you to
+defend it, with the odds of holding shown in its window. Build turrets there from hauled materials
+(one for each stage it has grown to, three at most), and hire guards by the hour at the outpost or
+from the Fleet window at any big dock; they take up their post a quarter of an hour later. Be there
+when it strikes and fight beside them: the raiders go for its stores, the turrets and guards for the
+raiders, and every raider down holds it. Away, the defence it had decides it. A raid lost halves its
+income for a few hours, leaves its market short of a good, takes a quarter of what you store there
+and knocks a turret out; never your credits. The first is only a probe, to show what is coming
+([PROCGEN.md §29](PROCGEN.md#29-defend-your-outpost)).
 
 ### 27. Rival stories ✅
 

@@ -6,7 +6,8 @@ import { hashString, rng, type Rng } from '../content/random.ts';
 import type { LastingMark } from '../content/story/marks.ts';
 import { jumpsFrom } from '../content/world/network.ts';
 import { WORLD_SEED } from '../content/world/rules.ts';
-import { isOutpostId, outpostLocation } from '../content/outposts/sites.ts';
+import { isOutpostId, outpostId, outpostLocation } from '../content/outposts/sites.ts';
+import { OUTPOST_RAIDS } from '../content/outposts/raids.ts';
 import { ALL_LOCATIONS, getLocation, getSystem, isFrontier, isInventedSystem, setSaveLocations, SYSTEMS, WORLD } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { trafficPlan } from '../world/traffic/plan.ts';
@@ -390,6 +391,11 @@ export function activeHaulLog(): WorldLog['hauls'] | null {
   return worldLog?.hauls ?? null;
 }
 
+/** The player's outpost in the save the game points at (docs/PROCGEN.md §22, §29), or null. */
+export function activeOutpost(): WorldLog['outpost'] | null {
+  return worldLog?.outpost ?? null;
+}
+
 /** What the player did to rival pilots' careers in the save the game points at (docs/PROCGEN.md §24), or null. */
 export function activeRivalLog(): WorldLog['rivals'] | null {
   return worldLog?.rivals ?? null;
@@ -569,8 +575,11 @@ export function marketEffect(locationId: string, commodity: CommodityId, clock: 
   const sky = worldLog?.sky ? skyPrice(locationId, commodity, clock, worldLog.sky.from) : 1;
   // Pyre's death (§26, fiction): the same, from its warning until it has faded in each sky.
   const edge = worldLog?.sky?.edge !== undefined ? edgePrice(locationId, commodity, clock, worldLog.sky.edge) : 1;
-  if (!event && !mark && sky === 1 && edge === 1) return NEUTRAL;
-  return { price: (event?.price ?? 1) * (mark?.price ?? 1) * sky * edge, stock: (event?.stock ?? 1) * (mark?.stock ?? 1) };
+  // A raid lost at the player's outpost (§29): its market short of one good while the hurt lasts.
+  const hurt = worldLog?.outpost?.defence?.hurt;
+  const raid = hurt && hurt.good === commodity && clock >= hurt.from && clock < hurt.until && locationId === outpostId(worldLog!.outpost!.site) ? OUTPOST_RAIDS.lost : null;
+  if (!event && !mark && sky === 1 && edge === 1 && !raid) return NEUTRAL;
+  return { price: (event?.price ?? 1) * (mark?.price ?? 1) * sky * edge * (raid?.price ?? 1), stock: (event?.stock ?? 1) * (mark?.stock ?? 1) * (raid?.stock ?? 1) };
 }
 
 /** How an event moves a good's price at a station right now, all effects together (1 without one). */

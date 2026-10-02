@@ -450,6 +450,40 @@ for (const size of SIZES) {
       await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
       expect(await api<boolean>(page, 'face', { id: 'duel:rs.lantern.duel', below: size.height < 500 ? 2 : 4 })).toBe(true);
       await shot(page, `${size.name}-14c-duel`, size.touch, results);
+      // Defending your outpost (docs/PROCGEN.md §29): the frame finished at the site chartered earlier, a turret
+      // built, a guard's hire, the Outpost window's defences with the first raid seen coming, and the raid in flight.
+      await docked('outpost.gj-411-b');
+      await api(page, 'setCargo', { 'habitat-modules': 8, metals: 20 });
+      await press(page, 'room-deck');
+      if (!(await page.getByTestId('outpost-window').isVisible().catch(() => false))) await press(page, 'station-outpost');
+      for (const good of ['habitat-modules', 'metals']) await press(page, `outpost-deliver-${good}`);
+      await waitUntil(page, 'the outpost open', async () => ((await api<{ world: { outpost?: { stage: number } } }>(page, 'state')).world.outpost?.stage ?? 0) >= 1);
+      await api(page, 'setCargo', { 'ship-parts': 4, machinery: 2, electronics: 3 });
+      await press(page, 'room-deck');
+      if (!(await page.getByTestId('outpost-window').isVisible().catch(() => false))) await press(page, 'station-outpost');
+      for (const good of ['ship-parts', 'machinery', 'electronics']) await press(page, `outpost-turret-deliver-${good}`);
+      await press(page, 'outpost-hire-guards');
+      await expect(page.getByTestId('guard-hire-dialog')).toBeVisible();
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-15b-guard-hire`, size.touch, results);
+      await press(page, 'guard-confirm');
+      const raid = (await api<{ next: { warnAt: number; at: number; window: number } | null }>(page, 'outpostRaid'))!;
+      expect(raid.next, 'a raid coming').not.toBeNull();
+      await api(page, 'advanceClock', raid.next!.warnAt + 5 - (await api<{ clock: number }>(page, 'state')).clock);
+      await press(page, 'room-deck');
+      if (!(await page.getByTestId('outpost-window').isVisible().catch(() => false))) await press(page, 'station-outpost');
+      await page.getByTestId('outpost-defences').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-15-outpost-defence`, size.touch, results);
+      await press(page, 'dock-launch');
+      if (await page.getByTestId('sheet-close').isVisible().catch(() => false)) await press(page, 'sheet-close');
+      await waitUntil(page, 'undocked', async () => (await api<{ autopilot: string } | null>(page, 'player'))?.autopilot === 'none');
+      await api(page, 'advanceClock', raid.next!.at - 1 - (await api<{ clock: number }>(page, 'state')).clock);
+      await waitUntil(page, 'the raid struck', async () => (await api<{ flight: { state: string } | null }>(page, 'outpostRaid'))!.flight?.state === 'on', 30_000);
+      await api(page, 'selectTarget', 'station:outpost.gj-411-b');
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      expect(await api<boolean>(page, 'face', { id: 'station:outpost.gj-411-b', below: size.height < 500 ? 2 : 4 })).toBe(true);
+      await shot(page, `${size.name}-15c-outpost-raid`, size.touch, results);
       for (const [name, r] of Object.entries(results)) {
         expect.soft(r.overflow, `${name}: page overflow`).toBe(false);
         expect.soft(r.clipped, `${name}: clipped controls`).toEqual([]);

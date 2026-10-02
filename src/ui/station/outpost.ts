@@ -6,6 +6,25 @@ import { getPlanet } from '../../data/systems.ts';
 import { cargoCount } from '../../economy/cargo.ts';
 import { COMMODITIES } from '../../economy/commodities.ts';
 import { charterOffers, charterOutpost, deliverable, deliverToOutpost, nextStage, outpostOf, outpostPlace, outpostStatus, stillNeeded, type CharterOffer } from '../../economy/outposts.ts';
+import { OUTPOST_RAIDS } from '../../content/outposts/raids.ts';
+import { RAID_FICTION } from '../../content/outposts/raidLines.ts';
+import { shipModel } from '../../content/catalog.ts';
+import type { OutpostRecord } from '../../app/state.ts';
+import {
+  defenceAt,
+  defenceLine,
+  deliverForTurret,
+  guardHireBlock,
+  guardOffers,
+  hireGuard,
+  holdOdds,
+  nextRaid,
+  oddsWord,
+  raidBand,
+  repairTurret,
+  turretCap,
+  turretNeeds,
+} from '../../economy/outpostRaids.ts';
 import { button, showModal, toast } from '../components.ts';
 import { formatCredits, h, replaceChildren } from '../dom.ts';
 import { glyph } from '../glyphs.ts';
@@ -49,8 +68,13 @@ export function outpostSection(ctx: StationContext, refresh: Refresh): HTMLEleme
             h('span', { class: 'row-name' }, `${o.name} · ${kindWord(o.kind)}`),
             h('span', { class: 'row-sub' }, outpostPlace(o)),
             h('span', { class: 'row-sub fleet-status', 'data-testid': 'outpost-status' }, outpostStatus(ctx.state, o)),
+            o.stage > 0 ? h('span', { class: 'row-sub', 'data-testid': 'outpost-defence-line' }, defenceLine(ctx.state, o)) : null,
             atOwnOutpost(ctx) ? null : h('span', { class: 'row-note' }, nextStage(o) ? 'Dock there to hand over the materials.' : 'Fiction: your station, at a real planet.'),
           ),
+          // Guards can be hired from any full-service dock (docs/PROCGEN.md §29).
+          o.stage > 0 && !atOwnOutpost(ctx) && !guardHireBlock(ctx.state, o)
+            ? h('span', { class: 'row-actions' }, button('Hire guards', { size: 'sm', testId: 'outpost-hire-guards', onClick: () => void openGuardHire(ctx, o, refresh) }))
+            : null,
         ),
       ),
     );
@@ -141,7 +165,7 @@ async function openCharter(ctx: StationContext, offer: CharterOffer, refresh: Re
     body: h(
       'div',
       { class: 'stack hire' },
-      h('p', null, `The charter costs ${formatCredits(offer.price)}. Then bring the materials for each stage to the site; your outpost opens once its frame is up, and pays you by the hour from then on. Raids in its system cut that hour's income.`),
+      h('p', null, `The charter costs ${formatCredits(offer.price)}. Then bring the materials for each stage to the site; your outpost opens once its frame is up, and pays you by the hour from then on. Raids in its system cut that hour's income, and raiders will come for the outpost itself now and then: build turrets there and hire guards to hold them off.`),
       h('div', { class: 'hire-field' }, h('label', { for: 'outpost-kind' }, 'What it is'), kindSelect),
       h('div', { class: 'hire-field' }, h('label', { for: 'outpost-name' }, 'Its name'), nameSelect),
       stages,
@@ -219,5 +243,182 @@ export function outpostContent(ctx: StationContext, refresh: Refresh): HTMLEleme
           ),
         )
       : h('p', { class: 'callout' }, 'Complete: a port with a market, repairs, a job board and an outfitter.'),
+    o.stage > 0 ? defenceSection(ctx, o, refresh) : null,
   );
+}
+
+// ---------------------------------------------------------------- its defences (docs/PROCGEN.md §29)
+
+const HOUR = 3_600;
+const clockIn = (seconds: number) => (seconds < HOUR ? `${Math.max(1, Math.round(seconds / 60))} min` : `${Math.round(seconds / HOUR)} h`);
+
+/** The outpost's defences, docked there: the raid watch and the odds, turrets (built from materials, repaired), guards, and the last raids. */
+function defenceSection(ctx: StationContext, o: OutpostRecord, refresh: Refresh): HTMLElement {
+  const { state } = ctx;
+  const d = o.defence;
+  const now = defenceAt(state, o, state.clock);
+  const next = nextRaid(state, o);
+  const warned = next && d?.warned === next.window && next.at > state.clock;
+  const threat = next?.threat ?? OUTPOST_RAIDS.threat[raidBand(o)];
+  const odds = holdOdds(now.value, threat);
+  const built = d?.turrets ?? 0;
+  const cap = turretCap(o);
+  const needs = turretNeeds(o);
+  const guards = (d?.guards ?? []).filter((g) => g.until > state.clock);
+  const block = guardHireBlock(state, o);
+  return h(
+    'section',
+    { 'aria-label': 'Defences', 'data-testid': 'outpost-defences' },
+    h('div', { class: 'list-head' }, h('span', null, 'Defences'), h('span', null, `${now.turrets} turret${now.turrets === 1 ? '' : 's'} up · ${now.guards.length} on post`)),
+    h(
+      'p',
+      { class: warned ? 'callout warn' : 'muted small', 'data-testid': 'outpost-raid-watch' },
+      warned ? `Raiders expected in about ${clockIn(next!.at - state.clock)}: ${next!.ships} ships. ${oddsWord(holdOdds(defenceAt(state, o, next!.at).value, next!.threat))}` : `Raiders come for outposts in ${raidBand(o)} space now and then; its watch sees them a quarter of an hour off. Against a raid now: ${oddsWord(odds)}`,
+    ),
+    h('div', { class: 'odds-bar', role: 'img', 'aria-label': `Odds of holding: ${Math.round(odds * 100)}%`, 'data-testid': 'outpost-odds' }, h('span', { class: 'odds-fill', style: `--fill: ${odds}` })),
+    h('div', { class: 'list-head' }, h('span', null, 'Turrets'), h('span', null, `${built}/${cap} built`)),
+    h(
+      'ul',
+      { class: 'list' },
+      Array.from({ length: built }, (_, i) => {
+        const downUntil = d?.down[i] ?? 0;
+        const down = downUntil > state.clock;
+        return h(
+          'li',
+          { class: 'trade-row fleet-row', 'data-testid': `outpost-turret-${i}` },
+          glyph('gun'),
+          h('span', { class: 'trade-text' }, h('span', { class: 'row-name' }, `Turret ${i + 1}`), h('span', { class: 'row-sub' }, down ? `Knocked out: back up in ${clockIn(downUntil - state.clock)}` : `Up · ${formatCredits(OUTPOST_RAIDS.turrets.upkeep)} an hour`)),
+          down
+            ? h(
+                'span',
+                { class: 'row-actions' },
+                button(`Repair · ${formatCredits(OUTPOST_RAIDS.turrets.repair)}`, {
+                  size: 'sm',
+                  testId: `outpost-turret-repair-${i}`,
+                  disabled: state.credits < OUTPOST_RAIDS.turrets.repair,
+                  onClick: () => {
+                    const r = repairTurret(state, i);
+                    ctx.sfx(r.ok ? 'ui-confirm' : 'ui-error');
+                    toast(r.message, r.ok ? 'good' : 'bad', 4000);
+                    ctx.save();
+                    refresh();
+                  },
+                }),
+              )
+            : null,
+        );
+      }),
+      needs.map((x) => {
+        const carry = cargoCount(state.ship.cargo, x.commodity);
+        const can = Math.min(x.left, carry);
+        return h(
+          'li',
+          { class: 'trade-row fleet-row', 'data-testid': `outpost-turret-need-${x.commodity}` },
+          glyph(COMMODITY_GLYPH[x.commodity]),
+          h('span', { class: 'trade-text' }, h('span', { class: 'row-name' }, `Turret ${built + 1}: ${COMMODITIES[x.commodity].name}`), h('span', { class: 'row-sub' }, `${x.delivered}/${x.need} delivered${x.left ? ` · you carry ${carry}` : ''}`)),
+          h(
+            'span',
+            { class: 'row-actions' },
+            x.left
+              ? button(can ? `Deliver ${can}` : 'Deliver', {
+                  size: 'sm',
+                  testId: `outpost-turret-deliver-${x.commodity}`,
+                  disabled: can <= 0,
+                  title: can <= 0 ? 'None in your hold' : undefined,
+                  onClick: () => {
+                    const r = deliverForTurret(state, x.commodity, can);
+                    ctx.sfx(r.ok ? (r.built ? 'mission-complete' : 'ui-confirm') : 'ui-error');
+                    toast(r.message, r.ok ? 'good' : 'bad', 5000);
+                    ctx.save();
+                    refresh();
+                  },
+                })
+              : h('span', { class: 'tag' }, 'Done'),
+          ),
+        );
+      }),
+    ),
+    built >= cap && cap < OUTPOST_RAIDS.turrets.needs.length ? h('p', { class: 'muted small' }, 'One turret for each stage built: the next comes with the next stage.') : null,
+    h('div', { class: 'list-head' }, h('span', null, 'Guards'), h('span', null, `${guards.length}/${OUTPOST_RAIDS.guards.max}`)),
+    guards.length
+      ? h(
+          'ul',
+          { class: 'list' },
+          guards.map((g) =>
+            h(
+              'li',
+              { class: 'trade-row fleet-row', 'data-testid': `outpost-guard-${g.id}` },
+              glyph('wing'),
+              h('span', { class: 'trade-text' }, h('span', { class: 'row-name' }, g.name), h('span', { class: 'row-sub' }, `${shipModel(g.model).name} · ${g.skill === 'sharp' ? 'sharp shot' : 'steady hand'} · ${g.from > state.clock ? `on post in ${clockIn(g.from - state.clock)}` : `on post for ${clockIn(g.until - state.clock)} more`}`)),
+            ),
+          ),
+        )
+      : h('p', { class: 'list-empty' }, 'No guards. Pilots here will guard the outpost by the hour, as will pilots at any dock with a market, repairs and a job board.'),
+    h('div', { class: 'row wrap' }, button('Hire a guard', { testId: 'outpost-hire-guards', disabled: !!block, title: block ?? undefined, onClick: () => void openGuardHire(ctx, o, refresh) })),
+    block && guards.length < OUTPOST_RAIDS.guards.max ? h('p', { class: 'muted small' }, block) : null,
+    d?.raids.length
+      ? h(
+          'div',
+          { class: 'stack-tight' },
+          h('div', { class: 'list-head' }, h('span', null, 'Raids'), h('span', null, '')),
+          h(
+            'ul',
+            { class: 'plain small', 'data-testid': 'outpost-raids' },
+            [...d.raids].reverse().map((r) => h('li', null, `${clockIn(Math.max(60, state.clock - r.at))} ago: ${r.result === 'held' ? 'held' : 'lost'}${r.where === 'flight' ? ', with you there' : ''}${r.took ? ` (took ${r.took})` : ''}`)),
+          ),
+        )
+      : null,
+    h('p', { class: 'muted small' }, RAID_FICTION),
+  );
+}
+
+/** Hiring a guard: two pilots this posting, a term, paid up front; on post a quarter of an hour on. */
+async function openGuardHire(ctx: StationContext, o: OutpostRecord, refresh: Refresh): Promise<void> {
+  const { state } = ctx;
+  const offers = guardOffers(state, o);
+  let pick = offers[0]!.id;
+  let hours = OUTPOST_RAIDS.guards.terms[1] ?? OUTPOST_RAIDS.guards.terms[0]!;
+  const termSelect = h(
+    'select',
+    { id: 'guard-term', 'data-testid': 'guard-term' },
+    OUTPOST_RAIDS.guards.terms.map((t) => h('option', { value: String(t), selected: t === hours }, `${t} hours`)),
+  );
+  const cost = h('p', { 'data-testid': 'guard-cost' });
+  const update = () => {
+    const offer = offers.find((x) => x.id === pick)!;
+    cost.textContent = `${offer.name} for ${hours} hours: ${formatCredits(offer.perHour * hours)}, paid now (you have ${formatCredits(state.credits)}). On post at ${o.name} a quarter of an hour after hiring.`;
+  };
+  termSelect.addEventListener('change', () => {
+    hours = Number(termSelect.value);
+    update();
+  });
+  const list = h(
+    'div',
+    { class: 'choice-options', role: 'radiogroup', 'aria-label': 'Pilots looking for work' },
+    offers.map((g) => {
+      const input = h('input', { type: 'radio', name: 'guard', value: g.id, checked: g.id === pick, 'data-testid': `guard-${g.id}` }) as HTMLInputElement;
+      input.addEventListener('change', () => {
+        pick = g.id;
+        update();
+      });
+      return h('label', { class: 'choice-option' }, input, h('span', { class: 'choice-label' }, ` ${g.name}`), h('span', { class: 'choice-effects' }, `${shipModel(g.model).name} · ${g.skill === 'sharp' ? 'sharp shot' : 'steady hand'} · ${formatCredits(g.perHour)} an hour`));
+    }),
+  );
+  update();
+  const answer = await showModal({
+    title: `Guards for ${o.name}`,
+    testId: 'guard-hire-dialog',
+    body: h('div', { class: 'stack hire' }, h('p', null, 'Pilots who will fly round your outpost and fight off raiders, by the hour. No refunds.'), list, h('div', { class: 'hire-field' }, h('label', { for: 'guard-term' }, 'For'), termSelect), cost, h('p', { class: 'muted small' }, RAID_FICTION)),
+    actions: [
+      { label: 'Cancel', value: 'cancel', testId: 'guard-cancel' },
+      { label: 'Hire', value: 'ok', variant: 'primary', testId: 'guard-confirm' },
+    ],
+    dismissValue: 'cancel',
+  });
+  if (answer !== 'ok') return;
+  const r = hireGuard(state, pick, hours);
+  ctx.sfx(r.ok ? 'credits' : 'ui-error');
+  toast(r.message, r.ok ? 'good' : 'bad', 5000);
+  ctx.save();
+  refresh();
 }
