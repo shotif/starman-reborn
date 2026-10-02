@@ -12,7 +12,7 @@ import * as THREE from 'three';
 import { AudioEngine } from '../audio/AudioEngine.ts';
 import type { MusicMood, SfxId } from '../audio/types.ts';
 import { ALL_LOCATIONS, getComponent, getLocation, getPlanet, getSystem, hasProvisionalData, isInventedSystem, MAP_SYSTEMS, PYRE_ID, saveLocationsKey, SYSTEMS, WORLD } from '../data/systems.ts';
-import { edgeComm, edgeMoment, edgeTimeline, hopsToPyre, laneClosedReason, PYRE_HOLE_ID, pyreRefugeId, pyreStage, pyreStatus, scheduleEdge } from '../economy/doomed.ts';
+import { edgeComm, edgeMoment, edgeTimeline, hopsToPyre, laneClosedReason, PYRE_HOLE_ID, pyreRefugeId, pyreStage, pyreStationsNow, pyreStatus, scheduleEdge } from '../economy/doomed.ts';
 import type { EdgeNewsKind } from '../content/stellar/doomedLines.ts';
 import type { SystemId } from '../data/types.ts';
 import { addCargo, cargoUsed, itemsThatFit } from '../economy/cargo.ts';
@@ -1429,7 +1429,7 @@ export class Game {
       jumpReach: state ? performanceOf(state.ship).jumpReach : 0,
       // The lane to Pyre takes no arrivals from its collapse until its debris has thinned (docs/PROCGEN.md §26).
       ...(state ? this.pyreClosed(state, current) : {}),
-      ...(state ? { inventedNote: pyreStatus(state.clock) } : {}),
+      ...(state ? { inventedNote: pyreStatus(state.clock), inventedStations: pyreStationsNow(state.clock) } : {}),
     };
   }
 

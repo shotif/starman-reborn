@@ -60,7 +60,7 @@ export const PYRE_ALIVE_SCENE: SystemSceneDef = {
  * (open some hours after the lane opens again). The observatory is gone with the star.
  */
 const HOLE = v(0, 0, 0);
-const remnant = v(52_000, 2_800, -26_000);
+const remnant = v(70_000, 3_500, -32_000);
 const remnantArrival = remnant.clone().add(v(5_000, 1_200, 7_500));
 const km = (x: number) => Math.round(x).toLocaleString('en-GB');
 
@@ -74,9 +74,9 @@ export const PYRE_GONE_SCENE: SystemSceneDef = {
     name: `${DOOMED.star.name}’s black hole`,
     subtitle: 'Invented black hole · not in the real sky',
     position: HOLE,
-    shadow: 900,
-    disc: [1_500, 6_500],
-    tidalRadius: 11_000,
+    shadow: 1_800,
+    disc: [3_000, 14_000],
+    tidalRadius: 22_000,
     glow: { color: '#ffd2a6', light: 1.1 },
   },
   planets: [],

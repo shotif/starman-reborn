@@ -2472,7 +2472,7 @@ it. The gas glows less and less: the rate at which a star's gas falls back drops
 (`fallbackDecay`). Nothing is pulled in from afar: away from it, its pull is no stronger than that
 of a star of the same mass.
 
-- **Its tides**: a faint dashed ring marks where they begin (drawn at 11,000 units, far nearer than
+- **Its tides**: a faint dashed ring marks where they begin (drawn at 22,000 units, far nearer than
   the real 6,470 km would be at the scene's scale). Inside it the hull strains, 3 points a second at
   its edge and more as the cube of how much nearer the ship goes (`hullStrainPerSecond`); shields are
   no help. A ship that reaches the shadow is lost. The autopilot never takes a ship inside: flying

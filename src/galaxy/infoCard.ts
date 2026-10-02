@@ -203,8 +203,16 @@ export class InfoCard {
       h('p', { class: 'gmap-summary' }, system.fiction),
       securityNote(systemId),
       newsBlock(systemId, state),
-      // The system's stations, and the player's own outpost there (docs/PROCGEN.md §22).
-      system.fictionalLocations.length ? locationList([...system.fictionalLocations, ...saveLocations(system.id)], 'compact') : null,
+      // The system's stations, and the player's own outpost there (docs/PROCGEN.md §22); at Pyre, the one there now.
+      isInventedSystem(systemId) && state.inventedStations
+        ? locationList(
+            system.fictionalLocations.filter((l) => state.inventedStations!.some((x) => x.id === l.id)),
+            'compact',
+            new Map(state.inventedStations.flatMap((x) => (x.note ? [[x.id, x.note] as const] : []))),
+          )
+        : system.fictionalLocations.length
+          ? locationList([...system.fictionalLocations, ...saveLocations(system.id)], 'compact')
+          : null,
     );
     const links = h(
       'div',

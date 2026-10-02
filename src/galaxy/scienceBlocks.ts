@@ -337,7 +337,8 @@ export function factList(system: StarSystemRecord): HTMLElement {
 
 // ---------- Fiction ----------
 
-export function locationList(locations: readonly FictionalLocation[], detail: Detail): HTMLElement {
+/** Stations, with their status: open or planned, or what `notes` says of one that takes no ships now (Pyre's). */
+export function locationList(locations: readonly FictionalLocation[], detail: Detail, notes?: ReadonlyMap<string, string>): HTMLElement {
   return h(
     'ul',
     { class: 'sci-list' },
@@ -352,7 +353,7 @@ export function locationList(locations: readonly FictionalLocation[], detail: De
           ' ',
           dataBadge('fictional'),
           ' ',
-          tag(l.status === 'functional' ? 'functional' : 'planned'),
+          notes?.has(l.id) ? tag('planned', notes.get(l.id)) : tag(l.status === 'functional' ? 'functional' : 'planned'),
         ),
         h(
           'p',

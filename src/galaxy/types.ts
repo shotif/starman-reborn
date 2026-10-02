@@ -38,6 +38,8 @@ export interface MapState {
   closedTo?: ReadonlyMap<SystemId, string>;
   /** How things stand at Pyre, the invented star, for its card (docs/PROCGEN.md §26). */
   inventedNote?: string;
+  /** Pyre's stations that exist now, and why one takes no ships (null: open). */
+  inventedStations?: readonly { id: string; note: string | null }[];
 }
 
 export interface MapMission {

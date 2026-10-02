@@ -34,6 +34,7 @@ import {
   holeReadUntil,
   hopsToPyre,
   nearPyre,
+  pyreStationsNow,
   pyreStatus,
   pyreWelcome,
   laneClosedReason,
@@ -618,6 +619,13 @@ describe('its work', () => {
     expect(pyreStatus(T.stationOpens + 1, EDGE)).toMatch(/Remnant Station is open/);
     // Its own News tells of no light arriving there.
     expect(edgeNews('pyre' as SystemId, T.stationOpens + 1, EDGE).map((n) => n.kind)).not.toContain('light');
+    // The star map lists the station there now, and why it takes no ships.
+    const obs = DOOMED.stations.observatory.id;
+    const rem = DOOMED.stations.remnant.id;
+    expect(pyreStationsNow(EDGE - 1, EDGE)).toEqual([{ id: obs, note: null }]);
+    expect(pyreStationsNow(T.collapse + 1, EDGE)).toEqual([{ id: obs, note: 'Evacuated' }]);
+    expect(pyreStationsNow(T.breakout + 1, EDGE)).toEqual([{ id: rem, note: 'Not open yet' }]);
+    expect(pyreStationsNow(T.stationOpens, EDGE)).toEqual([{ id: rem, note: null }]);
     // Its stations greet a ship as its story stands.
     expect(pyreWelcome(DOOMED.stations.observatory.id, EDGE - 1, EDGE)).toMatch(/^Pyre Observatory: .*reddest light/);
     expect(pyreWelcome(DOOMED.stations.observatory.id, EDGE + 1, EDGE)).toMatch(/alarm is sounding/);

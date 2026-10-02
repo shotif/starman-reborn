@@ -67,8 +67,8 @@ void main() {
   vec2 d = vUv * 2.0 - 1.0;
   float r = length(d);
   // The photon ring: a thin bright circle just outside the shadow, and a faint halo of bent light.
-  float ring = exp(-pow((r - 0.5) / 0.018, 2.0));
-  float halo = exp(-pow((r - 0.5) / 0.12, 2.0)) * 0.25;
+  float ring = exp(-pow((r - 0.5) / 0.022, 2.0)) * 1.5;
+  float halo = exp(-pow((r - 0.5) / 0.14, 2.0)) * 0.4;
   float flicker = 0.92 + 0.08 * sin(uTime * 3.1 + r * 40.0);
   vec3 col = vec3(1.0, 0.86, 0.7) * (ring * 1.6 + halo) * flicker * (0.35 + 0.65 * uGlow);
   gl_FragColor = vec4(col, 1.0);
@@ -118,7 +118,7 @@ export function createBlackHole(opts: BlackHoleArtOptions, ctx: ArtContext): Bla
     new THREE.ShaderMaterial({ uniforms: discUniforms, vertexShader: DISC_VERT, fragmentShader: DISC_FRAG, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, defines: { GRAN_OCT: 3 } }),
   );
   disc.name = 'fallback-disc';
-  disc.rotation.set(-Math.PI / 2 + 0.32, 0, 0.18);
+  disc.rotation.set(-Math.PI / 2 + 0.5, 0, 0.18);
   disc.renderOrder = 11;
   group.add(disc);
 

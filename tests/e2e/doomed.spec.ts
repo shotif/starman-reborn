@@ -161,10 +161,10 @@ test('Pyre: its alarm, its observers carried out as it explodes, and its black h
 
   // Inside its tides the hull strains; the pilot turns back.
   const hull = (await api<{ hullValue: number } | null>(page, 'hud'))!.hullValue;
-  await api(page, 'placeNear', { id: holeTarget, distance: 7_000 });
+  await api(page, 'placeNear', { id: holeTarget, distance: 17_000 });
   await expect(page.locator('.toast', { hasText: 'Tidal zone' })).toBeVisible();
   await waitUntil(page, 'hull strained', async () => ((await api<{ hullValue: number } | null>(page, 'hud'))?.hullValue ?? hull) < hull, 30_000);
-  await api(page, 'placeNear', { id: holeTarget, distance: 14_000 });
+  await api(page, 'placeNear', { id: holeTarget, distance: 26_000 });
 
   // Read from outside its tides with the action button.
   await waitUntil(page, 'Scan offered', async () => (await api<Hud | null>(page, 'hud'))?.context?.label === 'Scan', 30_000);

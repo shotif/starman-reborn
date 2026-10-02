@@ -121,6 +121,17 @@ export function hopsToPyre(from: SystemId): number {
   return (jumpsFrom(WORLD.links, from).get(DOOMED.star.anchor as SystemId) ?? 0) + 1;
 }
 
+/**
+ * Pyre's stations as they stand now (the star map's card): the observatory until the star goes
+ * (evacuated after the collapse), and the remnant station once the star has gone (not open yet until
+ * it opens). A note says why one takes no ships; none when it is open.
+ */
+export function pyreStationsNow(clock: number, edge: number | null = activeEdge()): { id: string; note: string | null }[] {
+  const stage = pyreStage(clock, edge);
+  if (stage !== 'gone') return [{ id: DOOMED.stations.observatory.id, note: stage === 'collapsed' ? 'Evacuated' : null }];
+  return [{ id: DOOMED.stations.remnant.id, note: remnantStationOpen(clock, edge) ? null : 'Not open yet' }];
+}
+
 /** How things stand at Pyre now, in a line (the star map's card). */
 export function pyreStatus(clock: number, edge: number | null = activeEdge()): string {
   const stage = pyreStage(clock, edge);
