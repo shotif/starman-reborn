@@ -103,7 +103,7 @@ export const LASTING_MARKS: readonly LastingMark[] = [
     locationId: 'mars-depot',
     headline: 'Deimos Depot’s back door',
     detail:
-      'Oren Vail kept his desk at Deimos Depot, and what the Authority seizes still leaves by the back door: weapons are cheap and plentiful there, and the Hollow Wake knows it.',
+      'Oren Vail kept their desk at Deimos Depot, and what the Authority seizes still leaves by the back door: weapons are cheap and plentiful there, and the Hollow Wake knows it.',
     market: { goods: ['weapons'], price: 0.8, stock: 1.6 },
   },
 

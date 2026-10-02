@@ -926,7 +926,7 @@ export const ARC_JOBS: readonly JobDef[] = [
       step: 1,
       speaker: 'halloway',
       debrief: [
-        { who: 'fenwick', text: 'Orla Fenwick. I keep this place, for my sins. Halloway sent you? Then she’s the only one who listened. Sit down: there’s soup, and there’s trouble.' },
+        { who: 'fenwick', text: 'Orla Fenwick. I keep this place, for my sins. Halloway sent you? Then Halloway’s the only one who listened. Sit down: there’s soup, and there’s trouble.' },
         { who: 'fenwick', text: 'We planted for three years before anything grew right. This year it did. And the one hauler we own is adrift with next year’s seed aboard.' },
       ],
     },
@@ -1069,7 +1069,7 @@ export const ARC_JOBS: readonly JobDef[] = [
       speaker: 'fenwick',
       finale: true,
       comms: [{ at: 0, lines: [{ who: 'halloway', text: 'Squall Relay to the harvest convoy: we see you. Half the relay is at the windows. Bring them in.' }] }],
-      debrief: [{ who: 'halloway', text: 'Fresh bread on a relay. I’d forgotten. The crews have put Harrow’s calls on the first channel, so nobody out there goes unanswered again. Tell Orla she has friends at the edge.' }],
+      debrief: [{ who: 'halloway', text: 'Fresh bread on a relay. I’d forgotten. The crews have put Harrow’s calls on the first channel, so nobody out there goes unanswered again. Tell Orla they have friends at the edge.' }],
       leaves: 'harvest.relay',
     },
   },
