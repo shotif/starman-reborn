@@ -43,6 +43,12 @@ async function dockAt(page: Page, id: string): Promise<void> {
   await hearOut(page);
 }
 
+/** Closes a discovery card if one is up (it pauses the flight); a new system may bring several, the newest on top. */
+async function dismissDiscovery(page: Page): Promise<void> {
+  const ok = page.getByTestId('discovery-ok').last();
+  if (await ok.isVisible().catch(() => false)) await ok.click({ timeout: 2_000 }).catch(() => {});
+}
+
 async function openWindow(page: Page, room: string, action: string, windowId: string): Promise<void> {
   await press(page, room);
   if (!(await page.getByTestId(windowId).isVisible().catch(() => false))) await press(page, action);
@@ -96,7 +102,8 @@ test('a glut ships its surplus out in the News, and a hauler bound through a rai
   // Launched, the hauler sets off with the player, named as the haul.
   await press(page, 'dock-launch');
   if (await page.getByTestId('controls-sheet').isVisible().catch(() => false)) await press(page, 'sheet-close');
-  await waitUntil(page, 'undocked', async () => (await api<{ autopilot: string } | null>(page, 'player'))?.autopilot === 'none', 60_000);
-  await waitUntil(page, 'the hauler alongside', async () => (await api<ShipInfo[]>(page, 'npcs')).some((n) => n.escort === id && n.name === esc.haul.name), 60_000);
+  // A new system's bodies may bring discovery cards, which pause the flight.
+  await waitUntil(page, 'undocked', async () => (await dismissDiscovery(page), (await api<{ autopilot: string } | null>(page, 'player'))?.autopilot === 'none'), 60_000);
+  await waitUntil(page, 'the hauler alongside', async () => (await dismissDiscovery(page), (await api<ShipInfo[]>(page, 'npcs')).some((n) => n.escort === id && n.name === esc.haul.name)), 60_000);
   await expect(page.getByTestId('hud-objective')).toContainText(`Escort the ${esc.haul.name} to ${esc.haul.toName}`);
 });

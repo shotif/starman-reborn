@@ -46,10 +46,10 @@ async function dockAt(page: Page, id: string): Promise<void> {
   await hearOut(page);
 }
 
-/** Closes a discovery card if one is up (it pauses the flight). */
+/** Closes a discovery card if one is up (it pauses the flight): the top one, never waiting on a covered one. */
 async function dismissDiscovery(page: Page): Promise<void> {
-  const ok = page.getByTestId('discovery-ok');
-  if (await ok.isVisible().catch(() => false)) await ok.click().catch(() => {});
+  const ok = page.getByTestId('discovery-ok').last();
+  if (await ok.isVisible().catch(() => false)) await ok.click({ timeout: 2_000 }).catch(() => {});
 }
 
 async function openWindow(page: Page, room: string, action: string, windowId: string): Promise<void> {
@@ -98,7 +98,8 @@ test('a supernova: the alert in the News, a job to catch its first light, Betelg
   await waitUntil(page, 'in flight', async () => (await api(page, 'mode')) === 'flight');
   if (await page.getByTestId('controls-sheet').isVisible().catch(() => false)) await press(page, 'sheet-close');
   await waitUntil(page, 'undocked', async () => (await dismissDiscovery(page), (await api<{ autopilot: string } | null>(page, 'player'))?.autopilot === 'none'), 60_000);
-  await expect(page.locator('.toast.comm', { hasText: 'Betelgeuse has exploded' })).toBeVisible();
+  // What the radio said (its toast may have come and gone while the ship undocked).
+  await waitUntil(page, 'the stations say so', async () => (await api<string[]>(page, 'comms')).some((t) => t.includes('Betelgeuse has exploded')), 30_000);
 
   // Betelgeuse is a target: a real star 498 light-years away, its supernova marked as fiction.
   await api(page, 'selectTarget', 'sky:betelgeuse');
