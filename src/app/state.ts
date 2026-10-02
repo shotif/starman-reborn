@@ -218,7 +218,11 @@ export interface WorldLog {
   /** Rival pilots (docs/PROCGEN.md §24): the ones the player knocked out, and the claims bought back. */
   rivals?: RivalLog;
   /** Stellar death (docs/PROCGEN.md §25), fiction: when the first neutrino alert comes, set once the opening delivery is done. */
-  sky?: { from: number };
+  /**
+   * The deaths in the sky (docs/PROCGEN.md §25–26): when the far stars' first neutrino alert comes,
+   * and (once the player has reached the frontier) when the warning of Pyre, the invented star, comes.
+   */
+  sky?: { from: number; edge?: number };
 }
 
 /** What the player did to rival pilots' careers (docs/PROCGEN.md §24). */

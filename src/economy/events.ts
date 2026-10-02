@@ -401,6 +401,11 @@ export function activeSkyFrom(): number | null {
   return worldLog?.sky?.from ?? null;
 }
 
+/** When the warning of Pyre, the invented star, comes in the save the game points at (docs/PROCGEN.md §26), or null before it is set. */
+export function activeEdge(): number | null {
+  return worldLog?.sky?.edge ?? null;
+}
+
 /** When the player ended an event early, in the save the game points at. */
 export function endedAt(e: WorldEvent): number | undefined {
   return worldLog?.ended[e.id];

@@ -3,6 +3,7 @@ import { STARTER_SHIP_ID } from '../../content/rules/index.ts';
 import { ALL_LOCATIONS } from '../../data/systems.ts';
 import { SYSTEM_IDS } from '../../data/systems.ts';
 import { codexEntries } from '../../economy/progress.ts';
+import { skyTimeline } from '../../economy/stellar.ts';
 import type { SystemId } from '../../data/types.ts';
 import { clampShip, newShipState } from '../../economy/loadout.ts';
 import { COMMODITIES, COMMODITY_IDS } from '../../content/economy/goods.ts';
@@ -372,6 +373,8 @@ export function assertValidState(s: GameState): void {
     }
   }
   if (w.sky !== undefined && !(isRecord(w.sky) && Number.isFinite(w.sky.from) && w.sky.from >= 0)) fail('world');
+  // Pyre's warning (docs/PROCGEN.md §26) comes after Antares has gone out.
+  if (w.sky?.edge !== undefined && !(Number.isFinite(w.sky.edge) && w.sky.edge >= skyTimeline(w.sky.from).bhGone)) fail('world');
   if (w.rivals !== undefined) {
     if (!isRecord(w.rivals) || !isRecord(w.rivals.down) || !isRecord(w.rivals.bought)) fail('world');
     for (const [id, d] of Object.entries(w.rivals.down)) if (!ROSTER.some((r) => r.id === id) || !isRecord(d) || !Number.isFinite(d.at) || !SYSTEM_IDS.includes(d.systemId)) fail('world');
