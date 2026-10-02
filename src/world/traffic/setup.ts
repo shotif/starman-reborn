@@ -1,7 +1,7 @@
 import { BORDER } from '../../content/border/rules.ts';
 import { EVENTS } from '../../content/events/rules.ts';
 import { jumpsFrom } from '../../content/world/network.ts';
-import { ALL_LOCATIONS, WORLD } from '../../data/systems.ts';
+import { ALL_LOCATIONS, isInventedSystem, WORLD } from '../../data/systems.ts';
 import { frontsHere } from '../../economy/border.ts';
 import { systemEventAt, type WorldEvent } from '../../economy/events.ts';
 import type { QualityLevel } from '../art/types.ts';
@@ -15,6 +15,8 @@ let jumps: Map<string, number> | null = null;
  * and, given the game clock, any raid or security sweep under way (docs/PROCGEN.md §11).
  */
 export function trafficFor(systemId: string, quality: QualityLevel, clock?: number): TrafficSetup {
+  // Pyre, the invented star (docs/PROCGEN.md §26), is beyond everyone's lanes: nobody flies there but the player.
+  if (isInventedSystem(systemId)) return { plan: { traders: 0, patrolWings: 0, wingSize: 2, packs: null }, owner: null };
   jumps ??= jumpsFrom(WORLD.links, 'sol');
   const profile = WORLD.profiles.get(systemId);
   const here = ALL_LOCATIONS.filter((l) => l.systemId === systemId && l.status === 'functional');

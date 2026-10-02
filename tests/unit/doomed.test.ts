@@ -1,8 +1,16 @@
+import * as THREE from 'three';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
+import type { AudioEngine } from '../../src/audio/AudioEngine.ts';
+import { defaultSettings } from '../../src/app/settings.ts';
 import { assertValidState } from '../../src/app/save/migrate.ts';
-import { createNewGame } from '../../src/app/state.ts';
+import { createNewGame, type GameState } from '../../src/app/state.ts';
+import { emptyInput } from '../../src/flight/input/types.ts';
+import { FlightSession } from '../../src/world/FlightSession.ts';
+import { SystemScene } from '../../src/world/SystemScene.ts';
+import { sceneDefFor } from '../../src/world/systems/index.ts';
+import { trafficFor } from '../../src/world/traffic/setup.ts';
 import { DOOMED, type DoomedRules } from '../../src/content/stellar/doomed.ts';
 import { EDGE_NEWS } from '../../src/content/stellar/doomedLines.ts';
 import { STELLAR } from '../../src/content/stellar/rules.ts';
@@ -188,5 +196,108 @@ describe('saves', () => {
     const bad = structuredClone(s);
     bad.world.sky!.edge = 5;
     expect(() => assertValidState(bad)).toThrow(/world/);
+  });
+});
+
+// ---------------------------------------------------------------- in flight
+
+function installCanvasStub(): void {
+  if ((globalThis as { document?: unknown }).document) return;
+  const stub = (): unknown =>
+    new Proxy(function () {}, {
+      get(_t, prop) {
+        if (prop === 'getImageData' || prop === 'createImageData') {
+          return (_x: number, _y: number, w: number, h: number) => ({ data: new Uint8ClampedArray(Math.max(4, w * h * 4)), width: w, height: h });
+        }
+        return stub();
+      },
+      apply() {
+        return stub();
+      },
+      set() {
+        return true;
+      },
+    });
+  (globalThis as { document?: unknown }).document = {
+    createElement: () => ({ width: 0, height: 0, style: {}, getContext: () => stub() }),
+  };
+}
+
+/** A pilot in flight in a system (Pyre among them), the far stars' story set and Pyre's warning at EDGE. */
+function flyIn(systemId: SystemId, clock: number): { s: GameState; flight: FlightSession; run: (seconds: number) => void } {
+  installCanvasStub();
+  const s = createNewGame(12);
+  s.jobs.lifeline = { status: 'complete', objectiveIndex: 4, acceptedAt: 0, completedAt: 1 };
+  s.flags.clearance = true;
+  s.clock = clock;
+  s.world.sky = { from: 1_000, edge: EDGE };
+  s.location = { systemId, dockedAt: null, flight: null, lastDockId: 'earth-port' };
+  useWorldLog(s.world);
+  const nothing = () => {};
+  const flight = new FlightSession({
+    system: new SystemScene(sceneDefFor(systemId), { quality: 'low', reducedMotion: true }),
+    camera: new THREE.PerspectiveCamera(),
+    state: s,
+    settings: defaultSettings(),
+    ctx: { quality: 'low', reducedMotion: true },
+    audio: { play() {}, setCombatIntensity() {}, setEngine() {} } as unknown as AudioEngine,
+    callbacks: {
+      onDocked: nothing,
+      onPlayerDestroyed: nothing,
+      onDiscovery: nothing,
+      onScanInfo: nothing,
+      onEncounterStart: nothing,
+      onEncounterEnd: nothing,
+      onLoot: nothing,
+      onBounty: nothing,
+      onContractKill: nothing,
+      onMessage: nothing,
+      onComm: nothing,
+    },
+    traffic: trafficFor(systemId, 'low', clock),
+  });
+  flight.start({ kind: 'arrival' });
+  const run = (seconds: number) => {
+    for (let t = 0; t < seconds; t += 1 / 20) {
+      s.clock += 1 / 20;
+      flight.update(1 / 20, emptyInput());
+    }
+  };
+  return { s, flight, run };
+}
+
+describe('in flight', () => {
+  it('flies at Pyre itself: its star marked as fiction, its observatory, and nobody else', () => {
+    expect(skyTimeline(1_000).bhGone).toBeLessThan(EDGE);
+    const { flight, run } = flyIn('pyre' as SystemId, EDGE - 600);
+    run(1);
+    const star = flight.allTargets().find((t) => t.id === 'star:pyre')!;
+    expect(star).toBeDefined();
+    expect(star.dataClass).toBe('fictional');
+    expect(star.subtitle).toMatch(/^Invented/);
+    expect(flight.allTargets().some((t) => t.id === `station:${DOOMED.stations.observatory.id}`)).toBe(true);
+    expect(flight.allTargets().some((t) => t.kind === 'ship')).toBe(false);
+    // Not in its own sky.
+    expect(flight.allTargets().some((t) => t.id === 'sky:pyre')).toBe(false);
+    flight.dispose();
+  });
+
+  it('shows Pyre in GJ 915’s sky from its warning, as fiction: counting down to its light, then the supernova', () => {
+    const near = 'gj-915' as SystemId;
+    const quiet = flyIn(near, EDGE - 60);
+    quiet.run(0.6);
+    expect(quiet.flight.allTargets().some((t) => t.id === 'sky:pyre')).toBe(false);
+    quiet.flight.dispose();
+    const { s, flight, run } = flyIn(near, T.breakout + 10);
+    run(0.6);
+    const pyre = flight.allTargets().find((t) => t.id === 'sky:pyre')!;
+    expect(pyre).toBeDefined();
+    expect(pyre.dataClass).toBe('fictional');
+    expect(pyre.distanceLabel).toBe('6 ly');
+    expect(pyre.subtitle).toMatch(/^Its light arrives in \d+:\d\d$/);
+    s.clock = lightArrives(near, EDGE) + 5;
+    run(0.6);
+    expect(pyre.subtitle).toMatch(/^Supernova · magnitude −/);
+    flight.dispose();
   });
 });

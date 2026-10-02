@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { Obstacle } from '../flight/autopilot.ts';
-import { getLocation } from '../data/systems.ts';
+import { getLocation, isInventedSystem } from '../data/systems.ts';
 import { createAsteroidField, createDustRing, type AsteroidFieldArt, type AsteroidHit } from './art/asteroids.ts';
 import { createPlanet, type PlanetArt } from './art/planets.ts';
 import { createSkybox } from './art/skybox.ts';
@@ -94,14 +94,16 @@ export class SystemScene {
       const light = new THREE.DirectionalLight(s.color, s.light);
       this.scene.add(light, light.target);
       this.stars.push({ def: s, art, light });
+      // Pyre is the one invented star (docs/PROCGEN.md §26): its target says so.
+      const invented = isInventedSystem(def.systemId);
       this.targets.push({
         id: `star:${s.id}`,
         name: s.name,
         kind: 'star',
         position: s.position,
         radius: s.radius,
-        subtitle: 'Star · real object; appearance illustrated',
-        dataClass: 'observed',
+        subtitle: invented ? 'Invented red supergiant · not in the real sky' : 'Star · real object; appearance illustrated',
+        dataClass: invented ? 'fictional' : 'observed',
         bodyId: s.id,
         alive: true,
         cycle: true,

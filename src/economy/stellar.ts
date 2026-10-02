@@ -138,9 +138,13 @@ const OBLIQUITY = (23.4392911 * Math.PI) / 180;
  * (scene angle = −longitude). Every system's sky uses it, from the system's real position.
  */
 export function skyDirection(systemId: SystemId, starId: string): [number, number, number] {
+  return skyDirectionTo(systemId, farStar(starId)!.positionLy);
+}
+
+/** The direction from a system to a place (light-years from the Sun, in the map's frame), in the flight scene's frame. */
+export function skyDirectionTo(systemId: SystemId, positionLy: readonly [number, number, number]): [number, number, number] {
   const sys = getSystem(systemId);
-  const f = farStar(starId)!;
-  let [x, y, z] = [0, 1, 2].map((i) => f.positionLy[i]! - sys.positionLy[i]!) as [number, number, number];
+  let [x, y, z] = [0, 1, 2].map((i) => positionLy[i]! - sys.positionLy[i]!) as [number, number, number];
   const n = Math.hypot(x, y, z);
   [x, y, z] = [x / n, y / n, z / n];
   const ye = y * Math.cos(OBLIQUITY) + z * Math.sin(OBLIQUITY);

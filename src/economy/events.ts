@@ -7,7 +7,7 @@ import type { LastingMark } from '../content/story/marks.ts';
 import { jumpsFrom } from '../content/world/network.ts';
 import { WORLD_SEED } from '../content/world/rules.ts';
 import { isOutpostId, outpostLocation } from '../content/outposts/sites.ts';
-import { ALL_LOCATIONS, getLocation, getSystem, isFrontier, setSaveLocations, SYSTEMS, WORLD } from '../data/systems.ts';
+import { ALL_LOCATIONS, getLocation, getSystem, isFrontier, isInventedSystem, setSaveLocations, SYSTEMS, WORLD } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { trafficPlan } from '../world/traffic/plan.ts';
 import { FACTIONS } from './factions.ts';
@@ -185,7 +185,8 @@ const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 function stationEventIn(locationId: string, index: number): WorldEvent | null {
   return cached(`s|${locationId}|${index}`, () => {
     // The player's own outpost has no world events of its own (docs/PROCGEN.md §22): only its system's raids touch it.
-    if (isOutpostId(locationId) || NO_EVENT_SYSTEMS.has(getLocation(locationId).systemId)) return null;
+    // Nor do Pyre's stations (docs/PROCGEN.md §26): its own story is all that happens there.
+    if (isOutpostId(locationId) || NO_EVENT_SYSTEMS.has(getLocation(locationId).systemId) || isInventedSystem(getLocation(locationId).systemId)) return null;
     const r = rng(WORLD_SEED, 'events', locationId, index);
     const kind = pickKind<StationEventKind>(r, EVENTS.stationOdds);
     if (!kind || !frontierEligible(kind, locationId)) return null;
@@ -273,6 +274,8 @@ function stationEventIn(locationId: string, index: number): WorldEvent | null {
 }
 
 function systemEventIn(systemId: SystemId, index: number): WorldEvent | null {
+  // No raids or sweeps at Pyre, the invented star: nobody's packs or patrols go there.
+  if (isInventedSystem(systemId)) return null;
   return cached(`y|${systemId}|${index}`, () => {
     const r = rng(WORLD_SEED, 'events', 'system', systemId, index);
     const kind = pickKind<SystemEventKind>(r, EVENTS.systemOdds);

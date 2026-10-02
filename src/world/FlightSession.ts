@@ -10,7 +10,7 @@ import { MISSILE_LOCK_CONE, MISSILE_LOCK_RANGE, updateMissile, type Missile, typ
 import { PirateBrain } from '../combat/PirateAI.ts';
 import { PatrolBrain, TraderBrain } from '../combat/TrafficAI.ts';
 import { Gun, ProjectileSystem, segmentHitsSphere, withinArc } from '../combat/weapons.ts';
-import { EXOPLANETS, FAR_STARS, getLocation, getSystem } from '../data/systems.ts';
+import { EXOPLANETS, FAR_STARS, getLocation, getSystem, isInventedSystem, PYRE_ID, PYRE_SYSTEM } from '../data/systems.ts';
 import type { FactionId } from '../data/types.ts';
 import type { DamageType } from '../content/types.ts';
 import type { ShipPerformance } from '../content/loadout.ts';
@@ -65,7 +65,9 @@ import { HAULS } from '../content/economy/hauls.ts';
 import { sightInView } from './sightseeing.ts';
 import { createFarStars, type FarStarsArt } from './art/farStars.ts';
 import { STELLAR } from '../content/stellar/rules.ts';
-import { farStarLook, magnitudeText, observationsWanted, skyDirection, skyPhase } from '../economy/stellar.ts';
+import { farStarLook, magnitudeText, observationsWanted, skyDirection, skyDirectionTo, skyPhase } from '../economy/stellar.ts';
+import { lightArrives, lyFromPyre, pyreLook } from '../economy/doomed.ts';
+import { activeEdge } from '../economy/events.ts';
 import { haulsIn, type Haul, type HaulHere, type HaulLeg } from '../economy/hauls.ts';
 import { FLEET } from '../content/fleet/rules.ts';
 import { captainsIn, type CaptainHere, type RunRaid } from '../economy/fleet.ts';
@@ -527,7 +529,9 @@ export class FlightSession {
     }
     this.refreshDenTargets();
     // The far stars, in their true direction from this system (fiction: how they die).
-    this.farSky = createFarStars(FAR_STARS.stars.length, opts.ctx);
+    // Pyre, the invented star, is in every sky but its own (docs/PROCGEN.md §26).
+    const pyreInSky = !isInventedSystem(opts.state.location.systemId);
+    this.farSky = createFarStars(FAR_STARS.stars.length + (pyreInSky ? 1 : 0), opts.ctx);
     this.system.scene.add(this.farSky.object);
     for (const f of FAR_STARS.stars) {
       const dir = new THREE.Vector3(...skyDirection(opts.state.location.systemId, f.id));
@@ -548,6 +552,16 @@ export class FlightSession {
           alive: false,
           cycle: false,
         },
+      });
+    }
+    if (pyreInSky) {
+      const ly = `${Math.round(lyFromPyre(opts.state.location.systemId)).toLocaleString('en-GB')} ly`;
+      const base = `Invented red supergiant · ${ly}`;
+      this.skyStars.push({
+        id: PYRE_ID,
+        dir: new THREE.Vector3(...skyDirectionTo(opts.state.location.systemId, PYRE_SYSTEM.positionLy)),
+        base,
+        target: { id: `sky:${PYRE_ID}`, name: PYRE_SYSTEM.displayName, kind: 'sky', position: new THREE.Vector3(), radius: 0, subtitle: base, dataClass: 'fictional', distanceLabel: ly, alive: false, cycle: false },
       });
     }
     this.updateSky();
@@ -3569,9 +3583,11 @@ export class FlightSession {
    * while a star's death is under way or a contract wants it watched (and never while it is gone).
    */
   private updateSky(): void {
-    const looks = this.skyStars.map((s) => farStarLook(s.id, this.state.clock) ?? { magnitude: Infinity, colour: '#ffffff' });
+    const here = this.state.location.systemId;
+    const looks = this.skyStars.map((s) => (s.id === PYRE_ID ? pyreLook(here, this.state.clock) : farStarLook(s.id, this.state.clock)) ?? { magnitude: Infinity, colour: '#ffffff' });
     this.farSky.set(this.skyStars.map((s, i) => ({ dir: s.dir, magnitude: looks[i]!.magnitude, colour: looks[i]!.colour })));
     this.skyStars.forEach((s, i) => {
+      if (s.id === PYRE_ID) return this.updatePyreTarget(s);
       const phase = skyPhase(s.id, this.state.clock);
       const show = looks[i]!.magnitude < STELLAR.nakedEye && (phase === 'dying' || observationsWanted(this.state, s.id).length > 0);
       s.target.alive = show;
@@ -3582,6 +3598,28 @@ export class FlightSession {
       s.target.subtitle = phase === 'catalogue' ? s.base : `${what} · magnitude ${magnitudeText(looks[i]!.magnitude)}`;
       if (!show && this.selectedId === s.target.id) this.selectedId = null;
     });
+  }
+
+  /**
+   * Pyre's target (docs/PROCGEN.md §26), always marked as fiction: from its warning on, as the star,
+   * then counting down to its light's arrival here, then the supernova and what is left of it.
+   */
+  private updatePyreTarget(s: { id: string; base: string; target: Target }): void {
+    const edge = activeEdge();
+    const clock = this.state.clock;
+    const here = this.state.location.systemId;
+    const show = edge !== null && clock >= edge;
+    s.target.alive = show;
+    s.target.cycle = show;
+    if (edge === null) return;
+    const look = pyreLook(here, clock, edge);
+    const arrives = lightArrives(here, edge);
+    const breakout = lightArrives(PYRE_ID, edge);
+    if (clock >= arrives) s.target.subtitle = `${look.phase === 'remnant' ? 'Supernova remnant' : 'Supernova'} · magnitude ${magnitudeText(look.magnitude)}`;
+    else if (clock >= breakout) {
+      const left = Math.ceil(arrives - clock);
+      s.target.subtitle = `Its light arrives in ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
+    } else s.target.subtitle = s.base;
   }
 
   /** Sightseers' sights (docs/PROCGEN.md §23.2): seen once each, scanned before or not. */

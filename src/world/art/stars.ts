@@ -3,7 +3,7 @@ import type { ArtContext, ArtObject } from './types.ts';
 import { NOISE_GLSL, OUTPUT_GLSL, getNoiseVolume } from './noise.ts';
 import { byQuality, disposeObject, seededRandom } from './util.ts';
 
-export type StarKind = 'main-sequence' | 'red-dwarf' | 'white-dwarf';
+export type StarKind = 'main-sequence' | 'red-dwarf' | 'white-dwarf' | 'supergiant';
 
 export interface StarArtOptions {
   /** Radius of the visible photosphere in game units (schematic). */
@@ -222,6 +222,19 @@ const LOOKS: Record<StarKind, KindLook> = {
     rays: 0.2,
     limb: [0.8, 0.85, 1.0],
   },
+  // A red supergiant (Pyre, the invented star): a handful of convection cells, each as big as a
+  // sun, a deep red limb, and a slow pulse. Artistic, like every star's look.
+  supergiant: {
+    bright: 0.92,
+    activity: 1.0,
+    spots: 0.55,
+    glowScale: 3.0,
+    glowIntensity: 0.95,
+    farIntensity: 1.2,
+    granFreq: 3.2,
+    rays: 0.12,
+    limb: [0.62, 0.17, 0.05],
+  },
 };
 
 /**
@@ -336,6 +349,9 @@ export function createStar(opts: StarArtOptions, ctx: ArtContext): StarArt {
   const flareDir = new THREE.Vector3();
   const baseGlow = coronaUniforms.uIntensity.value;
   const timeScale = ctx.reducedMotion ? 0.4 : 1;
+  // A supergiant pulses slowly, swelling a little and brightening (not with reduced motion).
+  const pulse = kind === 'supergiant' && !ctx.reducedMotion;
+  const baseBright = photoUniforms.uBright.value;
 
   return {
     object: group,
@@ -347,6 +363,11 @@ export function createStar(opts: StarArtOptions, ctx: ArtContext): StarArt {
       const near = (camera as THREE.PerspectiveCamera).near ?? 0.5;
       coronaUniforms.uNear.value = near;
       farUniforms.uNear.value = near;
+      if (pulse) {
+        const w = Math.sin(t * 0.21) * 0.6 + Math.sin(t * 0.13 + 1.7) * 0.4;
+        photosphere.scale.setScalar(1 + 0.012 * w);
+        photoUniforms.uBright.value = baseBright * (1 + 0.07 * w);
+      }
       if (!flares) return;
       if (flareAge < 0) {
         nextFlare -= dt;

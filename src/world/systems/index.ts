@@ -7,6 +7,7 @@ import { ALPHA_CENTAURI_SCENE } from './alphaCentauri.ts';
 import { BARNARD_SCENE } from './barnard.ts';
 import { catalogSceneDef } from './generated.ts';
 import { EPSILON_ERIDANI_SCENE } from './epsilonEridani.ts';
+import { PYRE_ALIVE_SCENE } from './pyre.ts';
 import { SIRIUS_SCENE } from './sirius.ts';
 import { SOL_SCENE, solScene } from './sol.ts';
 
@@ -17,6 +18,8 @@ export const SCENE_DEFS: Record<SystemId, SystemSceneDef> = {
   barnard: BARNARD_SCENE,
   sirius: SIRIUS_SCENE,
   'epsilon-eridani': EPSILON_ERIDANI_SCENE,
+  // Pyre, the one invented star (docs/PROCGEN.md §26).
+  pyre: PYRE_ALIVE_SCENE,
 };
 
 /**
