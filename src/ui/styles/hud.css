@@ -935,6 +935,18 @@
 
   .hud.touch-mode .hud-center {
     padding-top: 0;
+    gap: 3px;
+  }
+
+  /* One small line of warnings at most ("Hostile contact" in a fight), so with a target selected the
+     centre column still ends clear of the thumbs' buttons on short phones. */
+  .hud.touch-mode .hud-warning {
+    max-width: 100%;
+    font-size: 0.72rem;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 
