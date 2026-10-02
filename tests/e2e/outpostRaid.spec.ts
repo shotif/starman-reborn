@@ -50,6 +50,12 @@ async function dockAt(page: Page, id: string): Promise<void> {
   await hearOut(page);
 }
 
+/** Closes a discovery card if one is up (it pauses the flight); several may come, the newest on top. */
+async function dismissDiscovery(page: Page): Promise<void> {
+  const ok = page.getByTestId('discovery-ok').last();
+  if (await ok.isVisible().catch(() => false)) await ok.click({ timeout: 2_000 }).catch(() => {});
+}
+
 async function openDeckWindow(page: Page, button: string, content: string): Promise<void> {
   await press(page, 'room-deck');
   if (!(await page.getByTestId(content).isVisible().catch(() => false))) await press(page, button);
@@ -112,16 +118,19 @@ test('defending your outpost: a turret built, a guard hired, the first raid seen
   await press(page, 'dock-launch');
   await waitUntil(page, 'in flight', async () => (await api(page, 'mode')) === 'flight', 60_000);
   if (await page.getByTestId('sheet-close').isVisible().catch(() => false)) await press(page, 'sheet-close');
-  await waitUntil(page, 'the defences out', async () => (await api<{ own: string | null }[]>(page, 'npcs')).filter((n) => n.own).length >= 2, 30_000);
+  // The outpost's planet may bring a discovery card, which pauses the flight.
+  await waitUntil(page, 'undocked', async () => (await dismissDiscovery(page), (await api<{ autopilot: string } | null>(page, 'player'))?.autopilot === 'none'), 60_000);
+  await waitUntil(page, 'the defences out', async () => (await dismissDiscovery(page), (await api<{ own: string | null }[]>(page, 'npcs')).filter((n) => n.own).length >= 2), 60_000);
+  expect((await api<{ own: string | null; name: string }[]>(page, 'npcs')).filter((n) => n.own).map((n) => n.own).sort()).toEqual(['guard', 'turret']);
   await expect(page.getByTestId('hud-objective')).toContainText('Defend');
   await advanceTo(page, raid.next!.at - 2);
-  await waitUntil(page, 'the raid struck', async () => (await api<RaidNow>(page, 'outpostRaid'))!.flight?.state === 'on', 30_000);
+  await waitUntil(page, 'the raid struck', async () => (await dismissDiscovery(page), (await api<RaidNow>(page, 'outpostRaid'))!.flight?.state === 'on'), 60_000);
   const raiders = (await api<{ id: string; outpostRaid: number | null }[]>(page, 'npcs')).filter((n) => n.outpostRaid === raid.next!.window);
   expect(raiders).toHaveLength(raid.next!.ships);
 
   // Downed to the last: the raid is held, with the player there, and the job done.
   for (const r of raiders) await api(page, 'destroyNpc', { id: r.id, byPlayer: true });
-  await waitUntil(page, 'held', async () => (await api<RaidNow>(page, 'outpostRaid'))!.raids.some((x) => x.window === raid.next!.window), 20_000);
+  await waitUntil(page, 'held', async () => (await dismissDiscovery(page), (await api<RaidNow>(page, 'outpostRaid'))!.raids.some((x) => x.window === raid.next!.window)), 60_000);
   const after = (await api<RaidNow>(page, 'outpostRaid'))!;
   expect(after.raids.at(-1)).toMatchObject({ window: raid.next!.window, result: 'held', where: 'flight' });
   expect((await api<S>(page, 'state')).jobs[job]?.status).toBe('complete');

@@ -477,9 +477,15 @@ for (const size of SIZES) {
       await shot(page, `${size.name}-15-outpost-defence`, size.touch, results);
       await press(page, 'dock-launch');
       if (await page.getByTestId('sheet-close').isVisible().catch(() => false)) await press(page, 'sheet-close');
-      await waitUntil(page, 'undocked', async () => (await api<{ autopilot: string } | null>(page, 'player'))?.autopilot === 'none');
+      // The outpost's planet may bring a discovery card, which pauses the flight.
+      const dismissDiscovery = async () => {
+        const ok = page.getByTestId('discovery-ok').last();
+        if (await ok.isVisible().catch(() => false)) await ok.click({ timeout: 2_000 }).catch(() => {});
+      };
+      await waitUntil(page, 'undocked', async () => (await dismissDiscovery(), (await api<{ autopilot: string } | null>(page, 'player'))?.autopilot === 'none'));
       await api(page, 'advanceClock', raid.next!.at - 1 - (await api<{ clock: number }>(page, 'state')).clock);
-      await waitUntil(page, 'the raid struck', async () => (await api<{ flight: { state: string } | null }>(page, 'outpostRaid'))!.flight?.state === 'on', 30_000);
+      await waitUntil(page, 'the raid struck', async () => (await dismissDiscovery(), (await api<{ flight: { state: string } | null }>(page, 'outpostRaid'))!.flight?.state === 'on'), 60_000);
+      await dismissDiscovery();
       await api(page, 'selectTarget', 'station:outpost.gj-411-b');
       await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
       expect(await api<boolean>(page, 'face', { id: 'station:outpost.gj-411-b', below: size.height < 500 ? 2 : 4 })).toBe(true);
