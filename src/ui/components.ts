@@ -123,6 +123,21 @@ export function showModal(opts: ModalOptions): Promise<string> {
       h('div', { class: 'modal-actions' }, actionButtons),
     );
     const backdrop = h('div', { class: 'modal-backdrop' }, dialog);
+    // A tap that opened this modal (a touch button acts on pointerdown) ends with a click wherever the
+    // finger lifts, which may now be one of the modal's buttons: a pointer click whose press did not
+    // begin inside the modal is ignored. Keyboard and pad presses (no pointer) always count.
+    let pressedInside = false;
+    backdrop.addEventListener('pointerdown', () => (pressedInside = true), true);
+    backdrop.addEventListener(
+      'click',
+      (e) => {
+        if (e.detail > 0 && !pressedInside) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      },
+      true,
+    );
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && opts.dismissValue !== undefined) {
         e.preventDefault();
