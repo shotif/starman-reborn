@@ -71,6 +71,9 @@ test('defending your outpost: a turret built, a guard hired, the first raid seen
   await openFresh(page);
   await press(page, 'title-play');
   await press(page, 'intro-ok');
+  // The save's luck decides when raids strike; with an unlucky one (about one in twenty) a sweep
+  // falls on the first window and none is due yet. This one brings the probe in the first window.
+  await api(page, 'setSeed', 2);
   await api(page, 'completeJobs', ['lifeline']);
   await api(page, 'setCredits', 50_000);
 

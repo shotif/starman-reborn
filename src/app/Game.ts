@@ -2339,6 +2339,10 @@ export class Game {
         if (!this.state.visitedSystems.includes(this.state.location.systemId)) this.state.visitedSystems.push(this.state.location.systemId);
         this.onDocked(locationId);
       },
+      /** Test-only: sets the save's own seed, which a new game draws at random, so its luck is the same every run. */
+      setSeed: (seed: number) => {
+        if (this.state) this.state.seed = seed;
+      },
       /** Test-only: set standing with a faction (the law and the outlaw path). */
       setReputation: (faction: 'sta' | 'frontier' | 'hollow-wake', value: number) => {
         if (!this.state) return;
