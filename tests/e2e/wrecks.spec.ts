@@ -84,7 +84,7 @@ test('wrecks: a wreck salvaged, its trail followed and paid, a derelict boarded,
 
   // A wreck beacon (secure space: nobody picks it over): marked and on the HUD.
   let s = await api<State>(page, 'state');
-  const wreck = (await api<Offer | null>(page, 'findLane', { from: s.clock + 600, kind: 'wreck', trap: false }))!;
+  const wreck = (await api<Offer | null>(page, 'findLane', { from: s.clock + 600, kind: 'wreck', trap: false, quiet: true }))!;
   const siteId = await goTo(page, wreck);
   const target = `site:${siteId}`;
   await expect(page.getByTestId('hud-objective')).toContainText('Salvage the wreck of the');
@@ -135,7 +135,7 @@ test('wrecks: a wreck salvaged, its trail followed and paid, a derelict boarded,
 
   // An old beacon: the derelict boarded by holding steady alongside.
   s = await api<State>(page, 'state');
-  const old = (await api<Offer | null>(page, 'findLane', { from: s.clock + 600, kind: 'derelict', trap: false }))!;
+  const old = (await api<Offer | null>(page, 'findLane', { from: s.clock + 600, kind: 'derelict', trap: false, quiet: true }))!;
   const hulk = await goTo(page, old);
   await api(page, 'placeNear', { id: `site:${hulk}`, distance: 100 });
   await waitUntil(page, 'Board on the action', async () => (await dismissDiscovery(page), (await api<{ context: { label: string } | null } | null>(page, 'hud'))?.context?.label === 'Board'), 10_000);

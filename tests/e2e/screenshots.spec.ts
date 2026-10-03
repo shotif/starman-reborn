@@ -561,7 +561,7 @@ for (const size of SIZES) {
       };
       const markSite = async (kind: 'wreck' | 'derelict') => {
         const from = (await api<{ clock: number }>(page, 'state')).clock + 1_200;
-        const o = (await api<{ id: string; systemId: string; start: number } | null>(page, 'findLane', { from, kind, trap: false }))!;
+        const o = (await api<{ id: string; systemId: string; start: number } | null>(page, 'findLane', { from, kind, trap: false, quiet: true }))!;
         expect(o, `a ${kind} hail`).not.toBeNull();
         await api(page, 'advanceClock', o.start + 5 - (await api<{ clock: number }>(page, 'state')).clock);
         await api(page, 'warp', o.systemId);

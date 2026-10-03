@@ -2456,10 +2456,11 @@ export class Game {
       },
       /**
        * Test-only: the first lane encounter (docs/PROCGEN.md §27) from a moment on, in the given systems
-       * (or any), of a kind and trap or not if asked: where, when, and what.
+       * (or any, or only those without raider packs), of a kind and trap or not if asked: where, when, and what.
        */
-      findLane: (arg: { from: number; kind?: LaneKind; trap?: boolean; systems?: SystemId[] }) => {
-        const systems = arg.systems ?? SYSTEMS.map((x) => x.id);
+      findLane: (arg: { from: number; kind?: LaneKind; trap?: boolean; systems?: SystemId[]; quiet?: boolean }) => {
+        // `quiet`: only systems no raider packs roam, so nothing comes for a ship sitting still.
+        const systems = (arg.systems ?? SYSTEMS.map((x) => x.id)).filter((id) => !arg.quiet || !trafficFor(id, 'high').plan.packs);
         for (let slot = laneSlot(arg.from) + 1; slot < laneSlot(arg.from) + 400; slot++) {
           for (const id of systems) {
             const o = laneEncounter(id, slot);
