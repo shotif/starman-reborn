@@ -4,6 +4,7 @@ import { buyShip, shipOffers, tradeInValue, type ShipOffer } from '../../economy
 import { buyAndKeep, keepOffer } from '../../economy/fleet.ts';
 import { FLEET } from '../../content/fleet/rules.ts';
 import { gunSummary, newShipState, performanceOf } from '../../economy/loadout.ts';
+import { yardNote } from '../../economy/ranks.ts';
 import { button, showModal, toast } from '../components.ts';
 import { formatCredits, h } from '../dom.ts';
 import { glyph } from '../glyphs.ts';
@@ -30,6 +31,7 @@ export function shipyardContent(ctx: StationContext, refresh: Refresh): HTMLElem
       `Trade-in for your ${current.name} and its fittings: `,
       h('strong', { class: 'num' }, formatCredits(tradeInValue(state))),
     ),
+    rankNote(ctx),
     offers.length === 0 ? h('p', { class: 'list-empty' }, 'No ships for sale here.') : null,
     [...byClass.entries()].map(([cls, list]) =>
       h(
@@ -102,6 +104,17 @@ function comparison(now: ShipPerformance, next: ShipPerformance, nowGuns: string
   );
 }
 
+/** A rank's discount at this yard (docs/PROCGEN.md §32.3), if any. */
+export function rankNote(ctx: StationContext): HTMLElement | null {
+  const note = yardNote(ctx.state, ctx.locationId);
+  return note ? h('p', { class: 'muted small yard-discount', 'data-testid': 'yard-discount' }, note) : null;
+}
+
+/** A price, and what it was before a rank's discount. */
+export function priceWords(price: number, list: number, discount: number): string {
+  return discount ? `${formatCredits(price)} (${Math.round(discount * 100)}% off ${formatCredits(list)})` : formatCredits(price);
+}
+
 async function confirmShip(ctx: StationContext, o: ShipOffer, refresh: Refresh): Promise<void> {
   const { state, locationId } = ctx;
   const current = shipModel(state.ship.model);
@@ -123,7 +136,7 @@ async function confirmShip(ctx: StationContext, o: ShipOffer, refresh: Refresh):
             h(
               'p',
               { class: 'num' },
-              `Trade in: price ${formatCredits(o.model.price)} − trade-in ${formatCredits(o.tradeIn)} = ${formatCredits(o.net)} · credits after ${formatCredits(state.credits - o.net)}`,
+              `Trade in: price ${priceWords(o.price, o.model.price, o.discount)} − trade-in ${formatCredits(o.tradeIn)} = ${formatCredits(o.net)} · credits after ${formatCredits(state.credits - o.net)}`,
             ),
             h('p', { class: 'muted' }, `Your ${current.name} and everything fitted to it go to the yard. The new ship comes with its stock loadout and full racks; your cargo and repair kits move across.`),
           ],

@@ -4,6 +4,7 @@ import { getLocation } from '../data/systems.ts';
 import { standingTier } from './factions.ts';
 import { occupied } from './border.ts';
 import { dockAccess, wakeFriendly } from './law.ts';
+import { rankGreeting } from './ranks.ts';
 
 /**
  * Dock welcome lines (fiction). They change with the player's standing so reputation has a
@@ -39,6 +40,13 @@ const WELCOME: Record<string, { neutral: string; friendly: string }> = {
 };
 
 export function welcomeText(state: GameState, locationId: string): { text: string; improved: boolean } {
+  const base = baseWelcome(state, locationId);
+  // A ranked pilot is greeted by rank (docs/PROCGEN.md §32.5), but not at a station the Wake holds.
+  const greet = occupied(locationId, state.clock, state.world.border) ? null : rankGreeting(state, locationId);
+  return greet ? { ...base, text: `${base.text} ${greet}` } : base;
+}
+
+function baseWelcome(state: GameState, locationId: string): { text: string; improved: boolean } {
   const loc = getLocation(locationId);
   // The law and the Wake greet you in their own way (docs/PROCGEN.md §12).
   if (loc.stationType === 'pirate-den') return { text: `${loc.name}: the Wake knows your ship. Keep your guns cold in here and your mouth shut out there.`, improved: false };

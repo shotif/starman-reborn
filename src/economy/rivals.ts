@@ -158,7 +158,8 @@ export function claimFor(r: RivalDef, n: number): RivalRun['claim'] | null {
   for (const l of patchOf(r)) {
     for (const c of boardFor(l.id, epoch)) {
       const o = c.objectives[0];
-      if ((c.contract?.kind !== 'bounty' && c.contract?.kind !== 'ace') || o?.kind !== 'bounty') continue;
+      // A commission is for the faction's own ranks (docs/PROCGEN.md §32.4), never a rival's.
+      if ((c.contract?.kind !== 'bounty' && c.contract?.kind !== 'ace') || o?.kind !== 'bounty' || c.requires?.rank) continue;
       if ((home.get(o.systemId) ?? 99) > RIVALS.hunt.reach) continue;
       offers.push({ contract: c, giver: l.id });
     }

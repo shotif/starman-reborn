@@ -603,6 +603,37 @@ for (const size of SIZES) {
       await page.getByTestId('wrecks-record').evaluate((el) => el.scrollIntoView({ block: 'start' }));
       await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
       await shot(page, `${size.name}-17d-journal-wrecks`, size.touch, results);
+      // Ranks that open doors (docs/PROCGEN.md §32): the promotion card at Lane Officer, the journal's ranks,
+      // a commission on the board with its tag, the yard's discount with the rank on the deck, and the News.
+      await page.evaluate(() => (window as unknown as { __starman: { setReputation(f: string, v: number): void } }).__starman.setReputation('sta', 45));
+      await api(page, 'setRecord', { kills: 25 });
+      const rankFrom = (await api<{ clock: number }>(page, 'state')).clock;
+      const work = (await api<{ id: string; at: number } | null>(page, 'findCommission', { at: 'earth-port', from: rankFrom, rank: 2 }))!;
+      expect(work, 'a commission at Halcyon Ring').not.toBeNull();
+      await api(page, 'advanceClock', work.at + 60 - rankFrom);
+      await docked('earth-port');
+      await expect(page.getByTestId('rank-dialog')).toBeVisible({ timeout: 30_000 });
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-18-rank-card`, size.touch, results);
+      await press(page, 'rank-continue');
+      if (!(await page.getByTestId('journal').isVisible().catch(() => false))) await press(page, 'station-journal');
+      await page.getByTestId('ranks').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-18b-rank-journal`, size.touch, results);
+      await press(page, 'room-bar');
+      if (!(await page.getByTestId('jobs-window').isVisible().catch(() => false))) await press(page, 'station-jobs');
+      const commission = page.getByTestId(`job-${work.id}`);
+      if (!(await page.getByTestId(`accept-${work.id}`).isVisible().catch(() => false))) await commission.locator('.job-head').click();
+      await commission.evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      await shot(page, `${size.name}-18c-rank-board`, size.touch, results);
+      await press(page, 'room-deck');
+      if (!(await page.getByTestId('yard-discount').isVisible().catch(() => false))) await press(page, 'station-ships');
+      await expect(page.getByTestId('yard-discount')).toBeVisible();
+      await shot(page, `${size.name}-18d-rank-yard`, size.touch, results);
+      await press(page, 'room-bar');
+      if (!(await page.getByTestId('news-window').isVisible().catch(() => false))) await press(page, 'station-news');
+      await page.getByTestId('rank-news').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      await shot(page, `${size.name}-18e-rank-news`, size.touch, results);
       for (const [name, r] of Object.entries(results)) {
         expect.soft(r.overflow, `${name}: page overflow`).toBe(false);
         expect.soft(r.clipped, `${name}: clipped controls`).toEqual([]);

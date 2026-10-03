@@ -20,6 +20,9 @@ import { sightById } from '../../content/passengers/sights.ts';
 import { berths } from '../../economy/passengers.ts';
 import { buyClaim, claimsAt, rivalName, rivalTier } from '../../economy/rivals.ts';
 import { farStar } from '../../economy/stellar.ts';
+import { rankHere, rankName } from '../../economy/ranks.ts';
+import { RANK_NOTES } from '../../content/ranks/lines.ts';
+import { rankNewsList } from '../ranks.ts';
 
 export function pips(level: number, of = 3): HTMLElement {
   return h('span', { class: 'pips', role: 'img', 'aria-label': `Difficulty ${level} of ${of}` }, Array.from({ length: of }, (_, i) => h('span', { class: i < level ? 'on' : '' })));
@@ -288,6 +291,8 @@ function jobCard(ctx: StationContext, o: JobOffer, expanded: boolean, onSelect: 
     urgent ? h('span', { class: 'job-tag urgent' }, `Urgent · ${urgent.seconds / 60} min`) : null,
     job.contract?.event ? h('span', { class: 'job-tag event' }, 'In the news') : null,
     job.contract?.decisive ? h('span', { class: 'job-tag story' }, 'Settles the front for good') : null,
+    // A commission, for the owner's ranks (docs/PROCGEN.md §32.4).
+    job.requires?.rank ? h('span', { class: 'job-tag rank', 'data-testid': 'rank-tag' }, RANK_NOTES.tag.replace('{rank}', rankName(job.requires.rank.faction, job.requires.rank.rank) ?? '')) : null,
   ].filter(Boolean);
   const head = h(
     'button',
@@ -362,7 +367,7 @@ export function newsContent(ctx: StationContext): HTMLElement {
     { class: 'stack news' },
     h('p', { class: 'comm' }, icon('info'), ' ', welcome.text),
     h('p', { class: 'muted' }, loc.description, ' ', dataBadge('fictional')),
-    faction ? h('p', null, h('strong', null, faction.name), ` runs this dock. Your standing: ${TIER_LABEL[standingTier(standing)]} (${signed(standing)}).`) : null,
+    faction ? h('p', null, h('strong', null, faction.name), ` runs this dock. Your standing: ${TIER_LABEL[standingTier(standing)]} (${signed(standing)}).${rankHere(state, locationId) ? ` Your rank: ${rankHere(state, locationId)}.` : ''}`) : null,
     customsDesk(ctx),
     surveyOffice(ctx),
     edgeNewsList(loc.systemId, state.clock),
@@ -375,6 +380,7 @@ export function newsContent(ctx: StationContext): HTMLElement {
     haulNews(loc.systemId, state.clock),
     rivalNewsList(loc.systemId, state.clock),
     outpostRaidNewsList(loc.systemId, state.clock),
+    rankNewsList(state, locationId),
   );
 }
 

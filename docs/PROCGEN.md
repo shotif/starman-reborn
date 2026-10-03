@@ -525,7 +525,9 @@ hand-made stations join in once the opening delivery is done.
   every 25 minutes of play (the game clock). Ids are `c.<station>.<slot>.<index>`, so a contract
   can be found again from its id; a decisive operation (§20.7) is `c.<station>.<slot>.decisive` and a
   lasting mark's run (§14.7) `c.<station>.<slot>.run-<mark>`, because they come and go within a time
-  slot and must never take the id of a contract a pilot already holds.
+  slot and must never take the id of a contract a pilot already holds. A commission for a faction's
+  own ranks (§32.4) is `c.<station>.<slot>.rank`, from its own stream, so nothing else on the board
+  moves; rival hunters never take one, and the bars never tell of one.
 - Two contracts per board, one more at large stations and one more at trade ports and military
   bases (at most four), plus at most one that answers a world event (§11.3). No board posts two
   contracts of a kind to the same place.
@@ -550,7 +552,7 @@ hand-made stations join in once the opening delivery is done.
 - Accepting copies the contract into the save (`GameState.contracts`, save format 6), so the board
   moving on or the rules being tuned never changes a contract under the player. At most five
   generated contracts can be in progress; the 30 most recent finished ones (completed, abandoned
-  or failed) are kept for the journal.
+  or failed) are kept for the journal. A pilot at the top rank with any faction may have six (§32.3).
 - A survey of a planet the player has already scanned is not offered.
 
 ### 10.2 Kinds
@@ -858,7 +860,8 @@ Three ratings follow the career record and show in the journal with the next ran
 | Trade | contract and survey pay, plus a quarter of sales | Hauler, Dealer (2,000), Merchant (8,000), Broker (20,000), Magnate (50,000), Tycoon (120,000) |
 | Exploration | 3 per system visited, 1 per codex entry | Stay-at-home, Drifter (10), Wayfarer (30), Pathfinder (60), Surveyor (100), Cartographer (150) |
 
-Ace hunts (§10.2) need a Hardened combat rating.
+Ace hunts (§10.2) need a Hardened combat rating, and the factions' ranks (§32) ask for a record in two
+of them each.
 
 ### 13.3 Milestones
 
@@ -3168,3 +3171,107 @@ quiet pilot touring the lanes (scanning a body once a visit) meeting a wreck or 
 (both of the strongbox's), and fly the sites in a real flight: hulls and pods there, a log scanned,
 pods tractored in, raiders lying dark sprung near the hull or by a scan from further out, guards
 holding their spot, a derelict boarded and boarding broken off, a ship in distress reached.
+
+## 32. Ranks that open doors
+
+Standing and a record now earn a rank with each faction, and a rank opens doors
+(`src/economy/ranks.ts`; the rules in `RANKS`, `src/content/ranks/rules.ts`; what is said in
+`src/content/ranks/lines.ts`). The factions, their ranks and their ceremonies are fiction, and the
+promotion card says so.
+
+The owner chose (3 October 2026) that a rank needs standing and a record in either of two ratings the
+faction values; that it falls a step when standing drops ten below what earned it; and that the
+Wake's ranks and the law's are independent of each other (crimes already cost lawful standing, which
+does the closing).
+
+### 32.1 The ladders
+
+| | Rank 1 | Rank 2 | Rank 3 | Record in |
+| --- | --- | --- | --- | --- |
+| Sol Transit Authority | Bonded Carrier: standing 15 | Lane Officer: 40 | Lightkeeper: 70 | trade or combat |
+| Frontier Cooperative | Field Hand: 15 | Shareholder: 40 | Elder: 70 | exploration or trade |
+| Hollow Wake | Cold Hand: 20 | Pack Leader: 45 | Long Shadow: 75 | combat or trade |
+
+The better of the two ratings (§13.2) must reach Blooded, Dealer or Drifter for rank 1; Hardened,
+Broker or Pathfinder for rank 2; Veteran, Magnate or Surveyor for rank 3 (`record`). Rank 2 begins
+where Trusted standing does.
+
+### 32.2 Promotions and falls
+
+- **Promotions** come at the pilot's next dock of the faction's own: one of its open stations that
+  takes them in fully (not an emergency berth, not one the Wake holds), or, for the Wake, a den that
+  takes them in. The pilot goes straight to the highest rank earned, with one card: the rank, a short
+  ceremony, what it opens, and the fiction line. Ranks settle after the contracts at a dock, so work
+  finished there counts.
+- **Falls**: a rank holds while standing stays no more than ten below what earned it (`keepMargin`);
+  below that, it falls a step (and another, if standing has fallen below the next one's too). Its
+  perks drop at once; the save follows at the next dock, with a notice.
+- **Hunted**: while a lawful faction hunts the pilot (fines it knows of, or Hostile standing), that
+  rank's perks wait; the rank is kept.
+
+### 32.3 What a rank opens
+
+| Rank | With the law (at its own stations) | With the Hollow Wake |
+| --- | --- | --- |
+| 1 | Commissions on its boards (§32.4); 4% off ships and equipment at its yards; the rank named in the News, on the deck and in the greeting | Crew jobs on den boards; 4% off Wake Salvage gear and hulls at free ports and dens; the News at dens and free ports |
+| 2 | 8%; its docks clear the pilot in even with raiders near (traffic control says so on the radio) | 8%; raids on the pilot's outpost (§29) come half as often |
+| 3 | 12%; one more contract in progress at once (six) | 12%; six contracts |
+
+Market prices (§16 and standing's own), repairs, ammunition and kits are untouched. Trade-ins,
+resale and insurance stay on list prices, so at the top discount a ship or piece of gear bought and
+sold straight back still loses 18% of its price. Cleared in under fire lifts only the dock's refusal:
+jumping with hostiles near, hunters and fines are as before.
+
+### 32.4 Commissions
+
+Each lawful station's board, and each den's, posts one commission for its owner's ranks: work of a kind
+it gives its own (the Authority's escorts, bounties, parcels and freight; the Co-op's surveys,
+supplies, escorts and recoveries; the Wake's smuggling, piracy and parcels), not already on the board,
+paying a quarter more and +2 standing with the owner. Difficulty 1 and 2 need rank 1, difficulty 3
+rank 2. Below the rank the card shows locked, with the rank it needs (*For a Bonded Carrier of the Sol
+Transit Authority or above*): a door the pilot can see. Commissions never chain to a follow-up.
+Independent stations post none.
+
+### 32.5 What the game says
+
+The promotion card (`rank-dialog`), a notice for a fall, the rank on the deck under the station's
+name and in its greeting (*Welcome back, Lane Officer.*), the News within two jumps for two hours (the
+Wake's only at dens and free ports), the job card's tag (*Bonded Carrier and up*), the yard's note
+(*Lane Officer of the Sol Transit Authority: 8% off ships and equipment here.*), traffic control
+clearing a ranked pilot in, and the journal's *Ranks*: each faction's rank, what it opens now (or that
+its perks wait), and what the next needs, with the pilot's own numbers. The Wake's row shows once
+the Wake trusts the pilot.
+
+### 32.6 One save's own
+
+`ranks` (absent until the first promotion) keeps, for each faction, the rank given or fallen to, when
+and where, and whether it came by a fall (the News tells only promotions). Eligibility, perks,
+commissions, discounts and the News are all worked out from it, the standing and the ratings.
+Settling twice at one dock changes nothing, and an older save is promoted at its next dock. A
+commission taken keeps its `requires.rank`. Saves refuse an unknown faction, a rank outside its
+ladder, a time after the clock, an unknown station, and a commission needing an unknown rank.
+
+### 32.7 Guardrails
+
+`validateRanks` (`src/economy/rankGuards.ts`, run in `tests/unit/ranks.test.ts`): three ranks a
+ladder with standing rising within 1–90; a lawful rank never held by a wary pilot and over the boards'
+gate, a Wake rank never by one the Wake does not trust; a margin smaller than the gap between ranks,
+so a fall is a step at a time; records rising and within the ratings' ladders; discounts small (15% at
+most) and rising, and never enough for a ship or gear bought and sold back to lose under 15%, or a
+ship lost insured to pay back near its price; perks from a rank that exists, one more contract at
+most, the outpost's odds between nothing and all; commissions paid a tenth to a half more and worth
+up to 3 standing, needing ranks that rise with difficulty, of kinds the boards make, never outlaw work
+for the law and some for the Wake; promotions told for half an hour to six hours, within the News'
+reach. Names unique, no standing tier, rating or crew role, sharing no word with a station, system,
+faction or character, at most 16 characters; lines with no number, no he or she, no star, only
+their fields, and short enough for the card, the radio, the greeting and the News. Over the world:
+each lawful faction's discount at three yards or more and the Wake's at two; over eight time slots of
+every board, at most one commission a board, only at the owner's own stations, with the id that says
+so, the rank its difficulty needs, kinds its faction gives, pay under the contracts' ceiling, its
+standing and no follow-up; and commissions on 60% or more of each lawful faction's boards and half the
+dens'. The tests also break the rules and a name to see them caught, and check the ladders' exact
+thresholds, promotions only where they should come (straight to the highest, once), falls a step at a
+time and perks waiting while hunted, the discounts charged on gear, ships and ships kept (and never a
+profit to sell back), commissions locked and open, never chained and never a rival's, the sixth
+contract, the Wake's outpost and the News, the save, and a ranked pilot cleared in under fire in a
+real flight while another is refused.

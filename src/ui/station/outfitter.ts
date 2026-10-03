@@ -26,6 +26,7 @@ import { formatCredits, h } from '../dom.ts';
 import { glyph } from '../glyphs.ts';
 import type { Refresh, StationContext } from './context.ts';
 import { gearGlyph, gearLine, shipKind, slotGlyph, slotLabel } from './gearText.ts';
+import { priceWords, rankNote } from './shipyard.ts';
 
 const bar = (label: string, value: number, max: number, color: string, text: string) =>
   h('div', { class: 'statbar' }, label, h('div', { class: 'segbar', style: `--fill: ${max > 0 ? Math.max(0, Math.min(1, value / max)) : 0}; --seg-color: ${color}` }), h('span', { class: 'num' }, text));
@@ -188,6 +189,7 @@ export function outfitterContent(ctx: StationContext, refresh: Refresh, selected
       'section',
       { class: 'outfitter-sale', 'aria-label': 'For sale' },
       h('div', { class: 'list-head' }, h('span', null, `For ${slotLabel(slot, slots).toLowerCase()}`), h('span', null, 'You pay')),
+      sellsEquipment(locationId) ? rankNote(ctx) : null,
       forSale,
       sale && !sale.blocked
         ? h(
@@ -320,7 +322,7 @@ async function confirmBuy(ctx: StationContext, o: GearOffer, slotId: string, ref
       h(
         'p',
         { class: 'num' },
-        current ? `Price ${formatCredits(o.item.price)} − ${formatCredits(o.tradeIn)} = ${formatCredits(o.net)}` : `Price ${formatCredits(o.item.price)}`,
+        current ? `Price ${priceWords(o.price, o.item.price, o.discount)} − ${formatCredits(o.tradeIn)} = ${formatCredits(o.net)}` : `Price ${priceWords(o.price, o.item.price, o.discount)}`,
         ` · credits after ${formatCredits(state.credits - o.net)}`,
       ),
     ),

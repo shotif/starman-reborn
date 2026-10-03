@@ -85,6 +85,7 @@ import { WRECKS } from '../content/wrecks/rules.ts';
 import { POD_NAMES, POD_SUBTITLE, SITE_NAMES, SITE_NOTES, SITE_SUBTITLES } from '../content/wrecks/lines.ts';
 import type { SiteSetup } from '../economy/wrecks.ts';
 import { placeSite, podOffset } from './sites.ts';
+import { coveredAt, coverLine } from '../economy/ranks.ts';
 import type { StationOwner } from '../content/world/types.ts';
 import type { ArtContext, ArtObject } from './art/types.ts';
 import { seededRandom } from './art/util.ts';
@@ -1153,7 +1154,9 @@ export class FlightSession {
     // Alongside a derelict, slow, nobody hostile near: board it; while boarding, stop (docs/PROCGEN.md §31.4).
     if (this.boarding) return { label: 'Stop', action: 'cancel-autopilot', icon: 'close' };
     if (this.boardable()) return { label: 'Board', action: 'interact', icon: 'dock' };
-    if (this.dockCandidate() && !this.hostilesNearby(2_200)) {
+    // A ranked pilot is cleared in at their faction's own docks even with raiders near (docs/PROCGEN.md §32.3).
+    const dock = this.dockCandidate();
+    if (dock && (!this.hostilesNearby(2_200) || coveredAt(this.state, dock.def.locationId))) {
       return { label: 'Dock', action: 'interact', icon: 'dock' };
     }
     const lane = this.nearestLaneEntrance();
@@ -1214,9 +1217,14 @@ export class FlightSession {
 
   private beginDock(site: DockSite): void {
     if (this.hostilesNearby(2_200)) {
-      this.callbacks.onMessage('Docking refused: hostile contact nearby.', 'bad');
-      this.sfx('ui-error');
-      return;
+      // Their own ranks are cleared in under fire (docs/PROCGEN.md §32.3).
+      const cover = coverLine(this.state, site.def.locationId);
+      if (!cover) {
+        this.callbacks.onMessage('Docking refused: hostile contact nearby.', 'bad');
+        this.sfx('ui-error');
+        return;
+      }
+      this.callbacks.onComm?.(cover.speaker, cover.text);
     }
     // Pyre's observatory is evacuated at its collapse; its remnant station opens late (docs/PROCGEN.md §26).
     const shut = pyreDockRefusal(site.def.locationId, this.state.clock);

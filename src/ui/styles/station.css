@@ -886,6 +886,12 @@
   color: #ffc98f;
 }
 
+/* A commission, for a faction's own ranks (docs/PROCGEN.md §32.4): a double border, so not by colour alone. */
+.job-tag.rank {
+  border: 3px double rgba(120, 200, 255, 0.7);
+  color: #a9dcff;
+}
+
 /* ---------- Journal: pilot ratings and milestones (docs/PROCGEN.md §13) ---------- */
 
 .ratings .rating {
@@ -1010,4 +1016,17 @@
 
 .portrait-lg {
   --portrait-size: 6rem;
+}
+
+/* A promotion's perks (docs/PROCGEN.md §32.2): the mark sized to the line, so the list reads on a small phone. */
+.rank-perks li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+.rank-perks .glyph {
+  width: 1.2rem;
+  height: 1.2rem;
+  margin-top: 0.1rem;
 }

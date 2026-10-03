@@ -542,6 +542,15 @@ export interface CrewLog {
   former?: { name: string; role: CrewRole; at: number; locationId: string; why: 'let-go' | 'unhappy' }[];
 }
 
+/** A rank with a faction (docs/PROCGEN.md §32): which, when and where it was given or last fell. */
+export interface RankRecord {
+  rank: 1 | 2 | 3;
+  at: number;
+  where: string;
+  /** It came by a fall, not a promotion (the News tells only promotions). */
+  fell?: true;
+}
+
 export interface GameState {
   version: typeof SAVE_VERSION;
   createdAt: string;
@@ -591,6 +600,8 @@ export interface GameState {
   crew: Wingman[];
   /** The people aboard (docs/PROCGEN.md §30); absent until the first is hired. */
   aboard?: CrewLog;
+  /** Ranks with each faction (docs/PROCGEN.md §32): absent until the first promotion. */
+  ranks?: Partial<Record<FactionId, RankRecord>>;
   /** Confirmed-planet / body ids the player has scanned. */
   discoveredBodies: string[];
   jobs: Record<string, JobProgress>;

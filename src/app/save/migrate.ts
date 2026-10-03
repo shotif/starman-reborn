@@ -16,6 +16,7 @@ import { OUTPOST_RAIDS } from '../../content/outposts/raids.ts';
 import { ROSTER } from '../../content/rivals/rules.ts';
 import { CREW, CREW_DEEDS, CREW_HEARTS, CREW_ROLES, type CrewDeed } from '../../content/crew/rules.ts';
 import { SITE_KINDS, WRECKS } from '../../content/wrecks/rules.ts';
+import { RANKS } from '../../content/ranks/rules.ts';
 import { MYSTERY_IDS, type MysteryId } from '../../content/wrecks/mysteries.ts';
 import { outpostId, outpostSite } from '../../content/outposts/sites.ts';
 import { createNewGame, SAVE_VERSION, type CommodityId, type CrewLog, type GameState, type OutpostDefence, type OutpostRecord, type RivalStory, type WreckLog } from '../state.ts';
@@ -56,7 +57,8 @@ import { createNewGame, SAVE_VERSION, type CommodityId, type CrewLog, type GameS
  *   `met` and a wingman's `ally` (§28), and an outpost's `opened` and `defence` (§29), absent in older
  *   v10 saves; `aboard`, the crew aboard and who left (§30), and a contract's `crew`, absent in
  *   older v10 saves; the world log's `wrecks` (sites marked in flight and the trails they led to,
- *   §31), absent in older v10 saves. See GameState in src/app/state.ts.
+ *   §31), absent in older v10 saves; `ranks`, the rank given or fallen to with each faction, and a
+ *   commission's `requires.rank` (§32), absent in older v10 saves. See GameState in src/app/state.ts.
  */
 export interface SaveV1 {
   version: 1;
@@ -487,6 +489,8 @@ export function assertValidState(s: GameState): void {
     if (!isRecord(c) || c.id !== id || !Array.isArray(c.objectives) || !c.objectives.length || !Number.isFinite(c.reward) || typeof c.title !== 'string') fail(`contract ${id}`);
     const party = c.contract?.party;
     if (party !== undefined && (!Array.isArray(party) || !party.length || !party.every((n) => typeof n === 'string' && n.length > 0))) fail(`contract ${id}`);
+    const rank = c.requires?.rank;
+    if (rank !== undefined && (!isRecord(rank) || !(rank.faction in RANKS.ladders) || !Number.isInteger(rank.rank) || rank.rank < 1 || rank.rank > 3)) fail(`contract ${id}`);
   }
   if (!isRecord(s.law) || !isRecord(s.law.fines) || !Array.isArray(s.law.pending) || !isRecord(s.law.lastCrimeAt)) fail('law');
   for (const c of s.law.pending) {
@@ -554,6 +558,14 @@ export function assertValidState(s: GameState): void {
     if (w.ally !== undefined && !ROSTER.some((r) => r.id === w.ally)) fail('crew');
   }
   if (s.aboard !== undefined) assertValidCrew(s.aboard, fail);
+  // Ranks (docs/PROCGEN.md §32): with a known faction, within its ladder, given where and when the save could have been.
+  if (s.ranks !== undefined) {
+    if (!isRecord(s.ranks)) fail('ranks');
+    for (const [f, r] of Object.entries(s.ranks)) {
+      const ladder = RANKS.ladders[f as keyof typeof RANKS.ladders];
+      if (!ladder || !isRecord(r) || !Number.isInteger(r.rank) || r.rank < 1 || r.rank > ladder.names.length || !Number.isFinite(r.at) || r.at < 0 || r.at > s.clock || !LOCATION_IDS.has(r.where) || (r.fell !== undefined && r.fell !== true)) fail(`rank ${f}`);
+    }
+  }
   if (!Array.isArray(s.priceWatch) || !s.priceWatch.every((w) => isRecord(w) && LOCATION_IDS.has(w.locationId) && COMMODITY_IDS.includes(w.commodity))) fail('price watch');
   const kinds = ['price', 'event', 'den', 'ace', 'wreck', 'story', 'front'];
   if (!Array.isArray(s.rumours) || !s.rumours.every((r) => isRecord(r) && typeof r.key === 'string' && typeof r.text === 'string' && kinds.includes(r.kind) && Number.isFinite(r.at))) fail('rumours');

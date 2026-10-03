@@ -26,6 +26,7 @@ import { hasMarket, moveStock, orderTotal, quote, stockAvailable, type MarketCon
 import { barKind } from './people.ts';
 import { knownAt, marketContext } from './trade.ts';
 import { riskOf, security, type RouteRisk } from './tradeComputer.ts';
+import { discounted, yardDiscount } from './ranks.ts';
 
 /**
  * A fleet of your own (docs/PROCGEN.md §18): ships parked at stations, captains flying them on the
@@ -102,11 +103,13 @@ export function keepOffer(state: GameState, locationId: string, modelId: string)
   if (!model) return null;
   let blocked = shipStandingBlock(state, locationId, model);
   if (!blocked && state.fleet.ships.length >= FLEET.hangar.max) blocked = `Hangar full: you own ${FLEET.hangar.max} other ships`;
-  if (!blocked && model.price > state.credits) blocked = 'Not enough credits';
+  // A rank's discount at the faction's own yard (docs/PROCGEN.md §32.3).
+  const price = discounted(model.price, yardDiscount(state, locationId, model.maker));
+  if (!blocked && price > state.credits) blocked = 'Not enough credits';
   if (!blocked) blocked = berthBlock(state, performanceOf({ model: model.id, fittings: model.stock }).berths);
   if (!blocked) blocked = quartersBlock(state, model.id);
   const cargoMoves = performanceOf({ model: model.id, fittings: model.stock }).cargo >= cargoUsed(state.ship.cargo);
-  return { model, price: model.price, blocked, cargoMoves };
+  return { model, price, blocked, cargoMoves };
 }
 
 /**

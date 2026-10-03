@@ -26,6 +26,7 @@ import { computerContent } from './computer.ts';
 import { fleetContent } from './fleet.ts';
 import { atOwnOutpost, outpostContent } from './outpost.ts';
 import { rememberView } from './lastView.ts';
+import { rankHere } from '../../economy/ranks.ts';
 
 export type StationWindow = 'trader' | 'outfitter' | 'shipyard' | 'fleet' | 'outpost' | 'jobs' | 'people' | 'news' | 'computer' | 'journal' | 'arrival' | 'menu';
 
@@ -285,6 +286,8 @@ export class StationHub {
           { class: 'station-sub' },
           getSystem(loc.systemId).displayName,
           faction ? ` · ${faction.shortName} · ${TIER_LABEL[standingTier(standing)]} (${signed(standing)})` : '',
+          // Your rank with the owner (docs/PROCGEN.md §32.5).
+          rankHere(state, locationId) ? h('span', { 'data-testid': 'dock-rank' }, ` · ${rankHere(state, locationId)}`) : null,
           ' ',
           dataBadge('fictional'),
         ),

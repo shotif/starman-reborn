@@ -15,6 +15,7 @@ import { adjustReputation, FACTIONS, standingTier, TIER_LABEL } from './factions
 import { cargoCapacity } from './loadout.ts';
 import { carriesPassengers, fare } from './passengers.ts';
 import { rating } from './progress.ts';
+import { rankLock } from './ranks.ts';
 import { denDown } from './dens.ts';
 import { dockAccess } from './law.ts';
 import { BORDER } from '../content/border/rules.ts';
@@ -103,6 +104,8 @@ export interface JobDef {
     minRep?: { faction: FactionId; value: number };
     /** A story choice already made one of these ways. */
     choice?: { id: string; oneOf: readonly string[] };
+    /** A commission: a rank with this faction, this high or higher (docs/PROCGEN.md §32.4). */
+    rank?: { faction: FactionId; rank: number };
   };
   /** Jumps ending in this system cost nothing while the job is active. */
   coversJumpFeesTo?: SystemId;
@@ -275,6 +278,9 @@ export function jobLockReason(state: GameState, job: JobDef): string | null {
     const tier = standingTier(state.reputation[job.factionId] ?? 0);
     if (tier === 'wary' || tier === 'hostile') return `The ${FACTIONS[job.factionId].name} is wary of you: easy work only`;
   }
+  // A commission is for the faction's own ranks (docs/PROCGEN.md §32.4).
+  const rank = rankLock(state, req?.rank);
+  if (rank) return rank;
   return contractBlock(state, job);
 }
 

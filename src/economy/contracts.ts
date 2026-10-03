@@ -29,7 +29,10 @@ import { atWar, decisiveOpen, EXPOSED, FRONTS, frontState, momentum, occupied, s
 import { itemsThatFit } from './cargo.ts';
 import { activeEdge, activeSkyFrom, baseThreat, marksAt, marksKey, priceMultiplier, stationEventAt, systemEventAt, worldLogKey, type WorldEvent } from './events.ts';
 import { FACTIONS } from './factions.ts';
-import { dockAccess, lawIn, scansOnDocking, wakeFriendly } from './law.ts';
+import { dockAccess, isLawful, lawIn, scansOnDocking, wakeFriendly } from './law.ts';
+import { RANKS } from '../content/ranks/rules.ts';
+import { RANK_LINES } from '../content/ranks/lines.ts';
+import { activeLimit } from './ranks.ts';
 import type { JobDef } from './jobs.ts';
 import { cargoCapacity } from './loadout.ts';
 import { eventHaulsFrom, raidsOnWay } from './hauls.ts';
@@ -188,6 +191,9 @@ export function boardFor(locationId: string, epoch: number): JobDef[] {
     out.push(...pyreContracts(loc, epoch));
     // Escorts for this station's relief and shipments bound through raided lanes (docs/PROCGEN.md §21.7).
     out.push(...reliefEscorts(loc, epoch));
+    // A commission for the owner's own ranks (docs/PROCGEN.md §32.4), from its own stream and id.
+    const k = commission(loc, rng(WORLD_SEED, 'contracts', 'rank', locationId, epoch), `${CONTRACT_PREFIX}${locationId}.${epoch}.rank`, clock, (c) => out.some((o) => same(o, c)));
+    if (k) out.push(k);
     // Standing runs a lasting mark left here (docs/PROCGEN.md §14.7), each from its own stream.
     for (const mark of marksAt(locationId)) {
       if (!mark.run) continue;
@@ -199,6 +205,43 @@ export function boardFor(locationId: string, epoch: number): JobDef[] {
   if (boardCache.size > 4_000) boardCache.clear();
   boardCache.set(key, out);
   return out;
+}
+
+/**
+ * A commission (docs/PROCGEN.md §32.4): work of a kind the station's owner gives its own (the law's
+ * escorts, bounties, parcels and freight; the Co-op's surveys, supplies, escorts and recoveries; the
+ * Wake's smuggling, piracy and parcels), posted for its ranks only, better paid and worth more standing.
+ * Independent stations post none. Never chained.
+ */
+function commission(loc: FictionalLocation, r: Rng, id: string, clock: number, posted: (c: JobDef) => boolean): JobDef | null {
+  const owner: FactionId | null = loc.stationType === 'pirate-den' ? 'hollow-wake' : isLawful(loc.factionId ?? null) ? loc.factionId! : null;
+  if (!owner) return null;
+  const W = RANKS.work;
+  const order = W.kinds[owner].map((k) => ({ k, x: r.next() })).sort((a, b) => a.x - b.x);
+  // The first of its kinds the station can offer that is not already on the board.
+  let c: JobDef | null = null;
+  for (const { k } of order) {
+    for (let tries = 0; tries < 3 && !c; tries++) {
+      const next = makeContract(k, loc, r, id, clock);
+      if (!next) break;
+      if (!posted(next)) c = next;
+    }
+    if (c) break;
+  }
+  if (!c) return null;
+  const L = RANK_LINES[owner].work;
+  const reward = round5(c.reward * W.pay);
+  const urgent = c.contract?.urgent ? { ...c.contract.urgent, bonus: round5(reward * CONTRACTS.urgent.bonus) } : undefined;
+  return {
+    ...c,
+    title: `${L.title}: ${c.title}`,
+    briefing: `${L.brief} ${c.briefing}`,
+    reward,
+    difficultyNote: urgent ? c.difficultyNote.replace(/\+\d+ cr if/, `+${urgent.bonus} cr if`) : c.difficultyNote,
+    repReward: { ...c.repReward, [owner]: (c.repReward[owner] ?? 0) + W.standing },
+    requires: { ...(c.requires ?? {}), rank: { faction: owner, rank: W.rankFor[c.difficulty - 1]! } },
+    contract: { ...c.contract!, ...(urgent ? { urgent } : {}) },
+  };
 }
 
 /** Finds a posted contract by id (ids are `c.<station>.<time slot>.<index>`, or `.decisive` / `.run-<mark>` for those that come and go within a slot). */
@@ -1129,7 +1172,8 @@ function openStationsIn(systemId: SystemId): FictionalLocation[] {
  */
 export function followUpFor(job: JobDef, clock: number): JobDef | null {
   const c = job.contract;
-  if (!c || (c.kind !== 'parcel' && c.kind !== 'freight')) return null;
+  // Commissions never chain (docs/PROCGEN.md §32.4).
+  if (!c || (c.kind !== 'parcel' && c.kind !== 'freight') || job.requires?.rank) return null;
   const step = (c.chain?.step ?? 1) + 1;
   if (step > CONTRACTS.chain.maxSteps) return null;
   const r = rng(WORLD_SEED, 'chain', job.id);
@@ -1158,7 +1202,9 @@ export function contractBlock(state: GameState, job: JobDef): string | null {
   const c = job.contract;
   if (!c) return null;
   const active = Object.entries(state.jobs).filter(([id, p]) => p.status === 'active' && id.startsWith(CONTRACT_PREFIX)).length;
-  if (active >= CONTRACTS.maxActive) return `You already have ${CONTRACTS.maxActive} contracts in progress`;
+  // One more at the top rank with any faction (docs/PROCGEN.md §32.3).
+  const limit = activeLimit(state);
+  if (active >= limit) return `You already have ${limit} contracts in progress`;
   if (c.cargo && itemsThatFit(state.ship.cargo, c.cargo.commodity, cargoCapacity(state.ship)) < c.cargo.qty) {
     return `Needs ${c.cargo.qty * COMMODITIES[c.cargo.commodity].unitSize} free hold units`;
   }

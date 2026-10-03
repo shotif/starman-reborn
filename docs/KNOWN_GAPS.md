@@ -181,8 +181,13 @@ snapshot branch only when the archives changed.
 - Wingmen take two orders (attack my target, form up) and talk in a few lines. Seekers (from heavy
   raiders, aces and bounty hunters) are the only missiles fired at the player, and decoy flares
   the only countermeasure.
-- Ratings change nothing in the world except the combat rank that ace hunts and den assaults ask
-  for; milestones are a record, with one grant (the whole codex). The what-next hint suggests one
+- Ratings change the world through the factions' ranks (PROCGEN §32) and the combat rank that ace
+  hunts and den assaults ask for; milestones are a record, with one grant (the whole codex).
+- Ranks (PROCGEN §32) are three a faction. They open no ships or gear of their own, and commissions
+  are the boards' usual kinds of work at better pay; the people in the bars do not speak of ranks, and
+  What next does not point at one within reach. The Wake's outpost perk matters only to a pilot with
+  an outpost. A promotion comes as the pilot docks, so standing earned while already docked counts at
+  the next dock (or the next contract accepted there). The what-next hint suggests one
   thing at a time and only from places already visited: it never compares ships or equipment
   across the whole sky, and suggests no weapons or shields.
 - Generated stations have generated exteriors and interiors (twelve kinds in four owner

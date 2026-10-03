@@ -266,7 +266,7 @@ function frontFact(state: GameState, locationId: string, r: Rng): RumourFact | n
 /** A contract of a kind posted within reach: an ace hunt or a wreck to recover. */
 function postedFact(state: GameState, locationId: string, r: Rng, kind: 'ace' | 'wreck'): RumourFact | null {
   for (const d of [{ id: locationId, jumps: 0 }, ...docksNear(locationId, PEOPLE.rumour.reach)]) {
-    const job = postedContracts(state, d.id).find((j) => j.contract?.kind === (kind === 'ace' ? 'ace' : 'recovery'));
+    const job = postedContracts(state, d.id).find((j) => j.contract?.kind === (kind === 'ace' ? 'ace' : 'recovery') && !j.requires?.rank);
     if (!job) continue;
     const giver = getLocation(job.giverLocationId).name;
     const o = job.objectives[0];

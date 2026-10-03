@@ -9,6 +9,7 @@ import { dockAccess } from './law.ts';
 import { ammoName, clampShip, fittedItem, fittedLaunchers, hullMax, newShipState, performanceOf, shieldCapacity, shipSlots } from './loadout.ts';
 import { dockFaction } from './markets.ts';
 import { berthBlock } from './passengers.ts';
+import { discounted, yardDiscount } from './ranks.ts';
 
 /**
  * Outfitter and shipyard: buying, replacing and selling equipment, ammunition, repair kits, hull
@@ -54,6 +55,9 @@ export function hasShipyard(locationId: string): boolean {
 
 export interface GearOffer {
   item: GearItem;
+  /** What it costs here: the list price, less a rank's discount at the faction's own yard (docs/PROCGEN.md §32.3). */
+  price: number;
+  discount: number;
   /** What the dealer pays for the item it replaces. */
   tradeIn: number;
   /** Price after trade-in (what the credits change by). */
@@ -88,7 +92,9 @@ function ammoRefund(ship: ShipState, slotId: string): number {
 function offerFor(state: GameState, locationId: string, item: GearItem, slot: ShipSlot): GearOffer {
   const current = fittedItem(state.ship, slot.id);
   const tradeIn = current ? resaleValue(current.price) + ammoRefund(state.ship, slot.id) : 0;
-  const net = item.price - tradeIn;
+  const discount = yardDiscount(state, locationId, item.maker);
+  const price = discounted(item.price, discount);
+  const net = price - tradeIn;
   const fitted = current?.id === item.id;
   let blocked: string | null = null;
   if (fitted) blocked = 'Fitted';
@@ -99,7 +105,7 @@ function offerFor(state: GameState, locationId: string, item: GearItem, slot: Sh
   if (!blocked && capacityWith(state, slot.id, item.id) < cargoUsed(state.ship.cargo)) blocked = 'Your cargo would not fit';
   // Passengers aboard keep their berths (docs/PROCGEN.md §23).
   if (!blocked) blocked = berthBlock(state, performanceWith(state, slot.id, item.id).berths);
-  return { item, tradeIn, net, blocked, fitted };
+  return { item, price, discount, tradeIn, net, blocked, fitted };
 }
 
 /** Equipment on sale here that goes in this slot, cheapest class first. */
@@ -125,7 +131,7 @@ export function buyGear(state: GameState, locationId: string, gearId: string, sl
   const before = performanceOf(state.ship);
   const current = fittedItem(state.ship, slotId);
   if (current) applyCredits(state, offer.tradeIn, 'equipment', `Sold ${current.name}`);
-  applyCredits(state, -offer.item.price, 'equipment', `Bought ${offer.item.name}`);
+  applyCredits(state, -offer.price, 'equipment', `Bought ${offer.item.name}`);
   state.ship.fittings[slotId] = offer.item.id;
   delete state.ship.ammo[slotId];
   refit(state, before);
@@ -272,6 +278,9 @@ export function shipStandingBlock(state: GameState, locationId: string, model: S
 
 export interface ShipOffer {
   model: ShipModel;
+  /** What it costs here, less a rank's discount at the faction's own yard (docs/PROCGEN.md §32.3). */
+  price: number;
+  discount: number;
   tradeIn: number;
   net: number;
   blocked: string | null;
@@ -281,14 +290,16 @@ export interface ShipOffer {
 export function shipOffers(state: GameState, locationId: string): ShipOffer[] {
   const tradeIn = tradeInValue(state);
   return shipsForSale(locationId).map((model) => {
-    const net = model.price - tradeIn;
+    const discount = yardDiscount(state, locationId, model.maker);
+    const price = discounted(model.price, discount);
+    const net = price - tradeIn;
     const current = model.id === state.ship.model;
     let blocked: string | null = current ? 'Your current ship' : shipStandingBlock(state, locationId, model);
     if (!blocked && net > state.credits) blocked = 'Not enough credits';
     if (!blocked && performanceOf({ model: model.id, fittings: model.stock }).cargo < cargoUsed(state.ship.cargo)) blocked = 'Sell cargo first: the hold is smaller';
     if (!blocked) blocked = berthBlock(state, performanceOf({ model: model.id, fittings: model.stock }).berths);
     if (!blocked) blocked = quartersBlock(state, model.id);
-    return { model, tradeIn, net, blocked, current };
+    return { model, price, discount, tradeIn, net, blocked, current };
   });
 }
 
@@ -299,7 +310,7 @@ export function buyShip(state: GameState, locationId: string, modelId: string): 
   if (offer.blocked) return { ok: false, message: offer.blocked };
   const old = shipModel(state.ship.model);
   applyCredits(state, offer.tradeIn, 'equipment', `Traded in ${old.name}`);
-  applyCredits(state, -offer.model.price, 'equipment', `Bought ${offer.model.name}`);
+  applyCredits(state, -offer.price, 'equipment', `Bought ${offer.model.name}`);
   const fresh = newShipState(offer.model.id);
   state.ship.model = fresh.model;
   state.ship.fittings = fresh.fittings;

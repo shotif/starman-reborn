@@ -11,12 +11,12 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | --- | --- | --- |
 | TypeScript typecheck (app + scripts/tests) | `npm run typecheck` | Pass |
 | Astronomy data validation | `npm run data:validate` | Pass (22 warnings: the contested planets this edition keeps) |
-| Unit tests | `npm test` | Pass: 875 tests in 55 files |
+| Unit tests | `npm test` | Pass: 886 tests in 56 files |
 | Production build | `npm run build` | Pass |
-| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 716 KB of 800 (gzipped) |
-| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 45 passed (5 touch-only tests skipped) |
-| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 45 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
-| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 387 screenshots, no audit findings |
+| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 721 KB of 800 (gzipped) |
+| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 46 passed (5 touch-only tests skipped) |
+| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 46 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
+| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 432 screenshots, no audit findings |
 
 ### Unit tests (Vitest)
 
@@ -567,6 +567,22 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   broken off by pulling away; a guarded wreck's raiders holding their spot; a ship in distress
   reached; a site marked mid-flight joining the scene once.
 
+- `ranks.test.ts`: **ranks that open doors**. The guardrails pass over the world's boards and yards,
+  and broken rules and names are caught (a discount too big, standing that falls, a Wake rank below
+  its trust, a rank named like a rating, outlaw work for the law, a margin wider than the gap between
+  ranks). The ladders need both standing and a record in either of two ratings, exactly at their
+  thresholds. Promotions come only at the faction's own open dock (not an independent's, not on an
+  emergency berth, the Wake's only at a den that takes the pilot in), straight to the highest rank
+  earned, once; ranks fall a step when standing drops ten below what earned them, at any dock, and
+  their perks wait while the faction hunts the pilot. The discount comes off at the faction's own
+  yards only and is charged on gear, ships and ships kept, and nothing bought there at the top
+  discount sells back for a profit. Commissions are found by id, locked below their rank and open at
+  it, never chained, never taken by a rival; a sixth contract at the top rank. The Wake's rank keeps
+  its raiders off an outpost more; the News tells promotions nearby for two hours, the Wake's only in
+  its own places. The save keeps ranks and refuses damaged ones. In a real flight with a raider near
+  an Authority station, a Lane Officer is cleared in (Dock offered, traffic control on the radio) and
+  an unranked pilot is not.
+
 ### Browser tests (Playwright)
 
 - `journey.spec.ts`: **the nine-step journey from the spec** on desktop and on touch.
@@ -730,6 +746,12 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   customs patrol with contraband aboard, the risk named, bribed, the cargo kept; and a real mayday
   answered with a pad (A on the action, the D-pad to the first choice, A to take it), its ship then
   marked in the scene, flown alongside and paid.
+- `ranks.spec.ts`: **ranks that open doors**: with standing and three raiders downed, the next
+  Authority dock gives a Bonded Carrier's card (what it opens, the Fiction line); the deck names the
+  rank and the News tells it; a commission on Halcyon Ring's board carries its tag and is taken; the
+  shipyard's note takes 4% off; more standing and a harder record make a Lane Officer at Deimos
+  Depot; standing let slip, the rank falls a step at the next dock; and the Wake gives a Cold Hand's
+  rank at a den.
 - `wrecks.spec.ts`: **wrecks to fly to** (hails and scan finds turned on for this test): a wreck
   beacon's hail answered and marked, the HUD objective naming it; from 900 m, *Scan* on the action
   button, the log's card (paused, with the Fiction line) holding a lead, followed; flown in close,
@@ -776,8 +798,9 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   with the first raid seen coming, the raid on it in flight, a hand looking for a berth at a bar's
   table, the crew in the bar (hurt, giving notice, with a favour to ask), a crew member's favour in
   their dialog, a wreck marked in flight and targeted, its log's card with a lead and its choices,
-  an old derelict's card once boarded, the journal's wrecks and trails, and the News with a
-  shortage's relief
+  an old derelict's card once boarded, the journal's wrecks and trails, a promotion's card, the
+  journal's ranks, a commission on a board, the yard's discount with the rank on the deck, the
+  News telling a promotion, and the News with a shortage's relief
   haulers on their way, at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
   zoom). Saved in `docs/screenshots/` once any smooth scrolling has come to rest. Each is audited

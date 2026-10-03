@@ -13,6 +13,7 @@ import { settleFleet, type FleetSettlement } from '../economy/fleet.ts';
 import { alliesDock, settleRivalStories, type StoryNote } from '../economy/rivalStories.ts';
 import { crewFee, crewShipLost, settleCrew, type CrewNote } from '../economy/crew.ts';
 import { settleSites, tidySites, type SiteOutcome } from '../economy/wrecks.ts';
+import { settleRanks, type RankNote } from '../economy/ranks.ts';
 import type { Route } from '../galaxy/routing.ts';
 import type { JumpReadiness } from '../galaxy/types.ts';
 import { applyCredits, markVisited, type GameState } from './state.ts';
@@ -39,6 +40,8 @@ export interface DockOutcome {
   crew: { notes: CrewNote[]; jobs: JobEvent[] };
   /** Sites and trails whose time ran out (docs/PROCGEN.md §31). */
   sites: SiteOutcome;
+  /** Ranks given here, or fallen (docs/PROCGEN.md §32). */
+  ranks: RankNote[];
 }
 
 export function dockAt(state: GameState, locationId: string): DockOutcome {
@@ -70,7 +73,9 @@ export function dockAt(state: GameState, locationId: string): DockOutcome {
   const stories = settleRivalStories(state);
   // The crew last: wages to now, and what they made of all that happened since the last dock.
   const crew = settleCrew(state, locationId);
-  return { jobEvents, clearanceGranted, firstVisit, watchNotes, lawNotes, fleet, allies, stories, crew, sites };
+  // Ranks after the jobs, so a contract finished here can earn a rank here.
+  const ranks = settleRanks(state, locationId);
+  return { jobEvents, clearanceGranted, firstVisit, watchNotes, lawNotes, fleet, allies, stories, crew, sites, ranks };
 }
 
 export function undock(state: GameState): void {

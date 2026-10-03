@@ -9,8 +9,8 @@ After the scripted opening (10–20 minutes), the neighbourhood is an open sandb
 systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
 of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
 packs in lawless space; 39 ships and 146 pieces of equipment; and generated contracts on every job
-board. Increments 1–30 (under [Done so far](#done-so-far)) added world events and news, contracts
-of every kind, the law and the outlaw path, goals, five story arcs, combat depth, people in the
+board. Increments 1–31 (under [Done so far](#done-so-far)) added world events and news, contracts
+of every kind, the law and the outlaw path, goals, ranks with each faction that open doors, five story arcs, combat depth, people in the
 bars and a trade computer, a world that answers, gluts that ship their surplus out and relief to
 escort through raided lanes, a fleet of your own whose captains fly the lanes, a crew aboard your own ship,
 a station of your own to build and defend, passengers and sightseers, rival pilots with careers and stories of their own, a
@@ -30,13 +30,6 @@ What it lacks now:
 
 Candidates for what comes next, in the order they will be built, chosen by the owner on 2 October
 2026 once Lane encounters, Rival stories, Defend your outpost and Your crew were done.
-
-### Ranks that open doors ⏳ (M)
-
-Standing and ratings change the world: ranks with each lawful faction that bring perks (priority
-docking, discounts at their yards, contracts only for their own, the rank named in the News), and
-ranks with the Hollow Wake for outlaws. Today the ratings change almost nothing but the combat rank
-that ace hunts and den assaults ask for.
 
 ### Races on the lanes ⏳ (M)
 
@@ -58,6 +51,19 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 31. Ranks that open doors ✅
+
+Standing and a record now earn a rank with each faction: Bonded Carrier, Lane Officer and
+Lightkeeper with the Transit Authority; Field Hand, Shareholder and Elder with the Frontier Co-op;
+Cold Hand, Pack Leader and Long Shadow with the Hollow Wake. Each needs standing and a record in
+either of two ratings the faction values, and comes at your next dock of theirs with a short
+ceremony. A rank opens doors: commissions on their boards for their own ranks, better paid; up to
+12% off ships and equipment at their yards; their docks clearing you in even with raiders near; a
+sixth contract at the top; the Wake's raiders leaving your outpost alone more often; and your rank
+in the News, on the deck and in the greeting. Let your standing slip ten below what earned it and the
+rank falls a step; while a faction hunts you, its perks wait. The Wake's ranks and the law's are
+independent ([PROCGEN.md §32](PROCGEN.md#32-ranks-that-open-doors)).
 
 ### 30. Wrecks to fly to ✅
 

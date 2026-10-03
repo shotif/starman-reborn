@@ -18,6 +18,7 @@ import { boardEpoch } from './contracts.ts';
 import { activeOutpost, systemEventAt } from './events.ts';
 import { standingTier } from './factions.ts';
 import { advanceJobs, failJob, type JobDef, type JobEvent } from './jobs.ts';
+import { outpostOdds } from './ranks.ts';
 import { isLawful, totalFines, wakeFriendly } from './law.ts';
 import { marketTables } from './markets.ts';
 import { riskOf } from './tradeComputer.ts';
@@ -111,6 +112,8 @@ export function raidIn(state: GameState, o: OutpostRecord, n: number): RaidPlan 
   let odds = R.odds[band] * (R.stage[Math.min(o.stage, R.stage.length) - 1] ?? 1);
   if (event?.kind === 'raid') odds = Math.min(R.raidEvent.max, odds * R.raidEvent.odds);
   if (wakeFriendly(state)) odds *= R.trusted;
+  // A pilot of rank with the Wake sees its raids less often still (docs/PROCGEN.md §32.3).
+  odds *= outpostOdds(state);
   // The probe: in thin or lawless space, the first window once the grace is over always holds it.
   const sure = probe && band !== 'patrolled' && n === probeWindow(state, o) && !wakeFriendly(state);
   if (!sure && luck() >= odds) return null;

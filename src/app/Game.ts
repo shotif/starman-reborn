@@ -39,6 +39,9 @@ import {
 } from '../economy/wrecks.ts';
 import { WRECKS, type SiteKind } from '../content/wrecks/rules.ts';
 import { showSiteCard } from '../ui/wrecks.ts';
+import { activeLimit, coveredAt, earnedRank, heldRank, RANK_FACTIONS, type RankNote } from '../economy/ranks.ts';
+import { CONTRACTS } from '../content/contracts/rules.ts';
+import { showPromotion } from '../ui/ranks.ts';
 import { edgeComm, edgeMoment, edgeTimeline, hopsToPyre, laneClosedReason, PYRE_HOLE_ID, pyreRefugeId, pyreStage, pyreStationsNow, pyreStatus, scheduleEdge } from '../economy/doomed.ts';
 import type { EdgeNewsKind } from '../content/stellar/doomedLines.ts';
 import type { SystemId } from '../data/types.ts';
@@ -794,8 +797,9 @@ export class Game {
     if (r.ok) {
       this.sfx('ui-confirm');
       if (state.location.dockedAt) {
-        const events = dockAt(state, state.location.dockedAt).jobEvents;
-        this.announceJobEvents(events);
+        const out = dockAt(state, state.location.dockedAt);
+        this.announceJobEvents(out.jobEvents);
+        this.announceRanks(out.ranks);
       }
       const cargo = isStoryJob(jobId) ? getJob(jobId).story?.cargo : undefined;
       if (cargo) toast(`Loaded ${cargo.qty} ${COMMODITIES[cargo.commodity].name.toLowerCase()} for the job.`, 'info', 4000);
@@ -1472,6 +1476,26 @@ export class Game {
               { ...((state.jobs.lifeline?.status === 'complete' && lastView(locationId)) || { room: 'deck', window: null }), titleCard: true },
     );
     this.tellStory();
+    this.announceRanks(out.ranks);
+  }
+
+  /** Ranks given or fallen at a dock (docs/PROCGEN.md §32): a fall said at once; a promotion's card after any story here. */
+  private announceRanks(notes: RankNote[]): void {
+    for (const n of notes) {
+      if (n.kind === 'fell') {
+        toast(n.text, 'bad', 7000);
+        continue;
+      }
+      this.storyQueue = this.storyQueue
+        .then(async () => {
+          if (this.mode !== 'docked') return;
+          this.sfx('mission-complete');
+          await showPromotion(n);
+          this.station?.render();
+        })
+        .catch((err) => console.error(err));
+    }
+    if (notes.length) this.persist();
   }
 
   // ------------------------------------------------------------------ flight events
@@ -2343,6 +2367,35 @@ export class Game {
       setSeed: (seed: number) => {
         if (this.state) this.state.seed = seed;
       },
+      /** Test-only: the career record the ratings read (raiders downed, contract pay, sales), docs/PROCGEN.md §13. */
+      setRecord: (r: { kills?: number; rewards?: number; sales?: number }) => {
+        if (!this.state) return;
+        if (r.kills !== undefined) this.state.stats.kills = r.kills;
+        if (r.rewards !== undefined) this.state.stats.rewards = r.rewards;
+        if (r.sales !== undefined) this.state.stats.sales = r.sales;
+      },
+      /** Test-only: ranks held with each faction, what they open here, and the save's records (docs/PROCGEN.md §32). */
+      ranks: () => {
+        const state = this.state;
+        if (!state) return null;
+        const here = state.location.dockedAt;
+        return {
+          held: Object.fromEntries(RANK_FACTIONS.map((f) => [f, heldRank(state, f)])),
+          earned: Object.fromEntries(RANK_FACTIONS.map((f) => [f, earnedRank(state, f)])),
+          records: state.ranks ?? {},
+          limit: activeLimit(state),
+          covered: here ? coveredAt(state, here) : false,
+        };
+      },
+      /** Test-only: the first commission (docs/PROCGEN.md §32.4) a station posts from a moment on, needing this rank or less, and a den. */
+      findCommission: (arg: { at: string; from: number; rank?: number }) => {
+        for (let e = boardEpoch(arg.from) + 1; e < boardEpoch(arg.from) + 80; e++) {
+          const c = boardFor(arg.at, e).find((x) => x.requires?.rank && x.requires.rank.rank <= (arg.rank ?? 3));
+          if (c) return { id: c.id, title: c.title, at: e * CONTRACTS.epochSeconds };
+        }
+        return null;
+      },
+      den: () => ALL_LOCATIONS.find((l) => l.stationType === 'pirate-den' && l.status === 'functional')?.id ?? null,
       /** Test-only: set standing with a faction (the law and the outlaw path). */
       setReputation: (faction: 'sta' | 'frontier' | 'hollow-wake', value: number) => {
         if (!this.state) return;

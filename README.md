@@ -71,6 +71,9 @@ in distress to reach, pods to tractor in, a wreck to salvage, an old derelict (i
 so) to board by holding steady alongside; a scan of a planet may pick up a faint return too. Some
 are bait, with raiders lying dark until you come close or a scan shows them. And a wreck's log may
 hold a lead into a short trail across a few systems: a lost crew, a strongbox, an old hull's sister.
+Stand well with a faction and build a record, and it gives you a rank: the Transit Authority's,
+the Frontier Co-op's, or the Hollow Wake's for outlaws. A rank opens doors: commissions for their
+own, discounts at their yards, docks that clear you in under fire, and your name in the News.
 Ships, equipment, the world, the economy, events, contracts and the law are generated from rule
 files and checked by automated guardrails ([docs/PROCGEN.md](docs/PROCGEN.md)).
 
@@ -210,11 +213,13 @@ src/content/   rule-driven generators and guardrails (docs/PROCGEN.md): ships an
                (src/content/dens), combat depth (src/content/combat), people in the bars
                (src/content/people), the fleet (src/content/fleet), mining (src/content/mining),
                the border war (src/content/border), stellar death (src/content/stellar), lane
-               encounters (src/content/lanes) and wrecks to fly to (src/content/wrecks)
+               encounters (src/content/lanes), wrecks to fly to (src/content/wrecks) and ranks
+               (src/content/ranks)
 src/economy/   live markets, world events and the world's answers, trade, cargo, outfitter and
                shipyard, factions, jobs and generated contracts, the law, ratings, the codex,
                milestones, the story, people and rumours, the fleet, mining, the border war,
-               the far stars' deaths and Pyre's (the invented star), lane encounters and wrecks
+               the far stars' deaths and Pyre's (the invented star), lane encounters, wrecks
+               and ranks
 src/audio/     procedural Web Audio music and sound effects
 src/ui/        HUD, touch controls, station screens, encyclopedia, styles
 scripts/       the sky snapshot (sky-fetch on GitHub's runners, sky-process here), catalogue
