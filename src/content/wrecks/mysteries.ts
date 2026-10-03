@@ -21,8 +21,6 @@ export interface MysteryEnd {
   wake?: number;
   /** The contract kind the ending pays as (the crew's hearts weigh it: docs/PROCGEN.md §30.4). */
   contract: 'rescue' | 'recovery' | 'smuggle';
-  /** A raider den will do, for a pilot the Wake trusts. */
-  den?: boolean;
 }
 
 export interface MysteryRule {
@@ -47,7 +45,7 @@ export const MYSTERIES: Record<MysteryId, MysteryRule> = {
     from: ['wreck'],
     find: { kind: 'wreck', item: 'strongbox', jumps: [1, 2], below: 0.5, guard: true },
     end: { types: ['customs-depot', 'trade-port'], jumps: 3, pay: 1_200, standing: 5, contract: 'recovery' },
-    fence: { types: ['freeport'], den: true, jumps: 3, pay: 1_800, wake: 6, contract: 'smuggle' },
+    fence: { types: ['freeport'], jumps: 3, pay: 1_800, wake: 6, contract: 'smuggle' },
   },
   /** An old survey hull's sister ship, and its data vault. */
   silence: {

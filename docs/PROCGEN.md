@@ -3111,8 +3111,9 @@ Reading a log (scanning a wreck, boarding a derelict) may offer a lead, on the l
 start fits the site and whose places can be worked out from it; the first log a pilot ever reads
 always holds one, later logs one time in three (`leads.chance`). Followed, the trail's job steers to
 its find, then its ending. Every place comes from the starting site's id: the find a system the rule's
-jumps on (never the start, Sol or Pyre), the ending the nearest open station of its kinds within reach
-of the find.
+jumps on (never the start, Sol or Pyre) with an ending within reach of it, the ending the nearest open
+station of its kinds within reach of the find. The lifeboat's trail can start from any wreck or
+derelict, so the first log always holds a lead.
 
 | Trail | From | Find | Ending |
 | --- | --- | --- | --- |

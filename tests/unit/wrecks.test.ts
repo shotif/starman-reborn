@@ -293,6 +293,13 @@ describe('the trails', () => {
       }
       expect(n).toBeGreaterThan(10);
     }
+    // The lifeboat's trail can start from every wreck, so the first log read always holds a lead.
+    for (let slot = 20; slot < 120; slot++) {
+      for (const sys of SYSTEMS) {
+        const f = scanFind(sys.id, slot);
+        if (f?.kind === 'wreck') expect(mysteryPlaces('tender', f.id), f.id).not.toBeNull();
+      }
+    }
   });
 
   it('the lifeboat: its recorder tractored in, its crew found at a research station or relay, paid', () => {

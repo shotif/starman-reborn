@@ -17,7 +17,7 @@ interface Offer {
 
 interface Sites {
   log: { sites: Record<string, { ended?: { how: string }; read?: true; boarded?: true }> } | null;
-  flight: { id: string; kind: string; pods: number; boarding: number | null }[];
+  flight: { id: string; kind: string; pods: number; boarding: number | null; ended: boolean }[];
 }
 
 interface Mystery {
@@ -35,6 +35,23 @@ interface State {
 async function dismissDiscovery(page: Page): Promise<void> {
   const ok = page.getByTestId('discovery-ok').last();
   if (await ok.isVisible().catch(() => false)) await ok.click().catch(() => {});
+}
+
+/** Presses a button that a discovery card (a planet nearby, scanned as the ship passes) may come up over: the card put away, it is pressed again. */
+async function pressPast(page: Page, testId: string): Promise<void> {
+  const touch = await isTouch(page);
+  for (let i = 0; i < 10; i++) {
+    await dismissDiscovery(page);
+    const el = page.getByTestId(testId);
+    try {
+      if (touch) await el.tap({ timeout: 3_000 });
+      else await el.click({ timeout: 3_000 });
+      return;
+    } catch {
+      // A card came up over it: put it away and press again.
+    }
+  }
+  throw new Error(`${testId} could not be pressed`);
 }
 
 /** Into the encounter's system at its slot, flying, until it hails; then its card, and Mark it and go. */
@@ -104,9 +121,9 @@ test('wrecks: a wreck salvaged, its trail followed and paid, a derelict boarded,
   } else {
     await api(page, 'placeNear', { id: `site:${findId}`, distance: 100 });
     await waitUntil(page, 'Board on the action', async () => (await dismissDiscovery(page), (await api<{ context: { label: string } | null } | null>(page, 'hud'))?.context?.label === 'Board'), 10_000);
-    await press(page, context);
+    await pressPast(page, context);
   }
-  await expect(card).toBeVisible({ timeout: 30_000 });
+  await waitUntil(page, 'the find’s card', async () => (await dismissDiscovery(page), await card.isVisible()), 30_000);
   await press(page, 'site-close');
   const paid = (await api<State>(page, 'state')).credits;
   await api(page, 'dockAt', mystery.places.end);
@@ -123,9 +140,9 @@ test('wrecks: a wreck salvaged, its trail followed and paid, a derelict boarded,
   await api(page, 'placeNear', { id: `site:${hulk}`, distance: 100 });
   await waitUntil(page, 'Board on the action', async () => (await dismissDiscovery(page), (await api<{ context: { label: string } | null } | null>(page, 'hud'))?.context?.label === 'Board'), 10_000);
   await api(page, 'setTimeScale', 4);
-  await press(page, context);
-  await waitUntil(page, 'boarding', async () => (await api<Sites>(page, 'sites')).flight.some((x) => x.id === hulk && x.boarding !== null), 10_000);
-  await expect(card).toBeVisible({ timeout: 30_000 });
+  await pressPast(page, context);
+  await waitUntil(page, 'boarding', async () => (await dismissDiscovery(page), (await api<Sites>(page, 'sites')).flight.some((x) => x.id === hulk && (x.boarding !== null || x.ended))), 10_000);
+  await waitUntil(page, 'the derelict’s card', async () => (await dismissDiscovery(page), await card.isVisible()), 30_000);
   await api(page, 'setTimeScale', 1);
   await expect(page.getByTestId('site-found')).toContainText('You find');
   await press(page, 'site-close');
@@ -141,7 +158,7 @@ test('wrecks: a wreck salvaged, its trail followed and paid, a derelict boarded,
   await api(page, 'placeNear', { id: body.id, distance: 2_000 });
   await api(page, 'selectTarget', body.id);
   await waitUntil(page, 'Scan on the action', async () => (await dismissDiscovery(page), (await api<{ context: { label: string } | null } | null>(page, 'hud'))?.context?.label === 'Scan'), 10_000);
-  await press(page, context);
+  await pressPast(page, context);
   await waitUntil(page, 'the find marked', async () => (await dismissDiscovery(page), (await api<Sites>(page, 'sites')).flight.some((x) => x.id === find.id)), 20_000);
   await expect(page.getByText('Your scan picked up a faint return near')).toBeVisible();
 });

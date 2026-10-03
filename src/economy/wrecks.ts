@@ -731,24 +731,30 @@ export interface MysteryPlaces {
 
 const kindOf = (l: FictionalLocation): StationType | null => l.stationType ?? null;
 
-/** The nearest open station of an ending's kinds within its reach of a system, ties broken by the rng. */
-function nearestEnd(end: MysteryEnd, systemId: SystemId, r: Rng, allowDen: boolean): FictionalLocation | null {
+/** The open stations of an ending's kinds within its reach of a system (the lawful ones only, if asked), nearest first. */
+function endsNear(end: MysteryEnd, systemId: SystemId, lawful: boolean): FictionalLocation[] {
   const jumps = jumpsFrom(WORLD.links, systemId);
-  const ok = ALL_LOCATIONS.filter((l) => {
+  return ALL_LOCATIONS.filter((l) => {
     const t = kindOf(l);
-    if (l.status !== 'functional' || l.dockable === false || (jumps.get(l.systemId) ?? 99) > end.jumps) return false;
-    if (t === 'pirate-den') return allowDen && !!end.den;
-    return !!t && end.types.includes(t);
-  });
+    if (l.status !== 'functional' || l.dockable === false || (jumps.get(l.systemId) ?? 99) > end.jumps || t === 'pirate-den') return false;
+    return !!t && end.types.includes(t) && (!lawful || isLawful(l.factionId ?? null));
+  }).sort((a, b) => jumps.get(a.systemId)! - jumps.get(b.systemId)! || a.id.localeCompare(b.id));
+}
+
+/** The nearest of them, ties broken by the rng. */
+function nearestEnd(end: MysteryEnd, systemId: SystemId, r: Rng, lawful: boolean): FictionalLocation | null {
+  const ok = endsNear(end, systemId, lawful);
   if (!ok.length) return null;
+  const jumps = jumpsFrom(WORLD.links, systemId);
   const tie = new Map(ok.map((l) => [l.id, r.next()]));
   return ok.sort((a, b) => jumps.get(a.systemId)! - jumps.get(b.systemId)! || tie.get(a.id)! - tie.get(b.id)! || a.id.localeCompare(b.id))[0]!;
 }
 
 /**
  * Where a mystery's trail leads from the site that began it (docs/PROCGEN.md §31.6): the find in a
- * system the rule's jumps on (never the start, Sol or Pyre), and the ending at the nearest station of
- * its kinds within reach of the find. Null when the trail has nowhere to go from there.
+ * system the rule's jumps on (never the start, Sol or Pyre) with an ending in reach, and the ending
+ * at the nearest station of its kinds within reach of the find (the strongbox's insurers lawful, and
+ * a fence too). Null when the trail has nowhere to go from there.
  */
 export function mysteryPlaces(id: MysteryId, from: string): MysteryPlaces | null {
   const ref = siteRef(from);
@@ -758,6 +764,7 @@ export function mysteryPlaces(id: MysteryId, from: string): MysteryPlaces | null
   const r = rng(WORLD_SEED, 'mystery', id, from);
   const jumps = jumpsFrom(WORLD.links, start);
   const [lo, hi] = rule.find.jumps;
+  const lawful = id === 'strongbox';
   const candidates = [...jumps.entries()]
     .filter(([sys, j]) => j >= lo && j <= hi && sys !== 'sol' && !isInventedSystem(sys) && WORLD.profiles.has(sys))
     .map(([sys]) => sys)
@@ -766,18 +773,13 @@ export function mysteryPlaces(id: MysteryId, from: string): MysteryPlaces | null
       if (rule.find.below !== undefined) return (WORLD.profiles.get(sys)?.security ?? 1) < rule.find.below;
       return ALL_LOCATIONS.some((l) => l.systemId === sys && l.status === 'functional' && l.stationType && l.stationType !== 'pirate-den');
     })
+    .filter((sys) => endsNear(rule.end, sys, lawful).length > 0 && (!rule.fence || endsNear(rule.fence, sys, false).length > 0))
     .sort();
   if (!candidates.length) return null;
   const find = r.pick(candidates);
-  const end = nearestEnd(rule.end, find, r, false);
-  if (!end) return null;
-  if (id === 'strongbox' && !isLawful(end.factionId ?? null)) return null;
+  const end = nearestEnd(rule.end, find, r, lawful)!;
   const out: MysteryPlaces = { from, start, find, end: end.id, ship: siteSpecShip(from) };
-  if (rule.fence) {
-    const fence = nearestEnd({ ...rule.fence, den: false }, find, r, false);
-    if (!fence) return null;
-    out.fence = fence.id;
-  }
+  if (rule.fence) out.fence = nearestEnd(rule.fence, find, r, false)!.id;
   if (id === 'silence') {
     out.sister = r.pick(WRECK_NAMES.filter((n) => n !== out.ship));
     const bodies = siteBodies(find);

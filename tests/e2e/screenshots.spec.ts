@@ -539,6 +539,21 @@ for (const size of SIZES) {
         if (await ok.isVisible().catch(() => false)) await ok.click({ timeout: 2_000 }).catch(() => {});
       };
       const action = size.touch ? 'touch-context' : 'hud-context';
+      // A planet near a site may bring a discovery card over the action button: put away, pressed again.
+      const pressPast = async (testId: string) => {
+        for (let i = 0; i < 10; i++) {
+          await putAway();
+          const el = page.getByTestId(testId);
+          try {
+            if (size.touch) await el.tap({ timeout: 3_000 });
+            else await el.click({ timeout: 3_000 });
+            return;
+          } catch {
+            // A card came up over it.
+          }
+        }
+        throw new Error(`${testId} could not be pressed`);
+      };
       const markSite = async (kind: 'wreck' | 'derelict') => {
         const from = (await api<{ clock: number }>(page, 'state')).clock + 1_200;
         const o = (await api<{ id: string; systemId: string; start: number } | null>(page, 'findLane', { from, kind, trap: false }))!;
@@ -560,8 +575,9 @@ for (const size of SIZES) {
       await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
       expect(await api<boolean>(page, 'face', { id: wreckTarget, below: size.height < 500 ? 2 : 4 })).toBe(true);
       await shot(page, `${size.name}-17-wreck`, size.touch, results);
-      await waitUntil(page, 'Scan', async () => (await api<{ context: { label: string } | null } | null>(page, 'hud'))?.context?.label === 'Scan', 20_000);
-      await press(page, action);
+      await waitUntil(page, 'Scan', async () => (await putAway(), (await api<{ context: { label: string } | null } | null>(page, 'hud'))?.context?.label === 'Scan'), 20_000);
+      await pressPast(action);
+      await waitUntil(page, 'the log’s card', async () => (await putAway(), await page.getByTestId('site-dialog').isVisible()), 30_000);
       await expect(page.getByTestId('site-lead')).toBeVisible();
       await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
       await shot(page, `${size.name}-17b-site-card`, size.touch, results);
@@ -570,8 +586,8 @@ for (const size of SIZES) {
       await api(page, 'placeNear', { id: hulk, distance: 100 });
       await waitUntil(page, 'Board', async () => (await putAway(), (await api<{ context: { label: string } | null } | null>(page, 'hud'))?.context?.label === 'Board'), 20_000);
       await api(page, 'setTimeScale', 4);
-      await press(page, action);
-      await expect(page.getByTestId('site-dialog')).toBeVisible({ timeout: 30_000 });
+      await pressPast(action);
+      await waitUntil(page, 'the derelict’s card', async () => (await putAway(), await page.getByTestId('site-dialog').isVisible()), 30_000);
       await api(page, 'setTimeScale', 1);
       await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
       await shot(page, `${size.name}-17c-derelict-card`, size.touch, results);
