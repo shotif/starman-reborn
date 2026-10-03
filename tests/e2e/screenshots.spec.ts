@@ -107,7 +107,7 @@ async function audit(page: Page, touch: boolean): Promise<AuditResult> {
       }
     }
     const overlaps: string[] = [];
-    const panels = [...document.querySelectorAll('.hud-status, .hud-wallet, .hud-buttons, .hud-objective, .hud-target, .encounter-banner, .tcluster, .assist-chip, .wing-chip, .throttle, .toast')].filter(visible);
+    const panels = [...document.querySelectorAll('.hud-status, .hud-wallet, .hud-buttons, .hud-objective, .hud-race, .hud-target, .encounter-banner, .tcluster, .assist-chip, .wing-chip, .throttle, .toast')].filter(visible);
     for (let i = 0; i < panels.length; i++) {
       for (let j = i + 1; j < panels.length; j++) {
         const a = panels[i]!.getBoundingClientRect();
@@ -634,6 +634,53 @@ for (const size of SIZES) {
       if (!(await page.getByTestId('news-window').isVisible().catch(() => false))) await press(page, 'station-news');
       await page.getByTestId('rank-news').evaluate((el) => el.scrollIntoView({ block: 'start' }));
       await shot(page, `${size.name}-18e-rank-news`, size.touch, results);
+      // Races on the lanes (docs/PROCGEN.md §33): Halcyon Ring's club, waiting in the start box with the
+      // racers on the line, mid-run with the race strip, the result card, the record board, the ratings.
+      const raceState = async () => (await api<{ status: { phase: string; gate: number; finish: number | null; racers: { gate: number }[] } | null; record: number | null }>(page, 'race'))!;
+      if (!(await page.getByTestId('races-window').isVisible().catch(() => false))) await press(page, 'station-races');
+      await expect(page.getByTestId('race-par-sprint')).not.toContainText('…', { timeout: 60_000 });
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-19-race-club`, size.touch, results);
+      await expect(page.getByTestId('race-enter-sprint'), (await page.getByTestId('race-lock-sprint').textContent({ timeout: 1_000 }).catch(() => null)) ?? 'entry open').toBeVisible();
+      await press(page, 'race-enter-sprint');
+      await press(page, 'dock-launch');
+      await waitUntil(page, 'undocked', async () => (await api<{ autopilot: string } | null>(page, 'player'))?.autopilot === 'none', 60_000);
+      await api(page, 'raceAt', { gate: -1 });
+      await waitUntil(page, 'Start on the action', async () => (await api<{ context: { label: string } | null } | null>(page, 'hud'))?.context?.label === 'Start', 15_000);
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-19b-race-start`, size.touch, results);
+      await press(page, size.touch ? 'touch-context' : 'hud-context');
+      await api(page, 'setTimeScale', 8);
+      await waitUntil(page, 'under way', async () => (await raceState()).status?.phase === 'on', 15_000);
+      await waitUntil(page, 'the leader a gate on', async () => (await raceState()).status!.racers.some((r) => r.gate >= 2), 60_000);
+      await api(page, 'setTimeScale', 1);
+      const raceField = await api<{ time: number | null }[]>(page, 'raceField');
+      const raceTarget = Math.min(...raceField.map((f) => f.time ?? Infinity), (await raceState()).record ?? Infinity) - 2;
+      const through = async (gate: number, at: number) => {
+        await api(page, 'raceAt', { gate, at });
+        await waitUntil(page, `gate ${gate}`, async () => ((await raceState()).status?.gate ?? 0) > gate || (await raceState()).status?.finish !== null, 15_000);
+      };
+      await through(0, 0.5);
+      await through(1, raceTarget / 6 - 1.2);
+      await through(2, (raceTarget * 2) / 6 - 1.2);
+      await expect(page.getByTestId('hud-race-split')).not.toBeEmpty();
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-19c-race-gate`, size.touch, results);
+      for (let g = 3; g < 6; g++) await through(g, (raceTarget * g) / 6 - 1.2);
+      await expect(page.getByTestId('race-dialog')).toBeVisible({ timeout: 15_000 });
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-19d-race-result`, size.touch, results);
+      await press(page, 'race-continue');
+      await docked('earth-port');
+      await press(page, 'room-bar');
+      if (!(await page.getByTestId('races-window').isVisible().catch(() => false))) await press(page, 'station-races');
+      await page.getByTestId('race-board').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-19e-race-board`, size.touch, results);
+      await press(page, 'station-journal');
+      await page.getByTestId('rating-racing').evaluate((el) => el.scrollIntoView({ block: 'center' }));
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-19f-race-rating`, size.touch, results);
       for (const [name, r] of Object.entries(results)) {
         expect.soft(r.overflow, `${name}: page overflow`).toBe(false);
         expect.soft(r.clipped, `${name}: clipped controls`).toEqual([]);

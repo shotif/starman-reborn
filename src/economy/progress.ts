@@ -1,3 +1,4 @@
+import { racingScore } from './racing.ts';
 import { applyCredits, type GameState } from '../app/state.ts';
 import { CODEX_GRANT, MILESTONES, RATINGS, SURVEY_SALE, type MilestoneId, type RatingKind } from '../content/progress/rules.ts';
 import { ARC_JOBS } from '../content/story/arcs.ts';
@@ -87,6 +88,7 @@ export function sellSurvey(state: GameState, systemId: SystemId, locationId: str
 export function ratingScore(state: GameState, kind: RatingKind): number {
   if (kind === 'combat') return state.stats.kills;
   if (kind === 'trade') return Math.round(state.stats.rewards + state.stats.sales / 4);
+  if (kind === 'racing') return racingScore(state);
   return state.visitedSystems.length * 3 + codexProgress(state).done;
 }
 
@@ -161,6 +163,10 @@ function earned(state: GameState, id: MilestoneId): boolean {
       return finaleDone(state, 'border');
     case 'story-harvest':
       return finaleDone(state, 'harvest');
+    case 'race-won':
+      return Object.values(state.world.racing?.courses ?? {}).some((c) => c.wins > 0);
+    case 'course-record':
+      return Object.values(state.world.racing?.courses ?? {}).some((c) => c.record !== undefined);
   }
 }
 

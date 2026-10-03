@@ -512,6 +512,29 @@
   }
 }
 
+/* ---------- Narrow phones: a full action tab (a racing club's bar, docs/PROCGEN.md §33) goes icon-only ---------- */
+
+@media (max-width: 380px) {
+  .station-actions:has(> :nth-child(5)) {
+    padding-left: 0.35rem;
+    padding-right: 0.35rem;
+  }
+
+  .station-actions:has(> :nth-child(5)) .rail-btn {
+    min-width: 2.75rem;
+    padding: 0.2rem 0.25rem;
+  }
+
+  .station-actions:has(> :nth-child(5)) .rail-btn > span {
+    display: none;
+  }
+
+  .station-actions:has(> :nth-child(5)) .btn-primary {
+    padding-left: 0.7rem;
+    padding-right: 0.7rem;
+  }
+}
+
 /* ---------- Short landscape phones: compact, icon-only rails ---------- */
 
 @media (orientation: landscape) and (max-height: 500px) {

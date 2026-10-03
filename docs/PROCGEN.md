@@ -852,26 +852,28 @@ for this game.
 
 ### 13.2 Ratings
 
-Three ratings follow the career record and show in the journal with the next rank:
+Four ratings follow the career record and show in the journal with the next rank:
 
 | Rating | Score | Ranks |
 | --- | --- | --- |
 | Combat | hostile ships and den turrets destroyed | Green, Blooded (3), Steady (10), Hardened (25), Veteran (50), Ace (100), Legend (200) |
 | Trade | contract and survey pay, plus a quarter of sales | Hauler, Dealer (2,000), Merchant (8,000), Broker (20,000), Magnate (50,000), Tycoon (120,000) |
 | Exploration | 3 per system visited, 1 per codex entry | Stay-at-home, Drifter (10), Wayfarer (30), Pathfinder (60), Surveyor (100), Cartographer (150) |
+| Racing | points for heats finished, podiums, wins and course records, times the club's level (§33.6) | Onlooker, Rookie (10), Contender (40), Pacesetter (120), Laureate (250), Champion (450) |
 
 Ace hunts (§10.2) need a Hardened combat rating, and the factions' ranks (§32) ask for a record in two
 of them each.
 
 ### 13.3 Milestones
 
-Twenty-four milestones, each earned once and toasted when it happens: the first and the 25th
+Twenty-six milestones, each earned once and toasted when it happens: the first and the 25th
 contract, 10,000 and 50,000 credits in hand, flying a Mk II and a Mk III ship, ten and all
 systems visited, the first frontier system and 25 of them visited (§7.7), ten confirmed planets
 scanned, half and all of the codex, ten and fifty raiders down, Friendly with the Transit
-Authority and with the Frontier Cooperative, trusted by the Hollow Wake, a top rank in any rating,
-and each of the five story arcs (§14, §20.5) finished, The Long Border and First Harvest whichever
-way they end. The journal lists those earned.
+Authority and with the Frontier Cooperative, trusted by the Hollow Wake, a top rank in any rating
+(Racing among them), each of the five story arcs (§14, §20.5) finished, The Long Border and First
+Harvest whichever way they end, the first heat won and a course record set (§33). The journal lists
+those earned.
 
 ### 13.4 What next
 
@@ -3275,3 +3277,168 @@ time and perks waiting while hunted, the discounts charged on gear, ships and sh
 profit to sell back), commissions locked and open, never chained and never a rival's, the sixth
 contract, the Wake's outpost and the News, the save, and a ranked pilot cleared in under fire in a
 real flight while another is refused.
+
+## 33. Races on the lanes
+
+Racing clubs at stations in well-policed systems hold a Sprint round a real planet, moon or star and a
+Run between docks, heat after heat, and the club's racers and rival pilots really fly the gates beside
+the pilot (`src/economy/racing.ts`; the courses in `src/world/courses.ts`; the racers in
+`src/world/racingPilot.ts` and `src/world/RaceRun.ts`; the rules in `RACING`,
+`src/content/racing/rules.ts`; what is said in `src/content/racing/lines.ts`). The clubs, their gates,
+racers and records are fiction, and every screen that shows them says so; the bodies the courses round
+are real, at their schematic places in the scene.
+
+The owner chose (3 October 2026) that the other racers are real ships flown in the scene, not ghost
+times; that hulls race in two classes, light and heavy, on raw time; and that racing pays fees and
+purses kept below trading, a one-off purse for a course record and two milestones, and earns a fourth
+rating, Racing.
+
+### 33.1 Clubs and courses
+
+A club sits in each system at least 0.5 secure (never Pyre) with an open lawful or independent station
+to host it (the system's hand-made station, else its first open station by `venues.prefer`) and room
+for both its courses: sixteen clubs, Sol's among them. They take their names in the systems' order and
+a level from 1 to 3 drawn from the host (Sol's is a novice club). Epsilon Eridani has none (its belt
+rings the star) and nor has Luyten's Star (its two docks sit too close together for a Run).
+
+| | Sprint | Run |
+| --- | --- | --- |
+| Where | a ring round the real body nearest the host dock, 1.5–3 km off its surface (a star's counted at 1.3 radii), 200–300° of it | from 1.4–2.2 km off the host dock's bay, round a body on a ring 2.5–6 km off its surface, to off the system's farthest other dock (or back by the host) |
+| Gates | 6–8, the start and finish lines included; legs 0.9–3.3 km | 6–12; legs 2–10 km |
+| Length | 9–24 km | 25–80 km |
+| Gate radius | 140 m | 260 m |
+| Cruise | sealed | allowed |
+
+Every gate stays 1.5 km off any star's or planet's surface (every leg 800 m), 900 m from the next, 1.8
+km from any station and from any outpost a pilot might build there (§22), 400 m from a lane, outside
+every belt, and no turn at a gate is sharper than 110°. A course is laid from its id: ring sizes, tilts
+and starting angles are tried in an order drawn from it until all of that holds. Gate positions are kept
+relative to the body the course rounds, so Sol's courses keep their shape as Earth goes round the Sun:
+the Moon Loop rounds the Moon (which keeps its place by Earth), and Halcyon Ring's Run is a ring above
+Earth, both checked clear in Sol's scene on 72 dates across a whole Earth–Mars cycle, since its docks
+and lane move with the planets.
+
+### 33.2 Heats, classes and fields
+
+- **Heats**: the game clock is cut into heats of half an hour. An entry is for the heat under way if
+  five minutes of it are left, else the next; a pilot races once a heat, anywhere. An entry whose heat
+  closes before a start lapses, its fee kept.
+- **Classes**: light (couriers, light fighters, surveyors) and heavy (heavy fighters, gunships,
+  freighters), by the hull. An entry is for the class of the ship the pilot flies; launching in the
+  other class's hull voids it. Times are raw: a fast hull wins more.
+- **Members**: six per club and class, named from the bars' own pools, flying hulls of the class sold
+  at lawful yards at the club's tiers (level 1 Mk I, level 2 Mk I–II, level 3 Mk II–III), at skills of
+  0.80–0.92, 0.86–0.98 and 0.92–1.04.
+- **The field**: five racers. Up to two are rival pilots (§28) of the class docked in the club's system
+  as the heat opens, unless they are out for the pilot; club members are the rest, each with a form of
+  ±0.02 that heat. The same heat has the same field for every pilot.
+
+### 33.3 The racing pilot
+
+Every racer, club member or rival, is flown by the racing pilot in its own ship with stock fittings,
+on its own fixed step of 1/60 s, reading nothing but its own ship and the course: not the pilot, not the
+frame. So a heat's times are the same on every device, at any frame rate or time scale (a unit test
+flies one heat in four patterns of frames and gets the same times to the step). Skill sets the reaction
+off the line (1–0.2 s), the throttle (92–100%), the stick's reach (70–100%: 70% is what touch steering
+manages), how far it leans through a gate toward the next (0.15–0.5 of the radius), its line's error (up
+to 0.55 of the radius at the lowest), boost while energy is above 50–25%, when it drops out of cruise
+short of a gate, and the chance of a moment off the throttle at a gate (30% to 2%, half a second to
+two). Each racer keeps a lane of its own across the gates.
+
+Racers pass through the pilot and each other and never touch rocks; nobody's guns fire. When the pilot
+crosses the finish line, racers still flying are flown on to the finish from exactly where they are,
+copies of themselves on the same steps, for the card; and then they really get there in those times.
+Past the line they ease off and are gone after 20 seconds.
+
+### 33.4 Flying a race
+
+- **The start**: in the start box (within 450 m behind the start line, slower than 30 m/s) once the
+  heat is open, the action offers **Start** (E, the action button on touch, A on a pad). The marshal
+  counts three; crossing the line before *Go* is a false start, back behind the line. The pilot's clock
+  runs from *Go* and stops while the game is paused.
+- **Gates** count in order. Crossing one's plane outside it, but near, says *Missed gate n: turn back
+  for it*: no penalty but the time it takes; a gate taken out of order does not count.
+- **Sealed** from the countdown to the finish: guns and launchers, cruise on a Sprint (the touch cruise
+  button struck through), Go to, lanes and docking. No hails, raider packs, patrol scans or discovery
+  cards while a race is staged; a discovery waits for the finish.
+- **Retire**: held under 5 m/s for three seconds, the action offers it. Jumping out retires; losing the
+  ship loses the run; the marshals close the course at three times the class's par.
+- **The HUD**: a race strip in the objective panel's place (the course, gates passed, the clock, the
+  split against the pilot's best or par with *ahead* or *behind*, the place on the road), the next gate
+  and the one after marked with a double ring (the start box before the start), and on a narrow screen
+  only the racers just ahead and just behind marked.
+
+### 33.5 Par, records and pay
+
+- **Par**: the racing pilot at skill 1, clean, in the class's reference hull (Halden courier Mk I,
+  Halden freighter Mk I) is the class's par, which the cutoff counts from. The pilot's own par is the
+  same pilot in their ship as fitted, shown in the window and used for the split until there is a best.
+- **Records**: a course's record in a class is the best its members, or the rival pilots who race there,
+  could fly it, clean at their very best, bettered by 1–3%: no racer in a heat ever beats it. The board
+  shows its holder, or the pilot once they beat it. These times are worked out between frames when the
+  window opens (a dash until they are).
+- **Pay**: the fee and purse are 60 and 450 credits for a Sprint, 120 and 900 for a Run at a level-3
+  club, and half and three quarters of that at levels 1 and 2; places one to three take all, 40% and 20%
+  of the purse. Beating a course record pays 300 credits more, once per course and class. At the most,
+  a winner at fast clubs clears (900 − 120) × 2 = 1,560 credits an hour, below the middle of hauling and
+  trade. Prizes do not count toward the Trade rating. Each rival in a heat the pilot finishes thinks a
+  little better of them (+2, up to 30).
+
+### 33.6 The Racing rating
+
+Points for each course and class raced, times the club's level: one for each heat finished, two more for
+each podium, three more for each win, five for holding its record. A win at a fast club is worth 18, at a
+novice club 6. The ranks are Onlooker, Rookie (10), Contender (40), Pacesetter (120), Laureate (250) and
+Champion (450). The milestones *First heat won* and *A course record set* are earned with it, and *Top
+rank in a rating* counts Racing. The factions' ranks (§32) do not ask for it yet.
+
+### 33.7 What the game says
+
+At a club's station the bar has **Races** (`races-window`): the club and its level, this heat and the
+pilot's class, an entry under way, each course's card (its length, gates, fee and purse, the pilot's
+par, the record, their best, this heat's field in their class with rival pilots tagged, and Enter or
+why not) and the record board (each course and class: the record and its holder, the pilot's best and
+in what, and how they have done). The result card (`race-dialog`): the place and time, the prize, the
+record purse, a personal best, the rating's points and the whole field. The News within two jumps for an
+hour tells the pilot's wins and records; the journal has *Racing* and the fourth rating row. The marshal
+and rival pilots talk on the radio at the start.
+
+### 33.8 One save's own
+
+The world log's `racing` (absent until the first entry) keeps the entry open (course, class, heat,
+when, fee), the last heat raced, for each course and class the runs, finishes, podiums, wins, best (time,
+ship, when) and when its record purse was paid, and the last twelve results (place of how many, time,
+prize, who won, or how it ended: retired, cut off, lost, lapsed or void). Clubs, courses, members,
+fields, the racers' flying and times, par, records, prizes, the rating, the board and the News are all
+worked out. A race under way is not saved: loading a save made mid-race puts the pilot back before the
+start, the entry still open. Saves refuse an unknown course or class, a heat after the clock's or one
+already raced, counts that do not add up, times no ship could fly, prizes over the purse, more results
+than are kept, and two results in one heat.
+
+### 33.9 Guardrails
+
+`validateRacing` (`src/economy/racingGuards.ts`, run in `tests/unit/racing.test.ts`): heats of 20 to 60
+minutes; ranges in order; gates at least ten times the widest hull (and 200 m on a Run), six radii
+apart, no turn sharper than 120°; a start box wider than a gate, a countdown of two to five seconds, a
+cutoff of two to four times par; every hull class in exactly one class with a reference hull of its
+own; levels rising in tiers, skill and purse; a record a little better than the best racer; the racing
+pilot's stick never below touch's reach, its error and slips small; a field of four to eight with at
+least three club racers; fees at least a tenth of their purse, purses at most a quarter of the
+contracts' ceiling, places falling, no more than 2,000 credits an hour, all record purses together under
+the sky's grant; the Racing ladder six ranks rising from nothing, named like no standing, rank, rating or
+crew role. Words with no number, no he or she, no star, only their fields and short enough; club names
+unique, sharing no word with a station, system, faction, character, rival pilot or rank. Over the world:
+ten to twenty clubs in well-policed space, Sol's among them, two novice clubs within three jumps of Sol
+and clubs at every level, at least three for each lawful faction, and a club for every rival pilot;
+every course clear in its scene and flown by the racing pilot in each class's fastest and slowest hull
+inside the cutoff, the slowest also at the lowest skill with the stick held to touch's reach, never within
+300 m of a star's or planet's surface; and in sampled heats of every course and class, no racer beating
+the record and none failing to finish, while a pilot of the racing pilot's skill wins 30–90% of novice
+heats in a Mk I hull, 15–65% of club heats in a Mk II hull and places in 50–97% of them, places in 5–60%
+of fast clubs' heats in a Mk II hull and (almost) never wins one in a Mk I. The tests also break the rules
+to see them caught, and check crossing a gate (the right way, inside, a near miss, a fast step), fields
+that are the same every time with rivals of their class and none out for the pilot, par with its splits,
+a heat flown the same at any frame rate with the times worked out ahead coming true, a false start, the
+entry's locks and the fee, a lapse, a finish placed, paid, recorded and rated with the record purse once,
+the News, the milestones, the save and a damaged one refused, and in a real flight the start from the
+box, cruise and the autopilot sealed, and Retire.

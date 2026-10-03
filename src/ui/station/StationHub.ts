@@ -27,8 +27,9 @@ import { fleetContent } from './fleet.ts';
 import { atOwnOutpost, outpostContent } from './outpost.ts';
 import { rememberView } from './lastView.ts';
 import { rankHere } from '../../economy/ranks.ts';
+import { hasRaces, racesContent } from '../racing.ts';
 
-export type StationWindow = 'trader' | 'outfitter' | 'shipyard' | 'fleet' | 'outpost' | 'jobs' | 'people' | 'news' | 'computer' | 'journal' | 'arrival' | 'menu';
+export type StationWindow = 'trader' | 'outfitter' | 'shipyard' | 'fleet' | 'outpost' | 'jobs' | 'people' | 'news' | 'races' | 'computer' | 'journal' | 'arrival' | 'menu';
 
 export interface StationOpen {
   room?: RoomView;
@@ -61,6 +62,7 @@ const WINDOW_TITLE: Record<StationWindow, string> = {
   jobs: 'Job board',
   people: 'People',
   news: 'Station news',
+  races: 'Races',
   computer: 'Trade computer',
   journal: 'Journal',
   arrival: 'Arrival',
@@ -264,6 +266,8 @@ export class StationHub {
     // On emergency docking the board is shut, unless an independent has story work here (docs/PROCGEN.md §20).
     const jobs = full || jobsAt(this.ctx.state, this.ctx.locationId).length > 0;
     if (room === 'bar') items.push(...(jobs ? [act('jobs', 'Jobs', 'jobs', 'station-jobs')] : []), act('bar', 'People', 'people', 'station-people'), act('news', 'News', 'news', 'station-news'));
+    // A racing club here (docs/PROCGEN.md §33): its courses, this heat's field, the record board.
+    if (room === 'bar' && full && hasRaces(this.ctx.locationId)) items.push(act('thruster', 'Races', 'races', 'station-races'));
     if (room === 'trader') items.push(act('trader', 'Trade', 'trader', 'station-trade'));
     if (room === 'outfitter') items.push(act('outfitter', 'Equip', 'outfitter', 'station-equip'));
     items.push(button('Launch', { icon: 'launch', variant: 'primary', onClick: () => this.ctx.launch(), testId: 'dock-launch' }));
@@ -388,6 +392,8 @@ export class StationHub {
         });
       case 'news':
         return newsContent(ctx);
+      case 'races':
+        return racesContent(ctx, refresh);
       case 'computer':
         return computerContent(ctx, refresh);
       case 'journal':

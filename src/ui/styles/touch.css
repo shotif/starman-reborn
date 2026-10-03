@@ -190,6 +190,12 @@
   background: rgba(185, 243, 107, 0.45);
 }
 
+/* Sealed for a Sprint (docs/PROCGEN.md §33.4): dimmed and struck through, not by colour alone. */
+.tbtn.cruise[data-state='sealed'] {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
 .tbtn.cruise[data-state='charging'] {
   border-color: var(--warning);
   animation: cruise-charge 0.6s ease-in-out infinite alternate;

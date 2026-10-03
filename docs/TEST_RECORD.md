@@ -11,12 +11,12 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | --- | --- | --- |
 | TypeScript typecheck (app + scripts/tests) | `npm run typecheck` | Pass |
 | Astronomy data validation | `npm run data:validate` | Pass (22 warnings: the contested planets this edition keeps) |
-| Unit tests | `npm test` | Pass: 886 tests in 56 files |
+| Unit tests | `npm test` | Pass: 899 tests in 57 files |
 | Production build | `npm run build` | Pass |
-| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 721 KB of 800 (gzipped) |
-| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 46 passed (5 touch-only tests skipped) |
-| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 46 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
-| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 432 screenshots, no audit findings |
+| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 736 KB of 800 (gzipped) |
+| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 47 passed (5 touch-only tests skipped) |
+| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 47 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
+| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 486 screenshots, no audit findings |
 
 ### Unit tests (Vitest)
 
@@ -583,6 +583,24 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   an Authority station, a Lane Officer is cleared in (Dock offered, traffic control on the radio) and
   an unranked pilot is not.
 
+- `racing.test.ts`: **races on the lanes**. The guardrails pass (the rules, the words and club names,
+  sixteen clubs in well-policed space, every course clear and flown in each class's fastest and
+  slowest hull inside the cutoff, the slowest also at the lowest skill with touch's reach of stick,
+  never near a surface; sampled heats where nobody beats the record and the levels win and place as
+  meant), and broken rules are caught (gates too narrow, a purse over the ceiling, a fee too small, a
+  heat too short, a record no better than the racers). Clubs and courses are the same every time,
+  Halcyon Ring's a novice club round the Moon, clear at twenty dates. A gate counts only crossed the
+  right way inside it, a near miss is a miss, a fast step is caught. Fields are the same every time,
+  rivals race in their own ship's class and never when out for the pilot; par comes with a split at
+  every gate. One heat flown in frames of 1/144 s, 1/24 s, irregular ones and 0.8 s comes out to the
+  same times, and the times worked out early from where the racers are come true; a start from over
+  the line is a false start. Entries are locked before the opening is done, with fines, wary standing
+  or no money for the fee; the fee is charged, a heat late in its half hour is the next one, and an
+  unstarted entry lapses. A finish is placed, paid, recorded and rated (Rookie), the record purse
+  paid once, the News and both milestones follow; a retire counts a run. The save keeps it all and
+  refuses a damaged log. In a real flight: Start offered in the box, the countdown, cruise and the
+  autopilot sealed, and Retire offered when held still.
+
 ### Browser tests (Playwright)
 
 - `journey.spec.ts`: **the nine-step journey from the spec** on desktop and on touch.
@@ -752,6 +770,15 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   shipyard's note takes 4% off; more standing and a harder record make a Lane Officer at Deimos
   Depot; standing let slip, the rank falls a step at the next dock; and the Wake gives a Cold Hand's
   rank at a den.
+- `racing.spec.ts`: **races on the lanes**: at Halcyon Ring's club the Races window shows the light
+  class's field of five, the pilot's par and the record; the Moon Loop is entered for its fee; after
+  launching, the race strip says to go to the start; in the start box *Start* is on the action and
+  starts the countdown (on touch the cruise button is sealed); once the leading racer is two gates
+  on, every racer's finish is worked out ahead; the start line, then a gate out of order that does not
+  count, then each gate in order finish ahead of them all and of the record; the card says the heat is
+  won, with the record purse and the rating's points, and the prize and purse are paid; the racers
+  then really finish, each within two thousandths of a second of the time worked out; and docked
+  again, the journal shows the racing record and the Racing rating risen.
 - `wrecks.spec.ts`: **wrecks to fly to** (hails and scan finds turned on for this test): a wreck
   beacon's hail answered and marked, the HUD objective naming it; from 900 m, *Scan* on the action
   button, the log's card (paused, with the Fiction line) holding a lead, followed; flown in close,
@@ -800,7 +827,9 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   their dialog, a wreck marked in flight and targeted, its log's card with a lead and its choices,
   an old derelict's card once boarded, the journal's wrecks and trails, a promotion's card, the
   journal's ranks, a commission on a board, the yard's discount with the rank on the deck, the
-  News telling a promotion, and the News with a shortage's relief
+  News telling a promotion, a racing club's window, the start box with the racers on the line, a race
+  under way with its strip, a race's result card, the record board, the journal's four ratings, and
+  the News with a shortage's relief
   haulers on their way, at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
   zoom). Saved in `docs/screenshots/` once any smooth scrolling has come to rest. Each is audited

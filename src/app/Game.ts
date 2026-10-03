@@ -48,7 +48,7 @@ import type { SystemId } from '../data/types.ts';
 import { addCargo, cargoUsed, itemsThatFit } from '../economy/cargo.ts';
 import { COMMODITIES } from '../economy/commodities.ts';
 import { getCatalog, shipModel } from '../content/catalog.ts';
-import { hashString } from '../content/random.ts';
+import { hashString, rng } from '../content/random.ts';
 import { cargoCapacity, newShipState, performanceOf } from '../economy/loadout.ts';
 import { carriesPassengers, frighten, passengerFright, passengerGoodbye, passengerJobs, seeSight, sightseersArrive, sightsIn } from '../economy/passengers.ts';
 import { claimFor, holdsOf, metRival, nextRun, rivalById, rivalDestroyed, rivalHello, rivalKnockedOut, rivalName, rivalShot, rivalWhere, shift, standingWith, turnOf } from '../economy/rivals.ts';
@@ -141,6 +141,12 @@ import type { SaveManager } from './save/SaveManager.ts';
 import { applyDocumentSettings, type Settings } from './settings.ts';
 import { Soundscape } from './soundscape.ts';
 import { applyCredits, createNewGame, markVisited, type GameState } from './state.ts';
+import { CLASS_NAMES, RACE_LINES, RIVAL_START } from '../content/racing/lines.ts';
+import { RACING } from '../content/racing/rules.ts';
+import { WORLD_SEED } from '../content/world/rules.ts';
+import { classPar, clubRecord, venues, courseById, courseKey, courseName, endEntry, finishRace, gridOf, heatStart, lineUp, ownParRun, raceClass, racingLog, settleRacing, type RaceCard, type Standing } from '../economy/racing.ts';
+import { showRaceResult } from '../ui/racing.ts';
+import type { RaceEvent, RaceSetup } from '../world/RaceRun.ts';
 
 type Mode = 'loading' | 'title' | 'docked' | 'flight' | 'map' | 'jump';
 
@@ -1291,6 +1297,7 @@ export class Game {
           this.sfx('ui-confirm');
           toast(`The ${haul.name} got away: its owners send ${formatCredits(paid)} for the escort.`, 'good', 5000);
         },
+        onRace: (e) => this.onRace(e),
         onMessage: (text, tone) => toast(text, tone, 2600),
       },
       traffic: this.trafficHere(),
@@ -1326,6 +1333,7 @@ export class Game {
     const ambush = ambushIn(state, here);
     const duel = duelIn(state, here);
     const outpost = this.outpostHere();
+    const race = this.raceHere();
     return {
       ...base,
       plan: downDens.length ? { ...base.plan, packs: null } : base.plan,
@@ -1345,7 +1353,100 @@ export class Game {
       ...(ambush ? { rivalAmbush: { rivalId: ambush.rival.id, delay: ambush.delay, guns: ambush.guns, withRival: ambush.withRival, level: ambush.level } } : {}),
       ...(duel ? { duel: { jobId: duel.jobId, rivalId: duel.rival.id, started: duel.started } } : {}),
       ...(outpost ? { outpost } : {}),
+      ...(race ? { race } : {}),
     };
+  }
+
+  /**
+   * A race entered in this system (docs/PROCGEN.md §33): its course, heat and field, the pilot's par
+   * and best. An entry for the other class of hull lapses here.
+   */
+  private raceHere(): RaceSetup | null {
+    const state = this.state!;
+    const e = racingLog(state)?.entry;
+    const found = e ? courseById(e.course) : undefined;
+    if (!e || !found || found.venue.systemId !== state.location.systemId) return null;
+    if (raceClass(state.ship.model) !== e.cls) {
+      endEntry(state, 'voided');
+      toast(RACE_LINES.voided.replace('{class}', CLASS_NAMES[e.cls].toLowerCase()), 'bad', 6000);
+      this.persist();
+      return null;
+    }
+    const racers = lineUp(state, e.course, e.cls, e.heat);
+    const par = ownParRun(found.line, state.ship);
+    return {
+      courseId: e.course,
+      name: courseName(found.line),
+      club: found.venue.club,
+      cls: e.cls,
+      opens: heatStart(e.heat),
+      closes: heatStart(e.heat + 1),
+      racers,
+      grid: gridOf(racers),
+      par,
+      best: racingLog(state)?.courses[courseKey(e.course, e.cls)]?.best?.raw ?? null,
+      cutoff: RACING.cutoff * classPar(found.line, e.cls),
+    };
+  }
+
+  /** What happens in a race: the marshal's countdown, the rivals' words at the start, gates missed, the finish and its card. */
+  private onRace(e: RaceEvent): void {
+    const state = this.state!;
+    const winner = (field: readonly Standing[]) => [...field].filter((f) => f.time !== null).sort((a, b) => a.time! - b.time!)[0]?.id;
+    switch (e.kind) {
+      case 'count':
+        if (e.n === RACING.start.countdown) this.comm(RACE_LINES.marshal, RACE_LINES.marshalStart, 2500);
+        this.sfx('ui-click');
+        break;
+      case 'go': {
+        this.sfx('ui-confirm');
+        const entry = racingLog(state)?.entry;
+        if (entry) {
+          for (const r of lineUp(state, entry.course, entry.cls, entry.heat)) {
+            const rival = r.rival ? rivalById(r.rival) : undefined;
+            if (rival) this.comm(rivalName(rival), rng(WORLD_SEED, 'race-start', r.rival!, entry.heat).pick(RIVAL_START[rival.voice]), 4000);
+          }
+        }
+        break;
+      }
+      case 'false-start':
+        toast(RACE_LINES.falseStart, 'bad', 3500);
+        this.sfx('ui-error');
+        break;
+      case 'gate':
+        this.sfx('ui-click');
+        break;
+      case 'missed':
+        toast(RACE_LINES.missed.replace('{n}', String(e.n)), 'bad', 3000);
+        break;
+      case 'finish': {
+        const card = finishRace(state, e.raw, e.field);
+        this.persist();
+        if (!card) break;
+        this.sfx(card.place === 1 ? 'mission-complete' : 'ui-confirm');
+        void this.openRaceCard(card);
+        break;
+      }
+      case 'cut':
+      case 'retired':
+      case 'lost': {
+        const r = endEntry(state, e.kind, winner(e.field), e.field.length + 1);
+        if (r) toast(e.kind === 'cut' ? RACE_LINES.cutoff : RACE_LINES.retired, 'info', 4000);
+        this.persist();
+        break;
+      }
+      case 'lapsed':
+        if (endEntry(state, 'lapsed')) toast(RACE_LINES.lapsed, 'info', 5000);
+        this.persist();
+        break;
+    }
+  }
+
+  /** The result card: the game waits while it is open. */
+  private async openRaceCard(card: RaceCard): Promise<void> {
+    this.setPaused(true, false);
+    await showRaceResult(card);
+    this.setPaused(false);
   }
 
   /** The player's outpost in this system, as the flight scene needs it (docs/PROCGEN.md §29): turrets up, guards on post, a raid due. */
@@ -1433,6 +1534,7 @@ export class Game {
       if (scan.found.length || tipped) toast(`${tipped}${scan.text}`, scan.found.length ? 'bad' : 'info', 6000);
     }
     const out = dockAt(state, locationId);
+    if (settleRacing(state, false)) toast(RACE_LINES.lapsed, 'info', 5000);
     this.persist();
     if (dockAccess(state, locationId) === 'emergency') {
       const faction = getLocation(locationId).factionId!;
@@ -1839,6 +1941,8 @@ export class Game {
       toast(readiness.reason ?? 'Cannot jump right now.', 'bad');
       return;
     }
+    // Jumping out of a race under way retires from it (docs/PROCGEN.md §33.4).
+    if (this.flight?.raceUnderWay && endEntry(state, 'retired')) toast(RACE_LINES.retired, 'info', 4000);
     this.map?.close();
     this.mode = 'jump';
     this.refreshFlightUi();
@@ -2232,6 +2336,11 @@ export class Game {
       // Sites elsewhere whose time ran out (never one in this system while the pilot flies here).
       const sites = settleSites(state, state.location.systemId);
       if (sites.notes.length || sites.jobs.length) this.announceSite(sites);
+      // An entry whose heat closed before a start lapses (one staged in this flight says so itself).
+      if (!flight.raceStaged && settleRacing(state, false)) {
+        toast(RACE_LINES.lapsed, 'info', 5000);
+        this.persist();
+      }
       this.watchSky(state);
     }
     this.objectiveTimer -= dt;
@@ -2264,7 +2373,7 @@ export class Game {
     if (this.touch.visible) {
       const ctx = hudModel.context;
       this.touch.setContextAction(ctx?.label ?? null, ctx?.action ?? null, ctx?.icon);
-      this.touch.setCruiseState(hudModel.cruise);
+      this.touch.setCruiseState(hudModel.race?.sealedCruise ? 'sealed' : hudModel.cruise);
       this.touch.setCounts(hudModel.missiles, hudModel.repairKits, hudModel.decoys);
       this.touch.setWing(hudModel.wing);
       this.touch.setThrottle(hudModel.throttle);
@@ -2396,6 +2505,22 @@ export class Game {
         return null;
       },
       den: () => ALL_LOCATIONS.find((l) => l.stationType === 'pirate-den' && l.status === 'functional')?.id ?? null,
+      /** Test-only: a racing club (docs/PROCGEN.md §33), in a system or at a level, and its courses. */
+      findRaceVenue: (arg: { system?: string; level?: number } = {}) => {
+        const v = venues().find((x) => (!arg.system || x.systemId === arg.system) && (!arg.level || x.level === arg.level));
+        return v ? { locationId: v.locationId, systemId: v.systemId, level: v.level, club: v.club, sprint: v.courses.sprint.id, run: v.courses.run.id } : null;
+      },
+      /** Test-only: the racing log, and the race staged in this flight. */
+      race: () => {
+        const state = this.state;
+        if (!state) return null;
+        const e = racingLog(state)?.entry;
+        return { log: racingLog(state) ?? null, status: this.flight?.raceStatus() ?? null, record: e ? (clubRecord(e.course, e.cls)?.time ?? null) : null };
+      },
+      /** Test-only: every racer's final time, flown on ahead from where they are now. */
+      raceField: () => this.flight?.raceField() ?? [],
+      /** Test-only: the ship in the start box (gate -1), or just short of a gate with the race clock at `at`. */
+      raceAt: (arg: { gate: number; at?: number }) => this.flight?.raceAt(arg.gate, arg.at) ?? false,
       /** Test-only: set standing with a faction (the law and the outlaw path). */
       setReputation: (faction: 'sta' | 'frontier' | 'hollow-wake', value: number) => {
         if (!this.state) return;

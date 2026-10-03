@@ -32,6 +32,18 @@ export interface HudStatus {
   wanted?: string | null;
 }
 
+/** A race clock: "1:23.4". */
+function raceClock(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const rest = seconds - m * 60;
+  return `${m}:${rest < 10 ? '0' : ''}${rest.toFixed(1)}`;
+}
+
+function ordinal(n: number): string {
+  const s = n % 100 >= 11 && n % 100 <= 13 ? 'th' : (['th', 'st', 'nd', 'rd'][n % 10] ?? 'th');
+  return `${n}${s}`;
+}
+
 function setText(el: HTMLElement, text: string): void {
   if (el.textContent !== text) el.textContent = text;
 }
@@ -73,6 +85,7 @@ const TARGET_GLYPH: Record<TargetKind, GlyphName> = {
   sky: 'scanner',
   hole: 'scanner',
   wreck: 'salvage',
+  gate: 'thruster',
 };
 
 /** The Mine key (docs/PROCGEN.md §19); on a pad Mine is the context action. */
@@ -108,6 +121,14 @@ export class Hud {
   private readonly wantedText: HTMLElement;
   private readonly objectiveText: HTMLElement;
   private readonly objectivePanel: HTMLElement;
+  /** A race under way (docs/PROCGEN.md §33.4): in the objective panel's place. */
+  private readonly racePanel: HTMLElement;
+  private readonly raceName: HTMLElement;
+  private readonly raceGate: HTMLElement;
+  private readonly raceTime: HTMLElement;
+  private readonly raceSplit: HTMLElement;
+  private readonly racePlace: HTMLElement;
+  private readonly raceCount: HTMLElement;
   private readonly autopilotText: HTMLElement;
   private readonly warningText: HTMLElement;
   private readonly targetPanel: HTMLElement;
@@ -243,6 +264,19 @@ export class Hud {
       icon('objective'),
       this.objectiveText,
     );
+    this.raceName = h('span', { class: 'race-name' });
+    this.raceGate = h('span', { class: 'race-gate', 'data-testid': 'hud-race-gate' });
+    this.raceTime = h('span', { class: 'race-time', 'data-testid': 'hud-race-time' });
+    this.raceSplit = h('span', { class: 'race-split', 'data-testid': 'hud-race-split' });
+    this.racePlace = h('span', { class: 'race-place', 'data-testid': 'hud-race-place' });
+    this.raceCount = h('span', { class: 'race-count', 'data-testid': 'hud-race-count', 'aria-live': 'assertive' });
+    this.racePanel = h(
+      'div',
+      { class: 'hud-panel frame frame-sm hud-race', 'data-testid': 'hud-race', hidden: true },
+      icon('objective'),
+      h('span', { class: 'race-line' }, this.raceName, this.raceGate, this.raceTime, this.raceSplit, this.racePlace),
+      this.raceCount,
+    );
     this.autopilotText = h('div', { class: 'hud-autopilot', 'aria-live': 'polite' });
     this.miningText = h('div', { class: 'hud-mining', 'data-testid': 'hud-mining', hidden: true });
     this.warningText = h('div', { class: 'hud-warning', role: 'alert' });
@@ -345,7 +379,7 @@ export class Hud {
     this.root.classList.toggle('touch-mode', !full);
     if (full) {
       this.left.replaceChildren(this.wallet, this.scaleText);
-      this.centerColumn.replaceChildren(this.commandRail, this.objectivePanel, this.autopilotText, this.miningText, this.warningText, this.encounterBanner, this.hailBanner);
+      this.centerColumn.replaceChildren(this.commandRail, this.objectivePanel, this.racePanel, this.autopilotText, this.miningText, this.warningText, this.encounterBanner, this.hailBanner);
       this.right.replaceChildren(this.buttons);
       this.bottomLeft.replaceChildren(this.targetPanel);
       this.bottomCenter.replaceChildren(this.contextHint, this.status);
@@ -354,7 +388,7 @@ export class Hud {
       // Touch: the target panel and toasts stack in the centre column under the objective and
       // any alert (never on top of them).
       this.left.replaceChildren(this.status);
-      this.centerColumn.replaceChildren(this.objectivePanel, this.autopilotText, this.miningText, this.warningText, this.encounterBanner, this.hailBanner, this.targetPanel, this.toastSlot);
+      this.centerColumn.replaceChildren(this.objectivePanel, this.racePanel, this.autopilotText, this.miningText, this.warningText, this.encounterBanner, this.hailBanner, this.targetPanel, this.toastSlot);
       this.right.replaceChildren(this.buttons, this.wallet);
       this.bottomLeft.replaceChildren();
       this.bottomCenter.replaceChildren(this.contextHint);
@@ -426,8 +460,9 @@ export class Hud {
     );
     setText(this.scaleText, status.scaleNote);
     this.updateHail(model);
-    this.objectivePanel.hidden = !status.objective;
+    this.objectivePanel.hidden = !status.objective || !!model.race;
     if (status.objective) setText(this.objectiveText, status.objective);
+    this.updateRace(model);
     this.objectivePanel.setAttribute('aria-expanded', String(!this.objectivePanel.classList.contains('collapsed')));
     setText(this.autopilotText, model.autopilot ?? '');
     setText(this.warningText, model.warnings.join(' · '));
@@ -488,6 +523,22 @@ export class Hud {
     this.lockText.className = `lock-text ${model.missileLock}`;
     setText(this.lockText, model.missileLock === 'locked' ? `LOCK · ${(model.launcher ?? 'missiles').toUpperCase()} ${model.missiles}` : 'Locking…');
     this.lockText.style.transform = this.reticle.style.transform;
+  }
+
+  /** The race strip: the course, gates passed, the clock, the split against the pilot's best or par, the place on the road. */
+  private updateRace(model: HudModel): void {
+    const r = model.race;
+    this.racePanel.hidden = !r;
+    if (!r) return;
+    const running = r.phase === 'on';
+    setText(this.raceName, r.name);
+    setText(this.raceGate, running ? `Gate ${r.gate}/${r.gates}` : r.phase === 'countdown' ? 'Starting' : r.phase === 'ready' ? 'Press Start' : r.phase === 'wait' ? 'Heat opens soon' : 'To the start');
+    setText(this.raceTime, running ? raceClock(r.time) : '');
+    setText(this.raceSplit, running && r.split !== null ? `${r.split < 0 ? '−' : '+'}${Math.abs(r.split).toFixed(2)} ${r.split < 0 ? 'ahead' : 'behind'}` : '');
+    this.raceSplit.dataset.ahead = String((r.split ?? 0) < 0);
+    setText(this.racePlace, running ? `${ordinal(r.place)} of ${r.of}` : '');
+    setText(this.raceCount, r.count ?? '');
+    this.raceCount.hidden = !r.count;
   }
 
   private updateTarget(model: HudModel): void {

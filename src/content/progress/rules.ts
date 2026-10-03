@@ -3,9 +3,13 @@
  * what research stations pay for a completed survey. The names are invented for this game.
  */
 
-export type RatingKind = 'combat' | 'trade' | 'exploration';
+export type RatingKind = 'combat' | 'trade' | 'exploration' | 'racing';
 
-/** Rank names and the score each needs (combat: raiders and hunters destroyed; trade: contract pay plus a quarter of sales; exploration: three per system visited plus one per body catalogued). */
+/**
+ * Rank names and the score each needs (combat: raiders and hunters destroyed; trade: contract pay plus a
+ * quarter of sales; exploration: three per system visited plus one per body catalogued; racing: points
+ * for heats finished, podiums, wins and course records, times the club's level: docs/PROCGEN.md §33.9).
+ */
 export const RATINGS: Record<RatingKind, { label: string; ranks: readonly (readonly [string, number])[] }> = {
   combat: {
     label: 'Combat',
@@ -39,6 +43,17 @@ export const RATINGS: Record<RatingKind, { label: string; ranks: readonly (reado
       ['Pathfinder', 60],
       ['Surveyor', 100],
       ['Cartographer', 150],
+    ],
+  },
+  racing: {
+    label: 'Racing',
+    ranks: [
+      ['Onlooker', 0],
+      ['Rookie', 10],
+      ['Contender', 40],
+      ['Pacesetter', 120],
+      ['Laureate', 250],
+      ['Champion', 450],
     ],
   },
 };
@@ -93,7 +108,9 @@ export type MilestoneId =
   | 'story-frontier'
   | 'story-wake'
   | 'story-border'
-  | 'story-harvest';
+  | 'story-harvest'
+  | 'race-won'
+  | 'course-record';
 
 export const MILESTONES: readonly { id: MilestoneId; title: string }[] = [
   { id: 'first-contract', title: 'First contract completed' },
@@ -120,4 +137,6 @@ export const MILESTONES: readonly { id: MilestoneId; title: string }[] = [
   { id: 'story-wake', title: 'Salt’s Crew: the Hollow Wake’s story finished' },
   { id: 'story-border', title: 'The Long Border: the Ross 154 line settled' },
   { id: 'story-harvest', title: 'First Harvest: Harrow Farmstead’s harvest brought in' },
+  { id: 'race-won', title: 'First heat won' },
+  { id: 'course-record', title: 'A course record set' },
 ];

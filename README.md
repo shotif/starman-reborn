@@ -74,6 +74,9 @@ hold a lead into a short trail across a few systems: a lost crew, a strongbox, a
 Stand well with a faction and build a record, and it gives you a rank: the Transit Authority's,
 the Frontier Co-op's, or the Hollow Wake's for outlaws. A rank opens doors: commissions for their
 own, discounts at their yards, docks that clear you in under fire, and your name in the News.
+Race at the clubs in well-policed space: a Sprint round a real planet, moon or star, or a Run between
+docks, against club racers and rival pilots who really fly the gates beside you, in a light or heavy
+class of hull, for a purse, a course record and a Racing rating of your own.
 Ships, equipment, the world, the economy, events, contracts and the law are generated from rule
 files and checked by automated guardrails ([docs/PROCGEN.md](docs/PROCGEN.md)).
 
@@ -204,7 +207,8 @@ src/galaxy/    neighbourhood star map (3D + 2D fallback), routing, info cards
 src/flight/    ship dynamics, chase camera, autopilot, desktop, touch and gamepad input
 src/combat/    guns, projectiles, missiles, lead/intercept, damage, raider AI
 src/world/     local system scenes (hand-made and generated), flight session, traffic and raider
-               packs (src/world/traffic), procedural art (src/world/art)
+               packs (src/world/traffic), race courses and the racing pilot, procedural art
+               (src/world/art)
 src/content/   rule-driven generators and guardrails (docs/PROCGEN.md): ships and equipment,
                the world (src/content/world: lanes, territory, stations) and the economy
                (src/content/economy: goods, market profiles), contract rules (src/content/contracts),
@@ -213,13 +217,13 @@ src/content/   rule-driven generators and guardrails (docs/PROCGEN.md): ships an
                (src/content/dens), combat depth (src/content/combat), people in the bars
                (src/content/people), the fleet (src/content/fleet), mining (src/content/mining),
                the border war (src/content/border), stellar death (src/content/stellar), lane
-               encounters (src/content/lanes), wrecks to fly to (src/content/wrecks) and ranks
-               (src/content/ranks)
+               encounters (src/content/lanes), wrecks to fly to (src/content/wrecks), ranks
+               (src/content/ranks) and races (src/content/racing)
 src/economy/   live markets, world events and the world's answers, trade, cargo, outfitter and
                shipyard, factions, jobs and generated contracts, the law, ratings, the codex,
                milestones, the story, people and rumours, the fleet, mining, the border war,
-               the far stars' deaths and Pyre's (the invented star), lane encounters, wrecks
-               and ranks
+               the far stars' deaths and Pyre's (the invented star), lane encounters, wrecks,
+               ranks and racing
 src/audio/     procedural Web Audio music and sound effects
 src/ui/        HUD, touch controls, station screens, encyclopedia, styles
 scripts/       the sky snapshot (sky-fetch on GitHub's runners, sky-process here), catalogue

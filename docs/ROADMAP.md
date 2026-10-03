@@ -9,8 +9,8 @@ After the scripted opening (10–20 minutes), the neighbourhood is an open sandb
 systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
 of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
 packs in lawless space; 39 ships and 146 pieces of equipment; and generated contracts on every job
-board. Increments 1–31 (under [Done so far](#done-so-far)) added world events and news, contracts
-of every kind, the law and the outlaw path, goals, ranks with each faction that open doors, five story arcs, combat depth, people in the
+board. Increments 1–32 (under [Done so far](#done-so-far)) added world events and news, contracts
+of every kind, the law and the outlaw path, goals, ranks with each faction that open doors, races round real planets and moons against racers who really fly, five story arcs, combat depth, people in the
 bars and a trade computer, a world that answers, gluts that ship their surplus out and relief to
 escort through raided lanes, a fleet of your own whose captains fly the lanes, a crew aboard your own ship,
 a station of your own to build and defend, passengers and sightseers, rival pilots with careers and stories of their own, a
@@ -28,14 +28,8 @@ What it lacks now:
 
 ## Proposed next increments
 
-Candidates for what comes next, in the order they will be built, chosen by the owner on 2 October
-2026 once Lane encounters, Rival stories, Defend your outpost and Your crew were done.
-
-### Races on the lanes ⏳ (M)
-
-Timed runs between stations and round real planets and moons, with rival pilots racing too, prizes,
-and a record board in the save: something that asks for flying skill, which the trading loop
-rarely does.
+Candidates for what comes next, chosen by the owner on 2 October 2026 once Lane encounters, Rival
+stories, Defend your outpost and Your crew were done.
 
 ### Wing command ⏳ (M)
 
@@ -51,6 +45,19 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 32. Races on the lanes ✅
+
+Sixteen racing clubs in well-policed space hold a Sprint round a real planet, moon or star (Halcyon
+Ring's is the Moon Loop) and a Run between docks, a heat every half hour. Enter at the bar, fly to the
+start box and press Start: four or five racers line up beside you, club members and any rival pilot
+docked in the system, and really fly the gates, boosting, cruising on a Run and now and then slipping,
+on a clock of their own so a heat comes out the same on any device. Pass the gates in order (a miss
+means turning back), with guns, the autopilot and docking sealed, cruise too on a Sprint. Hulls race in
+two classes, light and heavy, on raw time; clubs come at three levels; the purse is kept below what
+trading pays, beating a course record pays once more, and a fourth rating, Racing, rises with every
+finish, podium, win and record. The record board, the journal and the News keep it
+([PROCGEN.md §33](PROCGEN.md#33-races-on-the-lanes)).
 
 ### 31. Ranks that open doors ✅
 

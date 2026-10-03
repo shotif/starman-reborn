@@ -17,6 +17,8 @@ import { ROSTER } from '../../content/rivals/rules.ts';
 import { CREW, CREW_DEEDS, CREW_HEARTS, CREW_ROLES, type CrewDeed } from '../../content/crew/rules.ts';
 import { SITE_KINDS, WRECKS } from '../../content/wrecks/rules.ts';
 import { RANKS } from '../../content/ranks/rules.ts';
+import { RACE_CLASSES, RACING } from '../../content/racing/rules.ts';
+import { courseById, heatOf, type RaceEnd, type RacingLog } from '../../economy/racing.ts';
 import { MYSTERY_IDS, type MysteryId } from '../../content/wrecks/mysteries.ts';
 import { outpostId, outpostSite } from '../../content/outposts/sites.ts';
 import { createNewGame, SAVE_VERSION, type CommodityId, type CrewLog, type GameState, type OutpostDefence, type OutpostRecord, type RivalStory, type WreckLog } from '../state.ts';
@@ -58,7 +60,9 @@ import { createNewGame, SAVE_VERSION, type CommodityId, type CrewLog, type GameS
  *   v10 saves; `aboard`, the crew aboard and who left (§30), and a contract's `crew`, absent in
  *   older v10 saves; the world log's `wrecks` (sites marked in flight and the trails they led to,
  *   §31), absent in older v10 saves; `ranks`, the rank given or fallen to with each faction, and a
- *   commission's `requires.rank` (§32), absent in older v10 saves. See GameState in src/app/state.ts.
+ *   commission's `requires.rank` (§32), absent in older v10 saves; the world log's `racing` (an entry
+ *   open, the pilot's results and bests by course and class, §33), absent in older v10 saves. See
+ *   GameState in src/app/state.ts.
  */
 export interface SaveV1 {
   version: 1;
@@ -179,6 +183,45 @@ function assertValidWrecks(log: WreckLog, fail: (msg: string) => never): void {
       if (r!.choice !== undefined && !(m === 'strongbox' && (r!.choice === 'insurer' || r!.choice === 'fence'))) fail(`trail ${m}`);
       if (r!.ended !== undefined && !(isRecord(r!.ended) && Number.isFinite(r!.ended.at) && MYSTERY_ENDS.includes(r!.ended.how))) fail(`trail ${m}`);
     }
+  }
+}
+
+const RACE_ENDS: readonly RaceEnd[] = ['retired', 'cut', 'lost', 'lapsed', 'voided'];
+
+/**
+ * The pilot's racing (docs/PROCGEN.md §33): an entry for a real course in a class, never for a heat
+ * already raced; counts that add up; times a ship could fly; no more results than are kept, one a heat.
+ */
+function assertValidRacing(log: RacingLog, clock: number, fail: (msg: string) => never): void {
+  const now = heatOf(clock) + 1;
+  const heat = (h: unknown) => Number.isInteger(h) && (h as number) >= 0 && (h as number) <= now;
+  const when = (t: unknown) => Number.isFinite(t) && (t as number) >= 0 && (t as number) <= clock + 1;
+  const plausible = (course: string, t: unknown) => {
+    const line = courseById(course)?.line;
+    return !!line && Number.isFinite(t) && (t as number) >= line.length / 900 && (t as number) <= (RACING.cutoff * line.length) / 50;
+  };
+  const top = RACING.pay.purse.run + RACING.pay.record;
+  if (!isRecord(log) || !isRecord(log.courses) || !Array.isArray(log.results) || log.results.length > RACING.keep.results) fail('racing');
+  const e = log.entry;
+  if (e !== undefined && !(isRecord(e) && !!courseById(e.course) && RACE_CLASSES.includes(e.cls) && heat(e.heat) && when(e.at) && Number.isFinite(e.fee) && e.fee >= 0 && e.fee <= RACING.pay.fee.run)) fail('racing entry');
+  if (log.ran !== undefined && !heat(log.ran)) fail('racing');
+  if (e && log.ran !== undefined && e.heat <= log.ran) fail('racing entry');
+  for (const [key, c] of Object.entries(log.courses)) {
+    const m = /^(.+)\.(light|heavy)$/.exec(key);
+    const course = m?.[1] ?? '';
+    const n = (v: unknown) => Number.isInteger(v) && (v as number) >= 0;
+    if (!m || !courseById(course) || !isRecord(c) || !n(c.runs) || !n(c.finished) || !n(c.podiums) || !n(c.wins) || !(c.wins <= c.podiums && c.podiums <= c.finished && c.finished <= c.runs)) fail(`race ${key}`);
+    if (c.best !== undefined && !(isRecord(c.best) && plausible(course, c.best.raw) && !!findShip(c.best.ship) && when(c.best.at) && c.finished > 0)) fail(`race ${key}`);
+    if (c.record !== undefined && !(when(c.record) && c.best)) fail(`race ${key}`);
+  }
+  const heats = new Set<number>();
+  for (const r of log.results) {
+    if (!isRecord(r) || !courseById(r.course) || !RACE_CLASSES.includes(r.cls) || !heat(r.heat) || !when(r.at) || heats.has(r.heat)) fail('race result');
+    heats.add(r.heat);
+    if (!(Number.isInteger(r.of) && r.of >= 0 && r.of <= RACING.field.size + 1 && Number.isInteger(r.place) && r.place >= 0 && r.place <= r.of)) fail('race result');
+    if (!(Number.isFinite(r.prize) && r.prize >= 0 && r.prize <= top)) fail('race result');
+    if (r.raw !== undefined && !plausible(r.course, r.raw)) fail('race result');
+    if ((r.place > 0) !== (r.raw !== undefined) || (r.how !== undefined && (!RACE_ENDS.includes(r.how) || r.place > 0)) || (r.first !== undefined && typeof r.first !== 'string')) fail('race result');
   }
 }
 
@@ -521,6 +564,7 @@ export function assertValidState(s: GameState): void {
     }
   }
   if (w.wrecks !== undefined) assertValidWrecks(w.wrecks, fail);
+  if (w.racing !== undefined) assertValidRacing(w.racing, s.clock, fail);
   // A job on its way to a site steers by a site the log holds.
   for (const [id, p] of Object.entries(s.jobs)) {
     const o = isRecord(p) && p.status === 'active' ? s.contracts[id]?.objectives[p.objectiveIndex] : undefined;

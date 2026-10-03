@@ -182,7 +182,8 @@ snapshot branch only when the archives changed.
   raiders, aces and bounty hunters) are the only missiles fired at the player, and decoy flares
   the only countermeasure.
 - Ratings change the world through the factions' ranks (PROCGEN §32) and the combat rank that ace
-  hunts and den assaults ask for; milestones are a record, with one grant (the whole codex).
+  hunts and den assaults ask for (Racing, §33.6, opens nothing yet); milestones are a record, with one
+  grant (the whole codex).
 - Ranks (PROCGEN §32) are three a faction. They open no ships or gear of their own, and commissions
   are the boards' usual kinds of work at better pay; the people in the bars do not speak of ranks, and
   What next does not point at one within reach. The Wake's outpost perk matters only to a pilot with
@@ -190,6 +191,14 @@ snapshot branch only when the archives changed.
   the next dock (or the next contract accepted there). The what-next hint suggests one
   thing at a time and only from places already visited: it never compares ships or equipment
   across the whole sky, and suggests no weapons or shields.
+- Races (PROCGEN §33): the racers cannot see or touch the pilot or each other, and steer round no
+  traffic; only the pilot's own heats are run, so the News and the board tell nothing of heats the
+  pilot did not race, and the record is the club's worked-out best, not a time anyone flew. Times are
+  the same on every device and frame rate, though two browsers' maths may differ in the last few
+  thousandths of a second. There are no outlaw races in lawless space and no wagers; classes go by
+  hull, so fittings count in full; Epsilon Eridani and Luyten's Star have no club. A race under way is
+  not saved: loading a save made mid-race puts the pilot back before the start. The factions' ranks do
+  not ask for the Racing rating yet.
 - Generated stations have generated exteriors and interiors (twelve kinds in four owner
   palettes).
 - Damage to systems is modelled for the player only (other ships just lose shield and hull); no

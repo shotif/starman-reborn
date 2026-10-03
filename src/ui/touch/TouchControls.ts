@@ -201,8 +201,11 @@ export class TouchControls {
     }
   }
 
-  setCruiseState(state: 'off' | 'charging' | 'on'): void {
+  /** `sealed`: a Sprint under way allows no cruise (docs/PROCGEN.md §33.4). */
+  setCruiseState(state: 'off' | 'charging' | 'on' | 'sealed'): void {
+    if (this.cruiseBtn.dataset.state === state) return;
     this.cruiseBtn.dataset.state = state;
+    this.cruiseBtn.setAttribute('aria-disabled', String(state === 'sealed'));
   }
 
   /** Shows the wing's order chip while a wing flies with the player. */

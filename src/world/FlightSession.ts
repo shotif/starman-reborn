@@ -86,6 +86,10 @@ import { POD_NAMES, POD_SUBTITLE, SITE_NAMES, SITE_NOTES, SITE_SUBTITLES } from 
 import type { SiteSetup } from '../economy/wrecks.ts';
 import { placeSite, podOffset } from './sites.ts';
 import { coveredAt, coverLine } from '../economy/ranks.ts';
+import { RACE_LINES } from '../content/racing/lines.ts';
+import { courseById } from '../economy/racing.ts';
+import { bodyPosition } from './courses.ts';
+import { RaceRun, type RaceEvent, type RaceSetup } from './RaceRun.ts';
 import type { StationOwner } from '../content/world/types.ts';
 import type { ArtContext, ArtObject } from './art/types.ts';
 import { seededRandom } from './art/util.ts';
@@ -158,6 +162,8 @@ export interface FlightCallbacks {
    * by); its guards are all down; or the ship in distress was destroyed before it was reached.
    */
   onSite?(siteId: string, what: 'near' | 'pod' | 'scanned' | 'reached' | 'boarded' | 'sprung' | 'cleared' | 'lost', detail?: { index?: number; how?: 'near' | 'scan'; friend?: boolean; revealed?: boolean }): void;
+  /** A race (docs/PROCGEN.md §33): the countdown, the start, a gate, the finish, a retire or a loss; the heat closing before a start. */
+  onRace?(event: RaceEvent): void;
   /** A manual scan of a planet, star or belt (docs/PROCGEN.md §31.3): it may pick up a faint return. */
   onBodyScan?(): void;
   /** The ship of an escort contract docked at its destination. */
@@ -324,6 +330,8 @@ export interface TrafficSetup {
   outpost?: { locationId: string; stage: number; turrets: number; guards: readonly OutpostGuardSetup[]; raid?: OutpostRaidSetup };
   /** Sites the pilot has marked here (docs/PROCGEN.md §31): wrecks, derelicts, ships and pods to fly to. */
   sites?: readonly SiteSetup[];
+  /** A race the pilot has entered here (docs/PROCGEN.md §33): its course, heat and field. */
+  race?: RaceSetup;
 }
 
 /** A guard hired for the player's outpost (docs/PROCGEN.md §29): on post from `from` until `until` (the game clock). */
@@ -628,6 +636,10 @@ export class FlightSession {
   private boarding: { id: string; left: number } | null = null;
   private minerPack: number | null = null;
   private holdFullSaid = false;
+  /** A race the pilot has entered here (docs/PROCGEN.md §33), and when a sealed control was last said. */
+  private race: RaceRun | null = null;
+  private readonly sealedAt = new Map<string, number>();
+  private readonly raceFrom = new THREE.Vector3();
 
   constructor(opts: {
     system: SystemScene;
@@ -762,6 +774,27 @@ export class FlightSession {
     this.camera.add(this.streaks.object);
     if (!this.camera.parent) this.system.scene.add(this.camera);
     else if (this.camera.parent !== this.system.scene) this.system.scene.add(this.camera);
+    this.stageRace(this.traffic?.race ?? null);
+  }
+
+  /** A race entered here: its gates and racers in the scene, round its body where the scene has it. */
+  private stageRace(setup: RaceSetup | null): void {
+    const line = setup ? courseById(setup.courseId)?.line : undefined;
+    const origin = line ? bodyPosition(this.system.def, line.bodyId) : null;
+    if (!setup || !line || !origin) return;
+    const bodies = [
+      ...this.system.def.planets.map((p) => ({ centre: p.position, radius: p.radius })),
+      ...this.system.def.stars.map((st) => ({ centre: st.position, radius: st.radius * 1.3 })),
+    ];
+    this.race = new RaceRun(setup, line, origin.clone(), this.system.scene, this.ctx, bodies);
+  }
+
+  /** Under way: what a race seals, said at most every few seconds. */
+  private sealed(text: string): void {
+    if (this.time - (this.sealedAt.get(text) ?? -99) < 3) return;
+    this.sealedAt.set(text, this.time);
+    this.callbacks.onMessage(text, 'info');
+    this.sfx('ui-error');
   }
 
   // ---------------------------------------------------------------- setup
@@ -829,6 +862,8 @@ export class FlightSession {
   }
 
   private objectiveTargetId(): string | null {
+    const race = this.race?.objectiveId();
+    if (race) return race;
     const id = this.objective.targetId;
     if (id && (this.loot.some((l) => l.target.id === id) || this.mining.find(id) || this.npcs.some((n) => n.target.id === id && n.target.alive) || ((id.startsWith('star:') || id.startsWith('sky:') || id.startsWith('site:')) && this.findTarget(id)))) return id;
     if (this.objective.locationId) return `station:${this.objective.locationId}`;
@@ -885,6 +920,7 @@ export class FlightSession {
     for (const t of this.mining.targets()) if (t.alive) list.push(t);
     for (const s of this.skyStars) if (s.target.alive) list.push(s.target);
     for (const s of this.sites) if (s.target.alive && !this.npcs.some((n) => n.target === s.target)) list.push(s.target);
+    if (this.race) for (const t of this.race.targets(this.viewport.width < 600, this.player.position)) if (t.alive) list.push(t);
     return list;
   }
 
@@ -984,6 +1020,7 @@ export class FlightSession {
     for (const l of this.loot) if (l.target.id === id && l.target.alive) return l.target;
     for (const d of this.drones) if (d.target.id === id && d.target.alive) return d.target;
     for (const s of this.sites) if (s.target.id === id && s.target.alive) return s.target;
+    if (this.race) for (const t of this.race.allTargets()) if (t.id === id && t.alive) return t;
     return this.mining.find(id);
   }
 
@@ -1015,6 +1052,10 @@ export class FlightSession {
     switch (action) {
       case 'cruise':
         if (this.busy) return;
+        if (this.race?.sealedCruise && this.player.cruise === 'off') {
+          this.sealed(RACE_LINES.sealedCruise);
+          return;
+        }
         if (this.autopilot.mode === 'goto') this.autopilot = { mode: 'none' };
         if (this.player.cruise === 'off') {
           this.player.requestCruise(true);
@@ -1095,6 +1136,8 @@ export class FlightSession {
   }
 
   private objectiveTarget(): Target | null {
+    const race = this.race?.objectiveId();
+    if (race) return this.findTarget(race);
     const { locationId, bodyId, targetId } = this.objective;
     if (locationId) return this.findTarget(`station:${locationId}`);
     if (bodyId) return this.findTarget(`planet:${bodyId}`);
@@ -1127,6 +1170,7 @@ export class FlightSession {
 
   /** The dock the context action would use: the selected station if in range, else the nearest. */
   private dockCandidate(): DockSite | null {
+    if (this.race?.closed) return null;
     const sel = this.selectedTarget;
     if (sel?.kind === 'station' && sel.locationId) {
       const site = this.system.dock(sel.locationId);
@@ -1147,6 +1191,9 @@ export class FlightSession {
     // Docking or riding a lane: the action button offers to stop and fly yourself.
     if (mode === 'dock' || mode === 'lane') return { label: 'Stop', action: 'cancel-autopilot', icon: 'close' };
     if (this.busy) return null;
+    // A race (docs/PROCGEN.md §33.4): Start in the box; under way, only Retire when held still.
+    if (this.race?.canStart()) return { label: RACE_LINES.start, action: 'interact', icon: 'play' };
+    if (this.race?.closed) return this.race.canRetire() ? { label: RACE_LINES.retire, action: 'interact', icon: 'close' } : null;
     const sel = this.selectedTarget;
     // The selected rock in the beam's reach: mining comes first (docs/PROCGEN.md §19).
     if (this.beam) return { label: 'Stop mining', action: 'mine', icon: 'mine' };
@@ -1196,6 +1243,17 @@ export class FlightSession {
   }
 
   private interact(): void {
+    if (this.race?.canStart()) {
+      this.race.start();
+      this.callbacks.onRace?.({ kind: 'count', n: 3 });
+      return;
+    }
+    if (this.race?.canRetire()) {
+      this.race.phase = 'done';
+      this.callbacks.onRace?.({ kind: 'retired', field: this.race.field() });
+      return;
+    }
+    if (this.race?.closed) return;
     const derelict = this.boardable();
     if (derelict) {
       this.startBoarding(derelict);
@@ -1216,6 +1274,10 @@ export class FlightSession {
   }
 
   private beginDock(site: DockSite): void {
+    if (this.race?.closed) {
+      this.sealed(RACE_LINES.noDock);
+      return;
+    }
     if (this.hostilesNearby(2_200)) {
       // Their own ranks are cleared in under fire (docs/PROCGEN.md §32.3).
       const cover = coverLine(this.state, site.def.locationId);
@@ -1240,6 +1302,10 @@ export class FlightSession {
   }
 
   private beginLane(lane: LaneRuntime, reverse: boolean, next: Autopilot | null): void {
+    if (this.race?.closed) {
+      this.sealed(RACE_LINES.ownWay);
+      return;
+    }
     this.player.requestCruise(false);
     this.drift = false;
     this.autopilot = { mode: 'lane', lane, reverse, phase: 'align', t: 0, s: 0, speed: 0, next };
@@ -1247,6 +1313,10 @@ export class FlightSession {
 
   /** Plans a route to a target, using a trade lane when it saves time, then flies it. */
   beginGoTo(targetId: string, dockAtEnd: boolean): void {
+    if (this.race?.closed) {
+      this.sealed(RACE_LINES.ownWay);
+      return;
+    }
     const target = this.findTarget(targetId);
     // A far star is light-years off: it is observed, never flown to.
     if (!target || target.kind === 'sky') return;
@@ -1329,6 +1399,10 @@ export class FlightSession {
   }
 
   private fireMissile(): void {
+    if (this.race?.closed) {
+      this.sealed(RACE_LINES.sealedGuns);
+      return;
+    }
     const t = this.selectedTarget;
     const launcher = activeLauncher(this.state.ship);
     if (!launcher) {
@@ -1409,6 +1483,7 @@ export class FlightSession {
     if (input.selectAt) this.pickAt(input.selectAt.x, input.selectAt.y);
 
     if (this.alive) this.updatePlayerControls(dt, input);
+    this.raceFrom.copy(this.player.position);
     stepBounded(dt, 1 / 60, (h) => {
       if (this.alive) this.stepPlayer(h);
       for (const n of this.npcs) this.stepNpc(n, h);
@@ -1426,6 +1501,7 @@ export class FlightSession {
     this.updateDrones(dt);
     this.mining.update(dt, this.player.position, this.state.clock, this.camera, this.beam?.rockId ?? null);
     if (this.alive) this.collide(this.player, this.playerDurability, true);
+    if (this.race) for (const e of this.race.update(dt, this.raceFrom, this.player.position, this.player.speed, this.state.clock, this.camera, this.time)) this.callbacks.onRace?.(e);
     this.updateHole(dt);
     this.tickHail(dt);
     for (const n of this.npcs) if (!n.den) this.collide(n.body, n.durability, false);
@@ -1798,6 +1874,10 @@ export class FlightSession {
   }
 
   private firePlayerGuns(): void {
+    if (this.race?.closed) {
+      this.sealed(RACE_LINES.sealedGuns);
+      return;
+    }
     let fired: DamageType | null = null;
     for (let i = 0; i < this.guns.length; i++) {
       const gun = this.guns[i]!;
@@ -2061,6 +2141,8 @@ export class FlightSession {
    */
   private watchLanes(): void {
     if (!this.lanesOn || this.hail) return;
+    // A race is quiet: no hails while it waits or runs (docs/PROCGEN.md §33.4).
+    if (this.race && this.race.phase !== 'done') return;
     if (!this.alive || this.busy || this.deathTimer >= 0 || this.scanStatus) return;
     if (this.time < (this.spawnKind === 'arrival' ? LANES.grace.afterArrival : LANES.grace.afterLaunch)) return;
     if (this.hostilesNearby(LANES.quiet.hostileRange)) return;
@@ -2127,6 +2209,10 @@ export class FlightSession {
 
   private destroyPlayer(): void {
     this.alive = false;
+    if (this.race?.closed) {
+      this.race.phase = 'done';
+      this.callbacks.onRace?.({ kind: 'lost', field: this.race.field() });
+    }
     this.autopilot = { mode: 'none' };
     this.playerArt.object.visible = false;
     this.spawnEffect(createExplosion(this.player.position.clone(), 10, this.ctx));
@@ -2504,7 +2590,7 @@ export class FlightSession {
       for (let w = 0; w < plan.patrolWings; w++) this.spawnPatrolWing(t, w);
     }
     // No raiders come where a rival waits for a duel: it is one on one.
-    if (plan.packs && !this.traffic?.duel && !this.duelist) {
+    if (plan.packs && !this.traffic?.duel && !this.duelist && !(this.race && this.race.phase !== 'done')) {
       timers.pack -= dt;
       const packs = new Set(this.npcs.flatMap((n) => (n.pack === undefined || n.contract ? [] : [n.pack]))).size;
       if (timers.pack <= 0 && packs < plan.packs.max && this.alive && !this.busy && this.autopilot.mode !== 'lane') {
@@ -3565,6 +3651,7 @@ export class FlightSession {
   /** A patrol passing close may scan the player's hold: always with contraband aboard, now and then otherwise. */
   private maybeScan(n: NpcShip): void {
     if (this.scan || this.scanned || !this.alive || this.busy || n.scanRolled) return;
+    if (this.race && this.race.phase !== 'done') return;
     const law = patrolsScanIn(this.state.location.systemId);
     if (!law || n.faction !== law || huntedBy(this.state, law)) return;
     if (n.body.position.distanceTo(this.player.position) > LAW.scans.range) return;
@@ -4303,6 +4390,8 @@ export class FlightSession {
   }
 
   private autoScan(): void {
+    // A race under way is not stopped for a discovery: it comes after the finish (docs/PROCGEN.md §33.4).
+    if (this.race?.closed) return;
     const pos = this.player.position;
     for (const p of this.system.planets) {
       const id = p.def.id;
@@ -4611,6 +4700,57 @@ export class FlightSession {
     }
     if (how === 'done') return;
     for (let i = this.loot.length - 1; i >= 0; i--) if (this.loot[i]!.site?.id === s.setup.id) this.removeLoot(i);
+  }
+
+  /** Whether a race is staged in this flight (it tells its own lapse), and whether one is under way. */
+  get raceStaged(): boolean {
+    return !!this.race && this.race.phase !== 'done';
+  }
+
+  get raceUnderWay(): boolean {
+    return !!this.race?.closed;
+  }
+
+  /** Test-only: the race here (docs/PROCGEN.md §33), or null. */
+  raceStatus(): ReturnType<RaceRun['status']> | null {
+    return this.race?.status() ?? null;
+  }
+
+  /** Test-only: every racer's final time, flown on ahead from where they are. */
+  raceField(): { id: string; time: number | null }[] {
+    return this.race?.field().map((f) => ({ id: f.id, time: f.time })) ?? [];
+  }
+
+  /**
+   * Test-only: the ship in the start box (`gate` -1, at rest), or 150 m short of a gate on its axis
+   * at 140 m/s with the pilot's clock set on to `at` seconds; the flight's own steps carry it through.
+   */
+  raceAt(gate: number, at?: number): boolean {
+    const race = this.race;
+    if (!race) return false;
+    this.autopilot = { mode: 'none' };
+    this.player.requestCruise(false);
+    const p = this.player;
+    if (gate < 0) {
+      const box = race.allTargets().find((t) => t.id === 'race-box');
+      const g0 = race.gateAt(0);
+      if (!box || !g0) return false;
+      p.position.copy(box.position);
+      p.velocity.set(0, 0, 0);
+      p.angularVelocity.set(0, 0, 0);
+      p.lookAlong(g0.normal);
+      this.throttle = 0;
+      return true;
+    }
+    const g = race.gateAt(gate);
+    if (!g) return false;
+    if (at !== undefined) race.setClock(at);
+    p.position.copy(g.position).addScaledVector(g.normal, -150);
+    p.velocity.copy(g.normal).multiplyScalar(140);
+    p.angularVelocity.set(0, 0, 0);
+    p.lookAlong(g.normal);
+    this.throttle = 1;
+    return true;
   }
 
   /** Test hook: the sites in this scene, and how each stands. */
@@ -5016,13 +5156,15 @@ export class FlightSession {
 
     // Markers.
     const markers: HudMarker[] = [];
-    const objId = this.objective.locationId
-      ? `station:${this.objective.locationId}`
-      : this.objective.bodyId
-        ? `planet:${this.objective.bodyId}`
-        : this.objective.targetId && (this.mining.find(this.objective.targetId) || this.objective.targetId.startsWith('sky:') || (this.objective.targetId.startsWith('site:') && this.findTarget(this.objective.targetId)))
-          ? this.objective.targetId
-          : null;
+    const objId =
+      this.race?.objectiveId() ??
+      (this.objective.locationId
+        ? `station:${this.objective.locationId}`
+        : this.objective.bodyId
+          ? `planet:${this.objective.bodyId}`
+          : this.objective.targetId && (this.mining.find(this.objective.targetId) || this.objective.targetId.startsWith('sky:') || (this.objective.targetId.startsWith('site:') && this.findTarget(this.objective.targetId)))
+            ? this.objective.targetId
+            : null);
     for (const t of this.allTargets()) {
       const dist = t.position.distanceTo(p.position);
       const selected = t.id === this.selectedId;
@@ -5060,6 +5202,7 @@ export class FlightSession {
     hud.context = this.contextAction();
     const near = this.nearestDock();
     hud.nearestDock = near ? { name: near.site.name, distance: Math.max(0, near.distance - near.site.radius) } : null;
+    hud.race = this.race && this.race.phase !== 'done' ? this.race.hud(p.position) : null;
 
     const warnings: string[] = [];
     if (hud.incoming && this.alive) warnings.push(`Seeker inbound${hud.incoming > 1 ? ` ×${hud.incoming}` : ''}: drop a decoy`);
@@ -5186,6 +5329,8 @@ export class FlightSession {
   }
 
   dispose(): void {
+    this.race?.dispose();
+    this.race = null;
     this.system.scene.remove(this.farSky.object);
     this.farSky.dispose();
     this.audio.setEngine(null);

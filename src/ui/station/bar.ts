@@ -15,6 +15,7 @@ import { borderNewsList, denNews, edgeNewsList, haulNews, markNews, newsList, ou
 import { fineOwed, isLawful, pardonCost, payFines } from '../../economy/law.ts';
 import { buysSurveys, sellSurvey, surveysForSale, surveyValue } from '../../economy/progress.ts';
 import { toast } from '../components.ts';
+import { racingNewsList } from '../racing.ts';
 import type { StationContext } from './context.ts';
 import { sightById } from '../../content/passengers/sights.ts';
 import { berths } from '../../economy/passengers.ts';
@@ -381,6 +382,7 @@ export function newsContent(ctx: StationContext): HTMLElement {
     rivalNewsList(loc.systemId, state.clock),
     outpostRaidNewsList(loc.systemId, state.clock),
     rankNewsList(state, locationId),
+    racingNewsList(state, loc.systemId),
   );
 }
 

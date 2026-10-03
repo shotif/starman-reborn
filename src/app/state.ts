@@ -1,3 +1,4 @@
+import type { RacingLog } from '../economy/racing.ts';
 import type { CrewDeed, CrewGrade, CrewHeart, CrewRole } from '../content/crew/rules.ts';
 import type { LaneKind } from '../content/lanes/rules.ts';
 import type { MysteryId } from '../content/wrecks/mysteries.ts';
@@ -233,6 +234,8 @@ export interface WorldLog {
   lanes?: Record<string, LaneRecord>;
   /** Wrecks, derelicts, ships and pods the pilot had marked, and the mysteries they led to (docs/PROCGEN.md §31). */
   wrecks?: WreckLog;
+  /** Races on the lanes (docs/PROCGEN.md §33): an entry open, the pilot's results and bests by course and class. */
+  racing?: RacingLog;
 }
 
 /** Sites marked and mysteries begun (docs/PROCGEN.md §31): only what the pilot did; everything else is worked out from the ids. */

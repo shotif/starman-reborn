@@ -4,6 +4,7 @@ import { storyRecord } from '../story.ts';
 import { lanesRecord } from '../lanes.ts';
 import { wrecksRecord } from '../wrecks.ts';
 import { ranksRecord } from '../ranks.ts';
+import { racingRecord } from '../racing.ts';
 import { crewRecord, rivalsRecord } from '../rivalStories.ts';
 import { cargoCount } from '../../economy/cargo.ts';
 import { COMMODITIES, COMMODITY_IDS } from '../../economy/commodities.ts';
@@ -86,6 +87,7 @@ export function journalContent(ctx: StationContext, refresh: Refresh): HTMLEleme
       ]),
     ),
     ranksRecord(state),
+    racingRecord(state),
     storyRecord(state),
     rivalsRecord(state),
     crewRecord(state),

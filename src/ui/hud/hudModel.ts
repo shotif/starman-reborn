@@ -81,6 +81,25 @@ export interface HudMining {
   status: string | null;
 }
 
+/** A race under way (docs/PROCGEN.md §33.4): the HUD's race strip, in the objective panel's place. */
+export interface HudRace {
+  name: string;
+  phase: 'approach' | 'wait' | 'ready' | 'countdown' | 'on' | 'done';
+  /** Gates passed since the start line, of those to pass (the finish line included). */
+  gate: number;
+  gates: number;
+  /** Seconds since the start (the finish time once across the line). */
+  time: number;
+  /** Seconds against the pilot's best (or par) at the last gate passed: negative is ahead. */
+  split: number | null;
+  /** The countdown's word, while it runs. */
+  count: string | null;
+  place: number;
+  of: number;
+  /** Cruise is sealed (a Sprint under way). */
+  sealedCruise: boolean;
+}
+
 /** A wing's standing order: engage raiders near the player, go for the player's target, or stay in formation. */
 export type WingOrder = 'free' | 'attack' | 'form';
 
@@ -131,6 +150,8 @@ export interface HudModel {
   encounterActive: boolean;
   /** Closest dock in this system (name and distance), for the HUD. */
   nearestDock: { name: string; distance: number } | null;
+  /** A race the pilot has entered here (docs/PROCGEN.md §33), or null. */
+  race: HudRace | null;
 }
 
 export function emptyHudModel(): HudModel {
@@ -168,5 +189,6 @@ export function emptyHudModel(): HudModel {
     mining: null,
     encounterActive: false,
     nearestDock: null,
+    race: null,
   };
 }
