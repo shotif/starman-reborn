@@ -164,7 +164,7 @@ describe('races: in flight, the racers on their own clock', () => {
     const { venue, line } = courseById(SPRINT)!;
     const heat = 30;
     const racers = lineUp(s, SPRINT, 'light', heat);
-    const setup: RaceSetup = { courseId: SPRINT, name: 'Moon Loop', club: venue.club, cls: 'light', opens: 0, closes: 1e9, racers, grid: gridOf(racers), par: ownParRun(line, s.ship), best: null, cutoff: 600 };
+    const setup: RaceSetup = { courseId: SPRINT, name: 'Moon Loop', club: venue.club, cls: 'light', closes: 1e9, racers, grid: gridOf(racers), par: ownParRun(line, s.ship), best: null, cutoff: 600 };
     const def = sceneDefFor('sol', null);
     const origin = bodyPosition(def, 'moon')!.clone();
     const run = new RaceRun(setup, line, origin, new THREE.Scene(), { quality: 'low', reducedMotion: true }, []);
@@ -328,7 +328,7 @@ describe('races: the flight', () => {
       traffic: {
         ...trafficFor('sol', 'low', s.clock),
         plan: { ...trafficFor('sol', 'low', s.clock).plan, packs: null, patrolWings: 0 },
-        race: { courseId: SPRINT, name: 'Moon Loop', club: 'Tailwind Club', cls: 'light', opens: heatStart(e.heat), closes: heatStart(e.heat + 1), racers, grid: gridOf(racers), par: ownParRun(line, s.ship), best: null, cutoff: 600 },
+        race: { courseId: SPRINT, name: 'Moon Loop', club: 'Tailwind Club', cls: 'light', closes: heatStart(e.heat + 1), racers, grid: gridOf(racers), par: ownParRun(line, s.ship), best: null, cutoff: 600 },
       },
     });
     flight.start({ kind: 'arrival' });

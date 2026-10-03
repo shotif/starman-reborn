@@ -532,7 +532,7 @@ export class Hud {
     if (!r) return;
     const running = r.phase === 'on';
     setText(this.raceName, r.name);
-    setText(this.raceGate, running ? `Gate ${r.gate}/${r.gates}` : r.phase === 'countdown' ? 'Starting' : r.phase === 'ready' ? 'Press Start' : r.phase === 'wait' ? 'Heat opens soon' : 'To the start');
+    setText(this.raceGate, running ? `Gate ${r.gate}/${r.gates}` : r.phase === 'countdown' ? 'Starting' : r.phase === 'ready' ? 'Press Start' : 'To the start');
     setText(this.raceTime, running ? raceClock(r.time) : '');
     setText(this.raceSplit, running && r.split !== null ? `${r.split < 0 ? '−' : '+'}${Math.abs(r.split).toFixed(2)} ${r.split < 0 ? 'ahead' : 'behind'}` : '');
     this.raceSplit.dataset.ahead = String((r.split ?? 0) < 0);

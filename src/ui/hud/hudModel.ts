@@ -84,7 +84,7 @@ export interface HudMining {
 /** A race under way (docs/PROCGEN.md §33.4): the HUD's race strip, in the objective panel's place. */
 export interface HudRace {
   name: string;
-  phase: 'approach' | 'wait' | 'ready' | 'countdown' | 'on' | 'done';
+  phase: 'approach' | 'ready' | 'countdown' | 'on' | 'done';
   /** Gates passed since the start line, of those to pass (the finish line included). */
   gate: number;
   gates: number;

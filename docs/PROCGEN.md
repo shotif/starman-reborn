@@ -3321,8 +3321,9 @@ and lane move with the planets.
 ### 33.2 Heats, classes and fields
 
 - **Heats**: the game clock is cut into heats of half an hour. An entry is for the heat under way if
-  five minutes of it are left, else the next; a pilot races once a heat, anywhere. An entry whose heat
-  closes before a start lapses, its fee kept.
+  five minutes of it are left, else the next; either way the pilot may start as soon as they are in the
+  start box. A pilot races once a heat, anywhere. An entry whose heat closes before a start lapses, its
+  fee kept.
 - **Classes**: light (couriers, light fighters, surveyors) and heavy (heavy fighters, gunships,
   freighters), by the hull. An entry is for the class of the ship the pilot flies; launching in the
   other class's hull voids it. Times are raw: a fast hull wins more.
@@ -3352,8 +3353,8 @@ Past the line they ease off and are gone after 20 seconds.
 
 ### 33.4 Flying a race
 
-- **The start**: in the start box (within 450 m behind the start line, slower than 30 m/s) once the
-  heat is open, the action offers **Start** (E, the action button on touch, A on a pad). The marshal
+- **The start**: in the start box (within 450 m behind the start line, slower than 30 m/s), the
+  action offers **Start** (E, the action button on touch, A on a pad). The marshal
   counts three; crossing the line before *Go* is a false start, back behind the line. The pilot's clock
   runs from *Go* and stops while the game is paused.
 - **Gates** count in order. Crossing one's plane outside it, but near, says *Missed gate n: turn back

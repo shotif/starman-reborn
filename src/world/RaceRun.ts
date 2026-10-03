@@ -27,8 +27,7 @@ export interface RaceSetup {
   name: string;
   club: string;
   cls: RaceClass;
-  /** The heat's window on the game clock. */
-  opens: number;
+  /** When the heat closes on the game clock: an entry not started by then lapses. */
   closes: number;
   racers: readonly Racer[];
   grid: number;
@@ -39,7 +38,7 @@ export interface RaceSetup {
   cutoff: number;
 }
 
-export type RacePhase = 'approach' | 'wait' | 'ready' | 'countdown' | 'on' | 'done';
+export type RacePhase = 'approach' | 'ready' | 'countdown' | 'on' | 'done';
 
 export type RaceEvent =
   | { kind: 'false-start' }
@@ -205,14 +204,14 @@ export class RaceRun {
     const g0 = this.line.gates[0]!;
     const a = this.local(p0, new THREE.Vector3());
     const b = this.local(p1, new THREE.Vector3());
-    if (this.phase === 'approach' || this.phase === 'wait' || this.phase === 'ready') {
+    if (this.phase === 'approach' || this.phase === 'ready') {
       if (clock >= this.setup.closes) {
         this.phase = 'done';
         out.push({ kind: 'lapsed' });
         this.clear();
         return out;
       }
-      this.phase = !this.inBox(p1, speed) ? 'approach' : clock < this.setup.opens ? 'wait' : 'ready';
+      this.phase = this.inBox(p1, speed) ? 'ready' : 'approach';
     } else if (this.phase === 'countdown') {
       const crossed = a.clone().sub(g0.pos).dot(g0.normal) < 0 && b.clone().sub(g0.pos).dot(g0.normal) >= 0;
       if (crossed) {
@@ -339,7 +338,7 @@ export class RaceRun {
   /** The gates and racers to mark: the next gate and the one after; on a narrow screen only the racers just ahead and behind. */
   targets(narrow: boolean, pilot: THREE.Vector3): Target[] {
     const out: Target[] = [];
-    if (this.phase === 'approach' || this.phase === 'wait' || this.phase === 'ready') out.push(this.boxTarget);
+    if (this.phase === 'approach' || this.phase === 'ready') out.push(this.boxTarget);
     if (this.phase !== 'done') for (const i of [this.gate, this.gate + 1]) if (this.gateTargets[i]) out.push(this.gateTargets[i]!);
     const live = this.racers.filter((r) => !r.gone);
     if (!narrow || this.phase !== 'on') return [...out, ...live.map((r) => r.target)];
@@ -357,7 +356,7 @@ export class RaceRun {
 
   /** What the flight's objective marks: the start box before the start, then the next gate. */
   objectiveId(): string | null {
-    if (this.phase === 'approach' || this.phase === 'wait' || this.phase === 'ready') return this.boxTarget.id;
+    if (this.phase === 'approach' || this.phase === 'ready') return this.boxTarget.id;
     if (this.phase === 'countdown' || this.phase === 'on') return `race-gate:${this.gate}`;
     return null;
   }
@@ -369,13 +368,11 @@ export class RaceRun {
     const text =
       this.phase === 'approach'
         ? O.approach
-        : this.phase === 'wait'
-          ? O.wait
-          : this.phase === 'ready'
-            ? O.ready
-            : this.gate >= n
-              ? O.finish
-              : O.on.replace('{n}', String(Math.max(1, this.gate))).replace('{of}', String(n));
+        : this.phase === 'ready'
+          ? O.ready
+          : this.gate >= n
+            ? O.finish
+            : O.on.replace('{n}', String(Math.max(1, this.gate))).replace('{of}', String(n));
     return text.replace('{course}', this.setup.name);
   }
 

@@ -48,7 +48,6 @@ export const KIND_NOTES = { sprint: 'Sublight: no cruise.', run: 'Cruise allowed
 export const RACE_LINES = {
   objective: {
     approach: '{course}: fly to the start line',
-    wait: '{course}: the heat opens soon',
     ready: '{course}: in the box, press Start',
     on: '{course}: gate {n} of {of}',
     finish: '{course}: the finish line',

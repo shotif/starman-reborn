@@ -54,8 +54,7 @@ export function racesContent(ctx: StationContext, refresh: () => void): HTMLElem
   const entry = racingLog(state)?.entry;
   const known = clubTimesKnown(venue, state.ship);
   if (!known) warmClubTimes(venue, state.ship, refresh);
-  const opens = heatStart(heat);
-  const when = opens > state.clock ? `opens in ${Math.max(1, minutes(opens - state.clock))} min` : `closes in ${Math.max(1, minutes(heatStart(heat + 1) - state.clock))} min`;
+  const when = `closes in ${Math.max(1, minutes(heatStart(heat + 1) - state.clock))} min`;
   const enteredHere = entry ? courseById(entry.course) : undefined;
   return h(
     'div',

@@ -1379,7 +1379,6 @@ export class Game {
       name: courseName(found.line),
       club: found.venue.club,
       cls: e.cls,
-      opens: heatStart(e.heat),
       closes: heatStart(e.heat + 1),
       racers,
       grid: gridOf(racers),
