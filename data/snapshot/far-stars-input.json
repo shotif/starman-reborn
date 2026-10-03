@@ -1,11 +1,8 @@
 {
-  "generatedBy": "scripts/build-dataset.ts",
-  "input": "data/snapshot/far-stars-input.json",
-  "verification": "snapshot",
+  "kind": "snapshot",
   "retrieved": "2026-10-03",
   "description": "Far stars beyond the map checked against SIMBAD on 2026-10-03 (scripts/sky-fetch.ts on GitHub's runners, processed by scripts/sky-process.ts): Gaia DR3 when its solution passes the cuts, otherwise SIMBAD's adopted values, each cited.",
-  "frame": "ICRS",
-  "referenceEpoch": 2016,
+  "targetEpoch": 2016,
   "stars": [
     {
       "id": "betelgeuse",
@@ -16,27 +13,14 @@
         "simbad": "alf Ori"
       },
       "spectralType": "M1-M2Ia-Iab",
-      "spectralTypeSource": {
-        "label": "SIMBAD: 1989ApJS...71..245K",
-        "url": "https://ui.adsabs.harvard.edu/abs/1989ApJS...71..245K",
-        "recordId": "* alf Ori",
-        "retrieved": "2026-10-03",
-        "bibcode": "1989ApJS...71..245K"
-      },
-      "raDegrees": 88.79306242077166,
-      "decDegrees": 7.407114217494916,
-      "properMotion": {
-        "raMasYr": 27.54,
-        "decMasYr": 11.3
-      },
-      "catalogEpoch": 2000,
+      "raDegrees": 88.79293899077537,
+      "decDegrees": 7.407063995272694,
+      "epoch": 2000,
+      "pmRaMasYr": 27.54,
+      "pmDecMasYr": 11.3,
       "parallaxMas": 6.55,
-      "parallaxErrorMas": 0.83,
-      "distanceErrorLightYears": 63.098838879994624,
-      "distanceLightYears": 497.9486682698371,
-      "referenceEpoch": 2016,
-      "frame": "ICRS",
-      "astrometrySource": {
+      "magnitudeV": 0.42,
+      "positionSource": {
         "label": "SIMBAD",
         "url": "https://simbad.cds.unistra.fr/simbad/sim-id?Ident=*%20alf%20Ori",
         "recordId": "* alf Ori",
@@ -50,7 +34,13 @@
         "recordId": "* alf Ori",
         "retrieved": "2026-10-03"
       },
-      "magnitudeV": 0.42,
+      "spectralTypeSource": {
+        "label": "SIMBAD: 1989ApJS...71..245K",
+        "url": "https://ui.adsabs.harvard.edu/abs/1989ApJS...71..245K",
+        "recordId": "* alf Ori",
+        "retrieved": "2026-10-03",
+        "bibcode": "1989ApJS...71..245K"
+      },
       "magnitudeSource": {
         "label": "SIMBAD: 1966CoLPL...4...99J",
         "url": "https://ui.adsabs.harvard.edu/abs/1966CoLPL...4...99J",
@@ -58,13 +48,8 @@
         "retrieved": "2026-10-03",
         "bibcode": "1966CoLPL...4...99J"
       },
-      "verification": "snapshot",
-      "positionLy": [
-        10.401005129767205,
-        493.68381480073344,
-        64.19490889307306
-      ],
-      "colorHex": "#ffb27a"
+      "colorHex": "#ffb27a",
+      "parallaxErrorMas": 0.83
     },
     {
       "id": "antares",
@@ -75,27 +60,14 @@
         "simbad": "alf Sco"
       },
       "spectralType": "M1.5Iab+B2Vn",
-      "spectralTypeSource": {
-        "label": "SIMBAD: 2021A&A...646A..11M",
-        "url": "https://ui.adsabs.harvard.edu/abs/2021A%26A...646A..11M",
-        "recordId": "* alf Sco",
-        "retrieved": "2026-10-03",
-        "bibcode": "2021A&A...646A..11M"
-      },
-      "raDegrees": 247.35185531435002,
-      "decDegrees": -26.432106167506387,
-      "properMotion": {
-        "raMasYr": -12.11,
-        "decMasYr": -23.3
-      },
-      "catalogEpoch": 2000,
+      "raDegrees": 247.3519154198264,
+      "decDegrees": -26.432002611950832,
+      "epoch": 2000,
+      "pmRaMasYr": -12.11,
+      "pmDecMasYr": -23.3,
       "parallaxMas": 5.89,
-      "parallaxErrorMas": 1,
-      "distanceErrorLightYears": 94.01459632502596,
-      "distanceLightYears": 553.745972354403,
-      "referenceEpoch": 2016,
-      "frame": "ICRS",
-      "astrometrySource": {
+      "magnitudeV": 0.91,
+      "positionSource": {
         "label": "SIMBAD",
         "url": "https://simbad.cds.unistra.fr/simbad/sim-id?Ident=*%20alf%20Sco",
         "recordId": "* alf Sco",
@@ -109,7 +81,13 @@
         "recordId": "* alf Sco",
         "retrieved": "2026-10-03"
       },
-      "magnitudeV": 0.91,
+      "spectralTypeSource": {
+        "label": "SIMBAD: 2021A&A...646A..11M",
+        "url": "https://ui.adsabs.harvard.edu/abs/2021A%26A...646A..11M",
+        "recordId": "* alf Sco",
+        "retrieved": "2026-10-03",
+        "bibcode": "2021A&A...646A..11M"
+      },
       "magnitudeSource": {
         "label": "SIMBAD: 2002yCat.2237....0D",
         "url": "https://ui.adsabs.harvard.edu/abs/2002yCat.2237....0D",
@@ -117,13 +95,8 @@
         "retrieved": "2026-10-03",
         "bibcode": "2002yCat.2237....0D"
       },
-      "verification": "snapshot",
-      "positionLy": [
-        -190.9407909708105,
-        -457.6215659250219,
-        -246.49283689895586
-      ],
-      "colorHex": "#ffb27a"
+      "colorHex": "#ffb27a",
+      "parallaxErrorMas": 1
     }
   ]
 }

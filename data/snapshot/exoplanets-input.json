@@ -1,7 +1,7 @@
 {
   "kind": "snapshot",
-  "retrieved": "2026-09-30",
-  "description": "Planets checked against the NASA Exoplanet Archive (pscomppars, confirmed planets) and the Extrasolar Planets Encyclopaedia on 2026-09-30. Nothing the game had is removed: planets neither archive confirms are kept and marked contested; the Encyclopaedia's candidates are added and marked candidate.",
+  "retrieved": "2026-10-03",
+  "description": "Planets checked against the NASA Exoplanet Archive (pscomppars, confirmed planets) and the Extrasolar Planets Encyclopaedia on 2026-10-03. Nothing the game had is removed: planets neither archive confirms are kept and marked contested; the Encyclopaedia's candidates are added and marked candidate.",
   "source": {
     "label": "NASA Exoplanet Archive (pscomppars)",
     "url": "https://exoplanetarchive.ipac.caltech.edu/"
@@ -36,7 +36,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Proxima%20Cen%20b",
         "recordId": "Proxima Cen b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -68,7 +68,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Proxima%20Cen%20d",
         "recordId": "Proxima Cen d",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -100,7 +100,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Barnard%20b",
         "recordId": "Barnard b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -132,7 +132,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Barnard%20c",
         "recordId": "Barnard c",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -164,7 +164,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Barnard%20d",
         "recordId": "Barnard d",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -196,7 +196,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Barnard%20e",
         "recordId": "Barnard e",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -227,7 +227,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/eps%20Eri%20b",
         "recordId": "eps Eri b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -259,7 +259,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20411%20b",
         "recordId": "GJ 411 b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -291,7 +291,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%2095735%20c",
         "recordId": "HD 95735 c",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -323,7 +323,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20887%20b",
         "recordId": "GJ 887 b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -355,7 +355,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20887%20c",
         "recordId": "GJ 887 c",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -387,7 +387,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Ross%20128%20b",
         "recordId": "Ross 128 b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -420,7 +420,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%2015%20A%20b",
         "recordId": "GJ 15 A b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -452,7 +452,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%2015%20A%20c",
         "recordId": "GJ 15 A c",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -483,7 +483,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/eps%20Ind%20A%20b",
         "recordId": "eps Ind A b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -512,7 +512,7 @@
       },
       "id": "tau-ceti-e",
       "status": "contested",
-      "statusNote": "Neither the NASA Exoplanet Archive nor the Encyclopaedia lists it on 2026-09-30. This edition of the game keeps it."
+      "statusNote": "Neither the NASA Exoplanet Archive nor the Encyclopaedia lists it on 2026-10-03. This edition of the game keeps it."
     },
     {
       "id": "tau-ceti-f",
@@ -544,7 +544,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/tau%20Cet%20f",
         "recordId": "tau Cet f",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -577,7 +577,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/tau%20Cet%20g",
         "recordId": "tau Cet g",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -610,7 +610,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/tau%20Cet%20h",
         "recordId": "tau Cet h",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -642,7 +642,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/YZ%20Cet%20b",
         "recordId": "YZ Cet b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -674,7 +674,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/YZ%20Cet%20c",
         "recordId": "YZ Cet c",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -706,7 +706,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/YZ%20Cet%20d",
         "recordId": "YZ Cet d",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -738,7 +738,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20273%20b",
         "recordId": "GJ 273 b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -770,7 +770,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20273%20c",
         "recordId": "GJ 273 c",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -799,7 +799,7 @@
       },
       "id": "kapteyn-b",
       "status": "contested",
-      "statusNote": "Neither the NASA Exoplanet Archive nor the Encyclopaedia lists it on 2026-09-30. This edition of the game keeps it."
+      "statusNote": "Neither the NASA Exoplanet Archive nor the Encyclopaedia lists it on 2026-10-03. This edition of the game keeps it."
     },
     {
       "id": "kapteyn-c",
@@ -831,7 +831,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Kapteyn%20c",
         "recordId": "Kapteyn c",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -863,7 +863,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Wolf%201061%20b",
         "recordId": "Wolf 1061 b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -895,7 +895,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Wolf%201061%20c",
         "recordId": "Wolf 1061 c",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -927,7 +927,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Wolf%201061%20d",
         "recordId": "Wolf 1061 d",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -958,7 +958,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%201061%20b",
         "recordId": "GJ 1061 b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -989,7 +989,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%201061%20c",
         "recordId": "GJ 1061 c",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -1020,7 +1020,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%201061%20d",
         "recordId": "GJ 1061 d",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -1051,7 +1051,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20876%20b",
         "recordId": "GJ 876 b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -1082,7 +1082,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20876%20c",
         "recordId": "GJ 876 c",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -1113,7 +1113,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20876%20d",
         "recordId": "GJ 876 d",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -1144,7 +1144,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20876%20e",
         "recordId": "GJ 876 e",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -1169,7 +1169,7 @@
       },
       "id": "hd-26965-b",
       "status": "contested",
-      "statusNote": "Neither the NASA Exoplanet Archive nor the Encyclopaedia lists it on 2026-09-30. This edition of the game keeps it."
+      "statusNote": "Neither the NASA Exoplanet Archive nor the Encyclopaedia lists it on 2026-10-03. This edition of the game keeps it."
     },
     {
       "id": "gj-674-b",
@@ -1198,135 +1198,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20674%20b",
         "recordId": "GJ 674 b",
-        "retrieved": "2026-09-30"
-      }
-    },
-    {
-      "id": "gj-1002-b",
-      "archiveName": "GJ 1002 b",
-      "hostId": "gj-1002",
-      "displayName": "GJ 1002 b",
-      "controversial": false,
-      "status": "confirmed",
-      "discoveryYear": 2022,
-      "discoveryMethod": "Radial Velocity",
-      "orbitalPeriodDays": {
-        "value": 10.3465,
-        "error": 0.027
-      },
-      "semiMajorAxisAu": {
-        "value": 0.0457,
-        "error": 0.0013
-      },
-      "massEarth": {
-        "value": 1.08,
-        "error": 0.13,
-        "qualifier": "minimum mass (M sin i)"
-      },
-      "radiusEarth": {
-        "value": 1.03
-      },
-      "source": {
-        "label": "NASA Exoplanet Archive",
-        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%201002%20b",
-        "recordId": "GJ 1002 b",
-        "retrieved": "2026-09-30"
-      }
-    },
-    {
-      "id": "gj-251-c",
-      "archiveName": "GJ 251 c",
-      "hostId": "gj-251",
-      "displayName": "GJ 251 c",
-      "controversial": false,
-      "status": "confirmed",
-      "discoveryYear": 2025,
-      "discoveryMethod": "Radial Velocity",
-      "orbitalPeriodDays": {
-        "value": 53.647,
-        "error": 0.044
-      },
-      "semiMajorAxisAu": {
-        "value": 0.196,
-        "error": 0.014
-      },
-      "massEarth": {
-        "value": 3.88,
-        "error": 0.79,
-        "qualifier": "minimum mass (M sin i)"
-      },
-      "radiusEarth": {
-        "value": 1.8
-      },
-      "source": {
-        "label": "NASA Exoplanet Archive",
-        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20251%20c",
-        "recordId": "GJ 251 c",
-        "retrieved": "2026-09-30"
-      }
-    },
-    {
-      "id": "lacaille-9352-e",
-      "archiveName": "GJ 887 e",
-      "hostId": "lacaille-9352",
-      "displayName": "Lacaille 9352 e",
-      "controversial": false,
-      "status": "confirmed",
-      "discoveryYear": 2026,
-      "discoveryMethod": "Radial Velocity",
-      "orbitalPeriodDays": {
-        "value": 4.4249,
-        "error": 0.00014
-      },
-      "semiMajorAxisAu": {
-        "value": 0.0417,
-        "error": 0.0014
-      },
-      "massEarth": {
-        "value": 1.46,
-        "error": 0.19,
-        "qualifier": "minimum mass (M sin i)"
-      },
-      "radiusEarth": {
-        "value": 1.12
-      },
-      "source": {
-        "label": "NASA Exoplanet Archive",
-        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20887%20e",
-        "recordId": "GJ 887 e",
-        "retrieved": "2026-09-30"
-      }
-    },
-    {
-      "id": "hd-219134-h",
-      "archiveName": "HD 219134 h",
-      "hostId": "hd-219134",
-      "displayName": "HD 219134 h",
-      "controversial": false,
-      "status": "confirmed",
-      "discoveryYear": 2015,
-      "discoveryMethod": "Radial Velocity",
-      "orbitalPeriodDays": {
-        "value": 2247,
-        "error": 43
-      },
-      "semiMajorAxisAu": {
-        "value": 3.11,
-        "error": 0.04
-      },
-      "massEarth": {
-        "value": 108.0622,
-        "error": 6.3566,
-        "qualifier": "minimum mass (M sin i)"
-      },
-      "radiusEarth": {
-        "value": 12.7
-      },
-      "source": {
-        "label": "NASA Exoplanet Archive",
-        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%20219134%20h",
-        "recordId": "HD 219134 h",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -1358,7 +1230,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/LTT%201445%20A%20b",
         "recordId": "LTT 1445 A b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -1390,7 +1262,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20486%20b",
         "recordId": "GJ 486 b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -1422,7 +1294,135 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/LTT%201445%20A%20c",
         "recordId": "LTT 1445 A c",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
+      }
+    },
+    {
+      "id": "gj-1002-b",
+      "archiveName": "GJ 1002 b",
+      "hostId": "gj-1002",
+      "displayName": "GJ 1002 b",
+      "controversial": false,
+      "status": "confirmed",
+      "discoveryYear": 2022,
+      "discoveryMethod": "Radial Velocity",
+      "orbitalPeriodDays": {
+        "value": 10.3465,
+        "error": 0.027
+      },
+      "semiMajorAxisAu": {
+        "value": 0.0457,
+        "error": 0.0013
+      },
+      "massEarth": {
+        "value": 1.08,
+        "error": 0.13,
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "radiusEarth": {
+        "value": 1.03
+      },
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%201002%20b",
+        "recordId": "GJ 1002 b",
+        "retrieved": "2026-10-03"
+      }
+    },
+    {
+      "id": "gj-251-c",
+      "archiveName": "GJ 251 c",
+      "hostId": "gj-251",
+      "displayName": "GJ 251 c",
+      "controversial": false,
+      "status": "confirmed",
+      "discoveryYear": 2025,
+      "discoveryMethod": "Radial Velocity",
+      "orbitalPeriodDays": {
+        "value": 53.647,
+        "error": 0.044
+      },
+      "semiMajorAxisAu": {
+        "value": 0.196,
+        "error": 0.014
+      },
+      "massEarth": {
+        "value": 3.88,
+        "error": 0.79,
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "radiusEarth": {
+        "value": 1.8
+      },
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20251%20c",
+        "recordId": "GJ 251 c",
+        "retrieved": "2026-10-03"
+      }
+    },
+    {
+      "id": "lacaille-9352-e",
+      "archiveName": "GJ 887 e",
+      "hostId": "lacaille-9352",
+      "displayName": "Lacaille 9352 e",
+      "controversial": false,
+      "status": "confirmed",
+      "discoveryYear": 2026,
+      "discoveryMethod": "Radial Velocity",
+      "orbitalPeriodDays": {
+        "value": 4.4249,
+        "error": 0.00014
+      },
+      "semiMajorAxisAu": {
+        "value": 0.0417,
+        "error": 0.0014
+      },
+      "massEarth": {
+        "value": 1.46,
+        "error": 0.19,
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "radiusEarth": {
+        "value": 1.12
+      },
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20887%20e",
+        "recordId": "GJ 887 e",
+        "retrieved": "2026-10-03"
+      }
+    },
+    {
+      "id": "hd-219134-h",
+      "archiveName": "HD 219134 h",
+      "hostId": "hd-219134",
+      "displayName": "HD 219134 h",
+      "controversial": false,
+      "status": "confirmed",
+      "discoveryYear": 2015,
+      "discoveryMethod": "Radial Velocity",
+      "orbitalPeriodDays": {
+        "value": 2247,
+        "error": 43
+      },
+      "semiMajorAxisAu": {
+        "value": 3.11,
+        "error": 0.04
+      },
+      "massEarth": {
+        "value": 108.0622,
+        "error": 6.3566,
+        "qualifier": "minimum mass (M sin i)"
+      },
+      "radiusEarth": {
+        "value": 12.7
+      },
+      "source": {
+        "label": "NASA Exoplanet Archive",
+        "url": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%20219134%20h",
+        "recordId": "HD 219134 h",
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -1454,7 +1454,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Teegarden's%20Star%20c",
         "recordId": "Teegarden's Star c",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -1487,7 +1487,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%20219134%20g",
         "recordId": "HD 219134 g",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -1519,7 +1519,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%203378%20b",
         "recordId": "GJ 3378 b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -1551,7 +1551,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Gl%20725%20A%20b",
         "recordId": "Gl 725 A b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -1583,7 +1583,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%201151%20c",
         "recordId": "GJ 1151 c",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -1615,7 +1615,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%2020794%20f",
         "recordId": "HD 20794 f",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -1647,7 +1647,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%204274%20c",
         "recordId": "GJ 4274 c",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -1680,7 +1680,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20667%20C%20f",
         "recordId": "GJ 667 C f",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -1712,7 +1712,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%203323%20b",
         "recordId": "GJ 3323 b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -1744,7 +1744,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20393%20b",
         "recordId": "GJ 393 b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -1775,7 +1775,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20581%20b",
         "recordId": "GJ 581 b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -1807,7 +1807,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20667%20C%20b",
         "recordId": "GJ 667 C b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -1839,7 +1839,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20667%20C%20c",
         "recordId": "GJ 667 C c",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -1872,7 +1872,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20667%20C%20e",
         "recordId": "GJ 667 C e",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -1904,7 +1904,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Gl%20725%20B%20c",
         "recordId": "Gl 725 B c",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -1936,7 +1936,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%20219134%20b",
         "recordId": "HD 219134 b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -1968,7 +1968,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%20219134%20d",
         "recordId": "HD 219134 d",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2001,7 +2001,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%20219134%20f",
         "recordId": "HD 219134 f",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2033,7 +2033,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20625%20b",
         "recordId": "GJ 625 b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2065,7 +2065,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%203323%20c",
         "recordId": "GJ 3323 c",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2097,7 +2097,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20682%20c",
         "recordId": "GJ 682 c",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2129,7 +2129,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Gl%20686%20b",
         "recordId": "Gl 686 b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2161,7 +2161,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%20180617%20b",
         "recordId": "HD 180617 b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2193,7 +2193,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20687%20b",
         "recordId": "GJ 687 b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2224,7 +2224,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20896%20A%20b",
         "recordId": "GJ 896 A b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2257,7 +2257,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20229%20A%20c",
         "recordId": "GJ 229 A c",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2289,7 +2289,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20338%20B%20b",
         "recordId": "GJ 338 B b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2320,7 +2320,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20832%20b",
         "recordId": "GJ 832 b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2352,7 +2352,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Teegarden's%20Star%20d",
         "recordId": "Teegarden's Star d",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2384,7 +2384,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%2020794%20d",
         "recordId": "HD 20794 d",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2415,7 +2415,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20581%20c",
         "recordId": "GJ 581 c",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2447,7 +2447,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20251%20b",
         "recordId": "GJ 251 b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2479,7 +2479,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%204274%20b",
         "recordId": "GJ 4274 b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2510,7 +2510,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20581%20e",
         "recordId": "GJ 581 e",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2542,7 +2542,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%2020794%20b",
         "recordId": "HD 20794 b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2575,7 +2575,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%2020794%20e",
         "recordId": "HD 20794 e",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2608,7 +2608,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20667%20C%20g",
         "recordId": "GJ 667 C g",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2640,7 +2640,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Gliese%2048%20b",
         "recordId": "Gliese 48 b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2672,7 +2672,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20887%20d",
         "recordId": "GJ 887 d",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2704,7 +2704,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%201002%20c",
         "recordId": "GJ 1002 c",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2736,7 +2736,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/HN%20Lib%20b",
         "recordId": "HN Lib b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2768,7 +2768,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%20219134%20c",
         "recordId": "HD 219134 c",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2800,7 +2800,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/Teegarden's%20Star%20b",
         "recordId": "Teegarden's Star b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2832,7 +2832,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20514%20b",
         "recordId": "GJ 514 b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2864,7 +2864,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20687%20c",
         "recordId": "GJ 687 c",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2896,7 +2896,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%209066%20c",
         "recordId": "GJ 9066 c",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2928,7 +2928,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20682%20b",
         "recordId": "GJ 682 b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2961,7 +2961,7 @@
         "label": "NASA Exoplanet Archive",
         "url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20229%20b",
         "recordId": "GJ 229 b",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -2988,7 +2988,7 @@
         "label": "The Extrasolar Planets Encyclopaedia",
         "url": "https://exoplanet.eu/catalog/gj_229_d--7263",
         "recordId": "GJ 229 d",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -3015,7 +3015,7 @@
         "label": "The Extrasolar Planets Encyclopaedia",
         "url": "https://exoplanet.eu/catalog/hd_219134_e--2418",
         "recordId": "HD 219134 e",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -3042,7 +3042,7 @@
         "label": "The Extrasolar Planets Encyclopaedia",
         "url": "https://exoplanet.eu/catalog/lalande_21185_d--8602",
         "recordId": "Lalande 21185 d",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -3068,7 +3068,7 @@
         "label": "The Extrasolar Planets Encyclopaedia",
         "url": "https://exoplanet.eu/catalog/luyten's_star_d--7135",
         "recordId": "Luyten's Star d",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -3094,7 +3094,7 @@
         "label": "The Extrasolar Planets Encyclopaedia",
         "url": "https://exoplanet.eu/catalog/luyten's_star_e--7136",
         "recordId": "Luyten's Star e",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     },
     {
@@ -3121,7 +3121,7 @@
         "label": "The Extrasolar Planets Encyclopaedia",
         "url": "https://exoplanet.eu/catalog/wolf_359_c--7134",
         "recordId": "Wolf 359 c",
-        "retrieved": "2026-09-30"
+        "retrieved": "2026-10-03"
       }
     }
   ]

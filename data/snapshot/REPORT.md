@@ -1,6 +1,6 @@
-# Sky snapshot 2026-09-30
+# Sky snapshot 2026-10-03
 
-Processed by `scripts/sky-process.ts` from `data/snapshot/raw/2026-09-30/`. Nothing the game had was removed.
+Processed by `scripts/sky-process.ts` from `data/snapshot/raw/2026-10-03/`. Nothing the game had was removed.
 
 ## Queries
 
@@ -80,7 +80,7 @@ Moved by more than 0.25 ly: BL Ceti (0.30 ly), GJ 1061 (2.01 ly). The frozen cor
 - **Groombridge 34 A b** (groombridge-34-a): confirmed by NASA as GJ 15 A b, flagged controversial
 - **Groombridge 34 A c** (groombridge-34-a): confirmed by NASA as GJ 15 A c
 - **Epsilon Indi A b** (epsilon-indi): confirmed by NASA as eps Ind A b
-- **Tau Ceti e** (tau-ceti): contested: Neither the NASA Exoplanet Archive nor the Encyclopaedia lists it on 2026-09-30. This edition of the game keeps it.
+- **Tau Ceti e** (tau-ceti): contested: Neither the NASA Exoplanet Archive nor the Encyclopaedia lists it on 2026-10-03. This edition of the game keeps it.
 - **Tau Ceti f** (tau-ceti): confirmed by NASA as tau Cet f, flagged controversial
 - **Tau Ceti g** (tau-ceti): confirmed by NASA as tau Cet g, flagged controversial
 - **Tau Ceti h** (tau-ceti): confirmed by NASA as tau Cet h, flagged controversial
@@ -89,7 +89,7 @@ Moved by more than 0.25 ly: BL Ceti (0.30 ly), GJ 1061 (2.01 ly). The frozen cor
 - **YZ Ceti d** (yz-ceti): confirmed by NASA as YZ Cet d
 - **Luyten's Star b** (luytens-star): confirmed by NASA as GJ 273 b
 - **Luyten's Star c** (luytens-star): confirmed by NASA as GJ 273 c
-- **Kapteyn's Star b** (kapteyns-star): contested: Neither the NASA Exoplanet Archive nor the Encyclopaedia lists it on 2026-09-30. This edition of the game keeps it.
+- **Kapteyn's Star b** (kapteyns-star): contested: Neither the NASA Exoplanet Archive nor the Encyclopaedia lists it on 2026-10-03. This edition of the game keeps it.
 - **Kapteyn's Star c** (kapteyns-star): confirmed by NASA as Kapteyn c, flagged controversial
 - **Wolf 1061 b** (wolf-1061): confirmed by NASA as Wolf 1061 b
 - **Wolf 1061 c** (wolf-1061): confirmed by NASA as Wolf 1061 c
@@ -101,15 +101,15 @@ Moved by more than 0.25 ly: BL Ceti (0.30 ly), GJ 1061 (2.01 ly). The frozen cor
 - **Gliese 876 c** (gliese-876): confirmed by NASA as GJ 876 c
 - **Gliese 876 d** (gliese-876): confirmed by NASA as GJ 876 d
 - **Gliese 876 e** (gliese-876): confirmed by NASA as GJ 876 e
-- **40 Eridani A b** (40-eridani-a): contested: Neither the NASA Exoplanet Archive nor the Encyclopaedia lists it on 2026-09-30. This edition of the game keeps it.
+- **40 Eridani A b** (40-eridani-a): contested: Neither the NASA Exoplanet Archive nor the Encyclopaedia lists it on 2026-10-03. This edition of the game keeps it.
 - **GJ 674 b** (gj-674): new: confirmed by NASA as GJ 674 b
+- **LTT 1445 A b** (ltt-1445-a): new: confirmed by NASA as LTT 1445 A b
+- **GJ 486 b** (gj-486): new: confirmed by NASA as GJ 486 b
+- **LTT 1445 A c** (ltt-1445-a): new: confirmed by NASA as LTT 1445 A c
 - **GJ 1002 b** (gj-1002): new: confirmed by NASA as GJ 1002 b
 - **GJ 251 c** (gj-251): new: confirmed by NASA as GJ 251 c
 - **Lacaille 9352 e** (lacaille-9352): new: confirmed by NASA as GJ 887 e
 - **HD 219134 h** (hd-219134): new: confirmed by NASA as HD 219134 h
-- **LTT 1445 A b** (ltt-1445-a): new: confirmed by NASA as LTT 1445 A b
-- **GJ 486 b** (gj-486): new: confirmed by NASA as GJ 486 b
-- **LTT 1445 A c** (ltt-1445-a): new: confirmed by NASA as LTT 1445 A c
 - **Teegarden's Star c** (teegardens-star): new: confirmed by NASA as Teegarden's Star c
 - **HD 219134 g** (hd-219134): new: listed (controversial) by NASA as HD 219134 g
 - **GJ 3378 b** (gj-3378): new: confirmed by NASA as GJ 3378 b
@@ -369,6 +369,11 @@ Joining Epsilon Indi: Epsilon Indi Ba (T1V), Epsilon Indi Bb (T6V).
 - **Fomalhaut C debris disc** (fomalhaut-c): [2014MNRAS.438L..96K](https://ui.adsabs.harvard.edu/abs/2014MNRAS.438L..96K), [2024ApJ...967L...8L](https://ui.adsabs.harvard.edu/abs/2024ApJ...967L...8L)
 - **Vega debris disc** (vega): [1984Natur.307..441H](https://ui.adsabs.harvard.edu/abs/1984Natur.307..441H), [2017ApJ...849...98Z](https://ui.adsabs.harvard.edu/abs/2017ApJ...849...98Z)
 - **GJ 581 debris disc** (gj-581): [2012A&A...548A..86L](https://ui.adsabs.harvard.edu/abs/2012A%26A...548A..86L)
+
+## Far stars
+
+- Betelgeuse (* alf Ori): 497.9 → 497.9 ly; SIMBAD
+- Antares (* alf Sco): 553.7 → 553.7 ly; SIMBAD
 
 ## The Solar System
 
