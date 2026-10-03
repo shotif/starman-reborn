@@ -42,6 +42,10 @@ export const LANES = {
     cargo: { weight: 3, bait: { secure: 0, patrolled: 0.15, lawless: 0.4 }, qty: [2, 4] as const, returnShare: 0.6, returnStanding: 2 },
     /** A trader who has lost their way: share your charts for a price tip, or sell them a fix. */
     trader: { weight: 2, fix: 60 },
+    /** A wreck's automatic beacon: salvage rights open (docs/PROCGEN.md §31). Raiders sometimes pick wrecks over (WRECKS.danger.guard). */
+    wreck: { weight: 3, standing: 1 },
+    /** An old beacon from a hulk adrift near a body, two jumps or more from Sol (§31). Sometimes raiders lie dark by it (WRECKS.danger.dark). */
+    derelict: { weight: 1, standing: 1 },
   },
 } as const;
 

@@ -5,7 +5,7 @@ import type { LaneKind } from './rules.ts';
  * risk the card names (with odds from the rules, never whether this one is a trap), each choice and
  * what came of it. Fiction, like the people and ships in them. Every number comes from the rules or
  * the world through a field, never written here: {ship}, {name}, {station}, {system}, {owner},
- * {credits}, {good}, {qty}, {toll}, {fine}, {bribe}, {sting}, {odds}, {sight}, {fare}.
+ * {credits}, {good}, {qty}, {toll}, {fine}, {bribe}, {sting}, {odds}, {sight}, {fare}, {body}.
  */
 
 export interface LaneOptionLines {
@@ -32,10 +32,10 @@ export const LANE_LINES: Record<LaneKind, LaneLines> = {
   mayday: {
     speaker: 'Mayday',
     hail: 'Mayday, mayday: the {ship}, drive failing, life support on reserve. Anyone on this channel?',
-    scene: 'The {ship} is drifting a few kilometres off your bow, running lights flickering. Their pilot, {name}, asks for a jump start and a word with the nearest station.',
+    scene: 'The {ship} is adrift out here, running lights flickering. Their pilot, {name}, asks for a jump start and will pay {credits} for the trouble.',
     risk: 'Maydays out here are sometimes bait: {odds}.',
     options: {
-      help: { label: 'Go to them', outcome: '{name} gets the {ship} running again and pays you {credits} for your trouble.', trap: 'The {ship} was bait. Raiders drop out of the dark around you.' },
+      help: { label: 'Go to them', outcome: 'The {ship} is marked on your HUD: fly alongside to help.' },
       pass: { label: 'Fly on', outcome: 'You leave the {ship} to someone else.' },
     },
     lapse: 'The mayday from the {ship} falls silent.',
@@ -45,7 +45,7 @@ export const LANE_LINES: Record<LaneKind, LaneLines> = {
     hail: 'A lifepod beacon: a survivor of the {ship}, lost to raiders here, is calling for a pickup.',
     scene: '{name}, who crewed the {ship} until the raiders came, is alive in a lifepod with a day of air. They ask to be taken to {station}.',
     options: {
-      aboard: { label: 'Take them aboard', outcome: '{name} is aboard, bound for {station}. They will pay {fare} there.' },
+      aboard: { label: 'Take them aboard', outcome: 'The lifepod is marked on your HUD: tractor it in, and {name} will pay {fare} at {station}.' },
       call: { label: 'Call it in', outcome: 'You pass the pod’s position to the {owner}. Someone will fetch {name}, in time.' },
       leave: { label: 'Leave the pod', outcome: 'You leave the pod to its beacon.' },
     },
@@ -88,11 +88,11 @@ export const LANE_LINES: Record<LaneKind, LaneLines> = {
   cargo: {
     speaker: 'Cargo beacon',
     hail: 'A cargo beacon: {qty} units of {good} adrift, lost by a hauler bound for {station}.',
-    scene: 'Cargo pods tumble a few kilometres away: {qty} units of {good}, tagged for {station}. Return them and the owners will pay {credits}; or keep them.',
+    scene: 'Cargo pods tumble somewhere out here: {qty} units of {good}, tagged for {station}. Return them and the owners will pay {credits}; or keep them.',
     risk: 'Cargo left adrift out here is sometimes bait: {odds}.',
     options: {
-      return: { label: 'Return it', outcome: 'The pods are in your hold. Deliver them to {station} for {credits}.', trap: 'The pods were bait. Raiders drop out of the dark around you.' },
-      keep: { label: 'Keep it', outcome: 'The pods are in your hold, and yours now.', trap: 'The pods were bait. Raiders drop out of the dark around you.' },
+      return: { label: 'Return it', outcome: 'The pods are marked on your HUD: tractor them in, then deliver them to {station} for {credits}.' },
+      keep: { label: 'Keep it', outcome: 'The pods are marked on your HUD: tractor them in, and they are yours.' },
       leave: { label: 'Leave it', outcome: 'You leave the pods to drift.' },
     },
     lapse: 'The cargo beacon drifts out of range.',
@@ -107,6 +107,30 @@ export const LANE_LINES: Record<LaneKind, LaneLines> = {
       ignore: { label: 'Ignore them', outcome: 'You let the {ship} find its own way.' },
     },
     lapse: 'The {ship} stops calling.',
+  },
+  wreck: {
+    speaker: 'Wreck beacon',
+    hail: 'An automatic beacon: the {ship} broke up out here. Salvage rights are open to anyone who comes.',
+    scene: 'The wreck of the {ship} is tumbling somewhere out here, its beacon still calling. Whatever is left in its hold and its log is yours if you go and get it.',
+    risk: 'Raiders pick over wrecks out here: {odds}.',
+    options: {
+      go: { label: 'Mark it and go', outcome: 'The wreck of the {ship} is marked on your HUD: scan its log and tractor in its pods.' },
+      call: { label: 'Log it for the salvors', outcome: 'You log the wreck for the {owner} salvors.' },
+      leave: { label: 'Leave it', outcome: 'You leave the wreck to its beacon.' },
+    },
+    lapse: 'The wreck’s beacon fades out of range.',
+  },
+  derelict: {
+    speaker: 'Old beacon',
+    hail: 'A carrier tone on a band nobody uses any more: an old hulk, the {ship}, adrift near {body}.',
+    scene: 'The {ship} has not answered a call in a very long time. It drifts near {body}, dark. Board it and see what is left aboard.',
+    risk: 'Hulks out here sometimes hide raiders lying dark: {odds}.',
+    options: {
+      go: { label: 'Mark it and go', outcome: 'The {ship} is marked on your HUD: hold steady alongside to board it.' },
+      report: { label: 'Report it', outcome: 'You report the {ship} to the {owner}.' },
+      leave: { label: 'Leave it', outcome: 'You leave the old hulk to its silence.' },
+    },
+    lapse: 'The old beacon fades.',
   },
 };
 

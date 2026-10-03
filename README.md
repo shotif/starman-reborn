@@ -65,8 +65,12 @@ frontier, Pyre dies: the one star the game invents, labelled so wherever it show
 just beyond the edge of the map. Carry its observers out before it explodes, outrun its light
 through the lanes, then fly to the black hole it leaves, read it from outside its tides, and keep
 clear of them. And between the docks, the lanes call: a mayday that may be bait, a lifepod, a Wake
-toll gate, a customs patrol open to a bribe, a stranded scientist, cargo adrift or a lost trader,
-each a choice with consequences.
+toll gate, a customs patrol open to a bribe, a stranded scientist, cargo adrift, a lost trader, a
+wreck's beacon or an old hulk's, each a choice with consequences. Many lead somewhere to fly: a ship
+in distress to reach, pods to tractor in, a wreck to salvage, an old derelict (invented, and labelled
+so) to board by holding steady alongside; a scan of a planet may pick up a faint return too. Some
+are bait, with raiders lying dark until you come close or a scan shows them. And a wreck's log may
+hold a lead into a short trail across a few systems: a lost crew, a strongbox, an old hull's sister.
 Ships, equipment, the world, the economy, events, contracts and the law are generated from rule
 files and checked by automated guardrails ([docs/PROCGEN.md](docs/PROCGEN.md)).
 
@@ -148,13 +152,13 @@ into the real-device checklist ([TEST_RECORD.md](docs/TEST_RECORD.md)). Nothing 
 | Strafe | **A / D** | – | – |
 | Boost | **Shift** | Boost button (hold) | **LT** (hold) |
 | Cruise | **Space** | Cruise button | D-pad **→** |
-| Dock, enter lane, interact | **E** | Green action button | **A** |
+| Dock, enter lane, interact, board a derelict (alongside and slow) | **E** | Green action button | **A** |
 | Go to selected target / objective | **G** | Green action button ("Go to") | **A** ("Go to") or **R3** |
 | Autopilot off (free flight) | **Free flight** on the command rail | Steer, or the action button ("Stop") | **B**, or steer |
 | Missile, rocket or torpedo | **F** or middle mouse | Missile button | **X** |
 | Repair kit | **R** | Repair button | D-pad **←** |
 | Decoy flare against seekers | **C** | Decoy button | **LB** |
-| Scan | **X** | Action button ("Scan") | **A** ("Scan") |
+| Scan (a planet, star, belt, rock or wreck) | **X** | Action button ("Scan") | **A** ("Scan") |
 | Mine the selected rock (mining laser, within 600 m) | **B** | Action button, amber ("Mine") | **A** ("Mine") |
 | Engines off (drift) | **Z** | Drift button (landscape) | **L3** |
 | Star map | **Tab** or **M** | Map button | **Back** (View) |
@@ -205,12 +209,12 @@ src/content/   rule-driven generators and guardrails (docs/PROCGEN.md): ships an
                (src/content/progress), the story arcs (src/content/story), dens under fire
                (src/content/dens), combat depth (src/content/combat), people in the bars
                (src/content/people), the fleet (src/content/fleet), mining (src/content/mining),
-               the border war (src/content/border), stellar death (src/content/stellar) and lane
-               encounters (src/content/lanes)
+               the border war (src/content/border), stellar death (src/content/stellar), lane
+               encounters (src/content/lanes) and wrecks to fly to (src/content/wrecks)
 src/economy/   live markets, world events and the world's answers, trade, cargo, outfitter and
                shipyard, factions, jobs and generated contracts, the law, ratings, the codex,
                milestones, the story, people and rumours, the fleet, mining, the border war,
-               the far stars' deaths and Pyre's (the invented star), and lane encounters
+               the far stars' deaths and Pyre's (the invented star), lane encounters and wrecks
 src/audio/     procedural Web Audio music and sound effects
 src/ui/        HUD, touch controls, station screens, encyclopedia, styles
 scripts/       the sky snapshot (sky-fetch on GitHub's runners, sky-process here), catalogue

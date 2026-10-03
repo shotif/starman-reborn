@@ -531,6 +531,57 @@ for (const size of SIZES) {
       await page.getByTestId('crew-favour').evaluate((el) => el.scrollIntoView({ block: 'end' }));
       await shot(page, `${size.name}-16c-crew-favour`, size.touch, results);
       await press(page, 'crew-close');
+      // Wrecks to fly to (docs/PROCGEN.md §31): a wreck beacon's site in flight, its log scanned (the
+      // first log's lead and its choices), an old derelict's card once boarded, and the journal's trails.
+      await api(page, 'meetLanes', true);
+      const putAway = async () => {
+        const ok = page.getByTestId('discovery-ok').last();
+        if (await ok.isVisible().catch(() => false)) await ok.click({ timeout: 2_000 }).catch(() => {});
+      };
+      const action = size.touch ? 'touch-context' : 'hud-context';
+      const markSite = async (kind: 'wreck' | 'derelict') => {
+        const from = (await api<{ clock: number }>(page, 'state')).clock + 1_200;
+        const o = (await api<{ id: string; systemId: string; start: number } | null>(page, 'findLane', { from, kind, trap: false }))!;
+        expect(o, `a ${kind} hail`).not.toBeNull();
+        await api(page, 'advanceClock', o.start + 5 - (await api<{ clock: number }>(page, 'state')).clock);
+        await api(page, 'warp', o.systemId);
+        await waitUntil(page, 'flying there', async () => (await api(page, 'mode')) === 'flight');
+        if (await page.getByTestId('sheet-close').isVisible().catch(() => false)) await press(page, 'sheet-close');
+        await waitUntil(page, `the ${kind} hail`, async () => (await putAway(), (await api<{ hail: { id: string } | null }>(page, 'lanes')).hail?.id === o.id), 60_000);
+        await press(page, size.touch ? 'touch-context' : 'hail-answer');
+        await press(page, 'lane-go');
+        const target = `site:lane.${o.id}`;
+        await waitUntil(page, 'the site in the scene', async () => (await api<{ id: string }[]>(page, 'targets')).some((t) => t.id === target), 20_000);
+        return target;
+      };
+      const wreckTarget = await markSite('wreck');
+      await api(page, 'placeNear', { id: wreckTarget, distance: 900 });
+      await api(page, 'selectTarget', wreckTarget);
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      expect(await api<boolean>(page, 'face', { id: wreckTarget, below: size.height < 500 ? 2 : 4 })).toBe(true);
+      await shot(page, `${size.name}-17-wreck`, size.touch, results);
+      await waitUntil(page, 'Scan', async () => (await api<{ context: { label: string } | null } | null>(page, 'hud'))?.context?.label === 'Scan', 20_000);
+      await press(page, action);
+      await expect(page.getByTestId('site-lead')).toBeVisible();
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-17b-site-card`, size.touch, results);
+      await press(page, 'site-leave');
+      const hulk = await markSite('derelict');
+      await api(page, 'placeNear', { id: hulk, distance: 100 });
+      await waitUntil(page, 'Board', async () => (await putAway(), (await api<{ context: { label: string } | null } | null>(page, 'hud'))?.context?.label === 'Board'), 20_000);
+      await api(page, 'setTimeScale', 4);
+      await press(page, action);
+      await expect(page.getByTestId('site-dialog')).toBeVisible({ timeout: 30_000 });
+      await api(page, 'setTimeScale', 1);
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-17c-derelict-card`, size.touch, results);
+      await press(page, (await page.getByTestId('site-follow').isVisible()) ? 'site-follow' : 'site-close');
+      await api(page, 'meetLanes', false);
+      await docked('wayfarer-array');
+      await press(page, 'station-journal');
+      await page.getByTestId('wrecks-record').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-17d-journal-wrecks`, size.touch, results);
       for (const [name, r] of Object.entries(results)) {
         expect.soft(r.overflow, `${name}: page overflow`).toBe(false);
         expect.soft(r.clipped, `${name}: clipped controls`).toEqual([]);

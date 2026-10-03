@@ -22,6 +22,7 @@ import { FlightSession } from '../../src/world/FlightSession.ts';
 import { SystemScene } from '../../src/world/SystemScene.ts';
 import { sceneDefFor } from '../../src/world/systems/index.ts';
 import { trafficFor } from '../../src/world/traffic/setup.ts';
+import { reachSite, siteSpec, springSite, takeSitePod } from '../../src/economy/wrecks.ts';
 
 /**
  * Lane encounters (docs/PROCGEN.md §27): the rules' guardrails, the world's slots, the pilot's gate,
@@ -140,23 +141,33 @@ describe('the pilot’s gate', () => {
 });
 
 describe('choices and what they bring', () => {
-  it('a mayday: a reward when it is real, raiders when it is bait; the card names the risk out of secure space', () => {
+  it('a mayday: the ship marked to fly alongside, paying when reached; bait found out there; the card names the risk out of secure space', () => {
     const real = find((x) => x.kind === 'mayday' && !x.trap);
     const s = meeting(real);
     const credits = s.credits;
     const out = answerLane(s, real, 'help')!;
     expect(out.ambush).toBeUndefined();
-    expect(s.credits - credits).toBe(real.credits);
+    expect(out.siteId).toBe(`lane.${real.id}`);
+    expect(out.jobId).toBe(`c.lane.${real.id}`);
+    expect(out.text).toMatch(/marked on your HUD/);
+    expect(s.credits).toBe(credits);
+    expect(s.world.wrecks!.sites[out.siteId!]).toMatchObject({ kind: 'ship', systemId: real.systemId });
     expect(s.world.lanes![real.id]!.pick).toBe('help');
+    reachSite(s, out.siteId!);
+    expect(s.jobs[out.jobId!]?.status).toBe('complete');
+    expect(s.credits - credits).toBe(real.credits);
     const bait = find((x) => x.kind === 'mayday' && x.trap);
     const b = meeting(bait);
     const before = b.credits;
     const words = laneWords(b, bait);
     expect(words.risk).toMatch(/sometimes bait: about one in/);
     const trap = answerLane(b, bait, 'help')!;
-    expect(trap.ambush).toBe(bait.level);
+    expect(trap.ambush).toBeUndefined();
+    expect(siteSpec(trap.siteId!, b)!.bait).toBe(true);
+    expect(reachSite(b, trap.siteId!).notes).toEqual([]);
+    expect(springSite(b, trap.siteId!, 'near').notes.map((n) => n.text).join(' ')).toMatch(/bait/);
+    expect(b.jobs[trap.jobId!]?.status).toBe('failed');
     expect(b.credits).toBe(before);
-    expect(trap.text).toMatch(/bait/);
   });
 
   it('a lifepod: its survivor aboard for a fare, needing a berth', () => {
@@ -165,8 +176,14 @@ describe('choices and what they bring', () => {
     expect(laneChoices(s, o).find((c) => c.id === 'aboard')!.lock).toBeNull();
     const out = answerLane(s, o, 'aboard')!;
     expect(out.jobId).toBe(`c.lane.${o.id}`);
+    expect(out.siteId).toBe(`lane.${o.id}`);
+    // The berth is kept from the answer; the pod is tractored in before the passage can end.
     expect(passengersAboard(s)).toBe(1);
     expect(s.jobs[out.jobId!]?.status).toBe('active');
+    dockAt(s, o.stationId!);
+    expect(s.jobs[out.jobId!]?.status).toBe('active');
+    s.location.dockedAt = null;
+    takeSitePod(s, out.siteId!, 0);
     const before = s.credits;
     dockAt(s, o.stationId!);
     expect(s.jobs[out.jobId!]?.status).toBe('complete');
@@ -241,10 +258,15 @@ describe('choices and what they bring', () => {
     expect(f.credits - credits).toBe(o.credits);
   });
 
-  it('cargo adrift: returned for pay, or kept; bait brings raiders and nothing aboard', () => {
+  it('cargo adrift: its pods marked to tractor in, then returned for pay, or kept; bait finds nothing aboard', () => {
     const o = find((x) => x.kind === 'cargo' && !x.trap);
     const s = meeting(o);
     const out = answerLane(s, o, 'return')!;
+    expect(cargoCount(s.ship.cargo, o.good!)).toBe(0);
+    const pods = siteSpec(out.siteId!, s)!.pods;
+    expect(pods.length).toBeGreaterThanOrEqual(1);
+    expect(pods.reduce((t, p) => t + p.cargo!.qty, 0)).toBe(o.qty);
+    for (const p of pods) takeSitePod(s, out.siteId!, p.index);
     expect(cargoCount(s.ship.cargo, o.good!)).toBe(o.qty);
     const dest = getLocation(o.stationId!);
     s.location = { ...s.location, systemId: dest.systemId, dockedAt: dest.id };
@@ -252,11 +274,16 @@ describe('choices and what they bring', () => {
     expect(deliverJob(s, out.jobId!, dest.id)).toMatchObject({ ok: true });
     expect(s.credits - before).toBe(o.credits);
     const k = meeting(o);
-    answerLane(k, o, 'keep');
+    const kept = answerLane(k, o, 'keep')!;
+    for (const p of siteSpec(kept.siteId!, k)!.pods) takeSitePod(k, kept.siteId!, p.index);
     expect(cargoCount(k.ship.cargo, o.good!)).toBe(o.qty);
+    expect(k.jobs[kept.jobId!]?.status).toBe('complete');
     const bait = find((x) => x.kind === 'cargo' && x.trap);
     const b = meeting(bait);
-    expect(answerLane(b, bait, 'keep')).toMatchObject({ ambush: bait.level });
+    const trap = answerLane(b, bait, 'keep')!;
+    expect(trap.ambush).toBeUndefined();
+    springSite(b, trap.siteId!, 'near');
+    for (const p of siteSpec(trap.siteId!, b)!.pods) takeSitePod(b, trap.siteId!, p.index);
     expect(cargoCount(b.ship.cargo, bait.good!)).toBe(0);
   });
 

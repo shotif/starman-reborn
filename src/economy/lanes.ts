@@ -4,6 +4,7 @@ import { COMMODITIES, type CommodityId } from '../content/economy/goods.ts';
 import { LANE_LINES, LANE_FICTION } from '../content/lanes/lines.ts';
 import { ADRIFT_GOODS, LANE_KINDS, LANE_SHIPS, LANES, type LaneKind } from '../content/lanes/rules.ts';
 import { LAW } from '../content/law/rules.ts';
+import { WRECKS } from '../content/wrecks/rules.ts';
 import { PASSENGERS } from '../content/passengers/rules.ts';
 import { FIRST_NAMES, LAST_NAMES } from '../content/people/lines.ts';
 import { rng, type Rng } from '../content/random.ts';
@@ -20,6 +21,7 @@ import { adjustReputation, FACTIONS } from './factions.ts';
 import { haulsLostNear } from './hauls.ts';
 import type { JobDef } from './jobs.ts';
 import { contrabandIn, customsScan, isLawful, lawIn, wakeFriendly, witness, type LawfulFaction } from './law.ts';
+import { derelictsMayBe, markLaneSite, reportSite, siteBlock, siteBodies } from './wrecks.ts';
 import { cargoCapacity } from './loadout.ts';
 import { berths } from './passengers.ts';
 import { priceTipNear } from './people.ts';
@@ -61,6 +63,8 @@ export interface LaneOffer {
   good?: CommodityId;
   qty?: number;
   sight?: string;
+  /** The real body a derelict drifts near (docs/PROCGEN.md §31): a scene planet's or star's id. */
+  body?: string;
 }
 
 export interface LaneChoice {
@@ -81,6 +85,8 @@ export interface LaneOutcome {
   pass?: true;
   /** A job taken on (a passage, or cargo to return). */
   jobId?: string;
+  /** A site marked in flight to fly to (docs/PROCGEN.md §31). */
+  siteId?: string;
 }
 
 const SLOT = LANES.slotSeconds;
@@ -130,7 +136,10 @@ function fits(kind: LaneKind, systemId: SystemId, start: number): boolean {
     case 'scientist':
       return tourSights().some((s) => s.systemId === systemId) && institutesNear(systemId).length > 0;
     case 'cargo':
+    case 'wreck':
       return openStations(systemId).length > 0;
+    case 'derelict':
+      return derelictsMayBe(systemId);
   }
 }
 
@@ -204,6 +213,19 @@ export function laneEncounter(systemId: SystemId, slot: number): LaneOffer | nul
       offer.credits = K.trader.fix;
       offer.stationId = stations[0]!.id;
       break;
+    case 'wreck':
+      // Raiders picking the wreck over: seen when the pilot gets there (docs/PROCGEN.md §31.5).
+      offer.trap = r.next() < WRECKS.danger.guard[band];
+      offer.level = packsIn(systemId)?.level ?? (band === 'lawless' ? 2 : 1);
+      offer.owner = isLawful(lawIn(systemId)) ? (lawIn(systemId) as LawfulFaction) : null;
+      break;
+    case 'derelict':
+      // Raiders lying dark by the hulk, and the real body it drifts near.
+      offer.trap = r.next() < WRECKS.danger.dark[band];
+      offer.level = packsIn(systemId)?.level ?? (band === 'lawless' ? 2 : 1);
+      offer.owner = isLawful(lawIn(systemId)) ? (lawIn(systemId) as LawfulFaction) : null;
+      offer.body = r.pick(siteBodies(systemId)).id;
+      break;
   }
   return offer;
 }
@@ -255,7 +277,9 @@ function fields(state: GameState, o: LaneOffer): Record<string, string> {
   const K = LANES.kinds;
   const station = o.stationId ? getLocation(o.stationId) : null;
   const fine = customsFine(state, o);
-  const odds = o.kind === 'customs' ? K.customs.sting : o.kind === 'mayday' ? K.mayday.bait[laneBand(o.systemId)] : o.kind === 'cargo' ? K.cargo.bait[laneBand(o.systemId)] : 0;
+  const band = laneBand(o.systemId);
+  const odds =
+    o.kind === 'customs' ? K.customs.sting : o.kind === 'mayday' ? K.mayday.bait[band] : o.kind === 'cargo' ? K.cargo.bait[band] : o.kind === 'wreck' ? WRECKS.danger.guard[band] : o.kind === 'derelict' ? WRECKS.danger.dark[band] : 0;
   return {
     ship: o.ship,
     name: o.name,
@@ -272,6 +296,7 @@ function fields(state: GameState, o: LaneOffer): Record<string, string> {
     sting: `${LANES.kinds.customs.stingFine.toLocaleString('en-GB')} cr`,
     sight: o.sight ?? '',
     odds: oddsText(odds),
+    body: o.body ? (siteBodies(o.systemId).find((b) => b.id === o.body)?.name ?? '') : '',
   };
 }
 
@@ -300,7 +325,7 @@ function customsFine(state: GameState, o: LaneOffer): { full: number; declare: n
 export function laneWords(state: GameState, o: LaneOffer): { speaker: string; hail: string; scene: string; risk: string | null; fiction: string } {
   const lines = LANE_LINES[o.kind];
   const values = fields(state, o);
-  const risky = o.kind === 'toll' || o.kind === 'customs' || ((o.kind === 'mayday' || o.kind === 'cargo') && values.odds !== 'never');
+  const risky = o.kind === 'toll' || o.kind === 'customs' || ((o.kind === 'mayday' || o.kind === 'cargo' || o.kind === 'wreck' || o.kind === 'derelict') && values.odds !== 'never');
   return { speaker: lines.speaker, hail: fillLane(lines.hail, values), scene: fillLane(lines.scene, values), risk: risky && lines.risk ? fillLane(lines.risk, values) : null, fiction: LANE_FICTION };
 }
 
@@ -317,11 +342,13 @@ export function laneChoices(state: GameState, o: LaneOffer): LaneChoice[] {
   const owner = o.owner ? FACTIONS[o.owner].shortName : null;
   const noBerth = berths(state).free < 1 ? 'No free berth: fit a passenger cabin' : null;
   const choice = (id: string, effects: string, lock: string | null = null): LaneChoice => ({ id, label: lines[id]!.label, effects, lock });
+  // Going to a site marks it in flight (docs/PROCGEN.md §31): only so many at once.
+  const sites = siteBlock(state);
   switch (o.kind) {
     case 'mayday':
-      return [choice('help', `${v.credits} if they are who they say`), choice('pass', 'Nothing')];
+      return [choice('help', `${v.credits} when you reach them, if they are who they say`, sites), choice('pass', 'Nothing')];
     case 'lifepod':
-      return [choice('aboard', `A berth to ${station}; ${v.fare} there`, noBerth), choice('call', owner ? `${owner} standing +${K.lifepod.standing}` : 'Nothing'), choice('leave', 'Nothing')];
+      return [choice('aboard', `Tractor in the pod; a berth to ${station}, ${v.fare} there`, noBerth ?? sites), choice('call', owner ? `${owner} standing +${K.lifepod.standing}` : 'Nothing'), choice('leave', 'Nothing')];
     case 'toll':
       return [choice('pay', `−${v.toll}; the pack lets you be here`, state.credits < (o.toll ?? 0) ? `You have ${state.credits.toLocaleString('en-GB')} cr` : null), choice('refuse', 'The pack attacks')];
     case 'customs':
@@ -340,10 +367,14 @@ export function laneChoices(state: GameState, o: LaneOffer): LaneChoice[] {
     }
     case 'cargo': {
       const full = o.good && freeHold(state, o.good) < (o.qty ?? 0) ? 'Not enough room in the hold' : null;
-      return [choice('return', `${v.qty} ${v.good} aboard; ${v.credits} at ${station}`, full), choice('keep', `${v.qty} ${v.good} aboard, yours`, full), choice('leave', 'Nothing')];
+      return [choice('return', `Tractor in ${v.qty} ${v.good}; ${v.credits} at ${station}`, full ?? sites), choice('keep', `Tractor in ${v.qty} ${v.good}, yours`, full ?? sites), choice('leave', 'Nothing')];
     }
     case 'trader':
       return [choice('charts', 'A price they know'), choice('sell', `+${v.credits}`), choice('ignore', 'Nothing')];
+    case 'wreck':
+      return [choice('go', 'Its pods and its log, if you get there', sites), choice('call', owner ? `${owner} standing +${K.wreck.standing}` : 'Nothing'), choice('leave', 'Nothing')];
+    case 'derelict':
+      return [choice('go', 'Whatever is left aboard, if you board it', sites), choice('report', owner ? `${owner} standing +${K.derelict.standing}` : 'Nothing'), choice('leave', 'Nothing')];
   }
 }
 
@@ -420,13 +451,21 @@ export function answerLane(state: GameState, o: LaneOffer, optionId: string): La
   const K = LANES.kinds;
   switch (`${o.kind}.${optionId}`) {
     case 'mayday.help':
-      if (o.trap) return say(lines.trap!, 'bad', { ambush: o.level ?? 1 });
-      applyCredits(state, o.credits ?? 0, 'reward', `Helped the ${o.ship}`);
-      if (o.owner) adjustReputation(state.reputation, o.owner, K.mayday.standing);
-      return say(lines.outcome, 'good');
+    case 'wreck.go':
+    case 'derelict.go': {
+      // A site to fly to (docs/PROCGEN.md §31): a bait mayday is found out there, not here.
+      const site = markLaneSite(state, o);
+      return say(lines.outcome, 'good', site ? { jobId: site.jobId, siteId: site.siteId } : {});
+    }
+    case 'wreck.call':
+    case 'derelict.report':
+      reportSite(state, o);
+      return say(lines.outcome, 'info');
     case 'lifepod.aboard': {
-      const jobId = takePassage(state, o, `A survivor of the ${o.ship}`, `${o.name}, who crewed the ${o.ship} until raiders destroyed it, was picked up from a lifepod in flight and wants to reach ${getLocation(o.stationId!).name}.`);
-      return say(lines.outcome, 'good', { jobId });
+      // The survivor's berth is kept from now; the pod is tractored in first.
+      takePassage(state, o, `A survivor of the ${o.ship}`, `${o.name}, who crewed the ${o.ship} until raiders destroyed it, is adrift in a lifepod and wants to reach ${getLocation(o.stationId!).name}.`);
+      const site = markLaneSite(state, o);
+      return say(lines.outcome, 'good', site ? { jobId: site.jobId, siteId: site.siteId } : {});
     }
     case 'lifepod.call':
     case 'scientist.tow':
@@ -470,10 +509,10 @@ export function answerLane(state: GameState, o: LaneOffer, optionId: string): La
       return say(lines.outcome, 'good');
     case 'cargo.return':
     case 'cargo.keep': {
-      if (o.trap) return say(lines.trap!, 'bad', { ambush: o.level ?? 1 });
-      addCargo(state.ship.cargo, o.good!, o.qty!);
-      const jobId = optionId === 'return' ? takeReturn(state, o) : undefined;
-      return say(lines.outcome, 'good', jobId ? { jobId } : {});
+      // The pods are marked to tractor in (docs/PROCGEN.md §31); returned, a delivery follows.
+      if (optionId === 'return') takeReturn(state, o);
+      const site = markLaneSite(state, o);
+      return say(lines.outcome, 'good', site ? { jobId: site.jobId, siteId: site.siteId } : {});
     }
     case 'trader.charts': {
       const at = o.stationId!;

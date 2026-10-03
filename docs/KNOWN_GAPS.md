@@ -140,8 +140,8 @@ snapshot branch only when the archives changed.
   from the defence the outpost had, not flown out.
 - Your crew (PROCGEN §30) have one story each and one hurt at a time, and mend only while the
   clock runs (in flight). Their deeds are counted from what the save records and a few hooks
-  (lane encounters, contraband sold, rescue and smuggling jobs done, customs finds, attacks on
-  lawful ships, raiders downed), not from everything a pilot might do; the trade computer's route
+  (lane encounters, sites flown to, contraband sold, rescue and smuggling jobs done, customs finds,
+  attacks on lawful ships, raiders downed), not from everything a pilot might do; the trade computer's route
   fees leave out the navigator's discount. Crew never stay aboard parked ships or fly with your
   captains, and those who leave are gone for good. A favour's place is the nearest of its kind,
   not one of their own choosing.
@@ -153,12 +153,22 @@ snapshot branch only when the archives changed.
   over. A duel is one on one as far as the scene can make it: no new raider packs come, the wing
   holds its fire and patrols leave the rival be, but raiders already there (from an earlier visit, or
   called by a lane encounter) can still join in. The rival's ship has its stock fittings.
-- Lane encounters (PROCGEN §27) are settled at their card: there is no wreck, pod or ship to fly to,
-  and raiders called by bait or a refused toll drop out of the dark a few kilometres off rather than
-  waiting at the spot. A hail counts down only while no hostiles are near, and one in a system the
-  pilot leaves goes with them unanswered (it is not met again). The Wake's toll covers only the
-  system it was paid in, until the next dock or jump. A lost trader's tip is a price within reach of
-  the system's first station. In browser tests encounters are off unless a test turns them on.
+- Lane encounters (PROCGEN §27): raiders called by a refused toll drop out of the dark a few
+  kilometres off rather than waiting at the spot. A hail counts down only while no hostiles are near,
+  and one in a system the pilot leaves goes with them unanswered (it is not met again). The Wake's
+  toll covers only the system it was paid in, until the next dock or jump. A lost trader's tip is a
+  price within reach of the system's first station. In browser tests encounters are off unless a
+  test turns them on.
+- Wrecks to fly to (PROCGEN §31): a site waits two hours (a trail's step three), at most four at once.
+  Hulls are catalogue ships, a derelict a larger dark one rather than a ruin of its own; they are
+  scenery the ship can pass through, with no collision. Boarding is a wait alongside, not a walk
+  inside. A ship in distress, once helped, stays where it is rather than flying on to a dock. Wrecks
+  hold salvage and cargo, never equipment, and are never the wreck of a hauler lost on the timetable.
+  There are three trails, each once a save and one at a time, and the strongbox's fence is always a
+  free port, never a den. Finds come only from manual scans of planets, stars and belts. Raiders lying
+  dark come out of hiding by the hull rather than flying in. Nobody else is simulated salvaging:
+  *another salvor got there first* is only how a site lapses. None lie in Sol or at Pyre; the star
+  map shows sites only through the Missions list, and the News says nothing of them.
 - Traffic and raider packs exist only around the player. Packs that saw the player and cargo pods
   left adrift wait for 30 minutes of game clock (in the last six systems), as do the packs and
   wrecks of the player's own contracts; everything else is generated again on arrival.

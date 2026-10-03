@@ -11,12 +11,12 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | --- | --- | --- |
 | TypeScript typecheck (app + scripts/tests) | `npm run typecheck` | Pass |
 | Astronomy data validation | `npm run data:validate` | Pass (22 warnings: the contested planets this edition keeps) |
-| Unit tests | `npm test` | Pass: 852 tests in 54 files |
+| Unit tests | `npm test` | Pass: 875 tests in 55 files |
 | Production build | `npm run build` | Pass |
-| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 704 KB of 800 (gzipped) |
-| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 44 passed (5 touch-only tests skipped) |
-| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 44 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
-| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 351 screenshots, no audit findings |
+| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 716 KB of 800 (gzipped) |
+| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 45 passed (5 touch-only tests skipped) |
+| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 45 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
+| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 387 screenshots, no audit findings |
 
 ### Unit tests (Vitest)
 
@@ -530,16 +530,42 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   line). Odds read in words. The world's slots hold the same encounter every time, never in Sol or
   at Pyre, a toll at the packs' threat. The pilot's gate: after the opening, once a slot and a
   cooldown, the first never a toll, customs or a trap, customs only with contraband aboard, no toll
-  for a pilot the Wake trusts. Every kind's choices and what they bring: a mayday's reward or bait's
-  raiders (the card naming the odds); a lifepod's survivor aboard for a fare paid on docking, closed
-  without a berth; a toll paid (the pass), refused or let lapse (raiders), closed to a pilot who
+  for a pilot the Wake trusts. Every kind's choices and what they bring: a mayday's ship marked,
+  paying when reached, or bait found out there, sprung, its job failed (the card naming the odds); a
+  lifepod's berth kept and its pod marked, the fare paid on docking only once it is tractored in,
+  closed without a berth; a toll paid (the pass), refused or let lapse (raiders), closed to a pilot who
   cannot pay; customs declared (half the fine), bribed (looked away, or a sting with its own fine and
   standing lost), dumped (standing lost), or ignored (a full scan); a scientist's berth with a data
-  core, helium-3 for pay, a tow; cargo returned and paid on delivery, kept, or bait (raiders, nothing
-  aboard); a lost trader's fix and charts; every card's words filled with no number written in, a
+  core, helium-3 for pay, a tow; cargo adrift marked as pods summing its load, tractored in, then
+  returned and paid on delivery, or kept, or bait (sprung, nothing aboard); a lost trader's fix and
+  charts; every card's words filled with no number written in, a
   choice for each line. The save keeps what was met, tidily, and refuses damaged records. In a real
   flight: the hail comes once the ship flies quietly, is written into the save, offers Answer, calls
   the card, and lapses after its time; a refused toll brings raiders, a paid one leaves the ship be.
+
+- `wrecks.test.ts`: **wrecks to fly to**. The guardrails pass over every system, and broken rules
+  and words are caught (danger falling with lawlessness, a trap in secure space, raiders lying dark
+  sprung beyond a scan's reach, a step too short, a hull not in the catalogue, a fence paying less
+  than the insurers, a number, *she*, a line saying something about a real body, a field it cannot
+  fill). Sites are the same every time from their ids, never in Sol or at Pyre, placed clear of
+  docks and bodies without touching the scene. From the lanes: a wreck or a derelict marked (near
+  the hail's body, drawn larger), logged for the salvors (+1 standing) or left; four marked close the
+  go choices. From a scan: the slot's find once, never before the opening, never twice. A wreck's log
+  read (the first log holding a lead) and its pods tractored in for its salvage and cargo, then done;
+  a derelict boarded for its salvage and a data core, or told the hold is full; leads only when no
+  trail is under way, and later logs about one in three. The trails lead where they should from every
+  kind of start (never Sol or Pyre, endings at stations of their kinds, insurers lawful); each is
+  followed to its end and paid (the lifeboat's recorder and its crew; the strongbox, guarded, to its
+  insurers and to a fence with the Wake's thanks, its extra pods still to take; the sister ship near
+  its body), goes cold after its step (never while flying where it leads), drops when abandoned, and
+  comes once a save. Settling lapses a site after its window, never while flying there; tidying keeps
+  the rules' count; a decoy sprung for a pilot the Wake trusts is a wave and nothing to gain. The save
+  keeps sites and trails and refuses damaged records. In a real flight: a wreck's hull and pods there,
+  *Scan* offered and its log read, its pods tractored in and the site done, its marker gone and
+  nothing left lingering; raiders lying dark by a derelict sprung near the hull (none remembered
+  lingering) or shown by a scan from further out; a derelict boarded by holding steady, and boarding
+  broken off by pulling away; a guarded wreck's raiders holding their spot; a ship in distress
+  reached; a site marked mid-flight joining the scene once.
 
 ### Browser tests (Playwright)
 
@@ -702,7 +728,16 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   reading *Answer*, the card (paused, with the Fiction line) and a fix sold; a Hollow Wake toll, the
   card naming the risk, paid; back in the same system in the same slot, nothing more to meet; a
   customs patrol with contraband aboard, the risk named, bribed, the cargo kept; and a real mayday
-  answered with a pad (A on the action, the D-pad to the first choice, A to take it) and paid.
+  answered with a pad (A on the action, the D-pad to the first choice, A to take it), its ship then
+  marked in the scene, flown alongside and paid.
+- `wrecks.spec.ts`: **wrecks to fly to** (hails and scan finds turned on for this test): a wreck
+  beacon's hail answered and marked, the HUD objective naming it; from 900 m, *Scan* on the action
+  button, the log's card (paused, with the Fiction line) holding a lead, followed; flown in close,
+  its pods tractored in for salvage and the job done; the trail flown to its find (the lifeboat's
+  recorder tractored in, its card), then docked at its ending and paid, the journal's *Wrecks and
+  trails* showing it; an old beacon's derelict, *Board* on the action alongside, held steady until
+  its card says what was found; and a planet's scan in a slot holding a find, the faint return
+  marked in the scene.
 - `outpostRaid.spec.ts`: **defending your outpost**: at Lalande 21185 the charter dialog warns of
   raids; the outpost's frame goes up; a turret is built from materials handed over in the Outpost
   window (*1/1 built*, *Up*); a guard is hired for eight hours in the guards' dialog; the watch sees
@@ -740,7 +775,9 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   stories, a rival waiting off a lawless beacon for a duel, an outpost's guards' dialog, its defences
   with the first raid seen coming, the raid on it in flight, a hand looking for a berth at a bar's
   table, the crew in the bar (hurt, giving notice, with a favour to ask), a crew member's favour in
-  their dialog, and the News with a shortage's relief
+  their dialog, a wreck marked in flight and targeted, its log's card with a lead and its choices,
+  an old derelict's card once boarded, the journal's wrecks and trails, and the News with a
+  shortage's relief
   haulers on their way, at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
   zoom). Saved in `docs/screenshots/` once any smooth scrolling has come to rest. Each is audited

@@ -12,6 +12,7 @@ import { pyreRefugeId, rescueDockId } from '../economy/doomed.ts';
 import { settleFleet, type FleetSettlement } from '../economy/fleet.ts';
 import { alliesDock, settleRivalStories, type StoryNote } from '../economy/rivalStories.ts';
 import { crewFee, crewShipLost, settleCrew, type CrewNote } from '../economy/crew.ts';
+import { settleSites, tidySites, type SiteOutcome } from '../economy/wrecks.ts';
 import type { Route } from '../galaxy/routing.ts';
 import type { JumpReadiness } from '../galaxy/types.ts';
 import { applyCredits, markVisited, type GameState } from './state.ts';
@@ -36,6 +37,8 @@ export interface DockOutcome {
   stories: { notes: StoryNote[]; jobs: JobEvent[] };
   /** What the crew aboard did and said since the last dock (docs/PROCGEN.md §30). */
   crew: { notes: CrewNote[]; jobs: JobEvent[] };
+  /** Sites and trails whose time ran out (docs/PROCGEN.md §31). */
+  sites: SiteOutcome;
 }
 
 export function dockAt(state: GameState, locationId: string): DockOutcome {
@@ -58,13 +61,16 @@ export function dockAt(state: GameState, locationId: string): DockOutcome {
     state.flags.clearance = true;
     clearanceGranted = true;
   }
+  // Sites and trails whose time ran out go before the jobs (docs/PROCGEN.md §31).
+  const sites = settleSites(state, null);
+  tidySites(state);
   const jobEvents = advanceJobs(state, { dockedAt: locationId, systemId: loc.systemId });
   // Rivals' stories after the jobs: an escort seen in here is done (docs/PROCGEN.md §28).
   const allies = alliesDock(state, locationId);
   const stories = settleRivalStories(state);
   // The crew last: wages to now, and what they made of all that happened since the last dock.
   const crew = settleCrew(state, locationId);
-  return { jobEvents, clearanceGranted, firstVisit, watchNotes, lawNotes, fleet, allies, stories, crew };
+  return { jobEvents, clearanceGranted, firstVisit, watchNotes, lawNotes, fleet, allies, stories, crew, sites };
 }
 
 export function undock(state: GameState): void {

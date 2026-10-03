@@ -13,6 +13,8 @@ import type { SystemId } from '../data/types.ts';
 import { MAX_REWARD } from './contractGuards.ts';
 import { laneBand, laneChoices, laneEncounter, laneOfferFor, laneSlot, stageLane, type LaneOffer } from './lanes.ts';
 import { isLawful, lawIn } from './law.ts';
+import { derelictsMayBe, siteBodies } from './wrecks.ts';
+import { WRECKS } from '../content/wrecks/rules.ts';
 import { useWorldLog } from './events.ts';
 
 /** What each kind's lines may use. */
@@ -24,6 +26,8 @@ const FIELDS: Record<LaneKind, readonly string[]> = {
   scientist: ['name', 'sight', 'station', 'fare', 'credits', 'system'],
   cargo: ['qty', 'good', 'station', 'credits', 'odds', 'system'],
   trader: ['ship', 'name', 'credits', 'system'],
+  wreck: ['ship', 'owner', 'odds', 'system'],
+  derelict: ['ship', 'body', 'owner', 'odds', 'system'],
 };
 
 /** A quiet pilot's tour of the lanes (minutes in a system, then a jump), for how often encounters come. */
@@ -147,7 +151,9 @@ function checkOffer(o: LaneOffer, report: (rule: string, subject: string, messag
   if (o.systemId === 'sol') report('world', o.id, 'an encounter in Sol');
   if (o.id !== `${o.systemId}.${o.slot}` || laneSlot(o.start) !== o.slot) report('world', o.id, 'an id or start that does not name its slot');
   const band = laneBand(o.systemId);
-  if (o.trap && o.kind !== 'customs' && (o.kind === 'mayday' ? K.mayday.bait[band] : o.kind === 'cargo' ? K.cargo.bait[band] : 0) <= 0) report('world', o.id, `a trap where ${o.kind} is never one`);
+  const trapOdds = o.kind === 'mayday' ? K.mayday.bait[band] : o.kind === 'cargo' ? K.cargo.bait[band] : o.kind === 'wreck' ? WRECKS.danger.guard[band] : o.kind === 'derelict' ? WRECKS.danger.dark[band] : 0;
+  if (o.trap && o.kind !== 'customs' && trapOdds <= 0) report('world', o.id, `a trap where ${o.kind} is never one`);
+  if (o.kind === 'derelict' && (!o.body || !siteBodies(o.systemId).some((b) => b.id === o.body) || !derelictsMayBe(o.systemId))) report('world', o.id, 'a derelict near no body of its system, or where none may be');
   if (o.kind === 'toll' && (band !== 'lawless' || !o.level || o.toll !== K.toll.toll[o.level])) report('world', o.id, 'a toll outside lawless space, or of the wrong amount');
   if (o.kind === 'customs' && (!isLawful(lawIn(o.systemId)) || o.owner !== lawIn(o.systemId))) report('world', o.id, 'customs where no law is');
   if (o.stationId) {

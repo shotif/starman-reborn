@@ -81,6 +81,10 @@ import { rivalById, rivalName, rivalsIn, rivalSubtitle, type RivalLeg, type Riva
 import { crewEffects, hurtCrew, isHurt, type CrewEffects } from '../economy/crew.ts';
 import { CREW, type CrewRole } from '../content/crew/rules.ts';
 import { CREW_NOTES, CREW_RADIO } from '../content/crew/lines.ts';
+import { WRECKS } from '../content/wrecks/rules.ts';
+import { POD_NAMES, POD_SUBTITLE, SITE_NAMES, SITE_NOTES, SITE_SUBTITLES } from '../content/wrecks/lines.ts';
+import type { SiteSetup } from '../economy/wrecks.ts';
+import { placeSite, podOffset } from './sites.ts';
 import type { StationOwner } from '../content/world/types.ts';
 import type { ArtContext, ArtObject } from './art/types.ts';
 import { seededRandom } from './art/util.ts';
@@ -146,6 +150,15 @@ export interface FlightCallbacks {
   onHail?(offer: LaneOffer): void;
   onAnswerHail?(offer: LaneOffer): void;
   onHailLapsed?(offer: LaneOffer): void;
+  /**
+   * A site marked in flight (docs/PROCGEN.md §31): the pilot came near it, tractored in one of its
+   * pods, scanned it (`revealed`: raiders lying dark sprung by the scan), reached a ship in distress,
+   * boarded a derelict; raiders lying dark by it sprang (`friend`: the Wake waves a pilot it trusts
+   * by); its guards are all down; or the ship in distress was destroyed before it was reached.
+   */
+  onSite?(siteId: string, what: 'near' | 'pod' | 'scanned' | 'reached' | 'boarded' | 'sprung' | 'cleared' | 'lost', detail?: { index?: number; how?: 'near' | 'scan'; friend?: boolean; revealed?: boolean }): void;
+  /** A manual scan of a planet, star or belt (docs/PROCGEN.md §31.3): it may pick up a faint return. */
+  onBodyScan?(): void;
   /** The ship of an escort contract docked at its destination. */
   onEscortArrived?(jobId: string): void;
   /** The ship of an escort contract was destroyed. */
@@ -263,6 +276,8 @@ interface NpcShip {
   escort?: { jobId: string; start: THREE.Vector3; ambushAt: number; ambushed: boolean; level: 1 | 2 | 3; waiting?: boolean; convoy?: boolean; follow?: { offset: THREE.Vector3 } };
   /** A ship stranded by a drive failure (a rescue): adrift until the player hands over the parts. */
   stranded?: { jobId: string; handed: boolean; told: boolean; restartAt?: number };
+  /** A site marked in flight it belongs to (docs/PROCGEN.md §31): its ship in distress, a guard, or a raider that lay dark by it. */
+  site?: string;
   /** Who it is fighting. */
   foe: NpcShip | 'player' | null;
   /** Bounty paid when the player destroys it. */
@@ -306,6 +321,8 @@ export interface TrafficSetup {
   duel?: { jobId: string; rivalId: string; started: boolean };
   /** The player's outpost here (docs/PROCGEN.md §29): its stage, its turrets up, its guards on post, and a raid due. */
   outpost?: { locationId: string; stage: number; turrets: number; guards: readonly OutpostGuardSetup[]; raid?: OutpostRaidSetup };
+  /** Sites the pilot has marked here (docs/PROCGEN.md §31): wrecks, derelicts, ships and pods to fly to. */
+  sites?: readonly SiteSetup[];
 }
 
 /** A guard hired for the player's outpost (docs/PROCGEN.md §29): on post from `from` until `until` (the game clock). */
@@ -350,8 +367,27 @@ interface LootPod {
   gear?: string;
   /** The item of a recovery contract (its job id). */
   recover?: string;
+  /** One of a marked site's pods (docs/PROCGEN.md §31): its site and index. */
+  site?: { id: string; index: number };
   life: number;
   target: Target;
+}
+
+/** A site marked in flight (docs/PROCGEN.md §31) as this scene has it. */
+interface SiteHere {
+  setup: SiteSetup;
+  centre: THREE.Vector3;
+  /** The hull drawn (a wreck, a derelict, a decoy); a ship in distress is an NPC and pods have none. */
+  hull: ShipArt | null;
+  spin: THREE.Vector3;
+  /** Its marker: the hull's, the ship's, or the spot its pods drift round. */
+  target: Target;
+  /** Its guards' pack. */
+  guardPack: number | null;
+  /** Its radio heard; scanned this flight; finished with. */
+  near: boolean;
+  scanned: boolean;
+  ended: boolean;
 }
 
 /** A proximity mine (docs/PROCGEN.md §15). */
@@ -437,7 +473,12 @@ function boltKind(type: DamageType, tier: number): ProjectileKind {
 
 /** Targets whose distance is shown to their surface rather than their centre (a belt's is to its band of rock). */
 function surfaced(kind: Target['kind']): boolean {
-  return kind === 'planet' || kind === 'star' || kind === 'rock' || kind === 'hole';
+  return kind === 'planet' || kind === 'star' || kind === 'rock' || kind === 'hole' || kind === 'wreck';
+}
+
+/** A site's words with its ship and body filled in. */
+function fillSite(text: string, s: SiteSetup): string {
+  return text.replace('{ship}', s.ship).replace('{body}', s.bodyName ?? '');
 }
 
 function easeInOut(t: number): number {
@@ -580,6 +621,10 @@ export class FlightSession {
   private readonly mining: MiningField;
   private readonly beamArt: MiningBeamArt;
   private beam: { rockId: string; cut: number; pods: number; soundIn: number; sparkIn: number; huntIn: number } | null = null;
+  /** Sites marked in flight (docs/PROCGEN.md §31), and a derelict being boarded (seconds left). */
+  private readonly sites: SiteHere[] = [];
+  private sitesSpawned = false;
+  private boarding: { id: string; left: number } | null = null;
   private minerPack: number | null = null;
   private holdFullSaid = false;
 
@@ -784,7 +829,7 @@ export class FlightSession {
 
   private objectiveTargetId(): string | null {
     const id = this.objective.targetId;
-    if (id && (this.loot.some((l) => l.target.id === id) || this.mining.find(id) || this.npcs.some((n) => n.target.id === id && n.target.alive) || ((id.startsWith('star:') || id.startsWith('sky:')) && this.findTarget(id)))) return id;
+    if (id && (this.loot.some((l) => l.target.id === id) || this.mining.find(id) || this.npcs.some((n) => n.target.id === id && n.target.alive) || ((id.startsWith('star:') || id.startsWith('sky:') || id.startsWith('site:')) && this.findTarget(id)))) return id;
     if (this.objective.locationId) return `station:${this.objective.locationId}`;
     if (this.objective.bodyId) return `planet:${this.objective.bodyId}`;
     return null;
@@ -838,6 +883,7 @@ export class FlightSession {
     for (const m of this.mines) if (m.target.alive) list.push(m.target);
     for (const t of this.mining.targets()) if (t.alive) list.push(t);
     for (const s of this.skyStars) if (s.target.alive) list.push(s.target);
+    for (const s of this.sites) if (s.target.alive && !this.npcs.some((n) => n.target === s.target)) list.push(s.target);
     return list;
   }
 
@@ -936,6 +982,7 @@ export class FlightSession {
     for (const s of this.skyStars) if (s.target.id === id && s.target.alive) return s.target;
     for (const l of this.loot) if (l.target.id === id && l.target.alive) return l.target;
     for (const d of this.drones) if (d.target.id === id && d.target.alive) return d.target;
+    for (const s of this.sites) if (s.target.id === id && s.target.alive) return s.target;
     return this.mining.find(id);
   }
 
@@ -1051,7 +1098,7 @@ export class FlightSession {
     if (locationId) return this.findTarget(`station:${locationId}`);
     if (bodyId) return this.findTarget(`planet:${bodyId}`);
     // A claim sends the player to a belt; a rescue to a stranded ship; a tour to a dwarf star (docs/PROCGEN.md §23).
-    if (targetId?.startsWith('star:')) return this.findTarget(targetId);
+    if (targetId?.startsWith('star:') || targetId?.startsWith('site:')) return this.findTarget(targetId);
     return targetId ? (this.mining.find(targetId) ?? this.npcs.find((n) => n.target.id === targetId && n.target.alive)?.target ?? null) : null;
   }
 
@@ -1103,6 +1150,9 @@ export class FlightSession {
     // The selected rock in the beam's reach: mining comes first (docs/PROCGEN.md §19).
     if (this.beam) return { label: 'Stop mining', action: 'mine', icon: 'mine' };
     if (this.miningReady()) return { label: 'Mine', action: 'mine', icon: 'mine' };
+    // Alongside a derelict, slow, nobody hostile near: board it; while boarding, stop (docs/PROCGEN.md §31.4).
+    if (this.boarding) return { label: 'Stop', action: 'cancel-autopilot', icon: 'close' };
+    if (this.boardable()) return { label: 'Board', action: 'interact', icon: 'dock' };
     if (this.dockCandidate() && !this.hostilesNearby(2_200)) {
       return { label: 'Dock', action: 'interact', icon: 'dock' };
     }
@@ -1115,6 +1165,9 @@ export class FlightSession {
     if (sel && (sel.kind === 'planet' || sel.kind === 'star' || sel.kind === 'hole') && sel.position.distanceTo(this.player.position) < this.scanRangeFor(sel) * 3) {
       return { label: 'Scan', action: 'scan', icon: 'scan' };
     }
+    // A site in scan range not yet scanned this flight, or a wreck whose log is unread.
+    const site = sel ? this.siteOf(sel.id) : null;
+    if (site && (!site.scanned || (site.setup.kind === 'wreck' && !site.setup.read)) && this.siteDistance(site) <= WRECKS.scanRange * this.scanner()) return { label: 'Scan', action: 'scan', icon: 'scan' };
     // A rock in scan range that has not been read; a belt once the ship is at it (Go to comes first).
     if (sel && this.canScanMining(sel) && (sel.kind === 'rock' || this.surfaceDistance(sel) < 1_500)) return { label: 'Scan', action: 'scan', icon: 'scan' };
     const goal = sel ?? this.objectiveTarget();
@@ -1140,6 +1193,11 @@ export class FlightSession {
   }
 
   private interact(): void {
+    const derelict = this.boardable();
+    if (derelict) {
+      this.startBoarding(derelict);
+      return;
+    }
     const site = this.dockCandidate();
     if (site) {
       this.beginDock(site);
@@ -1238,8 +1296,13 @@ export class FlightSession {
       this.scanMining(t);
       return;
     }
+    const site = t ? this.siteOf(t.id) : null;
+    if (site) {
+      this.scanSite(site);
+      return;
+    }
     if (!t || (t.kind !== 'planet' && t.kind !== 'star' && t.kind !== 'hole')) {
-      this.callbacks.onMessage('Select a planet, star, belt or rock to scan.', 'info');
+      this.callbacks.onMessage('Select a planet, star, belt, rock or wreck to scan.', 'info');
       return;
     }
     const d = t.position.distanceTo(this.player.position);
@@ -1253,6 +1316,8 @@ export class FlightSession {
     } else {
       this.callbacks.onScanInfo(t);
     }
+    // A scan of a planet or star may pick up a faint return (docs/PROCGEN.md §31.3).
+    if (t.kind !== 'hole') this.callbacks.onBodyScan?.();
   }
 
   private fireMissile(): void {
@@ -1361,6 +1426,7 @@ export class FlightSession {
     this.updateCrew(dt);
     this.updateEncounters(dt);
     this.updateTraffic(dt);
+    this.updateSites(dt);
     this.scanTimer -= dt;
     if (this.scanTimer <= 0) {
       this.scanTimer = 0.5;
@@ -1439,6 +1505,7 @@ export class FlightSession {
   private cancelAutopilot(message: string): void {
     const ap = this.autopilot;
     const p = this.player;
+    if (this.boarding) this.breakBoarding('stopped');
     if (ap.mode === 'none') return;
     if (ap.mode === 'undock') {
       // Still in the bay: finish clearing the station, then hand over at the exit point.
@@ -1526,6 +1593,8 @@ export class FlightSession {
         ? target.radius + 450
         : target.kind === 'loot'
           ? 40
+          : target.id.startsWith('site:')
+            ? target.radius + 120
           : target.kind === 'rock'
             ? target.radius + MINING.range * 0.4
             : target.kind === 'belt'
@@ -1844,7 +1913,8 @@ export class FlightSession {
       l.position.addScaledVector(l.velocity, dt);
       l.art.object.position.copy(l.position);
       if (this.alive && d < 30 && room) {
-        if (l.recover) this.callbacks.onRecovered?.(l.recover);
+        if (l.site) this.callbacks.onSite?.(l.site.id, 'pod', { index: l.site.index });
+        else if (l.recover) this.callbacks.onRecovered?.(l.recover);
         else this.callbacks.onLoot(l.value, l.cargo, l.gear);
         this.sfx('pickup');
         this.removeLoot(i);
@@ -1863,29 +1933,38 @@ export class FlightSession {
     this.loot.splice(i, 1);
   }
 
-  private spawnLoot(position: THREE.Vector3, value: number, extra: { cargo?: { commodity: CommodityId; qty: number }; recover?: { jobId: string; item: string }; gear?: string } = {}): void {
+  private spawnLoot(
+    position: THREE.Vector3,
+    value: number,
+    extra: { cargo?: { commodity: CommodityId; qty: number }; recover?: { jobId: string; item: string }; gear?: string; site?: { id: string; index: number; name: string; subtitle: string } } = {},
+  ): void {
     const art = createCargoPod(this.ctx);
     const pos = position.clone();
     art.object.position.copy(pos);
     this.system.scene.add(art.object);
-    const id = extra.recover ? `wreck:${extra.recover.jobId}` : `loot:${Math.floor(this.time * 1000)}-${this.loot.length}`;
+    const id = extra.site ? `site:${extra.site.id}:${extra.site.index}` : extra.recover ? `wreck:${extra.recover.jobId}` : `loot:${Math.floor(this.time * 1000)}-${this.loot.length}`;
     const cargo = extra.cargo;
+    // A recovery's item and a site's pods wait where they are, for as long as it takes.
+    const still = !!extra.recover || !!extra.site;
     this.loot.push({
       art,
       position: pos,
-      velocity: extra.recover ? new THREE.Vector3() : new THREE.Vector3(this.rand() - 0.5, this.rand() - 0.5, this.rand() - 0.5).multiplyScalar(20),
+      velocity: still ? new THREE.Vector3() : new THREE.Vector3(this.rand() - 0.5, this.rand() - 0.5, this.rand() - 0.5).multiplyScalar(20),
       value,
       ...(cargo ? { cargo } : {}),
       ...(extra.gear ? { gear: extra.gear } : {}),
       ...(extra.recover ? { recover: extra.recover.jobId } : {}),
-      life: extra.recover ? Infinity : 240,
+      ...(extra.site ? { site: { id: extra.site.id, index: extra.site.index } } : {}),
+      life: still ? Infinity : 240,
       target: {
         id,
-        name: extra.recover ? `${extra.recover.item.charAt(0).toUpperCase()}${extra.recover.item.slice(1)}` : extra.gear ? 'Equipment crate' : cargo ? 'Cargo pod' : 'Salvage pod',
+        name: extra.site ? extra.site.name : extra.recover ? `${extra.recover.item.charAt(0).toUpperCase()}${extra.recover.item.slice(1)}` : extra.gear ? 'Equipment crate' : cargo ? 'Cargo pod' : 'Salvage pod',
         kind: 'loot',
         position: pos,
         radius: 4,
-        subtitle: extra.recover
+        subtitle: extra.site
+          ? extra.site.subtitle
+          : extra.recover
           ? 'In the wreckage · fly close to tractor it in'
           : extra.gear
             ? `${getCatalog().gearById.get(extra.gear)?.name ?? 'Salvaged equipment'} · fly close to collect`
@@ -2105,6 +2184,7 @@ export class FlightSession {
     }
     if (n.escort) this.callbacks.onEscortLost?.(n.escort.jobId);
     if (n.stranded && !n.stranded.handed) this.callbacks.onRescueLost?.(n.stranded.jobId);
+    else if (n.site && n.role === 'trader' && !this.sites.find((s) => s.setup.id === n.site)?.setup.reached) this.callbacks.onSite?.(n.site, 'lost');
     else if (n.haul) this.callbacks.onMessage(`The ${n.haul.haul.name} was destroyed, with ${n.haul.haul.qty} ${COMMODITIES[n.haul.haul.commodity].name.toLowerCase()} aboard.`, 'bad');
     else if (n.role === 'trader' && !n.captain && !n.rival) this.callbacks.onMessage(`${n.name} was destroyed.`, 'bad');
     if (n.side === 'raider' && !n.den && !n.hunter && !n.encounter && !n.rival && !n.hired) this.dropLoot(n);
@@ -2443,6 +2523,7 @@ export class FlightSession {
       else if (n.sweep) this.flySweep(n, dt);
       else if (n.escort?.follow) this.flyEscortFollowing(n, dt);
       else if (n.stranded && !n.trader) this.flyStranded(n, dt);
+      else if (n.site && n.role === 'trader') this.flySiteShip(n, dt);
       else if (n.duel) this.flyDuelist(n, dt);
       else if (n.role === 'trader') this.flyTrader(n);
       else if (n.role === 'patrol') this.flyPatrol(n, dt);
@@ -3139,7 +3220,7 @@ export class FlightSession {
   lingering(): Pick<Lingering, 'packs' | 'pods'> {
     const packs = new Map<number, NpcShip[]>();
     for (const n of this.npcs) {
-      if (n.side !== 'raider' || n.pack === undefined || !this.packAlerted.has(n.pack) || n.contract || n.hunter || n.den || n.encounter) continue;
+      if (n.side !== 'raider' || n.pack === undefined || !this.packAlerted.has(n.pack) || n.contract || n.hunter || n.den || n.encounter || n.site) continue;
       if (n.durability.hull <= 0 || n.brain.state === 'escaped') continue;
       (packs.get(n.pack) ?? packs.set(n.pack, []).get(n.pack)!).push(n);
     }
@@ -3150,7 +3231,7 @@ export class FlightSession {
         return { level: Math.max(...ships.map((n) => this.raiderLevel(n))) as 1 | 2 | 3, count: ships.length, position: round(centre) };
       }),
       pods: this.loot
-        .filter((l) => !l.recover && l.target.alive)
+        .filter((l) => !l.recover && !l.site && l.target.alive)
         .slice(0, TRAFFIC.linger.maxPods)
         .map((l) => ({ position: round(l.position), value: l.value, ...(l.cargo ? { cargo: l.cargo } : {}), ...(l.gear ? { gear: l.gear } : {}) })),
     };
@@ -4286,6 +4367,262 @@ export class FlightSession {
     }
   }
 
+  // ---------------------------------------------------------------- wrecks to fly to (docs/PROCGEN.md §31)
+
+  /** Brings a site marked mid-flight into the scene (a hail answered, a scan's find, a trail followed). */
+  addSite(setup: SiteSetup): void {
+    if (this.sites.some((s) => s.setup.id === setup.id)) return;
+    this.spawnSite(setup);
+  }
+
+  /**
+   * A site where the save puts it: a wreck tumbling with its pods round it (and raiders picking it
+   * over), a derelict a size up and dark, a ship in distress at rest, or pods adrift round a spot.
+   * Raiders lying dark by it come out only when sprung.
+   */
+  private spawnSite(setup: SiteSetup): void {
+    const id = setup.id;
+    const centre = placeSite(this.system.def, id, setup.body);
+    const r = seededRandom(hashString(`site-look|${id}`));
+    const spin = new THREE.Vector3(setup.kind === 'derelict' ? 0.004 : 0.02 + r() * 0.03, setup.kind === 'derelict' ? 0.006 : 0, 0);
+    let hull: ShipArt | null = null;
+    let target: Target;
+    if (setup.kind === 'ship' && !setup.bait && setup.model) {
+      // A ship in distress: dead in space until the pilot comes alongside.
+      const npc = this.makeNpc(setup.model, 'trader', 'independent', centre, new THREE.Vector3(1, 0, 0), SITE_SUBTITLES.ship);
+      npc.name = setup.ship;
+      npc.site = id;
+      npc.body.velocity.set(0, 0, 0);
+      npc.target.id = `site:${id}`;
+      npc.target.name = fillSite(SITE_NAMES.ship, setup);
+      npc.target.hostile = false;
+      if (setup.reached) npc.target.subtitle = SITE_NOTES.reached.replace('{ship}', setup.ship);
+      target = npc.target;
+    } else {
+      if (setup.model) {
+        hull = createCatalogShipArt(shipModel(setup.model), this.ctx);
+        hull.object.position.copy(centre);
+        hull.object.rotation.set(r() * Math.PI, r() * Math.PI, r() * Math.PI);
+        hull.object.scale.setScalar(setup.scale);
+        hull.setThrottle(0);
+        this.system.scene.add(hull.object);
+      }
+      const first = setup.pods[0]?.what;
+      const name =
+        setup.kind === 'ship'
+          ? SITE_NAMES.ship
+          : setup.kind === 'wreck'
+            ? SITE_NAMES.wreck
+            : setup.kind === 'derelict'
+              ? SITE_NAMES.derelict
+              : first === 'lifepod'
+                ? SITE_NAMES.lifepod
+                : first === 'recorder'
+                  ? SITE_NAMES.recorder
+                  : SITE_NAMES.cargo;
+      target = {
+        id: `site:${id}`,
+        name: fillSite(name, setup),
+        // A decoy looks like any ship in distress.
+        kind: setup.kind === 'ship' ? 'ship' : 'wreck',
+        position: centre,
+        radius: hull ? hull.radius * setup.scale : 15,
+        subtitle: fillSite(SITE_SUBTITLES[setup.kind], setup),
+        dataClass: 'fictional',
+        hostile: false,
+        alive: true,
+        cycle: true,
+      };
+    }
+    const site: SiteHere = { setup, centre, hull, spin, target, guardPack: null, near: false, scanned: false, ended: false };
+    this.sites.push(site);
+    // Its pods (those not yet tractored in), round the spot.
+    for (const pod of setup.pods) {
+      if (setup.taken.includes(pod.index)) continue;
+      const what = pod.cargo ? `${pod.cargo.qty} × ${COMMODITIES[pod.cargo.commodity].name.toLowerCase()}` : pod.what === 'lifepod' && setup.person ? `${setup.person} aboard` : POD_NAMES[pod.what];
+      this.spawnLoot(centre.clone().add(podOffset(id, pod.index)), 0, {
+        ...(pod.cargo ? { cargo: pod.cargo } : {}),
+        site: { id, index: pod.index, name: POD_NAMES[pod.what], subtitle: `${what} · ${POD_SUBTITLE}` },
+      });
+    }
+    // Raiders picking a wreck over: seen, holding their spot, back whole until all are down.
+    if (setup.guard && !setup.cleared) {
+      const pack = ++this.packSerial;
+      const home = centre.clone().add(new THREE.Vector3(0, 300, 0));
+      this.packHome.set(pack, home);
+      const pool = RAIDERS[setup.guard];
+      for (let i = 0; i < setup.guard; i++) {
+        const g = this.spawnGuard(pool[i % pool.length]!, pack, home.clone().add(this.tmp.set(this.rand() - 0.5, this.rand() - 0.5, this.rand() - 0.5).multiplyScalar(500)));
+        g.site = id;
+      }
+      site.guardPack = pack;
+    }
+  }
+
+  /** The site whose marker this is (not one finished with). */
+  private siteOf(targetId: string): SiteHere | null {
+    return this.sites.find((s) => !s.ended && s.target.id === targetId) ?? null;
+  }
+
+  /** From the player to a site's hull (or its spot). */
+  private siteDistance(s: SiteHere): number {
+    return Math.max(0, s.target.position.distanceTo(this.player.position) - s.target.radius);
+  }
+
+  /** Raiders lying dark come out: by the hull, unless the Wake trusts the pilot (they wave them by). */
+  private springSite(s: SiteHere, how: 'near' | 'scan'): void {
+    s.setup.sprung = true;
+    const friend = this.denOpen;
+    if (!friend && s.setup.dark) {
+      const pack = ++this.packSerial;
+      const home = s.centre.clone();
+      this.packHome.set(pack, home);
+      const pool = RAIDERS[s.setup.dark];
+      for (let i = 0; i < Math.max(1, s.setup.darkCount); i++) {
+        const model = pool[Math.floor(this.rand() * pool.length)]!;
+        const position = home.clone().add(this.tmp.set(this.rand() - 0.5, this.rand() - 0.5, this.rand() - 0.5).multiplyScalar(400));
+        const bounty = bountyFor(model);
+        const npc = this.makeNpc(model, 'raider', 'hollow-wake', position, this.player.position.clone().sub(position).normalize(), `${FACTIONS['hollow-wake'].name} raider · hostile · bounty ${bounty} cr`);
+        npc.pack = pack;
+        npc.bounty = bounty;
+        npc.site = s.setup.id;
+      }
+      this.sfx('alert');
+    }
+    this.callbacks.onSite?.(s.setup.id, 'sprung', { how, friend });
+  }
+
+  /** A scan of a site: a wreck's log read; from beyond the spring range, raiders lying dark shown and sprung. */
+  private scanSite(s: SiteHere): void {
+    const d = this.siteDistance(s);
+    if (d > WRECKS.scanRange * this.scanner()) {
+      this.callbacks.onMessage('Out of scan range — fly closer.', 'bad');
+      return;
+    }
+    this.sfx('scan');
+    s.scanned = true;
+    let revealed = false;
+    if (s.setup.dark !== null && !s.setup.sprung && d > WRECKS.danger.spring) {
+      this.springSite(s, 'scan');
+      revealed = true;
+    }
+    if (s.setup.kind === 'wreck') s.setup.read = true;
+    this.callbacks.onSite?.(s.setup.id, 'scanned', { revealed });
+  }
+
+  /** A ship in distress: at rest until the pilot comes alongside, then its drive is back. */
+  private flySiteShip(n: NpcShip, dt: number): void {
+    for (const g of n.guns) g.tick(dt);
+    n.controls.throttle = 0;
+    n.body.velocity.multiplyScalar(Math.max(0, 1 - dt * 0.5));
+    const s = this.sites.find((x) => x.setup.id === n.site);
+    if (!s || s.setup.reached || s.ended || !this.alive || this.busy) return;
+    if (n.body.position.distanceTo(this.player.position) > WRECKS.reach) return;
+    s.setup.reached = true;
+    n.target.subtitle = SITE_NOTES.reached.replace('{ship}', s.setup.ship);
+    this.sfx('mission-complete');
+    this.callbacks.onSite?.(s.setup.id, 'reached');
+  }
+
+  /** The derelict the pilot may board now: alongside, slow, nobody hostile near. */
+  private boardable(): SiteHere | null {
+    if (!this.alive || this.busy || this.boarding || this.player.speed > WRECKS.board.maxSpeed) return null;
+    const near = this.sites.find((s) => !s.ended && s.setup.kind === 'derelict' && !s.setup.boarded && this.siteDistance(s) <= WRECKS.board.range);
+    if (!near || this.hostilesNearby(WRECKS.board.quiet)) return null;
+    return near;
+  }
+
+  private startBoarding(s: SiteHere): void {
+    this.autopilot = { mode: 'none' };
+    this.player.requestCruise(false);
+    this.throttle = 0;
+    this.drift = false;
+    this.boarding = { id: s.setup.id, left: WRECKS.board.seconds };
+    this.callbacks.onMessage(fillSite(SITE_NOTES.boarding, s.setup), 'info');
+  }
+
+  private breakBoarding(why: keyof typeof SITE_NOTES.why): void {
+    this.boarding = null;
+    this.callbacks.onMessage(SITE_NOTES.broken.replace('{why}', SITE_NOTES.why[why]), 'bad');
+  }
+
+  /**
+   * Each frame: hulls turn; a site's radio as the pilot nears it; raiders lying dark spring within
+   * range; a site's guards all down; boarding held (the ship eased to rest) or broken off.
+   */
+  private updateSites(dt: number): void {
+    if (!this.sitesSpawned && this.time > 2) {
+      this.sitesSpawned = true;
+      for (const setup of this.traffic?.sites ?? []) this.addSite(setup);
+    }
+    for (const s of this.sites) {
+      if (s.hull) {
+        s.hull.object.rotation.x += s.spin.x * dt;
+        s.hull.object.rotation.y += s.spin.y * dt;
+      }
+      if (s.ended) continue;
+      const rec = this.state.world.wrecks?.sites[s.setup.id];
+      if (!rec || rec.ended) {
+        this.endSite(s, rec?.ended?.how ?? 'dropped');
+        continue;
+      }
+      if (!this.alive) continue;
+      const d = this.siteDistance(s);
+      if (!s.near && d < 5_000) {
+        s.near = true;
+        this.callbacks.onSite?.(s.setup.id, 'near');
+      }
+      if (s.setup.dark !== null && !s.setup.sprung && d < WRECKS.danger.spring && !this.busy) this.springSite(s, 'near');
+      if (s.guardPack !== null && !s.setup.cleared && !this.npcs.some((n) => n.pack === s.guardPack && n.durability.hull > 0)) {
+        s.setup.cleared = true;
+        this.callbacks.onSite?.(s.setup.id, 'cleared');
+      }
+    }
+    const b = this.boarding;
+    if (!b) return;
+    const s = this.sites.find((x) => x.setup.id === b.id);
+    if (!s || s.ended || !this.alive) return this.breakBoarding('gone');
+    if (this.siteDistance(s) > WRECKS.board.range) return this.breakBoarding('range');
+    if (this.player.speed > WRECKS.board.maxSpeed) return this.breakBoarding('speed');
+    if (this.hostilesNearby(WRECKS.board.quiet)) return this.breakBoarding('hostile');
+    this.player.velocity.multiplyScalar(Math.exp(-1.5 * dt));
+    b.left -= dt;
+    if (b.left > 0) return;
+    this.boarding = null;
+    s.setup.boarded = true;
+    this.sfx('mission-complete');
+    this.callbacks.onSite?.(s.setup.id, 'boarded');
+  }
+
+  /** A site finished with: its marker goes (a hull stays, drifting); pods are left only after it is done. */
+  private endSite(s: SiteHere, how: string): void {
+    s.ended = true;
+    if (!this.npcs.some((n) => n.target === s.target)) {
+      s.target.alive = false;
+      if (this.selectedId === s.target.id) this.selectedId = null;
+    }
+    if (how === 'done') return;
+    for (let i = this.loot.length - 1; i >= 0; i--) if (this.loot[i]!.site?.id === s.setup.id) this.removeLoot(i);
+  }
+
+  /** Test hook: the sites in this scene, and how each stands. */
+  debugSites(): { id: string; kind: string; distance: number; pods: number; guards: number; dark: 'hidden' | 'sprung' | null; scanned: boolean; read: boolean; boarded: boolean; reached: boolean; boarding: number | null; ended: boolean }[] {
+    return this.sites.map((s) => ({
+      id: s.setup.id,
+      kind: s.setup.kind,
+      distance: this.siteDistance(s),
+      pods: this.loot.filter((l) => l.site?.id === s.setup.id).length,
+      guards: s.guardPack === null ? 0 : this.npcs.filter((n) => n.pack === s.guardPack && n.durability.hull > 0).length,
+      dark: s.setup.dark === null ? null : s.setup.sprung ? 'sprung' : 'hidden',
+      scanned: s.scanned,
+      read: s.setup.read,
+      boarded: s.setup.boarded,
+      reached: s.setup.reached,
+      boarding: this.boarding?.id === s.setup.id ? this.boarding.left : null,
+      ended: s.ended,
+    }));
+  }
+
   // ---------------------------------------------------------------- mining (docs/PROCGEN.md §19)
 
   /** Distance from the player to a target's surface (a belt: its band of rock). */
@@ -4323,6 +4660,8 @@ export class FlightSession {
     this.sfx('scan');
     if (t.kind === 'belt' || !rock) {
       this.callbacks.onScanInfo(t);
+      // A belt's scan may pick up a faint return (docs/PROCGEN.md §31.3).
+      if (t.kind === 'belt') this.callbacks.onBodyScan?.();
       return;
     }
     this.mining.scan(rock);
@@ -4621,6 +4960,9 @@ export class FlightSession {
             : ap.mode === 'undock'
               ? 'Launching…'
               : null;
+    // Boarding a derelict (docs/PROCGEN.md §31.4): the seconds left, in the autopilot's line.
+    const boarding = this.boarding ? this.sites.find((s) => s.setup.id === this.boarding!.id) : undefined;
+    if (this.boarding && boarding) hud.autopilot = `${fillSite(SITE_NOTES.boarding, boarding.setup)} · ${Math.ceil(this.boarding.left)} s`;
 
     // Reticle.
     const w = this.viewport.width;
@@ -4670,7 +5012,7 @@ export class FlightSession {
       ? `station:${this.objective.locationId}`
       : this.objective.bodyId
         ? `planet:${this.objective.bodyId}`
-        : this.objective.targetId && (this.mining.find(this.objective.targetId) || this.objective.targetId.startsWith('sky:'))
+        : this.objective.targetId && (this.mining.find(this.objective.targetId) || this.objective.targetId.startsWith('sky:') || (this.objective.targetId.startsWith('site:') && this.findTarget(this.objective.targetId)))
           ? this.objective.targetId
           : null;
     for (const t of this.allTargets()) {
@@ -4684,6 +5026,7 @@ export class FlightSession {
         if (t.kind === 'drone' && dist > 4_000) continue;
         if (t.kind === 'beacon' && dist > 20_000) continue;
         if (t.kind === 'rock' && dist > 6_000) continue;
+        if (t.kind === 'wreck' && dist > 30_000) continue;
       }
       const pr = this.project(t.position);
       if (!pr.onScreen && !important) continue;
@@ -4757,6 +5100,8 @@ export class FlightSession {
     /** The player's outpost's own (a turret, its stores, a guard), and a raider of a raid on it (its window; §29). */
     own: string | null;
     outpostRaid: number | null;
+    /** The marked site it belongs to (docs/PROCGEN.md §31). */
+    site: string | null;
     subtitle: string;
     state: string;
     hull: number;
@@ -4780,6 +5125,7 @@ export class FlightSession {
       duel: n.duel?.state ?? null,
       own: n.own?.kind ?? null,
       outpostRaid: n.outpostRaid ?? null,
+      site: n.site ?? null,
       subtitle: n.target.subtitle ?? '',
       state: n.trader?.state ?? (n.patrol && n.foe === null ? n.patrol.brain.state : n.brain.state),
       hull: n.durability.hull,
@@ -4852,6 +5198,12 @@ export class FlightSession {
       w.art.dispose();
     }
     this.wreckHulls.length = 0;
+    for (const s of this.sites) {
+      if (!s.hull) continue;
+      this.system.scene.remove(s.hull.object);
+      s.hull.dispose();
+    }
+    this.sites.length = 0;
     for (const d of this.drones) {
       this.system.scene.remove(d.art.object);
       d.art.dispose();

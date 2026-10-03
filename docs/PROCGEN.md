@@ -2546,13 +2546,15 @@ and events are fiction, and every card says so.
 
 | Kind | Where | Choices |
 | --- | --- | --- |
-| Mayday | Any system with a station | Go to them (a reward, 220–520 cr, and standing with the system's law; or, if it was bait, raiders); fly on |
-| Lifepod | Where raiders destroyed a hauler in the half hour before (§21) | Take the survivor aboard (a passage to a station there, 260–420 cr; needs a berth); call it in (standing); leave it |
+| Mayday | Any system with a station | Go to them (the ship marked on the HUD, §31: flown alongside, a reward, 220–520 cr, and standing with the system's law; or, if it was bait, raiders lying dark by a decoy); fly on |
+| Lifepod | Where raiders destroyed a hauler in the half hour before (§21) | Take the survivor aboard (the pod marked to tractor in, §31, then a passage to a station there, 260–420 cr; needs a berth); call it in (standing); leave it |
 | Toll | Lawless systems where raider packs roam | Pay the toll (150/300/500 cr by the packs' threat): the Wake's packs there let the ship be until it docks, jumps or fires on them; refuse (they attack) |
 | Customs | Systems with a law and security of 0.5 or more, a hold with contraband in it | Declare it (taken, half the fine); bribe the officer (35% of the fine; a sting one time in five: taken, a 600 cr fine, standing −8); dump it (standing −3) |
 | Stranded scientist | Systems with a sight of the real sky (§23) and a research station within two jumps | A berth to the station (a passage at 1.25 times the usual fare, and a data core); spare them helium-3 (paid twice its base price); call a tow (standing) |
-| Cargo adrift | Any system with a station | Return it (aboard, and a delivery to its owner for 60% of its base value and standing with its law); keep it (worth its full price); leave it. Bait brings raiders instead |
+| Cargo adrift | Any system with a station | Return it (its pods marked to tractor in, §31, then a delivery to its owner for 60% of its base value and standing with its law); keep it (worth its full price); leave it. Bait: raiders lying dark by the pods |
 | Lost trader | Any system with a station | Share your charts (they tell you a true price within reach, as a round in a bar would, §16); sell them a fix (60 cr); ignore them |
+| Wreck beacon | Any system with a station | Mark it and go (a wreck to salvage, §31); log it for the salvors (standing +1 with the system's law); leave it |
+| Old beacon | Two jumps or more from Sol | Mark it and go (an old derelict near a real body, to board, §31); report it (standing +1); leave it |
 
 ### 27.1 Meeting one
 
@@ -2585,10 +2587,12 @@ one in focus, B closes it.
 ### 27.3 What follows
 
 Answers act at once: credits, standing, cargo in or out of the hold, fines on the record (§12), a job
-taken on (a passage for a survivor or a scientist, §23; cargo to return, delivered at its owner's
-dock), a price learned. Raiders called by bait or a refused toll drop out of the dark a few
-kilometres off and hunt the ship (a pack at the system's threat, §5). The journal keeps the last
-twelve encounters, where, and what came of each.
+taken on (a passage for a scientist, §23), a price learned. A mayday answered, a lifepod taken
+aboard, cargo adrift claimed and the two beacons marked instead put a site on the HUD to fly to
+(§31), with a job that steers there; bait is found out there, where raiders lie dark by a decoy.
+Raiders called by a refused toll drop out of the dark a few kilometres off and hunt the ship (a pack
+at the system's threat, §5). The journal keeps the last twelve encounters, where, and what came of
+each.
 
 ### 27.4 One save's own
 
@@ -2928,11 +2932,12 @@ each dock it stays unpaid.
 0–100, starting at 55; Low under 35, High from 75 (`morale`). At each dock:
 
 - **Their heart**: each deed since the last dock that it likes, +6; each it hates, −8; at most 15
-  either way a dock. Soft-hearted: likes rescues (a mayday answered, a lifepod or scientist taken
-  aboard or called in, a stranded hauler's rescue done), hates leaving people adrift and attacks on
-  lawful ships. Rule-bender: likes contraband sold and smuggling runs done, hates contraband lost to
+  either way a dock. Soft-hearted: likes rescues (a ship in distress reached, a lifepod tractored in
+  or called in, a scientist taken aboard, a stranded hauler's rescue done, a lost crew found, §31),
+  hates leaving people adrift (a mayday passed by, a ship in distress or a lifepod let lapse) and
+  attacks on lawful ships. Rule-bender: likes contraband sold and smuggling runs done, hates contraband lost to
   the law and attacks on lawful ships. Ex-patrol: likes raiders downed, hates tolls and bribes paid
-  and smuggling (`hearts`, `laneDeeds`, `jobDeeds`).
+  and smuggling (`hearts`, `laneDeeds`, `siteDeeds`, `jobDeeds`).
 - **Everyone**: a dock at least ten minutes of clock after the last, +3 (up to 65); a round for the
   crew in the bar, +5 (30 cr a head, once a shift); treated +5; hurt −10; a dock passed hurt and
   untreated −5; the ship lost −20; unpaid −30; their story's tale +10, favour done +20, failed −20,
@@ -3000,3 +3005,165 @@ every role offered at five open stations or more, one in Sol; every favour with 
 from at least half the docks, time to get there and pay under the contracts' ceiling; crew names of
 their own (clear of every other pool of names and every place); and lines with no number, no he or
 she, no star, and only fields they can fill.
+
+## 31. Wrecks to fly to
+
+Lane hails and scans mark a **site** in flight, somewhere in the system to fly to
+(`src/economy/wrecks.ts`; the rules in `WRECKS`, `src/content/wrecks/rules.ts`; the trails in
+`MYSTERIES`, `src/content/wrecks/mysteries.ts`; what is said in `src/content/wrecks/lines.ts`; where
+a site lies in `src/world/sites.ts`): a ship in distress to fly alongside, pods to tractor in (a
+lifepod, cargo adrift, a lifeboat's recorder, a strongbox), a wreck to salvage (its log scanned, its
+pods tractored in), or an old derelict to board. About one wreck or derelict log in three holds a lead
+into one of three short trails across a few systems. The sites, their ships, people and logs are
+fiction, and every card says so; a derelict may drift near a real planet or star, but nothing is
+ever said about the body itself.
+
+The owner chose (2 October 2026) that a marked site waits two hours of game clock and a trail's step
+three, kept in the save and never closed while the pilot flies in its system; that a scan from beyond
+two kilometres shows raiders lying dark by a hull and springs them there and then; and that only the
+strongbox's trail ends in a choice.
+
+### 31.1 Sites
+
+Every site is worked out from its id, so the save keeps only what the pilot did there:
+
+- `lane.<system>.<slot>`: a hail's (§27), its ship, person, trap and threat the encounter's own;
+- `scan.<system>.<slot>`: a scan's find (§31.3);
+- `mys.<trail>.1`: a trail's find (§31.6), worked out from the site whose log began it.
+
+| Kind | What is there | Done when |
+| --- | --- | --- |
+| Ship | A ship in distress, at rest, a catalogue trader | Flown alongside (within 400 m, `reach`): its drive is back, and its job pays |
+| Pod | A lifepod, cargo adrift split into 2–3 pods, or a lifeboat's recorder | Every pod tractored in |
+| Wreck | A trader's hull, tumbling; 2–4 salvage pods of 60–180 cr, and one time in three a pod of 2–5 units of salvage, ship parts, electronics or machinery | Its log scanned and its pods tractored in |
+| Derelict | A class 3 freighter, gunship or surveyor drawn 1.8–2.6 times its size and dark, near a real body; 250–600 cr of salvage aboard, and a data core half the time (if the hold has room) | Boarded |
+
+A hail's site lies 8–18 km from the arrival point; a derelict or a scan's find 3–6 km off its body's
+surface; always 6 km or more from any station (beyond where a hail may come) and 2 km from any
+planet's or star's surface (`place`). Pods drift 60–150 m round their spot. The scene itself is never
+changed. A site waits two hours from when it was marked (`open`), never closing while the pilot flies
+in its system; then *another salvor got there first*, its job fails, and a ship in distress or a
+lifepod let lapse weighs on soft hearts (§30.4). At most four are marked at once (`maxOpen`); a
+hail's *go* choice is closed beyond that.
+
+Each site rides on an ordinary job (`c.lane.<offer>` for a hail's, `site.scan.<system>.<slot>` for a
+scan's, `mys.<trail>` for a trail's), so the HUD's objective, *Go to goal*, the star map's Missions
+list, the journal and *Abandon* all work as for any other; abandoning costs no standing. A new
+objective kind, `site`, is met when the site is done, and steers to it in its system.
+
+### 31.2 From the lanes
+
+A mayday's *Go to them* marks the ship, with a job paying the mayday's reward and +2 standing with
+the system's law when it is reached (contract kind rescue, so soft hearts like it). A lifepod's *Take
+them aboard* keeps a berth at once and marks the pod; tractored in, the survivor is aboard and the
+passage pays at its station. Cargo adrift, returned or kept, marks its pods (2–3, summing its load);
+returned, the delivery follows. A wreck beacon (weight 3, any system with a station) or an old beacon
+(weight 1, two jumps or more from Sol, never at Pyre) marks a wreck or a derelict, or is logged for
+the salvors or reported for +1 standing with the system's law. The card names the odds of danger
+(*Raiders pick over wrecks out here: about one in two*), never whether this one is dangerous.
+
+### 31.3 From a scan
+
+Each system's time is cut into slots of twenty minutes (`scan.slotSeconds`). A slot may hold a find
+(15% in secure space, 25% patrolled, 35% lawless): a derelict one time in three where derelicts may
+be, otherwise a wreck, near one of the system's confirmed planets or its primary star. The first
+manual scan of a planet, star or belt in that slot finds it (*Your scan picked up a faint return near
+… Marked on your HUD*), once; never before the opening delivery, in Sol or at Pyre, or with four
+sites marked. In browser tests finds are off unless a test turns them on, as hails are.
+
+### 31.4 In flight
+
+Sites show as a warm dashed diamond on the HUD within 30 km (always when the objective or selected),
+a decoy as any ship in distress. *Go to* stops 120 m off a site's hull, inside the tractor's reach
+and boarding range.
+
+- **Scan**: a site within 3 km (`scanRange`, times the scanner and a navigator's share) offers
+  *Scan* once a flight: a wreck's log is read (its card), and raiders lying dark by any site are shown
+  and sprung if the pilot is beyond 2 km; otherwise *nothing lying dark nearby*.
+- **The tractor**: a site's pods come in like any loot (cargo needs room in the hold; a lifepod's
+  berth was kept); they wait where they are for as long as the site does.
+- **Alongside**: within 400 m of a ship in distress, its drive is back: *Thank you: we can make the
+  nearest dock from here.*
+- **Boarding**: within 250 m of a derelict's hull, slower than 25 m/s, with no hostile within 3 km,
+  the action button offers *Board* (E, A on a pad, the action button on touch). Held steady for eight
+  seconds (the ship eased to rest, the seconds in the autopilot's line), it is boarded; pulling away,
+  drifting off, a hostile coming near or *Stop* breaks it off.
+- The wreck beacon and the old beacon speak on the radio within 5 km.
+
+### 31.5 Dangers
+
+- **Raiders picking a wreck over** (`danger.guard`: none in secure space, a quarter patrolled, a
+  little over half lawless): as many as the system's threat level, seen on the HUD, holding their
+  spot, paid like any Wake bounty. All downed, they do not come back; otherwise they are back, whole,
+  next visit.
+- **Raiders lying dark** by bait (a mayday's or cargo's, at the lanes' bait odds) or by a derelict
+  (`danger.dark`: none, 15%, 35%): two or three, coming out by the hull when the pilot comes within
+  2 km, or when a scan from further out shows them. A decoy's job fails (*a Hollow Wake decoy*):
+  there is nothing there to gain. Sprung once, they never come again, and nobody remembers them
+  lingering (§17).
+- **A pilot the Wake trusts** is waved by (*Oh, it's you. Fly on, friend.*); a decoy still holds
+  nothing, and guards let them salvage.
+
+### 31.6 Trails
+
+Reading a log (scanning a wreck, boarding a derelict) may offer a lead, on the log's card, to
+*Follow the trail* or *Leave it*: none while a trail is under way; otherwise a trail never begun whose
+start fits the site and whose places can be worked out from it; the first log a pilot ever reads
+always holds one, later logs one time in three (`leads.chance`). Followed, the trail's job steers to
+its find, then its ending. Every place comes from the starting site's id: the find a system the rule's
+jumps on (never the start, Sol or Pyre), the ending the nearest open station of its kinds within reach
+of the find.
+
+| Trail | From | Find | Ending |
+| --- | --- | --- | --- |
+| *The lifeboat of the …* | A wreck or a derelict | 1–2 jumps on: the lifeboat's recorder, adrift (a hauler took the crew aboard) | The nearest research station or relay within two jumps: 900 cr, +4 standing (a rescue) |
+| *The …’s strongbox* | A wreck | 1–2 jumps on, security under 0.5: a wreck held by raiders at the system's threat, the strongbox and a salvage pod or two | Its insurers, the nearest lawful customs depot or trade port within three jumps: 1,200 cr, +5; or a fence at the nearest free port within three jumps: 1,800 cr, Hollow Wake +6 (smuggling) |
+| *The sister of the …* | A derelict | 2–3 jumps on: the sister hull, near a real body, to board (its data vault whole) | The nearest research station within three jumps: 1,500 cr, +5 |
+
+The strongbox's card offers both endings when it is tractored in; closed, it goes back to its
+insurers. A trail's step waits three hours from when it opened (`open.step`), never closing while the
+pilot flies where it leads; missed, it goes cold. Abandoned, it is dropped. Each trail comes once a
+save, one at a time.
+
+### 31.7 What the game says
+
+The lane cards (two new kinds and the changed outcomes above), the site's name and subtitle on the
+HUD, the beacons on the radio, notices (marked, found, sprung, bait, boarding, salvaged, reached,
+done, lapsed), the log's card (its last entries, what was found, a lead or the strongbox's choice)
+and the journal's *Wrecks and trails*: the trail under way or the last, where it stands, and the
+newest eight sites, where, and how each ended. Lines never write a number, a star or he or she, and a
+line that names a real body only says a site drifts near it.
+
+### 31.8 One save's own
+
+The world log's `wrecks` (absent until the first site is marked) keeps each site marked: when, where,
+its kind, the pods taken, and whether its log was read, it was boarded, reached, its guards cleared or
+its raiders sprung, and how and when it ended; each trail begun (the site it began from, when, its
+step and when that opened, the strongbox's choice, how it ended); and the logs read. Finished sites
+are kept for a day, the newest 24 (a trail's find while its trail is remembered); a scan's job goes
+with its site. Saves refuse an id that names no system and slot, a hail's site marked before its slot
+or a scan's outside its slot, an unknown kind, pods taken twice, a flag other than true, an ending
+before the marking, a trail from anything but a hail's or a scan's site, a choice on any trail but the
+strongbox's, too many sites, and a job steering to a site the log does not hold.
+
+### 31.9 Guardrails
+
+`validateWrecks` (`src/economy/wreckGuards.ts`, run in `tests/unit/wrecks.test.ts`): dangers and
+finds rising with lawlessness, never a trap in secure space, at most three in five; windows long
+enough for the trips they ask for (one and a half times a jump there and back for a site, the longest
+step for a trail) and no longer than six hours; sites clear of the docks a hail must be clear of;
+boarding inside a ship in distress's reach, and between four and twenty seconds; raiders lying dark
+sprung inside a scan's reach; pods, salvage and pay in range and under the contracts' ceiling, a
+fence paying more than the insurers but at most 1.6 times as much; derelict hulls from the catalogue;
+no contraband in a wreck; crew deeds for things sites do. The words: no number, no he or she, no star,
+only fields they can fill, short enough for the HUD, the radio and the card; a real body only ever
+something a site drifts *near*, *by* or *off*, and no word about it (orbit, surface, atmosphere,
+water, life, moon, mass, temperature, discovered, giant and the like); the fiction line; wreck names
+of their own. Over every system and many slots: none in Sol or at Pyre, every site clear of docks and
+bodies, a derelict near its body, every kind somewhere, each trail able to start from at least half
+the systems where its starting kinds occur, a wreck's salvage under a recovery contract's pay, and a
+quiet pilot touring the lanes (scanning a body once a visit) meeting a wreck or derelict every 12 to
+90 minutes. The tests also break the rules and words to see them caught, follow each trail to its end
+(both of the strongbox's), and fly the sites in a real flight: hulls and pods there, a log scanned,
+pods tractored in, raiders lying dark sprung near the hull or by a scan from further out, guards
+holding their spot, a derelict boarded and boarding broken off, a ship in distress reached.

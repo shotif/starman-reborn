@@ -72,6 +72,7 @@ const TARGET_GLYPH: Record<TargetKind, GlyphName> = {
   rock: 'mining-laser',
   sky: 'scanner',
   hole: 'scanner',
+  wreck: 'salvage',
 };
 
 /** The Mine key (docs/PROCGEN.md §19); on a pad Mine is the context action. */
@@ -551,7 +552,7 @@ export class Hud {
     if (m.selected) return 0;
     if (m.objective) return 1;
     if (m.hostile) return 2;
-    if (m.kind === 'station' || m.kind === 'loot' || m.kind === 'drone') return 3;
+    if (m.kind === 'station' || m.kind === 'loot' || m.kind === 'wreck' || m.kind === 'drone') return 3;
     if (m.kind === 'lane') return 4;
     return 5;
   }

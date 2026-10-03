@@ -15,8 +15,10 @@ import { OUTPOSTS } from '../../content/outposts/rules.ts';
 import { OUTPOST_RAIDS } from '../../content/outposts/raids.ts';
 import { ROSTER } from '../../content/rivals/rules.ts';
 import { CREW, CREW_DEEDS, CREW_HEARTS, CREW_ROLES, type CrewDeed } from '../../content/crew/rules.ts';
+import { SITE_KINDS, WRECKS } from '../../content/wrecks/rules.ts';
+import { MYSTERY_IDS, type MysteryId } from '../../content/wrecks/mysteries.ts';
 import { outpostId, outpostSite } from '../../content/outposts/sites.ts';
-import { createNewGame, SAVE_VERSION, type CommodityId, type CrewLog, type GameState, type OutpostDefence, type OutpostRecord, type RivalStory } from '../state.ts';
+import { createNewGame, SAVE_VERSION, type CommodityId, type CrewLog, type GameState, type OutpostDefence, type OutpostRecord, type RivalStory, type WreckLog } from '../state.ts';
 
 /**
  * Save format history:
@@ -53,7 +55,8 @@ import { createNewGame, SAVE_VERSION, type CommodityId, type CrewLog, type GameS
  *   (lane encounters met, §27), absent in older v10 saves; the world log's rival `stories`, a rival's
  *   `met` and a wingman's `ally` (§28), and an outpost's `opened` and `defence` (§29), absent in older
  *   v10 saves; `aboard`, the crew aboard and who left (§30), and a contract's `crew`, absent in
- *   older v10 saves. See GameState in src/app/state.ts.
+ *   older v10 saves; the world log's `wrecks` (sites marked in flight and the trails they led to,
+ *   §31), absent in older v10 saves. See GameState in src/app/state.ts.
  */
 export interface SaveV1 {
   version: 1;
@@ -130,6 +133,51 @@ function validStory(st: RivalStory): boolean {
   if (st.duel !== undefined && !(isRecord(st.duel) && Number.isFinite(st.duel.posted) && time(st.duel.started))) return false;
   if (st.ended !== undefined && !(isRecord(st.ended) && Number.isFinite(st.ended.at) && STORY_ENDS.includes(st.ended.how))) return false;
   return true;
+}
+
+/** A site's id (docs/PROCGEN.md §31): a hail's or a scan's (its system and slot), or a trail's find. */
+function siteIdParts(id: string): { from: 'lane' | 'scan'; systemId: SystemId; slot: number } | { from: 'mys'; mystery: MysteryId } | null {
+  const [head, ...rest] = id.split('.');
+  if (head === 'mys') return rest.length === 2 && MYSTERY_IDS.includes(rest[0] as MysteryId) && rest[1] === '1' ? { from: 'mys', mystery: rest[0] as MysteryId } : null;
+  if (head !== 'lane' && head !== 'scan') return null;
+  const tail = rest.join('.');
+  const dot = tail.lastIndexOf('.');
+  const systemId = tail.slice(0, dot) as SystemId;
+  const slot = Number(tail.slice(dot + 1));
+  return dot > 0 && Number.isInteger(slot) && slot >= 0 && SYSTEM_IDS.includes(systemId) ? { from: head, systemId, slot } : null;
+}
+
+const SITE_ENDS = ['done', 'bait', 'lapsed', 'dropped', 'lost'];
+const MYSTERY_ENDS = ['solved', 'cold', 'dropped'];
+
+/**
+ * Sites marked and trails followed (docs/PROCGEN.md §31): ids that name their system and slot (a
+ * hail's marked after its slot began, a scan's within its slot), known kinds, pods by index, only
+ * `true` for what was done, endings after the marking, and no more than the rules keep.
+ */
+function assertValidWrecks(log: WreckLog, fail: (msg: string) => never): void {
+  const time = (t: unknown) => Number.isFinite(t) && (t as number) >= 0;
+  if (!isRecord(log) || !isRecord(log.sites) || Object.keys(log.sites).length > WRECKS.keep.sites + WRECKS.maxOpen + MYSTERY_IDS.length) fail('wrecks');
+  if (log.read !== undefined && !(Number.isInteger(log.read) && log.read >= 0)) fail('wrecks');
+  for (const [id, r] of Object.entries(log.sites)) {
+    const ref = siteIdParts(id);
+    if (!ref || !isRecord(r) || !time(r.at) || !SYSTEM_IDS.includes(r.systemId) || !SITE_KINDS.includes(r.kind)) fail(`site ${id}`);
+    if (ref.from !== 'mys' && ref.systemId !== r.systemId) fail(`site ${id}`);
+    if (ref.from === 'lane' && r.at < ref.slot * LANES.slotSeconds) fail(`site ${id}`);
+    if (ref.from === 'scan' && Math.floor(r.at / WRECKS.scan.slotSeconds) !== ref.slot) fail(`site ${id}`);
+    if (r.taken !== undefined && !(Array.isArray(r.taken) && new Set(r.taken).size === r.taken.length && r.taken.every((i) => Number.isInteger(i) && i >= 0 && i <= 5))) fail(`site ${id}`);
+    for (const flag of [r.read, r.boarded, r.cleared, r.sprung, r.reached]) if (flag !== undefined && flag !== true) fail(`site ${id}`);
+    if (r.ended !== undefined && !(isRecord(r.ended) && Number.isFinite(r.ended.at) && r.ended.at >= r.at && SITE_ENDS.includes(r.ended.how))) fail(`site ${id}`);
+  }
+  if (log.mysteries !== undefined) {
+    if (!isRecord(log.mysteries)) fail('wrecks');
+    for (const [m, r] of Object.entries(log.mysteries)) {
+      const from = isRecord(r) && typeof r.from === 'string' ? siteIdParts(r.from) : null;
+      if (!MYSTERY_IDS.includes(m as MysteryId) || !from || from.from === 'mys' || !time(r!.began) || (r!.step !== 0 && r!.step !== 1) || !Number.isFinite(r!.stepAt) || r!.stepAt < r!.began) fail(`trail ${m}`);
+      if (r!.choice !== undefined && !(m === 'strongbox' && (r!.choice === 'insurer' || r!.choice === 'fence'))) fail(`trail ${m}`);
+      if (r!.ended !== undefined && !(isRecord(r!.ended) && Number.isFinite(r!.ended.at) && MYSTERY_ENDS.includes(r!.ended.how))) fail(`trail ${m}`);
+    }
+  }
 }
 
 /** The crew aboard (docs/PROCGEN.md §30): one of each role at most, within the rules, their stories and who left. */
@@ -467,6 +515,12 @@ export function assertValidState(s: GameState): void {
     for (const [id, r] of Object.entries(w.lanes)) {
       if (!isRecord(r) || !Number.isFinite(r.at) || !(LANE_KINDS as readonly string[]).includes(r.kind) || !SYSTEM_IDS.includes(r.systemId) || id !== `${r.systemId}.${Math.floor(r.at / LANES.slotSeconds)}` || (r.pick !== undefined && typeof r.pick !== 'string')) fail('world');
     }
+  }
+  if (w.wrecks !== undefined) assertValidWrecks(w.wrecks, fail);
+  // A job on its way to a site steers by a site the log holds.
+  for (const [id, p] of Object.entries(s.jobs)) {
+    const o = isRecord(p) && p.status === 'active' ? s.contracts[id]?.objectives[p.objectiveIndex] : undefined;
+    if (o?.kind === 'site' && !w.wrecks?.sites[o.siteId]) fail(`job ${id}`);
   }
   if (w.rivals !== undefined) {
     if (!isRecord(w.rivals) || !isRecord(w.rivals.down) || !isRecord(w.rivals.bought)) fail('world');

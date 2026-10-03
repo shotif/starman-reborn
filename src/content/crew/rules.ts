@@ -106,10 +106,8 @@ export const CREW = {
   jobDeeds: { rescue: 'rescue', smuggle: 'smuggle' } as Record<string, CrewDeed>,
   /** Lane encounters (docs/PROCGEN.md §27) as deeds: the kind and the choice (or `lapsed`). */
   laneDeeds: {
-    'mayday.help': 'rescue',
     'mayday.pass': 'adrift',
     'mayday.lapsed': 'adrift',
-    'lifepod.aboard': 'rescue',
     'lifepod.call': 'rescue',
     'lifepod.leave': 'adrift',
     'lifepod.lapsed': 'adrift',
@@ -120,6 +118,11 @@ export const CREW = {
     'customs.declare': 'caught',
     'customs.dump': 'caught',
   } as Record<string, CrewDeed>,
+  /**
+   * Sites marked in flight (docs/PROCGEN.md §31) as deeds: a lifepod's survivor tractored in, and a ship
+   * in distress or a lifepod left to lapse. A ship in distress reached pays through its job (a rescue).
+   */
+  siteDeeds: { 'lifepod.taken': 'rescue', 'ship.lapsed': 'adrift', 'lifepod.lapsed': 'adrift' } as Record<string, CrewDeed>,
   /**
    * Each crew member's story: their tale, told at the first dock after `tale` deeds their heart likes
    * with them aboard (`raiders` raiders for the ex-patrol); a favour asked at a dock at least

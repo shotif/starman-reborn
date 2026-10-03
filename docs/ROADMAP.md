@@ -9,13 +9,13 @@ After the scripted opening (10–20 minutes), the neighbourhood is an open sandb
 systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
 of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
 packs in lawless space; 39 ships and 146 pieces of equipment; and generated contracts on every job
-board. Increments 1–29 (under [Done so far](#done-so-far)) added world events and news, contracts
+board. Increments 1–30 (under [Done so far](#done-so-far)) added world events and news, contracts
 of every kind, the law and the outlaw path, goals, five story arcs, combat depth, people in the
 bars and a trade computer, a world that answers, gluts that ship their surplus out and relief to
 escort through raided lanes, a fleet of your own whose captains fly the lanes, a crew aboard your own ship,
 a station of your own to build and defend, passengers and sightseers, rival pilots with careers and stories of their own, a
 supernova in every sky (as fiction), an invented star at the map's edge that explodes and leaves a
-black hole to fly to (fiction too), encounters on the lanes between the docks, mining in the real belts, the frontier with a life of its own,
+black hole to fly to (fiction too), encounters on the lanes between the docks, wrecks and derelicts to fly to with short trails across a few systems, mining in the real belts, the frontier with a life of its own,
 a border war whose fronts can be won for good, story endings that change stations for good, escorts
 and convoys across jumps, haulers with real cargo on a timetable, and a game measured and tuned on a
 real phone.
@@ -30,12 +30,6 @@ What it lacks now:
 
 Candidates for what comes next, in the order they will be built, chosen by the owner on 2 October
 2026 once Lane encounters, Rival stories, Defend your outpost and Your crew were done.
-
-### Wrecks to fly to ⏳ (M)
-
-Lane encounters and scans lead somewhere in flight: a wreck to salvage, a pod to tractor in, a
-derelict (invented, and labelled fiction) to board, with short mysteries that run across a few
-systems. Today a lane encounter is settled at its card, with nothing to fly to.
 
 ### Ranks that open doors ⏳ (M)
 
@@ -64,6 +58,20 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 30. Wrecks to fly to ✅
+
+Lane hails and scans now lead somewhere in flight. Answering a mayday, a lifepod or cargo adrift
+marks it on the HUD to fly to: alongside the ship in distress, its pilot pays; the lifepod or the
+pods come in on the tractor. Two new hails, a wreck beacon and an old beacon, mark a wreck to salvage
+(scan its log, tractor in its pods) or an old derelict, invented and labelled fiction, drifting near
+a real planet or star, to board by holding steady alongside. A scan of a planet, star or belt may pick
+up a faint return too. Raiders pick some wrecks over in plain sight; others lie dark by a hulk or a
+decoy and come out when you get close, unless a scan from further off shows them first. One log in
+three, and always the first you read, holds a lead into a short trail across a few systems: a lost
+crew's lifeboat, a strongbox to return to its insurers or sell to a fence, an old hull's sister ship
+and its vault. A site waits two hours, a trail's step three
+([PROCGEN.md §31](PROCGEN.md#31-wrecks-to-fly-to)).
 
 ### 29. Your crew ✅
 

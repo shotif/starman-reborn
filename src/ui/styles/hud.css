@@ -635,6 +635,21 @@
   top: -8px;
 }
 
+/* A wreck, a derelict or something adrift to fly to (docs/PROCGEN.md §31): a warm dashed diamond (never colour alone). */
+.marker.kind-wreck {
+  color: var(--warm);
+}
+
+.marker.kind-wreck .marker-shape {
+  border-style: dashed;
+  border-radius: 0;
+  transform: rotate(45deg);
+  width: 18px;
+  height: 18px;
+  left: -9px;
+  top: -9px;
+}
+
 /* The player's own ships, flown by their captains: green, with a double square (never colour alone). */
 .marker.own {
   color: var(--success);

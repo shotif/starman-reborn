@@ -80,7 +80,9 @@ export type Objective =
   /** Meet a rival at a beacon for a duel, one on one, and win it (docs/PROCGEN.md §28; JobProgress.duel). */
   | { kind: 'duel'; systemId: SystemId; rival: string; text: string }
   /** Hold the player's outpost against a raid (docs/PROCGEN.md §29; JobProgress.outpost): the raid's window and when it strikes. */
-  | { kind: 'outpost'; systemId: SystemId; locationId: string; window: number; at: number; text: string };
+  | { kind: 'outpost'; systemId: SystemId; locationId: string; window: number; at: number; text: string }
+  /** A site marked in flight (docs/PROCGEN.md §31): done when the pilot has done all there is to do there. */
+  | { kind: 'site'; systemId: SystemId; siteId: string; text: string };
 
 export interface JobDef {
   id: string;
@@ -463,6 +465,8 @@ function objectiveSatisfied(state: GameState, jobId: string, o: Objective, ctx: 
       return state.jobs[jobId]?.duel === 'won';
     case 'outpost':
       return state.jobs[jobId]?.outpost === 'held';
+    case 'site':
+      return state.world.wrecks?.sites[o.siteId]?.ended?.how === 'done';
     case 'have-cargo':
       return cargoCount(state.ship.cargo, o.commodity) >= o.qty;
     case 'dock':
@@ -730,6 +734,10 @@ function describeCurrent(state: GameState, jobId: string): ObjectiveSummary | nu
     case 'duel':
       // The rival waits off the jump beacon (docs/PROCGEN.md §28).
       return { ...base, text: inOtherSystem(o.systemId, o.text), targetSystemId: o.systemId, targetLocationId: null, ...(o.systemId === here ? { targetId: duelTargetId(jobId) } : {}) };
+    case 'site': {
+      // A site marked in flight (docs/PROCGEN.md §31): steering to it in its system.
+      return { ...base, text: inOtherSystem(o.systemId, o.text), targetSystemId: o.systemId, targetLocationId: null, ...(o.systemId === here ? { targetId: `site:${o.siteId}` } : {}) };
+    }
     case 'choice': {
       const loc = getLocation(o.locationId);
       const text = state.location.dockedAt === o.locationId ? `${o.text}: open the Jobs window` : `Dock at ${loc.name}: ${o.text.charAt(0).toLowerCase()}${o.text.slice(1)}`;

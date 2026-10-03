@@ -1,5 +1,7 @@
 import type { CrewDeed, CrewGrade, CrewHeart, CrewRole } from '../content/crew/rules.ts';
 import type { LaneKind } from '../content/lanes/rules.ts';
+import type { MysteryId } from '../content/wrecks/mysteries.ts';
+import type { SiteKind } from '../content/wrecks/rules.ts';
 import type { StoryDeed } from '../content/rivals/stories.ts';
 import type { CommodityId } from '../content/economy/goods.ts';
 import type { StationType } from '../content/world/types.ts';
@@ -229,6 +231,47 @@ export interface WorldLog {
   sky?: { from: number; edge?: number };
   /** Lane encounters met (docs/PROCGEN.md §27), by slot id (`<system>.<slot>`): when, what, and what came of it. */
   lanes?: Record<string, LaneRecord>;
+  /** Wrecks, derelicts, ships and pods the pilot had marked, and the mysteries they led to (docs/PROCGEN.md §31). */
+  wrecks?: WreckLog;
+}
+
+/** Sites marked and mysteries begun (docs/PROCGEN.md §31): only what the pilot did; everything else is worked out from the ids. */
+export interface WreckLog {
+  /** By site id: `lane.<system>.<slot>`, `scan.<system>.<slot>` or `mys.<mystery>.<step>`. */
+  sites: Record<string, SiteRecord>;
+  /** Each mystery begun, once a save. */
+  mysteries?: Partial<Record<MysteryId, MysteryRecord>>;
+  /** Logs read so far (the first always holds a lead, if one can be had). */
+  read?: number;
+}
+
+export interface SiteRecord {
+  /** Game clock when it was marked: its window runs from here. */
+  at: number;
+  systemId: SystemId;
+  kind: SiteKind;
+  /** Pods tractored in, by index. */
+  taken?: number[];
+  /** Its log read; boarded; its guards all downed; its dark raiders sprung; reached (a ship in distress). */
+  read?: true;
+  boarded?: true;
+  cleared?: true;
+  sprung?: true;
+  reached?: true;
+  /** How it ended, and when. */
+  ended?: { at: number; how: 'done' | 'bait' | 'lapsed' | 'dropped' | 'lost' };
+}
+
+export interface MysteryRecord {
+  /** The site whose lead began it: every place on its trail is worked out from it. */
+  from: string;
+  began: number;
+  /** Steps done (0: the find waits; 1: the ending waits), and when the step under way opened. */
+  step: 0 | 1;
+  stepAt: number;
+  /** The strongbox's ending, once chosen. */
+  choice?: 'insurer' | 'fence';
+  ended?: { at: number; how: 'solved' | 'cold' | 'dropped' };
 }
 
 /** A lane encounter the pilot met (docs/PROCGEN.md §27). */

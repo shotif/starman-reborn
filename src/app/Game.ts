@@ -15,6 +15,30 @@ import { ALL_LOCATIONS, getComponent, getLocation, getPlanet, getSystem, hasProv
 import { answerLane, laneEncounter, laneOfferFor, laneSlot, lapseLane, type LaneOffer } from '../economy/lanes.ts';
 import { LANE_KINDS, type LaneKind } from '../content/lanes/rules.ts';
 import { showLaneCard } from '../ui/lanes.ts';
+import {
+  boardSite,
+  chooseEnding,
+  clearSite,
+  findOnScan,
+  followLead,
+  loseSite,
+  mysteryPlaces,
+  mysteryUnderWay,
+  nearSite,
+  reachSite,
+  scanFind,
+  scanSite,
+  scanSlot,
+  settleSites,
+  siteSetup,
+  sitesIn,
+  springSite,
+  takeSitePod,
+  type SiteCard,
+  type SiteOutcome,
+} from '../economy/wrecks.ts';
+import { WRECKS, type SiteKind } from '../content/wrecks/rules.ts';
+import { showSiteCard } from '../ui/wrecks.ts';
 import { edgeComm, edgeMoment, edgeTimeline, hopsToPyre, laneClosedReason, PYRE_HOLE_ID, pyreRefugeId, pyreStage, pyreStationsNow, pyreStatus, scheduleEdge } from '../economy/doomed.ts';
 import type { EdgeNewsKind } from '../content/stellar/doomedLines.ts';
 import type { SystemId } from '../data/types.ts';
@@ -1145,6 +1169,38 @@ export class Game {
           this.persist();
         },
         onAnswerHail: (offer) => void this.onAnswerHail(offer),
+        // Sites marked in flight (docs/PROCGEN.md §31): what happened there, in the save, and its words.
+        onSite: (id, what, detail) => {
+          const out =
+            what === 'near'
+              ? nearSite(state, id)
+              : what === 'pod'
+                ? takeSitePod(state, id, detail?.index ?? -1)
+                : what === 'scanned'
+                  ? scanSite(state, id, !!detail?.revealed)
+                  : what === 'reached'
+                    ? reachSite(state, id)
+                    : what === 'boarded'
+                      ? boardSite(state, id)
+                      : what === 'sprung'
+                        ? springSite(state, id, detail?.how ?? 'near', !!detail?.friend)
+                        : what === 'cleared'
+                          ? clearSite(state, id)
+                          : loseSite(state, id);
+          this.announceSite(out);
+        },
+        // A scan of a planet, star or belt may pick up a faint return (§31.3); off in browser tests unless one turns it on.
+        onBodyScan: () => {
+          if (TEST_RUN && !this.lanesInTests) return;
+          const found = findOnScan(state, state.location.systemId);
+          if (!found) return;
+          this.sfx('radio-blip');
+          toast(found.text, 'good', 6000);
+          const setup = siteSetup(state, found.siteId);
+          if (setup) this.flight?.addSite(setup);
+          this.announceJobEvents(advanceJobs(state, { dockedAt: null, systemId: state.location.systemId }));
+          this.persist();
+        },
         onHailLapsed: (offer) => {
           const out = lapseLane(state, offer);
           this.flight?.laneOutcome(offer.id, out);
@@ -1278,6 +1334,7 @@ export class Game {
       downDens,
       crew: state.crew.map((w) => ({ id: w.id, name: w.name, model: w.model, skill: w.skill, ...(w.ally ? { ally: w.ally } : {}) })),
       sights: sightsIn(state, here),
+      sites: sitesIn(state, here),
       lingering: this.takeLingering(),
       // Rivals' feuds (docs/PROCGEN.md §28): customs tipped off, hired guns waiting, a duel off the beacon.
       tipped: tippedPatrols(state, here),
@@ -1391,6 +1448,8 @@ export class Game {
     for (const n of out.lawNotes) toast(n, 'good', 6000);
     this.announceFleet(out.fleet);
     this.announceJobEvents(out.jobEvents, false);
+    for (const n of out.sites.notes) toast(n.text, n.tone, 6000);
+    this.announceJobEvents(out.sites.jobs, false);
     for (const n of out.allies) toast(n, 'info', 5000);
     this.announceStories(out.stories);
     this.announceCrew(out.crew);
@@ -1558,7 +1617,37 @@ export class Game {
     this.flight?.laneOutcome(offer.id, out);
     if (!out) return;
     toast(out.text, out.tone, 6000);
+    // A site to fly to, brought into the scene (docs/PROCGEN.md §31).
+    const site = out.siteId ? siteSetup(state, out.siteId) : null;
+    if (site) this.flight?.addSite(site);
     if (out.jobId) this.announceJobEvents(advanceJobs(state, { dockedAt: null, systemId: state.location.systemId }));
+    this.persist();
+  }
+
+  /** What came of something at a site (docs/PROCGEN.md §31): notices, the radio, jobs, then a card to read, paused. */
+  private announceSite(out: SiteOutcome): void {
+    for (const n of out.notes) toast(n.text, n.tone, 5000);
+    if (out.comm) this.comm(out.comm.speaker, out.comm.text, 5000);
+    if (out.jobs.length) this.announceJobEvents(out.jobs);
+    this.persist();
+    if (out.card) void this.openSiteCard(out.card);
+  }
+
+  /** A log or a find's card: a lead followed (its trail begins), or the strongbox's ending chosen. */
+  private async openSiteCard(card: SiteCard): Promise<void> {
+    const state = this.state!;
+    this.setPaused(true, false);
+    const pick = await showSiteCard(card);
+    this.setPaused(false);
+    if (card.lead && pick === 'follow') {
+      const r = followLead(state, card.site, card.lead.mystery);
+      toast(r.message, r.ok ? 'good' : 'bad', 5000);
+      const find = r.ok ? siteSetup(state, `mys.${card.lead.mystery}.1`) : null;
+      if (find && find.systemId === state.location.systemId) this.flight?.addSite(find);
+      if (r.ok) this.announceJobEvents(advanceJobs(state, { dockedAt: null, systemId: state.location.systemId }));
+    } else if (card.choose) {
+      toast(chooseEnding(state, pick === 'fence' ? 'fence' : 'insurer').message, 'info', 5000);
+    }
     this.persist();
   }
 
@@ -2116,6 +2205,9 @@ export class Game {
         this.persist();
       }
       if (this.announceStories(settleRivalStories(state))) this.persist();
+      // Sites elsewhere whose time ran out (never one in this system while the pilot flies here).
+      const sites = settleSites(state, state.location.systemId);
+      if (sites.notes.length || sites.jobs.length) this.announceSite(sites);
       this.watchSky(state);
     }
     this.objectiveTimer -= dt;
@@ -2301,6 +2393,9 @@ export class Game {
         this.state.clock += Math.max(0, seconds);
         this.announceFleet(settleFleet(this.state));
         this.announceStories(settleRivalStories(this.state));
+        const sites = settleSites(this.state, this.mode === 'flight' ? this.state.location.systemId : null);
+        for (const n of sites.notes) toast(n.text, n.tone, 5000);
+        this.announceJobEvents(sites.jobs, false);
         this.persist();
         this.station?.render();
       },
@@ -2372,6 +2467,26 @@ export class Game {
           }
         }
         return null;
+      },
+      /** Test-only: the first scan slot from a moment on holding a find (docs/PROCGEN.md §31.3) in the given systems (or any), of a kind if asked. */
+      findScanFind: (arg: { from: number; kind?: SiteKind; systems?: SystemId[]; dark?: boolean; guard?: boolean }) => {
+        const systems = arg.systems ?? SYSTEMS.map((x) => x.id);
+        for (let slot = scanSlot(arg.from) + 1; slot < scanSlot(arg.from) + 400; slot++) {
+          for (const id of systems) {
+            const f = scanFind(id, slot);
+            if (!f || (arg.kind && f.kind !== arg.kind) || (arg.dark !== undefined && (f.dark !== null) !== arg.dark) || (arg.guard !== undefined && (f.guard !== null) !== arg.guard)) continue;
+            return { id: f.id, systemId: f.systemId, slot, kind: f.kind, ship: f.ship, body: f.body, at: slot * WRECKS.scan.slotSeconds };
+          }
+        }
+        return null;
+      },
+      /** Test-only: the sites this save has marked, and how the flight scene has them. */
+      sites: () => ({ log: this.state?.world.wrecks ?? null, flight: this.flight?.debugSites() ?? [] }),
+      /** Test-only: the trail under way, its record and where it leads. */
+      mystery: () => {
+        const id = this.state ? mysteryUnderWay(this.state) : null;
+        const rec = id ? this.state!.world.wrecks!.mysteries![id]! : null;
+        return id && rec ? { id, record: rec, places: mysteryPlaces(id, rec.from) } : null;
       },
       /** Test-only: lets lane encounters hail in this browser test (they are off in tests otherwise). */
       meetLanes: (on: boolean) => {

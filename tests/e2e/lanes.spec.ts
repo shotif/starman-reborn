@@ -5,7 +5,7 @@ import { api, isTouch, openFresh, press, waitUntil } from './helpers.ts';
  * Lane encounters (docs/PROCGEN.md §27): a lost trader's hail answered from its banner and a fix
  * sold; a Hollow Wake toll paid, the card naming the risk; the same slot never hailing twice; a
  * customs patrol bribed with contraband aboard; and a real mayday answered with a pad (A on the
- * action, the D-pad to the choice, A to take it).
+ * action, the D-pad to the choice, A to take it), then flown to and paid when reached.
  */
 
 interface Offer {
@@ -158,5 +158,10 @@ test('lane encounters: a trader helped, a toll paid, a slot met once, a bribe, a
   await hold(page, A, 'the card open', async () => card.isVisible());
   await hold(page, DOWN, 'the first choice in focus', async () => page.getByTestId('lane-help').evaluate((el) => el === document.activeElement));
   await hold(page, A, 'went to them', async () => (await api<Lanes>(page, 'lanes')).met[mayday.id]?.pick === 'help');
-  expect((await api<State>(page, 'state')).credits - reward).toBe(mayday.credits);
+  // The ship is marked on the HUD (docs/PROCGEN.md §31): flown alongside, its pilot pays.
+  expect((await api<State>(page, 'state')).credits).toBe(reward);
+  const site = `lane.${mayday.id}`;
+  await waitUntil(page, 'the ship in the scene', async () => (await api<{ flight: { id: string }[] }>(page, 'sites')).flight.some((x) => x.id === site), 20_000);
+  await api(page, 'placeNear', { id: `site:${site}`, distance: 150 });
+  await waitUntil(page, 'paid when reached', async () => (await api<State>(page, 'state')).credits - reward === mayday.credits, 20_000);
 });
