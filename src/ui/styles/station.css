@@ -10,6 +10,8 @@
   inset: 0;
   z-index: 6;
   pointer-events: none;
+  /* Its width, in the page's own rem, lets a full action tab go icon-only with large text too. */
+  container: station / inline-size;
 }
 
 .station > *,
@@ -512,9 +514,10 @@
   }
 }
 
-/* ---------- Narrow phones: a full action tab (a racing club's bar, docs/PROCGEN.md §33) goes icon-only ---------- */
+/* ---------- Narrow screens: a full action tab (a racing club's bar, docs/PROCGEN.md §33) goes icon-only ---------- */
+/* A container query, so the page's own text size counts (a phone's large text makes the tab wider). */
 
-@media (max-width: 380px) {
+@container station (max-width: 23rem) {
   .station-actions:has(> :nth-child(5)) {
     padding-left: 0.35rem;
     padding-right: 0.35rem;
