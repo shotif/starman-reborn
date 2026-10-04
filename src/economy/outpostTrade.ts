@@ -48,6 +48,43 @@ export function refinedThisHour(o: OutpostRecord, clock: number): number {
   return o.refined?.hour === Math.floor(clock / HOUR) ? o.refined.units : 0;
 }
 
+/**
+ * Units it can still take in the hour of `clock`. An hour before the one it last refined in has
+ * none left (a captain's step worked out late never undoes a later hour's record).
+ */
+export function refineRoom(o: OutpostRecord, clock: number): number {
+  if ((o.refined?.hour ?? -Infinity) > Math.floor(clock / HOUR)) return 0;
+  return Math.max(0, refineAllowance(o) - refinedThisHour(o, clock));
+}
+
+/** Records units refined in the hour of `clock`. */
+function recordRefined(o: OutpostRecord, clock: number, units: number): void {
+  o.refined = { hour: Math.floor(clock / HOUR), units: refinedThisHour(o, clock) + units };
+}
+
+/**
+ * A mining captain's load handed over (docs/PROCGEN.md §37.2): the refinery takes what its hour's
+ * room allows, good by good in the load's order, and its market gains the refined goods. Returns
+ * what it took and what it pays (the captain's cut is the fleet's to take); the rest stays in `load`.
+ */
+export function takeLoad(state: GameState, o: OutpostRecord, load: Partial<Record<CommodityId, number>>, clock: number): { taken: Partial<Record<RawGood, number>>; pay: number } {
+  const taken: Partial<Record<RawGood, number>> = {};
+  let pay = 0;
+  if (!inBelt(o) || o.stage <= 0) return { taken, pay };
+  for (const c of RAW_GOODS) {
+    const room = refineRoom(o, clock);
+    const n = Math.min(room, load[c] ?? 0);
+    if (n <= 0) continue;
+    load[c] = (load[c] ?? 0) - n;
+    if (!load[c]) delete load[c];
+    recordRefined(o, clock, n);
+    taken[c] = n;
+    pay += n * refinePay(c);
+    moveStock(state.markets, outpostId(o.site), R.goods[c], n / R.per, Math.max(clock, state.markets[outpostId(o.site)]?.t ?? clock));
+  }
+  return { taken, pay };
+}
+
 /** What one unit of a raw good fetches there. */
 export const refinePay = (c: RawGood): number => Math.round(COMMODITIES[c].basePrice * R.pay);
 
@@ -58,7 +95,7 @@ export const nextRefineHour = (clock: number): number => (Math.floor(clock / HOU
 export function refinable(state: GameState, c: CommodityId): number {
   const o = outpostAt(state, state.location.dockedAt);
   if (!o || !isRawGood(c)) return 0;
-  return Math.max(0, Math.min(refineAllowance(o) - refinedThisHour(o, state.clock), cargoCount(state.ship.cargo, c)));
+  return Math.max(0, Math.min(refineRoom(o, state.clock), cargoCount(state.ship.cargo, c)));
 }
 
 /** Refines raw goods from the hold: paid for now, and its market gains one refined unit for every two. */
@@ -68,11 +105,10 @@ export function refineAtOutpost(state: GameState, c: CommodityId, qty: number): 
   if (o.stage <= 0) return { ok: false, message: `${o.name} refines once its frame is up.` };
   if (!isRawGood(c)) return { ok: false, message: `${o.name} refines metal ore, water ice and volatile gases.` };
   if (!Number.isInteger(qty) || qty <= 0) return { ok: false, message: 'Choose at least one unit.' };
-  if (qty > refinable(state, c)) return { ok: false, message: refineAllowance(o) - refinedThisHour(o, state.clock) <= 0 ? `${o.name} has refined all it can this hour.` : 'More than it can take this hour, or than you carry.' };
-  const hour = Math.floor(state.clock / HOUR);
+  if (qty > refinable(state, c)) return { ok: false, message: refineRoom(o, state.clock) <= 0 ? `${o.name} has refined all it can this hour.` : 'More than it can take this hour, or than you carry.' };
   const paid = qty * refinePay(c);
   removeCargo(state.ship.cargo, c, qty);
-  o.refined = { hour, units: refinedThisHour(o, state.clock) + qty };
+  recordRefined(o, state.clock, qty);
   applyCredits(state, paid, 'sell', `Refining at ${o.name}`);
   const made = R.goods[c];
   moveStock(state.markets, outpostId(o.site), made, qty / R.per, state.clock);
@@ -106,7 +142,7 @@ export function giveUpBlock(state: GameState, o: OutpostRecord): string | null {
   if (here !== id && (getLocation(here).systemId !== site.systemId || dockAccess(state, here) !== 'full')) return `Give it up at ${o.name}, or a station of its system where you can do business.`;
   if (Object.values(state.fleet.storage[id] ?? {}).some((q) => (q ?? 0) > 0)) return `Take what you stored at ${o.name} first.`;
   const run = state.fleet.ships.find((s) => s.hauler && s.hauler.leg !== 'home' && (s.hauler.route.to === id || s.hauler.route.from === id));
-  if (run) return `Captain ${run.hauler!.captain} is on a run there: recall them and let the run end first.`;
+  if (run) return run.hauler!.work === 'mine' ? `Captain ${run.hauler!.captain} mines for it: recall them and let them fly home first.` : `Captain ${run.hauler!.captain} is on a run there: recall them and let the run end first.`;
   const job = Object.entries(state.contracts).find(([jobId, c]) => state.jobs[jobId]?.status === 'active' && !jobId.startsWith(`op.${o.site}.`) && JSON.stringify(c).includes(`"${id}"`));
   if (job) return `Finish or drop the job ${job[1].title} first.`;
   return null;

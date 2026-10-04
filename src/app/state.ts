@@ -159,17 +159,28 @@ export interface Hauler {
   insured: boolean;
   /** Game clock when the captain was hired (with the ship's id and the run, it keys each run's luck). */
   hired: number;
-  /** `home`: at `route.from`, loading next; `out`: carrying the cargo to `route.to`; `back`: flying home empty. */
-  leg: 'home' | 'out' | 'back';
+  /**
+   * `home`: at `route.from`, loading next; `out`: carrying the cargo to `route.to`; `back`: flying home
+   * empty; `work`: a mining captain at work in its refinery's system (docs/PROCGEN.md §37.2).
+   */
+  leg: 'home' | 'out' | 'back' | 'work';
+  /**
+   * What the captain does (docs/PROCGEN.md §37): trade runs (absent), supplying the outpost at
+   * `route.to` until it is complete, or mining for the belt refinery at `route.to`.
+   */
+  work?: 'supply' | 'mine';
+  /** A mining captain at work: where in its cycle it is, since `since`. */
+  phase?: 'to-rocks' | 'cutting' | 'to-dock' | 'handing';
   /** Game clock when the current run began (at home: when the captain next looks at the route). */
   since: number;
   /** What the run under way cost when it set out: the goods, both ways' jump fees and the captain's fee. */
   cost: number;
   /**
-   * Why the captain waits at home (null: not waiting), and how many looks at the route in a row
-   * found no run to make. A wait is reported once, when it outlasts the first look.
+   * Why the captain waits at home (null: not waiting; `supplies`: a supply captain finds nothing to
+   * load), and how many looks at the route in a row found no run to make. A wait is reported once,
+   * when it outlasts the first look.
    */
-  waiting: 'unprofitable' | 'credits' | null;
+  waiting: 'unprofitable' | 'credits' | 'supplies' | null;
   waits: number;
   /** Called home: the ship parks at `route.from` when this run is done. */
   recalled: boolean;
@@ -210,7 +221,8 @@ export interface Stake {
 export interface FleetReport {
   /** Game clock when it happened. */
   at: number;
-  kind: 'run' | 'raid' | 'lost' | 'wait' | 'home';
+  /** `supply`: a supply captain's delivery; `mine`: a mining captain's load refined (docs/PROCGEN.md §37). */
+  kind: 'run' | 'raid' | 'lost' | 'wait' | 'home' | 'supply' | 'mine';
   text: string;
   /** Credits it made (negative: cost) the player. */
   amount: number;

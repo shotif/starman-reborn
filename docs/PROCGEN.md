@@ -3795,3 +3795,107 @@ belt docks in the scene in their ring and clear of rocks, refining (paid, capped
 moved, a planet's refusing), selling and abandoning (half back, the site free, nothing left naming its
 station, the pilot moved, what blocks it, the journal's six), hauler calls on their beat, income from
 several, raids by system (none in Sol, the probe in Fomalhaut), and saves.
+
+## 37. Captains supply outposts
+
+The pilot's captains (§18) can now work for the pilot's outposts (§22, §36): a **supply** captain
+brings the materials for an outpost's next stage, and a **mining** captain works a belt
+refinery's own belt and has what it cuts refined there (`src/economy/fleetWork.ts`; rules in
+`FLEET.work`, `src/content/fleet/rules.ts`; hired in the Fleet window). The captains, their ships'
+work and what is said of it are fiction; the belts are the real, cited ones (§19.1).
+
+The owner chose (4 October 2026): a supply captain takes what the pilot has stored first, then buys
+the rest; mining captains mine in the belt (seen at work in the ring in flight), rather than buying
+raw goods; a supply captain takes a share of the goods it carries, as there is no profit to share;
+and these runs are safe deliveries, never raided.
+
+### 37.1 Supply runs
+
+- **Hiring**: in the Fleet window, at the dock where one of the pilot's ships is parked with an
+  empty hold, a captain can be hired to supply any of the pilot's outposts that still has a stage to
+  build (in any system: the captain flies the lanes as a hauler does).
+- **Loading** (180 s, as a haul): the captain takes the next stage's materials still needed, good by
+  good in the stage's order: first whatever the ship's hold still has of them (left from the last
+  run), then what the pilot keeps in storage at the home dock (§18.3), then buys the rest where the
+  home dock's market sells them (at the list price, without standing), filling at most 90% of the
+  hold and never more than the stage still needs.
+- **Pay**: the captain takes 10% of the goods' value at their galaxy base prices (`work.share`),
+  whether they came from the hold, storage or the market; with the goods bought and the jump fees
+  both ways, it is paid when the run sets out. So supplying by captain always costs more than
+  flying the goods there yourself.
+- **Delivery**: on arrival the goods are handed over as if the pilot had brought them, and a stage
+  done changes the outpost as ever (it opens, grows, gains services). Anything the stage no longer
+  needs (the pilot brought it meanwhile) stays aboard for the next stage. The captain flies home
+  empty of the rest and loads again, stage after stage, until the outpost is complete; then the
+  captain parks the ship and signs off. Run times are a haul's: 180 s loading, then 1.5 × the trip
+  each way.
+- **Waiting**: when nothing can be loaded (nothing aboard, in storage or for sale at home of what
+  the stage needs) or the pilot cannot pay, the captain waits and looks again every 15 minutes,
+  reported once, as a hauler does.
+
+### 37.2 Mining captains
+
+- **Hiring**: a parked ship with a mining laser fitted (§19) and an empty hold can be hired to mine
+  for one of the pilot's belt refineries once its frame is up.
+- **Getting there**: 180 s readying, then the trip to the refinery's system at a run's pace (1.5 ×
+  the trip); on recall, the same home.
+- **Working**, in cycles in the refinery's system: 60 s out to its spot in the belt (`work.transit`,
+  the same the mining estimates use, §19), cutting until 90% of the hold is full at its lasers' rate
+  and with its prospecting scanner as the pilot's own beam cuts (units of rock a minute, each unit
+  yielding the scanner's factor), 60 s back to the refinery, and handing the load over. The load is
+  the belt's goods in the mean shares of its kind's rocks (§19: a main-belt load is 70% metal ore and
+  30% water ice), in whole units.
+- **Refining**: the refinery takes the load within its hourly allowance (§36.3), which the
+  pilot's own refining shares: what does not fit waits aboard and is handed over as each new hour
+  of the clock begins, the captain waiting at the dock, before going out again. Each unit is paid at
+  the refining price; the captain takes 30% of it (`work.cut`, as a hauler takes of a run's profit)
+  and the rest is the pilot's; the refined goods go into the refinery's market as ever.
+- **Its spot** lies in the refinery's ring (Epsilon Eridani's inner one), halfway across and level
+  with it, `work.spot` metres along the ring from the refinery, clear of every station by
+  `work.clear`; one spot to a refinery, its captains working side by side.
+- **Recall**: the captain hands over what is aboard, then flies home and parks. A refinery with a
+  mining captain working for it cannot be given up until the captain is recalled and gone.
+
+### 37.3 Safe deliveries
+
+Supply and mining captains are never raided, even in lawless space (the owner's choice): nothing
+is lost on the way, and nothing needs guarding. Raiders who hunt miners (§19) hunt the pilot only.
+
+### 37.4 Seen in flight
+
+Supply captains fly the lanes as haulers do (§18.6), named as the pilot's with what they carry
+(*Captain Ada Moss · 12 habitat modules for Lodestone Exchange*). A mining captain getting there or
+going home does the same; at work in the pilot's system it is seen at its spot in the ring, its beam
+on the rock (*Captain Ada Moss · mining for Copperleaf Stillworks*), or flying between the spot and
+the refinery, never popping in near the pilot. It cannot be hurt by raiders; the pilot's own guns
+can still destroy it, as any of the pilot's ships (§18.6).
+
+### 37.5 The Fleet window
+
+The hiring dialog asks what the captain is to do: **Haul** (a trade route, as before), **Supply** (an
+outpost still being built: what the next run would carry, from where, and what it costs), or
+**Mine** (a belt refinery: for a ship with a mining laser, the units it would cut an hour and what
+they would pay within the refinery's allowance). Each captain's line says what it is doing (*on the
+way to Lodestone Exchange with 12 habitat modules*, *cutting in the Main asteroid belt*, *waiting
+for the refinery's next hour*). Reports and toasts tell deliveries, stages done and loads refined.
+
+### 37.6 One save's own
+
+A captain's record keeps what it does (`work`: absent for a trade haul, `supply` or `mine`) and,
+for a mining captain at work, where in its cycle it is. Saves refuse a supply captain for an outpost
+the save does not have or one already complete, a mining captain without a laser or for an outpost
+that is not a belt refinery, and a cycle phase that is not one.
+
+### 37.7 Guardrails
+
+`validateFleetWork` (`src/economy/fleetWorkGuards.ts`, run in `tests/unit/fleetWork.test.ts`)
+checks that the share is between nothing and a fifth and the cut between nothing and a half; that a
+supply run always costs more than the goods at base prices; that a mining cycle, for every laser
+the catalogue sells, takes at least a few minutes and pays the pilot no more an hour than 70% of the
+port's allowance at the dearest raw good's refining price (so a mining captain earns within what a
+hauler can, §18.5); that every belt refinery's spot lies in its ring and clear of stations; and that
+the rules are whole numbers where they must be. The tests also break the rules to see them caught,
+and check supply runs (storage first, then the market, the share, the stage done by a captain,
+waiting, signing off when complete), mining (cycles on time, the load's shares, the allowance shared
+with the pilot and waited out, the cut, recall), settling the same however often, the flight's
+captains at work, and saves.

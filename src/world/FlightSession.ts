@@ -79,7 +79,7 @@ import { laneOfferFor, laneWords, stageLane, type LaneOffer, type LaneOutcome } 
 import { activeEdge } from '../economy/events.ts';
 import { haulsIn, type Haul, type HaulHere, type HaulLeg } from '../economy/hauls.ts';
 import { FLEET } from '../content/fleet/rules.ts';
-import { captainsIn, type CaptainHere, type RunRaid } from '../economy/fleet.ts';
+import { captainsIn, runDoing, type CaptainHere, type RunRaid } from '../economy/fleet.ts';
 import { RIVALS } from '../content/rivals/rules.ts';
 import { RIVAL_STORY } from '../content/rivals/stories.ts';
 import { RAID_GUARD } from '../content/outposts/raidLines.ts';
@@ -3308,8 +3308,7 @@ export class FlightSession {
     const at = this.placeOnLeg(key, leg, from, to, c.progress, first);
     if (!at) return false;
     const model = shipModel(c.ship.ship.model);
-    const good = COMMODITIES[h.route.commodity].name.toLowerCase();
-    const doing = way === 'back' ? `flying home to ${this.whereIs(to)}, empty` : c.qty > 0 ? `${c.qty} ${good} for ${this.whereIs(to)}` : `robbed, flying on to ${this.whereIs(to)} empty`;
+    const doing = runDoing(c.ship, way, (id) => this.whereIs(id));
     const npc = this.makeNpc(model.id, 'trader', 'independent', at.position, at.forward, `Captain ${h.captain} · ${doing}`, c.ship.ship.fittings);
     // "your Petrel" in messages; on the HUD, marked as the player's and in the target cycle.
     npc.name = model.name;

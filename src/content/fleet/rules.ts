@@ -66,6 +66,15 @@ export const FLEET = {
   lanes: {
     ambush: { patrolled: 1, thin: 1, lawless: 2 } satisfies Record<Danger, 1 | 2 | 3> as Record<Danger, 1 | 2 | 3>,
   },
+  /**
+   * Captains who work for the pilot's outposts (docs/PROCGEN.md §37). A supply captain takes `share`
+   * of the goods it carries at their galaxy base prices; a mining captain `cut` of what the refinery
+   * pays for each load. A mining captain flies `transit` seconds between its spot and the refinery
+   * each way; its spot lies `spot` metres along the refinery's ring from it, at least `clear` from
+   * every station. At most `maxSteps` of a mining captain's steps are worked out in one settle; past
+   * that the captain rests until the clock.
+   */
+  work: { share: 0.1, cut: 0.3, transit: 60, spot: 3_000, clear: 2_000, maxSteps: 2_000 },
   storage: {
     /** A lease at one station (paid once, kept for good): its price and hold size (units). */
     lease: 400,

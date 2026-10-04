@@ -24,7 +24,8 @@ import { cycleOf } from '../../economy/battles.ts';
 import { RACE_CLASSES, RACING } from '../../content/racing/rules.ts';
 import { courseById, heatOf, type RaceEnd, type RacingLog } from '../../economy/racing.ts';
 import { MYSTERY_IDS, type MysteryId } from '../../content/wrecks/mysteries.ts';
-import { outpostId, outpostSite } from '../../content/outposts/sites.ts';
+import { outpostId, outpostSite, siteOfStation } from '../../content/outposts/sites.ts';
+import { miningRig } from '../../economy/fleetWork.ts';
 import { createNewGame, SAVE_VERSION, type CommodityId, type CrewLog, type FormerOutpost, type GameState, type OutpostDefence, type OutpostRecord, type RivalStory, type WreckLog } from '../state.ts';
 
 /**
@@ -500,6 +501,20 @@ function assertValidShip(ship: GameState['ship'], fail: (msg: string) => never, 
   if (!isRecord(sys) || !(['engines', 'guns', 'shields'] as const).every((k) => Number.isFinite(sys[k]) && sys[k] >= 0 && sys[k] <= 1)) fail(`${what} systems`);
 }
 
+/**
+ * A captain's work for the pilot's outposts (docs/PROCGEN.md §37.6): a trade haul as ever; a supply
+ * captain for an outpost of the save; a mining captain with a laser aboard, for a belt refinery of
+ * the save, in a phase of its cycle while at work (and only then).
+ */
+function validWork(o: GameState['fleet']['ships'][number], h: NonNullable<GameState['fleet']['ships'][number]['hauler']>): boolean {
+  const site = siteOfStation(h.route.to);
+  const own = !!site && (LOCATION_IDS as ReadonlySet<string>).has(h.route.to);
+  if (h.work === undefined) return h.leg !== 'work' && h.phase === undefined && h.waiting !== 'supplies';
+  if (h.work === 'supply') return own && h.leg !== 'work' && h.phase === undefined && h.waiting !== 'unprofitable';
+  if (h.work !== 'mine' || !own || !site?.beltId || !(miningRig(o.ship).rate > 0) || h.waiting === 'unprofitable' || h.waiting === 'supplies') return false;
+  return h.leg === 'work' ? ['to-rocks', 'cutting', 'to-dock', 'handing'].includes(h.phase as string) : h.phase === undefined;
+}
+
 /** The fleet (docs/PROCGEN.md §18): owned ships and their captains, storage, stakes and reports. */
 function assertValidFleet(fl: GameState['fleet'], fail: (msg: string) => never): void {
   if (!isRecord(fl) || !Array.isArray(fl.ships) || !isRecord(fl.storage) || !Array.isArray(fl.stakes) || !Array.isArray(fl.reports)) fail('fleet');
@@ -522,8 +537,9 @@ function assertValidFleet(fl: GameState['fleet'], fail: (msg: string) => never):
       !COMMODITY_IDS.includes(h.route.commodity) ||
       typeof h.insured !== 'boolean' ||
       typeof h.recalled !== 'boolean' ||
-      !['home', 'out', 'back'].includes(h.leg) ||
-      ![null, 'unprofitable', 'credits'].includes(h.waiting) ||
+      !['home', 'out', 'back', 'work'].includes(h.leg) ||
+      ![null, 'unprofitable', 'credits', 'supplies'].includes(h.waiting) ||
+      !validWork(o, h) ||
       !Number.isInteger(h.waits) ||
       h.waits < 0 ||
       !time(h.hired) ||
@@ -563,7 +579,7 @@ function assertValidFleet(fl: GameState['fleet'], fail: (msg: string) => never):
     stakes.add(k.locationId);
   }
   if (stakes.size > FLEET.stakes.maxStations) fail('stakes');
-  const kinds = ['run', 'raid', 'lost', 'wait', 'home'];
+  const kinds = ['run', 'raid', 'lost', 'wait', 'home', 'supply', 'mine'];
   if (!fl.reports.every((r) => isRecord(r) && Number.isFinite(r.at) && kinds.includes(r.kind) && typeof r.text === 'string' && Number.isFinite(r.amount) && (r.shipId === undefined || typeof r.shipId === 'string'))) fail('fleet reports');
 }
 

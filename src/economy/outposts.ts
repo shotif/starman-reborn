@@ -142,19 +142,38 @@ export function deliverToOutpost(state: GameState, c: CommodityId, qty: number):
   if (!Number.isInteger(qty) || qty <= 0) return { ok: false, message: 'Choose at least one unit.' };
   if (qty > deliverable(state, c)) return { ok: false, message: stage.needs[c] ? 'More than it needs, or than you carry.' : `The ${stage.name.toLowerCase()} needs no ${goodName(c)}.` };
   removeCargo(state.ship.cargo, c, qty);
-  o.delivered[c] = (o.delivered[c] ?? 0) + qty;
-  if (stillNeeded(o).some((x) => x.left > 0)) return { ok: true, message: `Delivered ${qty} ${goodName(c)} for the ${stage.name.toLowerCase()}.` };
-  // The stage is done: the outpost grows (and opens, after its frame).
+  const done = handOver(o, c, qty, state.clock);
+  if (!done) return { ok: true, message: `Delivered ${qty} ${goodName(c)} for the ${stage.name.toLowerCase()}.` };
+  return { ok: true, message: `Delivered ${qty} ${goodName(c)}. ${stageLine(o)}.`, stageDone: done };
+}
+
+/**
+ * Takes materials toward the next stage (the player's, or a supply captain's, docs/PROCGEN.md
+ * §37.1), no more than it still needs; when all are in, the stage is done: the outpost grows (and
+ * opens, after its frame). Returns the stage done, if one was.
+ */
+export function handOver(o: OutpostRecord, c: CommodityId, qty: number, clock: number): string | undefined {
+  const stage = nextStage(o);
+  const left = stillNeeded(o).find((x) => x.commodity === c)?.left ?? 0;
+  const n = Math.min(qty, left);
+  if (!stage || n <= 0) return undefined;
+  o.delivered[c] = (o.delivered[c] ?? 0) + n;
+  if (stillNeeded(o).some((x) => x.left > 0)) return undefined;
   const opened = o.stage === 0;
   o.stage += 1;
   o.delivered = {};
   if (opened) {
-    o.since = state.clock;
-    o.opened = state.clock;
+    o.since = clock;
+    o.opened = clock;
   }
   refreshSaveStations();
-  const what = opened ? `${o.name} is open: its market and repairs are working` : `${o.name} is now a ${stage.name.toLowerCase()}`;
-  return { ok: true, message: `Delivered ${qty} ${goodName(c)}. ${what}.`, stageDone: stage.id };
+  return stage.id;
+}
+
+/** What a stage just done made of the outpost, in words. */
+export function stageLine(o: OutpostRecord): string {
+  const now = OUTPOSTS.stages[o.stage - 1]!;
+  return o.stage === 1 ? `${o.name} is open: its market and repairs are working` : `${o.name} is now a ${now.name.toLowerCase()}`;
 }
 
 // ---------------------------------------------------------------- income (with the fleet, economy/fleet.ts settleFleet)

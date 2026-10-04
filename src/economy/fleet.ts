@@ -2,11 +2,12 @@ import { applyCredits, type Cargo, type CommodityId, type FleetReport, type Game
 import { shipModel, shipsForSale } from '../content/catalog.ts';
 import { CONTRACTS } from '../content/contracts/rules.ts';
 import { FLEET } from '../content/fleet/rules.ts';
+import { OUTPOSTS } from '../content/outposts/rules.ts';
 import { FIRST_NAMES, LAST_NAMES } from '../content/people/lines.ts';
 import { rng } from '../content/random.ts';
 import type { ShipModel } from '../content/types.ts';
 import { jumpsFrom } from '../content/world/network.ts';
-import { ALL_LOCATIONS, getLocation, getSystem, saveLocations, SYSTEMS, WORLD } from '../data/systems.ts';
+import { ALL_LOCATIONS, findBelt, getLocation, getSystem, saveLocations, SYSTEMS, WORLD } from '../data/systems.ts';
 import type { FactionId, SystemId } from '../data/types.ts';
 import { findRoute } from '../galaxy/routing.ts';
 import { addCargo, cargoCount, cargoUsed, itemsThatFit, removeCargo } from './cargo.ts';
@@ -16,7 +17,10 @@ import { quartersBlock } from './crewQuarters.ts';
 import { hasShipyard, shipStandingBlock, shipTradeIn, type Result } from './equipment.ts';
 import { stationEventAt, systemEventAt, type WorldEvent } from './events.ts';
 import { legsOf, type HaulLeg } from './hauls.ts';
-import { outpostNext, payOldHours, payOutpostHour } from './outposts.ts';
+import { handOver, nextStage, outpostNext, payOldHours, payOutpostHour, stageLine, stillNeeded } from './outposts.ts';
+import { inBelt, takeLoad } from './outpostTrade.ts';
+import { loadUnits, mineLoad, miningRig, phaseEnd, siteIdOf } from './fleetWork.ts';
+import { outpostId, siteOfStation } from '../content/outposts/sites.ts';
 import { nextRaid, outpostSystem, raidNote, settleRaid, skipQuietWindows, type RaidPlan } from './outpostRaids.ts';
 import type { JobEvent } from './jobs.ts';
 import { berthBlock } from './passengers.ts';
@@ -51,6 +55,7 @@ import { discounted, yardDiscount } from './ranks.ts';
  */
 
 const NEUTRAL: Record<FactionId, number> = { sta: 0, frontier: 0, 'hollow-wake': 0 };
+const OUTPOSTS_REFINE = OUTPOSTS.refining;
 const HOUR = 3_600;
 
 const shipName = (ship: ShipState) => shipModel(ship.model).name;
@@ -464,7 +469,8 @@ export interface RunRaid {
  */
 export function runRaid(seed: number, o: Pick<OwnedShip, 'id' | 'hauler'>): RunRaid | null {
   const h = o.hauler;
-  if (!h || h.leg !== 'out') return null;
+  // Supply and mining captains are never raided (docs/PROCGEN.md §37.3).
+  if (!h || h.leg !== 'out' || h.work) return null;
   const { from, to } = h.route;
   const setOff = h.since + FLEET.haulers.loadSeconds;
   const risk = haulRisk(from, to, setOff);
@@ -631,6 +637,7 @@ export function recallHauler(state: GameState, shipId: string): Result {
     return { ok: true, message: `${h.captain} parks your ${shipName(o.ship)} at ${place(o.locationId)} and signs off.` };
   }
   h.recalled = true;
+  if (h.leg === 'work') return { ok: true, message: `${h.captain} will hand over what is aboard at ${place(h.route.to)}, then bring your ${shipName(o.ship)} home to ${place(o.locationId)}.` };
   const minutes = Math.max(1, Math.round((h.since + haulTimes(h.route.from, h.route.to).run - state.clock) / 60));
   return { ok: true, message: `${h.captain} will bring your ${shipName(o.ship)} home to ${place(o.locationId)} after this run, in about ${minutes} min.` };
 }
@@ -819,10 +826,272 @@ function arrive(state: GameState, o: OwnedShip, h: Hauler, t: number, out: Fleet
 }
 
 function comeHome(state: GameState, o: OwnedShip, h: Hauler, t: number, out: FleetSettlement): void {
-  if (h.recalled) return park(state, o, h, t, out);
+  // A mining captain comes home only when recalled (docs/PROCGEN.md §37.2).
+  if (h.recalled || h.work === 'mine') return park(state, o, h, t, out);
   h.leg = 'home';
   h.since = t;
   h.cost = 0;
+}
+
+// ---------------------------------------------------------------- working for the pilot's outposts (docs/PROCGEN.md §37)
+
+const W = FLEET.work;
+const cargoText = (cargo: Cargo) =>
+  (Object.entries(cargo) as [CommodityId, number][])
+    .filter(([, q]) => q > 0)
+    .map(([c, q]) => `${q} ${goodName(c)}`)
+    .join(', ');
+const outpostById = (state: GameState, id: string): OutpostRecord | undefined => (state.world.outposts ?? []).find((x) => outpostId(x.site) === id);
+const baseValue = (cargo: Cargo) => (Object.entries(cargo) as [CommodityId, number][]).reduce((sum, [c, q]) => sum + q * COMMODITIES[c].basePrice, 0);
+
+/** What a supply run would load now (docs/PROCGEN.md §37.1): from the hold, then storage at home, then the home market; and what it costs. */
+export interface SupplyPlan {
+  aboard: Cargo;
+  stored: Cargo;
+  bought: Cargo;
+  /** Paid for what is bought; the captain's share of what is loaded (at base prices); both ways' jump fees; all told. */
+  goods: number;
+  share: number;
+  fees: number;
+  cost: number;
+  units: number;
+}
+
+export function supplyPlan(state: GameState, o: OwnedShip, to: string, t = state.clock): SupplyPlan | null {
+  const post = outpostById(state, to);
+  if (!post || !nextStage(post)) return null;
+  const home = o.locationId;
+  const ctx: MarketContext = { clock: t, markets: state.markets };
+  const store = state.fleet.storage[home] ?? {};
+  let room = Math.max(0, Math.floor(cargoCapacity(o.ship) * FLEET.haulers.holdShare) - cargoUsed(o.ship.cargo));
+  const plan: SupplyPlan = { aboard: {}, stored: {}, bought: {}, goods: 0, share: 0, fees: haulFees(home, to), cost: 0, units: 0 };
+  for (const x of stillNeeded(post)) {
+    const c = x.commodity;
+    const size = COMMODITIES[c].unitSize;
+    let left = x.left;
+    const have = Math.min(left, cargoCount(o.ship.cargo, c));
+    if (have > 0) {
+      plan.aboard[c] = have;
+      left -= have;
+    }
+    const stored = Math.min(left, cargoCount(store, c), Math.floor(room / size));
+    if (stored > 0) {
+      plan.stored[c] = stored;
+      left -= stored;
+      room -= stored * size;
+    }
+    if (left <= 0 || !lawfulCargo(c) || quote(home, c, NEUTRAL, ctx).buy === null) continue;
+    const n = Math.min(left, stockAvailable(home, c, ctx), Math.floor(room / size));
+    const price = n > 0 ? orderTotal(home, c, n, 'buy', NEUTRAL, ctx) : null;
+    if (!n || price === null) continue;
+    plan.bought[c] = n;
+    plan.goods += price;
+    room -= n * size;
+  }
+  plan.share = Math.round((baseValue(plan.stored) + baseValue(plan.bought)) * W.share);
+  plan.units = loadUnits(plan.aboard) + loadUnits(plan.stored) + loadUnits(plan.bought);
+  plan.cost = plan.goods + plan.share + plan.fees;
+  return plan.units > 0 ? plan : null;
+}
+
+/** A captain whose work is done signs off and parks the ship (what is aboard stays aboard). */
+function signOff(state: GameState, o: OwnedShip, h: Hauler, t: number, out: FleetSettlement, why: string): void {
+  delete o.hauler;
+  report(state, out, { at: t, kind: 'home', shipId: o.id, amount: 0, text: `${h.captain} parked your ${shipName(o.ship)} at ${place(h.route.from)} and signed off: ${why}.` });
+}
+
+/** A wait at home, reported once. */
+function wait(state: GameState, o: OwnedShip, h: Hauler, t: number, out: FleetSettlement, why: 'supplies' | 'credits', text: string): void {
+  h.waits = h.waiting === why ? h.waits + 1 : 1;
+  h.waiting = why;
+  h.since = t + FLEET.haulers.recheck;
+  if (h.waits === 1) report(state, out, { at: t, kind: 'wait', shipId: o.id, amount: 0, text });
+}
+
+/** A supply captain at home: loads what the next stage needs (the hold, storage, then the market) and sets out, or waits. */
+function setOutSupply(state: GameState, o: OwnedShip, h: Hauler, t: number, out: FleetSettlement): void {
+  if (h.recalled) return park(state, o, h, t, out);
+  const { from, to } = h.route;
+  const post = outpostById(state, to);
+  if (!post || !nextStage(post)) return signOff(state, o, h, t, out, post ? `${post.name} is complete` : 'the outpost is no longer yours');
+  const plan = supplyPlan(state, o, to, t);
+  if (!plan) return wait(state, o, h, t, out, 'supplies', `${h.captain} waits at ${place(from)}: nothing ${post.name} still needs is in your storage or for sale here.`);
+  if (plan.cost > state.credits) return wait(state, o, h, t, out, 'credits', `${h.captain} waits at ${place(from)}: you cannot pay for a load for ${post.name} (${plan.cost} cr).`);
+  credit(state, -plan.cost);
+  const store = state.fleet.storage[from];
+  for (const [c, q] of Object.entries(plan.stored) as [CommodityId, number][]) {
+    removeCargo(store!, c, q);
+    o.ship.cargo[c] = cargoCount(o.ship.cargo, c) + q;
+  }
+  for (const [c, q] of Object.entries(plan.bought) as [CommodityId, number][]) {
+    moveStockAt(state, from, c, -q, t);
+    o.ship.cargo[c] = cargoCount(o.ship.cargo, c) + q;
+  }
+  h.cost = plan.cost;
+  h.leg = 'out';
+  h.since = t;
+  h.waiting = null;
+  h.waits = 0;
+}
+
+/** A supply captain at the outpost: hands over what its stages need (a stage done, the next's too); the rest stays aboard. */
+function arriveSupply(state: GameState, o: OwnedShip, h: Hauler, t: number, out: FleetSettlement): void {
+  h.runs += 1;
+  out.runs += 1;
+  h.leg = 'back';
+  delete h.sight;
+  const post = outpostById(state, h.route.to);
+  const given: Cargo = {};
+  const done: string[] = [];
+  for (let more = !!post; more && post && nextStage(post); ) {
+    more = false;
+    for (const x of stillNeeded(post)) {
+      const n = Math.min(x.left, cargoCount(o.ship.cargo, x.commodity));
+      if (n <= 0) continue;
+      removeCargo(o.ship.cargo, x.commodity, n);
+      given[x.commodity] = (given[x.commodity] ?? 0) + n;
+      more = true;
+      // A stage done: its next stage's needs are worked through afresh.
+      if (handOver(post, x.commodity, n, t)) {
+        done.push(stageLine(post));
+        break;
+      }
+    }
+  }
+  const cost = h.cost;
+  h.earned -= cost;
+  h.cost = 0;
+  const what = cargoText(given);
+  const text = what
+    ? `${h.captain} delivered ${what} to ${post!.name}${done.length ? `. ${done.join('. ')}` : ''}.`
+    : `${h.captain} reached ${post?.name ?? place(h.route.to)} with nothing it still needs.`;
+  report(state, out, { at: t, kind: 'supply', shipId: o.id, amount: -cost, text });
+}
+
+/** A mining captain at home: pays the jump fees there and back and sets out for the refinery, or waits for credits. */
+function setOutMine(state: GameState, o: OwnedShip, h: Hauler, t: number, out: FleetSettlement): void {
+  if (h.recalled) return park(state, o, h, t, out);
+  const post = outpostById(state, h.route.to);
+  if (!post || !inBelt(post) || post.stage <= 0) return signOff(state, o, h, t, out, 'the refinery is no longer yours');
+  const fees = haulFees(h.route.from, h.route.to);
+  if (fees > state.credits) return wait(state, o, h, t, out, 'credits', `${h.captain} waits at ${place(h.route.from)}: you cannot pay the jump fees to ${post.name} (${fees} cr).`);
+  credit(state, -fees);
+  h.earned -= fees;
+  h.cost = 0;
+  h.leg = 'out';
+  h.since = t;
+  h.waiting = null;
+  h.waits = 0;
+}
+
+/** At the refinery's system: to work, out to the spot in the ring (recalled on the way: straight home). */
+function startWork(h: Hauler, t: number): void {
+  if (h.recalled) {
+    h.leg = 'back';
+    h.since = t - haulTimes(h.route.from, h.route.to).load - haulTimes(h.route.from, h.route.to).oneWay;
+    return;
+  }
+  h.leg = 'work';
+  h.phase = 'to-rocks';
+  h.since = t;
+}
+
+/** A mining captain's step in its cycle: out to the rocks, cutting a load, back, handing it over (as the hour's allowance lets). */
+function workStep(state: GameState, o: OwnedShip, h: Hauler, t: number, out: FleetSettlement): void {
+  const post = outpostById(state, h.route.to);
+  switch (h.phase) {
+    case 'to-rocks':
+      h.phase = 'cutting';
+      h.since = t;
+      return;
+    case 'cutting':
+      o.ship.cargo = { ...mineLoad(o.ship, siteIdOf(h)) };
+      h.phase = 'to-dock';
+      h.since = t;
+      return;
+    case 'to-dock':
+      h.phase = 'handing';
+      h.since = t;
+      return;
+    default: {
+      const { taken, pay } = post ? takeLoad(state, post, o.ship.cargo, t) : { taken: {}, pay: 0 };
+      if (pay > 0) {
+        const cut = Math.round(pay * W.cut);
+        credit(state, pay - cut);
+        h.earned += pay - cut;
+        out.hauled += pay - cut;
+        h.runs += 1;
+        report(state, out, { at: t, kind: 'mine', shipId: o.id, amount: pay - cut, text: `${h.captain} handed ${cargoText(taken as Cargo)} to ${post!.name}: ${signed(pay - cut)} cr.` });
+      }
+      if (cargoUsed(o.ship.cargo) > 0) {
+        // The refinery has taken all it can this hour: the rest waits aboard for the next.
+        h.since = (Math.floor(t / HOUR) + 1) * HOUR;
+        return;
+      }
+      if (h.recalled) {
+        // Home now: the way back, as a run's (its back legs start a load and a way out before it).
+        const { load, oneWay } = haulTimes(h.route.from, h.route.to);
+        h.leg = 'back';
+        delete h.phase;
+        h.since = t - load - oneWay;
+        return;
+      }
+      h.phase = 'to-rocks';
+      h.since = t;
+    }
+  }
+}
+
+/** The pilot's outposts a captain can supply: still to be completed. */
+export function supplyTargets(state: GameState): OutpostRecord[] {
+  return (state.world.outposts ?? []).filter((x) => !!nextStage(x));
+}
+
+/** The pilot's belt refineries a ship can mine for: open, with a laser aboard the ship. */
+export function mineTargets(state: GameState, o: OwnedShip): OutpostRecord[] {
+  if (miningRig(o.ship).rate <= 0) return [];
+  return (state.world.outposts ?? []).filter((x) => inBelt(x) && x.stage > 0);
+}
+
+/** What a mining captain would do for a refinery: its load, a cycle's time, and the units and credits an hour within the allowance. */
+export function miningEstimate(o: OwnedShip, post: OutpostRecord): { load: Cargo; units: number; cycle: number; perHour: number; payPerHour: number } {
+  const load = mineLoad(o.ship, post.site) as Cargo;
+  const units = loadUnits(load);
+  const { rate, prospect } = miningRig(o.ship);
+  const cycle = 2 * W.transit + (rate > 0 ? Math.max(1, Math.round((units / (rate * prospect)) * 60)) : Infinity);
+  const allowance = OUTPOSTS_REFINE.perHour[Math.min(post.stage, OUTPOSTS_REFINE.perHour.length) - 1] ?? 0;
+  const perHour = Math.min(allowance, Math.floor((units * HOUR) / cycle));
+  const value = units > 0 ? (Object.entries(load) as [CommodityId, number][]).reduce((s, [c, q]) => s + q * Math.round(COMMODITIES[c].basePrice * OUTPOSTS_REFINE.pay), 0) / units : 0;
+  return { load, units, cycle, perHour, payPerHour: Math.round(perHour * value * (1 - W.cut)) };
+}
+
+/** Puts a parked ship's captain to work for an outpost (docs/PROCGEN.md §37): supplying it, or mining for it; the first step comes at once. */
+export function hireWorker(state: GameState, shipId: string, work: 'supply' | 'mine', to: string): Result & { reports: FleetReport[] } {
+  const o = state.fleet.ships.find((x) => x.id === shipId);
+  const fail = (message: string) => ({ ok: false, message, reports: [] });
+  if (!o) return fail('No such ship.');
+  const block = dockBlock(state, o.locationId) ?? hireBlock(state, o);
+  if (block) return fail(block.endsWith('.') ? block : `${block}.`);
+  const post = outpostById(state, to);
+  if (!post) return fail('You have no outpost there.');
+  if (work === 'supply' && !supplyTargets(state).includes(post)) return fail(`${post.name} is complete.`);
+  if (work === 'mine' && !mineTargets(state, o).includes(post)) return fail(miningRig(o.ship).rate <= 0 ? 'Fit a mining laser to the ship first.' : `${post.name} is not an open refinery in a belt.`);
+  const captain = captainFor(state, o.id);
+  const first = work === 'supply' ? (stillNeeded(post).find((x) => x.left > 0)?.commodity ?? 'machinery') : (Object.keys(mineLoad(o.ship, post.site))[0] as CommodityId | undefined) ?? 'ore';
+  o.hauler = { captain, route: { from: o.locationId, to, commodity: first }, work, insured: false, hired: state.clock, leg: 'home', since: state.clock, cost: 0, waiting: null, waits: 0, recalled: false, runs: 0, earned: 0 };
+  const { reports } = settleFleet(state);
+  const h = o.hauler;
+  const how =
+    work === 'supply'
+      ? h.leg === 'out'
+        ? `: loading ${cargoText(o.ship.cargo)} for ${post.name}.`
+        : h.waiting === 'credits'
+          ? ', but waits: you cannot pay for a load yet.'
+          : `, but waits: nothing ${post.name} needs is in your storage or for sale here.`
+      : h.leg === 'out'
+        ? `: setting out to mine for ${post.name}.`
+        : ', but waits: you cannot pay the jump fees yet.';
+  return { ok: true, message: `${captain} takes your ${shipName(o.ship)}${how}`, reports };
 }
 
 function payDividend(state: GameState, k: Stake, out: FleetSettlement): void {
@@ -882,7 +1151,7 @@ export function settleFleet(state: GameState, opts: SettleOptions = {}): FleetSe
     }
     for (const o of fleet.ships) {
       if (!o.hauler || resting.has(o)) continue;
-      let t = haulerNext(o.hauler);
+      let t = o.hauler.leg === 'work' ? phaseEnd(o, o.hauler) : haulerNext(o.hauler);
       const raid = o.hauler.leg === 'out' ? raidAhead(state.seed, o) : null;
       if (raid && raid.at <= t) {
         if (raid.at <= now && opts.inSight?.has(o.id) && raid.systemId === here) continue;
@@ -928,9 +1197,24 @@ export function settleFleet(state: GameState, opts: SettleOptions = {}): FleetSe
         continue;
       }
       looks.set(o, n);
-      setOut(state, o, h, next.t, out);
+      if (h.work === 'supply') setOutSupply(state, o, h, next.t, out);
+      else if (h.work === 'mine') setOutMine(state, o, h, next.t, out);
+      else setOut(state, o, h, next.t, out);
     } else if (h.leg === 'out') {
-      arrive(state, o, h, next.t, out);
+      if (h.work === 'supply') arriveSupply(state, o, h, next.t, out);
+      else if (h.work === 'mine') startWork(h, next.t);
+      else arrive(state, o, h, next.t, out);
+    } else if (h.leg === 'work') {
+      const n = (looks.get(o) ?? 0) + 1;
+      if (n > FLEET.work.maxSteps) {
+        // Away for very long: the captain rests at the refinery until now, and starts out afresh.
+        h.phase = 'to-rocks';
+        h.since = now;
+        resting.add(o);
+        continue;
+      }
+      looks.set(o, n);
+      workStep(state, o, h, next.t, out);
     } else {
       comeHome(state, o, h, next.t, out);
     }
@@ -958,7 +1242,7 @@ export interface CaptainHere {
 
 /** The leg a hauler flies at a moment, on the run under way. */
 function legAt(h: Hauler, clock: number): { way: 'out' | 'back'; leg: HaulLeg } | null {
-  if (h.leg === 'home') return null;
+  if (h.leg === 'home' || h.leg === 'work') return null;
   const w = runWay(h);
   const legs = h.leg === 'out' ? w.out : w.back;
   const leg = legs.find((l) => clock >= l.start && clock < l.end);
@@ -1027,6 +1311,7 @@ function whereNow(state: GameState, h: Hauler): string {
 export function haulerStatus(state: GameState, o: OwnedShip): string {
   const h = o.hauler;
   if (!h) return `Parked at ${place(o.locationId)}`;
+  if (h.work) return workStatus(state, o, h);
   const { from, to, commodity: c } = h.route;
   const minutes = Math.max(1, Math.round((haulerNext(h) - state.clock) / 60));
   const recalled = h.recalled ? ' · recalled' : '';
@@ -1041,6 +1326,47 @@ export function haulerStatus(state: GameState, o: OwnedShip): string {
   return `Loading at ${place(from)}`;
 }
 
+/** What a supply or mining captain is doing now (docs/PROCGEN.md §37.5). */
+function workStatus(state: GameState, o: OwnedShip, h: Hauler): string {
+  const { from, to } = h.route;
+  const next = h.leg === 'work' ? phaseEnd(o, h) : haulerNext(h);
+  const minutes = Math.max(1, Math.round((next - state.clock) / 60));
+  const recalled = h.recalled ? ' · recalled' : '';
+  const aboard = cargoText(o.ship.cargo);
+  const belt = siteOfStation(to)?.beltId ? (findBelt(siteOfStation(to)!.beltId!)?.name ?? 'belt') : 'belt';
+  if (h.leg === 'back') return `Flying back to ${place(from)}, home in ${minutes} min${whereNow(state, h)}${recalled}`;
+  if (h.work === 'supply') {
+    if (h.leg === 'out' && state.clock < h.since + FLEET.haulers.loadSeconds) return `Loading ${aboard} at ${place(from)} for ${place(to)}, there in ${minutes} min${recalled}`;
+    if (h.leg === 'out') return `Carrying ${aboard} to ${place(to)}, there in ${minutes} min${whereNow(state, h)}${recalled}`;
+    if (h.waiting === 'credits') return `Waiting at ${place(from)}: not enough credits for a load (looks again in ${minutes} min)`;
+    if (h.waiting === 'supplies') return `Waiting at ${place(from)}: nothing ${place(to)} needs is stored or sold here (looks again in ${minutes} min)`;
+    return `Loading at ${place(from)}`;
+  }
+  if (h.leg === 'out') return `On the way to mine for ${place(to)}, there in ${minutes} min${whereNow(state, h)}${recalled}`;
+  if (h.leg === 'home') return h.waiting === 'credits' ? `Waiting at ${place(from)}: not enough credits for the jump fees (looks again in ${minutes} min)` : `Readying at ${place(from)}`;
+  switch (h.phase) {
+    case 'to-rocks':
+      return `Flying out to the rocks in the ${belt}${recalled}`;
+    case 'cutting':
+      return `Cutting in the ${belt}, a load in ${minutes} min${recalled}`;
+    case 'to-dock':
+      return `Bringing ${aboard} to ${place(to)}${recalled}`;
+    default:
+      return next > state.clock ? `Waiting at ${place(to)} for its next hour with ${aboard} aboard (in ${minutes} min)${recalled}` : `Handing over ${aboard} at ${place(to)}${recalled}`;
+  }
+}
+
+/** What a captain flying the lanes is about, for its subtitle in flight (docs/PROCGEN.md §18.6, §37.4). */
+export function runDoing(o: OwnedShip, way: 'out' | 'back', whereIs: (id: string) => string): string {
+  const h = o.hauler!;
+  const { from, to, commodity: c } = h.route;
+  if (way === 'back') return `flying home to ${whereIs(from)}${h.work ? '' : ', empty'}`;
+  if (h.work === 'mine') return `on the way to mine for ${whereIs(to)}`;
+  if (h.work === 'supply') return `${cargoText(o.ship.cargo) || 'nothing'} for ${whereIs(to)}`;
+  const qty = cargoCount(o.ship.cargo, c);
+  return qty > 0 ? `${qty} ${goodName(c)} for ${whereIs(to)}` : `robbed, flying on to ${whereIs(to)} empty`;
+}
+
 /** The newest report about one ship, if any is still kept. */
 export function lastReport(state: GameState, shipId: string): FleetReport | undefined {
   for (let i = state.fleet.reports.length - 1; i >= 0; i--) if (state.fleet.reports[i]!.shipId === shipId) return state.fleet.reports[i];
@@ -1050,7 +1376,7 @@ export function lastReport(state: GameState, shipId: string): FleetReport | unde
 /** Toast lines for a settle: a lost ship always, a few reports as they are, many as a summary; dividends. */
 export function fleetNews(s: FleetSettlement): { text: string; tone: 'good' | 'bad' | 'info' }[] {
   const lines: { text: string; tone: 'good' | 'bad' | 'info' }[] = [];
-  const tone = (r: FleetReport) => (r.kind === 'lost' || r.kind === 'raid' || r.amount < 0 ? 'bad' : r.kind === 'run' ? 'good' : 'info');
+  const tone = (r: FleetReport) => (r.kind === 'lost' || r.kind === 'raid' || (r.amount < 0 && r.kind !== 'supply') ? 'bad' : r.kind === 'run' || r.kind === 'mine' || r.kind === 'supply' ? 'good' : 'info');
   for (const r of s.reports) if (r.kind === 'lost') lines.push({ text: r.text, tone: 'bad' });
   const rest = s.reports.filter((r) => r.kind !== 'lost');
   if (rest.length <= 2) {
@@ -1060,8 +1386,10 @@ export function fleetNews(s: FleetSettlement): { text: string; tone: 'good' | 'b
     const raids = rest.filter((r) => r.kind === 'raid').length;
     const waits = rest.filter((r) => r.kind === 'wait').length;
     const home = rest.filter((r) => r.kind === 'home').length;
+    const supplies = rest.filter((r) => r.kind === 'supply').length;
+    const loads = rest.filter((r) => r.kind === 'mine').length;
     const net = rest.reduce((sum, r) => sum + r.amount, 0);
-    const parts = [runs ? plural(runs, 'run') : '', raids ? plural(raids, 'raid') : '', waits ? `${waits} waiting` : '', home ? `${home} home` : ''].filter(Boolean);
+    const parts = [runs ? plural(runs, 'run') : '', raids ? plural(raids, 'raid') : '', supplies ? plural(supplies, 'delivery').replace('deliverys', 'deliveries') : '', loads ? `${plural(loads, 'load')} refined` : '', waits ? `${waits} waiting` : '', home ? `${home} home` : ''].filter(Boolean);
     lines.push({ text: `Your haulers: ${parts.join(', ')} (${signed(net)} cr). The Fleet window on the deck has the reports.`, tone: net < 0 || raids ? 'bad' : 'good' });
   }
   if (s.dividends > 0) lines.push({ text: `Dividends from your stakes: +${s.dividends} cr.`, tone: 'good' });
