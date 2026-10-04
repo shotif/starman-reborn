@@ -13,7 +13,7 @@ import { newShipState } from './loadout.ts';
 import { sceneDefFor } from '../world/systems/index.ts';
 
 /** The rules a guardrail checks (the real ones, or a broken copy in the tests). */
-export type WorkRules = typeof FLEET.work;
+export type WorkRules = { readonly [K in keyof typeof FLEET.work]: number };
 
 /**
  * Guardrails for captains who work for the pilot's outposts (docs/PROCGEN.md §37.7): the share and
