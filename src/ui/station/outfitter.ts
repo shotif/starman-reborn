@@ -1,3 +1,4 @@
+import { treatWing, wingTreatQuote } from '../../economy/wing.ts';
 import { getLocation } from '../../data/systems.ts';
 import { gearItem, shipModel } from '../../content/catalog.ts';
 import { cargoUsed } from '../../economy/cargo.ts';
@@ -81,6 +82,21 @@ export function shipStatus(ctx: StationContext, refresh: Refresh, opts: { repair
           disabled: state.credits < treatQuote(state, locationId),
           onClick: () => {
             const r = treatCrew(state, locationId);
+            ctx.sfx(r.ok ? 'repair' : 'ui-error');
+            toast(r.message, r.ok ? 'good' : 'bad');
+            ctx.save();
+            refresh();
+          },
+        })
+      : null,
+    // The wing's hurt (docs/PROCGEN.md §34), seen to by the same medic.
+    opts.repair && wingTreatQuote(state, locationId) > 0
+      ? button(`Treat your wing · ${formatCredits(wingTreatQuote(state, locationId))}`, {
+          icon: 'repair',
+          testId: 'dock-treat-wing',
+          disabled: state.credits < wingTreatQuote(state, locationId),
+          onClick: () => {
+            const r = treatWing(state, locationId);
             ctx.sfx(r.ok ? 'repair' : 'ui-error');
             toast(r.message, r.ok ? 'good' : 'bad');
             ctx.save();

@@ -9,8 +9,8 @@ After the scripted opening (10–20 minutes), the neighbourhood is an open sandb
 systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
 of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
 packs in lawless space; 39 ships and 146 pieces of equipment; and generated contracts on every job
-board. Increments 1–32 (under [Done so far](#done-so-far)) added world events and news, contracts
-of every kind, the law and the outlaw path, goals, ranks with each faction that open doors, races round real planets and moons against racers who really fly, five story arcs, combat depth, people in the
+board. Increments 1–33 (under [Done so far](#done-so-far)) added world events and news, contracts
+of every kind, the law and the outlaw path, goals, ranks with each faction that open doors, races round real planets and moons against racers who really fly, a wing that takes orders and grows with every fight, five story arcs, combat depth, people in the
 bars and a trade computer, a world that answers, gluts that ship their surplus out and relief to
 escort through raided lanes, a fleet of your own whose captains fly the lanes, a crew aboard your own ship,
 a station of your own to build and defend, passengers and sightseers, rival pilots with careers and stories of their own, a
@@ -28,14 +28,8 @@ What it lacks now:
 
 ## Proposed next increments
 
-Candidates for what comes next, chosen by the owner on 2 October 2026 once Lane encounters, Rival
-stories, Defend your outpost and Your crew were done.
-
-### Wing command ⏳ (M)
-
-More orders for hired wingmen (defend my target, hold here, break off, cover the hauler), and
-wingmen who grow more skilled with each fight, remember the pilot, and can be hurt and treated like
-the crew. Today they take two orders.
+The three increments the owner chose on 2 October 2026 (Ranks that open doors, Races on the lanes and
+Wing command) are done; what comes next is for the owner to choose.
 
 ### How an increment ships
 
@@ -45,6 +39,19 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 33. Wing command ✅
+
+The wing on your pay takes six orders from a card that pauses the game (V then 1–6, the Wing chip on
+touch, Back held on a pad): engage at will, attack my target, defend the friendly ship you select,
+cover the hauler you escort or answer, hold here, or break off and form up, each locked with why when
+it cannot be given. Wingmen grow with every fight beside you and every raider they down, through four
+grades from Steady hand to Veteran wing, aiming, reacting and jinking better while staying below a
+raider's aim, and ask a higher fee as they do. They come to trust you, or not: loyal ones fly on credit
+when you are short, wary ones give notice. Badly hit, a wingman holds back; shot down, they eject, are
+picked up and rejoin at your next dock, hurt until they mend or a medic sees to them. Nobody on the wing
+is lost for good. A word in the bar, the journal and your former wingmen keep their story
+([PROCGEN.md §34](PROCGEN.md#34-wing-command)).
 
 ### 32. Races on the lanes ✅
 

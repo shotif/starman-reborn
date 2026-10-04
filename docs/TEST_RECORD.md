@@ -11,12 +11,12 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | --- | --- | --- |
 | TypeScript typecheck (app + scripts/tests) | `npm run typecheck` | Pass |
 | Astronomy data validation | `npm run data:validate` | Pass (22 warnings: the contested planets this edition keeps) |
-| Unit tests | `npm test` | Pass: 899 tests in 57 files |
+| Unit tests | `npm test` | Pass: 926 tests in 58 files |
 | Production build | `npm run build` | Pass |
-| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 736 KB of 800 (gzipped) |
-| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 47 passed (5 touch-only tests skipped) |
-| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 47 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
-| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 486 screenshots, no audit findings |
+| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 744 KB of 800 (gzipped) |
+| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 48 passed (5 touch-only tests skipped) |
+| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 48 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
+| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 531 screenshots, no audit findings |
 
 ### Unit tests (Vitest)
 
@@ -176,8 +176,8 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   full; stashed items are fitted (the old item sold) or sold at an equipment dealer only; new ships
   carry decoys and the outfitter sells more up to capacity; damaged systems cost more to repair the
   worse they are; pilots for hire are posted where they should be, the same for everyone; hiring
-  costs one fee, every jump pays the wing, an unpaid or shot-down pilot leaves, nobody flies with a
-  wanted pilot; a den knocked out on the player's own account is dark for six hours, paid by the
+  costs one fee, every jump pays the wing, an unpaid pilot leaves and a shot-down one is picked up
+  (§34), nobody flies with a wanted pilot; a den knocked out on the player's own account is dark for six hours, paid by the
   nearest law and resented by the Wake; den assault contracts come from the law, need Friendly
   standing and a Hardened record, and are not offered against a dark den; v7 saves gain decoys,
   intact systems, an empty stash and no wing, damaged combat data rejected.
@@ -185,7 +185,8 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   ship (and the HUD says so) until a repair kit patches them up; a hull hit flashes the screen's
   edges and the flash fades in under half a second at any frame rate; heavy raiders fire seekers
   at the player and a decoy draws them off; a mine arms, goes off near the player and hurts; hired
-  wingmen launch with the player, catch up and are reported when lost; a den wakes when an
+  wingmen launch with the player, catch up and are reported when lost; the wing takes orders (attack
+  my target, form up, engage at will) given from the card, which the key asks the game for; a den wakes when an
   untrusted pilot comes near (turrets, mines, no wing), pays turret bounties and reports its
   reactor down on the player's own account; a den stays quiet for a Wake friend; raiders talk when
   they find you, and a patrol taking on raiders within radio range calls it (from across the
@@ -253,7 +254,8 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   quiet systems and faint under the comm blip.
 - `gamepad.test.ts`: one job per button with Xbox and PlayStation names; sticks with a dead zone,
   inverted pitch and a springing reticle; each press acting once, held buttons repeating, Start and
-  Back heard by the pause menu and the map; presses for a dialog (the D-pad, A and B) read once;
+  Back heard by the pause menu and the map; Back tapped opening the map as it lets go and held 0.4 s
+  opening the wing's orders once (not when held as the pad connects); presses for a dialog (the D-pad, A and B) read once;
   connections and disconnections reported once; the last device used owns the HUD, and a drifting
   stick never takes it.
 - `portraits.test.ts`: portraits are a pure function of seed and look, differ between seeds, keep
@@ -601,6 +603,28 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   refuses a damaged log. In a real flight: Start offered in the box, the countdown, cruise and the
   autopilot sealed, and Retire offered when held still.
 
+- `wing.test.ts`: **wing command**. The guardrails pass, and broken rules and words are caught (a
+  veteran aiming or jinking like a raider, hitting too hard, a skill not rising, too many points a
+  flight, a ladder too short, fees doubling, loyalty too quick, credit souring a loyal wingman, a
+  mayday beyond the release, a medic too dear, a number and a *she* in a line). Grades come from fights
+  and downs with a sharp hire one up, each flying better; fees rise with grade, a loyal wingman asks
+  less, and the hiring board asks the same; fights win trust, a bad hit and a loss cost it, one shot
+  down is not launched, and an ally keeps no record. At a dock one shot down rejoins hurt, a dock passed
+  untreated after the first weighs on them, settling twice changes nothing, the medic (dearer after a
+  loss, none at a den) sees to them; a hurt mends in its time; a new grade brings a raise once; a wary
+  wingman gives notice and leaves at a later dock unless won back. Short of credits a wingman leaves
+  unless loyal, who flies on credit, paid at the next dock or gone; one waiting to rejoin is not paid;
+  the journal keeps six. What they say follows memory and trust, the same each time. Saves keep the
+  records and refuse damaged ones. The orders on their own: a guard or hold ends at a jump, Defend and
+  Cover locked with why, a new foe after a moment, a guard going for whoever goes for its ward and
+  keeping station off it, released when the ward is lost or the pilot is far, a hold fighting only what
+  comes close or goes for them and keeping its point, nobody fighting hurt, in a duel or formed up,
+  forming up boosting home, and fights and downs earned once a pack, within reach and capped. In a real
+  flight: wingmen launched at their grade, a veteran reacting sooner than a steady hand, a wingman badly
+  hit saying so and holding back (and one launched hurt), a hold staying behind and coming back when the
+  pilot is far, Cover keeping station off an escort, and a raider downed earning a fight and a down, a
+  wingman shot down picked up.
+
 ### Browser tests (Playwright)
 
 - `journey.spec.ts`: **the nine-step journey from the spec** on desktop and on touch.
@@ -779,6 +803,14 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   won, with the record purse and the rating's points, and the prize and purse are paid; the racers
   then really finish, each within two thousandths of a second of the time worked out; and docked
   again, the journal shows the racing record and the Racing rating risen.
+- `wing.spec.ts`: **wing command**: a pilot hired in the bar shows their grade in *Your wing*; in
+  flight the order card (V on a keyboard, the Wing chip on touch) pauses the game, lists the wingman,
+  locks Defend and Cover with why, and gives Hold (the radio's reply, the HUD's *Wing 1 · Hold* or the
+  chip's *Wing · Hold*); *Not now* changes nothing; Form up is given; on a pad, Back held opens the
+  card. Shot down after a run of fights, the wingman rejoins at the next dock hurt, a Seasoned wing with
+  a raise and *Hurt* tagged; the deck's *Treat your wing* sees to them for 300 cr; a word in the bar
+  gives what they say, their record and *Easy*; a reload keeps the record; the journal's wing names
+  them, and let go, the journal remembers them.
 - `wrecks.spec.ts`: **wrecks to fly to** (hails and scan finds turned on for this test): a wreck
   beacon's hail answered and marked, the HUD objective naming it; from 900 m, *Scan* on the action
   button, the log's card (paused, with the Fiction line) holding a lead, followed; flown in close,
@@ -828,8 +860,9 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   an old derelict's card once boarded, the journal's wrecks and trails, a promotion's card, the
   journal's ranks, a commission on a board, the yard's discount with the rank on the deck, the
   News telling a promotion, a racing club's window, the start box with the racers on the line, a race
-  under way with its strip, a race's result card, the record board, the journal's four ratings, and
-  the News with a shortage's relief
+  under way with its strip, a race's result card, the record board, the journal's four ratings, the
+  wing's order card in flight, the HUD with a wingman hurt, the wing in the bar, a word with a wingman,
+  the journal's wing with those who flew before, and the News with a shortage's relief
   haulers on their way, at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
   zoom). Saved in `docs/screenshots/` once any smooth scrolling has come to rest. Each is audited

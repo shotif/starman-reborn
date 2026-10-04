@@ -11,7 +11,12 @@ export interface AiTuning {
   accuracy: number;
   projectileSpeed: number;
   gunRange: number;
+  /** The chance of a jink when the shield collapses (a raider's `RAIDER_EVADE`; a wingman's by grade, docs/PROCGEN.md §34). */
+  evade?: number;
 }
+
+/** A raider's chance to jink when its shield collapses. */
+export const RAIDER_EVADE = 0.8;
 
 export interface AiOutput {
   fire: boolean;
@@ -72,7 +77,7 @@ export class PirateBrain {
       (this.state === 'attack' || this.state === 'approach') &&
       this.lastShield > 0 &&
       selfDurability.shield <= 0 &&
-      this.rand() < 0.8
+      this.rand() < (tuning.evade ?? RAIDER_EVADE)
     ) {
       this.setState('evade');
       this.breakDir.set(this.rand() - 0.5, this.rand() - 0.5, this.rand() - 0.5).normalize();

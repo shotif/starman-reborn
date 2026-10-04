@@ -5,6 +5,7 @@ import {
   PAD_BUTTON,
   PAD_FOR,
   PAD_HOLDS,
+  PAD_TAP_HOLD,
   padLabel,
   padStyle,
   type PadButton,
@@ -227,6 +228,7 @@ describe('gamepad buttons', () => {
     const { frame } = rig(p);
     frame();
     for (const [button, action] of Object.entries(PAD_ACTIONS) as [PadButton, FlightAction][]) {
+      if (button in PAD_TAP_HOLD) continue;
       p.press(button);
       expect([...frame().actions], button).toEqual([action]);
       for (let i = 0; i < 5; i++) expect(frame().actions.size, `${button} held`).toBe(0);
@@ -237,6 +239,46 @@ describe('gamepad buttons', () => {
       p.release(button);
       frame();
     }
+  });
+
+  it('open the map on a tap of Back as it lets go, and the wing’s orders on a hold, once', () => {
+    const p = new FakePad();
+    const { input } = rig(p);
+    let now = 1_000;
+    const frame = (ms = 16): FlightAction[] => {
+      now += ms;
+      input.update(now);
+      const out = emptyInput();
+      input.poll(1 / 60, out, true);
+      return [...out.actions];
+    };
+    frame();
+    // A tap: nothing as it goes down, the map as it lets go.
+    p.press('back');
+    expect(frame()).toEqual([]);
+    expect(frame(100)).toEqual([]);
+    p.release('back');
+    expect(frame()).toEqual(['map']);
+    expect(frame()).toEqual([]);
+    // A hold: the order card once it has been held long enough, once, and nothing as it lets go.
+    p.press('back');
+    expect(frame()).toEqual([]);
+    expect(frame(PAD_TAP_HOLD.back.after * 1_000 - 50)).toEqual([]);
+    expect(frame(60)).toEqual(['wing-order']);
+    for (let i = 0; i < 20; i++) expect(frame(100)).toEqual([]);
+    p.release('back');
+    expect(frame()).toEqual([]);
+    // Held when the pad connects: it must be let go before it acts.
+    const q = new FakePad(1);
+    q.press('back');
+    const other = rig(q);
+    other.input.update(5_000);
+    other.input.update(6_000);
+    q.release('back');
+    other.input.update(6_016);
+    const out = emptyInput();
+    other.input.poll(1 / 60, out, true);
+    expect(out.actions.size).toBe(0);
   });
 
   it('count presses from any pad, and presses on the same frame all act', () => {

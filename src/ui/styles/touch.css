@@ -345,6 +345,12 @@
   border-color: rgba(98, 227, 154, 0.55);
 }
 
+/* Someone on the wing hurt (docs/PROCGEN.md §34): a warm dashed edge, not by colour alone. */
+.wing-chip[data-hurt='true'] {
+  border-color: rgba(255, 190, 120, 0.8);
+  border-style: dashed;
+}
+
 .touch-controls.swapped .touch-chips {
   right: auto;
   left: calc(var(--safe-left) + 12px);

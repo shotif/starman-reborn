@@ -37,12 +37,14 @@ import { aimErrors, avoidObstacles, flyTo, steerToward, type Obstacle } from '..
 import { ChaseCamera } from '../flight/ChaseCamera.ts';
 import type { FlightAction, FlightInput } from '../flight/input/types.ts';
 import { lookRotation, neutralControls, RAIDER_SHIP, ShipBody, stepBounded, type ShipControls, type ShipParams } from '../flight/ShipBody.ts';
-import { emptyHudModel, WING_ORDER_LABEL, type HudContextAction, type HudMarker, type HudMining, type HudModel, type WingOrder } from '../ui/hud/hudModel.ts';
+import { emptyHudModel, type HudContextAction, type HudMarker, type HudMining, type HudModel, type WingOrder } from '../ui/hud/hudModel.ts';
+import { ORDER_LOCKS, WING_RADIO } from '../content/wing/lines.ts';
+import { WING } from '../content/wing/rules.ts';
+import { WingCommand, type WingCredit, type WingOption, type WingView } from './WingCommand.ts';
+import { wingSkill } from '../economy/wing.ts';
 import { createMiningBeam, type MiningBeamArt } from './art/mining.ts';
 import { MiningField, type MinableRock, type MiningLedger } from './MiningField.ts';
 
-/** What a wingman says when given an order. */
-const WING_ACK: Record<WingOrder, string> = { free: 'Copy. Engaging at will.', attack: 'Copy, going for your target.', form: 'Copy. Forming up on you.' };
 import type { AsteroidHit } from './art/asteroids.ts';
 import {
   createCargoPod,
@@ -187,8 +189,12 @@ export interface FlightCallbacks {
   onHunterDown?(): void;
   /** A den's reactor went down: the den assault `jobId` is done (null: the player knocked it out on their own). */
   onDenDestroyed?(locationId: string, jobId: string | null): void;
-  /** A hired wingman's ship was destroyed (they bail out and leave the player's pay). */
+  /** A hired wingman's ship was destroyed (they eject and are picked up, rejoining at the next dock: docs/PROCGEN.md §34). */
   onWingmanLost?(crewId: string): void;
+  /** Wing command (§34): the pilot asked for the order card; a hired wingman badly hit; fights and downs earned beside the pilot. */
+  onWingOrders?(): void;
+  onWingHurt?(crewId: string): void;
+  onWingFought?(credits: readonly WingCredit[]): void;
   /** Radio chatter: who speaks, and the line. */
   onComm?(speaker: string, text: string): void;
   /** Sightseers have had their good look at their sight (docs/PROCGEN.md §23). */
@@ -207,7 +213,7 @@ export type SpawnSpec =
 
 type NpcRole = 'raider' | 'trader' | 'patrol';
 
-interface NpcShip {
+export interface NpcShip {
   id: string;
   /** Catalogue ship model (den parts: their own kind). */
   modelId: string;
@@ -263,7 +269,20 @@ interface NpcShip {
   /** Part of a raider den under assault: a gun turret, or the reactor. Den parts never move. */
   den?: { locationId: string; part: 'turret' | 'reactor' };
   /** Flies with the player: a den assault's lawful wing, or a hired wingman (`crewId`), and where it keeps station. */
-  wingman?: { offset: THREE.Vector3; crewId?: string; damage?: number; hurtAt?: number };
+  wingman?: {
+    offset: THREE.Vector3;
+    crewId?: string;
+    damage?: number;
+    hurtAt?: number;
+    /** By grade (docs/PROCGEN.md §34): aim, the chance to jink, seconds to react to a new foe. */
+    accuracy?: number;
+    evade?: number;
+    react?: number;
+    /** Badly hit: holding back from fights. */
+    hurt?: boolean;
+    /** A rival flying as an ally (§28): takes orders, earns nothing. */
+    ally?: boolean;
+  };
   /** Seconds until this raider can fire its next seeker at the player (seeker carriers only). */
   seekerIn?: number;
   /** A raider breaking off has had its chance to drop a mine. */
@@ -311,7 +330,9 @@ export interface TrafficSetup {
   /** Den assaults under way here: the den, its turrets still standing, and whose wing flies with the player. */
   assaults?: readonly { jobId: string; locationId: string; turretsLeft: number; wing?: FactionId | null }[];
   /** Wingmen on the player's pay: they fly alongside wherever the player goes. */
-  crew?: readonly { id: string; name: string; model: string; skill: 'steady' | 'sharp'; ally?: string }[];
+  crew?: readonly { id: string; name: string; model: string; skill: 'steady' | 'sharp'; ally?: string; grade?: 1 | 2 | 3 | 4; hurt?: boolean }[];
+  /** The wing's order carried from the last flight (docs/PROCGEN.md §34). */
+  wingOrder?: WingOrder;
   /** What the player left here last time (docs/PROCGEN.md §17): packs still hunting, pods adrift. */
   lingering?: Pick<Lingering, 'packs' | 'pods'>;
   /** Den defences under way here: the den, the sweep ships still to destroy, and whose sweep it is (the Authority's unless said). */
@@ -449,7 +470,7 @@ const HOSTILE_RADIUS = 3_500;
 /** An escorted ship holds position while the player is further away than this, and jumps with them only within it. */
 const ESCORT_WAIT = CONTRACTS.escort.keepUpM;
 /** A wingman or an escorted ship left this far behind (a lane, a long cruise) catches up. */
-const CATCH_UP = 6_000;
+const CATCH_UP = WING.catchUp;
 /** Coming this close to a stranded ship hands the parts over. */
 const RESCUE_RANGE = 400;
 /** Patrols go after a pilot their faction hunts within this range. */
@@ -610,7 +631,8 @@ export class FlightSession {
   /** Session time of the last chatter line (rate limit), and dens whose defences are awake. */
   private chatterAt = -99;
   /** The wing's standing order (docs/PROCGEN.md §16). */
-  private wingOrder: WingOrder = 'free';
+  /** The wing's orders (docs/PROCGEN.md §34). */
+  private readonly wing: WingCommand;
   private readonly denAlerted = new Set<string>();
   private lootSerial = 0;
   /** Raider dens knocked out (before this flight or during it): wrecked, silent, closed. */
@@ -656,6 +678,7 @@ export class FlightSession {
     lanes?: boolean;
   }) {
     this.lanesOn = opts.lanes ?? true;
+    this.wing = new WingCommand(opts.traffic?.wingOrder);
     this.system = opts.system;
     this.camera = opts.camera;
     this.state = opts.state;
@@ -1100,7 +1123,9 @@ export class FlightSession {
         this.toggleMining();
         break;
       case 'wing-order':
-        this.cycleWingOrder();
+        // The order card (docs/PROCGEN.md §34): the game opens it, paused.
+        if (this.npcs.some((x) => x.wingman && x.durability.hull > 0)) this.callbacks.onWingOrders?.();
+        else this.callbacks.onMessage(ORDER_LOCKS.nobody, 'info');
         break;
       case 'engine-kill':
         if (this.busy) return;
@@ -1510,6 +1535,7 @@ export class FlightSession {
     this.updateCrew(dt);
     this.updateEncounters(dt);
     this.updateTraffic(dt);
+    this.updateWing(dt);
     this.updateSites(dt);
     this.scanTimer -= dt;
     if (this.scanTimer <= 0) {
@@ -2283,8 +2309,13 @@ export class FlightSession {
     else if (n.role === 'trader' && !n.captain && !n.rival) this.callbacks.onMessage(`${n.name} was destroyed.`, 'bad');
     if (n.side === 'raider' && !n.den && !n.hunter && !n.encounter && !n.rival && !n.hired) this.dropLoot(n);
     if (n.wingman?.crewId) {
-      this.callbacks.onMessage(`${n.name}’s ship is gone; ${n.name} ejected and leaves your wing.`, 'bad');
+      // Nobody on the wing is lost for good (docs/PROCGEN.md §34): an ally ejects home; a hired wingman is picked up.
+      this.callbacks.onMessage(n.wingman.ally ? `${n.name}’s ship is gone; ${n.name} ejected.` : WING_RADIO.picked.replace('{name}', n.name), 'bad');
       this.callbacks.onWingmanLost?.(n.wingman.crewId);
+    }
+    if (n.side === 'raider') {
+      const credits = this.wing.credit(n, n.lastHitBy, this.wingView());
+      if (credits.length) this.callbacks.onWingFought?.(credits);
     }
     const killer = n.lastHitBy ? this.npcs.find((x) => x.id === n.lastHitBy) : undefined;
     if (killer?.wingman?.crewId && n.side === 'raider') this.chatter('wing-kill', killer.name);
@@ -3883,45 +3914,84 @@ export class FlightSession {
   /** A wingman keeps station off the player's wing and goes for raiders (and den turrets) near the player. */
   private flyWingman(n: NpcShip, dt: number): void {
     const w = n.wingman!;
-    // Left far behind (a lane, a long cruise), a wingman catches up.
-    if (!this.busy && n.body.position.distanceTo(this.player.position) > CATCH_UP) {
+    const view = this.wingView();
+    // Left far behind (a lane, a long cruise), a wingman catches up, unless it holds a point or guards a ship.
+    if (!this.busy && !this.wing.anchored && n.body.position.distanceTo(this.player.position) > CATCH_UP) {
       n.body.position.copy(w.offset).applyQuaternion(this.player.quaternion).add(this.player.position);
       n.body.velocity.copy(this.player.velocity);
+    }
+    // Badly hit, a hired wingman holds back from fights until mended or treated (docs/PROCGEN.md §34).
+    if (w.crewId && !w.ally && !w.hurt && n.durability.hull < n.durability.hullMax * WING.hurt.hull) {
+      w.hurt = true;
+      this.callbacks.onWingHurt?.(w.crewId);
+      this.callbacks.onComm?.(n.name, WING_RADIO.hurt);
     }
     if (w.crewId && n.durability.shield <= 0 && this.time - (w.hurtAt ?? -99) > 20) {
       w.hurtAt = this.time;
       this.chatter('wing-hurt', n.name);
     }
-    const fair = (x: NpcShip) => x.side === 'raider' && !x.hunter && !x.duel && !this.raiderSparesPlayer(x) && !(x.den?.part === 'reactor' && this.turretsStanding(x.den.locationId));
-    // Orders (docs/PROCGEN.md §16): the player's target when it is fair game, nothing while formed up.
-    const ordered = this.wingOrder === 'attack' ? this.npcs.find((x) => x.target.id === this.selectedId && x.durability.hull > 0 && (fair(x) || x.foe === 'player')) : undefined;
-    // A duel is one on one: the wing holds its fire (docs/PROCGEN.md §28).
-    const dueling = this.duelist?.duel?.state === 'on';
-    const foe = !this.alive || this.busy || this.wingOrder === 'form' || dueling ? null : (ordered ?? this.nearestShip(this.player.position, 3_000, fair));
+    const foe = this.wing.foeFor(n, view);
     n.foe = foe;
     if (foe) {
       this.fightNpc(n, foe.body, dt, w.damage ?? TRAFFIC.npcDamage);
       return;
     }
     for (const g of n.guns) g.tick(dt);
-    const slot = this.tmp2.copy(w.offset).applyQuaternion(this.player.quaternion).add(this.player.position);
+    const slot = this.wing.slotFor(n, view, this.tmp2);
     flyTo(n.body, slot, { arriveDistance: 60, allowCruise: false, maxThrottle: 1 }, n.controls);
-    n.body.requestCruise(this.player.cruise === 'on' && n.body.position.distanceTo(slot) > 400);
+    n.controls.boost = this.wing.boostHome(n, slot) && n.body.energy > n.body.params.energyMax * 0.3;
+    n.body.requestCruise(!this.wing.anchored && this.player.cruise === 'on' && n.body.position.distanceTo(slot) > 400);
   }
 
-  /** The wing's standing order, cycled by the player: engage at will, attack my target, form up. */
-  private cycleWingOrder(): void {
-    const wing = this.npcs.filter((x) => x.wingman && x.durability.hull > 0);
-    if (!wing.length) {
-      this.callbacks.onMessage('Nobody is flying on your wing.', 'info');
-      return;
+  /** A guard or a hold ends (the ward gone, the pilot far off): the wing forms up and says so. */
+  private updateWing(dt: number): void {
+    for (const e of this.wing.update(this.wingView(), dt)) {
+      const lead = this.npcs.find((x) => x.wingman?.crewId && x.durability.hull > 0) ?? this.npcs.find((x) => x.wingman && x.durability.hull > 0);
+      if (lead) this.callbacks.onComm?.(lead.name, e.why === 'ward' ? WING_RADIO.wardGone.replace('{ward}', e.ward ?? 'ship') : WING_RADIO.tooFar);
     }
-    const next: Record<WingOrder, WingOrder> = { free: 'attack', attack: 'form', form: 'free' };
-    this.wingOrder = next[this.wingOrder];
+  }
+
+  /** What the wing's orders need to know of this flight. */
+  private wingView(): WingView {
+    return {
+      time: this.time,
+      alive: this.alive,
+      busy: this.busy,
+      dueling: this.duelist?.duel?.state === 'on',
+      player: this.player,
+      selectedId: this.selectedId,
+      npcs: this.npcs,
+      fair: (x) => x.side === 'raider' && !x.hunter && !x.duel && !this.raiderSparesPlayer(x) && !(x.den?.part === 'reactor' && this.turretsStanding(x.den.locationId)),
+    };
+  }
+
+  /** The order card's choices (docs/PROCGEN.md §34), each with why not when it cannot be given. */
+  wingOptions(): WingOption[] {
+    return this.wing.options(this.wingView());
+  }
+
+  /** Gives the wing an order: the lead wingman's reply, or null if it cannot be given now. */
+  giveWingOrder(order: WingOrder): { speaker: string; text: string } | null {
+    const wing = this.npcs.filter((x) => x.wingman && x.durability.hull > 0);
+    const reply = wing.length ? this.wing.give(order, this.wingView()) : null;
+    if (!reply) return null;
     this.sfx('ui-click');
-    this.callbacks.onMessage(`Wing: ${WING_ORDER_LABEL[this.wingOrder].toLowerCase()}.`, 'info');
-    const lead = wing.find((x) => x.wingman?.crewId) ?? wing[0]!;
-    this.callbacks.onComm?.(lead.name, WING_ACK[this.wingOrder]);
+    const lead = wing.find((x) => x.wingman?.crewId && !x.wingman.ally) ?? wing[0]!;
+    return { speaker: lead.name, text: reply };
+  }
+
+  /** The order to carry into the next flight. */
+  wingCarry(): WingOrder {
+    return this.wing.order;
+  }
+
+  /** Test hook: the wing's order, ward and held point, what it has earned, and each wingman's foe and hurt. */
+  wingStatus(): ReturnType<WingCommand['status']> & { earned: ReturnType<WingCommand['earnings']>; ships: { crewId: string | null; foe: string | null; hurt: boolean; distance: number }[] } {
+    return {
+      ...this.wing.status(),
+      earned: this.wing.earnings(),
+      ships: this.npcs.filter((x) => x.wingman && x.durability.hull > 0).map((x) => ({ crewId: x.wingman!.crewId ?? null, foe: x.foe && x.foe !== 'player' ? x.foe.id : x.foe === 'player' ? 'player' : null, hurt: !!x.wingman!.hurt, distance: x.body.position.distanceTo(this.player.position) })),
+    };
   }
 
   /** A sweep comes for a den: waves of lawful ships from the jump beacon, and the den's crews turn out. */
@@ -4246,7 +4316,9 @@ export class FlightSession {
       npc.name = w.name;
       npc.target.name = w.name;
       npc.target.hostile = false;
-      npc.wingman = { offset, crewId: w.id, damage: COMBAT.wingmen.skill[w.skill] };
+      // By grade (docs/PROCGEN.md §34): an ally flies at its hire's grade and earns nothing.
+      const skill = wingSkill(w.grade ?? (w.skill === 'sharp' ? 2 : 1));
+      npc.wingman = { offset, crewId: w.id, damage: skill.damage, accuracy: skill.accuracy, evade: skill.evade, react: skill.react, ...(w.hurt ? { hurt: true } : {}), ...(w.ally ? { ally: true } : {}) };
       if (ally) npc.rival = { id: ally.id };
     });
     if (crew.length) this.chatter('wing-join', crew[0]!.name, true);
@@ -4358,9 +4430,10 @@ export class FlightSession {
     // Close long distances in cruise, then drop out to fight.
     n.body.requestCruise(n.brain.state === 'approach' && n.body.position.distanceTo(foe.position) > 3_500 && aimErrors(n.body, foe.position).angle < 0.3);
     const tuning = {
-      accuracy: n.side === 'raider' ? DIFFICULTY[this.settings.difficulty].enemyAccuracy : 0.6,
+      accuracy: n.side === 'raider' ? DIFFICULTY[this.settings.difficulty].enemyAccuracy : (n.wingman?.accuracy ?? 0.6),
       projectileSpeed: g0?.profile.projectileSpeed ?? 800,
       gunRange: g0?.profile.range ?? 900,
+      ...(n.wingman?.evade !== undefined ? { evade: n.wingman.evade } : {}),
     };
     const out = n.brain.update(dt, n.body, n.durability, foe, tuning, n.controls);
     if (!g0 || !out.fire || !withinArc(n.body, out.aimPoint)) return;
@@ -5087,8 +5160,7 @@ export class FlightSession {
     hud.launcher = launcher ? roundsLabel(launcher.stats.kind) : null;
     hud.repairKits = this.state.ship.repairKits;
     hud.decoys = this.state.ship.decoys;
-    const wingCount = this.npcs.filter((x) => x.wingman && x.durability.hull > 0).length;
-    hud.wing = wingCount ? { count: wingCount, order: this.wingOrder } : null;
+    hud.wing = this.wing.hud(this.npcs);
     hud.mining = this.miningHud();
     hud.incoming = this.incomingSeekers;
     hud.systems = { ...this.state.ship.systems };

@@ -1,4 +1,4 @@
-import { WING_ORDER_LABEL, type WingOrder } from '../hud/hudModel.ts';
+import { wingOrderLabel, type WingOrder } from '../hud/hudModel.ts';
 import type { AimAssist } from '../../app/settings.ts';
 import { AIM_REACH, type FlightAction, type FlightInput } from '../../flight/input/types.ts';
 import { TouchControlsModel, type VirtualStick } from '../../flight/input/touchModel.ts';
@@ -209,11 +209,14 @@ export class TouchControls {
   }
 
   /** Shows the wing's order chip while a wing flies with the player. */
-  setWing(wing: { count: number; order: WingOrder } | null): void {
+  /** The wing's chip (it opens the order card, docs/PROCGEN.md §34): its order, and a warm edge while anyone is hurt. */
+  setWing(wing: { count: number; order: WingOrder; hurt: number } | null): void {
     this.wingChip.hidden = !wing;
     if (wing) {
-      const text = `Wing: ${WING_ORDER_LABEL[wing.order]}`;
+      const text = `Wing · ${wingOrderLabel(wing.order)}`;
       if (this.wingChip.textContent !== text) this.wingChip.textContent = text;
+      const hurt = String(wing.hurt > 0);
+      if (this.wingChip.dataset.hurt !== hurt) this.wingChip.dataset.hurt = hurt;
     }
   }
 

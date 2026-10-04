@@ -71,7 +71,7 @@ const DESKTOP_ROWS: [string, readonly string[] | string][] = [
   ['Missile', [...KEY_BINDINGS.missile, 'middle mouse']],
   ['Repair kit', KEY_BINDINGS.repair],
   ['Decoy flare', KEY_BINDINGS.decoy],
-  ['Wing orders (cycle)', KEY_BINDINGS.wingOrder],
+  ['Wing orders (then 1 to 6)', KEY_BINDINGS.wingOrder],
   ['Scan target', KEY_BINDINGS.scan],
   ['Mine the selected rock (mining laser, within 600 m)', KEY_BINDINGS.mine],
   ['Engines off (drift)', KEY_BINDINGS.engineKill],
@@ -104,7 +104,8 @@ const GAMEPAD_ROWS: [string, readonly PadButton[] | string][] = [
   ['Repair kit', [PAD_FOR.repair]],
   ['Decoy flare', [PAD_FOR.decoy]],
   ['Engines off (drift)', [PAD_FOR['engine-kill']]],
-  ['Star map', [PAD_FOR.map]],
+  ['Star map (tap)', [PAD_FOR.map]],
+  ['Wing orders (hold)', [PAD_FOR.map]],
   ['Pause', [PAD_FOR.pause]],
 ];
 
@@ -147,6 +148,7 @@ export function controlsContent(steering: SteeringMode, scheme: InputScheme = 'd
         h('li', null, h('strong', null, 'Throttle: '), 'slide the bar on the left edge (bottom section is reverse).'),
         h('li', null, h('strong', null, 'Buttons: '), 'Boost (hold), Cruise, Target (hold for nearest hostile), Missile, Repair, and the green action button for Dock, Enter lane, Scan or Go to. With a mining laser fitted and a rock selected within 600 m, it turns amber: Mine (and Stop mining).'),
         h('li', null, h('strong', null, 'Aim assist: '), 'the chip above the right buttons shows and changes its strength (Off / Low / Medium). It only nudges your reticle toward the selected target’s lead marker; it never picks targets for you.'),
+        h('li', null, h('strong', null, 'Wing: '), 'with wingmen flying, the Wing chip shows their order (dashed while one is hurt); tap it for the order card, which pauses the game.'),
         h('li', null, h('strong', null, 'Star map: '), 'pinch to zoom where your fingers are, drag to turn, double-tap to zoom in. Find searches every system, star, planet and station by name; Missions lists the systems your missions send you to.'),
         h('li', null, 'A mouse or keyboard plugged into a tablet switches to the desktop controls automatically.'),
         h('li', null, h('strong', null, 'Practice: '), 'three training drones circle just outside Halcyon Ring. Select one and shoot it to try aiming — no reward, no risk.'),

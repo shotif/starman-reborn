@@ -112,7 +112,7 @@ describe('wingmen for hire', () => {
     expect(pilotsFor(quiet.id, 0)).toEqual([]);
   });
 
-  it('hiring costs one fee; each jump pays the wing; a pilot you cannot pay, or whose ship is lost, leaves', () => {
+  it('hiring costs one fee; each jump pays the wing; a pilot you cannot pay leaves; one whose ship is lost is picked up and rejoins', () => {
     const s = pilot();
     const [a, b] = pilotsFor(base.id, 0);
     const credits = s.credits;
@@ -130,7 +130,7 @@ describe('wingmen for hire', () => {
     expect(r.notes).toHaveLength(1);
     expect(s.crew).toHaveLength(1);
     wingmanLost(s, s.crew[0]!.id);
-    expect(s.crew).toEqual([]);
+    expect(s.crew[0]!.hurt?.down).toBe(true);
     expect(dismissWingman(s, 'nobody').ok).toBe(false);
   });
 

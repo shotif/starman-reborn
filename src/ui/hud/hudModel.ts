@@ -100,10 +100,13 @@ export interface HudRace {
   sealedCruise: boolean;
 }
 
-/** A wing's standing order: engage raiders near the player, go for the player's target, or stay in formation. */
-export type WingOrder = 'free' | 'attack' | 'form';
+/** A wing's standing order (docs/PROCGEN.md §34). */
+export type { WingOrder } from '../../content/wing/rules.ts';
+import type { WingOrder } from '../../content/wing/rules.ts';
+import { ORDER_WORDS } from '../../content/wing/lines.ts';
 
-export const WING_ORDER_LABEL: Record<WingOrder, string> = { free: 'Engage at will', attack: 'Attack my target', form: 'Form up' };
+/** An order's short label, for the HUD row and the touch chip. */
+export const wingOrderLabel = (o: WingOrder): string => ORDER_WORDS[o].short;
 
 export interface HudModel {
   speed: number;
@@ -144,7 +147,7 @@ export interface HudModel {
   /** Screen-edge flashes after hits, 0–1 (hull red, shield blue). */
   flash: { hull: number; shield: number };
   /** Ships flying on the player's wing, and their standing order (null without a wing). */
-  wing: { count: number; order: WingOrder } | null;
+  wing: { count: number; order: WingOrder; hurt: number } | null;
   /** The mining laser, when one is fitted. */
   mining: HudMining | null;
   encounterActive: boolean;

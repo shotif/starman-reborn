@@ -95,7 +95,11 @@ import { boardEpoch, boardFor, partyName, postedContract, postedContracts } from
 import { briefingFor, choiceHere, denDown, isStoryJob, knockOutDen, makeChoice, markSeen, optionLock, pendingBeats, speakerName } from '../economy/story.ts';
 import { DENS } from '../content/dens/rules.ts';
 import { showChoice, showDialogue } from '../ui/story.ts';
-import { denBounty, payCrew, stashGear, wingmanLost } from '../economy/combat.ts';
+import { denBounty, stashGear, wingmanLost } from '../economy/combat.ts';
+import { launchList, payWing, settleWing, trustBand, trustOf, wingFought, wingHurt } from '../economy/wing.ts';
+import { TRUST_PREFIX } from '../content/wing/lines.ts';
+import type { WingOrder } from '../content/wing/rules.ts';
+import { showWingCard } from '../ui/wing.ts';
 import { eventHauls, haulFate, raidsOnWay, recordHaul, reliefHauls, shipments, shipsOut } from '../economy/hauls.ts';
 import { HAULS } from '../content/economy/hauls.ts';
 import { commitCrime, customsScan, dockAccess, finesTravelling, isLawful, scansOnDocking, settleLaw, totalFines } from '../economy/law.ts';
@@ -929,6 +933,8 @@ export class Game {
   // ------------------------------------------------------------------ story
 
   private storyQueue: Promise<void> = Promise.resolve();
+  /** The wing's order, carried from one flight to the next over a jump (docs/PROCGEN.md §34). */
+  private wingCarry: WingOrder = 'free';
 
   /**
    * Tells the story beats not yet told (docs/PROCGEN.md §14): as dialogue at a dock (then any choice
@@ -1118,11 +1124,20 @@ export class Game {
           this.persist();
         },
         onWingmanLost: (id) => {
-          // An ally lost on the wing ejects, and is home refitting (docs/PROCGEN.md §28).
+          // An ally lost on the wing ejects, and is home refitting (docs/PROCGEN.md §28); a hired wingman is picked up (§34).
           const ally = state.crew.find((w) => w.id === id)?.ally;
           const r = ally ? rivalById(ally) : undefined;
           if (r) allyLost(state, r, state.location.systemId);
           else wingmanLost(state, id);
+          this.persist();
+        },
+        onWingOrders: () => void this.openWingCard(),
+        onWingHurt: (id) => {
+          wingHurt(state, id, 'hit');
+          this.persist();
+        },
+        onWingFought: (credits) => {
+          for (const c of credits) wingFought(state, c.crewId, c);
           this.persist();
         },
         onOutpostRaid: (window, what, downed) => {
@@ -1344,7 +1359,8 @@ export class Game {
       assaults: assaultsIn(state, here),
       defences: defencesIn(state, here),
       downDens,
-      crew: state.crew.map((w) => ({ id: w.id, name: w.name, model: w.model, skill: w.skill, ...(w.ally ? { ally: w.ally } : {}) })),
+      crew: launchList(state),
+      wingOrder: this.wingCarry,
       sights: sightsIn(state, here),
       sites: sitesIn(state, here),
       lingering: this.takeLingering(),
@@ -1439,6 +1455,20 @@ export class Game {
         this.persist();
         break;
     }
+  }
+
+  /** The wing's order card (docs/PROCGEN.md §34): the game waits while it is open; the lead wingman answers. */
+  private async openWingCard(): Promise<void> {
+    const state = this.state;
+    const flight = this.flight;
+    if (!state || !flight || this.paused) return;
+    this.setPaused(true, false);
+    const pick = await showWingCard(state, flight.wingOptions());
+    this.setPaused(false);
+    const reply = pick && this.flight === flight ? flight.giveWingOrder(pick) : null;
+    if (!reply) return;
+    const lead = state.crew.find((w) => w.name === reply.speaker);
+    this.comm(reply.speaker, `${lead && !lead.ally ? TRUST_PREFIX[trustBand(trustOf(lead))] : ''}${reply.text}`, 3500);
   }
 
   /** The result card: the game waits while it is open. */
@@ -1558,6 +1588,9 @@ export class Game {
     for (const n of out.allies) toast(n, 'info', 5000);
     this.announceStories(out.stories);
     this.announceCrew(out.crew);
+    // The wing at a dock (docs/PROCGEN.md §34): rejoining, mended, a raise, credit, notice; orders start afresh.
+    for (const n of settleWing(state, locationId)) toast(n.text, n.tone, 6000);
+    this.wingCarry = 'free';
     const deliverable = Object.keys(state.jobs).some((id) => {
       const p = state.jobs[id]!;
       return p.status === 'active' && getJob(id, state).destinationLocationId === locationId;
@@ -1996,11 +2029,13 @@ export class Game {
         this.leaveOutpostRaid();
         this.flight?.writeBack(state);
         this.rememberLingering();
+        // The wing's order carries over the jump (docs/PROCGEN.md §34).
+        this.wingCarry = this.flight?.wingCarry() ?? 'free';
         this.disposeFlight();
         const events = performJump(state, j.route, j.fee);
         this.announceJobEvents(events);
         for (const n of settleLaw(state)) toast(n, 'good', 6000);
-        const wing = payCrew(state, j.route.hops.length);
+        const wing = payWing(state, j.route.hops.length);
         if (wing.paid) toast(`Wing fees: ${formatCredits(wing.paid)}`, 'info', 3000);
         for (const note of wing.notes) toast(note, 'bad', 5000);
         // The wing is paid first: a hauler loading out of sight never leaves it unpaid.
@@ -2785,6 +2820,24 @@ export class Game {
         const state = this.state;
         if (!state) return null;
         return { members: crewAboard(state), effects: crewEffects(state), deeds: state.aboard?.deeds ?? {}, former: state.aboard?.former ?? [], systems: state.ship.systems };
+      },
+      /** Test-only: the wing on the pilot's pay, who has left, and the wing's orders in this flight (docs/PROCGEN.md §34). */
+      wing: () => {
+        const state = this.state;
+        if (!state) return null;
+        return { crew: state.crew, former: state.wingFormer ?? [], flight: this.flight?.wingStatus() ?? null, carry: this.wingCarry };
+      },
+      /** Test-only: a hired wingman's record (the first, unless named): fights, downs, trust, and a hurt or a loss. */
+      setWing: (arg: { id?: string; fights?: number; downs?: number; trust?: number; hurt?: 'hit' | 'down' }) => {
+        const state = this.state;
+        const w = state?.crew.find((x) => !x.ally && (!arg.id || x.id === arg.id));
+        if (!state || !w) return;
+        if (arg.fights !== undefined) w.fights = arg.fights;
+        if (arg.downs !== undefined) w.downs = arg.downs;
+        if (arg.trust !== undefined) w.trust = arg.trust;
+        if (arg.hurt) wingHurt(state, w.id, arg.hurt);
+        this.persist();
+        this.station?.render();
       },
       /** Test-only: the nearest dock (by jumps) whose bar has a hand of this role (and heart) for hire now. */
       findCrew: (arg: { role: CrewRole; heart?: CrewHeart }) => {

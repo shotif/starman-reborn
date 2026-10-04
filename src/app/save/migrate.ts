@@ -17,6 +17,7 @@ import { ROSTER } from '../../content/rivals/rules.ts';
 import { CREW, CREW_DEEDS, CREW_HEARTS, CREW_ROLES, type CrewDeed } from '../../content/crew/rules.ts';
 import { SITE_KINDS, WRECKS } from '../../content/wrecks/rules.ts';
 import { RANKS } from '../../content/ranks/rules.ts';
+import { WING, WING_MEMORIES } from '../../content/wing/rules.ts';
 import { RACE_CLASSES, RACING } from '../../content/racing/rules.ts';
 import { courseById, heatOf, type RaceEnd, type RacingLog } from '../../economy/racing.ts';
 import { MYSTERY_IDS, type MysteryId } from '../../content/wrecks/mysteries.ts';
@@ -62,7 +63,8 @@ import { createNewGame, SAVE_VERSION, type CommodityId, type CrewLog, type GameS
  *   §31), absent in older v10 saves; `ranks`, the rank given or fallen to with each faction, and a
  *   commission's `requires.rank` (§32), absent in older v10 saves; the world log's `racing` (an entry
  *   open, the pilot's results and bests by course and class, §33), absent in older v10 saves. See
- *   GameState in src/app/state.ts.
+ *   GameState in src/app/state.ts. The wing's records on `crew` entries (fights, downs, trust, memory,
+ *   hurt, notice, owed) and `wingFormer` (§34) are absent in older v10 saves.
  */
 export interface SaveV1 {
   version: 1;
@@ -600,6 +602,36 @@ export function assertValidState(s: GameState): void {
     if (!isRecord(w) || typeof w.id !== 'string' || typeof w.name !== 'string' || !findShip(w.model) || !Number.isFinite(w.fee) || w.fee < 0 || (w.skill !== 'steady' && w.skill !== 'sharp')) fail('crew');
     // A rival flying as an ally (§28) is one of the six.
     if (w.ally !== undefined && !ROSTER.some((r) => r.id === w.ally)) fail('crew');
+    // Wing command (§34): a hired wingman's record; an ally keeps none.
+    const count = (v: unknown) => v === undefined || (Number.isInteger(v) && (v as number) >= 0);
+    const own = [w.fights, w.downs, w.trust, w.memory, w.hurt, w.notice, w.owed];
+    if (w.ally !== undefined && own.some((v) => v !== undefined)) fail('crew');
+    if (!count(w.fights) || !count(w.downs) || (w.trust !== undefined && !(Number.isFinite(w.trust) && w.trust >= 0 && w.trust <= 100))) fail('crew');
+    if (w.memory !== undefined && !WING_MEMORIES.includes(w.memory)) fail('crew');
+    if (w.notice !== undefined && !(Number.isFinite(w.notice) && w.notice >= 0 && w.notice <= s.clock + 1)) fail('crew');
+    if (w.owed !== undefined && !(Number.isFinite(w.owed) && w.owed > 0)) fail('crew');
+    const h = w.hurt;
+    if (h !== undefined && !(isRecord(h) && Number.isFinite(h.at) && h.at >= 0 && h.at <= s.clock + 1 && Number.isFinite(h.until) && h.until >= h.at && Number.isInteger(h.docks) && h.docks >= 0 && (h.down === undefined || h.down === true) && (h.hard === undefined || h.hard === true) && (h.dockAt === undefined || Number.isFinite(h.dockAt)))) fail('crew');
+  }
+  if (s.wingFormer !== undefined) {
+    const ids = new Set(s.crew.map((w) => w.id));
+    const n = (v: unknown, max = Infinity) => Number.isFinite(v) && (v as number) >= 0 && (v as number) <= max;
+    const ok = (x: unknown) =>
+      isRecord(x) &&
+      typeof x.id === 'string' &&
+      !ids.has(x.id) &&
+      typeof x.name === 'string' &&
+      typeof x.model === 'string' &&
+      !!findShip(x.model) &&
+      (x.skill === 'steady' || x.skill === 'sharp') &&
+      Number.isInteger(x.fights) &&
+      n(x.fights) &&
+      Number.isInteger(x.downs) &&
+      n(x.downs) &&
+      n(x.trust, 100) &&
+      n(x.at, s.clock + 1) &&
+      (x.why === 'let-go' || x.why === 'unpaid' || x.why === 'unhappy');
+    if (!Array.isArray(s.wingFormer) || s.wingFormer.length > WING.former || !s.wingFormer.every(ok)) fail('former wing');
   }
   if (s.aboard !== undefined) assertValidCrew(s.aboard, fail);
   // Ranks (docs/PROCGEN.md §32): with a known faction, within its ladder, given where and when the save could have been.

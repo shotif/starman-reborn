@@ -178,8 +178,11 @@ snapshot branch only when the archives changed.
 - The law is simple: a crime is known where it was seen and spreads a jump every ten minutes;
   fines lapse after three hours without a new crime; a patrol scans at most once a flight.
   Selling contraband at a station is not a crime; only having it in the hold at a scan is.
-- Wingmen take two orders (attack my target, form up) and talk in a few lines. Seekers (from heavy
-  raiders, aces and bounty hunters) are the only missiles fired at the player, and decoy flares
+- Wingmen (PROCGEN §34) take six orders but no waypoints: Hold keeps the point where the pilot was,
+  and Cover picks its hauler by a fixed order rather than being told which. Two fly at most, and the
+  card gives one order to the whole wing. Their grades come from fights and downs only (not the
+  pilot's rank or a trainer), and they talk in a few lines by what they remember last. Seekers (from
+  heavy raiders, aces and bounty hunters) are the only missiles fired at the player, and decoy flares
   the only countermeasure.
 - Ratings change the world through the factions' ranks (PROCGEN §32) and the combat rank that ace
   hunts and den assaults ask for (Racing, §33.6, opens nothing yet); milestones are a record, with one

@@ -1,4 +1,4 @@
-import { WING_ORDER_LABEL } from './hudModel.ts';
+import { wingOrderLabel } from './hudModel.ts';
 import { FACTIONS } from '../../economy/factions.ts';
 import { PAD_FOR, PAD_HOLDS, padLabel, type PadButton, type PadStyle } from '../../flight/input/GamepadInput.ts';
 import type { FlightAction, InputScheme } from '../../flight/input/types.ts';
@@ -307,7 +307,7 @@ export class Hud {
     this.wingText = h('span', { class: 'load-name' });
     const kbd = (key: keyof typeof LOADOUT_KEYS) => h('kbd', { class: 'kbd' }, LOADOUT_KEYS[key]);
     this.loadoutKeys = { gun: kbd('gun'), missile: kbd('missile'), repair: kbd('repair'), decoy: kbd('decoy') };
-    // Wing orders are a key (V) or the Wing chip on touch; no pad button is spare for them.
+    // Wing orders: a key (V), the Wing chip on touch, or Back held on a pad (docs/PROCGEN.md §34).
     this.wingKey = h('kbd', { class: 'kbd' }, 'V');
     this.miningName = h('span', { class: 'load-name' });
     this.miningState = h('span', { class: 'num' });
@@ -481,7 +481,7 @@ export class Hud {
     setText(this.kitText, String(model.repairKits));
     setText(this.decoyText, String(model.decoys));
     this.wingRow.hidden = !model.wing;
-    if (model.wing) setText(this.wingText, `Wing ${model.wing.count} · ${WING_ORDER_LABEL[model.wing.order]}`);
+    if (model.wing) setText(this.wingText, `Wing ${model.wing.count} · ${wingOrderLabel(model.wing.order)}${model.wing.hurt ? ` · ${model.wing.hurt} hurt` : ''}`);
     const m = model.mining;
     this.miningRow.hidden = !m;
     if (m) {

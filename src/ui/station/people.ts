@@ -1,19 +1,19 @@
 import { COMBAT } from '../../content/combat/rules.ts';
 import { PEOPLE } from '../../content/people/rules.ts';
 import { shipModel } from '../../content/catalog.ts';
-import { dismissWingman, hireWingman } from '../../economy/combat.ts';
+import { hireWingman } from '../../economy/combat.ts';
+import { wingSection } from '../wing.ts';
 import { buyDrink, peopleAt, storyLine, type Person } from '../../economy/people.ts';
 import { FACTIONS } from '../../economy/factions.ts';
 import { button, dataBadge, showModal, toast } from '../components.ts';
 import { formatCredits, h, replaceChildren, signed } from '../dom.ts';
-import { glyph } from '../glyphs.ts';
 import type { StationContext } from './context.ts';
 import { personPortrait } from './personPortrait.ts';
 import { hashString } from '../../content/random.ts';
 import type { RivalTier } from '../../content/rivals/lines.ts';
 import { RIVALS, STYLE_LABEL, type RivalDef } from '../../content/rivals/rules.ts';
-import { buyRivalRound, makeAmends, metRival, rivalById, rivalGreeting, rivalName, rivalsDockedAt, rivalTier, roundBlock, standingWith } from '../../economy/rivals.ts';
-import { askAlly, lendTo, partWays, settleRivalStories, storyOffer, storyStatus, storyTag, takeEscort, type StoryAct } from '../../economy/rivalStories.ts';
+import { buyRivalRound, makeAmends, metRival, rivalGreeting, rivalName, rivalsDockedAt, rivalTier, roundBlock, standingWith } from '../../economy/rivals.ts';
+import { askAlly, lendTo, settleRivalStories, storyOffer, storyStatus, storyTag, takeEscort, type StoryAct } from '../../economy/rivalStories.ts';
 import { portraitElement } from '../portraits.ts';
 import { crewHands, crewSection } from './crew.ts';
 
@@ -58,7 +58,7 @@ export function peopleContent(ctx: StationContext, refresh: Refresh, openJob: (j
       : h('p', { class: 'list-empty' }, 'The bar is quiet.'),
     crewHands(ctx, refresh),
     rivalList(ctx, refresh),
-    wingList(ctx, refresh),
+    wingSection(ctx, refresh),
     crewSection(ctx, refresh, openJob),
   );
 }
@@ -233,45 +233,6 @@ async function sitWithRival(ctx: StationContext, r: RivalDef, refresh: Refresh):
     dismissValue: 'close',
     testId: 'rival-dialog',
   });
-}
-
-/** The wing already on the player's pay, with a way to let them go. */
-function wingList(ctx: StationContext, refresh: Refresh): HTMLElement | null {
-  const { state } = ctx;
-  if (!state.crew.length) return null;
-  return h(
-    'section',
-    { class: 'wing-section', 'aria-label': 'Your wing' },
-    h('div', { class: 'list-head' }, h('span', null, 'Your wing'), h('span', null, `${state.crew.length}/${COMBAT.wingmen.max}`)),
-    h(
-      'ul',
-      { class: 'list', 'data-testid': 'your-wing' },
-      state.crew.map((w) =>
-        h(
-          'li',
-          { class: 'trade-row', 'data-testid': `pilot-${w.id}` },
-          glyph('gun'),
-          h(
-            'span',
-            { class: 'trade-text' },
-            h('span', { class: 'row-name' }, w.name),
-            h('span', { class: 'row-sub' }, w.ally ? `Your ally · ${shipModel(w.model).name} · flies free until you next dock` : `${shipModel(w.model).name} · ${formatCredits(w.fee)} a jump`),
-          ),
-          button(w.ally ? 'Part ways' : 'Dismiss', {
-            size: 'sm',
-            testId: `dismiss-${w.id}`,
-            onClick: () => {
-              const ally = w.ally ? rivalById(w.ally) : undefined;
-              const r = ally ? partWays(state, ally) : dismissWingman(state, w.id);
-              toast(r.message, r.ok ? 'good' : 'bad');
-              ctx.save();
-              refresh();
-            },
-          }),
-        ),
-      ),
-    ),
-  );
 }
 
 /** Sitting down with someone: what they say, a round for what they know, and their business. */

@@ -1113,10 +1113,10 @@ balance; every name is invented.
   have pilots looking for work, the same for everyone in a time slot, flying their faction's patrol
   fighters. A steady hand costs 180 cr a jump in a Mk I fighter and 320 cr in a Mk II; a sharp shot
   a quarter more, and hits harder.
-- Hiring costs the first fee; every jump pays the wing. A pilot the player cannot pay leaves, and so
-  does one whose ship is destroyed. At most two fly at once. They launch with the player, keep
-  station off the player's wing (catching up after a lane), and go for raiders near the player that
-  are not sparing them. Nobody flies with a pilot the law is hunting.
+- Hiring costs the first fee; every jump pays the wing. At most two fly at once. They launch with the
+  player, keep station off the player's wing (catching up after a lane), and go for raiders near the
+  player that are not sparing them. Nobody flies with a pilot the law is hunting. Their orders, grades,
+  trust, pay and hurts are §34's: none is lost for good.
 
 ### 15.5 Raider dens under fire
 
@@ -1270,9 +1270,8 @@ the save when the player asks.
   fit the poster's faction (story missions have their own words).
 - **Where you left off**: after the opening, docking with nothing more pressing opens the room and
   window last open at that station (kept on the device, not in the save).
-- **Wing orders**: V (or the Wing chip on touch) cycles the wing's standing order: engage at will
-  (the default), attack my target (the player's selected target when it is fair game, otherwise as
-  at will), or form up (no fighting). The wing acknowledges on the radio.
+- **Wing orders**: V (or the Wing chip on touch, or Back held on a pad) opens the wing's order card,
+  paused; the six orders are §34's. The wing acknowledges on the radio.
 
 ### 16.6 People guardrails
 
@@ -3443,3 +3442,127 @@ a heat flown the same at any frame rate with the times worked out ahead coming t
 entry's locks and the fee, a lapse, a finish placed, paid, recorded and rated with the record purse once,
 the News, the milestones, the save and a damaged one refused, and in a real flight the start from the
 box, cruise and the autopilot sealed, and Retire.
+
+## 34. Wing command
+
+The wing on the pilot's pay (§15.4) takes six orders from a card that pauses the game, and its pilots
+grow with every fight beside the pilot, come to trust (or not) the one who pays them, and are hurt,
+picked up and treated (`src/economy/wing.ts`; the orders in flight in `src/world/WingCommand.ts`; the
+rules in `WING`, `src/content/wing/rules.ts`; what is said in `src/content/wing/lines.ts`). The
+wingmen, their insurers and their words are fiction, and the card, a word with a wingman and the
+journal's wing say so.
+
+The owner chose (4 October 2026) a paused order card (the Wing chip on touch, V then 1–6 on a keyboard,
+Back held on a pad); that nobody on the wing is lost for good (shot down, a wingman ejects, is picked up
+and rejoins at the next dock, hurt unless treated); and that wingmen learn from the fights they fly and
+the raiders they down, at most four points a flight, through four grades that stay below a raider's aim.
+
+### 34.1 The orders
+
+| Order | What the wing does |
+| --- | --- |
+| Engage at will (the default) | Takes on raiders within 3 km of the pilot that are fair game: not one sparing the pilot, a duellist, a bounty hunter, or a den's reactor while a turret stands. |
+| Attack my target | Goes for the selected ship if it is fair game or going for the pilot; otherwise as at will. |
+| Defend my target | Guards the friendly ship selected (not a wingman): keeps station 220 m off it, goes for raiders going for it within 4 km, then any within 1.8 km of it, and drops a chase 2.5 km from it. |
+| Cover the hauler | As Defend, for the ship the pilot escorts (a convoy's ships shared out, one wingman each in turn), else the pilot's own hauler in the system, else a hauler sending a mayday within 7 km, else the stranded ship of a rescue; chosen again each second. |
+| Hold here | Holds the point where the pilot was: fights raiders within 1.5 km of it, or any going for them, and drops a chase 2.5 km from it. |
+| Break off and form up | Stops fighting and flies back to its slots off the pilot's wing, boosting from more than 1 km out. |
+
+- **The card** (`wing-orders`) opens with V (then 1–6, or a click), the Wing chip on touch, or Back
+  held for 0.4 s on a pad (Back tapped opens the star map as it lets go). It pauses the game as a hail's
+  card does, lists the wing (grade, hurt or not), and gives each order with what it does, or why not
+  now: *Select a friendly ship first*, *That one is hostile: use Attack my target*, *No hauler here to
+  cover* (a locked order is dashed). On a phone held sideways the six sit in three columns, all in
+  view without scrolling. The lead hired wingman answers on the radio, *If you say so* first when wary of the pilot,
+  *Right with you* when loyal. The HUD's wing row says *Wing 2 · Hold · 1 hurt*; the touch chip says
+  *Wing · Hold*, with a dashed border while someone is hurt.
+- **Anchored**: under Defend, Cover and Hold the wing does not catch up with a pilot far off; the order
+  ends, the wing forming up and saying so, when the ward is lost or the pilot is 8 km from the ward or the
+  point. A guard or a hold ends at a jump; the other orders carry over one. Each launch from a dock starts
+  at will.
+- **Reacting**: a wingman takes on a new foe after a moment by grade (1.2 s to 0.4 s). Nobody fires in a
+  duel (§28), while hurt, or while the pilot docks or jumps. Allies (§28) take the orders too, but keep no
+  record of their own.
+
+### 34.2 Grades
+
+A hired wingman's points are the fights flown and raiders downed beside the pilot, and four more for a
+sharp hire. Grades: *Steady hand* (from 0), *Sharp shot* (4), *Seasoned wing* (12), *Veteran wing* (28).
+
+| Grade | Guns (×) | Aim | Reacts | Jinks when the shield fails |
+| --- | --- | --- | --- | --- |
+| Steady hand | 0.30 | 0.60 | 1.2 s | 50% |
+| Sharp shot | 0.38 | 0.66 | 0.9 s | 60% |
+| Seasoned wing | 0.41 | 0.72 | 0.6 s | 70% |
+| Veteran wing | 0.44 | 0.76 | 0.4 s | 75% |
+
+A raider's guns are 0.25 of the catalogue's, aim 0.8 at standard difficulty and jink 80% of the time: a
+veteran still aims and jinks worse, and two veterans fire less than the biggest raider pack. A fight
+counts once for each pack, for each hired wingman who took that pack on and was within 3 km of one of its
+raiders as it went down; a down counts for the wingman whose guns last hit the raider; at most two fights
+and two downs a flight. So a sharp hire is a veteran in six flights at the very best, a steady hand in
+seven.
+
+### 34.3 Fees, trust and leaving
+
+- **Fees**: the hire's base (§15.4) times 1, 1.25, 1.45 and 1.7 by grade, to the nearest 5 credits; a
+  loyal wingman asks a tenth less. A new grade's fee starts at the next dock, with a note.
+- **Trust** runs from 0 to 100, starting at 50: *Wary* under 30, *Loyal* from 70, *Easy* between. A
+  fight beside the pilot adds 3, being treated 5; a dock passed hurt and untreated (from the second)
+  takes 5, a bad hit 5, being shot down 10 and flying on credit 15. Loyalty takes seven fights or so.
+- **Pay**: every jump pays the wing; one shot down and waiting to rejoin is not paid. A wingman the
+  pilot cannot pay leaves, unless loyal: then they fly on credit, owed at the next dock, and leave if
+  it is still not paid.
+- **Notice**: at a dock a wary wingman gives notice, and leaves at a later dock if still wary; trust
+  back above 30 withdraws it.
+- The journal remembers the last six who flew with the pilot, and why they left: let go, unpaid or
+  unhappy.
+
+### 34.4 Hurt, down and treated
+
+- **Hurt**: a hired wingman whose hull falls under 40% says so and holds back from fights, keeping
+  station, until they mend (two hours of game clock) or a medic at any dock that repairs ships treats
+  them (150 cr).
+- **Down**: a hired wingman whose ship is destroyed ejects and is picked up, and rejoins at the next
+  dock in a new ship from their insurers, hurt for four hours (300 cr to treat). Nobody is lost for
+  good.
+- The outfitter's **Treat your wing** sees to everyone hurt at once.
+
+### 34.5 What the game says
+
+The bar's *Your wing* lists each wingman with their grade, ship, fee and tags (*Hurt*, *Picked up*,
+*Notice*, *Owed*, *Loyal*, *Wary*), Dismiss (or Part ways for an ally), and a word with them
+(`wing-dialog`): what they say, by what they remember last (a fight, being treated or not, being shot
+down, being paid late, a raise, flying on credit) and how they feel, their record and the points to
+their next grade, and how they feel as a bar. The journal has *Your wing* and those who flew with the
+pilot before. Notes at a dock: rejoined, mended, a raise, notice given, gone, credit paid.
+
+### 34.6 One save's own
+
+Each hired wingman on `crew` keeps fights, downs, trust, what they remember last, a hurt (when, until,
+docks passed, shot down, since a loss), notice and fees owed, all absent on a new hire and in older
+saves; `wingFormer` keeps up to six who have left. Grades, skills, fees, bands and words are worked
+out; the order given and what the wing earns are kept only for the flight. Saves refuse an ally with a
+record, counts that are not whole, trust outside 0–100, an unknown memory, a notice or hurt from the
+future, nothing owed marked owed, a former wingman still on the wing or in an unknown ship, and more
+former wingmen than are kept.
+
+### 34.7 Guardrails
+
+`validateWing` (`src/economy/wingGuards.ts`, run in `tests/unit/wing.test.ts`): a guard's and a hold's
+distances in order, released beyond them, a mayday covered inside the release, at will within the
+catch-up; four grades rising from nothing, a sharp hire one up, the top five to twenty flights away;
+every skill better with each grade, the first two hitting as the hiring board says; at most four points
+a flight, counted within reach; a veteran aiming and jinking worse than a raider, hitting under twice a
+raider's guns, and a full veteran wing firing less than the biggest pack; fees rising with grade, never
+doubling, a loyal discount up to a quarter; trust bands in order, loyalty taking four fights or more, one
+loss not making a new hire wary, flying on credit not making a loyal one wary; holding back between 20%
+and 60% of the hull, a loss slower to mend and dearer to treat, a medic no dearer than a repair (two after
+a loss). Words with no number, no he or she, no star, only their fields and short enough (an order's
+short label eight characters for the chip), something to say for every memory and band, and grade names
+of their own. The tests also break the rules to see them caught, and check the grades, fees and the
+hiring board, trust, hurts, a loss, rejoining, mending, treatment, a raise, notice, credit, pay, the
+journal's six, what they say, the save and damaged ones refused; the orders on their own (carrying over a
+jump, locks, reaction, guards and holds, releases, forming up, earning with its caps); and in a real
+flight the grades launched, reaction by grade, holding back when hurt, holding a point, covering an
+escort and a raider downed and a wingman picked up. A gamepad test checks Back tapped and held.

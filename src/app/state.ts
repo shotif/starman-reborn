@@ -1,4 +1,5 @@
 import type { RacingLog } from '../economy/racing.ts';
+import type { WingMemory } from '../content/wing/rules.ts';
 import type { CrewDeed, CrewGrade, CrewHeart, CrewRole } from '../content/crew/rules.ts';
 import type { LaneKind } from '../content/lanes/rules.ts';
 import type { MysteryId } from '../content/wrecks/mysteries.ts';
@@ -54,6 +55,30 @@ export interface Wingman {
   skill: 'steady' | 'sharp';
   /** A rival flying as the player's ally (docs/PROCGEN.md §28): their id. Allies fly free and leave when the player next docks. */
   ally?: string;
+  /** Wing command (docs/PROCGEN.md §34), a hired wingman's own: fights and raiders downed beside the pilot (their grade follows), trust 0–100, what they remember last. */
+  fights?: number;
+  downs?: number;
+  trust?: number;
+  memory?: WingMemory;
+  /** Hurt: holding back from fights until `until`, unless treated; `down`: shot down, picked up, rejoining at the next dock; `hard`: since a ship lost (dearer to treat); `dockAt`: the last dock passed untreated. */
+  hurt?: { at: number; until: number; docks: number; down?: true; hard?: true; dockAt?: number };
+  /** When they gave notice (they leave at the next dock unless the pilot wins them back). */
+  notice?: number;
+  /** Fees flown on credit, owed at the next dock. */
+  owed?: number;
+}
+
+/** A wingman who has left the pilot's wing, remembered in the journal (docs/PROCGEN.md §34). */
+export interface FormerWingman {
+  id: string;
+  name: string;
+  model: string;
+  skill: 'steady' | 'sharp';
+  fights: number;
+  downs: number;
+  trust: number;
+  at: number;
+  why: 'let-go' | 'unpaid' | 'unhappy';
 }
 
 /** Where the player is when the game is saved. */
@@ -601,6 +626,8 @@ export interface GameState {
   stash: string[];
   /** Wingmen on the player's pay. */
   crew: Wingman[];
+  /** Wingmen who have left the wing, newest last (docs/PROCGEN.md §34); absent until the first leaves. */
+  wingFormer?: FormerWingman[];
   /** The people aboard (docs/PROCGEN.md §30); absent until the first is hired. */
   aboard?: CrewLog;
   /** Ranks with each faction (docs/PROCGEN.md §32): absent until the first promotion. */

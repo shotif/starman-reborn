@@ -681,6 +681,51 @@ for (const size of SIZES) {
       await page.getByTestId('rating-racing').evaluate((el) => el.scrollIntoView({ block: 'center' }));
       await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
       await shot(page, `${size.name}-19f-race-rating`, size.touch, results);
+      // Wing command (docs/PROCGEN.md §34): the order card in flight, the HUD with a wingman hurt, the
+      // wing in the bar (a loyal Seasoned wing, a wary one hurt and giving notice), a word with a
+      // wingman, and the journal's wing with one who flew before.
+      await api(page, 'setCredits', 50_000);
+      const hirePilot = async () => {
+        await openPeople();
+        await page.locator('[data-testid^="person-w."]').first().click();
+        await press(page, (await page.locator('[data-testid^="hire-"]').first().getAttribute('data-testid'))!);
+      };
+      await hirePilot();
+      await docked('mars-depot');
+      await hirePilot();
+      await docked('earth-port');
+      const wingIds = (await api<{ crew: { id: string }[] }>(page, 'wing')).crew.map((w) => w.id);
+      expect(wingIds, 'two pilots hired').toHaveLength(2);
+      await api(page, 'setWing', { id: wingIds[0], fights: 9, downs: 4, trust: 80 });
+      await api(page, 'setWing', { id: wingIds[1], trust: 25, hurt: 'hit' });
+      await press(page, 'dock-launch');
+      await waitUntil(page, 'undocked', async () => (await api<{ autopilot: string } | null>(page, 'player'))?.autopilot === 'none', 60_000);
+      await waitUntil(page, 'the wing out', async () => (await api<{ wing: { count: number } | null }>(page, 'hud'))?.wing?.count === 2, 30_000);
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      if (size.touch) await press(page, 'touch-wing');
+      else await page.keyboard.press('v');
+      await expect(page.getByTestId('wing-orders')).toBeVisible();
+      await shot(page, `${size.name}-20-wing-card`, size.touch, results);
+      await press(page, 'wing-order-hold');
+      await expect(page.getByTestId('wing-orders')).toBeHidden();
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-20b-wing-hud`, size.touch, results);
+      await api(page, 'advanceClock', 600);
+      await docked('earth-port');
+      await openPeople();
+      await expect(page.getByTestId(`wing-tag-${wingIds[1]}-notice`)).toBeVisible();
+      await page.getByTestId('your-wing').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-20c-wing-bar`, size.touch, results);
+      await press(page, `wing-talk-${wingIds[0]}`);
+      await expect(page.getByTestId('wing-dialog')).toBeVisible();
+      await shot(page, `${size.name}-20d-wing-dialog`, size.touch, results);
+      await press(page, 'wing-close');
+      await press(page, `dismiss-${wingIds[1]}`);
+      await press(page, 'station-journal');
+      await page.getByTestId('wing-record').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-20e-wing-journal`, size.touch, results);
       for (const [name, r] of Object.entries(results)) {
         expect.soft(r.overflow, `${name}: page overflow`).toBe(false);
         expect.soft(r.clipped, `${name}: clipped controls`).toEqual([]);

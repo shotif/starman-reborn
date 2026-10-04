@@ -92,6 +92,7 @@ function flightIn(systemId: SystemId, traffic: Partial<TrafficSetup>, setup: (s:
     onContractKill: record('contractKill'),
     onDenDestroyed: record('denDestroyed'),
     onWingmanLost: record('wingmanLost'),
+    onWingOrders: record('wingOrders'),
     onCrime: record('crime'),
     onComm: (speaker, text) => comms.push(`${speaker}: ${text}`),
     onMessage: (text) => log.push(text),
@@ -221,22 +222,26 @@ describe('combat depth in flight', () => {
     raiders[0]!.body.position.copy(f.flight.player.position).add(new THREE.Vector3(500, 0, 0));
     raiders[1]!.body.position.copy(f.flight.player.position).add(new THREE.Vector3(-1_500, 0, 0));
     f.flight.selectTarget(raiders[1]!.target.id);
-    f.run(0.1);
-    expect(f.flight.hud.wing).toEqual({ count: 1, order: 'free' });
+    // A sharp hire takes a moment to react to a new foe.
+    f.run(1);
+    expect(f.flight.hud.wing).toEqual({ count: 1, order: 'free', hurt: 0 });
     expect(wing.foe).toBe(raiders[0]);
-    f.run(0.1, undefined, ['wing-order']);
-    expect(f.flight.hud.wing?.order).toBe('attack');
+    expect(f.flight.giveWingOrder('attack')).toEqual({ speaker: 'Maren Okoro', text: 'Copy, going for your target.' });
     f.run(0.1);
+    expect(f.flight.hud.wing?.order).toBe('attack');
+    f.run(1);
     expect(wing.foe).toBe(raiders[1]);
-    expect(f.comms.some((c) => c === 'Maren Okoro: Copy, going for your target.')).toBe(true);
-    f.run(0.1, undefined, ['wing-order']);
+    f.flight.giveWingOrder('form');
     f.run(0.1);
     expect(f.flight.hud.wing?.order).toBe('form');
     expect(wing.foe).toBeNull();
-    f.run(0.1, undefined, ['wing-order']);
-    f.run(0.1);
+    f.flight.giveWingOrder('free');
+    f.run(1);
     expect(f.flight.hud.wing?.order).toBe('free');
     expect(wing.foe).not.toBeNull();
+    // The key or the chip asks the game for the order card.
+    f.run(0.1, undefined, ['wing-order']);
+    expect(f.calls.wingOrders).toHaveLength(1);
   });
 
   it('a raider den wakes when a pilot it does not trust comes near, and knocking it out on your own pays', () => {

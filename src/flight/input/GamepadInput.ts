@@ -64,7 +64,13 @@ export const PAD_FOR = Object.fromEntries(Object.entries(PAD_ACTIONS).map(([butt
 /** Buttons that act for as long as they are held. */
 export const PAD_HOLDS = { fire: 'rt', boost: 'lt', throttleUp: 'up', throttleDown: 'down' } as const satisfies Record<string, PadButton>;
 
-const ACTION_BUTTONS = (Object.entries(PAD_ACTIONS) as [PadButton, PadAction][]).map(([button, action]) => [PAD_BUTTON[button], action] as const);
+/**
+ * A button that does one thing tapped and another held (docs/PROCGEN.md §34): Back tapped opens the
+ * star map as it lets go; held `after` seconds, it opens the wing's order card instead.
+ */
+export const PAD_TAP_HOLD = { back: { tap: 'map', hold: 'wing-order', after: 0.4 } } as const;
+
+const ACTION_BUTTONS = (Object.entries(PAD_ACTIONS) as [PadButton, PadAction][]).filter(([button]) => !(button in PAD_TAP_HOLD)).map(([button, action]) => [PAD_BUTTON[button], action] as const);
 
 /** Which names the pad's buttons carry. */
 export type PadStyle = 'xbox' | 'playstation';
@@ -215,6 +221,9 @@ export class GamepadInput {
   private readonly aimMark: Vec = { x: 0, y: 0 };
   /** Set when the pads change: buttons already held must be let go before they act. */
   private resync = true;
+  /** When Back went down (null: not held), and whether the hold has fired. */
+  private backAt: number | null = null;
+  private backHeld = false;
   /** Standard-layout pads read this frame. */
   private reading = 0;
 
@@ -251,7 +260,7 @@ export class GamepadInput {
    * Reads the pads. Call it once per frame in every mode, so a press counts once and a press made
    * on one screen never acts on the next.
    */
-  update(): void {
+  update(now = performance.now()): void {
     this.pressedNow.clear();
     const last = this.down;
     this.down = this.wasDown;
@@ -285,6 +294,7 @@ export class GamepadInput {
     shapeStick(ax, ay, this.aim);
     if (this.resync) {
       this.resync = false;
+      this.backAt = null;
       for (let i = 0; i < BUTTONS; i++) this.wasDown[i] = this.down[i] === true;
       Object.assign(this.steerMark, this.steer);
       Object.assign(this.aimMark, this.aim);
@@ -293,6 +303,19 @@ export class GamepadInput {
     let used = false;
     for (let i = 0; i < BUTTONS; i++) if (this.down[i] && !this.wasDown[i]) used = true;
     for (const [i, action] of ACTION_BUTTONS) if (this.down[i] && !this.wasDown[i]) this.pressedNow.add(action);
+    // Back: the map tapped (as it lets go), the wing's orders held.
+    const B = PAD_BUTTON.back;
+    const T = PAD_TAP_HOLD.back;
+    if (this.down[B] && !this.wasDown[B]) {
+      this.backAt = now;
+      this.backHeld = false;
+    } else if (this.down[B] && this.backAt !== null && !this.backHeld && now - this.backAt >= T.after * 1_000) {
+      this.backHeld = true;
+      this.pressedNow.add(T.hold);
+    } else if (!this.down[B] && this.wasDown[B] && this.backAt !== null) {
+      if (!this.backHeld) this.pressedNow.add(T.tap);
+      this.backAt = null;
+    }
     // Evaluate both sticks, so each keeps its own mark.
     const steered = pushedFrom(this.steer, this.steerMark);
     const aimed = pushedFrom(this.aim, this.aimMark);

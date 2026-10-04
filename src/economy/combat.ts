@@ -1,6 +1,7 @@
+import { letWingmanGo, payWing, wingFee, wingHurt } from './wing.ts';
 import { applyCredits, type GameState, type Wingman } from '../app/state.ts';
 import { COMBAT } from '../content/combat/rules.ts';
-import { findGear, resaleValue, shipModel } from '../content/catalog.ts';
+import { findGear, resaleValue } from '../content/catalog.ts';
 import { DENS } from '../content/dens/rules.ts';
 import { rng } from '../content/random.ts';
 import { jumpsFrom } from '../content/world/network.ts';
@@ -175,9 +176,8 @@ export function pilotsFor(locationId: string, clock: number): Wingman[] {
   const fleet = FLEETS[owner].patrols.length ? FLEETS[owner].patrols : FLEETS.sta.patrols;
   return Array.from({ length: count }, (_, i) => {
     const model = r.pick(fleet);
-    const tier = Math.min(2, shipModel(model).tier) as 1 | 2;
     const skill: Wingman['skill'] = r.next() < 0.35 ? 'sharp' : 'steady';
-    const fee = Math.round((COMBAT.wingmen.fee[tier] * (skill === 'sharp' ? 1.25 : 1)) / 5) * 5;
+    const fee = wingFee({ model, skill });
     return { id: `w.${locationId}.${epoch}.${i}`, name: `${r.pick(WING_FIRST)} ${r.pick(WING_LAST)}`, model, fee, skill };
   });
 }
@@ -195,33 +195,13 @@ export function hireWingman(state: GameState, locationId: string, id: string): {
 }
 
 export function dismissWingman(state: GameState, id: string): { ok: boolean; message: string } {
-  const i = state.crew.findIndex((w) => w.id === id);
-  if (i < 0) return { ok: false, message: 'Not on your wing.' };
-  const [w] = state.crew.splice(i, 1);
-  return { ok: true, message: `${w!.name} leaves your wing.` };
+  return letWingmanGo(state, id);
 }
 
-/** Each jump pays the wing (`hops` jumps at a time); a pilot you cannot pay leaves. */
-export function payCrew(state: GameState, hops = 1): { paid: number; notes: string[] } {
-  const notes: string[] = [];
-  let paid = 0;
-  for (const w of [...state.crew]) {
-    const fee = w.fee * hops;
-    // An ally flies free (docs/PROCGEN.md §28).
-    if (fee <= 0) continue;
-    if (state.credits >= fee) {
-      applyCredits(state, -fee, 'fee', `Wing fee: ${w.name}`);
-      paid += fee;
-    } else {
-      state.crew.splice(state.crew.indexOf(w), 1);
-      notes.push(`${w.name} leaves your wing: you could not pay the ${fee} cr fee.`);
-    }
-  }
-  return { paid, notes };
-}
+/** Each jump pays the wing (docs/PROCGEN.md §34): see `payWing`. */
+export const payCrew = payWing;
 
-/** A hired wingman's ship was lost: they leave the wing. */
+/** A hired wingman's ship was lost: they eject, are picked up and rejoin at the next dock (docs/PROCGEN.md §34). */
 export function wingmanLost(state: GameState, id: string): void {
-  const i = state.crew.findIndex((w) => w.id === id);
-  if (i >= 0) state.crew.splice(i, 1);
+  wingHurt(state, id, 'down');
 }

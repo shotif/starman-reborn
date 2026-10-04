@@ -31,7 +31,8 @@ outlaw or neither; and First Harvest, out among the frontier's farms. However ea
 faction arcs and First Harvest ends, it changes a station's market, and most often its job board,
 for good. Pilot ratings, a codex of 361 real bodies, 24 milestones and a hint of what to do next
 give it goals. Fights have seekers and decoy
-flares, mines, damage to a ship's systems, loot, wingmen for hire, and raider dens that defend
+flares, mines, damage to a ship's systems, loot, wingmen for hire who take six orders from a
+paused card, grow with every fight and are picked up when shot down, and raider dens that defend
 themselves and can be knocked out.
 Pilots who would rather not fight can mine the real belts (the Solar System's main belt and Kuiper
 Belt, and the debris discs astronomers have seen around nearby stars, each with its source): a
