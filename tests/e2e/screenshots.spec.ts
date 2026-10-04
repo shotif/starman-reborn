@@ -168,6 +168,8 @@ for (const size of SIZES) {
     });
 
     test(`layouts at ${size.name}`, async ({ page }) => {
+      // One journey through every screen: at the largest size, drawn in software, it takes about a quarter of an hour.
+      test.setTimeout(25 * 60_000);
       mkdirSync(OUT, { recursive: true });
       const results: Record<string, AuditResult> = {};
       if (size.textScale) {
