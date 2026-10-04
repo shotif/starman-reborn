@@ -3819,10 +3819,10 @@ and these runs are safe deliveries, never raided.
   run), then what the pilot keeps in storage at the home dock (§18.3), then buys the rest where the
   home dock's market sells them (at the list price, without standing), filling at most 90% of the
   hold and never more than the stage still needs.
-- **Pay**: the captain takes 10% of the goods' value at their galaxy base prices (`work.share`),
-  whether they came from the hold, storage or the market; with the goods bought and the jump fees
-  both ways, it is paid when the run sets out. So supplying by captain always costs more than
-  flying the goods there yourself.
+- **Pay**: the captain takes 10% of the value, at galaxy base prices, of the goods it loads from
+  storage or the market (`work.share`; what is still aboard from the last run was counted then);
+  with the goods bought and the jump fees both ways, it is paid when the run sets out. So supplying
+  by captain always costs more than flying the same goods there yourself.
 - **Delivery**: on arrival the goods are handed over as if the pilot had brought them, and a stage
   done changes the outpost as ever (it opens, grows, gains services). Anything the stage no longer
   needs (the pilot brought it meanwhile) stays aboard for the next stage. The captain flies home
@@ -3865,10 +3865,11 @@ is lost on the way, and nothing needs guarding. Raiders who hunt miners (§19) h
 
 Supply captains fly the lanes as haulers do (§18.6), named as the pilot's with what they carry
 (*Captain Ada Moss · 12 habitat modules for Lodestone Exchange*). A mining captain getting there or
-going home does the same; at work in the pilot's system it is seen at its spot in the ring, its beam
-on the rock (*Captain Ada Moss · mining for Copperleaf Stillworks*), or flying between the spot and
-the refinery, never popping in near the pilot. It cannot be hurt by raiders; the pilot's own guns
-can still destroy it, as any of the pilot's ships (§18.6).
+going home does the same; at work in the pilot's system it is seen at its spot in the ring, 140 m
+off its rock with the beam on it (*Captain Ada Moss · mining for Copperleaf Stillworks*), or flying
+between the spot and the refinery, a ship for each phase where the clock says it is, never popping
+in near the pilot. Raiders neither hunt these captains nor hurt them; the pilot's own guns can still
+destroy one, as any of the pilot's ships (§18.6), and that loses the ship.
 
 ### 37.5 The Fleet window
 
@@ -3882,19 +3883,23 @@ for the refinery's next hour*). Reports and toasts tell deliveries, stages done 
 ### 37.6 One save's own
 
 A captain's record keeps what it does (`work`: absent for a trade haul, `supply` or `mine`) and,
-for a mining captain at work, where in its cycle it is. Saves refuse a supply captain for an outpost
-the save does not have or one already complete, a mining captain without a laser or for an outpost
-that is not a belt refinery, and a cycle phase that is not one.
+for a mining captain at work, where in its cycle it is (`phase`, with the leg `work`); a supply
+captain may wait for supplies (`waiting: supplies`). Saves refuse a supply or mining captain for an
+outpost the save does not have, a mining captain without a laser or for an outpost that is not in a
+belt, a phase that is not one or one off the leg `work`, and a wait that does not fit the work. Away
+for very long, at most 2,000 of a mining captain's steps are worked out in one settle (`work.maxSteps`);
+past that it rests at the refinery until the clock and starts out afresh.
 
 ### 37.7 Guardrails
 
 `validateFleetWork` (`src/economy/fleetWorkGuards.ts`, run in `tests/unit/fleetWork.test.ts`)
-checks that the share is between nothing and a fifth and the cut between nothing and a half; that a
-supply run always costs more than the goods at base prices; that a mining cycle, for every laser
-the catalogue sells, takes at least a few minutes and pays the pilot no more an hour than 70% of the
-port's allowance at the dearest raw good's refining price (so a mining captain earns within what a
-hauler can, §18.5); that every belt refinery's spot lies in its ring and clear of stations; and that
-the rules are whole numbers where they must be. The tests also break the rules to see them caught,
+checks that the share is above nothing and a fifth at most, and the cut above nothing and a half at
+most; that the transit is the mining estimates' (§19) and the spot beyond its own clearance; that a
+mining cycle, for every laser the catalogue sells in the ship with the most hold that takes it,
+takes three minutes at least and pays the pilot no more an hour than 70% of a port's allowance at
+the dearest raw good's refining price (about 1,240 cr an hour at a frame and 2,480 at a port, within
+what a hauler earns, §18.5); that every belt refinery's spot lies in its ring and clear of stations
+(Sol's on 120 dates 15 days apart); and that the rules are whole numbers where they must be. The tests also break the rules to see them caught,
 and check supply runs (storage first, then the market, the share, the stage done by a captain,
 waiting, signing off when complete), mining (cycles on time, the load's shares, the allowance shared
 with the pilot and waited out, the cut, recall), settling the same however often, the flight's

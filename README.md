@@ -46,9 +46,10 @@ as everyone else's haulers: meet one on the way, guard it when raiders jump it, 
 And after the fleet, stations of your own (up to three, one to a system): charter a site in orbit of
 a real planet or in a real belt, haul the materials there stage by stage, and your outpost opens,
 trades and pays you by the hour. A belt outpost is a refinery that buys the ore, ice and gases you
-mine for more than any market, and you can watch independent haulers call at it. Raiders come for
-an outpost now and then: build turrets there, hire guards, or be there to fight them off. Sell one
-back for half of what went in, or abandon it.
+mine for more than any market, and you can watch independent haulers call at it. Your captains can
+supply an outpost being built, or mine its belt for a refinery while you watch them work. Raiders
+come for an outpost now and then: build turrets there, hire guards, or be there to fight them off.
+Sell one back for half of what went in, or abandon it.
 Sign on a crew of your own (an engineer who patches the ship up in flight, a gunner, a navigator):
 each has a heart that likes or hates what you do, a story, and a favour to ask, and they leave if
 you treat them badly.

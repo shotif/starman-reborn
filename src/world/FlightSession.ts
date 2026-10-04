@@ -47,7 +47,9 @@ import { BATTLES, type BattleSide } from '../content/border/battles.ts';
 import type { BattlePlan } from '../economy/battles.ts';
 import { getFront } from '../economy/border.ts';
 import { wingSkill } from '../economy/wing.ts';
-import { createMiningBeam, type MiningBeamArt } from './art/mining.ts';
+import { createMinableRock, createMiningBeam, type MinableRockArt, type MiningBeamArt } from './art/mining.ts';
+import { minersIn, miningSpot } from '../economy/fleetWork.ts';
+import { siteOfStation } from '../content/outposts/sites.ts';
 import { MiningField, type MinableRock, type MiningLedger } from './MiningField.ts';
 
 import type { AsteroidHit } from './art/asteroids.ts';
@@ -243,7 +245,9 @@ export interface NpcShip {
    * flies here, what it carries, the run's raid when it is due here, the pack of that ambush once it
    * comes, and whether the raid is settled (seen safely past).
    */
-  captain?: { shipId: string; key: string; name: string; leg: HaulLeg; way: 'out' | 'back'; qty: number; raid: RunRaid | null; ambush?: number; settled?: boolean };
+  captain?: { shipId: string; key: string; name: string; leg?: HaulLeg; way: 'out' | 'back' | 'work'; qty: number; raid: RunRaid | null; ambush?: number; settled?: boolean; safe?: true };
+  /** A mining captain of the pilot's at work (docs/PROCGEN.md §37.4): its phase, and while cutting its rock and beam. */
+  miner?: { phase: 'to-rocks' | 'cutting' | 'to-dock'; rock?: MinableRockArt; beam?: MiningBeamArt; rockAt?: THREE.Vector3 };
   /** A rival pilot (docs/PROCGEN.md §24): who, and the run it flies here (none for an ally, a duel or hired guns, §28). */
   rival?: { id: string; run?: RivalRun; leg?: RivalLeg };
   /** Hired by a rival to find the player (docs/PROCGEN.md §28): they want the player only, and pay no bounty. */
@@ -2275,6 +2279,8 @@ export class FlightSession {
   }
 
   private damageNpc(n: NpcShip, amount: number, at: THREE.Vector3, type?: DamageType, byPlayer = false): void {
+    // The pilot's supply and mining captains are safe from everyone's guns but the pilot's (docs/PROCGEN.md §37.3).
+    if (n.captain?.safe && !byPlayer) return;
     if (byPlayer) n.playerHitAt = this.time;
     // A battle ship the pilot fires on treats them as an enemy for the rest of the battle (docs/PROCGEN.md §35.3).
     if (byPlayer && n.battle && !n.battle.over) n.battle.turned = true;
@@ -2409,6 +2415,12 @@ export class FlightSession {
     n.target.alive = false;
     this.system.scene.remove(n.art.object);
     n.art.dispose();
+    // A mining captain's rock and beam go with its ship (docs/PROCGEN.md §37.4).
+    for (const art of [n.miner?.rock, n.miner?.beam]) {
+      if (!art) continue;
+      this.system.scene.remove(art.object);
+      art.dispose();
+    }
   }
 
   // ---------------------------------------------------------------- collisions
@@ -2592,6 +2604,7 @@ export class FlightSession {
       timers.haulCheck = 2;
       this.updateHauls(plan.traders, !timers.populated);
       this.updateCaptains(!timers.populated);
+      this.updateMiners(!timers.populated);
       this.updateRivals(!timers.populated);
       timers.populated = true;
     }
@@ -2682,6 +2695,7 @@ export class FlightSession {
       else if (n.stranded && !n.trader) this.flyStranded(n, dt);
       else if (n.site && n.role === 'trader') this.flySiteShip(n, dt);
       else if (n.duel) this.flyDuelist(n, dt);
+      else if (n.miner?.phase === 'cutting') this.flyMinerCutting(n, dt);
       else if (n.role === 'trader') this.flyTrader(n);
       else if (n.role === 'patrol') this.flyPatrol(n, dt);
       else this.flyRaider(n, dt);
@@ -3316,8 +3330,95 @@ export class FlightSession {
     npc.target.own = true;
     npc.target.cycle = true;
     npc.trader = new TraderBrain({ id: at.toDock ? to : 'jump', point: at.end }, npc.durability);
-    npc.captain = { shipId: c.ship.id, key, name: h.captain, leg, way, qty: c.qty, raid: c.raid };
+    npc.captain = { shipId: c.ship.id, key, name: h.captain, leg, way, qty: c.qty, raid: c.raid, ...(h.work ? { safe: true as const } : {}) };
     return true;
+  }
+
+  /** Ships of the pilot's mining captains in this scene, by owned ship: seen once, they come and go without the pop-in rule. */
+  private readonly minersSeen = new Set<string>();
+
+  /**
+   * The pilot's mining captains at work here (docs/PROCGEN.md §37.4): flying out from the refinery
+   * to their spot in the ring, cutting there with the beam on their rock, or bringing the load in. A
+   * ship appears with each phase, where the clock says it is, never popping in near the pilot.
+   */
+  private updateMiners(first: boolean): void {
+    for (const m of minersIn(this.state, this.state.location.systemId, this.state.clock)) {
+      const key = `mine.${m.ship.id}.${m.hauler.since}.${m.phase}`;
+      const existing = this.npcs.find((n) => n.miner && n.captain?.shipId === m.ship.id && n.durability.hull > 0);
+      if (existing?.captain?.key === key || m.phase === 'handing') continue;
+      const site = siteOfStation(m.dockId);
+      const spot = site ? miningSpot(this.system.def, site) : null;
+      const dock = this.system.dock(m.dockId);
+      if (!spot || !dock) continue;
+      const exit = dock.dockPoint.clone().addScaledVector(dock.approach, 250);
+      const rockAt = spot;
+      // The ship cuts from 140 m off its rock, on the refinery's side.
+      const station = rockAt.clone().addScaledVector(exit.clone().sub(rockAt).normalize(), 140);
+      const [a, b] = m.phase === 'to-dock' ? [station, exit] : [exit, station];
+      const at = m.phase === 'cutting' ? station : a.clone().lerp(b, m.progress);
+      if (!existing && !first && !this.minersSeen.has(m.ship.id) && at.distanceTo(this.player.position) < 1_500) continue;
+      if (existing) this.removeMiner(existing);
+      const model = shipModel(m.ship.ship.model);
+      const dockName = getLocation(m.dockId).name;
+      const aboard = Object.entries(m.ship.ship.cargo).filter(([, q]) => (q ?? 0) > 0).map(([c, q]) => `${q} ${COMMODITIES[c as CommodityId].name.toLowerCase()}`).join(', ');
+      const doing = m.phase === 'cutting' ? `mining for ${dockName}` : m.phase === 'to-dock' ? `${aboard || 'a load'} for ${dockName}` : `out to the rocks for ${dockName}`;
+      const facing = m.phase === 'cutting' ? rockAt.clone().sub(station).normalize() : b.clone().sub(a).normalize();
+      const npc = this.makeNpc(model.id, 'trader', 'independent', at, facing, `Captain ${m.hauler.captain} · ${doing}`, m.ship.ship.fittings);
+      npc.name = model.name;
+      npc.target.name = `Your ${model.name}`;
+      npc.target.own = true;
+      npc.target.cycle = true;
+      npc.captain = { shipId: m.ship.id, key, name: m.hauler.captain, way: 'work', qty: 0, raid: null, safe: true };
+      npc.miner = { phase: m.phase };
+      if (m.phase === 'cutting') {
+        npc.body.velocity.set(0, 0, 0);
+        const rock = createMinableRock(hashString(m.ship.id) % 997, 42, { color: new THREE.Color('#7d6250'), ice: 0.1 }, this.ctx);
+        rock.object.position.copy(rockAt);
+        this.system.scene.add(rock.object);
+        const beam = createMiningBeam(this.ctx);
+        this.system.scene.add(beam.object);
+        npc.miner = { phase: 'cutting', rock, beam, rockAt: rockAt.clone() };
+      } else {
+        npc.trader = new TraderBrain(m.phase === 'to-dock' ? { id: m.dockId, point: dock.dockPoint } : { id: 'spot', point: station }, npc.durability);
+      }
+      this.minersSeen.add(m.ship.id);
+    }
+    // A cutting ship whose captain no longer works here (recalled and gone) goes too.
+    for (const n of [...this.npcs]) {
+      if (n.miner?.phase !== 'cutting') continue;
+      const still = minersIn(this.state, this.state.location.systemId, this.state.clock).some((m) => m.ship.id === n.captain?.shipId && m.phase === 'cutting');
+      if (!still) this.removeMiner(n);
+    }
+  }
+
+  /** A mining captain's ship leaves the scene (its next phase brings it back), with its rock and beam (removeNpc). */
+  private removeMiner(n: NpcShip): void {
+    this.removeNpc(n);
+  }
+
+  /** A mining captain cutting: it holds its place, nose to the rock, the beam on it. */
+  private flyMinerCutting(n: NpcShip, dt: number): void {
+    const m = n.miner!;
+    n.controls.throttle = 0;
+    n.body.velocity.multiplyScalar(Math.max(0, 1 - dt * 2));
+    if (!m.rockAt || !m.beam || !m.rock) return;
+    const nose = n.body.position.clone().addScaledVector(m.rockAt.clone().sub(n.body.position).normalize(), 8);
+    const surface = m.rockAt.clone().addScaledVector(n.body.position.clone().sub(m.rockAt).normalize(), 40);
+    m.beam.set(nose, surface);
+    m.beam.update?.(dt, this.time, this.camera);
+    m.rock.update?.(dt, this.time, this.camera);
+  }
+
+  /** Test hook: the pilot's mining captains' ships in this scene: their phase, and how far from the refinery's dock. */
+  minerStatus(): { shipId: string; phase: string; distance: number; beam: boolean }[] {
+    return this.npcs
+      .filter((n) => n.miner && n.durability.hull > 0)
+      .map((n) => {
+        const o = this.state.fleet.ships.find((x) => x.id === n.captain?.shipId);
+        const dock = o?.hauler ? this.system.dock(o.hauler.route.to) : undefined;
+        return { shipId: n.captain!.shipId, phase: n.miner!.phase, distance: dock ? Math.round(n.body.position.distanceTo(dock.dockPoint)) : -1, beam: !!n.miner!.beam };
+      });
   }
 
   /** The player's own haulers flying in sight (their owned ships' ids): a raid due on one here waits for the flight (docs/PROCGEN.md §18.6). */
@@ -4540,7 +4641,7 @@ export class FlightSession {
     } else if (playerFair && (n.foe === 'player' || pack.some(sees))) {
       n.foe = 'player';
     } else {
-      const prey = n.foe && n.foe !== 'player' && n.foe.durability.hull > 0 ? n.foe : this.nearestShip(n.body.position, TRAFFIC.huntRange, (x) => x.side === 'lawful');
+      const prey = n.foe && n.foe !== 'player' && n.foe.durability.hull > 0 ? n.foe : this.nearestShip(n.body.position, TRAFFIC.huntRange, (x) => x.side === 'lawful' && !x.captain?.safe);
       n.foe = prey;
     }
     // Raiders give up on a player who is out of reach.

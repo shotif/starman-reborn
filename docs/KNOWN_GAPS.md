@@ -100,15 +100,21 @@ snapshot branch only when the archives changed.
   scene a captain flies at its ship's own speed, so it may dock a little before or after the run's
   schedule says; the sale goes by the schedule.
 - Stations of your own (PROCGEN §22, §36) are three to a save at most, one to a system. Their
-  materials are handed over by the player in person (a captain can be hired to one only once it
-  trades), their frames borrow a shipyard's look while they are built, and they have no world events
-  of their own (their system's raids still cut the income). They keep to themselves: no other
-  station's board sends work to one, the timetable's haulers do not call there (the haulers seen
-  calling at an outpost only change what is drawn: its stock recovers as every station's does), and
-  the star map's search does not find them (their system's card lists them). A belt outpost is always
-  a refinery, the only kind that refines, and only the ore, ice and gases the pilot brings in person:
-  captains do not mine or deliver to be refined. Selling one waits while goods are stored there, a
-  captain is on a run to it or a job of its board is under way.
+  materials come by the player's hand or a supply captain's (§37), who loads only at the dock where
+  its ship is parked; their frames borrow a shipyard's look while they are built, and they have no
+  world events of their own (their system's raids still cut the income). They keep to themselves: no
+  other station's board sends work to one, the timetable's haulers do not call there (the haulers
+  seen calling at an outpost only change what is drawn: its stock recovers as every station's does),
+  and the star map's search does not find them (their system's card lists them). A belt outpost is
+  always a refinery, the only kind that refines, and only the ore, ice and gases the pilot brings or
+  a mining captain cuts in its own belt. Selling one waits while goods are stored there, a captain
+  is on a run to it or mining for it, or a job of its board is under way.
+- Supply and mining captains (PROCGEN §37) are never raided, by the owner's choice: raiders do not
+  hunt them in flight, and nothing is lost on the way. A supply captain carries only what the next
+  stages need and buys nothing its home market does not sell; leftovers stay aboard. A mining captain
+  works only for the pilot's own belt refineries, its load in its belt's mean shares (not rock by
+  rock as the pilot's beam cuts), and its ship is seen at work only while the pilot flies in that
+  system; it takes no part in the pilot's own mining field.
 - Passengers and sightseers (PROCGEN §23) ride with the player only: a captain does not carry them,
   and the passengers have no lasting names or memories (a party is a contract's, gone when it
   ends). A good look at a sight is a matter of distance, not of where the ship is pointing, and the

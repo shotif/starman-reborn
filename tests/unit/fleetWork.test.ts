@@ -11,6 +11,10 @@ import { useWorldLog } from '../../src/economy/events.ts';
 import { fleetNews, haulerNext, haulerStatus, hireWorker, recallHauler, runRaid, settleFleet, supplyPlan } from '../../src/economy/fleet.ts';
 import { cutSeconds, meanShares, mineLoad, minersIn, phaseEnd } from '../../src/economy/fleetWork.ts';
 import { stockAvailable } from '../../src/economy/markets.ts';
+import { validateFleetWork, type WorkRules } from '../../src/economy/fleetWorkGuards.ts';
+import { miningSpot } from '../../src/economy/fleetWork.ts';
+import { outpostSite } from '../../src/content/outposts/sites.ts';
+import { sceneDefFor } from '../../src/world/systems/index.ts';
 import { newShipState } from '../../src/economy/loadout.ts';
 import { charterOffers, charterOutpost, deliverToOutpost, outpostAt, stillNeeded } from '../../src/economy/outposts.ts';
 import { giveUpBlock, refineAllowance, refinePay, refineRoom, refinedThisHour } from '../../src/economy/outpostTrade.ts';
@@ -74,6 +78,29 @@ function runFor(s: GameState, seconds: number, step = 60): ReturnType<typeof set
   }
   return out;
 }
+
+describe('the rules', () => {
+  it('pass the guardrails, which catch them broken', () => {
+    expect(validateFleetWork()).toEqual([]);
+    const broken = (patch: Partial<WorkRules>) => validateFleetWork({ ...FLEET.work, ...patch } as WorkRules).map((i) => i.rule);
+    expect(broken({ share: 0 })).toContain('rules');
+    expect(broken({ share: 0.5 })).toContain('rules');
+    expect(broken({ cut: 0.9 })).toContain('rules');
+    expect(broken({ transit: 45 })).toContain('rules');
+    expect(broken({ spot: 1_000 })).toContain('rules');
+    expect(broken({ maxSteps: 2.5 })).toContain('rules');
+    // A spot too near a station is caught.
+    expect(broken({ clear: 50_000 })).toContain('spots');
+  });
+
+  it('puts every refinery’s spot in its ring, along it from the refinery', () => {
+    const site = outpostSite(MAIN)!;
+    const def = sceneDefFor('sol');
+    const spot = miningSpot(def, site)!;
+    const ring = def.belts.find((b) => b.beltId === 'sol-main-belt')!;
+    expect(Math.hypot(spot.x - ring.center.x, spot.z - ring.center.z)).toBeCloseTo((ring.innerRadius + ring.outerRadius) / 2, 0);
+  });
+});
 
 describe('supply captains', () => {
   it('load from the hold, then storage, then the market, for a share of the goods, and the stage is done as if the pilot brought it', () => {

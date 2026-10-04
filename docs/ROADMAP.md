@@ -9,11 +9,11 @@ After the scripted opening (10–20 minutes), the neighbourhood is an open sandb
 systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
 of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
 packs in lawless space; 39 ships and 146 pieces of equipment; and generated contracts on every job
-board. Increments 1–35 (under [Done so far](#done-so-far)) added world events and news, contracts
+board. Increments 1–36 (under [Done so far](#done-so-far)) added world events and news, contracts
 of every kind, the law and the outlaw path, goals, ranks with each faction that open doors, races round real planets and moons against racers who really fly, a wing that takes orders and grows with every fight, border battles to see and join, five story arcs, combat depth, people in the
 bars and a trade computer, a world that answers, gluts that ship their surplus out and relief to
 escort through raided lanes, a fleet of your own whose captains fly the lanes, a crew aboard your own ship,
-up to three stations of your own to build and defend, refineries in the real belts, passengers and sightseers, rival pilots with careers and stories of their own, a
+up to three stations of your own to build and defend, refineries in the real belts, captains who supply them and mine for them, passengers and sightseers, rival pilots with careers and stories of their own, a
 supernova in every sky (as fiction), an invented star at the map's edge that explodes and leaves a
 black hole to fly to (fiction too), encounters on the lanes between the docks, wrecks and derelicts to fly to with short trails across a few systems, mining in the real belts, the frontier with a life of its own,
 a border war whose fronts can be won for good, story endings that change stations for good, escorts
@@ -28,8 +28,13 @@ What it lacks now:
 
 ## Proposed next increments
 
-Chosen by the owner on 4 October 2026, once Ranks, Races and Wing command were done: The border in
-sight and then Outposts in the belts, both now done. The next are to be proposed to the owner.
+Chosen by the owner on 4 October 2026, once the border and the belts were done: Captains supply
+outposts (now done) and then Outposts join the trade.
+
+### Outposts join the trade ⏳ (M)
+
+Other stations' boards post work to the pilot's outposts, the timetable's haulers buy and sell
+there, and the star map's search finds them.
 
 ### How an increment ships
 
@@ -39,6 +44,18 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 36. Captains supply outposts ✅
+
+Your captains can now work for your outposts. Hire one in the Fleet window to supply an outpost
+being built: the captain takes the next stage's materials from your storage at the ship's dock
+first, then buys the rest there, for a tenth of the goods' value, and hands them over stage after
+stage until the outpost is complete. Or put a ship with a mining laser to work for a belt refinery:
+its captain flies there and works the belt in cycles, seen in flight at its spot in the ring with
+the beam on its rock, and each load is refined within the refinery's hourly allowance (your own
+refining included), the captain taking 30% of the pay (about 1,240 cr an hour at a frame and 2,480 at
+a port). These captains are never raided. Recall brings them home
+([PROCGEN.md §37](PROCGEN.md#37-captains-supply-outposts)).
 
 ### 35. Outposts in the belts ✅
 

@@ -14,8 +14,15 @@ import {
   haulEstimate,
   haulerStatus,
   haulGoods,
+  haulFees,
+  haulTimes,
   hireBlock,
   hireHauler,
+  hireWorker,
+  mineTargets,
+  miningEstimate,
+  supplyPlan,
+  supplyTargets,
   lastReport,
   leaseStorage,
   moveCargo,
@@ -43,6 +50,8 @@ import { ago, RISK_WORD } from './computer.ts';
 import type { Refresh, StationContext } from './context.ts';
 import { shipKind } from './gearText.ts';
 import { outpostSection } from './outpost.ts';
+import { outpostId } from '../../content/outposts/sites.ts';
+import { refineAllowance } from '../../economy/outpostTrade.ts';
 import { COMMODITY_GLYPH } from './trader.ts';
 
 /**
@@ -125,7 +134,8 @@ function parkedRow(ctx: StationContext, o: OwnedShip, refresh: Refresh): HTMLEle
   const sale = sellOffer(state, o);
   const block = hireBlock(state, o);
   const dests = block ? [] : haulDestinations(state, o.locationId);
-  const noHire = block ?? (dests.length ? null : 'Captains fly only to docks you have been to: dock at another market first');
+  const work = block ? false : supplyTargets(state).length > 0 || mineTargets(state, o).length > 0;
+  const noHire = block ?? (dests.length || work ? null : 'Captains fly only to docks you have been to: dock at another market first');
   return h(
     'li',
     { class: 'trade-row fleet-row', 'data-testid': `fleet-ship-${o.id}` },
@@ -195,6 +205,13 @@ function haulers(ctx: StationContext, refresh: Refresh): HTMLElement | null {
         const hl = o.hauler!;
         const { from, to, commodity: c } = hl.route;
         const last = lastReport(state, o.id);
+        const route = hl.work === 'supply' ? `Supplying ${where(ctx, to)} from ${where(ctx, from)}` : hl.work === 'mine' ? `Mining for ${where(ctx, to)}, home ${where(ctx, from)}` : `${goodName(c)}: ${where(ctx, from)} → ${where(ctx, to)}`;
+        const record =
+          hl.work === 'supply'
+            ? `${hl.runs} deliver${hl.runs === 1 ? 'y' : 'ies'} · spent ${formatCredits(Math.abs(hl.earned))} · safe deliveries`
+            : hl.work === 'mine'
+              ? `${hl.runs} load${hl.runs === 1 ? '' : 's'} refined · ${money(hl.earned)} · safe deliveries`
+              : `${hl.runs} run${hl.runs === 1 ? '' : 's'} · ${money(hl.earned)} · ${hl.insured ? 'insured' : 'not insured'}`;
         return h(
           'li',
           { class: 'trade-row fleet-row', 'data-testid': `fleet-hauler-${o.id}` },
@@ -203,9 +220,9 @@ function haulers(ctx: StationContext, refresh: Refresh): HTMLElement | null {
             'span',
             { class: 'trade-text' },
             h('span', { class: 'row-name' }, `${shipModel(o.ship.model).name} · ${hl.captain}`),
-            h('span', { class: 'row-sub' }, `${goodName(c)}: ${where(ctx, from)} → ${where(ctx, to)}`),
-            h('span', { class: 'row-sub fleet-status' }, haulerStatus(state, o)),
-            h('span', { class: 'row-sub' }, `${hl.runs} run${hl.runs === 1 ? '' : 's'} · ${money(hl.earned)} · ${hl.insured ? 'insured' : 'not insured'}`),
+            h('span', { class: 'row-sub' }, route),
+            h('span', { class: 'row-sub fleet-status', 'data-testid': `fleet-status-${o.id}` }, haulerStatus(state, o)),
+            h('span', { class: 'row-sub' }, record),
             last ? h('span', { class: 'row-sub fleet-last' }, `${ago(state.clock, last.at)}: ${last.text}`) : null,
           ),
           h(
@@ -217,12 +234,15 @@ function haulers(ctx: StationContext, refresh: Refresh): HTMLElement | null {
               disabled: hl.recalled,
               onClick: () => done(ctx, refresh, recallHauler(state, o.id)),
             }),
-            button(hl.insured ? 'Drop insurance' : 'Insure', {
-              size: 'sm',
-              variant: 'ghost',
-              testId: `fleet-insure-${o.id}`,
-              onClick: () => done(ctx, refresh, setInsured(state, o.id, !hl.insured)),
-            }),
+            // Supply and mining captains are never raided (docs/PROCGEN.md §37.3): nothing to insure.
+            hl.work
+              ? null
+              : button(hl.insured ? 'Drop insurance' : 'Insure', {
+                  size: 'sm',
+                  variant: 'ghost',
+                  testId: `fleet-insure-${o.id}`,
+                  onClick: () => done(ctx, refresh, setInsured(state, o.id, !hl.insured)),
+                }),
           ),
         );
       }),
@@ -275,14 +295,24 @@ function choicesFor(ctx: StationContext, o: OwnedShip, to: string, insured: bool
     .sort((a, b) => b.est.net - a.est.net);
 }
 
+type Work = 'haul' | 'supply' | 'mine';
+const WORK_WORD: Record<Work, string> = { haul: 'Haul a trade route', supply: 'Supply an outpost', mine: 'Mine for a refinery' };
+
 async function openHire(ctx: StationContext, o: OwnedShip, dests: string[], refresh: Refresh): Promise<void> {
   const { state } = ctx;
   const model = shipModel(o.ship.model);
   const captain = captainFor(state, o.id);
+  // What the captain can be hired to do (docs/PROCGEN.md §37): a trade route, an outpost to supply, a refinery to mine for.
+  const supplies = supplyTargets(state);
+  const mines = mineTargets(state, o);
+  const works = (['haul', 'supply', 'mine'] as const).filter((w) => (w === 'haul' ? dests.length : w === 'supply' ? supplies.length : mines.length) > 0);
+  let work: Work = works[0] ?? 'haul';
+  let supplyTo = supplies[0] ? outpostId(supplies[0].site) : '';
+  let mineFor = mines[0] ? outpostId(mines[0].site) : '';
   let insured = false;
   // Start from the destination whose best run pays most.
   const best = dests.map((d) => choicesFor(ctx, o, d, insured)[0]).filter((x): x is Choice => !!x).sort((a, b) => b.est.net - a.est.net)[0];
-  let to = best?.to ?? dests[0]!;
+  let to = best?.to ?? dests[0] ?? '';
   let c: CommodityId | null = best?.c ?? null;
   const destSelect = h(
     'select',
@@ -305,7 +335,7 @@ async function openHire(ctx: StationContext, o: OwnedShip, dests: string[], refr
     const est = c ? haulEstimate(state, o, to, c, insured) : null;
     const pays = !!est && est.net >= FLEET.haulers.minProfit;
     const hire = confirm();
-    if (hire) hire.disabled = !pays;
+    if (hire) hire.disabled = work === 'haul' && !pays;
     if (!est) {
       replaceChildren(summary, h('p', { class: 'list-empty' }, 'Nothing sold here that you know a buyer for there.'));
       return;
@@ -353,12 +383,77 @@ async function openHire(ctx: StationContext, o: OwnedShip, dests: string[], refr
   });
   fillGoods();
   update();
-  const answer = showModal({
-    title: `A captain for your ${model.name}`,
-    testId: 'fleet-hire-dialog',
-    body: h(
+  // Supply: the next run as it would load now, and what it costs.
+  const supplySelect = h(
+    'select',
+    { id: 'fleet-supply-to', 'data-testid': 'fleet-supply-to' },
+    supplies.map((p) => h('option', { value: outpostId(p.site), selected: outpostId(p.site) === supplyTo }, p.name)),
+  );
+  const supplySummary = h('div', { class: 'hire-summary', 'aria-live': 'polite', 'data-testid': 'fleet-supply-summary' });
+  const updateSupply = () => {
+    if (!supplyTo) return;
+    const plan = supplyPlan(state, o, supplyTo);
+    const list = (cargo: Cargo) => (Object.entries(cargo) as [CommodityId, number][]).map(([c, q]) => `${q} ${goodName(c).toLowerCase()}`).join(', ');
+    replaceChildren(
+      supplySummary,
+      plan
+        ? h(
+            'dl',
+            { class: 'kv' },
+            h('dt', null, 'First run'),
+            h('dd', null, [list(plan.stored) ? `${list(plan.stored)} from your storage` : '', list(plan.bought) ? `${list(plan.bought)} bought here` : ''].filter(Boolean).join('; ') || 'what is aboard'),
+            h('dt', null, 'Costs'),
+            h('dd', null, `goods ${formatCredits(plan.goods)} · captain ${formatCredits(plan.share)} (${pct(FLEET.work.share)} of the goods’ value) · jump fees ${formatCredits(plan.fees)}`),
+            h('dt', null, h('strong', null, 'Each run')),
+            h('dd', { class: 'num', 'data-testid': 'fleet-supply-cost' }, h('strong', null, `${formatCredits(plan.cost)}, paid as it sets out`)),
+            h('dt', null, 'Time'),
+            h('dd', null, `${minutes(haulTimes(o.locationId, supplyTo).run)} a run, there and back`),
+          )
+        : h('p', { class: 'list-empty' }, 'Nothing it still needs is in your storage here or for sale here: the captain would wait until it is.'),
+    );
+  };
+  supplySelect.addEventListener('change', () => {
+    supplyTo = supplySelect.value;
+    updateSupply();
+  });
+  // Mine: a load, a cycle, and what the refinery takes and pays an hour.
+  const mineSelect = h(
+    'select',
+    { id: 'fleet-mine-for', 'data-testid': 'fleet-mine-for' },
+    mines.map((p) => h('option', { value: outpostId(p.site), selected: outpostId(p.site) === mineFor }, p.name)),
+  );
+  const mineSummary = h('div', { class: 'hire-summary', 'aria-live': 'polite', 'data-testid': 'fleet-mine-summary' });
+  const updateMine = () => {
+    const post = mines.find((p) => outpostId(p.site) === mineFor);
+    if (!post) return;
+    const est = miningEstimate(o, post);
+    const list = (Object.entries(est.load) as [CommodityId, number][]).map(([c, q]) => `${q} ${goodName(c).toLowerCase()}`).join(', ');
+    replaceChildren(
+      mineSummary,
+      h(
+        'dl',
+        { class: 'kv' },
+        h('dt', null, 'Each load'),
+        h('dd', null, `${list}, cut in ${minutes(est.cycle - 2 * FLEET.work.transit)}; ${minutes(est.cycle)} a cycle with the trips`),
+        h('dt', null, 'Refined'),
+        h('dd', null, `about ${est.perHour} units an hour (the refinery takes ${refineAllowance(post)} an hour, your own refining included)`),
+        h('dt', null, h('strong', null, 'You make')),
+        h('dd', { class: 'num pos', 'data-testid': 'fleet-mine-pay' }, h('strong', null, `about ${money(est.payPerHour)} an hour`), ` after the captain’s ${pct(FLEET.work.cut)}`),
+        h('dt', null, 'Getting there'),
+        h('dd', null, `${minutes(haulTimes(o.locationId, mineFor).load + haulTimes(o.locationId, mineFor).oneWay)}, jump fees there and back ${formatCredits(haulFees(o.locationId, mineFor))}`),
+      ),
+    );
+  };
+  mineSelect.addEventListener('change', () => {
+    mineFor = mineSelect.value;
+    updateMine();
+  });
+  updateSupply();
+  updateMine();
+  const sections: Record<Work, HTMLElement> = {
+    haul: h(
       'div',
-      { class: 'stack hire' },
+      { class: 'stack', 'data-testid': 'fleet-hire-haul' },
       h('p', null, `${captain} will fly it from here for ${formatCredits(FLEET.haulers.fee)} a run and ${pct(FLEET.haulers.wageShare)} of each run’s profit, loading here and selling at the far end.`),
       h('div', { class: 'hire-field' }, h('label', { for: 'fleet-dest' }, 'Destination'), destSelect),
       h('div', { class: 'hire-field' }, h('label', { for: 'fleet-good' }, 'Cargo'), goodSelect),
@@ -371,16 +466,51 @@ async function openHire(ctx: StationContext, o: OwnedShip, dests: string[], refr
       ),
       h('p', { class: 'muted small' }, 'Prices at the far end are the last you saw. Every run moves both markets, so a route worked hard pays less; the captain decides on the day, waits while a run does not pay, and reports as the runs go. Meet your ship on the lanes, and you can guard it if raiders strike.'),
     ),
+    supply: h(
+      'div',
+      { class: 'stack', 'data-testid': 'fleet-hire-supply' },
+      h('p', null, `${captain} will bring what your outpost’s next stage needs, stage after stage until it is complete: first what your storage here holds, then what this market sells. For ${pct(FLEET.work.share)} of the goods’ value a run.`),
+      h('div', { class: 'hire-field' }, h('label', { for: 'fleet-supply-to' }, 'Outpost'), supplySelect),
+      supplySummary,
+      h('p', { class: 'muted small' }, 'Safe deliveries: raiders leave your supply captains alone. Keep your storage here stocked with what this market does not sell.'),
+    ),
+    mine: h(
+      'div',
+      { class: 'stack', 'data-testid': 'fleet-hire-mine' },
+      h('p', null, `${captain} will fly it to your refinery and work its belt with the ship’s mining laser, handing each load over to be refined, for ${pct(FLEET.work.cut)} of what the refinery pays.`),
+      h('div', { class: 'hire-field' }, h('label', { for: 'fleet-mine-for' }, 'Refinery'), mineSelect),
+      mineSummary,
+      h('p', { class: 'muted small' }, 'Safe deliveries: raiders leave your mining captains alone. Fly out to the belt to watch them work; the captains and their ships’ work are fiction, the belt is real.'),
+    ),
+  };
+  const workField = h('div', { class: 'hire-field' }, h('label', { for: 'fleet-work' }, 'Work'), h('select', { id: 'fleet-work', 'data-testid': 'fleet-work' }, works.map((w) => h('option', { value: w, selected: w === work }, WORK_WORD[w]))));
+  const show = () => {
+    for (const [k, el] of Object.entries(sections) as [Work, HTMLElement][]) el.hidden = k !== work;
+    const hire = confirm();
+    if (hire) hire.disabled = false;
+    if (work === 'haul') update();
+  };
+  workField.querySelector('select')?.addEventListener('change', (e) => {
+    work = (e.target as HTMLSelectElement).value as Work;
+    show();
+  });
+  show();
+  const answer = showModal({
+    title: `A captain for your ${model.name}`,
+    testId: 'fleet-hire-dialog',
+    body: h('div', { class: 'stack hire' }, workField, ...works.map((w) => sections[w])),
     actions: [
       { label: 'Cancel', value: 'cancel', testId: 'fleet-hire-cancel' },
       { label: 'Hire', value: 'ok', variant: 'primary', testId: 'fleet-hire-confirm' },
     ],
     dismissValue: 'cancel',
   });
-  update();
-  if ((await answer) !== 'ok' || !c) return;
-  const r = hireHauler(state, o.id, to, c, insured);
-  done(ctx, refresh, r);
+  show();
+  if ((await answer) !== 'ok') return;
+  if (work === 'haul') {
+    if (!c) return;
+    done(ctx, refresh, hireHauler(state, o.id, to, c, insured));
+  } else done(ctx, refresh, hireWorker(state, o.id, work, work === 'supply' ? supplyTo : mineFor));
 }
 
 // ---------------------------------------------------------------- storage

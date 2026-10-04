@@ -2797,6 +2797,24 @@ export class Game {
         this.station?.render();
         return r?.ok ? id : null;
       },
+      /** Test-only: parks a ship of a model, with extra fittings, where the pilot is docked (docs/PROCGEN.md §37); its id. */
+      parkShip: (arg: { model: string; fittings?: Record<string, string> }) => {
+        const state = this.state;
+        const here = state?.location.dockedAt;
+        if (!state || !here) return null;
+        const id = `ship-${state.fleet.ships.length + 1}`;
+        const ship = newShipState(arg.model);
+        ship.fittings = { ...ship.fittings, ...(arg.fittings ?? {}) };
+        state.fleet.ships.push({ id, ship, locationId: here });
+        this.station?.render();
+        return id;
+      },
+      /** Test-only: the pilot's working captains (docs/PROCGEN.md §37): their records, and the mining ships in this flight. */
+      workers: () => {
+        const state = this.state;
+        if (!state) return null;
+        return { ships: state.fleet.ships.filter((o) => o.hauler?.work).map((o) => ({ id: o.id, cargo: o.ship.cargo, hauler: o.hauler })), flight: this.flight?.minerStatus() ?? null };
+      },
       /**
        * Test-only: a rival's story (docs/PROCGEN.md §28): the record, how it stands, what it offers at
        * their table now, the holds on their career, standing, and the duel in this flight.

@@ -534,6 +534,28 @@ for (const size of SIZES) {
       await expect(page.getByTestId('outpost-give-up-dialog')).toBeVisible();
       await shot(page, `${size.name}-15f-give-up`, size.touch, results);
       await press(page, 'outpost-give-up-cancel');
+      // Captains supply outposts (docs/PROCGEN.md §37): a ship with a mining laser hired to mine for the
+      // refinery (the dialog's estimate), a freighter to supply an outpost, and the Fleet window's captains at
+      // work; both recalled at once, so they spend nothing later in the journey.
+      await docked('earth-port');
+      const minerShip = await api<string>(page, 'parkShip', { model: 'ship.courier.1.halden', fittings: { 'utility-1': 'gear.mining-laser.1.eridani' } });
+      const supplyShip = await api<string>(page, 'parkShip', { model: 'ship.freighter.1.halden' });
+      await press(page, 'room-deck');
+      if (!(await page.getByTestId('fleet').isVisible().catch(() => false))) await press(page, 'station-fleet');
+      await press(page, `fleet-hire-${minerShip}`);
+      await page.getByTestId('fleet-work').selectOption('mine');
+      await expect(page.getByTestId('fleet-mine-pay')).toBeVisible();
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-15g-hire-miner`, size.touch, results);
+      await press(page, 'fleet-hire-confirm');
+      await press(page, `fleet-hire-${supplyShip}`);
+      await page.getByTestId('fleet-work').selectOption('supply');
+      await press(page, 'fleet-hire-confirm');
+      await page.getByTestId(`fleet-hauler-${minerShip}`).evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-15h-captains`, size.touch, results);
+      await press(page, `fleet-recall-${minerShip}`);
+      await press(page, `fleet-recall-${supplyShip}`);
       // Your crew (docs/PROCGEN.md §30): a hand looking for a berth at a bar's table, the crew in the
       // bar (hurt and giving notice, a favour to ask), and the favour in their dialog.
       const hand = (await api<{ locationId: string; offerId: string } | null>(page, 'findCrew', { role: 'engineer', heart: 'soft-hearted' }))!;

@@ -643,6 +643,21 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   turns on the pilot; an assault comes in two waves; a turning battle opens before a clash due at the
   same time; a battle left unfinished is staged again; and
   left to themselves both sides win some clashes.
+- `fleetWork.test.ts`: **captains supply outposts**. The guardrails pass, and broken rules are caught
+  (no share, too large a share or cut, a transit other than the mining estimates', a spot within its
+  own clearance, a fraction where a whole number is due, a clearance no spot can keep). A refinery's
+  spot lies in its ring. A supply run loads what is aboard, then storage, then the market, and costs
+  the goods, a tenth of the loaded goods' base value and both ways' fees; a hold with goods aboard is
+  not hired out; it is never raided; delivered, the goods count toward the stage. Earth Port sells
+  machinery but not habitat modules or metals: the captain delivers the machinery, then waits, said
+  once, until storage has the rest. From a station on, stage after stage until complete, it delivers
+  and signs off. A mining captain needs a laser; its load is the belt's mean shares (a main-belt load
+  70% ore); it sets out, works in cycles (out to the rocks, cutting, back, handing over), is seen
+  cutting where it works, hands over only what the hour's allowance leaves after the pilot's own
+  refining, is paid less its 30% cut, waits for the next hour with the rest and goes out again;
+  its refinery cannot be given up meanwhile; the save round-trips; recalled, it hands over, flies home
+  and signs off. Settled every 30 s or once over 12 hours, the outcome is the same, never above the
+  allowance, and the refinery's market has the refined goods.
 - `beltOutposts.test.ts`: **outposts in the belts**. One site in each cited belt (nine in eight
   systems, Sol's two included), always a refinery; the guardrails pass, and broken rules and places are
   caught (refining that pays no more than a market can, an allowance that does not rise, a yield other
@@ -850,6 +865,14 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   pilot's part and the purse paid; then, as Regent Concourse is about to fall, the Wake's assault on it
   comes in two waves and is beaten off with the pilot; docked, the standing earned brings the
   Authority's first rank, the News tells the battle and the journal's *Border battles* keeps both.
+- `fleetWork.spec.ts`: **captains supply outposts**: at Earth Port, with a refinery chartered in Sol's
+  main belt, a freighter's captain is hired in the Fleet window to *Supply an outpost* (the dialog
+  shows what is bought here and the cost, the haul fields hidden); it loads 6 machinery, its status
+  says so, and an hour on the machinery is delivered. The rest brought by hand, the refinery opens. A
+  courier with a mining laser is hired to *Mine for a refinery* (the dialog gives units and credits an
+  hour); in flight it is seen cutting in the belt with its beam on its rock and marked as the
+  pilot's; half an hour on, a load is handed over and paid and the refinery has refined it. Recalled
+  at Earth Port, it flies home and signs off.
 - `beltOutpost.spec.ts`: **outposts in the belts**: at Earth Port the Fleet window offers Sol's two
   belts; the main belt's charter dialog says it is always a refinery, and once chartered the Fleet
   window says one to a system. At the site the Outpost window waits for the frame, then (open) says

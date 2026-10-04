@@ -769,15 +769,16 @@ function wreck(state: GameState, o: OwnedShip, h: Hauler, t: number, systemId: S
   const { from, to, commodity: c } = h.route;
   const payout = h.insured && by === 'raiders' ? insurancePayout(o.ship) : 0;
   credit(state, payout);
-  // What the run still had at stake (the goods and fees, until it sells) goes with the ship.
-  const net = payout - h.cost;
+  // What the run still had at stake (the goods and fees, until it sells) goes with the ship; a
+  // working captain's costs were counted when they were paid (docs/PROCGEN.md §37).
+  const net = payout - (h.work ? 0 : h.cost);
   h.earned += net;
   out.hauled += net;
   // A run ended on its way out counts as a run; one on its way home was counted when it arrived.
   if (h.leg === 'out') out.runs += 1;
   o.ship.cargo = {};
   state.fleet.ships.splice(state.fleet.ships.indexOf(o), 1);
-  const way = h.leg === 'out' ? `on the way to ${place(to)}` : `on the way home to ${place(from)}`;
+  const way = h.leg === 'work' ? `at work for ${place(to)}` : h.leg === 'out' ? `on the way to ${place(to)}` : `on the way home to ${place(from)}`;
   const aboard = qty > 0 ? `, with ${qty} ${goodName(c)}` : '';
   const who = by === 'raiders' ? 'Raiders destroyed' : 'Your own guns destroyed';
   const insured = payout ? ` Insurance paid ${payout} cr.` : by === 'player' && h.insured ? ' Insurance does not pay for that.' : '';
@@ -928,6 +929,7 @@ function setOutSupply(state: GameState, o: OwnedShip, h: Hauler, t: number, out:
     o.ship.cargo[c] = cargoCount(o.ship.cargo, c) + q;
   }
   h.cost = plan.cost;
+  h.earned -= plan.cost;
   h.leg = 'out';
   h.since = t;
   h.waiting = null;
@@ -959,7 +961,6 @@ function arriveSupply(state: GameState, o: OwnedShip, h: Hauler, t: number, out:
     }
   }
   const cost = h.cost;
-  h.earned -= cost;
   h.cost = 0;
   const what = cargoText(given);
   const text = what
@@ -1342,6 +1343,7 @@ function workStatus(state: GameState, o: OwnedShip, h: Hauler): string {
     if (h.waiting === 'supplies') return `Waiting at ${place(from)}: nothing ${place(to)} needs is stored or sold here (looks again in ${minutes} min)`;
     return `Loading at ${place(from)}`;
   }
+  if (h.leg === 'out' && state.clock < h.since + FLEET.haulers.loadSeconds) return `Readying at ${place(from)} to mine for ${place(to)}, there in ${minutes} min${recalled}`;
   if (h.leg === 'out') return `On the way to mine for ${place(to)}, there in ${minutes} min${whereNow(state, h)}${recalled}`;
   if (h.leg === 'home') return h.waiting === 'credits' ? `Waiting at ${place(from)}: not enough credits for the jump fees (looks again in ${minutes} min)` : `Readying at ${place(from)}`;
   switch (h.phase) {
