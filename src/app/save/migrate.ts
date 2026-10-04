@@ -18,6 +18,9 @@ import { CREW, CREW_DEEDS, CREW_HEARTS, CREW_ROLES, type CrewDeed } from '../../
 import { SITE_KINDS, WRECKS } from '../../content/wrecks/rules.ts';
 import { RANKS } from '../../content/ranks/rules.ts';
 import { WING, WING_MEMORIES } from '../../content/wing/rules.ts';
+import { BATTLE_KINDS, BATTLES } from '../../content/border/battles.ts';
+import { getFront } from '../../economy/border.ts';
+import { cycleOf } from '../../economy/battles.ts';
 import { RACE_CLASSES, RACING } from '../../content/racing/rules.ts';
 import { courseById, heatOf, type RaceEnd, type RacingLog } from '../../economy/racing.ts';
 import { MYSTERY_IDS, type MysteryId } from '../../content/wrecks/mysteries.ts';
@@ -64,7 +67,8 @@ import { createNewGame, SAVE_VERSION, type CommodityId, type CrewLog, type GameS
  *   commission's `requires.rank` (§32), absent in older v10 saves; the world log's `racing` (an entry
  *   open, the pilot's results and bests by course and class, §33), absent in older v10 saves. See
  *   GameState in src/app/state.ts. The wing's records on `crew` entries (fights, downs, trust, memory,
- *   hurt, notice, owed) and `wingFormer` (§34) are absent in older v10 saves.
+ *   hurt, notice, owed) and `wingFormer` (§34) are absent in older v10 saves, as are the border
+ *   log's `battles` (battles seen to an end, §35).
  */
 export interface SaveV1 {
   version: 1;
@@ -547,6 +551,34 @@ export function assertValidState(s: GameState): void {
   for (const b of Object.values(w.border)) {
     if (!isRecord(b) || !Array.isArray(b.deeds) || !b.deeds.every((d) => Array.isArray(d) && d.length === 2 && d.every(Number.isFinite))) fail('border');
     if (b.ending !== undefined && !['law', 'wake', 'truce'].includes(b.ending)) fail('border');
+  }
+  // Battles seen to an end (§35): a known front, kind and sides, at most so many, each once, its slot or cycle matching its time.
+  for (const [id, b] of Object.entries(w.border)) {
+    if (b.battles === undefined) continue;
+    const known = getFront(id);
+    if (!known || !Array.isArray(b.battles) || b.battles.length > BATTLES.keep) fail('border battles');
+    const front = known!;
+    const C = BATTLES.clash;
+    const seen = new Set<string>();
+    for (const r of b.battles) {
+      const ok =
+        isRecord(r) &&
+        BATTLE_KINDS.includes(r.kind) &&
+        Number.isInteger(r.key) &&
+        Number.isFinite(r.at) &&
+        r.at >= 0 &&
+        r.at <= s.clock + 1 &&
+        ['law', 'wake', 'draw'].includes(r.winner) &&
+        ['law', 'wake'].includes(r.side) &&
+        typeof r.part === 'boolean' &&
+        (r.den === undefined || (r.den === true && r.kind === 'clash')) &&
+        (r.kind === 'clash'
+          ? r.at >= r.key * C.slotSeconds && r.at <= (r.key + 1) * C.slotSeconds + C.arrive + C.lasts
+          : r.key >= cycleOf(front, r.at - BATTLES.turning.lasts) && r.key <= cycleOf(front, r.at)) &&
+        !seen.has(`${r.kind}:${r.key}`);
+      if (!ok) fail('border battles');
+      seen.add(`${r.kind}:${r.key}`);
+    }
   }
   if (w.marks !== undefined && (!isRecord(w.marks) || !Object.entries(w.marks).every(([id, t]) => !!markById(id) && Number.isFinite(t)))) fail('world');
   if (w.hauls !== undefined) {

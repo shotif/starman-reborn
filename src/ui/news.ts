@@ -2,6 +2,7 @@ import type { EventKind } from '../content/events/rules.ts';
 import { getLocation, getSystem } from '../data/systems.ts';
 import type { GameState } from '../app/state.ts';
 import { borderNews, type FrontPhase } from '../economy/border.ts';
+import { battleNews } from '../economy/battles.ts';
 import { densDownNear } from '../economy/dens.ts';
 import type { SystemId } from '../data/types.ts';
 import { eventEnd, marksNear, minutes, newsAt, type NewsItem, type WorldEvent } from '../economy/events.ts';
@@ -113,10 +114,20 @@ const PHASE_LABEL: Record<FrontPhase, string> = { 'pushed-back': 'Border: the la
 /** The border war within reach (docs/PROCGEN.md §20): each front as it stands. */
 export function borderNewsList(systemId: SystemId, clock: number): HTMLElement | null {
   const news = borderNews(systemId, clock);
-  if (!news.length) return null;
+  // Turning battles the pilot fought in and won (docs/PROCGEN.md §35.5), first.
+  const battles = battleNews(systemId, clock);
+  if (!news.length && !battles.length) return null;
   return h(
     'ul',
     { class: 'list news-list', 'data-testid': 'border-news' },
+    battles.map((b, i) =>
+      h(
+        'li',
+        { class: 'news-item kind-border', 'data-testid': `battle-news-${i}` },
+        glyph('gun'),
+        h('span', { class: 'news-text' }, h('span', { class: 'row-name' }, b.headline), h('span', { class: 'row-sub' }, 'Border battle'), h('span', { class: 'news-detail' }, b.detail)),
+      ),
+    ),
     news.map((n) =>
       h(
         'li',

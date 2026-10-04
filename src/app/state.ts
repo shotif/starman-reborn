@@ -1,5 +1,6 @@
 import type { RacingLog } from '../economy/racing.ts';
 import type { WingMemory } from '../content/wing/rules.ts';
+import type { BattleKind, BattleSide } from '../content/border/battles.ts';
 import type { CrewDeed, CrewGrade, CrewHeart, CrewRole } from '../content/crew/rules.ts';
 import type { LaneKind } from '../content/lanes/rules.ts';
 import type { MysteryId } from '../content/wrecks/mysteries.ts';
@@ -450,6 +451,20 @@ export type BorderEnding = 'law' | 'wake' | 'truce';
 export interface BorderLog {
   deeds: [number, number][];
   ending?: BorderEnding;
+  /** Battles the pilot saw to an end on this front (docs/PROCGEN.md §35), the newest last. */
+  battles?: BattleRecord[];
+}
+
+/** A border battle seen to its end (docs/PROCGEN.md §35): its kind, slot or tide cycle, when, who won, the pilot's side and part, and where. */
+export interface BattleRecord {
+  kind: BattleKind;
+  key: number;
+  at: number;
+  winner: BattleSide | 'draw';
+  side: BattleSide;
+  part: boolean;
+  /** A clash fought in the den's system (else the lawful one). */
+  den?: true;
 }
 
 /** A price the player asked to watch (docs/PROCGEN.md §16). */

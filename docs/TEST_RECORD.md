@@ -11,12 +11,12 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | --- | --- | --- |
 | TypeScript typecheck (app + scripts/tests) | `npm run typecheck` | Pass |
 | Astronomy data validation | `npm run data:validate` | Pass (22 warnings: the contested planets this edition keeps) |
-| Unit tests | `npm test` | Pass: 926 tests in 58 files |
+| Unit tests | `npm test` | Pass: 944 tests in 59 files |
 | Production build | `npm run build` | Pass |
-| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 744 KB of 800 (gzipped) |
-| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 48 passed (5 touch-only tests skipped) |
-| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 48 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
-| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 531 screenshots, no audit findings |
+| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 750 KB of 800 (gzipped) |
+| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 49 passed (5 touch-only tests skipped) |
+| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 49 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
+| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 567 screenshots, no audit findings |
 
 ### Unit tests (Vitest)
 
@@ -625,6 +625,25 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   pilot is far, Cover keeping station off an escort, and a raider downed earning a fight and a down, a
   wingman shot down picked up.
 
+- `battles.test.ts`: **the border in sight**. The guardrails pass (every front's battle lines in
+  both systems and its turning points clear, schedules the same each time, turning battles once a turn
+  of the tide where a station can fall), and broken rules and words are caught (a battle too big, too
+  big on Low, a purse as much as a war contract, deeds other than the owner chose, a window too short,
+  a line within a den's alert, an aim too good, a certain clash, a number and a *she* in a line).
+  Clashes come by slot where a front fights, sized by the tide and smaller on Low, one a slot at
+  Lacaille 9352 between its two fronts, none on a settled front; a turning battle is due in the
+  pressure's window before Regent Concourse falls or is freed, once a turn, and not on a front with no
+  station that can fall. Settled: won with the pilot's part, the deed, 900 cr and standing, and the
+  station held for that turn; a retaking won frees it at once; on the Wake's side its standing and the
+  station falls early; a clash pays 300 cr; won without the pilot, lost or drawn, only the record;
+  settling twice changes nothing; the News tells a turning battle for two hours within reach; saves
+  keep six a front and refuse damaged records. In a real flight: a clash opens at the beacon line a
+  moment after arrival, the strip counts each side, the pilot's part counts once and the winners
+  hold; a pilot the Wake trusts fights on its side and the wing holds its fire; a lawful ship fired on
+  turns on the pilot; an assault comes in two waves; a turning battle opens before a clash due at the
+  same time; a battle left unfinished is staged again; and
+  left to themselves both sides win some clashes.
+
 ### Browser tests (Playwright)
 
 - `journey.spec.ts`: **the nine-step journey from the spec** on desktop and on touch.
@@ -803,6 +822,14 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   won, with the record purse and the rating's points, and the prize and purse are paid; the racers
   then really finish, each within two thousandths of a second of the time worked out; and docked
   again, the journal shows the racing record and the Racing rating risen.
+- `battles.spec.ts`: **the border in sight** (battles turned on for this test, and Ross 154's raider
+  packs kept away while the pilot waits in flight): at Ross 154 a clash
+  opens at the beacon line a moment after launch from Waymark Waypoint; the battle strip names it,
+  counts *Transit Authority* (*you*) and *Wake*, and says Fiction, and the battle line is a target;
+  one of the Wake's ships downed by the pilot and the rest by the law, the clash is won with the
+  pilot's part and the purse paid; then, as Regent Concourse is about to fall, the Wake's assault on it
+  comes in two waves and is beaten off with the pilot; docked, the standing earned brings the
+  Authority's first rank, the News tells the battle and the journal's *Border battles* keeps both.
 - `wing.spec.ts`: **wing command**: a pilot hired in the bar shows their grade in *Your wing*; in
   flight the order card (V on a keyboard, the Wing chip on touch) pauses the game, lists the wingman,
   locks Defend and Cover with why, and gives Hold (the radio's reply, the HUD's *Wing 1 · Hold* or the
@@ -862,14 +889,16 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   News telling a promotion, a racing club's window, the start box with the racers on the line, a race
   under way with its strip, a race's result card, the record board, the journal's four ratings, the
   wing's order card in flight, the HUD with a wingman hurt, the wing in the bar, a word with a wingman,
-  the journal's wing with those who flew before, and the News with a shortage's relief
+  the journal's wing with those who flew before, a clash at Ross 154's beacon line with its battle strip
+  and the battle line selected, the Wake's assault on Regent Concourse, the News of it beaten off, the
+  journal's border battles, and the News with a shortage's relief
   haulers on their way, at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
   zoom). Saved in `docs/screenshots/` once any smooth scrolling has come to rest. Each is audited
   for page scroll overflow, clipped controls (controls inside a scrolling panel count only if the
   panel itself is off-screen), content cut off inside any box that is not meant to scroll, text
-  under 10 px, touch targets under 40 px, and overlaps between HUD panels, touch clusters and
-  toasts.
+  under 10 px, touch targets under 40 px, and overlaps between HUD panels (the battle strip among
+  them), touch clusters and toasts.
 
 ## Performance notes (not representative)
 

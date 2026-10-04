@@ -1740,6 +1740,8 @@ front is a function of the seed and the game clock, plus a short log of what the
   under way comes on top: a sweep clears the border's packs too.
 - **A fallen station** is held by the Wake: lawful pilots get emergency docking only (repairs and
   the customs desk, §12), friends of the Wake dock as usual, and it posts no contracts.
+- **Battles in sight** (§35): clashes off the jump beacon while a front fights, and a turning battle at
+  the exposed station as it is about to fall or be retaken.
 - **News**: the News room reports every front within three jumps (a headline and a line), and
   officers and pilots in the bars tell how a front within two jumps stands and where its tide
   takes it in the next four hours (§16).
@@ -3566,3 +3568,128 @@ journal's six, what they say, the save and damaged ones refused; the orders on t
 jump, locks, reaction, guards and holds, releases, forming up, earning with its caps); and in a real
 flight the grades launched, reaction by grade, holding back when hurt, holding a point, covering an
 escort and a raider downed and a wingman picked up. A gamepad test checks Back tapped and held.
+
+## 35. The border in sight
+
+The border war (§20) is now fought where the pilot can see it: in a front's systems, the front's
+faction and the Hollow Wake meet in **clashes** off the jump beacon while the front fights, and when
+the exposed station is about to fall or be retaken a **turning battle** is fought at the station
+itself (the schedule and outcome in `src/economy/battles.ts`; the battle in flight in
+`src/world/BorderBattle.ts`; the rules in `BATTLES`, `src/content/border/battles.ts`; what is said
+in `src/content/border/battleLines.ts`). Like the war, every battle is fiction, and the battle strip,
+the battle line's marker and the journal say so.
+
+The owner chose (4 October 2026) that a battle won with the pilot's help pushes the tide (a turning
+battle as much as a war contract, a clash a third of that, fading like any deed), so a pilot can hold
+a station for hours but not for good; that both clashes and turning battles are staged; that the
+pilot fights on the law's side unless the law hunts them or the Wake trusts them, and whoever they
+fire on treats them as an enemy; and that a battle won pays a purse and a little standing, below a
+war contract's pay.
+
+### 35.1 Clashes
+
+- **When**: the game clock is cut into slots of 20 minutes. In each slot each system of a front at
+  war may hold a clash, drawn from the seed, the front, the system and the slot: in a **skirmish** in
+  both its systems (60%), in a **blockade** or with its station **fallen** in the lawful system (50%,
+  40%: the law trying the Wake's lines), and with the Wake **pushed back** in the den's system (40%:
+  the law's patrols hunting near the den). A system on two fronts (Lacaille 9352) holds at most one
+  clash a slot. A front settled for good (§20.5, §20.7) or at a truce holds none.
+- **Where**: the **battle line**, on the way from the system's jump beacon to what each side holds:
+  in the lawful system toward the exposed station (or, with none, the faction's first station with
+  repairs), in the den's system toward the den; 35% of the way, between 3 and 6 km from the beacon,
+  and at least 5 km from the den, so it does not wake.
+- **Who**: the front's faction's patrol fighters against Wake raiders matched to them (level 1 against
+  the Authority's Mk I fighters, level 2 against the Cooperative's Mk II), three a side and a fourth for
+  the side the tide favours (|tide| 35 or more); two a side (and one more) on the Low preset.
+  Each side comes in from its own end: in the lawful system the Wake from the beacon (down the lane)
+  and the law from its station; in the den's system the other way round.
+- **Its time**: a clash opens 30 seconds into its slot, or 20 seconds after the pilot arrives if
+  later, and is fought whether the pilot joins or not. Each battle ship goes for the nearest ship of
+  the other side in the battle (and for the pilot, if the pilot is its enemy and within 4 km), and
+  otherwise closes on the line; nobody chases a ship that has fled, or anyone more than 4.5 km from
+  the line. Battle ships aim at each other alike (0.7, either side; at the pilot, raiders aim as the
+  difficulty says). A side whose ships are all down or fled is beaten. A clash still undecided after
+  six minutes ends with both sides pulling back: a draw.
+
+### 35.2 Turning battles
+
+- **The assault**: when the front's exposed station is about to fall, its pressure falling and within
+  8 of the fall (−52 to −60, about an hour and a half of game time), arriving or launching in the
+  lawful system stages the Wake's assault on it.
+- **The retaking**: when it is held and about to be freed, its pressure rising and within 8 below the
+  fall, the law comes to retake it.
+- **Once each turn**: each is fought once each turn of the tide (per front, per tide cycle, per
+  kind). Seen to its end (won, lost or drawn), it is not staged again that cycle; left before its
+  end, it is staged again on the next arrival while still due.
+- **At the station**: 2 km off its bay. The attackers come in two waves of three (two on Low), the
+  second when the first is down to one ship; four defenders (three on Low) hold by the station. The
+  Wake's raiders are a level above a clash's (2 against the Authority, 3 against the Cooperative).
+  After eight minutes an undecided battle is the defenders': the attackers withdraw. Left to
+  themselves the two sides are close, the Wake a little ahead: the tide takes the station on time
+  unless the pilot tips the battle.
+- **First**: one battle is fought at a time in a system, and a turning battle comes before a clash:
+  no clash opens while one is due, or within two minutes of it.
+- A front with no exposed station (WISE 0722−0540's) has clashes only.
+
+### 35.3 The pilot's side
+
+- The pilot fights on the **law's side**, unless the front's faction hunts them (fines owed or
+  Hostile standing) or the Wake trusts them (it spares them, §27), when it is the **Wake's**. A
+  battle ship of the other side is marked hostile; one of the pilot's side, friendly.
+- **Whoever the pilot fires on treats them as an enemy**: a lawful ship fired on turns on the pilot,
+  and downing one is a crime as ever (§12); raiders of a Wake the pilot is friends with turn too.
+- **The pilot's part**: the pilot, or a hired wingman, downs a ship of the other side in the battle.
+  Hired wingmen (§34) take on the Wake's battle ships under their orders as they do other raiders; on
+  the Wake's side they hold their fire on the battle (they fly for lawful pay).
+
+### 35.4 What a battle won changes
+
+- A battle ended with the pilot's side winning, and the pilot's part in it, is a **deed** on its front
+  (§20.2): a turning battle 18 its way (as much as a war contract), a clash 6, each fading over a day
+  as any deed. So an assault beaten off keeps the station for that turn of the tide, and a retaking
+  won frees it hours early; but the tide comes round again, and only a decisive operation (§20.7)
+  settles a front.
+- **A purse**: the side pays 900 cr for a turning battle and 300 cr for a clash (below a war
+  contract's 450 cr and more), with standing: +5 and +2 with the front's faction, or with the Wake on
+  its side. Raider bounties pay as ever; lawful ships downed stay crimes, whatever the Wake pays.
+- A battle lost or drawn changes nothing beyond the ships downed in it, each a deed as ever (+2 a
+  raider, −3 a lawful ship).
+
+### 35.5 What the game says
+
+- **In flight**: the side's radio as a battle opens (*Wake fighters at the beacon line, all wings
+  engage*; *The Wake is coming for Regent Concourse*), a *Battle line* marker, and the **battle strip**
+  in the objective's place: the battle's name, the ships still flying on each side and the pilot's
+  side (underlined, and marked *you*). On a short or narrow phone the strip keeps to two lines, its
+  Fiction badge an icon, and on a 640×360 phone a selected target's box keeps to the right of the
+  centre, clear of the wing and aim chips. As it ends: the radio, and a toast with the purse and what
+  it did to the front.
+- **The News** within three jumps tells a turning battle the pilot fought in and won for two hours (*A
+  pilot helps beat off the Wake's assault on Regent Concourse*). The **journal**'s *Border battles*
+  lists the last battles the pilot saw to an end, how each went and the pilot's side.
+- In browser tests battles are off unless a test turns them on, as lane encounters are.
+
+### 35.6 One save's own
+
+The front's log on `world.border` keeps the last six battles the pilot saw to an end: the kind, its
+slot or tide cycle, when, the winner, the pilot's side and whether they took part (enough to stage
+each once and tell it). The schedule, the lines, the ships, the sides and the purses are worked out.
+A battle under way is not saved: loading puts the pilot back as they launched. Saves refuse an
+unknown kind or side, a battle after the clock, a slot or cycle that does not match its time, and
+more than six.
+
+### 35.7 Guardrails
+
+`validateBattles` (`src/economy/battleGuards.ts`, run in `tests/unit/battles.test.ts`): slots of 10
+to 30 minutes, chances between 0 and 1, sizes that add at most ten ships to the scene (seven on Low),
+raider levels from 1 to 3 with a turning battle's no lower than a clash's, battle ships aiming no
+better than raiders at the pilot and leashed no nearer than where they form up,
+a turning window of at least half an hour, purses below a war contract's least pay, deeds as the owner
+chose (a turning battle the war contract's, a clash a third); every front's battle lines in both
+systems on the way from the beacon, 1.5 km clear of any star's or planet's surface, 2 km from any
+station and outside every belt, and at least 5 km from a den; every exposed station's battle point
+clear the same way; schedules the same every time, a clash in each front at war within a few slots,
+turning battles exactly when the pressure is in its window; words with no number, no he or she, no
+star, only their fields and short enough for the strip. The tests also break the rules to see them
+caught, and fly battles headless: both sides win some even clashes, a pilot's part counts, a deed and
+a purse are paid once, and a battle left unfinished is staged again.

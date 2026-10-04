@@ -24,7 +24,8 @@ and the stations' freight flies the lanes in named haulers on a timetable: a sho
 you can watch arrive (or race, or rob), a glut ships its surplus out (buy it up before it goes),
 raids take haulers whose cargo never arrives, and a hauler bound through raided lanes will wait
 for an escort. Where lawful space meets a raider den, a border war swings back
-and forth, and your work tips it, until you win a front for good, for the law or for the Wake.
+and forth, fought in sight in clashes off the beacons and battles for the stations on the line,
+and your work tips it, until you win a front for good, for the law or for the Wake.
 Five hand-written story arcs give the sandbox a spine: three faction arcs; The Long Border, which
 reads the choices made in the other three and settles a front for good, as a lawful pilot, an
 outlaw or neither; and First Harvest, out among the frontier's farms. However each of the
@@ -208,8 +209,8 @@ src/galaxy/    neighbourhood star map (3D + 2D fallback), routing, info cards
 src/flight/    ship dynamics, chase camera, autopilot, desktop, touch and gamepad input
 src/combat/    guns, projectiles, missiles, lead/intercept, damage, raider AI
 src/world/     local system scenes (hand-made and generated), flight session, traffic and raider
-               packs (src/world/traffic), race courses and the racing pilot, procedural art
-               (src/world/art)
+               packs (src/world/traffic), race courses and the racing pilot, border battles and
+               the wing's orders, procedural art (src/world/art)
 src/content/   rule-driven generators and guardrails (docs/PROCGEN.md): ships and equipment,
                the world (src/content/world: lanes, territory, stations) and the economy
                (src/content/economy: goods, market profiles), contract rules (src/content/contracts),
@@ -219,12 +220,12 @@ src/content/   rule-driven generators and guardrails (docs/PROCGEN.md): ships an
                (src/content/people), the fleet (src/content/fleet), mining (src/content/mining),
                the border war (src/content/border), stellar death (src/content/stellar), lane
                encounters (src/content/lanes), wrecks to fly to (src/content/wrecks), ranks
-               (src/content/ranks) and races (src/content/racing)
+               (src/content/ranks), races (src/content/racing) and the wing (src/content/wing)
 src/economy/   live markets, world events and the world's answers, trade, cargo, outfitter and
                shipyard, factions, jobs and generated contracts, the law, ratings, the codex,
                milestones, the story, people and rumours, the fleet, mining, the border war,
                the far stars' deaths and Pyre's (the invented star), lane encounters, wrecks,
-               ranks and racing
+               ranks, racing, the wing, and border battles
 src/audio/     procedural Web Audio music and sound effects
 src/ui/        HUD, touch controls, station screens, encyclopedia, styles
 scripts/       the sky snapshot (sky-fetch on GitHub's runners, sky-process here), catalogue

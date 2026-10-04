@@ -100,6 +100,16 @@ export interface HudRace {
   sealedCruise: boolean;
 }
 
+/** A border battle under way (docs/PROCGEN.md §35): its title, the ships still flying on each side, the pilot's side. */
+export interface HudBattle {
+  title: string;
+  law: number;
+  wake: number;
+  side: 'law' | 'wake';
+  /** The lawful side's short name (the front's faction). */
+  lawName: string;
+}
+
 /** A wing's standing order (docs/PROCGEN.md §34). */
 export type { WingOrder } from '../../content/wing/rules.ts';
 import type { WingOrder } from '../../content/wing/rules.ts';
@@ -155,6 +165,8 @@ export interface HudModel {
   nearestDock: { name: string; distance: number } | null;
   /** A race the pilot has entered here (docs/PROCGEN.md §33), or null. */
   race: HudRace | null;
+  /** A border battle under way here (docs/PROCGEN.md §35), or null. */
+  battle: HudBattle | null;
 }
 
 export function emptyHudModel(): HudModel {
@@ -193,5 +205,6 @@ export function emptyHudModel(): HudModel {
     encounterActive: false,
     nearestDock: null,
     race: null,
+    battle: null,
   };
 }

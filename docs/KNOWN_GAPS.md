@@ -77,7 +77,11 @@ snapshot branch only when the archives changed.
   player's rescue is flown. A survey season's readings never settle a contested planet: the
   archives do.
 - The border war is a tide on the clock plus the player's deeds, not a simulation of fleets. It
-  runs only on the five lanes where a den's system touches lawful space. The Long Border settles its
+  runs only on the five lanes where a den's system touches lawful space. Its battles (PROCGEN §35)
+  are fought only where the pilot is: out of sight nothing is flown, and only a battle won with the
+  pilot's part moves the front. A battle is one at a time in a system, the sides fly patrol fighters
+  and raiders only (no gunships, freighters or the stations' own guns), a fled ship never comes back,
+  and a battle under way is not saved. The Long Border settles its
   front, and the player's decisive operations settle the other four; a front swings with the tide
   until then, and nobody but the player ever settles one. A settled front cannot be reopened.
 - The stations' freight is a timetable of haulers: they fly as ships only in the player's system,

@@ -228,6 +228,52 @@
   color: var(--amber);
 }
 
+/* The battle strip (docs/PROCGEN.md §35.5): in the objective panel's place while a border battle is fought. */
+.hud-battle {
+  --cut: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 34rem;
+  font-size: 0.88rem;
+  --edge: rgba(255, 140, 110, 0.75);
+}
+
+.hud-battle .icon {
+  color: #ff9a7a;
+}
+
+.hud-battle .battle-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 10px;
+  min-width: 0;
+}
+
+.hud-battle .battle-name {
+  font-weight: 600;
+}
+
+.hud-battle .battle-side {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+/* On a short or narrow screen the strip keeps to two lines: the Fiction badge shows its icon only. */
+@media (max-height: 500px), (max-width: 420px) {
+  .hud-battle .battle-fiction-word {
+    display: none;
+  }
+}
+
+/* The pilot's own side: brighter and underlined (not by colour alone). */
+.hud-battle .battle-side[data-yours='true'] {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .hud-objective.collapsed .objective-text {
   display: -webkit-box;
   -webkit-line-clamp: 1;
@@ -967,6 +1013,14 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+}
+
+/* Short and narrow landscape phones (640x360): the target box keeps to the right of the centre, clear of the wing and aim chips and the left buttons below them. */
+@media (orientation: landscape) and (max-height: 420px) and (max-width: 720px) {
+  .hud.touch-mode .hud-target {
+    align-self: flex-end;
+    width: min(12rem, 100%);
   }
 }
 

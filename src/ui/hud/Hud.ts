@@ -86,6 +86,7 @@ const TARGET_GLYPH: Record<TargetKind, GlyphName> = {
   hole: 'scanner',
   wreck: 'salvage',
   gate: 'thruster',
+  battle: 'gun',
 };
 
 /** The Mine key (docs/PROCGEN.md §19); on a pad Mine is the context action. */
@@ -123,6 +124,10 @@ export class Hud {
   private readonly objectivePanel: HTMLElement;
   /** A race under way (docs/PROCGEN.md §33.4): in the objective panel's place. */
   private readonly racePanel: HTMLElement;
+  private readonly battlePanel: HTMLElement;
+  private readonly battleName: HTMLElement;
+  private readonly battleLaw: HTMLElement;
+  private readonly battleWake: HTMLElement;
   private readonly raceName: HTMLElement;
   private readonly raceGate: HTMLElement;
   private readonly raceTime: HTMLElement;
@@ -277,6 +282,24 @@ export class Hud {
       h('span', { class: 'race-line' }, this.raceName, this.raceGate, this.raceTime, this.raceSplit, this.racePlace),
       this.raceCount,
     );
+    // The battle strip (docs/PROCGEN.md §35.5): in the objective's place while a border battle is fought here.
+    this.battleName = h('span', { class: 'battle-name', 'data-testid': 'hud-battle-name' });
+    this.battleLaw = h('span', { class: 'battle-side law', 'data-testid': 'hud-battle-law' });
+    this.battleWake = h('span', { class: 'battle-side wake', 'data-testid': 'hud-battle-wake' });
+    this.battlePanel = h(
+      'div',
+      { class: 'hud-panel frame frame-sm hud-battle', 'data-testid': 'hud-battle', hidden: true },
+      icon('objective'),
+      h(
+        'span',
+        { class: 'battle-line' },
+        this.battleName,
+        this.battleLaw,
+        this.battleWake,
+        // Fiction, as a badge whose word gives way to its icon on a short screen.
+        h('span', { class: 'badge badge-fictional battle-fiction', title: 'Game fiction: not a real place or claim' }, icon('fiction'), h('span', { class: 'battle-fiction-word' }, 'Fiction')),
+      ),
+    );
     this.autopilotText = h('div', { class: 'hud-autopilot', 'aria-live': 'polite' });
     this.miningText = h('div', { class: 'hud-mining', 'data-testid': 'hud-mining', hidden: true });
     this.warningText = h('div', { class: 'hud-warning', role: 'alert' });
@@ -379,7 +402,7 @@ export class Hud {
     this.root.classList.toggle('touch-mode', !full);
     if (full) {
       this.left.replaceChildren(this.wallet, this.scaleText);
-      this.centerColumn.replaceChildren(this.commandRail, this.objectivePanel, this.racePanel, this.autopilotText, this.miningText, this.warningText, this.encounterBanner, this.hailBanner);
+      this.centerColumn.replaceChildren(this.commandRail, this.objectivePanel, this.racePanel, this.battlePanel, this.autopilotText, this.miningText, this.warningText, this.encounterBanner, this.hailBanner);
       this.right.replaceChildren(this.buttons);
       this.bottomLeft.replaceChildren(this.targetPanel);
       this.bottomCenter.replaceChildren(this.contextHint, this.status);
@@ -388,7 +411,7 @@ export class Hud {
       // Touch: the target panel and toasts stack in the centre column under the objective and
       // any alert (never on top of them).
       this.left.replaceChildren(this.status);
-      this.centerColumn.replaceChildren(this.objectivePanel, this.racePanel, this.autopilotText, this.miningText, this.warningText, this.encounterBanner, this.hailBanner, this.targetPanel, this.toastSlot);
+      this.centerColumn.replaceChildren(this.objectivePanel, this.racePanel, this.battlePanel, this.autopilotText, this.miningText, this.warningText, this.encounterBanner, this.hailBanner, this.targetPanel, this.toastSlot);
       this.right.replaceChildren(this.buttons, this.wallet);
       this.bottomLeft.replaceChildren();
       this.bottomCenter.replaceChildren(this.contextHint);
@@ -460,9 +483,10 @@ export class Hud {
     );
     setText(this.scaleText, status.scaleNote);
     this.updateHail(model);
-    this.objectivePanel.hidden = !status.objective || !!model.race;
+    this.objectivePanel.hidden = !status.objective || !!model.race || !!model.battle;
     if (status.objective) setText(this.objectiveText, status.objective);
     this.updateRace(model);
+    this.updateBattle(model);
     this.objectivePanel.setAttribute('aria-expanded', String(!this.objectivePanel.classList.contains('collapsed')));
     setText(this.autopilotText, model.autopilot ?? '');
     setText(this.warningText, model.warnings.join(' · '));
@@ -539,6 +563,18 @@ export class Hud {
     setText(this.racePlace, running ? `${ordinal(r.place)} of ${r.of}` : '');
     setText(this.raceCount, r.count ?? '');
     this.raceCount.hidden = !r.count;
+  }
+
+  /** The battle strip: the battle, the ships still flying on each side, and which is the pilot's. */
+  private updateBattle(model: HudModel): void {
+    const b = model.battle;
+    this.battlePanel.hidden = !b;
+    if (!b) return;
+    setText(this.battleName, b.title);
+    setText(this.battleLaw, `${b.lawName} ${b.law}${b.side === 'law' ? ' · you' : ''}`);
+    setText(this.battleWake, `Wake ${b.wake}${b.side === 'wake' ? ' · you' : ''}`);
+    this.battleLaw.dataset.yours = String(b.side === 'law');
+    this.battleWake.dataset.yours = String(b.side === 'wake');
   }
 
   private updateTarget(model: HudModel): void {

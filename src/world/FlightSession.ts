@@ -41,6 +41,11 @@ import { emptyHudModel, type HudContextAction, type HudMarker, type HudMining, t
 import { ORDER_LOCKS, WING_RADIO } from '../content/wing/lines.ts';
 import { WING } from '../content/wing/rules.ts';
 import { WingCommand, type WingCredit, type WingOption, type WingView } from './WingCommand.ts';
+import { BorderBattle, type BattleEvent, type BattleMark } from './BorderBattle.ts';
+import { battleSite } from './battleSite.ts';
+import { BATTLES, type BattleSide } from '../content/border/battles.ts';
+import type { BattlePlan } from '../economy/battles.ts';
+import { getFront } from '../economy/border.ts';
 import { wingSkill } from '../economy/wing.ts';
 import { createMiningBeam, type MiningBeamArt } from './art/mining.ts';
 import { MiningField, type MinableRock, type MiningLedger } from './MiningField.ts';
@@ -195,6 +200,8 @@ export interface FlightCallbacks {
   onWingOrders?(): void;
   onWingHurt?(crewId: string): void;
   onWingFought?(credits: readonly WingCredit[]): void;
+  /** A border battle opened, or ended as the pilot saw it (docs/PROCGEN.md §35). */
+  onBattle?(e: BattleEvent): void;
   /** Radio chatter: who speaks, and the line. */
   onComm?(speaker: string, text: string): void;
   /** Sightseers have had their good look at their sight (docs/PROCGEN.md §23). */
@@ -268,6 +275,8 @@ export interface NpcShip {
   hunter?: boolean;
   /** Part of a raider den under assault: a gun turret, or the reactor. Den parts never move. */
   den?: { locationId: string; part: 'turret' | 'reactor' };
+  /** In a border battle (docs/PROCGEN.md §35): which, its side, where it holds, and once it is over. */
+  battle?: BattleMark;
   /** Flies with the player: a den assault's lawful wing, or a hired wingman (`crewId`), and where it keeps station. */
   wingman?: {
     offset: THREE.Vector3;
@@ -333,6 +342,8 @@ export interface TrafficSetup {
   crew?: readonly { id: string; name: string; model: string; skill: 'steady' | 'sharp'; ally?: string; grade?: 1 | 2 | 3 | 4; hurt?: boolean }[];
   /** The wing's order carried from the last flight (docs/PROCGEN.md §34). */
   wingOrder?: WingOrder;
+  /** Border battles due here while the pilot is in this system (docs/PROCGEN.md §35). */
+  battles?: readonly BattlePlan[];
   /** What the player left here last time (docs/PROCGEN.md §17): packs still hunting, pods adrift. */
   lingering?: Pick<Lingering, 'packs' | 'pods'>;
   /** Den defences under way here: the den, the sweep ships still to destroy, and whose sweep it is (the Authority's unless said). */
@@ -633,6 +644,7 @@ export class FlightSession {
   /** The wing's standing order (docs/PROCGEN.md §16). */
   /** The wing's orders (docs/PROCGEN.md §34). */
   private readonly wing: WingCommand;
+  private readonly borderBattle: BorderBattle;
   private readonly denAlerted = new Set<string>();
   private lootSerial = 0;
   /** Raider dens knocked out (before this flight or during it): wrecked, silent, closed. */
@@ -679,6 +691,7 @@ export class FlightSession {
   }) {
     this.lanesOn = opts.lanes ?? true;
     this.wing = new WingCommand(opts.traffic?.wingOrder);
+    this.borderBattle = new BorderBattle(opts.traffic?.battles ?? [], opts.state.clock);
     this.system = opts.system;
     this.camera = opts.camera;
     this.state = opts.state;
@@ -944,6 +957,7 @@ export class FlightSession {
     for (const s of this.skyStars) if (s.target.alive) list.push(s.target);
     for (const s of this.sites) if (s.target.alive && !this.npcs.some((n) => n.target === s.target)) list.push(s.target);
     if (this.race) for (const t of this.race.targets(this.viewport.width < 600, this.player.position)) if (t.alive) list.push(t);
+    for (const t of this.borderBattle.targets()) list.push(t);
     return list;
   }
 
@@ -1044,6 +1058,7 @@ export class FlightSession {
     for (const d of this.drones) if (d.target.id === id && d.target.alive) return d.target;
     for (const s of this.sites) if (s.target.id === id && s.target.alive) return s.target;
     if (this.race) for (const t of this.race.allTargets()) if (t.id === id && t.alive) return t;
+    for (const t of this.borderBattle.targets()) if (t.id === id) return t;
     return this.mining.find(id);
   }
 
@@ -1536,6 +1551,7 @@ export class FlightSession {
     this.updateEncounters(dt);
     this.updateTraffic(dt);
     this.updateWing(dt);
+    this.updateBattle();
     this.updateSites(dt);
     this.scanTimer -= dt;
     if (this.scanTimer <= 0) {
@@ -2250,6 +2266,8 @@ export class FlightSession {
 
   private damageNpc(n: NpcShip, amount: number, at: THREE.Vector3, type?: DamageType, byPlayer = false): void {
     if (byPlayer) n.playerHitAt = this.time;
+    // A battle ship the pilot fires on treats them as an enemy for the rest of the battle (docs/PROCGEN.md §35.3).
+    if (byPlayer && n.battle && !n.battle.over) n.battle.turned = true;
     // Firing on the Wake ends the toll's pass (docs/PROCGEN.md §27).
     if (byPlayer && n.side === 'raider') this.tollPaid = false;
     if (n.den?.part === 'reactor' && this.turretsStanding(n.den.locationId)) {
@@ -2318,6 +2336,8 @@ export class FlightSession {
       if (credits.length) this.callbacks.onWingFought?.(credits);
     }
     const killer = n.lastHitBy ? this.npcs.find((x) => x.id === n.lastHitBy) : undefined;
+    // A battle ship down: the pilot's part if they or their wing downed one of the other side's (docs/PROCGEN.md §35).
+    if (n.battle) this.borderBattle.downed(n, this.time - n.playerHitAt < 30 || !!killer?.wingman);
     if (killer?.wingman?.crewId && n.side === 'raider') this.chatter('wing-kill', killer.name);
     else if (n.side === 'raider' && !n.den && this.inRadioRange(n) && this.rand() < 0.35) this.chatter('raider-down', 'Wake raider');
     const byPlayer = this.time - n.playerHitAt < 30;
@@ -2641,9 +2661,10 @@ export class FlightSession {
     for (const n of [...this.npcs]) {
       if (n.encounter || n.durability.hull <= 0) continue;
       // Who shows as hostile: raiders (unless the Wake trusts you), hunters, and lawful ships after you.
-      n.target.hostile = n.side === 'raider' ? !this.raiderSparesPlayer(n) : n.foe === 'player' || !!n.sweep;
+      n.target.hostile = n.battle ? this.borderBattle.enemyOfPilot(n) : n.side === 'raider' ? !this.raiderSparesPlayer(n) : n.foe === 'player' || !!n.sweep;
       if (n.own) this.flyOwn(n, dt);
       else if (n.den) this.flyDenPart(n, dt);
+      else if (n.battle) this.flyBattleShip(n, dt);
       else if (n.wingman) this.flyWingman(n, dt);
       else if (n.sweep) this.flySweep(n, dt);
       else if (n.escort?.follow) this.flyEscortFollowing(n, dt);
@@ -3961,7 +3982,8 @@ export class FlightSession {
       player: this.player,
       selectedId: this.selectedId,
       npcs: this.npcs,
-      fair: (x) => x.side === 'raider' && !x.hunter && !x.duel && !this.raiderSparesPlayer(x) && !(x.den?.part === 'reactor' && this.turretsStanding(x.den.locationId)),
+      // On the Wake's side of a border battle the wing holds its fire on the battle (docs/PROCGEN.md §35.3).
+      fair: (x) => x.side === 'raider' && !x.hunter && !x.duel && !this.raiderSparesPlayer(x) && !(x.den?.part === 'reactor' && this.turretsStanding(x.den.locationId)) && !(x.battle && this.borderBattle.side === 'wake'),
     };
   }
 
@@ -3991,6 +4013,98 @@ export class FlightSession {
       ...this.wing.status(),
       earned: this.wing.earnings(),
       ships: this.npcs.filter((x) => x.wingman && x.durability.hull > 0).map((x) => ({ crewId: x.wingman!.crewId ?? null, foe: x.foe && x.foe !== 'player' ? x.foe.id : x.foe === 'player' ? 'player' : null, hurt: !!x.wingman!.hurt, distance: x.body.position.distanceTo(this.player.position) })),
+    };
+  }
+
+  // ---------------------------------------------------------------- the border in sight (docs/PROCGEN.md §35)
+
+  /** Opens a border battle that is due, brings in its waves and ends it; the game hears of each. */
+  private updateBattle(): void {
+    const ready = this.alive && !this.busy && this.autopilot.mode !== 'lane' && !this.race && !this.traffic?.duel && !this.duelist;
+    const events = this.borderBattle.update({ clock: this.state.clock, time: this.time, ready, npcs: this.npcs }, {
+      site: (plan) => battleSite(this.system.def, plan),
+      sideOf: (plan) => {
+        const front = getFront(plan.frontId);
+        return front && (huntedBy(this.state, front.faction) || wakeFriendly(this.state)) ? 'wake' : 'law';
+      },
+      spawn: (plan, side, count, from, post) => this.spawnBattleShips(plan, side, count, from, post),
+      comm: (speaker, text) => this.callbacks.onComm?.(speaker, text),
+    });
+    for (const e of events) {
+      if (e.kind === 'opened') this.sfx('alert');
+      this.callbacks.onBattle?.(e);
+    }
+  }
+
+  /** Brings a side's ships into a battle at its end of the line: the front's patrol fighters, or Wake raiders. */
+  private spawnBattleShips(plan: BattlePlan, side: BattleSide, count: number, from: THREE.Vector3, post: THREE.Vector3): void {
+    const front = getFront(plan.frontId);
+    if (!front) return;
+    const models = side === 'law' ? FLEETS[front.faction].patrols : RAIDERS[plan.level];
+    const pack = ++this.packSerial;
+    const across = this.tmp2.set(post.z - from.z, 0, from.x - post.x).normalize().clone();
+    for (let i = 0; i < count; i++) {
+      const model = models[(i + plan.key) % models.length]!;
+      const spread = (i - (count - 1) / 2) * 260;
+      const position = from.clone().addScaledVector(across, spread).add(this.tmp.set(0, (this.rand() - 0.5) * 300, 0));
+      const forward = post.clone().sub(position).normalize();
+      const npc =
+        side === 'law'
+          ? this.makeNpc(model, 'patrol', front.faction, position, forward, `${FACTIONS[front.faction].shortName} wing · border battle`)
+          : this.makeNpc(model, 'raider', 'hollow-wake', position, forward, `${FACTIONS['hollow-wake'].name} raider · border battle · bounty ${bountyFor(model)} cr`);
+      if (side === 'wake') {
+        npc.pack = pack;
+        npc.bounty = bountyFor(model);
+      }
+      npc.battle = { id: plan.id, side, post: post.clone().addScaledVector(across, spread * 0.6) };
+    }
+  }
+
+  /**
+   * A battle ship goes for the nearest ship of the other side in its battle, or for the pilot if the
+   * pilot is its enemy and nearer; otherwise it closes on the line (or holds the station's approach).
+   * Once the battle is over, the winners hold and the beaten run.
+   */
+  private flyBattleShip(n: NpcShip, dt: number): void {
+    const b = n.battle!;
+    if (b.over || n.brain.state === 'escaped') {
+      for (const g of n.guns) g.tick(dt);
+      n.foe = null;
+      const away = n.body.position.clone().sub(b.post);
+      const goal = b.over === 'hold' ? b.post : away.lengthSq() > 1 ? b.post.clone().addScaledVector(away.normalize(), 20_000) : b.post.clone().add(this.tmp.set(0, 20_000, 0));
+      flyTo(n.body, goal, { arriveDistance: 200, allowCruise: b.over !== 'hold', maxThrottle: b.over === 'hold' ? 0.4 : 1 }, n.controls);
+      n.body.requestCruise(b.over !== 'hold' && n.body.position.distanceTo(goal) > 3_000);
+      if (n.body.position.distanceTo(this.player.position) > (b.over === 'hold' ? 9_000 : 6_000)) this.removeNpc(n);
+      return;
+    }
+    const R = BATTLES.reach;
+    // Nobody chases a ship that has fled the fight, or anyone far from the line.
+    const inFight = (x: NpcShip) => x.durability.hull > 0 && x.brain.state !== 'flee' && x.brain.state !== 'escaped' && x.body.position.distanceTo(b.post) < BATTLES.leash;
+    const pilotFair = this.alive && !this.busy && this.autopilot.mode !== 'lane' && this.borderBattle.enemyOfPilot(n) && this.player.position.distanceTo(b.post) < BATTLES.leash;
+    const toPilot = this.player.position.distanceTo(n.body.position);
+    const kept = n.foe && n.foe !== 'player' && n.foe.battle?.id === b.id && !n.foe.battle.over && inFight(n.foe) ? n.foe : null;
+    const enemy = kept ?? this.nearestShip(n.body.position, R * 2, (x) => x.battle?.id === b.id && x.battle.side !== b.side && !x.battle.over && inFight(x));
+    const foe = pilotFair && toPilot < R && (!enemy || toPilot < enemy.body.position.distanceTo(n.body.position)) ? 'player' : enemy;
+    n.foe = foe;
+    if (foe === 'player') {
+      this.fightNpc(n, this.player, dt, TRAFFIC.npcDamage * DIFFICULTY[this.settings.difficulty].enemyDamage);
+      if (n.seekerIn !== undefined) this.tickSeeker(n, dt);
+    } else if (foe) {
+      this.fightNpc(n, foe.body, dt, TRAFFIC.npcDamage);
+    } else {
+      for (const g of n.guns) g.tick(dt);
+      flyTo(n.body, b.post, { arriveDistance: 250, allowCruise: false, maxThrottle: 0.8 }, n.controls);
+      n.body.requestCruise(false);
+    }
+  }
+
+  /** Test hook: the border battle due, under way or done here, the pilot's part, and each battle ship. */
+  battleStatus(): ReturnType<BorderBattle['status']> & { ships: { id: string; side: BattleSide; hull: number; over: string | null; turned: boolean; foe: string | null; distance: number }[] } {
+    return {
+      ...this.borderBattle.status(),
+      ships: this.npcs
+        .filter((n) => n.battle && n.durability.hull > 0)
+        .map((n) => ({ id: n.id, side: n.battle!.side, hull: n.durability.hull, over: n.battle!.over ?? null, turned: !!n.battle!.turned, foe: n.foe === 'player' ? 'player' : (n.foe?.id ?? null), distance: n.body.position.distanceTo(this.player.position) })),
     };
   }
 
@@ -4430,7 +4544,8 @@ export class FlightSession {
     // Close long distances in cruise, then drop out to fight.
     n.body.requestCruise(n.brain.state === 'approach' && n.body.position.distanceTo(foe.position) > 3_500 && aimErrors(n.body, foe.position).angle < 0.3);
     const tuning = {
-      accuracy: n.side === 'raider' ? DIFFICULTY[this.settings.difficulty].enemyAccuracy : (n.wingman?.accuracy ?? 0.6),
+      // Border battle ships aim alike at each other (docs/PROCGEN.md §35); at the pilot, raiders aim as the difficulty says.
+      accuracy: n.battle && foe !== this.player ? BATTLES.aim : n.side === 'raider' ? DIFFICULTY[this.settings.difficulty].enemyAccuracy : (n.wingman?.accuracy ?? 0.6),
       projectileSpeed: g0?.profile.projectileSpeed ?? 800,
       gunRange: g0?.profile.range ?? 900,
       ...(n.wingman?.evade !== undefined ? { evade: n.wingman.evade } : {}),
@@ -5161,6 +5276,7 @@ export class FlightSession {
     hud.repairKits = this.state.ship.repairKits;
     hud.decoys = this.state.ship.decoys;
     hud.wing = this.wing.hud(this.npcs);
+    hud.battle = this.borderBattle.hud(this.npcs);
     hud.mining = this.miningHud();
     hud.incoming = this.incomingSeekers;
     hud.systems = { ...this.state.ship.systems };

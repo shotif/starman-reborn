@@ -1,5 +1,7 @@
 import { BORDER } from '../content/border/rules.ts';
 import { atWar, borderNews, occupied, pushFront, recordDeed } from '../economy/border.ts';
+import { battlesDue, battlesSeen, settleBattle } from '../economy/battles.ts';
+import type { BattleKind } from '../content/border/battles.ts';
 import { gameJulianDate } from '../data/solar.ts';
 import type { Lingering } from './state.ts';
 import { TRAFFIC } from '../world/traffic/plan.ts';
@@ -229,6 +231,10 @@ export class Game {
   private systemOwn = '';
   /** Browser tests that want lane encounters turn them on (docs/PROCGEN.md §27). */
   private lanesInTests = false;
+  /** Border battles (docs/PROCGEN.md §35) are off in browser tests unless a test turns them on. */
+  private battlesInTests = false;
+  /** Test-only: no raider packs in flight (a test that waits in a lawless system for something else). */
+  private packsOff = false;
   /** Pyre's scene: the star, or its black hole once it has gone (docs/PROCGEN.md §26); null elsewhere. */
   private systemStage: 'alive' | 'gone' | null = null;
   private flight: FlightSession | null = null;
@@ -1140,6 +1146,12 @@ export class Game {
           for (const c of credits) wingFought(state, c.crewId, c);
           this.persist();
         },
+        // A border battle seen to its end (docs/PROCGEN.md §35): the deed, purse and standing, recorded once.
+        onBattle: (e) => {
+          if (e.kind !== 'ended') return;
+          for (const n of settleBattle(state, e.result)) toast(n.text, n.tone, 6000);
+          this.persist();
+        },
         onOutpostRaid: (window, what, downed) => {
           const o = state.world.outpost;
           const setup = this.flight?.outpostRaidStatus()?.setup;
@@ -1351,7 +1363,7 @@ export class Game {
     const race = this.raceHere();
     return {
       ...base,
-      plan: downDens.length ? { ...base.plan, packs: null } : base.plan,
+      plan: downDens.length || this.packsOff ? { ...base.plan, packs: null } : base.plan,
       contractPacks: contractPacksIn(state, here),
       escorts: escortsIn(state, here),
       wrecks: wrecksIn(state, here),
@@ -1361,6 +1373,7 @@ export class Game {
       downDens,
       crew: launchList(state),
       wingOrder: this.wingCarry,
+      battles: TEST_RUN && !this.battlesInTests ? [] : battlesDue(here, state.clock, 3_600, this.renderer.quality === 'low', state.world.border),
       sights: sightsIn(state, here),
       sites: sitesIn(state, here),
       lingering: this.takeLingering(),
@@ -2838,6 +2851,35 @@ export class Game {
         if (arg.hurt) wingHurt(state, w.id, arg.hurt);
         this.persist();
         this.station?.render();
+      },
+      /** Test-only: lets border battles be staged in this browser test (they are off in tests otherwise). */
+      meetBattles: (on: boolean) => {
+        this.battlesInTests = on;
+      },
+      /** Test-only: no raider packs in the flights to come (the battles' own ships still come). */
+      quietPacks: (on: boolean) => {
+        this.packsOff = on;
+      },
+      /**
+       * Test-only: the first border battle of a kind due in a system from a moment on (docs/PROCGEN.md
+       * §35); a clash only where no turning battle is due around it (one would come first).
+       */
+      findBattle: (arg: { system: SystemId; kind: BattleKind; from: number }) => {
+        const low = this.renderer.quality === 'low';
+        const log = this.state?.world.border ?? null;
+        for (let t = arg.from; t < arg.from + 96 * 3_600; t += 3_600) {
+          const plans = battlesDue(arg.system, t, 3_600, low, log).filter((p) => p.kind === arg.kind);
+          const plan = plans.find((p) => p.kind !== 'clash' || !battlesDue(arg.system, p.opens - 1_800, 3_600, low, log).some((x) => x.kind !== 'clash'));
+          if (plan) return { id: plan.id, opens: plan.opens, until: plan.until, toward: plan.toward, law: plan.law, wake: plan.wake, title: plan.title };
+        }
+        return null;
+      },
+      /** Test-only: the border battle in this flight, and the battles this save has seen to an end. */
+      battle: () => ({ flight: this.flight?.battleStatus() ?? null, seen: this.state ? battlesSeen(this.state) : [] }),
+      /** Test-only: downs the nearest ship of a side in the battle under way, by the pilot's guns or not. */
+      downBattleShip: (arg: { side: 'law' | 'wake'; byPlayer: boolean }) => {
+        const ship = this.flight?.battleStatus().ships.filter((x) => x.side === arg.side && !x.over).sort((a, b) => a.distance - b.distance)[0];
+        return ship ? (this.flight?.debugDestroy(ship.id, arg.byPlayer) ?? false) : false;
       },
       /** Test-only: the nearest dock (by jumps) whose bar has a hand of this role (and heart) for hire now. */
       findCrew: (arg: { role: CrewRole; heart?: CrewHeart }) => {

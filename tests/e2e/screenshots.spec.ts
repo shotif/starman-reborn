@@ -107,7 +107,7 @@ async function audit(page: Page, touch: boolean): Promise<AuditResult> {
       }
     }
     const overlaps: string[] = [];
-    const panels = [...document.querySelectorAll('.hud-status, .hud-wallet, .hud-buttons, .hud-objective, .hud-race, .hud-target, .encounter-banner, .tcluster, .assist-chip, .wing-chip, .throttle, .toast')].filter(visible);
+    const panels = [...document.querySelectorAll('.hud-status, .hud-wallet, .hud-buttons, .hud-objective, .hud-race, .hud-battle, .hud-target, .encounter-banner, .tcluster, .assist-chip, .wing-chip, .throttle, .toast')].filter(visible);
     for (let i = 0; i < panels.length; i++) {
       for (let j = i + 1; j < panels.length; j++) {
         const a = panels[i]!.getBoundingClientRect();
@@ -726,6 +726,66 @@ for (const size of SIZES) {
       await page.getByTestId('wing-record').evaluate((el) => el.scrollIntoView({ block: 'start' }));
       await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
       await shot(page, `${size.name}-20e-wing-journal`, size.touch, results);
+      // The border in sight (docs/PROCGEN.md §35): a clash at Ross 154's beacon line with its strip and
+      // the battle line selected, the Wake's assault on Regent Concourse, the News of it beaten off, and
+      // the journal's battles.
+      await api(page, 'meetBattles', true);
+      await api(page, 'quietPacks', true);
+      const nowClock = async () => (await api<{ clock: number }>(page, 'state')).clock;
+      const battleNow = async () => (await api<{ flight: { active: string | null; wave: number } | null; seen: { title: string }[] }>(page, 'battle'))!;
+      const toBattle = async (kind: 'clash' | 'assault') => {
+        const found = (await api<{ id: string; opens: number; title: string } | null>(page, 'findBattle', { system: 'ross-154', kind, from: await nowClock() }))!;
+        expect(found, `a ${kind} at Ross 154`).not.toBeNull();
+        await api(page, 'advanceClock', found.opens - (await nowClock()) - 40);
+        await docked('waymark-waypoint');
+        if (await page.getByTestId('rank-dialog').isVisible({ timeout: 3_000 }).catch(() => false)) await press(page, 'rank-continue');
+        await press(page, 'dock-launch');
+        await waitUntil(page, 'undocked', async () => (await api<{ autopilot: string } | null>(page, 'player'))?.autopilot === 'none', 60_000);
+        await api(page, 'setTimeScale', 4);
+        // A battle of its kind opens (a clash from the slot before may come first).
+        try {
+          await waitUntil(page, `the ${kind} opens`, async () => !!(await battleNow()).flight?.active?.startsWith(`${kind}:`), 60_000);
+        } catch (e) {
+          const why = JSON.stringify({ found, clock: await nowClock(), battle: await api(page, 'battle'), log: (await api<{ world: { border: unknown } }>(page, 'state')).world.border });
+          throw new Error(`${(e as Error).message}: ${why}`);
+        }
+        await api(page, 'setTimeScale', 1);
+        return found;
+      };
+      const winBattle = async (title: string) => {
+        let first = true;
+        await waitUntil(page, 'the battle won', async () => {
+          const b = await battleNow();
+          if (b.seen.some((x) => x.title === title)) return true;
+          if (b.flight?.active) {
+            await api(page, 'downBattleShip', { side: 'wake', byPlayer: first });
+            first = false;
+          }
+          return false;
+        }, 60_000);
+      };
+      const clashFound = await toBattle('clash');
+      await api(page, 'selectTarget', 'battle-line');
+      await expect(page.getByTestId('hud-battle')).toBeVisible();
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-21-battle-clash`, size.touch, results);
+      await winBattle(clashFound.title);
+      const assaultFound = await toBattle('assault');
+      await expect(page.getByTestId('hud-battle-name')).toHaveText(assaultFound.title);
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-21b-battle-assault`, size.touch, results);
+      await winBattle(assaultFound.title);
+      await docked('waymark-waypoint');
+      if (await page.getByTestId('rank-dialog').isVisible({ timeout: 3_000 }).catch(() => false)) await press(page, 'rank-continue');
+      await press(page, 'room-bar');
+      if (!(await page.getByTestId('news-window').isVisible().catch(() => false))) await press(page, 'station-news');
+      await page.getByTestId('battle-news-0').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-21c-battle-news`, size.touch, results);
+      await press(page, 'station-journal');
+      await page.getByTestId('battles-record').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-21d-battle-journal`, size.touch, results);
       for (const [name, r] of Object.entries(results)) {
         expect.soft(r.overflow, `${name}: page overflow`).toBe(false);
         expect.soft(r.clipped, `${name}: clipped controls`).toEqual([]);

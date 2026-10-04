@@ -6,7 +6,8 @@ import type { DataClass, FactionId } from '../data/types.ts';
 /** `hole`: the black hole where Pyre was (docs/PROCGEN.md §26): scanned from outside its tides. */
 /** `wreck`: a site marked in flight (docs/PROCGEN.md §31): a wreck, a derelict, something adrift. */
 /** `gate`: a race gate or start box (docs/PROCGEN.md §33), fiction. */
-export type TargetKind = 'station' | 'planet' | 'star' | 'lane' | 'beacon' | 'ship' | 'loot' | 'drone' | 'belt' | 'rock' | 'sky' | 'hole' | 'wreck' | 'gate';
+/** `battle`: where a border battle is fought (docs/PROCGEN.md §35), fiction. */
+export type TargetKind = 'station' | 'planet' | 'star' | 'lane' | 'beacon' | 'ship' | 'loot' | 'drone' | 'belt' | 'rock' | 'sky' | 'hole' | 'wreck' | 'gate' | 'battle';
 
 /** Anything the player can select, bracket, fly to or dock with. */
 export interface Target {

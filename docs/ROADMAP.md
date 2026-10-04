@@ -9,8 +9,8 @@ After the scripted opening (10–20 minutes), the neighbourhood is an open sandb
 systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
 of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
 packs in lawless space; 39 ships and 146 pieces of equipment; and generated contracts on every job
-board. Increments 1–33 (under [Done so far](#done-so-far)) added world events and news, contracts
-of every kind, the law and the outlaw path, goals, ranks with each faction that open doors, races round real planets and moons against racers who really fly, a wing that takes orders and grows with every fight, five story arcs, combat depth, people in the
+board. Increments 1–34 (under [Done so far](#done-so-far)) added world events and news, contracts
+of every kind, the law and the outlaw path, goals, ranks with each faction that open doors, races round real planets and moons against racers who really fly, a wing that takes orders and grows with every fight, border battles to see and join, five story arcs, combat depth, people in the
 bars and a trade computer, a world that answers, gluts that ship their surplus out and relief to
 escort through raided lanes, a fleet of your own whose captains fly the lanes, a crew aboard your own ship,
 a station of your own to build and defend, passengers and sightseers, rival pilots with careers and stories of their own, a
@@ -28,8 +28,14 @@ What it lacks now:
 
 ## Proposed next increments
 
-The three increments the owner chose on 2 October 2026 (Ranks that open doors, Races on the lanes and
-Wing command) are done; what comes next is for the owner to choose.
+Chosen by the owner on 4 October 2026, once Ranks, Races and Wing command were done: The border in
+sight (now done) and then Outposts in the belts.
+
+### Outposts in the belts ⏳ (L)
+
+A second outpost site at the real debris belts (the Solar System's belts and the discs seen round
+nearby stars), fed by the pilot's own mining; outposts can be sold or abandoned, and timetable
+haulers call at them.
 
 ### How an increment ships
 
@@ -39,6 +45,19 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 34. The border in sight ✅
+
+The border war is now fought where you can see it. While a front fights, its faction's patrol
+fighters and the Hollow Wake's raiders clash off the jump beacon in its systems, on a schedule from
+the clock, whether you join or not; a battle strip counts the ships on each side and marks yours. When
+a station on the line is about to fall, the Wake comes for it in two waves; when it is about to be
+freed, the law comes to retake it. You fight on the law's side unless the law hunts you or the Wake
+trusts you, and whoever you fire on treats you as an enemy. A battle won with your part pushes the
+front your way (a turning battle as much as a war contract), so you can hold a station for a turn of
+the tide but not for good, and the side pays a purse and a little standing. The News tells a turning
+battle you helped win, and the journal keeps the battles you saw through
+([PROCGEN.md §35](PROCGEN.md#35-the-border-in-sight)).
 
 ### 33. Wing command ✅
 
