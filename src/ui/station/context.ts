@@ -28,6 +28,8 @@ export interface StationContext {
   decide(): void;
   /** Rebuilds the station screen (after a pardon, the whole station opens up; your outpost grows), with a window open. */
   reload(window?: StationWindow | null): void;
+  /** Docks the pilot at another station of this system without flying (an outpost of theirs given up while they were docked there, docs/PROCGEN.md §36.4). */
+  dockElsewhere(locationId: string): void;
   deliverJob(jobId: string): void;
   /** Jump fees between systems (0 when covered by a contract). */
   travelCost(from: SystemId, to: SystemId): number;

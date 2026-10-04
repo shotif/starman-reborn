@@ -9,11 +9,11 @@ After the scripted opening (10–20 minutes), the neighbourhood is an open sandb
 systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
 of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
 packs in lawless space; 39 ships and 146 pieces of equipment; and generated contracts on every job
-board. Increments 1–34 (under [Done so far](#done-so-far)) added world events and news, contracts
+board. Increments 1–35 (under [Done so far](#done-so-far)) added world events and news, contracts
 of every kind, the law and the outlaw path, goals, ranks with each faction that open doors, races round real planets and moons against racers who really fly, a wing that takes orders and grows with every fight, border battles to see and join, five story arcs, combat depth, people in the
 bars and a trade computer, a world that answers, gluts that ship their surplus out and relief to
 escort through raided lanes, a fleet of your own whose captains fly the lanes, a crew aboard your own ship,
-a station of your own to build and defend, passengers and sightseers, rival pilots with careers and stories of their own, a
+up to three stations of your own to build and defend, refineries in the real belts, passengers and sightseers, rival pilots with careers and stories of their own, a
 supernova in every sky (as fiction), an invented star at the map's edge that explodes and leaves a
 black hole to fly to (fiction too), encounters on the lanes between the docks, wrecks and derelicts to fly to with short trails across a few systems, mining in the real belts, the frontier with a life of its own,
 a border war whose fronts can be won for good, story endings that change stations for good, escorts
@@ -29,13 +29,7 @@ What it lacks now:
 ## Proposed next increments
 
 Chosen by the owner on 4 October 2026, once Ranks, Races and Wing command were done: The border in
-sight (now done) and then Outposts in the belts.
-
-### Outposts in the belts ⏳ (L)
-
-A second outpost site at the real debris belts (the Solar System's belts and the discs seen round
-nearby stars), fed by the pilot's own mining; outposts can be sold or abandoned, and timetable
-haulers call at them.
+sight and then Outposts in the belts, both now done. The next are to be proposed to the owner.
 
 ### How an increment ships
 
@@ -45,6 +39,20 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 35. Outposts in the belts ✅
+
+A station of your own can now stand in a real belt, and you can run three. Every cited belt has a
+site, Sol's main belt and Kuiper Belt among them (nine in eight systems), always a refinery, chartered
+from a station of its system and built as any outpost; any mix of planet and belt sites, one to a
+system. From its frame on, a belt refinery takes the ore, ice and gases you mine and pays at once,
+more than any market pays for them raw, 40 units an hour at first and 80 as a port, and its market
+sells what it makes of them, one refined unit for every two. Independent haulers call about every four
+hours, and you can watch one fly in from the beacon and dock. An outpost can be sold to its system's
+faction for half of what went into it, or abandoned: the site is free again, a pilot docked there
+rides out to the nearest dock, and the journal keeps the last six you have had. Rocks in a ring now
+keep clear of a station standing in it, the Eridani Mining Hub's too
+([PROCGEN.md §36](PROCGEN.md#36-outposts-in-the-belts)).
 
 ### 34. The border in sight ✅
 
@@ -257,7 +265,7 @@ a market and repairs; then a station with a job board; then a port with an outfi
 hour from the day it opens (300, 800, then 1,600 cr), less in an hour raiders swarm its system, and
 your captains can haul to it. It is yours alone: nobody else's prices, boards or haulers change
 because of it ([PROCGEN.md §22](PROCGEN.md#22-a-station-of-your-own)). Sites in the catalogued
-belts are still to come.
+belts came with increment 35.
 
 ### 19. Your captains on the lanes ✅
 

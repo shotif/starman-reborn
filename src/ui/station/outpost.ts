@@ -1,6 +1,6 @@
 import type { CommodityId } from '../../app/state.ts';
 import { OUTPOSTS } from '../../content/outposts/rules.ts';
-import { kindWord, sitePlace, type OutpostSite } from '../../content/outposts/sites.ts';
+import { kindWord, outpostSite, sitePlace, type OutpostSite } from '../../content/outposts/sites.ts';
 import type { StationType } from '../../content/world/types.ts';
 import { cargoCount } from '../../economy/cargo.ts';
 import { COMMODITIES } from '../../economy/commodities.ts';
@@ -8,7 +8,6 @@ import { charterOffers, charterOutpost, deliverable, deliverToOutpost, nextStage
 import { OUTPOST_RAIDS } from '../../content/outposts/raids.ts';
 import { RAID_FICTION } from '../../content/outposts/raidLines.ts';
 import { shipModel } from '../../content/catalog.ts';
-import type { OutpostRecord } from '../../app/state.ts';
 import {
   defenceAt,
   defenceLine,
@@ -24,12 +23,14 @@ import {
   turretCap,
   turretNeeds,
 } from '../../economy/outpostRaids.ts';
-import { button, showModal, toast } from '../components.ts';
+import { button, dataBadge, showModal, toast } from '../components.ts';
+import { buyerOf, callLine, giveUpBlock, giveUpOutpost, inBelt, nearestDock, RAW_GOODS, refinable, refineAllowance, refineAtOutpost, refinedThisHour, refinePay, nextRefineHour, saleValue } from '../../economy/outpostTrade.ts';
+import { getLocation, getSystem } from '../../data/systems.ts';
+import type { GameState, OutpostRecord } from '../../app/state.ts';
 import { formatCredits, h, replaceChildren } from '../dom.ts';
 import { glyph } from '../glyphs.ts';
 import type { Refresh, StationContext } from './context.ts';
 import { COMMODITY_GLYPH } from './trader.ts';
-import { outpostSite } from '../../content/outposts/sites.ts';
 
 const outpostSiteOf = (o: OutpostRecord) => outpostSite(o.site);
 
@@ -82,13 +83,25 @@ function ownSection(ctx: StationContext, refresh: Refresh): HTMLElement {
             o.stage > 0 ? h('span', { class: 'row-sub', 'data-testid': 'outpost-defence-line' }, defenceLine(ctx.state, o)) : null,
             here ? null : h('span', { class: 'row-note' }, nextStage(o) ? 'Dock there to hand over the materials.' : `Fiction: your station, at a real ${site?.beltId ? 'belt' : 'planet'}.`),
           ),
-          // Guards can be hired from any full-service dock (docs/PROCGEN.md §29).
-          o.stage > 0 && !here && !guardHireBlock(ctx.state, o)
-            ? h('span', { class: 'row-actions' }, button('Hire guards', { size: 'sm', testId: 'outpost-hire-guards', onClick: () => void openGuardHire(ctx, o, refresh) }))
-            : null,
+          rowActions(ctx, o, here, refresh),
         );
       }),
     ),
+  );
+}
+
+/** Away from it: guards to hire from any full-service dock (§29), and giving it up from a station of its system (§36.4). */
+function rowActions(ctx: StationContext, o: OutpostRecord, here: boolean, refresh: Refresh): HTMLElement | null {
+  if (here) return null;
+  const hire = o.stage > 0 && !guardHireBlock(ctx.state, o);
+  const sameSystem = outpostSiteOf(o)?.systemId === getLocation(ctx.locationId).systemId;
+  const giveUp = sameSystem && !giveUpBlock(ctx.state, o);
+  if (!hire && !giveUp) return null;
+  return h(
+    'span',
+    { class: 'row-actions' },
+    hire ? button('Hire guards', { size: 'sm', testId: 'outpost-hire-guards', onClick: () => void openGuardHire(ctx, o, refresh) }) : null,
+    giveUp ? button('Give up', { size: 'sm', variant: 'ghost', testId: 'outpost-give-up', onClick: () => void openGiveUp(ctx, o, refresh) }) : null,
   );
 }
 
@@ -187,10 +200,11 @@ async function openCharter(ctx: StationContext, offer: CharterOffer, refresh: Re
       'div',
       { class: 'stack hire' },
       h('p', null, `The charter costs ${formatCredits(offer.price)}. Then bring the materials for each stage to the site; your outpost opens once its frame is up, and pays you by the hour from then on. Raids in its system cut that hour's income, and raiders will come for the outpost itself now and then: build turrets there and hire guards to hold them off.`),
+      site.beltId ? h('p', { 'data-testid': 'outpost-charter-belt' }, `In a belt it is always a refinery: from its frame on it takes the metal ore, water ice and volatile gases you mine, ${OUTPOSTS.refining.perHour[0]} units an hour at first, and pays more for them than any market.`) : null,
       h('div', { class: 'hire-field' }, h('label', { for: 'outpost-kind' }, 'What it is'), kindSelect),
       h('div', { class: 'hire-field' }, h('label', { for: 'outpost-name' }, 'Its name'), nameSelect),
       stages,
-      h('p', { class: 'muted small' }, `The outpost and its people are fiction; ${sitePlace(site)} is a real ${site.beltId ? 'belt, as a cited source reports it' : 'planet'}. Up to ${OUTPOSTS.max} outposts to a pilot, one to a system.`),
+      h('p', { class: 'muted small' }, `The outpost and its people are fiction; ${site.beltId ? `the ${sitePlace(site)} is real, as a cited source reports it` : `${sitePlace(site)} is a real planet`}. Up to ${OUTPOSTS.max} outposts to a pilot, one to a system.`),
     ),
     actions: [
       { label: 'Cancel', value: 'cancel', testId: 'outpost-charter-cancel' },
@@ -218,6 +232,7 @@ export function outpostContent(ctx: StationContext, refresh: Refresh): HTMLEleme
     { class: 'stack fleet', 'data-testid': 'outpost-content' },
     h('p', { class: 'muted small' }, `${o.name}, your ${kindWord(o.kind)} (fiction) ${outpostWhere(o)}.`),
     h('p', { 'data-testid': 'outpost-window-status' }, outpostStatus(state, o)),
+    o.stage > 0 ? h('p', { class: 'muted small', 'data-testid': 'outpost-calls' }, callLine(o, state.clock)) : null,
     stage
       ? h(
           'section',
@@ -264,7 +279,132 @@ export function outpostContent(ctx: StationContext, refresh: Refresh): HTMLEleme
           ),
         )
       : h('p', { class: 'callout' }, 'Complete: a port with a market, repairs, a job board and an outfitter.'),
+    inBelt(o) ? refineSection(ctx, o, refresh) : null,
     o.stage > 0 ? defenceSection(ctx, o, refresh) : null,
+    giveUpSection(ctx, o, refresh),
+  );
+}
+
+// ---------------------------------------------------------------- refining (docs/PROCGEN.md §36.3)
+
+/** A belt outpost's refining: the raw goods it takes from the hold, so many an hour, paid for at once. */
+function refineSection(ctx: StationContext, o: OutpostRecord, refresh: Refresh): HTMLElement {
+  const { state } = ctx;
+  if (o.stage <= 0) return h('p', { class: 'muted small', 'data-testid': 'outpost-refining' }, 'Once its frame is up, it refines the metal ore, water ice and volatile gases you bring, and pays for them.');
+  const cap = refineAllowance(o);
+  const used = refinedThisHour(o, state.clock);
+  return h(
+    'section',
+    { 'aria-label': 'Refining', 'data-testid': 'outpost-refining' },
+    h('div', { class: 'list-head' }, h('span', null, 'Refining'), h('span', { 'data-testid': 'outpost-refined' }, `${used}/${cap} this hour`)),
+    h(
+      'ul',
+      { class: 'list' },
+      RAW_GOODS.map((c) => {
+        const can = refinable(state, c);
+        const carry = cargoCount(state.ship.cargo, c);
+        const made = OUTPOSTS.refining.goods[c];
+        return h(
+          'li',
+          { class: 'trade-row fleet-row', 'data-testid': `outpost-refine-row-${c}` },
+          glyph(COMMODITY_GLYPH[c]),
+          h('span', { class: 'trade-text' }, h('span', { class: 'row-name' }, COMMODITIES[c].name), h('span', { class: 'row-sub' }, `${formatCredits(refinePay(c))} a unit · into ${goodName(made)} · you carry ${carry}`)),
+          h(
+            'span',
+            { class: 'row-actions' },
+            button(can ? `Refine ${can}` : 'Refine', {
+              size: 'sm',
+              testId: `outpost-refine-${c}`,
+              disabled: can <= 0,
+              title: can <= 0 ? (used >= cap ? 'All it can take this hour' : 'None in your hold') : undefined,
+              onClick: () => {
+                const r = refineAtOutpost(state, c, can);
+                ctx.sfx(r.ok ? 'credits' : 'ui-error');
+                toast(r.message, r.ok ? 'good' : 'bad', 5000);
+                ctx.save();
+                refresh();
+              },
+            }),
+          ),
+        );
+      }),
+    ),
+    h(
+      'p',
+      { class: 'muted small' },
+      used >= cap
+        ? `It takes ${cap} units an hour: more in ${clockIn(nextRefineHour(state.clock) - state.clock)}.`
+        : `It pays more than any market does for them raw, and its market sells what it makes: one refined unit for every ${OUTPOSTS.refining.per}.`,
+    ),
+  );
+}
+
+// ---------------------------------------------------------------- giving it up (docs/PROCGEN.md §36.4)
+
+/** At the outpost: selling it or abandoning it. */
+function giveUpSection(ctx: StationContext, o: OutpostRecord, refresh: Refresh): HTMLElement {
+  const block = giveUpBlock(ctx.state, o);
+  return h(
+    'section',
+    { 'aria-label': 'Give it up', 'data-testid': 'outpost-give-up-section' },
+    h('div', { class: 'list-head' }, h('span', null, 'Give it up'), h('span', null, `worth ${formatCredits(saleValue(o))}`)),
+    h('p', { class: 'muted small' }, `${capital(buyerOf(outpostSiteOf(o)!.systemId))} would buy it for half of what went into it; or abandon it for nothing.`),
+    h('div', { class: 'row wrap' }, button('Sell or abandon', { variant: 'ghost', testId: 'outpost-give-up', disabled: !!block, title: block ?? undefined, onClick: () => void openGiveUp(ctx, o, refresh) })),
+    block ? h('p', { class: 'muted small' }, block) : null,
+  );
+}
+
+/** Sell or abandon, confirmed: the site is free again; docked there, the pilot rides out to the nearest dock. */
+async function openGiveUp(ctx: StationContext, o: OutpostRecord, refresh: Refresh): Promise<void> {
+  const { state } = ctx;
+  const site = outpostSiteOf(o)!;
+  const price = saleValue(o);
+  const here = outpostAt(state, ctx.locationId) === o;
+  const answer = await showModal({
+    title: `Give up ${o.name}?`,
+    testId: 'outpost-give-up-dialog',
+    body: h(
+      'div',
+      { class: 'stack' },
+      h('p', null, `Sell it to ${buyerOf(site.systemId)} for ${formatCredits(price)}: half of what went into it, the charter and the materials at their base prices. Or abandon it for nothing.`),
+      h('p', null, `Either way the site is free again: its guards are paid off, its turrets go with it, and its market and board close.${here ? ` You ride its last shuttle out to ${getLocation(nearestDock(o)).name}.` : ''}`),
+      h('p', { class: 'muted small' }, `The outpost is fiction; ${site.beltId ? 'the ' : ''}${sitePlace(site)} is real.`),
+    ),
+    actions: [
+      { label: 'Keep it', value: 'cancel', testId: 'outpost-give-up-cancel' },
+      { label: 'Abandon', value: 'abandoned', variant: 'danger', testId: 'outpost-abandon' },
+      { label: `Sell · ${formatCredits(price)}`, value: 'sold', variant: 'primary', testId: 'outpost-sell' },
+    ],
+    dismissValue: 'cancel',
+  });
+  if (answer !== 'sold' && answer !== 'abandoned') return;
+  const r = giveUpOutpost(state, o.site, answer);
+  ctx.sfx(r.ok ? (r.paid ? 'credits' : 'ui-confirm') : 'ui-error');
+  toast(r.message, r.ok ? 'good' : 'bad', 7000);
+  ctx.save();
+  if (r.movedTo) ctx.dockElsewhere(r.movedTo);
+  else refresh();
+}
+
+/** The journal's outposts given up (docs/PROCGEN.md §36.4), the newest first. */
+export function formerOutpostsRecord(state: GameState): HTMLElement | null {
+  const list = state.world.outpostsFormer ?? [];
+  if (!list.length) return null;
+  return h(
+    'section',
+    { 'aria-label': 'Outposts you have had', 'data-testid': 'outposts-former' },
+    h('div', { class: 'list-head' }, h('span', null, 'Outposts you have had'), h('span', null, dataBadge('fictional'))),
+    h(
+      'ul',
+      { class: 'plain small' },
+      [...list].reverse().map((f) => {
+        const site = outpostSite(f.site);
+        const where = site ? `${sitePlace(site)}, ${getSystem(site.systemId).displayName}` : f.site;
+        const stage = f.stage > 0 ? `a ${OUTPOSTS.stages[Math.min(f.stage, OUTPOSTS.stages.length) - 1]!.name.toLowerCase()}` : 'its frame unfinished';
+        const end = f.how === 'sold' ? `sold for ${formatCredits(f.paid)}` : 'abandoned';
+        return h('li', null, `${f.name} (${kindWord(f.kind)}), ${where}: ${stage}, ${end} ${clockIn(Math.max(60, state.clock - f.ended))} ago.`);
+      }),
+    ),
   );
 }
 

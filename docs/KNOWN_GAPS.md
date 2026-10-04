@@ -99,13 +99,16 @@ snapshot branch only when the archives changed.
   A ship guarded through an ambush comes out of it whole: damage taken in sight is not kept. In the
   scene a captain flies at its ship's own speed, so it may dock a little before or after the run's
   schedule says; the sale goes by the schedule.
-- A station of your own (PROCGEN §22) is one outpost to a save, at a confirmed planet only: the
-  roadmap's sites in the catalogued belts are not there yet, and an outpost cannot be sold or
-  abandoned. Its materials are handed over by the player in person (a captain can be hired to it
-  only once it trades), its frames borrow a shipyard's look while it is built, and it has no world
-  events of its own (its system's raids still cut its income). It keeps to itself: no other
-  station's board sends work to it, the timetable's haulers do not call there, and the star map's
-  search does not find it (its system's card lists it).
+- Stations of your own (PROCGEN §22, §36) are three to a save at most, one to a system. Their
+  materials are handed over by the player in person (a captain can be hired to one only once it
+  trades), their frames borrow a shipyard's look while they are built, and they have no world events
+  of their own (their system's raids still cut the income). They keep to themselves: no other
+  station's board sends work to one, the timetable's haulers do not call there (the haulers seen
+  calling at an outpost only change what is drawn: its stock recovers as every station's does), and
+  the star map's search does not find them (their system's card lists them). A belt outpost is always
+  a refinery, the only kind that refines, and only the ore, ice and gases the pilot brings in person:
+  captains do not mine or deliver to be refined. Selling one waits while goods are stored there, a
+  captain is on a run to it or a job of its board is under way.
 - Passengers and sightseers (PROCGEN §23) ride with the player only: a captain does not carry them,
   and the passengers have no lasting names or memories (a party is a contract's, gone when it
   ends). A good look at a sight is a matter of distance, not of where the ship is pointing, and the

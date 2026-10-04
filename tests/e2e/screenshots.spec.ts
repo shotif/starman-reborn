@@ -501,6 +501,39 @@ for (const size of SIZES) {
         await shot(page, raidShot, size.touch, results);
         if (!results[raidShot]!.overlaps.some((o) => o.includes('toast'))) break;
       }
+      // Outposts in the belts (docs/PROCGEN.md §36): a refinery chartered in Sol's main belt (the Fleet
+      // window listing both outposts), refining the ore in the hold, and the dialog to give it up.
+      await api(page, 'setCredits', 80_000);
+      await docked('earth-port');
+      await press(page, 'room-deck');
+      if (!(await page.getByTestId('fleet').isVisible().catch(() => false))) await press(page, 'station-fleet');
+      await press(page, 'outpost-charter-belt.sol-main-belt');
+      await expect(page.getByTestId('outpost-charter-belt')).toBeVisible();
+      await press(page, 'outpost-charter-confirm');
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await page.getByTestId('outpost').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      await shot(page, `${size.name}-15d-outposts`, size.touch, results);
+      await docked('outpost.belt.sol-main-belt');
+      await api(page, 'setCargo', { 'habitat-modules': 8, metals: 20, machinery: 6 });
+      const openOutpost = async () => {
+        await press(page, 'room-deck');
+        if (!(await page.getByTestId('outpost-window').isVisible().catch(() => false))) await press(page, 'station-outpost');
+      };
+      await openOutpost();
+      for (const good of ['habitat-modules', 'metals', 'machinery']) await press(page, `outpost-deliver-${good}`);
+      await waitUntil(page, 'the refinery open', async () => ((await api<{ world: { outposts?: { site: string; stage: number }[] } }>(page, 'state')).world.outposts?.find((o) => o.site === 'belt.sol-main-belt')?.stage ?? 0) >= 1);
+      await api(page, 'setCargo', { ore: 4, water: 2 });
+      await openOutpost();
+      await press(page, 'outpost-refine-ore');
+      await expect(page.getByTestId('outpost-refined')).toHaveText('4/40 this hour');
+      await page.getByTestId('outpost-refining').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-15e-refinery`, size.touch, results);
+      await page.getByTestId('outpost-give-up-section').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      await press(page, 'outpost-give-up');
+      await expect(page.getByTestId('outpost-give-up-dialog')).toBeVisible();
+      await shot(page, `${size.name}-15f-give-up`, size.touch, results);
+      await press(page, 'outpost-give-up-cancel');
       // Your crew (docs/PROCGEN.md §30): a hand looking for a berth at a bar's table, the crew in the
       // bar (hurt and giving notice, a favour to ask), and the favour in their dialog.
       const hand = (await api<{ locationId: string; offerId: string } | null>(page, 'findCrew', { role: 'engineer', heart: 'soft-hearted' }))!;

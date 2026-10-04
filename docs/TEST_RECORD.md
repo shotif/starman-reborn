@@ -11,12 +11,12 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | --- | --- | --- |
 | TypeScript typecheck (app + scripts/tests) | `npm run typecheck` | Pass |
 | Astronomy data validation | `npm run data:validate` | Pass (22 warnings: the contested planets this edition keeps) |
-| Unit tests | `npm test` | Pass: 944 tests in 59 files |
+| Unit tests | `npm test` | Pass: 958 tests in 60 files |
 | Production build | `npm run build` | Pass |
-| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 750 KB of 800 (gzipped) |
-| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 49 passed (5 touch-only tests skipped) |
-| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 49 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
-| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 567 screenshots, no audit findings |
+| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 755 KB of 800 (gzipped) |
+| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 50 passed (5 touch-only tests skipped); `battles.spec.ts` timed out undocking while the screenshot run shared the machine, and passed run again on its own |
+| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 50 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
+| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 594 screenshots, no audit findings (three sizes that ran past the 15-minute limit while the browser tests shared the machine passed run again on their own) |
 
 ### Unit tests (Vitest)
 
@@ -643,6 +643,26 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   turns on the pilot; an assault comes in two waves; a turning battle opens before a clash due at the
   same time; a battle left unfinished is staged again; and
   left to themselves both sides win some clashes.
+- `beltOutposts.test.ts`: **outposts in the belts**. One site in each cited belt (nine in eight
+  systems, Sol's two included), always a refinery; the guardrails pass, and broken rules and places are
+  caught (refining that pays no more than a market can, an allowance that does not rise, a yield other
+  than half, a refined good a refinery does not make, a belt outpost of another kind, too many
+  outposts, a sale fetching more than went in, an angle set for a belt that is not cited, a belt
+  without its site, a site that can be something else, a station or a lane where the site is). In the
+  scene a belt outpost stands halfway across its ring, level with it, its bay facing out, with no rock
+  within reach of it, and none of the Eridani Mining Hub either. Up to three outposts, one a system,
+  any mix of planet and belt sites, each paying its own income in one settle; none raided in Sol, the
+  probe due in lawless Fomalhaut. Refining pays 2.2 times the base price at once, takes 40 an hour at
+  the frame (no more, and no carry-over) and more as a port, puts half in refined goods in its market,
+  and refuses a planet's outpost, an unfinished one and goods that are not raw. Selling pays half of
+  the charter and the materials, frees the site, moves a pilot docked there to the nearest dock,
+  leaves nothing in the save that names the station (a rumour, a watch, old jobs, its raid job, its
+  prices), and round-trips; abandoning pays nothing from another station of its system; storage, a
+  captain on a run there and a job bound for it each block it, and a parked captain is stood down;
+  the journal keeps the last six. Hauler calls come about every four hours in order, the same each
+  time, none before it opens. Saves: one from before keeps its outpost as the first; more than three,
+  two in a system, a belt outpost of another kind, refining over the allowance or at a planet's, too
+  many former outposts, an unknown former site, or an abandoned one that fetched something are refused.
 
 ### Browser tests (Playwright)
 
@@ -830,6 +850,15 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   pilot's part and the purse paid; then, as Regent Concourse is about to fall, the Wake's assault on it
   comes in two waves and is beaten off with the pilot; docked, the standing earned brings the
   Authority's first rank, the News tells the battle and the journal's *Border battles* keeps both.
+- `beltOutpost.spec.ts`: **outposts in the belts**: at Earth Port the Fleet window offers Sol's two
+  belts; the main belt's charter dialog says it is always a refinery, and once chartered the Fleet
+  window says one to a system. At the site the Outpost window waits for the frame, then (open) says
+  when haulers call; with 50 ore in the hold it refines 40 (*40/40 this hour*, the button then
+  disabled) for 48 cr each. In flight ten minutes before the next call, the refinery is a target, the
+  call is due, and when it comes a hauler (*The …*) flies in from the beacon toward the dock. Docked
+  again, *Sell or abandon* names the Sol Transit Authority as the buyer; sold, the pilot is at Earth
+  Port or Mars Depot, paid what the journal's *Outposts you have had* says it fetched, and the Fleet
+  window offers the site again.
 - `wing.spec.ts`: **wing command**: a pilot hired in the bar shows their grade in *Your wing*; in
   flight the order card (V on a keyboard, the Wing chip on touch) pauses the game, lists the wingman,
   locks Defend and Cover with why, and gives Hold (the radio's reply, the HUD's *Wing 1 · Hold* or the

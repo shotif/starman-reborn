@@ -26,22 +26,29 @@ export const OUTPOSTS = {
   belts: {
     kinds: ['refinery'] as const satisfies readonly StationType[],
     angle: {} as Partial<Record<string, number>>,
-    clear: { station: 3_000, body: 3_000, lane: 400 },
+    clear: { station: 3_000, body: 3_000, lane: 1_500 },
   },
   /**
    * A belt outpost refines what the pilot brings (§36.3): each raw good and what it is refined into;
-   * the pay for a unit, as so many times the raw good's base price; the units it takes in an hour of
-   * game clock by the stages done (frame, station, port); and one refined unit for every `per` raw.
+   * the pay for a unit, as so many times the raw good's base price (the top of the price band, so
+   * above what any market can pay for it raw); the units it takes in an hour of game clock by the
+   * stages done (frame, station, port); and one refined unit for every `per` raw.
    */
   refining: {
     goods: { ore: 'metals', water: 'deuterium', gases: 'polymers' } as const satisfies Partial<Record<CommodityId, CommodityId>>,
-    pay: 2,
+    pay: 2.2,
     perHour: [40, 60, 80] as const,
     per: 2,
   },
   /** Outposts sold or abandoned that the journal keeps (§36.4), and the share of what went in that a sale fetches. */
   former: 6,
   sale: 0.5,
+  /**
+   * Haulers calling at an open outpost (§36.5): one about every `every` seconds of game clock, each
+   * call moved up to `spread` either way (drawn from the site and the call), seen in flight when it
+   * falls while the pilot is in the outpost's system; one that came this long ago is still on its way in.
+   */
+  calls: { every: 14_400, spread: 3_600, onTheWay: 240 },
   /** Where the outpost orbits its planet: distance from the surface and height (schematic units). */
   orbit: { distance: [1_600, 2_800] as const, height: [-450, 450] as const },
   /** While its frame goes up, the site looks like a shipyard's frames, small and new. */
