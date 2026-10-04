@@ -9,6 +9,7 @@ import { ALL_LOCATIONS, getLocation, getPlanet, saveLocations, WORLD_SEEDS } fro
 import { hasOutfitter, repairKitOffer } from '../../src/economy/equipment.ts';
 import { systemEventAt, useWorldLog } from '../../src/economy/events.ts';
 import { haulDestinations, settleFleet } from '../../src/economy/fleet.ts';
+import { dockFees } from '../../src/economy/hauls.ts';
 import { postedContracts } from '../../src/economy/contracts.ts';
 import { hasMarket, marketTables, quote } from '../../src/economy/markets.ts';
 import { validateOutposts, type OutpostRules } from '../../src/economy/outpostGuards.ts';
@@ -208,7 +209,10 @@ describe('its income', () => {
     const once = structuredClone(s);
     const r = settleFleet(s);
     const hours = [0, 1, 2].map((h) => incomeAt(s.world.outposts![0]!, opened + h * 3_600 + 1_800));
-    expect(r.outpost).toBe(hours.reduce((a, b) => a + b, 0));
+    // With the dock fees of its haulers those hours (docs/PROCGEN.md §38.2).
+    const fees = dockFees(outpostId(PLANET), opened, opened + 3 * 3_600);
+    expect(s.world.outposts![0]!.fees ?? 0).toBe(fees);
+    expect(r.outpost).toBe(hours.reduce((a, b) => a + b, 0) + fees);
     expect(s.credits).toBe(before + r.outpost);
     expect(s.world.outposts![0]!.earned).toBe(r.outpost);
     expect(hours.every((x) => x === OUTPOSTS.stages[0]!.income || x === Math.round(OUTPOSTS.stages[0]!.income * 0.6))).toBe(true);

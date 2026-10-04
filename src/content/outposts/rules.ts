@@ -44,11 +44,19 @@ export const OUTPOSTS = {
   former: 6,
   sale: 0.5,
   /**
-   * Haulers calling at an open outpost (§36.5): one about every `every` seconds of game clock, each
-   * call moved up to `spread` either way (drawn from the site and the call), seen in flight when it
-   * falls while the pilot is in the outpost's system; one that came this long ago is still on its way in.
+   * Outposts join the trade (docs/PROCGEN.md §38): the chance an open outpost sends a hauler out in
+   * a time slot (HAULS.slotSeconds), and draws one in, by the stages done (frame, station, port);
+   * the dock fee, a share of each hauler's cargo at galaxy base prices, paid with the hour's income;
+   * how many hours back a settle counts the fees; and the work boards within `jumps` post to an
+   * outpost: one a board in a time slot with `chance`, a `passage` share of them passages (the rest freight).
    */
-  calls: { every: 14_400, spread: 3_600, onTheWay: 240 },
+  trade: {
+    send: [0.04, 0.08, 0.12] as const,
+    draw: [0.04, 0.08, 0.12] as const,
+    fee: 0.03,
+    feeHours: 72,
+    board: { jumps: 2, chance: 0.35, passage: 0.4 },
+  },
   /** Where the outpost orbits its planet: distance from the surface and height (schematic units). */
   orbit: { distance: [1_600, 2_800] as const, height: [-450, 450] as const },
   /** While its frame goes up, the site looks like a shipyard's frames, small and new. */

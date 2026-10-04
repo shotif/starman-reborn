@@ -397,8 +397,10 @@ export interface OutpostRecord {
   delivered: Partial<Record<CommodityId, number>>;
   /** Game clock its income is settled to (whole hours from when it opened). */
   since: number;
-  /** Income paid so far. */
+  /** Income paid so far (dock fees included). */
   earned: number;
+  /** Dock fees its haulers have paid so far (docs/PROCGEN.md §38.2), once there are any. */
+  fees?: number;
   /** When it opened, its frame up (docs/PROCGEN.md §29). Absent in older saves: raids count from its founding. */
   opened?: number;
   /** Its defences, and the raids it has met (docs/PROCGEN.md §29), once there is something to keep. */

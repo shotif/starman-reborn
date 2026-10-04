@@ -62,9 +62,7 @@ import type { CrewDeed, CrewHeart, CrewRole } from '../content/crew/rules.ts';
 import { STORY, STORY_NOTES } from '../content/rivals/storyLines.ts';
 import { defenceOf, foughtPlan, nextRaid, outpostSystem, raidNote, raidWarning, settleRaid, turretsUp } from '../economy/outpostRaids.ts';
 import { outpostAt, outpostIn, outpostsOf } from '../economy/outposts.ts';
-import { callHauler, callsBetween, nextCall } from '../economy/outpostTrade.ts';
-import { OUTPOSTS } from '../content/outposts/rules.ts';
-import { FLEETS } from '../world/traffic/plan.ts';
+import { nextHauler } from '../economy/outpostTrade.ts';
 import { RAID_WATCH } from '../content/outposts/raidLines.ts';
 import { outpostId } from '../content/outposts/sites.ts';
 import { farStar, farStarLook, recordObservation, scheduleSky, skyComm, skyMoment, skyTimeline } from '../economy/stellar.ts';
@@ -1519,8 +1517,6 @@ export class Game {
       // Guards on post, and those hired to come on post later (they join the flight at their time).
       guards: (o.defence?.guards ?? []).filter((g) => g.until > state.clock).map((g) => ({ id: g.id, name: g.name, model: g.model, skill: g.skill, from: g.from, until: g.until })),
       ...(plan && plan.at - state.clock < 2 * 3_600 ? { raid: { window: plan.window, at: plan.at, threat: plan.threat, ships: plan.ships } } : {}),
-      // Haulers calling (docs/PROCGEN.md §36.5): one already on its way in, and those due in the next two hours.
-      calls: callsBetween(o, state.clock - OUTPOSTS.calls.onTheWay, state.clock + 2 * 3_600).map((c) => ({ ...c, ...callHauler(o.site, c.n, FLEETS.independent.traders) })),
     };
   }
 
@@ -2862,12 +2858,17 @@ export class Game {
         const next = nextRaid(state, o);
         return { next, warned: o.defence?.warned ?? null, raids: o.defence?.raids ?? [], turrets: o.defence?.turrets ?? 0, flight: this.flight?.outpostRaidStatus() ?? null };
       },
-      /** Test-only: an outpost's hauler calls (the first chartered, unless its site is named): the next due, and those in this flight (docs/PROCGEN.md §36.5). */
-      outpostCalls: (site?: string) => {
+      /**
+       * Test-only: an outpost's haulers (the first chartered, unless its site is named): the next to set
+       * off or dock, the dock fees paid, and those flying to or from it in this flight (docs/PROCGEN.md §38).
+       */
+      outpostHaulers: (site?: string) => {
         const state = this.state;
         const o = state ? outpostsOf(state).find((x) => !site || x.site === site) : undefined;
         if (!state || !o) return null;
-        return { next: nextCall(o, state.clock), flight: this.flight?.outpostCallStatus() ?? null };
+        const n = nextHauler(o, state.clock);
+        const next = n ? { id: n.haul.id, name: n.haul.name, out: n.out, at: n.at, depart: n.haul.depart, arrive: n.haul.arrive, from: n.haul.from, to: n.haul.to, commodity: n.haul.commodity, qty: n.haul.qty } : null;
+        return { next, fees: o.fees ?? 0, earned: o.earned, flight: this.flight?.haulersAt(outpostId(o.site)) ?? null };
       },
       /** Test-only: the crew aboard, what they do for the ship now, the deeds counted, who left (docs/PROCGEN.md §30). */
       crew: () => {

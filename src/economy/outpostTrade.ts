@@ -1,11 +1,8 @@
 import { applyCredits, type CommodityId, type FormerOutpost, type GameState, type OutpostRecord } from '../app/state.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
-import { CALLER_NAMES } from '../content/outposts/beltLines.ts';
 import { OUTPOSTS } from '../content/outposts/rules.ts';
 import { outpostId, outpostSite } from '../content/outposts/sites.ts';
-import { hashString, rng } from '../content/random.ts';
-import { WORLD_SEED } from '../content/world/rules.ts';
-import { ALL_LOCATIONS, getLocation, WORLD } from '../data/systems.ts';
+import { ALL_LOCATIONS, getLocation, getSystem, WORLD } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { siteDock } from '../world/siteDock.ts';
 import { sceneDefFor } from '../world/systems/index.ts';
@@ -13,6 +10,7 @@ import { cargoCount, removeCargo } from './cargo.ts';
 import type { Result } from './equipment.ts';
 import { refreshSaveStations } from './events.ts';
 import { FACTIONS } from './factions.ts';
+import { outpostDockings, type Haul } from './hauls.ts';
 import { dockAccess } from './law.ts';
 import { moveStock } from './markets.ts';
 import { outpostAt, outpostsOf } from './outposts.ts';
@@ -20,7 +18,7 @@ import { outpostAt, outpostsOf } from './outposts.ts';
 /**
  * What a pilot does with an outpost besides building it (docs/PROCGEN.md §36; rules in OUTPOSTS):
  * a belt outpost refines the raw goods the pilot brings, so much an hour; any outpost can be sold
- * for half of what went into it, or abandoned; and haulers call at an open outpost every few hours.
+ * for half of what went into it, or abandoned; and the haulers at an open outpost pay dock fees (§38).
  * Worked out from the game clock: nothing runs in the background.
  */
 
@@ -224,45 +222,38 @@ function rename(node: unknown, from: string, to: string): void {
   }
 }
 
-// ---------------------------------------------------------------- haulers calling (§36.5)
+// ---------------------------------------------------------------- haulers and dock fees (§38)
 
-const C = OUTPOSTS.calls;
+/** How far ahead the Outpost window looks for the next hauler. */
+const LOOK_AHEAD = 6 * HOUR;
 
-/** When call `n` at a site comes (each site on its own beat, each call moved a little). */
-export function callAt(site: string, n: number): number {
-  const phase = hashString(`outpost-call|${site}`) % C.every;
-  return Math.round(phase + n * C.every + (rng(WORLD_SEED, 'outpost-call', site, n).next() * 2 - 1) * C.spread);
-}
-
-/** The calls at an open outpost from `from` to `to` (game clock), in order. */
-export function callsBetween(o: OutpostRecord, from: number, to: number): { n: number; at: number }[] {
-  if (o.stage <= 0) return [];
-  const start = Math.max(from, o.opened ?? o.founded);
-  const out: { n: number; at: number }[] = [];
-  // Calls keep their order (each moves less than half the gap between them).
-  for (let n = Math.max(0, Math.floor((start - C.spread) / C.every) - 1); callAt(o.site, n) <= to; n++) {
-    const at = callAt(o.site, n);
-    if (at >= start) out.push({ n, at });
-  }
-  return out;
-}
-
-/** The next call at an open outpost after a moment (null while it is being built). */
-export function nextCall(o: OutpostRecord, clock: number): { n: number; at: number } | null {
+/** The next hauler at an open outpost within six hours: one it sends, as it sets off, or one it draws in, as it docks. */
+export function nextHauler(o: OutpostRecord, clock: number): { haul: Haul; at: number; out: boolean } | null {
   if (o.stage <= 0) return null;
-  return callsBetween(o, clock, clock + C.every + 2 * C.spread)[0] ?? null;
+  const id = outpostId(o.site);
+  const next = outpostDockings(id, clock, clock + LOOK_AHEAD)[0];
+  return next ? { ...next, out: next.haul.from === id } : null;
 }
 
-/** A call's hauler: an independent's ship and name, the same for every player. */
-export function callHauler(site: string, n: number, models: readonly string[]): { name: string; model: string } {
-  const r = rng(WORLD_SEED, 'outpost-caller', site, n);
-  return { name: r.pick(CALLER_NAMES), model: r.pick(models) };
+/** A station's name, with its system's when it is not the outpost's. */
+function placeFrom(o: OutpostRecord, locationId: string): string {
+  const loc = getLocation(locationId);
+  return loc.systemId === outpostSite(o.site)?.systemId ? loc.name : `${loc.name} (${getSystem(loc.systemId).displayName})`;
 }
 
-/** What the Outpost window says of the next call. */
-export function callLine(o: OutpostRecord, clock: number): string {
-  const next = nextCall(o, clock);
-  if (!next) return '';
-  const mins = Math.max(1, Math.round((next.at - clock) / 60));
-  return `Haulers call about every ${Math.round(C.every / HOUR)} hours; the next is due in ${mins < 90 ? `${mins} min` : `about ${Math.round(mins / 60)} h`}.`;
+/** What the Outpost window says of the haulers: who comes next, and the dock fees. */
+export function haulerLines(o: OutpostRecord, clock: number): { next: string; fees: string } {
+  const n = nextHauler(o, clock);
+  let next = 'No hauler is due here in the next six hours.';
+  if (n) {
+    const mins = Math.max(1, Math.round((n.at - clock) / 60));
+    const when = mins < 90 ? `${mins} min` : `about ${Math.round(mins / 60)} h`;
+    const cargo = `${n.haul.qty} ${goodName(n.haul.commodity)}`;
+    next = n.out
+      ? `The ${n.haul.name} sets off in ${when} with ${cargo} for ${placeFrom(o, n.haul.to)}.`
+      : `The ${n.haul.name} docks in ${when} with ${cargo} from ${placeFrom(o, n.haul.from)}.`;
+  }
+  const share = Math.round(OUTPOSTS.trade.fee * 100);
+  const fees = `Every hauler pays a dock fee of ${share}% of its cargo’s worth, with the hour’s income: ${(o.fees ?? 0).toLocaleString('en-US')} cr so far.`;
+  return { next, fees };
 }

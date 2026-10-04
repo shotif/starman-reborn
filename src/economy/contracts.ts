@@ -3,6 +3,8 @@ import { shipModel } from '../content/catalog.ts';
 import { ACE_NAMES, BOARD_KINDS, CONTRACTS, CONVOY_NAMES, CURATED_BOARD_KINDS, DEN_BOARD_KINDS, FRONTIER_SURVEY_WEIGHT, RECOVERY_ITEMS, WAR_BOARD_WEIGHT, type ContractKind, type KindWeights } from '../content/contracts/rules.ts';
 import { BORDER } from '../content/border/rules.ts';
 import { LAW } from '../content/law/rules.ts';
+import { OUTPOSTS } from '../content/outposts/rules.ts';
+import { isOutpostId } from '../content/outposts/sites.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
 import { beltGoods } from '../content/mining/rules.ts';
 import { PASSENGERS } from '../content/passengers/rules.ts';
@@ -35,7 +37,7 @@ import { RANK_LINES } from '../content/ranks/lines.ts';
 import { activeLimit } from './ranks.ts';
 import type { JobDef } from './jobs.ts';
 import { cargoCapacity } from './loadout.ts';
-import { eventHaulsFrom, raidsOnWay } from './hauls.ts';
+import { eventHaulsFrom, raidsOnWay, tradingOutposts } from './hauls.ts';
 import { berths } from './passengers.ts';
 import { marketTables } from './markets.ts';
 
@@ -194,6 +196,9 @@ export function boardFor(locationId: string, epoch: number): JobDef[] {
     // A commission for the owner's own ranks (docs/PROCGEN.md §32.4), from its own stream and id.
     const k = commission(loc, rng(WORLD_SEED, 'contracts', 'rank', locationId, epoch), `${CONTRACT_PREFIX}${locationId}.${epoch}.rank`, clock, (c) => out.some((o) => same(o, c)));
     if (k) out.push(k);
+    // Work to one of the pilot's outposts within reach (docs/PROCGEN.md §38.3), from its own stream and id.
+    const w = outpostWork(loc, rng(WORLD_SEED, 'contracts', 'outpost', locationId, epoch), `${CONTRACT_PREFIX}${locationId}.${epoch}.outpost`, clock);
+    if (w && !out.some((o) => same(o, w))) out.push(w);
     // Standing runs a lasting mark left here (docs/PROCGEN.md §14.7), each from its own stream.
     for (const mark of marksAt(locationId)) {
       if (!mark.run) continue;
@@ -242,6 +247,24 @@ function commission(loc: FictionalLocation, r: Rng, id: string, clock: number, p
     requires: { ...(c.requires ?? {}), rank: { faction: owner, rank: W.rankFor[c.difficulty - 1]! } },
     contract: { ...c.contract!, ...(urgent ? { urgent } : {}) },
   };
+}
+
+/**
+ * Work to one of the pilot's open outposts (docs/PROCGEN.md §38.3): a lawful board within reach may
+ * post one a time slot, a passage there or freight of a good this station makes that the outpost
+ * uses or trades (a passage when there is none). Where several are in reach, one is drawn.
+ */
+function outpostWork(giver: FictionalLocation, r: Rng, id: string, clock: number): JobDef | null {
+  const B = OUTPOSTS.trade.board;
+  if (giver.stationType === 'pirate-den' || isOutpostId(giver.id) || r.next() >= B.chance) return null;
+  const posts = tradingOutposts()
+    .map((x) => x.loc)
+    .filter((l) => jumpsBetween(giver.systemId, l.systemId) <= B.jumps)
+    .sort((a, b) => (a.id < b.id ? -1 : 1));
+  if (!posts.length) return null;
+  const to = r.pick(posts);
+  const job = r.next() < B.passage ? passage(giver, r, id, to) : (freight(giver, r, id, clock, { to }) ?? passage(giver, r, id, to));
+  return job && { ...job, briefing: `${job.briefing} ${to.name} is your own outpost: its people will be glad of it.` };
 }
 
 /** Finds a posted contract by id (ids are `c.<station>.<time slot>.<index>`, or `.decisive` / `.run-<mark>` for those that come and go within a slot). */
@@ -557,21 +580,25 @@ function freight(
   r: Rng,
   id: string,
   clock: number,
-  opts: { commodity?: CommodityId; event?: WorldEvent; run?: NonNullable<LastingMark['run']> } = {},
+  opts: { commodity?: CommodityId; event?: WorldEvent; run?: NonNullable<LastingMark['run']>; to?: FictionalLocation } = {},
 ): JobDef | null {
   const markets = marketTables();
   const here = markets.get(giver.id);
   if (!here) return null;
-  const made = [...here.entries.values()].filter((e) => e.role === 'produce' && isLegalCargo(e.commodity)).map((e) => e.commodity);
+  const takes = (l: FictionalLocation, c: CommodityId) => {
+    const e = markets.get(l.id)?.entries.get(c);
+    return !!e && e.role !== 'produce';
+  };
+  // Bound for one place (one of the pilot's outposts, §38.3): only what it takes.
+  const made = [...here.entries.values()].filter((e) => e.role === 'produce' && isLegalCargo(e.commodity) && (!opts.to || takes(opts.to, e.commodity))).map((e) => e.commodity);
   const wanted = opts.run?.commodity ?? opts.commodity;
   if (!made.length || (wanted && !made.includes(wanted))) return null;
   const commodity = wanted ?? r.pick(made);
   // A mark's run always goes to the same place.
-  const dests = openStations().filter((l) => {
+  const dests = (opts.to ? [opts.to] : openStations()).filter((l) => {
     if (l.id === giver.id || jumpsBetween(giver.systemId, l.systemId) > CONTRACTS.maxJumps.freight) return false;
     if (opts.run && l.id !== opts.run.to) return false;
-    const e = markets.get(l.id)?.entries.get(commodity);
-    return !!e && e.role !== 'produce';
+    return takes(l, commodity);
   });
   if (!dests.length) return null;
   const dest = r.pick(dests);
@@ -895,9 +922,9 @@ const wants = (names: readonly string[]) => (names.length === 1 ? 'wants' : 'wan
 
 const BERTHS_NOTE = 'A berth each in a passenger cabin (an outfitter fits one in a utility slot); every hit your hull takes with them aboard comes off the fare.';
 
-/** Passage: a party to another open station within reach, paid by the distance and the heads. */
-function passage(giver: FictionalLocation, r: Rng, id: string): JobDef | null {
-  const options = openStations().filter((l) => l.id !== giver.id && jumpsBetween(giver.systemId, l.systemId) <= CONTRACTS.maxJumps.passage);
+/** Passage: a party to another open station within reach (or to `to`, one of the pilot's outposts, §38.3), paid by the distance and the heads. */
+function passage(giver: FictionalLocation, r: Rng, id: string, to?: FictionalLocation): JobDef | null {
+  const options = (to ? [to] : openStations()).filter((l) => l.id !== giver.id && jumpsBetween(giver.systemId, l.systemId) <= CONTRACTS.maxJumps.passage);
   if (!options.length) return null;
   const dest = r.pick(options);
   const names = party(r, PASSENGERS.passage.party);

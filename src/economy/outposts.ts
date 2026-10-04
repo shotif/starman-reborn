@@ -9,6 +9,7 @@ import { cargoCount, removeCargo } from './cargo.ts';
 import type { Result } from './equipment.ts';
 import { refreshSaveStations } from './events.ts';
 import { dividendFactor } from './fleet.ts';
+import { dockFees } from './hauls.ts';
 import { dockAccess } from './law.ts';
 import { hurtFactor, upkeep } from './outpostRaids.ts';
 
@@ -183,11 +184,16 @@ export function outpostNext(o: OutpostRecord): number {
   return o.stage > 0 ? o.since + HOUR : Infinity;
 }
 
-/** Pays one hour of income, at the middle of the hour (what happened in its system then). */
-export function payOutpostHour(o: OutpostRecord): number {
-  const pay = incomeAt(o, o.since + HOUR / 2);
+/**
+ * Pays one hour of income, at the middle of the hour (what happened in its system then), with the
+ * dock fees of the haulers that hour (docs/PROCGEN.md §38.2) when it is within `trade.feeHours` of now.
+ */
+export function payOutpostHour(o: OutpostRecord, now: number): number {
+  const fees = now - o.since <= OUTPOSTS.trade.feeHours * HOUR ? dockFees(outpostId(o.site), o.since, o.since + HOUR) : 0;
+  const pay = incomeAt(o, o.since + HOUR / 2) + fees;
   o.since += HOUR;
   o.earned += pay;
+  if (fees > 0) o.fees = (o.fees ?? 0) + fees;
   return pay;
 }
 

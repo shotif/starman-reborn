@@ -42,7 +42,7 @@ import { ORDER_LOCKS, WING_RADIO } from '../content/wing/lines.ts';
 import { WING } from '../content/wing/rules.ts';
 import { WingCommand, type WingCredit, type WingOption, type WingView } from './WingCommand.ts';
 import { BorderBattle, type BattleEvent, type BattleMark } from './BorderBattle.ts';
-import { battleSite, beaconOf } from './battleSite.ts';
+import { battleSite } from './battleSite.ts';
 import { BATTLES, type BattleSide } from '../content/border/battles.ts';
 import type { BattlePlan } from '../economy/battles.ts';
 import { getFront } from '../economy/border.ts';
@@ -254,8 +254,6 @@ export interface NpcShip {
   hired?: string;
   /** The player's outpost's own (docs/PROCGEN.md §29): a turret, its stores, or a guard flying its loop round the outpost. */
   own?: { kind: 'turret' | 'stores' | 'guard'; centre: THREE.Vector3; angle: number };
-  /** A hauler calling at the player's outpost (docs/PROCGEN.md §36.5): which call. */
-  call?: number;
   /** A raider of the raid on the player's outpost (its window). */
   outpostRaid?: number;
   /** A rival waiting for a duel off the beacon, fighting it, or done with it (§28): `yielded` (the player won), `won` (the rival did). */
@@ -364,20 +362,12 @@ export interface TrafficSetup {
   rivalAmbush?: { rivalId: string; delay: number; guns: number; withRival: boolean; level: 1 | 2 | 3 };
   /** A rival waiting off the jump beacon for a duel (§28), and whether it has started. */
   duel?: { jobId: string; rivalId: string; started: boolean };
-  /** The player's outpost here (docs/PROCGEN.md §29): its stage, its turrets up, its guards on post, a raid due, and haulers calling (§36.5). */
-  outpost?: { locationId: string; stage: number; turrets: number; guards: readonly OutpostGuardSetup[]; raid?: OutpostRaidSetup; calls?: readonly OutpostCallSetup[] };
+  /** The player's outpost here (docs/PROCGEN.md §29): its stage, its turrets up, its guards on post, and a raid due. */
+  outpost?: { locationId: string; stage: number; turrets: number; guards: readonly OutpostGuardSetup[]; raid?: OutpostRaidSetup };
   /** Sites the pilot has marked here (docs/PROCGEN.md §31): wrecks, derelicts, ships and pods to fly to. */
   sites?: readonly SiteSetup[];
   /** A race the pilot has entered here (docs/PROCGEN.md §33): its course, heat and field. */
   race?: RaceSetup;
-}
-
-/** A hauler calling at the player's outpost (docs/PROCGEN.md §36.5): the call, when it comes in, its name and ship. */
-export interface OutpostCallSetup {
-  n: number;
-  at: number;
-  name: string;
-  model: string;
 }
 
 /** A guard hired for the player's outpost (docs/PROCGEN.md §29): on post from `from` until `until` (the game clock). */
@@ -2624,7 +2614,6 @@ export class FlightSession {
       if (t.outpost) this.spawnOutpostDefences(t.outpost);
     }
     this.updateOutpostGuards();
-    this.updateOutpostCalls();
     this.updateOutpostRaid();
     // A rival's hired guns strike a little way into the flight (docs/PROCGEN.md §28).
     const hired = t.rivalAmbush;
@@ -3034,46 +3023,14 @@ export class FlightSession {
     this.outpostGuards = { centre, due: o.guards.filter((g) => g.from > clock && g.until > clock), slot: 0 };
     for (const g of o.guards) if (g.from <= clock && clock < g.until) this.spawnOutpostGuard(g);
     if (o.raid) this.armOutpostRaid(o.raid);
-    this.outpostCalls = { locationId: o.locationId, due: [...(o.calls ?? [])], seen: [] };
   }
 
-  /** Haulers due to call at the outpost in this flight, and the calls seen. */
-  private outpostCalls: { locationId: string; due: OutpostCallSetup[]; seen: number[] } | null = null;
-
-  /**
-   * A hauler calling at the outpost (docs/PROCGEN.md §36.5): at its time (or a moment after the
-   * flight began, for one already on its way), it comes in by the jump beacon and docks there.
-   */
-  private updateOutpostCalls(): void {
-    const oc = this.outpostCalls;
-    if (!oc?.due.length) return;
-    const clock = this.state.clock;
-    const now = oc.due.filter((c) => c.at <= clock);
-    if (!now.length) return;
-    oc.due = oc.due.filter((c) => c.at > clock);
-    const dock = this.system.dock(oc.locationId);
-    if (!dock) return;
-    for (const c of now) {
-      const beacon = beaconOf(this.system.def);
-      const way = dock.dockPoint.clone().sub(beacon).normalize();
-      const side = new THREE.Vector3(-way.z, 0, way.x).multiplyScalar(((c.n % 3) - 1) * 180);
-      const from = beacon.clone().addScaledVector(way, 400).add(side);
-      const npc = this.makeNpc(c.model, 'trader', 'independent', from, way, `Independent hauler · calling at ${getLocation(oc.locationId).name} · fiction`);
-      npc.name = c.name;
-      npc.target.name = `The ${c.name}`;
-      npc.trader = new TraderBrain({ id: oc.locationId, point: dock.dockPoint }, npc.durability);
-      npc.call = c.n;
-      oc.seen.push(c.n);
-    }
-  }
-
-  /** Test hook: the haulers calling at the outpost here, due and seen, and those in flight now. */
-  outpostCallStatus(): { due: number[]; seen: number[]; flying: { n: number; state: string; distance: number }[] } | null {
-    const oc = this.outpostCalls;
-    if (!oc) return null;
-    const dock = this.system.dock(oc.locationId);
-    const flying = this.npcs.filter((n) => n.call !== undefined && n.durability.hull > 0).map((n) => ({ n: n.call!, state: n.trader?.state ?? '', distance: dock ? Math.round(n.body.position.distanceTo(dock.dockPoint)) : -1 }));
-    return { due: oc.due.map((c) => c.n), seen: [...oc.seen], flying };
+  /** Test hook: the haulers flying to or from a station in this flight (docs/PROCGEN.md §38), with how far each is from its dock. */
+  haulersAt(locationId: string): { id: string; name: string; state: string; distance: number }[] {
+    const dock = this.system.dock(locationId);
+    return this.npcs
+      .filter((n) => n.haul && (n.haul.haul.from === locationId || n.haul.haul.to === locationId) && n.durability.hull > 0)
+      .map((n) => ({ id: n.haul!.haul.id, name: n.name, state: n.trader?.state ?? '', distance: dock ? Math.round(n.body.position.distanceTo(dock.dockPoint)) : -1 }));
   }
 
   /** The outpost's centre and its guards still to come on post in this flight. */

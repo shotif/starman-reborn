@@ -39,9 +39,9 @@ const MIN_SPREAD = 0.04;
 
 /**
  * The shared world's market tables, which also answer, by id, for the save's own stations (the
- * player's outpost, docs/PROCGEN.md §22). Going through them (keys, entries) gives the shared
- * world's only, so events, the timetable, the spill between neighbours and other stations' prices
- * never change with a save's outpost.
+ * player's outposts, docs/PROCGEN.md §22). Going through them (keys, entries) gives the shared
+ * world's only, so events, the world's own timetable and its tables never change with a save's
+ * outposts; the outposts' own haulers and the spill between neighbours add them (§38).
  */
 class Tables extends Map<string, StationMarket> {
   override get(id: string): StationMarket | undefined {
@@ -135,22 +135,28 @@ function ownStock(locationId: string, entry: MarketEntry, ctx: MarketContext): n
   return target + (s - target) * k;
 }
 
-let neighbourCache: Map<string, Map<CommodityId, string[]>> | null = null;
+let neighbourCache: { key: string; byStation: Map<string, Map<CommodityId, string[]>> } | null = null;
 
-/** Stations within reach of a dock that trade a good (where its surplus or shortfall drifts). */
+/**
+ * Stations within reach of a dock that trade a good (where its surplus or shortfall drifts): the
+ * world's, and the save's own outposts with a market (docs/PROCGEN.md §38.4), both ways.
+ */
 export function spillNeighbours(locationId: string, commodity: CommodityId): string[] {
-  // The save's own stations keep to themselves (see Tables).
-  if (saveLocations().some((l) => l.id === locationId)) return [];
-  neighbourCache ??= new Map();
-  let byGood = neighbourCache.get(locationId);
+  const key = saveLocationsKey();
+  if (neighbourCache?.key !== key) neighbourCache = { key, byStation: new Map() };
+  let byGood = neighbourCache.byStation.get(locationId);
   if (!byGood) {
     byGood = new Map();
     const from = getLocation(locationId).systemId;
     const near = new Set([from, ...(WORLD.links.get(from) ?? [])]);
     const reach = ECONOMY.spill.jumps >= 1 ? near : new Set([from]);
-    const others = [...marketTables().entries()].filter(([id]) => id !== locationId && reach.has(getLocation(id).systemId));
+    const tables = marketTables();
+    const own = saveLocations()
+      .filter((l) => l.services.includes('market') && tables.has(l.id))
+      .map((l) => [l.id, tables.get(l.id)!] as const);
+    const others = [...tables.entries(), ...own].filter(([id]) => id !== locationId && reach.has(getLocation(id).systemId));
     for (const c of COMMODITY_IDS) byGood.set(c, others.filter(([, t]) => t.entries.has(c)).map(([id]) => id));
-    neighbourCache.set(locationId, byGood);
+    neighbourCache.byStation.set(locationId, byGood);
   }
   return byGood.get(commodity) ?? [];
 }

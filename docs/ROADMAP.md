@@ -29,12 +29,7 @@ What it lacks now:
 ## Proposed next increments
 
 Chosen by the owner on 4 October 2026, once the border and the belts were done: Captains supply
-outposts (now done) and then Outposts join the trade.
-
-### Outposts join the trade ⏳ (M)
-
-Other stations' boards post work to the pilot's outposts, the timetable's haulers buy and sell
-there, and the star map's search finds them.
+outposts and then Outposts join the trade, both now done. The next are for the owner to choose.
 
 ### How an increment ships
 
@@ -44,6 +39,18 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 37. Outposts join the trade ✅
+
+Your outposts now trade with the world. Once open, each has haulers of its own on the timetable,
+sending what its market makes to stations within two jumps and drawing in what it uses from the
+makers near it: about one an hour at a frame, two at a station and three at a port, seen in flight
+like any hauler (yours shown first when the scene is busy), raided like any. Every one pays a dock
+fee, 3% of its cargo's worth, with the hour's income (about 30–90 cr an hour at Sol's main belt
+refinery), and the Outpost window says who comes next and what the fees have paid. The haulers who
+only called are gone. Boards within two jumps post freight and passages to your outposts, the star
+map's search finds them by name, and their markets share the drift of stock with their neighbours.
+The world's own timetable is just as it was ([PROCGEN.md §38](PROCGEN.md#38-outposts-join-the-trade)).
 
 ### 36. Captains supply outposts ✅
 
@@ -64,8 +71,8 @@ site, Sol's main belt and Kuiper Belt among them (nine in eight systems), always
 from a station of its system and built as any outpost; any mix of planet and belt sites, one to a
 system. From its frame on, a belt refinery takes the ore, ice and gases you mine and pays at once,
 more than any market pays for them raw, 40 units an hour at first and 80 as a port, and its market
-sells what it makes of them, one refined unit for every two. Independent haulers call about every four
-hours, and you can watch one fly in from the beacon and dock. An outpost can be sold to its system's
+sells what it makes of them, one refined unit for every two. Independent haulers called about every
+four hours (until the timetable's own came, in 37). An outpost can be sold to its system's
 faction for half of what went into it, or abandoned: the site is free again, a pilot docked there
 rides out to the nearest dock, and the journal keeps the last six you have had. Rocks in a ring now
 keep clear of a station standing in it, the Eridani Mining Hub's too

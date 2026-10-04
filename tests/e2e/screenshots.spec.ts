@@ -529,11 +529,26 @@ for (const size of SIZES) {
       await page.getByTestId('outpost-refining').evaluate((el) => el.scrollIntoView({ block: 'start' }));
       await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
       await shot(page, `${size.name}-15e-refinery`, size.touch, results);
+      // Outposts join the trade (docs/PROCGEN.md §38): the Outpost window's haulers and dock fees.
+      await page.getByTestId('outpost-haulers').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      await expect(page.getByTestId('outpost-next-hauler')).toBeVisible();
+      await shot(page, `${size.name}-15i-haulers`, size.touch, results);
       await page.getByTestId('outpost-give-up-section').evaluate((el) => el.scrollIntoView({ block: 'start' }));
       await press(page, 'outpost-give-up');
       await expect(page.getByTestId('outpost-give-up-dialog')).toBeVisible();
       await shot(page, `${size.name}-15f-give-up`, size.touch, results);
       await press(page, 'outpost-give-up-cancel');
+      // The star map's search finds the refinery by name (§38.4).
+      const refinery = (await api<{ world: { outposts?: { site: string; name: string }[] } }>(page, 'state')).world.outposts!.find((o) => o.site === 'belt.sol-main-belt')!.name;
+      await press(page, 'dock-map');
+      await expect(page.getByTestId('galaxy-map')).toBeVisible();
+      await press(page, 'map-search');
+      await page.getByTestId('map-search-input').fill(refinery.split(' ')[0]!);
+      await expect(page.getByTestId('map-search-result-sol')).toContainText(`Your outpost ${refinery}`);
+      await shot(page, `${size.name}-15j-map-outpost`, size.touch, results);
+      await page.getByTestId('map-search-input').press('Escape');
+      await expect(page.getByTestId('map-search-dialog')).toBeHidden();
+      await press(page, 'map-close');
       // Captains supply outposts (docs/PROCGEN.md §37): a ship with a mining laser hired to mine for the
       // refinery (the dialog's estimate), a freighter to supply an outpost, and the Fleet window's captains at
       // work; both recalled at once, so they spend nothing later in the journey.

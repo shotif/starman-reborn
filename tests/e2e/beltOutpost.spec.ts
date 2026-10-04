@@ -4,8 +4,9 @@ import { api, openFresh, press, waitUntil } from './helpers.ts';
 /**
  * Outposts in the belts (docs/PROCGEN.md §36): a refinery chartered in Sol's main belt from Earth
  * Port, its frame built, the ore in the hold refined there (paid above any market, so much an
- * hour), a hauler seen calling at it in flight, and the outpost sold back for half of what went in,
- * the pilot riding out to the nearest dock and the journal keeping it.
+ * hour), the refinery a station to fly back to in flight, and the outpost sold back for half of what
+ * went in, the pilot riding out to the nearest dock and the journal keeping it. (Its haulers and
+ * their dock fees are tests/e2e/outpostTrade.spec.ts's.)
  */
 
 type Hooks = { __starman: { completeJobs(ids: string[]): void; dockAt(id: string): void } };
@@ -13,10 +14,6 @@ interface BeltState {
   credits: number;
   location: { dockedAt: string | null };
   world: { outposts?: { site: string; name: string; stage: number; refined?: { hour: number; units: number } }[]; outpostsFormer?: { site: string; how: string; paid: number }[] };
-}
-interface Calls {
-  next: { n: number; at: number } | null;
-  flight: { due: number[]; seen: number[]; flying: { n: number; state: string; distance: number }[] } | null;
 }
 
 const SITE = 'belt.sol-main-belt';
@@ -47,7 +44,7 @@ async function openDeckWindow(page: Page, button: string, content: string): Prom
   await expect(page.getByTestId(content)).toBeVisible();
 }
 
-test('an outpost in the belts: a refinery in Sol’s main belt, refining the ore you bring, a hauler calling, sold back', async ({ page }) => {
+test('an outpost in the belts: a refinery in Sol’s main belt, refining the ore you bring, sold back', async ({ page }) => {
   await openFresh(page);
   await press(page, 'title-play');
   await press(page, 'intro-ok');
@@ -76,8 +73,6 @@ test('an outpost in the belts: a refinery in Sol’s main belt, refining the ore
   await expect(page.getByTestId('outpost-refining')).toContainText('Once its frame is up');
   for (const good of ['habitat-modules', 'metals', 'machinery']) await press(page, `outpost-deliver-${good}`);
   await waitUntil(page, 'the outpost open', async () => (await api<BeltState>(page, 'state')).world.outposts?.[0]?.stage === 1);
-  await openDeckWindow(page, 'station-outpost', 'outpost-window');
-  await expect(page.getByTestId('outpost-calls')).toContainText('Haulers call about every 4 hours');
 
   // Ore from the hold: 40 an hour at the frame, paid at once, above any market's price.
   await api(page, 'setCargo', { ore: 50 });
@@ -91,29 +86,13 @@ test('an outpost in the belts: a refinery in Sol’s main belt, refining the ore
   expect(s.credits - before).toBe(40 * 48);
   expect(s.world.outposts![0]!.refined?.units).toBe(40);
 
-  // Out in Sol, ten minutes before the next call: the refinery is a station to fly back to, and a hauler comes in to call there.
-  const due = (await api<Calls>(page, 'outpostCalls'))!.next!;
-  await api(page, 'advanceClock', Math.max(0, due.at - (await api<{ clock: number }>(page, 'state')).clock - 600));
+  // Out in Sol: the refinery is a station to fly back to.
   await hearOut(page);
   await press(page, 'dock-launch');
   await waitUntil(page, 'in flight', async () => (await api(page, 'mode')) === 'flight');
   if (await page.getByTestId('controls-sheet').isVisible().catch(() => false)) await press(page, 'sheet-close');
   const targets = await api<{ id: string; name: string }[]>(page, 'targets');
   expect(targets).toContainEqual(expect.objectContaining({ id: `station:${OUTPOST}`, name }));
-  await waitUntil(page, 'the outpost in the scene', async () => !!(await api<Calls>(page, 'outpostCalls'))?.flight, 30_000);
-  const calls = (await api<Calls>(page, 'outpostCalls'))!;
-  expect(calls.flight?.due).toContain(calls.next!.n);
-  const clock = (await api<{ clock: number }>(page, 'state')).clock;
-  await api(page, 'advanceClock', Math.max(0, calls.next!.at - clock) + 1);
-  await waitUntil(page, 'a hauler calling', async () => ((await api<Calls>(page, 'outpostCalls'))!.flight?.seen ?? []).includes(calls.next!.n), 30_000);
-  const flying = (await api<Calls>(page, 'outpostCalls'))!.flight!.flying.find((f) => f.n === calls.next!.n)!;
-  expect(flying).toBeTruthy();
-  const callers = await api<{ id: string; name: string }[]>(page, 'targets');
-  expect(callers.some((t) => t.name.startsWith('The '))).toBe(true);
-  await waitUntil(page, 'the hauler heading in', async () => {
-    const f = (await api<Calls>(page, 'outpostCalls'))!.flight!.flying.find((x) => x.n === calls.next!.n);
-    return !f || f.distance < flying.distance - 200;
-  }, 60_000);
 
   // Back at the refinery: sell it. Half of what went in; the pilot rides out to the nearest dock.
   await dockAt(page, OUTPOST);

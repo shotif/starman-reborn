@@ -1875,6 +1875,9 @@ haulers, their names and their owners are fiction; the stars they fly between ar
   no lawful owner), with a name from a list (`HAULER_NAMES`, all invented).
 - Ids: `h.<station>.<slot>` for trade, `h.<event id>.<k>` for a shortage's relief or a glut's
   shipments.
+- The pilot's open outposts add haulers of their own (§38.1): sent out as `h.<outpost station>.<slot>`
+  and drawn in as `h.in.<outpost station>.<slot>`, from their own streams, leaving the rest of the
+  timetable as it is.
 
 ### 21.2 What becomes of a haul
 
@@ -2054,8 +2057,10 @@ The outposts live in the save's world log (`world.outposts`, §36.6), and the wo
 id (`outpost.<planet>`, or `outpost.belt.<belt>` in a belt): `getLocation` resolves the save's own stations (`setSaveLocations`), the
 market tables answer for it by id, its system's scene adds its dock, and its board and outfitter
 are its own. It is never added to the shared world's lists (`ALL_LOCATIONS`, a system's stations,
-the market tables as they are gone through), so nobody else's prices, boards, the haul timetable
-(§21), traffic or events change because of it, for that player or any other.
+the market tables as they are gone through), so the world's own haul timetable (§21), the other
+stations' tables, traffic and events never change because of it, for that player or any other. Once
+open it joins the trade (§38): its own haulers are added to the timetable, boards within reach post
+work to it, and its market is a neighbour in the spill (§17.2), for the save that has it.
 
 Guardrails (`validateOutposts`, `src/economy/outpostGuards.ts`, run in
 `tests/unit/outposts.test.ts`): every stage needs lawful goods somebody makes, in whole numbers;
@@ -3765,13 +3770,10 @@ with an outpost of the pilot's says so instead of listing its sites.
 
 ### 36.5 Haulers calling
 
-Every open outpost has a hauler call about every four hours (`calls.every`), each call moved up to an
-hour either way (drawn from the outpost's site and the call), so calls keep their order and each
-site has its own beat. In flight in its system, a call due comes in by the jump beacon: an
-independent hauler (named from `CALLER_NAMES`, flying an independent trader's ship) that flies to the
-outpost and docks; one that came in up to four minutes before the flight began is still on its way.
-Away, the call is as if it happened. Its market's stock comes back toward normal with time as every
-station's does (§8): the calls are that trade, seen. The Outpost window says when the next is due.
+*Replaced (§38.5).* Until the outposts joined the trade, every open outpost had a hauler call about
+every four hours, seen in flight coming in by the jump beacon and docking, with the Outpost window
+saying when the next was due. The timetable's own haulers come and go from the outposts now (§38.1),
+and the Outpost window says who comes next.
 
 ### 36.6 One save's own
 
@@ -3904,3 +3906,106 @@ and check supply runs (storage first, then the market, the share, the stage done
 waiting, signing off when complete), mining (cycles on time, the load's shares, the allowance shared
 with the pilot and waited out, the cut, recall), settling the same however often, the flight's
 captains at work, and saves.
+
+## 38. Outposts join the trade
+
+The pilot's outposts (§22, §36) now trade with the world: the timetable's haulers (§21) come and
+go from them, every one paying a dock fee, and boards within reach post work to them
+(`src/economy/hauls.ts` for the haulers, `src/economy/outpostTrade.ts` for the fees, boards in
+`src/economy/contracts.ts`; the rules in `OUTPOSTS.trade`, `src/content/outposts/rules.ts`). The
+haulers, their names and cargo, the fees and the work are fiction; the stars are real.
+
+The owner chose (4 October 2026): freight and passages to the outposts on the boards within reach;
+real haulers of the timetable in place of the haulers who only called (§36.5); a dock fee for each
+hauler, a few per cent of its cargo, paid with the outpost's income; and the outposts found by the
+star map's search and counted among their neighbours' markets.
+
+### 38.1 Haulers at your outposts
+
+- **Its own timetable**: an open outpost (its frame up, its market open) may send a hauler out in
+  each five-minute slot (§21.1) from when it opened, with a chance by the stages done
+  (`trade.send`: 4% at the frame, 8% at the station, 12% at the port), carrying one of the goods
+  its market makes to an open station within two jumps that uses or trades it, nearer ones more
+  often. And it may draw one in each slot (`trade.draw`, the same chances), carrying a good it uses
+  or trades from an open station within two jumps that makes it, nearer ones more often. A haul's
+  load is the world's (a quarter of the taker's normal stock, 8–40 units), and nobody sends one out
+  of a raided system or into one. So about one hauler an hour at a frame, two at a station and
+  three at a port.
+- **The world's own timetable does not change**: another station's haul in a slot is the same
+  with the pilot's outposts or without them. The outposts' hauls are added to it, drawn from each
+  outpost's own stream (`rng(seed, 'haul', <outpost>, <slot>)` sent, `'haul-in'` drawn).
+- **Who flies them**: one the outpost sends flies for an independent (it belongs to no faction);
+  one it draws, for its sender's owner (§21.1). Ids: `h.<outpost station>.<slot>` sent,
+  `h.in.<outpost station>.<slot>` drawn in.
+- **Hauls like any**: seen in flight in every system of their way, named with their cargo and where
+  they are bound (§21.3), and shown before the rest of the trade there when the scene has room for
+  only so many (after relief and shipments); lost in a raided system's lanes by the raid's odds; their loss missed by
+  the outpost's market when one bound for it is lost; spilling cargo when destroyed, and destroying
+  one is piracy (§12.1), the pilot's own outpost's hauler or not.
+
+### 38.2 Dock fees
+
+- Every hauler that docks at an outpost pays the pilot a fee: 3% of its cargo's worth at galaxy
+  base prices (`trade.fee`), rounded to the credit. One the outpost sends pays as it sets off; one
+  drawn in pays when it docks, and only if it gets there.
+- The fees are paid with the hour's income (§22.4), the hour they fall in, on top of it (a raid's
+  cut is the income's; fewer haulers fly while one is on). At Sol's main belt refinery, reckoned
+  over two days: about 30 cr an hour at the frame, 60 at the station and 90 at the port, some 6–10%
+  on top of the income.
+- Away very long, only the last 72 hours of a settle count their fees (`trade.feeHours`): before
+  that nobody kept the tally, and those hours pay their income alone.
+- **The Outpost window** says who comes next (*The Bramble sets off in 6 min with 20 refined metals
+  for Ceres Exchange*, *The Kestrel docks in 14 min with 18 metal ore from Vesta Works*) and what
+  the fees have paid in all.
+
+### 38.3 Work on the boards
+
+- Every lawful board within two jumps of an open outpost of the pilot's (`trade.board.jumps`) may
+  post one job to it a time slot (§10), from its own stream (`rng(seed, 'contracts', 'outpost',
+  <station>, <slot>)`) so the rest of the board does not move: with a chance of 35%
+  (`trade.board.chance`), a passage there (40% of them, `trade.board.passage`), or freight of a
+  good the board's station makes that the outpost uses or trades (a passage when there is none).
+  Where several outposts are in reach, one is drawn.
+- Paid, gated and timed as any freight or passage (§10, §23); its id is the board's
+  (`c.<station>.<slot>.outpost`). A raider den's board, Pyre's and the outposts' own boards post
+  none. An outpost with such a job of the pilot's under way cannot be given up (§36.4).
+
+### 38.4 Neighbours and the map
+
+- **Neighbours**: an outpost's market is a neighbour like any other's (§17.2): what the player
+  leaves it at drifts to the stations trading the good in its system and one jump away, and what
+  the player leaves them at drifts to it. A station that gains an outpost as a neighbour shares its
+  drift among one more.
+- **Search**: the star map's search (§15) finds the pilot's outposts by name, as *Your outpost*,
+  with their system.
+
+### 38.5 The calls go
+
+The haulers who only called at an outpost (§36.5) are gone with the rules for them
+(`OUTPOSTS.calls`, `CALLER_NAMES`): the timetable's haulers are the outposts' trade now.
+
+### 38.6 One save's own
+
+The hauls, the fees and the board work are worked out from the seed, the clock and the save's
+outposts, cached by the save's own stations (`saveLocationsKey`), so they change when an outpost
+opens, grows or is given up, and with nothing else. What the world shares (the other stations'
+timetable, their boards' other work, events, traffic) does not change; what does, for the save
+with outposts: their own haulers, the job a board posts to one, and the spill between neighbours.
+An outpost keeps the fees paid in all (`fees`); saves refuse fees that are not a whole number of
+credits from nothing up to what it has earned. The haul log (§21.4) keeps what became of an
+outpost's haulers the player saw as any others'.
+
+### 38.7 Guardrails
+
+`validateOutpostTrade` (`src/economy/outpostTradeGuards.ts`, run in `tests/unit/outpostTrade.test.ts`)
+checks the rules (a chance for each stage, from nothing to a half, never falling as it grows; the
+fee above nothing and a tenth at most; the fee hours whole, a day at least and no more than the
+income settles one by one; the board's chance and share from nothing to one, its reach one to
+three jumps), and, over a day at every belt site and a planet site of each kind with the outpost
+open at each stage: every haul from or to the outpost goes from a station that makes its cargo to
+one that takes it, within reach, its load within bounds, its id found again; the fees an hour a
+quarter of the stage's income at most, on average. The tests also break the rules to see them
+caught, and check that the world's timetable is the same with outposts or without; that an
+outpost's haulers fly in flight, are lost to raids and missed; fees paid with the income, the same
+however often settled, and none past the fee hours; the board job (its stream, its destination,
+its pay, none at a den); the spill both ways; the search; the calls gone; and saves.

@@ -13,13 +13,14 @@ import { beltSiteIssues, validateBeltOutposts } from '../../src/economy/beltOutp
 import type { OutpostRules } from '../../src/economy/outpostGuards.ts';
 import { nextRaid } from '../../src/economy/outpostRaids.ts';
 import { charterOffers, charterOutpost, deliverToOutpost, outpostAt, outpostIn, outpostsOf, stillNeeded } from '../../src/economy/outposts.ts';
-import { callAt, callsBetween, giveUpBlock, giveUpOutpost, nearestDock, nextCall, outpostCost, refinable, refineAllowance, refineAtOutpost, refinePay, saleValue } from '../../src/economy/outpostTrade.ts';
+import { giveUpBlock, giveUpOutpost, nearestDock, outpostCost, refinable, refineAllowance, refineAtOutpost, refinePay, saleValue } from '../../src/economy/outpostTrade.ts';
 import { SystemScene } from '../../src/world/SystemScene.ts';
 import { sceneDefFor } from '../../src/world/systems/index.ts';
 
 /**
  * Outposts in the belts (docs/PROCGEN.md §36): the sites, up to three outposts and one a system,
- * the scene, refining, selling and abandoning, haulers calling, income and raids, and the save.
+ * the scene, refining, selling and abandoning, income and raids, and the save (the haulers at an
+ * outpost are the timetable's, tests/unit/outpostTrade.test.ts).
  */
 
 afterEach(() => useWorldLog(null));
@@ -316,29 +317,6 @@ describe('selling and abandoning', () => {
     expect(s.world.outpostsFormer).toHaveLength(OUTPOSTS.former);
     expect(s.world.outpostsFormer!.at(-1)!.ended).toBe(s.clock);
     assertValidState(s);
-  });
-});
-
-describe('haulers calling', () => {
-  it('about every four hours, each on its own beat, the same for every player', () => {
-    const { o } = mainBelt(1);
-    const calls = callsBetween(o, 0, 20 * 24 * HOUR);
-    expect(calls.length).toBeGreaterThan(100);
-    expect(calls.every((c) => c.at >= (o.opened ?? 0))).toBe(true);
-    for (let i = 1; i < calls.length; i++) {
-      const gap = calls[i]!.at - calls[i - 1]!.at;
-      expect(gap).toBeGreaterThanOrEqual(OUTPOSTS.calls.every - 2 * OUTPOSTS.calls.spread);
-      expect(gap).toBeLessThanOrEqual(OUTPOSTS.calls.every + 2 * OUTPOSTS.calls.spread);
-      expect(calls[i]!.n).toBe(calls[i - 1]!.n + 1);
-    }
-    expect(callsBetween(o, 0, 20 * 24 * HOUR)).toEqual(calls);
-    expect(callAt(MAIN, 5)).not.toBe(callAt(KUIPER, 5));
-    const t = 3 * 24 * HOUR + 123;
-    const next = nextCall(o, t)!;
-    expect(next.at).toBeGreaterThanOrEqual(t);
-    expect(calls.find((c) => c.at >= t)).toEqual(next);
-    // None while it is being built.
-    expect(nextCall(mainBelt(0).o, t)).toBeNull();
   });
 });
 

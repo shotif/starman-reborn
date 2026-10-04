@@ -146,6 +146,8 @@ function assertValidOutpost(o: OutpostRecord, fail: (msg: string) => never): voi
     !Number.isFinite(o.founded) ||
     !Number.isFinite(o.since) ||
     !Number.isFinite(o.earned) ||
+    // Dock fees (§38.2): whole credits, part of what it has earned.
+    (o.fees !== undefined && (!Number.isInteger(o.fees) || o.fees < 0 || o.fees > o.earned)) ||
     (o.opened !== undefined && !Number.isFinite(o.opened)) ||
     (o.defence !== undefined && !validDefence(o.defence, o.stage)) ||
     (o.refined !== undefined && !validRefined(o.refined, site.beltId ? o.stage : 0))

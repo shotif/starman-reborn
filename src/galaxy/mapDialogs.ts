@@ -3,14 +3,14 @@
  * you to. Each is a modal dialog over the map; choosing a row hands its system back to the map,
  * which selects it and brings it to the centre.
  */
-import { MAP_SYSTEMS, getSystem } from '../data/systems.ts';
+import { MAP_SYSTEMS, getSystem, saveLocations } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { h, type Child } from '../ui/dom.ts';
 import { icon } from '../ui/icons.ts';
 import { laneTaker } from './jumpRules.ts';
 import { MAP_STARS, formatLy } from './mapData.ts';
 import { mapIcon } from './mapIcons.ts';
-import { searchSystems, type SearchKind } from './mapSearch.ts';
+import { outpostEntries, searchIndex, searchSystems, type SearchKind } from './mapSearch.ts';
 import { findRoute } from './routing.ts';
 import type { MapMission, MapState } from './types.ts';
 
@@ -41,6 +41,7 @@ const KIND_WORDS: Record<Exclude<SearchKind, 'system'>, string> = {
   planet: 'Planet',
   moon: 'Moon',
   station: 'Station',
+  outpost: 'Your outpost',
   belt: 'Belt',
   catalogue: 'Also known as',
 };
@@ -196,7 +197,7 @@ export function openSearchDialog(ctx: PickerContext): MapDialog {
     const state = ctx.state;
     const here = state.currentSystemId;
     const hits = query
-      ? searchSystems(query, { near: here })
+      ? searchSystems(query, { near: here }, [...searchIndex(), ...outpostEntries(saveLocations())])
       : MAP_SYSTEMS.filter((sys) => sys.id !== here)
           .map((sys) => ({ sys, ly: lyBetween(here, sys.id) }))
           .sort((a, b) => a.ly - b.ly)

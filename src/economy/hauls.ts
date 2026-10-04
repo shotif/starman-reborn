@@ -1,15 +1,17 @@
-import type { HaulRecord } from '../app/state.ts';
+import type { HaulRecord, OutpostRecord } from '../app/state.ts';
 import { COMMODITIES, type CommodityId } from '../content/economy/goods.ts';
 import { HAULER_NAMES, HAULS } from '../content/economy/hauls.ts';
 import { ECONOMY } from '../content/economy/rules.ts';
 import { EVENTS } from '../content/events/rules.ts';
+import { OUTPOSTS } from '../content/outposts/rules.ts';
+import { isOutpostId, outpostId } from '../content/outposts/sites.ts';
 import { rng } from '../content/random.ts';
 import { WORLD_SEED } from '../content/world/rules.ts';
 import { jumpsFrom } from '../content/world/network.ts';
-import { ALL_LOCATIONS, getLocation, WORLD } from '../data/systems.ts';
+import { ALL_LOCATIONS, getLocation, saveLocations, saveLocationsKey, WORLD } from '../data/systems.ts';
 import type { FictionalLocation, SystemId } from '../data/types.ts';
 import { FLEETS } from '../world/traffic/plan.ts';
-import { activeHaulLog, eventEnd, stationEventById, stationEventsBetween, systemEventAt, systemEventsBetween, type WorldEvent } from './events.ts';
+import { activeHaulLog, activeOutposts, eventEnd, stationEventById, stationEventsBetween, systemEventAt, systemEventsBetween, type WorldEvent } from './events.ts';
 import { marketTables } from './markets.ts';
 import { rivalRelief } from './rivals.ts';
 
@@ -21,6 +23,8 @@ import { rivalRelief } from './rivals.ts';
  * A haul in a raided system's lanes may be lost, unless the player escorts it. All of it is a
  * function of the seed, the clock and the save's world log (which keeps what became of the hauls
  * the player saw, and those the player escorts); FlightSession flies the ones in the player's system.
+ * The pilot's open outposts send and draw haulers of their own (docs/PROCGEN.md §38), added to the
+ * world's timetable without changing it.
  */
 
 export type HaulLegKind = 'out' | 'transit' | 'in' | 'local';
@@ -34,7 +38,10 @@ export interface HaulLeg {
 }
 
 export interface Haul {
-  /** `h.<station>.<slot>` for trade, `h.<event id>.<k>` for a shortage's relief or a glut's shipment. */
+  /**
+   * `h.<station>.<slot>` for trade (an outpost's sent too), `h.in.<outpost station>.<slot>` for one an
+   * outpost draws in, `h.<event id>.<k>` for a shortage's relief or a glut's shipment.
+   */
   id: string;
   kind: 'trade' | 'relief' | 'shipment';
   name: string;
@@ -84,11 +91,13 @@ export function haulSenders(): readonly FictionalLocation[] {
 const madeCache = new Map<string, CommodityId[]>();
 /** The lawful goods a station makes (none at a closed one). */
 export function made(locationId: string): CommodityId[] {
-  let out = madeCache.get(locationId);
+  // The save's own stations change as they grow (docs/PROCGEN.md §38.6).
+  const cache = isOutpostId(locationId) ? own().made : madeCache;
+  let out = cache.get(locationId);
   if (!out) {
     const t = marketTables().get(locationId);
     out = t ? [...t.entries.values()].filter((e) => e.role === 'produce' && COMMODITIES[e.commodity].category !== 'contraband').map((e) => e.commodity).sort() : [];
-    madeCache.set(locationId, out);
+    cache.set(locationId, out);
   }
   return out;
 }
@@ -179,9 +188,22 @@ const raided = (systemId: SystemId, clock: number) => systemEventAt(systemId, cl
 
 // ---------------------------------------------------------------- the timetable
 
+/** One of `places` (nearest first), nearer ones more often: by one over the systems on the way from `systemId`. */
+function nearer(r: ReturnType<typeof rng>, systemId: SystemId, places: readonly FictionalLocation[]): FictionalLocation {
+  const ways = waysFrom(systemId);
+  const weights = places.map((t) => 1 / ways.get(t.systemId)!.length);
+  let x = r.next() * weights.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < places.length; i++) {
+    x -= weights[i]!;
+    if (x < 0) return places[i]!;
+  }
+  return places[places.length - 1]!;
+}
+
 const tradeCache = new Map<string, Haul | null>();
-/** The haul a station sends in a time slot, if it sends one. */
+/** The haul a station sends in a time slot, if it sends one (one of the pilot's outposts too, §38). */
 export function tradeHaul(stationId: string, slot: number): Haul | null {
+  if (isOutpostId(stationId)) return outpostHaul(stationId, slot, 'out');
   const key = `${stationId}|${slot}`;
   if (tradeCache.has(key)) return tradeCache.get(key)!;
   const haul = makeTradeHaul(stationId, slot);
@@ -199,18 +221,8 @@ function makeTradeHaul(stationId: string, slot: number): Haul | null {
   const commodity = r.pick(goods);
   const takers = takersOf(from, commodity);
   if (!takers.length) return null;
-  // Nearer stations get more of the trade.
+  const to = nearer(r, from.systemId, takers);
   const ways = waysFrom(from.systemId);
-  const weights = takers.map((t) => 1 / ways.get(t.systemId)!.length);
-  let x = r.next() * weights.reduce((a, b) => a + b, 0);
-  let to = takers[takers.length - 1]!;
-  for (let i = 0; i < takers.length; i++) {
-    x -= weights[i]!;
-    if (x < 0) {
-      to = takers[i]!;
-      break;
-    }
-  }
   const depart = slot * HAULS.slotSeconds + Math.round(r.range(0, HAULS.slotSeconds));
   // Nobody sends a hauler out of a raided system, or into one.
   if (HAULS.avoidRaids && (raided(from.systemId, depart) || raided(to.systemId, depart))) return null;
@@ -224,6 +236,110 @@ function makeTradeHaul(stationId: string, slot: number): Haul | null {
     model: ship(r, faction),
     faction,
     from: stationId,
+    to: to.id,
+    commodity,
+    qty: load(to.id, commodity),
+    path,
+    legs,
+    depart,
+    arrive: legs.at(-1)!.end,
+  };
+}
+
+// ---------------------------------------------------------------- the pilot's outposts (§38)
+
+/** What the save's outposts' hauls depend on: its own stations, and how far each is built and when it opened. */
+function ownKey(): string {
+  return `${saveLocationsKey()}#${activeOutposts()
+    .map((o) => `${o.site}:${o.stage}:${o.opened ?? o.founded}`)
+    .join(',')}`;
+}
+
+interface OwnCaches {
+  key: string;
+  made: Map<string, CommodityId[]>;
+  goods: Map<string, CommodityId[]>;
+  hauls: Map<string, Haul | null>;
+}
+let ownCaches: OwnCaches | null = null;
+/** Caches of what the save's own stations send and draw, kept while they stay as they are. */
+function own(): OwnCaches {
+  const key = ownKey();
+  if (ownCaches?.key !== key) ownCaches = { key, made: new Map(), goods: new Map(), hauls: new Map() };
+  return ownCaches;
+}
+
+/** The save's outposts that trade (open, their market open), as stations, with their records. */
+export function tradingOutposts(): { loc: FictionalLocation; o: OutpostRecord }[] {
+  const out: { loc: FictionalLocation; o: OutpostRecord }[] = [];
+  for (const o of activeOutposts()) {
+    if (o.stage <= 0) continue;
+    const loc = saveLocations().find((l) => l.id === outpostId(o.site));
+    if (loc && isOpen(loc) && loc.services.includes('market')) out.push({ loc, o });
+  }
+  return out;
+}
+
+/**
+ * The lawful goods an outpost sends out (those it makes that a station within reach takes) or draws
+ * in (those it uses or trades that a station within reach makes).
+ */
+function outpostGoods(loc: FictionalLocation, dir: 'out' | 'in'): CommodityId[] {
+  const cache = own().goods;
+  const key = `${dir}|${loc.id}`;
+  let out = cache.get(key);
+  if (!out) {
+    const entries = [...(marketTables().get(loc.id)?.entries.values() ?? [])].filter((e) => COMMODITIES[e.commodity].category !== 'contraband');
+    out =
+      dir === 'out'
+        ? made(loc.id).filter((c) => takersOf(loc, c).length > 0)
+        : entries.filter((e) => e.role !== 'produce' && makersNear(loc, e.commodity, HAULS.maxJumps).length > 0).map((e) => e.commodity).sort();
+    cache.set(key, out);
+  }
+  return out;
+}
+
+/**
+ * The haul one of the pilot's outposts sends out (`out`) or draws in (`in`) in a time slot, if any
+ * (docs/PROCGEN.md §38.1): from its own stream, with a chance by its stages done, from when it opened.
+ */
+export function outpostHaul(stationId: string, slot: number, dir: 'out' | 'in'): Haul | null {
+  const cache = own().hauls;
+  const key = `${dir}|${stationId}|${slot}`;
+  if (cache.has(key)) return cache.get(key)!;
+  const haul = makeOutpostHaul(stationId, slot, dir);
+  if (cache.size > 20_000) cache.clear();
+  cache.set(key, haul);
+  return haul;
+}
+
+function makeOutpostHaul(stationId: string, slot: number, dir: 'out' | 'in'): Haul | null {
+  const post = tradingOutposts().find((x) => x.loc.id === stationId);
+  if (!post) return null;
+  const { loc, o } = post;
+  const chances = dir === 'out' ? OUTPOSTS.trade.send : OUTPOSTS.trade.draw;
+  const r = rng(WORLD_SEED, dir === 'out' ? 'haul' : 'haul-in', stationId, slot);
+  if (r.next() >= chances[Math.min(o.stage, chances.length) - 1]!) return null;
+  const goods = outpostGoods(loc, dir);
+  if (!goods.length) return null;
+  const commodity = r.pick(goods);
+  // Sent to a station that takes it, or drawn from one that makes it: nearer ones more often.
+  const other = nearer(r, loc.systemId, dir === 'out' ? takersOf(loc, commodity) : makersNear(loc, commodity, HAULS.maxJumps));
+  const [from, to] = dir === 'out' ? [loc, other] : [other, loc];
+  const depart = slot * HAULS.slotSeconds + Math.round(r.range(0, HAULS.slotSeconds));
+  if (depart < (o.opened ?? o.founded)) return null;
+  if (HAULS.avoidRaids && (raided(from.systemId, depart) || raided(to.systemId, depart))) return null;
+  const way = waysFrom(loc.systemId).get(other.systemId)!;
+  const path = dir === 'out' ? way : [...way].reverse();
+  const legs = legsOf(path, depart);
+  const faction = owner(from);
+  return {
+    id: dir === 'out' ? `h.${stationId}.${slot}` : `h.in.${stationId}.${slot}`,
+    kind: 'trade',
+    name: r.pick(HAULER_NAMES),
+    model: ship(r, faction),
+    faction,
+    from: from.id,
     to: to.id,
     commodity,
     qty: load(to.id, commodity),
@@ -402,7 +518,45 @@ function tradeHaulsNear(systemId: SystemId, from: number, to: number): Haul[] {
       if (h && h.depart <= to && h.arrive >= from && h.path.includes(systemId)) out.push(h);
     }
   }
+  // The pilot's outposts' own (docs/PROCGEN.md §38.1).
+  const ways = waysFrom(systemId);
+  for (const { loc } of tradingOutposts()) {
+    if ((ways.get(loc.systemId)?.length ?? 99) - 1 > HAULS.maxJumps) continue;
+    for (let slot = first; slot <= last; slot++) {
+      for (const dir of ['out', 'in'] as const) {
+        const h = outpostHaul(loc.id, slot, dir);
+        if (h && h.depart <= to && h.arrive >= from && h.path.includes(systemId)) out.push(h);
+      }
+    }
+  }
   return out;
+}
+
+/**
+ * The haulers at one of the pilot's outposts from `from` to `to` (docs/PROCGEN.md §38.2): those it
+ * sends, as they set off, and those it draws in that get there, as they dock; in time order.
+ */
+export function outpostDockings(stationId: string, from: number, to: number): { haul: Haul; at: number }[] {
+  const out: { haul: Haul; at: number }[] = [];
+  for (let slot = Math.floor((from - LONGEST) / HAULS.slotSeconds); slot <= Math.floor(to / HAULS.slotSeconds); slot++) {
+    const sent = outpostHaul(stationId, slot, 'out');
+    if (sent && sent.depart >= from && sent.depart < to) out.push({ haul: sent, at: sent.depart });
+    const drawn = outpostHaul(stationId, slot, 'in');
+    if (!drawn || drawn.arrive < from) continue;
+    const fate = haulFate(drawn);
+    if (fate.delivered && fate.at >= from && fate.at < to) out.push({ haul: drawn, at: fate.at });
+  }
+  return out.sort((a, b) => a.at - b.at || (a.haul.id < b.haul.id ? -1 : 1));
+}
+
+/** The dock fee a hauler pays at one of the pilot's outposts (docs/PROCGEN.md §38.2): a share of its cargo's worth at galaxy base prices. */
+export function dockFee(h: Pick<Haul, 'commodity' | 'qty'>): number {
+  return Math.round(OUTPOSTS.trade.fee * h.qty * COMMODITIES[h.commodity].basePrice);
+}
+
+/** The dock fees an outpost's haulers pay from `from` to `to`. */
+export function dockFees(stationId: string, from: number, to: number): number {
+  return outpostDockings(stationId, from, to).reduce((sum, d) => sum + dockFee(d.haul), 0);
 }
 
 /** Every haul with any part of its way between `from` and `to` in `systemId` (trade, relief and shipments). */
@@ -452,8 +606,9 @@ export interface HaulHere {
 }
 
 /**
- * The hauls flying in a system at a moment (not lost by then), relief and shipments first, for the
- * flight scene. One the player escorts flies with the player instead, never on its timetable.
+ * The hauls flying in a system at a moment (not lost by then), relief and shipments first, then the
+ * pilot's outposts', for the flight scene. One the player escorts flies with the player instead,
+ * never on its timetable.
  */
 export function haulsIn(systemId: SystemId, clock: number): HaulHere[] {
   const out: HaulHere[] = [];
@@ -464,8 +619,11 @@ export function haulsIn(systemId: SystemId, clock: number): HaulHere[] {
     if (fate.escort || (fate.at <= clock && (!fate.delivered || fate.at < h.arrive))) continue;
     out.push({ haul: h, leg, progress: (clock - leg.start) / (leg.end - leg.start) });
   }
-  // Relief and shipments first (the haulers the news speaks of), then in timetable order.
-  return out.sort((a, b) => Number(b.haul.kind !== 'trade') - Number(a.haul.kind !== 'trade') || (a.haul.id < b.haul.id ? -1 : 1));
+  // Relief and shipments first (the haulers the news speaks of), then the pilot's outposts' (§38.1), then in timetable order.
+  const own = (h: Haul) => isOutpostId(h.from) || isOutpostId(h.to);
+  return out.sort(
+    (a, b) => Number(b.haul.kind !== 'trade') - Number(a.haul.kind !== 'trade') || Number(own(b.haul)) - Number(own(a.haul)) || (a.haul.id < b.haul.id ? -1 : 1),
+  );
 }
 
 /** The relief a shortage has had by a moment: units delivered by hauls (and rival runners, §24) that arrived. */
@@ -554,7 +712,9 @@ function rolledLost(h: Haul, systemId: SystemId, level: 1 | 2 | 3): boolean {
 const raidLossCache = new Map<string, Map<string, Haul[]>>();
 /** Trade hauls a raid's odds go against in its lanes, by where they were bound (haulFate has the last word). */
 function lostToRaid(raid: WorldEvent): ReadonlyMap<string, Haul[]> {
-  let out = raidLossCache.get(raid.id);
+  // The pilot's outposts' hauls are among them (§38.1).
+  const key = tradingOutposts().length ? `${raid.id}|${ownKey()}` : raid.id;
+  let out = raidLossCache.get(key);
   if (!out) {
     out = new Map();
     for (const h of tradeHaulsNear(raid.systemId, raid.start, raid.end)) {
@@ -564,7 +724,7 @@ function lostToRaid(raid: WorldEvent): ReadonlyMap<string, Haul[]> {
       out.set(h.to, [...(out.get(h.to) ?? []), h]);
     }
     if (raidLossCache.size > 2_000) raidLossCache.clear();
-    raidLossCache.set(raid.id, out);
+    raidLossCache.set(key, out);
   }
   return out;
 }
@@ -590,12 +750,17 @@ function raidsAround(systemId: SystemId, clock: number): WorldEvent[] {
   return out;
 }
 
-/** The haul with this id: a station's trade haul (`h.<station>.<slot>`), or an event's relief or shipment (`h.<event id>.<k>`). */
+/**
+ * The haul with this id: a station's trade haul (`h.<station>.<slot>`, one of the pilot's outposts'
+ * too), one an outpost draws in (`h.in.<outpost station>.<slot>`), or an event's relief or shipment
+ * (`h.<event id>.<k>`).
+ */
 export function haulById(id: string): Haul | null {
   const dot = id.lastIndexOf('.');
   const head = id.slice(2, dot);
   const n = Number(id.slice(dot + 1));
   if (!id.startsWith('h.') || !Number.isInteger(n)) return null;
+  if (head.startsWith('in.')) return isOutpostId(head.slice(3)) ? outpostHaul(head.slice(3), n, 'in') : null;
   if (head.startsWith('e.')) {
     const e = stationEventById(head);
     return (e && eventHauls(e).find((h) => h.id === id)) ?? null;

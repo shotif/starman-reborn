@@ -102,10 +102,12 @@ snapshot branch only when the archives changed.
 - Stations of your own (PROCGEN §22, §36) are three to a save at most, one to a system. Their
   materials come by the player's hand or a supply captain's (§37), who loads only at the dock where
   its ship is parked; their frames borrow a shipyard's look while they are built, and they have no
-  world events of their own (their system's raids still cut the income). They keep to themselves: no
-  other station's board sends work to one, the timetable's haulers do not call there (the haulers
-  seen calling at an outpost only change what is drawn: its stock recovers as every station's does),
-  and the star map's search does not find them (their system's card lists them). A belt outpost is
+  world events of their own (their system's raids still cut the income). Once open they trade (§38),
+  but only with the world's stations: an outpost's haulers never run to another of the pilot's
+  outposts, only lawful boards within two jumps post work to them (never the outposts' own boards),
+  and a trade haul that docks there moves its market no more than any trade haul moves any market
+  (it is the normal flow, §21.3). Away for more than three days, the hours before the last three pay
+  no dock fees. A belt outpost is
   always a refinery, the only kind that refines, and only the ore, ice and gases the pilot brings or
   a mining captain cuts in its own belt. Selling one waits while goods are stored there, a captain
   is on a run to it or mining for it, or a job of its board is under way.

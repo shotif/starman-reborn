@@ -1175,7 +1175,7 @@ export function settleFleet(state: GameState, opts: SettleOptions = {}): FleetSe
       continue;
     }
     if (next.outpost) {
-      const pay = payOutpostHour(next.outpost);
+      const pay = payOutpostHour(next.outpost, now);
       if (pay > 0) paid.add(next.outpost);
       out.outpost += pay;
       credit(state, pay);

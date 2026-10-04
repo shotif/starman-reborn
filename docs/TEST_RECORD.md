@@ -674,8 +674,7 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   leaves nothing in the save that names the station (a rumour, a watch, old jobs, its raid job, its
   prices), and round-trips; abandoning pays nothing from another station of its system; storage, a
   captain on a run there and a job bound for it each block it, and a parked captain is stood down;
-  the journal keeps the last six. Hauler calls come about every four hours in order, the same each
-  time, none before it opens. Saves: one from before keeps its outpost as the first; more than three,
+  the journal keeps the last six. Saves: one from before keeps its outpost as the first; more than three,
   two in a system, a belt outpost of another kind, refining over the allowance or at a planet's, too
   many former outposts, an unknown former site, or an abandoned one that fetched something are refused.
 
@@ -857,6 +856,25 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   won, with the record purse and the rating's points, and the prize and purse are paid; the racers
   then really finish, each within two thousandths of a second of the time worked out; and docked
   again, the journal shows the racing record and the Racing rating risen.
+- `outpostTrade.test.ts`: **outposts join the trade**. The guardrails pass over a day at every belt
+  site and a planet site of each kind at each stage, and broken rules are caught (a chance missing
+  for a stage, above a half or falling as it grows, no fee or too large a one, fee hours too few,
+  fractional or past the income's, a board chance or passage share out of range, too long a reach).
+  An outpost sends and draws haulers of its own, none before it opened, more as it grows (about one
+  an hour at a frame, under four and a half at a port), the sent ones with goods it makes for the
+  world's stations, the drawn ones from makers of what it takes, each found again by its id; none
+  while it is built or once it is gone. The world's own timetable is the same, module for module,
+  with an outpost or without. Its haulers fly in the systems of their way, shown before the rest of
+  the trade. At lawless Fomalhaut nobody sets off into or out of a raid, and one lost on its way in
+  is missed by the outpost's market and pays no fee. Dock fees (3% of the cargo at base prices) come
+  with the hour's income, the same settled hour by hour or once, within a quarter of the income, and
+  only for the last 72 hours when away longer. The Outpost window names the next hauler and the fees
+  so far. Boards within two jumps post freight (a good the giver makes and the outpost takes) and
+  passages to it, about a third of the time, from their own stream: the rest of each board is as it
+  would be without, none goes to an outpost being built, none comes from a den, and a job bound for
+  it blocks giving it up. Its market is a spill neighbour both ways, and a glut left at Earth Port
+  drifts to it. The star map's search finds it by name, only with the save's entries. No calls are
+  left in the rules, and saves keep the fees and refuse negative, fractional or more-than-earned ones.
 - `battles.spec.ts`: **the border in sight** (battles turned on for this test, and Ross 154's raider
   packs kept away while the pilot waits in flight): at Ross 154 a clash
   opens at the beacon line a moment after launch from Waymark Waypoint; the battle strip names it,
@@ -875,13 +893,18 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   at Earth Port, it flies home and signs off.
 - `beltOutpost.spec.ts`: **outposts in the belts**: at Earth Port the Fleet window offers Sol's two
   belts; the main belt's charter dialog says it is always a refinery, and once chartered the Fleet
-  window says one to a system. At the site the Outpost window waits for the frame, then (open) says
-  when haulers call; with 50 ore in the hold it refines 40 (*40/40 this hour*, the button then
-  disabled) for 48 cr each. In flight ten minutes before the next call, the refinery is a target, the
-  call is due, and when it comes a hauler (*The …*) flies in from the beacon toward the dock. Docked
-  again, *Sell or abandon* names the Sol Transit Authority as the buyer; sold, the pilot is at Earth
+  window says one to a system. At the site the Outpost window waits for the frame, then (open) with
+  50 ore in the hold it refines 40 (*40/40 this hour*, the button then disabled) for 48 cr each. In
+  flight the refinery is a target. Docked again, *Sell or abandon* names the Sol Transit Authority as the buyer; sold, the pilot is at Earth
   Port or Mars Depot, paid what the journal's *Outposts you have had* says it fetched, and the Fleet
   window offers the site again.
+- `outpostTrade.spec.ts`: **outposts join the trade**: a refinery chartered in Sol's main belt from
+  Earth Port and its frame built, its Outpost window's *Haulers* names who comes next (or that none
+  is due) and says the dock fee is 3%, nothing paid yet; hours on, the fees have come in with the
+  income and the window says how much. Launched from Earth Port just before the next hauler's leg in
+  Sol, it is seen flying to or from the refinery and is a target (*The …*). Back at Earth Port, within
+  a few time slots the board posts work to the refinery, shown in the jobs window; and the star map's
+  search, given the first word of its name, finds Sol as *Your outpost …*.
 - `wing.spec.ts`: **wing command**: a pilot hired in the bar shows their grade in *Your wing*; in
   flight the order card (V on a keyboard, the Wing chip on touch) pauses the game, lists the wingman,
   locks Defend and Cover with why, and gives Hold (the radio's reply, the HUD's *Wing 1 · Hold* or the

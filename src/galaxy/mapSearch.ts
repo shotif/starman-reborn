@@ -1,13 +1,14 @@
 /**
  * Finding a system on the star map by name (pure, no DOM): systems, their stars, planets, stations
- * and belts, the Solar System's own bodies, and the common catalogue names of the stars. Matching
+ * and belts, the Solar System's own bodies, the common catalogue names of the stars, and the pilot's
+ * own outposts (docs/PROCGEN.md §38.4). Matching
  * ignores case, accents and punctuation, takes Greek letters spelled out, and forgives a typo or two
  * in longer words. One hit per system, best first.
  */
 import { BELTS, MAP_SYSTEMS, SOLAR_BODIES, componentsOf } from '../data/systems.ts';
 import type { StarSystemRecord, SystemId } from '../data/types.ts';
 
-export type SearchKind = 'system' | 'star' | 'planet' | 'moon' | 'station' | 'belt' | 'catalogue';
+export type SearchKind = 'system' | 'star' | 'planet' | 'moon' | 'station' | 'outpost' | 'belt' | 'catalogue';
 
 export interface SearchEntry {
   systemId: SystemId;
@@ -134,6 +135,11 @@ export function buildSearchIndex(systems: readonly StarSystemRecord[] = MAP_SYST
   return out;
 }
 
+/** The pilot's own outposts as search entries (a save's own, so never in the shared index). */
+export function outpostEntries(outposts: readonly { systemId: SystemId; name: string }[]): SearchEntry[] {
+  return outposts.map((o) => entry(o.systemId, 'outpost', o.name, false)).filter((e) => e.norm);
+}
+
 let defaultIndex: SearchEntry[] | null = null;
 
 /** The index over every system on the map (built on first use). */
@@ -142,7 +148,7 @@ export function searchIndex(): SearchEntry[] {
   return defaultIndex;
 }
 
-const KIND_RANK: Record<SearchKind, number> = { system: 0, star: 1, station: 2, planet: 3, moon: 3, belt: 4, catalogue: 5 };
+const KIND_RANK: Record<SearchKind, number> = { system: 0, star: 1, station: 2, outpost: 2, planet: 3, moon: 3, belt: 4, catalogue: 5 };
 
 /** Optimal-string-alignment distance from `a` to the closest prefix of `b` (typos while typing). */
 export function prefixDistance(a: string, b: string): number {

@@ -24,7 +24,7 @@ import {
   turretNeeds,
 } from '../../economy/outpostRaids.ts';
 import { button, dataBadge, showModal, toast } from '../components.ts';
-import { buyerOf, callLine, giveUpBlock, giveUpOutpost, inBelt, nearestDock, RAW_GOODS, refinable, refineAllowance, refineAtOutpost, refinedThisHour, refinePay, nextRefineHour, saleValue } from '../../economy/outpostTrade.ts';
+import { buyerOf, giveUpBlock, haulerLines, giveUpOutpost, inBelt, nearestDock, RAW_GOODS, refinable, refineAllowance, refineAtOutpost, refinedThisHour, refinePay, nextRefineHour, saleValue } from '../../economy/outpostTrade.ts';
 import { getLocation, getSystem } from '../../data/systems.ts';
 import type { GameState, OutpostRecord } from '../../app/state.ts';
 import { formatCredits, h, replaceChildren } from '../dom.ts';
@@ -232,7 +232,6 @@ export function outpostContent(ctx: StationContext, refresh: Refresh): HTMLEleme
     { class: 'stack fleet', 'data-testid': 'outpost-content' },
     h('p', { class: 'muted small' }, `${o.name}, your ${kindWord(o.kind)} (fiction) ${outpostWhere(o)}.`),
     h('p', { 'data-testid': 'outpost-window-status' }, outpostStatus(state, o)),
-    o.stage > 0 ? h('p', { class: 'muted small', 'data-testid': 'outpost-calls' }, callLine(o, state.clock)) : null,
     stage
       ? h(
           'section',
@@ -280,8 +279,23 @@ export function outpostContent(ctx: StationContext, refresh: Refresh): HTMLEleme
         )
       : h('p', { class: 'callout' }, 'Complete: a port with a market, repairs, a job board and an outfitter.'),
     inBelt(o) ? refineSection(ctx, o, refresh) : null,
+    o.stage > 0 ? haulerSection(o, state.clock) : null,
     o.stage > 0 ? defenceSection(ctx, o, refresh) : null,
     giveUpSection(ctx, o, refresh),
+  );
+}
+
+// ---------------------------------------------------------------- haulers (docs/PROCGEN.md §38)
+
+/** The timetable's haulers at an open outpost: who comes next, and the dock fees they pay. */
+function haulerSection(o: OutpostRecord, clock: number): HTMLElement {
+  const lines = haulerLines(o, clock);
+  return h(
+    'section',
+    { 'aria-label': 'Haulers', 'data-testid': 'outpost-haulers' },
+    h('div', { class: 'list-head' }, h('span', null, 'Haulers')),
+    h('p', { 'data-testid': 'outpost-next-hauler' }, lines.next),
+    h('p', { class: 'muted small', 'data-testid': 'outpost-fees' }, lines.fees),
   );
 }
 
