@@ -75,7 +75,8 @@ export function raidBalance(windows = 400, seeds = 20): { lost: Partial<Record<R
   const sums: Partial<Record<RaidBand, { lost: number; hours: number }>> = {};
   let lawlessSaved = 0;
   let lawlessHours = 0;
-  const raided = outpostSites().filter((s) => (WORLD.profiles.get(s.systemId)?.security ?? 1) < OUTPOST_RAIDS.maxSecurity);
+  // Planet sites (a belt's are raided by the same rules, by their system).
+  const raided = outpostSites().filter((s) => !!s.planetId && (WORLD.profiles.get(s.systemId)?.security ?? 1) < OUTPOST_RAIDS.maxSecurity);
   const bands: RaidBand[] = ['patrolled', 'thin', 'lawless'];
   const byBand = new Map(bands.map((b) => [b, raided.filter((s) => riskOf(WORLD.profiles.get(s.systemId)?.security ?? 1) === b)]));
   const L = OUTPOST_RAIDS.lost;
@@ -86,8 +87,8 @@ export function raidBalance(windows = 400, seeds = 20): { lost: Partial<Record<R
     if (!pool.length) continue;
     const site = pool[(Math.floor(k / bands.length) * 7) % pool.length]!;
     const state: GameState = createNewGame(1_000 + k);
-    const o: OutpostRecord = { site: site.planetId, kind: site.kinds[0]!, name: 'Test Port', founded: 0, stage: OUTPOSTS.stages.length, delivered: {}, since: 0, earned: 0, opened: 0 };
-    state.world.outpost = o;
+    const o: OutpostRecord = { site: site.id, kind: site.kinds[0]!, name: 'Test Port', founded: 0, stage: OUTPOSTS.stages.length, delivered: {}, since: 0, earned: 0, opened: 0 };
+    state.world.outposts = [o];
     useWorldLog(state.world);
     try {
       const band = raidBand(o);

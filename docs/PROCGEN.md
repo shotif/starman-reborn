@@ -3693,3 +3693,88 @@ turning battles exactly when the pressure is in its window; words with no number
 star, only their fields and short enough for the strip. The tests also break the rules to see them
 caught, and fly battles headless: both sides win some even clashes, a pilot's part counts, a deed and
 a purse are paid once, and a battle left unfinished is staged again.
+
+## 36. Outposts in the belts
+
+A station of your own (§22) can now stand in a real belt as well as in orbit of a planet, a pilot may
+run up to three, and a belt outpost refines the rock the pilot mines (`src/economy/outposts.ts`; the
+belt sites in `src/content/outposts/sites.ts`; refining and selling in
+`src/economy/outpostTrade.ts`; the rules in `OUTPOSTS`, `src/content/outposts/rules.ts`). The belts
+are the real, cited ones (§19.1); the outposts, their names and their people are fiction.
+
+The owner chose (4 October 2026) up to three outposts a save, any mix of planet and belt sites; a site
+in every cited belt, Sol's included; ore in, goods out (a belt outpost refines what the pilot brings,
+paying more than selling it raw, on top of its hourly income); and half back when an outpost is sold.
+
+### 36.1 Sites in the belts
+
+- **One site in each cited belt**: Sol's main belt and Kuiper Belt, and the debris discs of Alpha
+  Centauri (Proxima's), Epsilon Eridani, Tau Ceti, Vega, Fomalhaut, Fomalhaut C and GJ 581: nine
+  sites in seven systems. The site lies in its belt's ring as drawn in flight (Epsilon Eridani's inner
+  ring), halfway across it, level with it, at an angle drawn from the belt's id and moved on until it
+  is at least 3 km from every station, planet and star (Sol's moving planets checked across a whole
+  Earth–Mars cycle) and 400 m from every lane. The belt is real and cited; the outpost is invented.
+- **Always a refinery** (named Refinery, Smelter or Stillworks): its belt is its ore. The world keeps
+  its own refineries to space at least 0.15 secure (§7.3); a pilot may build one anywhere, and in
+  lawless space raids come for it (§29).
+- Chartered and built as any outpost (§22.2–22.4): the same charter, stages, services and income.
+
+### 36.2 Up to three
+
+A save may run up to three outposts, any mix of planet and belt sites, **at most one in a system**
+(so a system's scene holds at most one of the pilot's own, with its defences and raids, §29). Each is
+chartered, built, paid, raided and guarded on its own. The Fleet window lists them all, and the
+Outpost window at each is that outpost's.
+
+### 36.3 Ore in, goods out
+
+- From its frame on, a belt outpost's Outpost window has **Refine**: hand over metal ore, water ice
+  and volatile gases from the hold. For each unit the outpost pays the pilot twice its base price,
+  more than any market pays for it raw at its normal stock (the best pays 1.94 times, for ice at a
+  remote refinery).
+- And its market gains the refined goods, one for every two units: refined metals for ore, deuterium
+  fuel for ice, polymers for gases, to buy there; its stock comes back to normal with time, as every
+  station's does (§8).
+- **So much an hour**: 40 units an hour of game clock at the frame, 60 at the station, 80 at the
+  port. The hour's allowance does not carry over. At most the port pays 80 × 28 × 2 = 4,480 cr an hour
+  for gases, against 3,840 for the same gases sold raw at the best market there is: the outpost's
+  gift is the trip it saves.
+
+### 36.4 Selling and abandoning
+
+- At the outpost, or any station of its system where the pilot has full access, the Outpost window
+  offers **Sell**: its system's faction buys it (an independent buyer where nobody holds the
+  system) for half of what went into it, the charter and every good handed over for its stages at
+  their galaxy base prices. **Abandon** gives it up for nothing.
+- Either way the site is free again: its guards are paid off, a raid due no longer comes, captains
+  running to it are stood down at their ship's dock, and its market, board and outfitter close (a
+  pilot docked there is moved to the nearest open dock of the system). The journal keeps it among
+  *Outposts you have had* (the last six): its name, where, its stage, when it ended and what it fetched.
+
+### 36.5 Haulers calling
+
+Every open outpost has a hauler call about every four hours (each call's time drawn from the
+outpost's site and the call): an independent hauler comes in from its system's jump beacon and docks
+there. In flight in its system the pilot sees it fly in; away, the call is as if it happened. Its
+market's stock comes back toward normal with time as every station's does (§8): the calls are that
+trade, seen. The Outpost window says when the next is due.
+
+### 36.6 One save's own
+
+`world.outposts` keeps up to three outposts (a save from before keeps its one as the first); a belt
+outpost's site is `belt.<belt id>`, its station `outpost.belt.<belt id>`. Each keeps what it has
+refined this hour; `world.outpostsFormer` keeps the last six given up. Saves refuse more than three,
+two in one system, an unknown site, a belt outpost of another kind, more refined in an hour than its
+allowance, and more former outposts than are kept.
+
+### 36.7 Guardrails
+
+`validateOutposts` grows (`src/economy/outpostGuards.ts`, run in `tests/unit/outposts.test.ts` and
+`tests/unit/beltOutposts.test.ts`): every cited belt has exactly one site, in its ring, a refinery,
+clear of stations, bodies and lanes as said; at most three outposts and one a system; the refining
+pay above every market's raw price at normal stock, the hourly allowance rising with the stages and
+the refined yield half the raw; the sale half. The tests also break the rules to see them caught,
+and check the refactor (a save from before keeps its outpost), charters up to three and one a system,
+belt dock positions in the scene clear of rocks, refining (paid, capped, the market's stock moved),
+selling and abandoning (half back, the site free, guards and runs stood down, the journal), hauler
+calls on time and seen in flight, and saves.

@@ -3192,10 +3192,10 @@ export class FlightSession {
     this.callbacks.onOutpostRaid?.(raid.setup.window, how, raid.downed);
   }
 
-  /** The raid on the outpost here, if one is due or under way (leaving one under way leaves it to the clock). */
-  outpostRaidStatus(): { window: number; state: 'pending' | 'on' | 'held' | 'lost' | 'timeout'; downed: number; setup: OutpostRaidSetup } | null {
+  /** The raid on the outpost here (by its station), if one is due or under way (leaving one under way leaves it to the clock). */
+  outpostRaidStatus(): { window: number; state: 'pending' | 'on' | 'held' | 'lost' | 'timeout'; downed: number; setup: OutpostRaidSetup; locationId: string | null } | null {
     const r = this.outpostRaid;
-    return r ? { window: r.setup.window, state: r.state, downed: r.downed, setup: r.setup } : null;
+    return r ? { window: r.setup.window, state: r.state, downed: r.downed, setup: r.setup, locationId: this.traffic?.outpost?.locationId ?? null } : null;
   }
 
   /** The duel here, if a rival waits for one or is fighting it (the game counts leaving a duel under way as forfeit). */

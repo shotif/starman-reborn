@@ -25,7 +25,7 @@ import { RACE_CLASSES, RACING } from '../../content/racing/rules.ts';
 import { courseById, heatOf, type RaceEnd, type RacingLog } from '../../economy/racing.ts';
 import { MYSTERY_IDS, type MysteryId } from '../../content/wrecks/mysteries.ts';
 import { outpostId, outpostSite } from '../../content/outposts/sites.ts';
-import { createNewGame, SAVE_VERSION, type CommodityId, type CrewLog, type GameState, type OutpostDefence, type OutpostRecord, type RivalStory, type WreckLog } from '../state.ts';
+import { createNewGame, SAVE_VERSION, type CommodityId, type CrewLog, type FormerOutpost, type GameState, type OutpostDefence, type OutpostRecord, type RivalStory, type WreckLog } from '../state.ts';
 
 /**
  * Save format history:
@@ -90,7 +90,45 @@ const SHARED_IDS: ReadonlySet<string> = new Set([...ALL_LOCATIONS.filter((l) => 
 /** Stations a save may name: the shared world's, and its own outpost once it is valid (set as a save is checked). */
 let LOCATION_IDS: ReadonlySet<string> = SHARED_IDS;
 
-/** The player's outpost (docs/PROCGEN.md §22): a real site, a kind it allows, its stage and deliveries in range. */
+/** The player's outposts (docs/PROCGEN.md §22, §36.6): up to three, at most one in a system, each valid. */
+function assertValidOutposts(list: OutpostRecord[], fail: (msg: string) => never): void {
+  if (!Array.isArray(list) || list.length > OUTPOSTS.max) fail('outposts');
+  const systems = new Set<string>();
+  for (const o of list) {
+    assertValidOutpost(o, fail);
+    const sys = outpostSite(o.site)!.systemId;
+    if (systems.has(sys)) fail('two outposts in one system');
+    systems.add(sys);
+  }
+}
+
+/** Outposts given up (docs/PROCGEN.md §36.4): as many as are kept, each a site that was, sold or abandoned. */
+function validFormer(list: FormerOutpost[]): boolean {
+  return (
+    Array.isArray(list) &&
+    list.length <= OUTPOSTS.former &&
+    list.every(
+      (f) =>
+        isRecord(f) &&
+        typeof f.site === 'string' &&
+        !!outpostSite(f.site) &&
+        typeof f.name === 'string' &&
+        typeof f.kind === 'string' &&
+        Number.isInteger(f.stage) &&
+        f.stage >= 0 &&
+        f.stage <= OUTPOSTS.stages.length &&
+        Number.isFinite(f.founded) &&
+        Number.isFinite(f.ended) &&
+        f.ended >= f.founded &&
+        (f.how === 'sold' || f.how === 'abandoned') &&
+        Number.isFinite(f.paid) &&
+        f.paid >= 0 &&
+        (f.how === 'sold' || f.paid === 0),
+    )
+  );
+}
+
+/** The player's outpost (docs/PROCGEN.md §22, §36): a real site, a kind it allows, its stage, deliveries and refining in range. */
 function assertValidOutpost(o: OutpostRecord, fail: (msg: string) => never): void {
   const site = isRecord(o) && typeof o.site === 'string' ? outpostSite(o.site) : undefined;
   if (
@@ -108,10 +146,17 @@ function assertValidOutpost(o: OutpostRecord, fail: (msg: string) => never): voi
     !Number.isFinite(o.since) ||
     !Number.isFinite(o.earned) ||
     (o.opened !== undefined && !Number.isFinite(o.opened)) ||
-    (o.defence !== undefined && !validDefence(o.defence, o.stage))
+    (o.defence !== undefined && !validDefence(o.defence, o.stage)) ||
+    (o.refined !== undefined && !validRefined(o.refined, site.beltId ? o.stage : 0))
   ) {
     fail('outpost');
   }
+}
+
+/** What a belt outpost refined this hour (docs/PROCGEN.md §36.3): never more than its stages allow, nor at a planet's. */
+function validRefined(r: NonNullable<OutpostRecord['refined']>, stage: number): boolean {
+  const cap = stage > 0 ? OUTPOSTS.refining.perHour[Math.min(stage, OUTPOSTS.refining.perHour.length) - 1]! : 0;
+  return isRecord(r) && Number.isInteger(r.hour) && r.hour >= 0 && Number.isInteger(r.units) && r.units >= 0 && r.units <= cap && cap > 0;
 }
 
 /** An outpost's defences and raids (docs/PROCGEN.md §29): turrets within its stages, guards and raids that make sense. */
@@ -414,9 +459,18 @@ export function migrateSave(raw: unknown): GameState {
   else if (raw.version === 7) data = migrateV7(raw as unknown as Parameters<typeof migrateV7>[0]);
   else if (raw.version === 8) data = migrateV8(raw as unknown as Parameters<typeof migrateV8>[0]);
   else if (raw.version === 9) data = migrateV9(raw as unknown as Parameters<typeof migrateV9>[0]);
+  upgradeOutposts(data);
   const state = data as GameState;
   assertValidState(state);
   return state;
+}
+
+/** A save from before the belts (docs/PROCGEN.md §36.6) kept one outpost: it becomes the first of `world.outposts`. */
+function upgradeOutposts(data: unknown): void {
+  if (!isRecord(data) || !isRecord(data.world) || !('outpost' in data.world)) return;
+  const w = data.world as Record<string, unknown>;
+  if (w.outposts === undefined && w.outpost !== undefined) w.outposts = [w.outpost];
+  delete w.outpost;
 }
 
 /** A cargo record: known goods in whole, non-negative quantities. */
@@ -519,13 +573,14 @@ export function assertValidState(s: GameState): void {
     throw new SaveFormatError(`Save data is damaged: ${msg}`);
   };
   if (!isRecord(s) || s.version !== SAVE_VERSION) fail('wrong version');
-  // The save's own outpost first: once valid, its id is a station the rest of the save may name.
-  const own = isRecord(s.world) ? s.world.outpost : undefined;
+  // The save's own outposts first: once valid, their ids are stations the rest of the save may name.
+  const own = isRecord(s.world) ? s.world.outposts : undefined;
   LOCATION_IDS = SHARED_IDS;
   if (own !== undefined) {
-    assertValidOutpost(own, fail);
-    LOCATION_IDS = new Set([...SHARED_IDS, outpostId(own.site)]);
+    assertValidOutposts(own, fail);
+    LOCATION_IDS = new Set([...SHARED_IDS, ...own.map((o) => outpostId(o.site))]);
   }
+  if (isRecord(s.world) && s.world.outpostsFormer !== undefined && !validFormer(s.world.outpostsFormer)) fail('former outposts');
   // The real systems, or Pyre, the invented star (docs/PROCGEN.md §26).
   if (!KNOWN_SYSTEM_IDS.includes(s.location?.systemId)) fail('unknown system');
   if (s.location.dockedAt !== null && !LOCATION_IDS.has(s.location.dockedAt)) fail('unknown dock');

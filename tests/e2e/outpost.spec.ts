@@ -10,7 +10,7 @@ import { api, openFresh, press, waitUntil } from './helpers.ts';
 type Hooks = { __starman: { completeJobs(ids: string[]): void; dockAt(id: string): void } };
 interface OutpostState {
   credits: number;
-  world: { outpost?: { site: string; name: string; stage: number; earned: number } };
+  world: { outposts?: { site: string; name: string; stage: number; earned: number }[] };
 }
 
 const DOCK = 'wayfarer-array';
@@ -58,7 +58,7 @@ test('your own outpost: chartered, built and opened at Lalande 21185, paying its
   const name = await page.getByTestId('outpost-name').inputValue();
   await press(page, 'outpost-charter-confirm');
   let s = await api<OutpostState>(page, 'state');
-  expect(s.world.outpost).toMatchObject({ site: PLANET, name, stage: 0 });
+  expect(s.world.outposts?.[0]).toMatchObject({ site: PLANET, name, stage: 0 });
   expect(s.credits).toBe(50_000 - 8_000);
   await expect(page.getByTestId('outpost-status')).toContainText('Its frame is going up');
 
@@ -71,14 +71,14 @@ test('your own outpost: chartered, built and opened at Lalande 21185, paying its
   for (const good of ['habitat-modules', 'metals', 'machinery']) await press(page, `outpost-deliver-${good}`);
 
   // Its frame is up: it is open, with a market, and its window says what the station needs next.
-  await waitUntil(page, 'the outpost open', async () => (await api<OutpostState>(page, 'state')).world.outpost?.stage === 1);
+  await waitUntil(page, 'the outpost open', async () => (await api<OutpostState>(page, 'state')).world.outposts?.[0]?.stage === 1);
   await expect(page.getByTestId('outpost-window-status')).toContainText('Open, a frame');
   await expect(page.getByTestId('room-trader')).toBeVisible();
 
   // It pays by the hour, and the toast says so.
   await api(page, 'advanceClock', 3_600);
   s = await api<OutpostState>(page, 'state');
-  expect(s.world.outpost!.earned).toBeGreaterThan(0);
+  expect(s.world.outposts![0]!.earned).toBeGreaterThan(0);
   await expect(page.getByText(/Income from your outpost: \+\d+ cr\./)).toBeVisible();
 
   // Out in Lalande 21185, it is a station of the system, to fly back to.

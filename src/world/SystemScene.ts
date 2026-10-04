@@ -56,6 +56,8 @@ export interface LaneRuntime {
 }
 
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
+/** Room kept free of rock round a station that sits in a belt's ring (metres), beyond its own size. */
+const BELT_CLEAR = 800;
 
 /**
  * One loaded local system: static scenery, lights, docks, lanes and belts built from a
@@ -216,6 +218,8 @@ export class SystemScene {
           sizeMin: b.sizeMin,
           sizeMax: b.sizeMax,
           color: b.color,
+          // Stations in a ring (the Eridani Mining Hub, a belt outpost) keep room round them free of rock.
+          clear: this.docks.map((d) => ({ center: d.def.position.clone().sub(b.center), radius: d.radius + BELT_CLEAR })),
         },
         ctx,
       );

@@ -1,12 +1,12 @@
 import * as THREE from 'three';
-import { outpostSite } from '../content/outposts/sites.ts';
+import { sitesIn } from '../content/outposts/sites.ts';
 import { RACING, type CourseKind, type CourseShape } from '../content/racing/rules.ts';
 import { rng } from '../content/random.ts';
 import { WORLD_SEED } from '../content/world/rules.ts';
 import type { SystemId } from '../data/types.ts';
 import type { SystemSceneDef } from './sceneTypes.ts';
 import { sceneDefFor } from './systems/index.ts';
-import { polar } from './systems/helpers.ts';
+import { siteDock } from './siteDock.ts';
 
 /**
  * A race course in a system's scene (docs/PROCGEN.md §33.1): gates in order from the start line to
@@ -66,12 +66,7 @@ function bodiesOf(def: SystemSceneDef): Body[] {
 
 /** Every dock a course keeps clear of: the scene's stations and every outpost a pilot might build there. */
 function docksOf(def: SystemSceneDef): THREE.Vector3[] {
-  const out = def.stations.map((s) => s.position);
-  for (const p of def.planets) {
-    const site = outpostSite(p.id);
-    if (site) out.push(polar(p.position, site.orbit.distance + p.radius, site.orbit.angle, site.orbit.height));
-  }
-  return out;
+  return [...def.stations.map((s) => s.position), ...sitesIn(def.systemId).flatMap((site) => siteDock(def, site)?.position ?? [])];
 }
 
 /** Distance from a point to the segment a–b. */

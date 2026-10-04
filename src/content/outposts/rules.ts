@@ -9,8 +9,8 @@ import type { StationType } from '../world/types.ts';
  * from the game clock like the fleet (src/economy/outposts.ts): nothing runs in the background.
  */
 export const OUTPOSTS = {
-  /** Outposts a save can found. */
-  max: 1,
+  /** Outposts a save can run at once (docs/PROCGEN.md §36.2), at most one in a system. */
+  max: 3,
   /** The charter for a site, paid at a station in its system (credits). */
   charter: 8_000,
   /**
@@ -18,6 +18,30 @@ export const OUTPOSTS = {
    * system's security is within that kind's band, and a mine only round a small planet.
    */
   kinds: ['mining-outpost', 'refinery', 'factory', 'agri-station', 'research-station', 'relay', 'trade-port', 'freeport'] as const satisfies readonly StationType[],
+  /**
+   * Outposts in the belts (docs/PROCGEN.md §36): always a refinery; where round its ring a site lies
+   * when the angle drawn from its id would put it too near a station or body (degrees); how far it
+   * keeps from them (and from lanes).
+   */
+  belts: {
+    kinds: ['refinery'] as const satisfies readonly StationType[],
+    angle: {} as Partial<Record<string, number>>,
+    clear: { station: 3_000, body: 3_000, lane: 400 },
+  },
+  /**
+   * A belt outpost refines what the pilot brings (§36.3): each raw good and what it is refined into;
+   * the pay for a unit, as so many times the raw good's base price; the units it takes in an hour of
+   * game clock by the stages done (frame, station, port); and one refined unit for every `per` raw.
+   */
+  refining: {
+    goods: { ore: 'metals', water: 'deuterium', gases: 'polymers' } as const satisfies Partial<Record<CommodityId, CommodityId>>,
+    pay: 2,
+    perHour: [40, 60, 80] as const,
+    per: 2,
+  },
+  /** Outposts sold or abandoned that the journal keeps (§36.4), and the share of what went in that a sale fetches. */
+  former: 6,
+  sale: 0.5,
   /** Where the outpost orbits its planet: distance from the surface and height (schematic units). */
   orbit: { distance: [1_600, 2_800] as const, height: [-450, 450] as const },
   /** While its frame goes up, the site looks like a shipyard's frames, small and new. */

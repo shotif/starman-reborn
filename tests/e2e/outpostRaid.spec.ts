@@ -26,7 +26,7 @@ interface S {
   clock: number;
   credits: number;
   jobs: Record<string, { status: string } | undefined>;
-  world: { outpost?: { stage: number; defence?: { guards: { id: string }[] } } };
+  world: { outposts?: { stage: number; defence?: { guards: { id: string }[] } }[] };
 }
 
 const DOCK = 'wayfarer-array';
@@ -87,7 +87,7 @@ test('defending your outpost: a turret built, a guard hired, the first raid seen
   await api(page, 'setCargo', { 'habitat-modules': 8, metals: 20, machinery: 6 });
   await openDeckWindow(page, 'station-outpost', 'outpost-window');
   for (const good of ['habitat-modules', 'metals', 'machinery']) await press(page, `outpost-deliver-${good}`);
-  await waitUntil(page, 'the outpost open', async () => (await api<S>(page, 'state')).world.outpost?.stage === 1);
+  await waitUntil(page, 'the outpost open', async () => (await api<S>(page, 'state')).world.outposts?.[0]?.stage === 1);
 
   // Its defences: a turret built from the materials brought, and a guard hired for a few hours.
   await openDeckWindow(page, 'station-outpost', 'outpost-window');
@@ -102,7 +102,7 @@ test('defending your outpost: a turret built, a guard hired, the first raid seen
   await page.getByTestId('guard-term').selectOption('8');
   const before = (await api<S>(page, 'state')).credits;
   await press(page, 'guard-confirm');
-  await waitUntil(page, 'a guard hired', async () => ((await api<S>(page, 'state')).world.outpost?.defence?.guards.length ?? 0) === 1);
+  await waitUntil(page, 'a guard hired', async () => ((await api<S>(page, 'state')).world.outposts?.[0]?.defence?.guards.length ?? 0) === 1);
   expect((await api<S>(page, 'state')).credits).toBeLessThan(before);
 
   // The watch sees the first raid coming: a probe, a job to defend the outpost, the odds in its window.

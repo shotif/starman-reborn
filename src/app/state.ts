@@ -247,8 +247,10 @@ export interface WorldLog {
   marks?: Record<string, number>;
   /** What became of the hauls the player saw (docs/PROCGEN.md §21), by haul id; kept three hours. */
   hauls?: Record<string, HaulRecord>;
-  /** The player's own outpost (docs/PROCGEN.md §22), once chartered. */
-  outpost?: OutpostRecord;
+  /** The player's own outposts (docs/PROCGEN.md §22, §36), up to three, at most one in a system. */
+  outposts?: OutpostRecord[];
+  /** Outposts sold or abandoned (docs/PROCGEN.md §36.4), the newest last. */
+  outpostsFormer?: FormerOutpost[];
   /** Rival pilots (docs/PROCGEN.md §24): the ones the player knocked out, and the claims bought back. */
   rivals?: RivalLog;
   /**
@@ -370,7 +372,7 @@ export interface RivalStanding {
  * planet, built stage by stage from the materials the player brings, paying an income once open.
  */
 export interface OutpostRecord {
-  /** The site: the confirmed planet it orbits (content/outposts/sites.ts). */
+  /** The site: the confirmed planet it orbits, or `belt.<belt id>` in a belt (content/outposts/sites.ts). */
   site: string;
   /** What it is (OUTPOSTS.kinds), and its name (one of those offered at the charter). */
   kind: StationType;
@@ -389,6 +391,22 @@ export interface OutpostRecord {
   opened?: number;
   /** Its defences, and the raids it has met (docs/PROCGEN.md §29), once there is something to keep. */
   defence?: OutpostDefence;
+  /** A belt outpost's refining this hour (docs/PROCGEN.md §36.3): the hour (clock / 3,600, whole) and the units taken. */
+  refined?: { hour: number; units: number };
+}
+
+/** An outpost sold or abandoned (docs/PROCGEN.md §36.4). */
+export interface FormerOutpost {
+  site: string;
+  name: string;
+  kind: StationType;
+  /** Stages it had done. */
+  stage: number;
+  founded: number;
+  ended: number;
+  how: 'sold' | 'abandoned';
+  /** What it fetched (0 when abandoned). */
+  paid: number;
 }
 
 /** A guard hired to fly round the player's outpost (docs/PROCGEN.md §29). */

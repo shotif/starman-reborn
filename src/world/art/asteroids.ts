@@ -17,6 +17,8 @@ export interface AsteroidFieldOptions {
   sizeMin: number;
   sizeMax: number;
   color: THREE.ColorRepresentation;
+  /** Spheres no rock may sit in (field-local space): stations in the ring, with room to spare. */
+  clear?: readonly { center: THREE.Vector3; radius: number }[];
 }
 
 export interface AsteroidHit {
@@ -113,11 +115,13 @@ export function createAsteroidField(opts: AsteroidFieldOptions, ctx: ArtContext)
     }
     // Many small rocks, few big ones.
     const size = opts.sizeMin + Math.pow(rand(), 2.6) * (opts.sizeMax - opts.sizeMin);
+    // A rock in a cleared sphere is left out (its draws still made, so the others stay where they are).
+    const gone = !!opts.clear?.some((c) => c.center.distanceTo(p) < c.radius + size);
     centers[i * 3] = p.x;
     centers[i * 3 + 1] = p.y;
     centers[i * 3 + 2] = p.z;
-    radii[i] = size * BODY;
-    maxR = Math.max(maxR, size * BODY);
+    radii[i] = gone ? 0 : size * BODY;
+    if (!gone) maxR = Math.max(maxR, size * BODY);
     quats.push(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(rand() - 0.5, rand() - 0.5, rand() - 0.5).normalize(), rand() * Math.PI * 2));
   }
 
@@ -163,6 +167,7 @@ export function createAsteroidField(opts: AsteroidFieldOptions, ctx: ArtContext)
   const grid = new Map<number, number[]>();
   const key = (x: number, y: number, z: number): number => ((x + 4096) * 8192 + (y + 4096)) * 8192 + (z + 4096);
   for (let i = 0; i < count; i++) {
+    if (radii[i] === 0) continue;
     const kx = Math.floor(centers[i * 3]! * inv);
     const ky = Math.floor(centers[i * 3 + 1]! * inv);
     const kz = Math.floor(centers[i * 3 + 2]! * inv);
@@ -180,6 +185,7 @@ export function createAsteroidField(opts: AsteroidFieldOptions, ctx: ArtContext)
   let qLr = 0;
   let qScale = 1;
   const consider = (i: number): void => {
+    if (radii[i] === 0) return;
     const dx = centers[i * 3]! - local.x;
     const dy = centers[i * 3 + 1]! - local.y;
     const dz = centers[i * 3 + 2]! - local.z;

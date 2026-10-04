@@ -75,12 +75,12 @@ function built(stages: number, seed = 17): { s: GameState; o: OutpostRecord } {
   expect(charterOutpost(s, PLANET, offer.kinds[0]!.kind, offer.kinds[0]!.names[0]!).ok).toBe(true);
   dockAt(s, outpostId(PLANET));
   for (let i = 0; i < stages; i++) {
-    for (const x of stillNeeded(s.world.outpost!)) {
+    for (const x of stillNeeded(s.world.outposts![0]!)) {
       s.ship.cargo = { [x.commodity]: x.left };
       expect(deliverToOutpost(s, x.commodity, x.left).ok).toBe(true);
     }
   }
-  return { s, o: s.world.outpost! };
+  return { s, o: s.world.outposts![0]! };
 }
 
 /** The first raid from the outpost's first window on, and the window it is in. */
@@ -282,13 +282,13 @@ describe('guards', () => {
     expect(guardOffers(s, o)).toEqual(offers);
     const g = offers[0]!;
     const credits = s.credits;
-    expect(hireGuard(s, g.id, 4).ok).toBe(true);
+    expect(hireGuard(s, o.site, g.id, 4).ok).toBe(true);
     expect(s.credits).toBe(credits - g.perHour * 4);
     expect(defenceAt(s, o, s.clock).guards).toEqual([]);
     expect(defenceAt(s, o, s.clock + OUTPOST_RAIDS.guards.delay).guards).toHaveLength(1);
     expect(defenceAt(s, o, s.clock + OUTPOST_RAIDS.guards.delay + 4 * HOUR).guards).toEqual([]);
-    expect(hireGuard(s, g.id, 4).ok).toBe(false);
-    expect(hireGuard(s, offers[1]!.id, 2).ok).toBe(true);
+    expect(hireGuard(s, o.site, g.id, 4).ok).toBe(false);
+    expect(hireGuard(s, o.site, offers[1]!.id, 2).ok).toBe(true);
     expect(guardHireBlock(s, o)).toMatch(/all the guards it can use/);
     // Not from just any dock; never for a hunted pilot.
     s.clock += 6 * HOUR;
@@ -314,10 +314,10 @@ describe('saves', () => {
       patch(x);
       return () => assertValidState(x);
     };
-    expect(bad((x) => (x.world.outpost!.defence!.turrets = 3))).toThrow(/outpost/);
-    expect(bad((x) => (x.world.outpost!.defence!.raids[0]!.result = 'won' as never))).toThrow(/outpost/);
-    expect(bad((x) => (x.world.outpost!.defence!.guards[0]!.model = 'ship.nothing'))).toThrow(/outpost/);
-    expect(bad((x) => (x.world.outpost!.defence!.hurt!.good = 'gold' as never))).toThrow(/outpost/);
+    expect(bad((x) => (x.world.outposts![0]!.defence!.turrets = 3))).toThrow(/outpost/);
+    expect(bad((x) => (x.world.outposts![0]!.defence!.raids[0]!.result = 'won' as never))).toThrow(/outpost/);
+    expect(bad((x) => (x.world.outposts![0]!.defence!.guards[0]!.model = 'ship.nothing'))).toThrow(/outpost/);
+    expect(bad((x) => (x.world.outposts![0]!.defence!.hurt!.good = 'gold' as never))).toThrow(/outpost/);
     expect(OUTPOSTS.stages).toHaveLength(3);
   });
 });

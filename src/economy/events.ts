@@ -1,4 +1,4 @@
-import type { CommodityId, WorldLog } from '../app/state.ts';
+import type { CommodityId, OutpostRecord, WorldLog } from '../app/state.ts';
 import { BOOMS, EVENTS, FRONTIER_EVENTS, GLUT_CAUSES, SHORTAGE_CAUSES, STRANDED_NAMES, STRIKE_CAUSES, type EventKind, type StationEventKind, type SystemEventKind } from '../content/events/rules.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
 import { CURATED_MARKETS, ECONOMY } from '../content/economy/rules.ts';
@@ -342,7 +342,7 @@ function systemEventIn(systemId: SystemId, index: number): WorldEvent | null {
  * shortage, breaking a raid), and a story's ending can leave a lasting mark on a station (§14.7).
  * The game points this at the save's world log; tests may too.
  */
-type ActiveLog = Pick<WorldLog, 'ended'> & Partial<Pick<WorldLog, 'border' | 'marks' | 'hauls' | 'outpost' | 'rivals' | 'sky'>>;
+type ActiveLog = Pick<WorldLog, 'ended'> & Partial<Pick<WorldLog, 'border' | 'marks' | 'hauls' | 'outposts' | 'rivals' | 'sky'>>;
 let worldLog: ActiveLog | null = null;
 
 export function useWorldLog(log: ActiveLog | null): void {
@@ -350,10 +350,9 @@ export function useWorldLog(log: ActiveLog | null): void {
   refreshSaveStations();
 }
 
-/** Points the world at the save's own stations (its outpost, docs/PROCGEN.md §22): when the log is set, and when the outpost changes. */
+/** Points the world at the save's own stations (its outposts, docs/PROCGEN.md §22, §36): when the log is set, and when an outpost changes. */
 export function refreshSaveStations(): void {
-  const o = worldLog?.outpost ? outpostLocation(worldLog.outpost) : null;
-  setSaveLocations(o ? [o] : []);
+  setSaveLocations((worldLog?.outposts ?? []).flatMap((o) => outpostLocation(o) ?? []));
 }
 
 /** The lasting marks left in the save the game points at, in the order they were left. */
@@ -391,9 +390,9 @@ export function activeHaulLog(): WorldLog['hauls'] | null {
   return worldLog?.hauls ?? null;
 }
 
-/** The player's outpost in the save the game points at (docs/PROCGEN.md §22, §29), or null. */
-export function activeOutpost(): WorldLog['outpost'] | null {
-  return worldLog?.outpost ?? null;
+/** The player's outposts in the save the game points at (docs/PROCGEN.md §22, §29, §36). */
+export function activeOutposts(): readonly OutpostRecord[] {
+  return worldLog?.outposts ?? [];
 }
 
 /** What the player did to rival pilots' careers in the save the game points at (docs/PROCGEN.md §24), or null. */
@@ -575,9 +574,9 @@ export function marketEffect(locationId: string, commodity: CommodityId, clock: 
   const sky = worldLog?.sky ? skyPrice(locationId, commodity, clock, worldLog.sky.from) : 1;
   // Pyre's death (§26, fiction): the same, from its warning until it has faded in each sky.
   const edge = worldLog?.sky?.edge !== undefined ? edgePrice(locationId, commodity, clock, worldLog.sky.edge) : 1;
-  // A raid lost at the player's outpost (§29): its market short of one good while the hurt lasts.
-  const hurt = worldLog?.outpost?.defence?.hurt;
-  const raid = hurt && hurt.good === commodity && clock >= hurt.from && clock < hurt.until && locationId === outpostId(worldLog!.outpost!.site) ? OUTPOST_RAIDS.lost : null;
+  // A raid lost at one of the player's outposts (§29): its market short of one good while the hurt lasts.
+  const hurt = isOutpostId(locationId) ? worldLog?.outposts?.find((o) => outpostId(o.site) === locationId)?.defence?.hurt : undefined;
+  const raid = hurt && hurt.good === commodity && clock >= hurt.from && clock < hurt.until ? OUTPOST_RAIDS.lost : null;
   if (!event && !mark && sky === 1 && edge === 1 && !raid) return NEUTRAL;
   return { price: (event?.price ?? 1) * (mark?.price ?? 1) * sky * edge * (raid?.price ?? 1), stock: (event?.stock ?? 1) * (mark?.stock ?? 1) * (raid?.stock ?? 1) };
 }

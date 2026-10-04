@@ -1,9 +1,10 @@
 import { applyCredits, type CommodityId, type GameState, type OutpostRecord } from '../app/state.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
 import { OUTPOSTS } from '../content/outposts/rules.ts';
-import { kindWord, outpostId, outpostNames, outpostSite, sitesIn, type OutpostSite } from '../content/outposts/sites.ts';
+import { kindWord, outpostId, outpostNames, outpostSite, sitePlace, sitesIn, type OutpostSite } from '../content/outposts/sites.ts';
 import type { StationType } from '../content/world/types.ts';
-import { getLocation, getPlanet, getSystem } from '../data/systems.ts';
+import { getLocation, getSystem } from '../data/systems.ts';
+import type { SystemId } from '../data/types.ts';
 import { cargoCount, removeCargo } from './cargo.ts';
 import type { Result } from './equipment.ts';
 import { refreshSaveStations } from './events.ts';
@@ -12,19 +13,31 @@ import { dockAccess } from './law.ts';
 import { hurtFactor, upkeep } from './outpostRaids.ts';
 
 /**
- * A station of your own (docs/PROCGEN.md §22; rules in src/content/outposts/rules.ts): the player
- * charters a site in orbit of a confirmed planet, at a station in its system; brings the materials
- * for each stage to it; and once its frame is up it opens, trades and pays an income by the hour,
- * worked out from the game clock with the fleet (settleFleet). The outpost lives in the save's world
- * log (`world.outpost`), and the world finds it by its id (economy/events.ts refreshSaveStations).
+ * Stations of your own (docs/PROCGEN.md §22, §36; rules in src/content/outposts/rules.ts): the
+ * player charters a site in orbit of a confirmed planet or in a cited belt, at a station in its
+ * system; brings the materials for each stage to it; and once its frame is up it opens, trades and
+ * pays an income by the hour, worked out from the game clock with the fleet (settleFleet). Up to
+ * three, at most one in a system. The outposts live in the save's world log (`world.outposts`), and
+ * the world finds them by their ids (economy/events.ts refreshSaveStations).
  */
 
 const HOUR = 3_600;
 
 const goodName = (c: CommodityId) => COMMODITIES[c].name.toLowerCase();
 
-export function outpostOf(state: GameState): OutpostRecord | undefined {
-  return state.world.outpost;
+/** The player's outposts, in the order they were chartered. */
+export function outpostsOf(state: GameState): readonly OutpostRecord[] {
+  return state.world.outposts ?? [];
+}
+
+/** The player's outpost whose station this is, if any. */
+export function outpostAt(state: GameState, locationId: string | null | undefined): OutpostRecord | undefined {
+  return locationId ? outpostsOf(state).find((o) => outpostId(o.site) === locationId) : undefined;
+}
+
+/** The player's outpost in a system, if any (at most one, §36.2). */
+export function outpostIn(state: GameState, systemId: SystemId): OutpostRecord | undefined {
+  return outpostsOf(state).find((o) => outpostSite(o.site)?.systemId === systemId);
 }
 
 /** The stage being built next (null when all are done). */
@@ -78,50 +91,52 @@ export function charterOffers(state: GameState): CharterOffer[] {
   const block = charterBlock(state, here);
   return sitesIn(getLocation(here).systemId).map((site) => ({
     site,
-    kinds: site.kinds.map((kind) => ({ kind, names: outpostNames(site.planetId, kind) })),
+    kinds: site.kinds.map((kind) => ({ kind, names: outpostNames(site.id, kind) })),
     price: OUTPOSTS.charter,
     blocked: block,
   }));
 }
 
 function charterBlock(state: GameState, here: string): string | null {
-  if (state.world.outpost) return `You run an outpost already (at most ${OUTPOSTS.max})`;
+  const own = outpostsOf(state);
+  if (own.length >= OUTPOSTS.max) return `You run ${OUTPOSTS.max} outposts already, as many as a pilot can`;
+  const there = outpostIn(state, getLocation(here).systemId);
+  if (there) return `${there.name} is yours in this system already: one outpost to a system`;
   if (dockAccess(state, here) !== 'full') return 'Emergency docking only: no business here';
   if (state.credits < OUTPOSTS.charter) return 'Not enough credits';
   return null;
 }
 
 /** Charters a site of this system for an outpost of a kind, with one of the names offered: its frame is to be built. */
-export function charterOutpost(state: GameState, planetId: string, kind: StationType, name: string): Result {
+export function charterOutpost(state: GameState, siteId: string, kind: StationType, name: string): Result {
   const here = state.location.dockedAt;
   if (!here) return { ok: false, message: 'Dock in the system first.' };
-  const offer = charterOffers(state).find((x) => x.site.planetId === planetId);
+  const offer = charterOffers(state).find((x) => x.site.id === siteId);
   if (!offer) return { ok: false, message: 'Charter a site from a station in its own system.' };
   if (offer.blocked) return { ok: false, message: `${offer.blocked}.` };
   const k = offer.kinds.find((x) => x.kind === kind);
   if (!k) return { ok: false, message: `No ${kindWord(kind)} can be built there.` };
   if (!k.names.includes(name)) return { ok: false, message: 'Choose one of the names offered.' };
-  state.world.outpost = { site: planetId, kind, name, founded: state.clock, stage: 0, delivered: {}, since: state.clock, earned: 0 };
+  (state.world.outposts ??= []).push({ site: siteId, kind, name, founded: state.clock, stage: 0, delivered: {}, since: state.clock, earned: 0 });
   applyCredits(state, -OUTPOSTS.charter, 'fleet', `Charter for ${name}`);
   refreshSaveStations();
-  const planet = getPlanet(planetId)!.displayName;
-  return { ok: true, message: `${name} is chartered in orbit of ${planet}. Bring the materials for its frame there.` };
+  return { ok: true, message: `${name} is chartered ${siteWhere(offer.site)}. Bring the materials for its frame there.` };
 }
 
 // ---------------------------------------------------------------- building
 
 /** How many of a good the player can hand over here now (docked at their outpost, toward the next stage). */
 export function deliverable(state: GameState, c: CommodityId): number {
-  const o = state.world.outpost;
-  if (!o || state.location.dockedAt !== outpostId(o.site)) return 0;
+  const o = outpostAt(state, state.location.dockedAt);
+  if (!o) return 0;
   const left = stillNeeded(o).find((x) => x.commodity === c)?.left ?? 0;
   return Math.min(left, cargoCount(state.ship.cargo, c));
 }
 
 /** Hands over materials from the hold toward the next stage; when all are in, the stage is done. */
 export function deliverToOutpost(state: GameState, c: CommodityId, qty: number): Result & { stageDone?: string } {
-  const o = state.world.outpost;
-  if (!o || state.location.dockedAt !== outpostId(o.site)) return { ok: false, message: 'Dock at your outpost first.' };
+  const o = outpostAt(state, state.location.dockedAt);
+  if (!o) return { ok: false, message: 'Dock at your outpost first.' };
   const stage = nextStage(o);
   if (!stage) return { ok: false, message: `${o.name} is complete.` };
   if (!Number.isInteger(qty) || qty <= 0) return { ok: false, message: 'Choose at least one unit.' };
@@ -170,11 +185,21 @@ export function payOldHours(o: OutpostRecord, now: number): { hours: number; pay
 
 // ---------------------------------------------------------------- what the player sees
 
-/** Where the outpost is: its planet and system. */
+/** Where the outpost is: its planet or belt, and its system. */
 export function outpostPlace(o: OutpostRecord): string {
   const site = outpostSite(o.site);
-  const planet = getPlanet(o.site)?.displayName ?? o.site;
-  return site ? `${planet}, ${getSystem(site.systemId).displayName}` : planet;
+  return site ? `${sitePlace(site)}, ${getSystem(site.systemId).displayName}` : o.site;
+}
+
+/** Where the outpost is, as a sentence ends: "in orbit of Kepler-1 b, Kepler-1", "in the Kuiper Belt, Sol". */
+export function outpostWhere(o: OutpostRecord): string {
+  const site = outpostSite(o.site);
+  return site ? `${siteWhere(site)}, ${getSystem(site.systemId).displayName}` : o.site;
+}
+
+/** Where a site is, as a sentence ends: "in orbit of Kepler-1 b", "in the Kuiper Belt". */
+export function siteWhere(site: OutpostSite): string {
+  return site.planetId ? `in orbit of ${sitePlace(site)}` : `in the ${sitePlace(site)}`;
 }
 
 /** One line on how it stands: being built (what is still needed), or open (its stage and income). */

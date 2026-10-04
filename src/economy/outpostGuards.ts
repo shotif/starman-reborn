@@ -62,25 +62,29 @@ export function validateOutposts(rules: OutpostRules = OUTPOSTS, sites: readonly
   // The sites.
   const ids = new Set<string>();
   for (const site of sites) {
-    const subject = site.planetId;
-    const planet = getPlanet(site.planetId);
+    const { planetId, orbit } = site;
+    // Belt sites are checked below (§36).
+    if (!planetId || !orbit) continue;
+    const subject = planetId;
+    if (site.id !== planetId) report('sites', subject, 'a planet site with another id');
+    const planet = getPlanet(planetId);
     const seed = WORLD_SEEDS.find((s) => s.id === site.systemId);
     if (ids.has(subject)) report('sites', subject, 'two sites at one planet');
     ids.add(subject);
-    if (!planet || planet.status !== 'confirmed' || !seed?.planets.some((p) => p.id === site.planetId)) report('sites', subject, 'not a confirmed planet of its system');
+    if (!planet || planet.status !== 'confirmed' || !seed?.planets.some((p) => p.id === planetId)) report('sites', subject, 'not a confirmed planet of its system');
     if (!seed || seed.curated) report('sites', subject, 'in a hand-made system');
     const [d0, d1] = rules.orbit.distance;
-    if (site.orbit.distance < d0 || site.orbit.distance > d1 || Math.abs(site.orbit.height) > rules.orbit.height[1]) report('sites', subject, 'an orbit out of bounds');
+    if (orbit.distance < d0 || orbit.distance > d1 || Math.abs(orbit.height) > rules.orbit.height[1]) report('sites', subject, 'an orbit out of bounds');
     if (!site.kinds.length) report('sites', subject, 'nothing can be built');
     const security = WORLD.profiles.get(site.systemId)?.security ?? 1;
-    const small = (seed?.planets.find((p) => p.id === site.planetId)?.massEarth ?? 0) <= GIANT_EARTH_MASSES;
+    const small = (seed?.planets.find((p) => p.id === planetId)?.massEarth ?? 0) <= GIANT_EARTH_MASSES;
     for (const k of site.kinds) {
       const band = STATION_TYPES.find((t) => t.type === k)?.security;
       if (!rules.kinds.includes(k as (typeof rules.kinds)[number]) || !band || security < band[0] || security > band[1]) report('sites', subject, `${k}: not allowed at its security`);
       if (k === 'mining-outpost' && !small) report('sites', subject, 'a mine round a giant planet');
-      const names = outpostNames(site.planetId, k);
+      const names = outpostNames(planetId, k);
       if (new Set(names).size !== 3) report('names', subject, `${k}: fewer than three names offered`);
-      const loc = outpostLocation({ site: site.planetId, kind: k, name: names[0]!, founded: 0, stage: 1, delivered: {}, since: 0, earned: 0 });
+      const loc = outpostLocation({ site: planetId, kind: k, name: names[0]!, founded: 0, stage: 1, delivered: {}, since: 0, earned: 0 });
       if (!loc || ALL_LOCATIONS.some((l) => l.id === loc.id || l.name === loc.name)) report('sites', subject, 'its outpost would clash with a station');
     }
   }

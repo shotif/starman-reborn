@@ -15,7 +15,7 @@ import { trafficFor } from '../world/traffic/setup.ts';
 import { cargoCount, removeCargo } from './cargo.ts';
 import { WING_FIRST, WING_LAST } from './combat.ts';
 import { boardEpoch } from './contracts.ts';
-import { activeOutpost, systemEventAt } from './events.ts';
+import { activeOutposts, systemEventAt } from './events.ts';
 import { standingTier } from './factions.ts';
 import { advanceJobs, failJob, type JobDef, type JobEvent } from './jobs.ts';
 import { outpostOdds } from './ranks.ts';
@@ -24,8 +24,8 @@ import { marketTables } from './markets.ts';
 import { riskOf } from './tradeComputer.ts';
 
 /**
- * Raids on the player's outpost (docs/PROCGEN.md §29; rules in src/content/outposts/raids.ts). The
- * outpost's time is cut into windows; each holds at most one raid, worked out from the save's seed,
+ * Raids on the player's outposts (docs/PROCGEN.md §29; rules in src/content/outposts/raids.ts), each
+ * on its own. An outpost's time is cut into windows; each holds at most one raid, worked out from the save's seed,
  * the site and the window, at odds set by its system's band and the outpost's stage. A raid warned
  * of is a job (*Defend …*); it is fought in flight when the player is there, and otherwise decided
  * by the defence the outpost had (turrets, guards, patrols, standing) against the raiders'
@@ -42,6 +42,8 @@ const security = (systemId: SystemId) => WORLD.profiles.get(systemId)?.security 
 const fill = (text: string, values: Record<string, string | number>) => text.replace(/\{(\w+)\}/g, (_, k: string) => String(values[k] ?? ''));
 const pick = <T>(list: readonly T[], key: string): T => rng(0x5ead, 'outpost-line', key).pick(list);
 const goodName = (c: CommodityId) => COMMODITIES[c].name.toLowerCase();
+/** The player's outpost docked at, if any. */
+const dockedOutpost = (state: GameState) => (state.world.outposts ?? []).find((o) => state.location.dockedAt === outpostId(o.site));
 
 /** The outpost's system. */
 export function outpostSystem(o: OutpostRecord): SystemId {
@@ -373,8 +375,8 @@ export function turretNeeds(o: OutpostRecord): { commodity: CommodityId; need: n
 
 /** Hands over materials from the hold toward the next turret (docked at the outpost); all in, it is built. */
 export function deliverForTurret(state: GameState, c: CommodityId, qty: number): { ok: boolean; message: string; built?: boolean } {
-  const o = state.world.outpost;
-  if (!o || state.location.dockedAt !== outpostId(o.site)) return { ok: false, message: 'Dock at your outpost first.' };
+  const o = dockedOutpost(state);
+  if (!o) return { ok: false, message: 'Dock at your outpost first.' };
   const left = turretNeeds(o).find((x) => x.commodity === c)?.left ?? 0;
   if (!left) return { ok: false, message: turretNeeds(o).length ? `The turret needs no ${goodName(c)}.` : 'No more turrets can be built until the outpost grows.' };
   const n = Math.min(qty, left, cargoCount(state.ship.cargo, c));
@@ -391,8 +393,8 @@ export function deliverForTurret(state: GameState, c: CommodityId, qty: number):
 
 /** Repairs a turret a raid knocked out (docked at the outpost). */
 export function repairTurret(state: GameState, index: number): { ok: boolean; message: string } {
-  const o = state.world.outpost;
-  if (!o || state.location.dockedAt !== outpostId(o.site)) return { ok: false, message: 'Dock at your outpost first.' };
+  const o = dockedOutpost(state);
+  if (!o) return { ok: false, message: 'Dock at your outpost first.' };
   const d = o.defence;
   if (!d || index >= d.turrets || !((d.down[index] ?? 0) > state.clock)) return { ok: false, message: 'That turret is not down.' };
   if (state.credits < R.turrets.repair) return { ok: false, message: `Repairs cost ${R.turrets.repair} cr.` };
@@ -443,10 +445,10 @@ export function guardHireBlock(state: GameState, o: OutpostRecord): string | nul
   return full ? null : 'Hire guards at your outpost, or at a dock with a market, repairs and a job board.';
 }
 
-/** Hires a guard for a term (hours), paid up front: on post at the outpost 15 minutes on. */
-export function hireGuard(state: GameState, offerId: string, hours: number): { ok: boolean; message: string } {
-  const o = state.world.outpost;
-  if (!o) return { ok: false, message: 'You have no outpost.' };
+/** Hires a guard for an outpost (by its site) for a term (hours), paid up front: on post there 15 minutes on. */
+export function hireGuard(state: GameState, site: string, offerId: string, hours: number): { ok: boolean; message: string } {
+  const o = (state.world.outposts ?? []).find((x) => x.site === site);
+  if (!o) return { ok: false, message: 'You have no outpost there.' };
   const block = guardHireBlock(state, o);
   if (block) return { ok: false, message: block };
   const offer = guardOffers(state, o).find((x) => x.id === offerId);
@@ -465,16 +467,18 @@ export function hireGuard(state: GameState, offerId: string, hours: number): { o
 
 // ---------------------------------------------------------------- the News
 
-/** Raids on the player's outpost within news reach, over the last hour (the save the game points at). */
+/** Raids on the player's outposts within news reach, over the last hour (the save the game points at). */
 export function outpostRaidNews(systemId: SystemId, clock: number): { text: string; at: number; jumps: number }[] {
-  const o = activeOutpost();
-  if (!o?.defence) return [];
-  const sys = outpostSystem(o);
-  const jumps = jumpsFrom(WORLD.links, systemId).get(sys) ?? 99;
-  if (jumps > EVENTS.newsJumps) return [];
-  return o.defence.raids
-    .filter((r) => r.at <= clock && clock - r.at < HOUR)
-    .map((r) => ({ at: r.at, jumps, text: fill(pick(RAID_NEWS[r.result], `${o.site}|${r.window}`), { outpost: o.name, system: getSystem(sys).displayName }) }));
+  const reach = jumpsFrom(WORLD.links, systemId);
+  return activeOutposts().flatMap((o) => {
+    if (!o.defence) return [];
+    const sys = outpostSystem(o);
+    const jumps = reach.get(sys) ?? 99;
+    if (jumps > EVENTS.newsJumps) return [];
+    return o.defence.raids
+      .filter((r) => r.at <= clock && clock - r.at < HOUR)
+      .map((r) => ({ at: r.at, jumps, text: fill(pick(RAID_NEWS[r.result], `${o.site}|${r.window}`), { outpost: o.name, system: getSystem(sys).displayName }) }));
+  });
 }
 
 /** How the outpost stands against raids, in a line (the Fleet window, the Outpost window). */

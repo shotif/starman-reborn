@@ -1,11 +1,10 @@
 import type { CommodityId } from '../../app/state.ts';
 import { OUTPOSTS } from '../../content/outposts/rules.ts';
-import { kindWord, outpostId, type OutpostSite } from '../../content/outposts/sites.ts';
+import { kindWord, sitePlace, type OutpostSite } from '../../content/outposts/sites.ts';
 import type { StationType } from '../../content/world/types.ts';
-import { getPlanet } from '../../data/systems.ts';
 import { cargoCount } from '../../economy/cargo.ts';
 import { COMMODITIES } from '../../economy/commodities.ts';
-import { charterOffers, charterOutpost, deliverable, deliverToOutpost, nextStage, outpostOf, outpostPlace, outpostStatus, stillNeeded, type CharterOffer } from '../../economy/outposts.ts';
+import { charterOffers, charterOutpost, deliverable, deliverToOutpost, nextStage, outpostAt, outpostPlace, outpostsOf, outpostStatus, outpostWhere, siteWhere, stillNeeded, type CharterOffer } from '../../economy/outposts.ts';
 import { OUTPOST_RAIDS } from '../../content/outposts/raids.ts';
 import { RAID_FICTION } from '../../content/outposts/raidLines.ts';
 import { shipModel } from '../../content/catalog.ts';
@@ -30,37 +29,49 @@ import { formatCredits, h, replaceChildren } from '../dom.ts';
 import { glyph } from '../glyphs.ts';
 import type { Refresh, StationContext } from './context.ts';
 import { COMMODITY_GLYPH } from './trader.ts';
+import { outpostSite } from '../../content/outposts/sites.ts';
+
+const outpostSiteOf = (o: OutpostRecord) => outpostSite(o.site);
 
 /**
- * A station of your own (docs/PROCGEN.md §22): the outpost's part of the Fleet window (how it
- * stands, or the sites of this system to charter), and the Outpost window at the outpost itself
+ * Stations of your own (docs/PROCGEN.md §22, §36): the outposts' part of the Fleet window (how each
+ * stands, and the sites of this system to charter), and the Outpost window at an outpost itself
  * (the materials for the next stage, handed over from the hold).
  */
 
 const goodName = (c: CommodityId) => COMMODITIES[c].name.toLowerCase();
 const article = (word: string) => (/^[aeiou]/i.test(word) ? `an ${word}` : `a ${word}`);
+const capital = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
-/** True when docked at the player's own outpost. */
+/** True when docked at one of the player's own outposts. */
 export function atOwnOutpost(ctx: StationContext): boolean {
-  const o = outpostOf(ctx.state);
-  return !!o && ctx.locationId === outpostId(o.site);
+  return !!outpostAt(ctx.state, ctx.locationId);
 }
 
 // ---------------------------------------------------------------- the Fleet window
 
 export function outpostSection(ctx: StationContext, refresh: Refresh): HTMLElement {
-  const o = outpostOf(ctx.state);
-  if (o) {
-    return h(
-      'section',
-      { 'aria-label': 'Your outpost', 'data-testid': 'outpost' },
-      h('div', { class: 'list-head' }, h('span', null, 'Your outpost'), h('span', null, `earned ${formatCredits(o.earned)}`)),
-      h(
-        'ul',
-        { class: 'list' },
-        h(
+  const own = outpostsOf(ctx.state);
+  return h('div', { class: 'stack' }, own.length ? ownSection(ctx, refresh) : null, sitesSection(ctx, refresh));
+}
+
+/** The player's outposts, each as it stands. */
+function ownSection(ctx: StationContext, refresh: Refresh): HTMLElement {
+  const own = outpostsOf(ctx.state);
+  const earned = own.reduce((sum, o) => sum + o.earned, 0);
+  return h(
+    'section',
+    { 'aria-label': own.length > 1 ? 'Your outposts' : 'Your outpost', 'data-testid': 'outpost' },
+    h('div', { class: 'list-head' }, h('span', null, own.length > 1 ? `Your outposts (${own.length}/${OUTPOSTS.max})` : 'Your outpost'), h('span', null, `earned ${formatCredits(earned)}`)),
+    h(
+      'ul',
+      { class: 'list' },
+      own.map((o) => {
+        const here = outpostAt(ctx.state, ctx.locationId) === o;
+        const site = outpostSiteOf(o);
+        return h(
           'li',
-          { class: 'trade-row fleet-row', 'data-testid': 'outpost-row' },
+          { class: 'trade-row fleet-row', 'data-testid': 'outpost-row', 'data-site': o.site },
           glyph('dock'),
           h(
             'span',
@@ -69,49 +80,60 @@ export function outpostSection(ctx: StationContext, refresh: Refresh): HTMLEleme
             h('span', { class: 'row-sub' }, outpostPlace(o)),
             h('span', { class: 'row-sub fleet-status', 'data-testid': 'outpost-status' }, outpostStatus(ctx.state, o)),
             o.stage > 0 ? h('span', { class: 'row-sub', 'data-testid': 'outpost-defence-line' }, defenceLine(ctx.state, o)) : null,
-            atOwnOutpost(ctx) ? null : h('span', { class: 'row-note' }, nextStage(o) ? 'Dock there to hand over the materials.' : 'Fiction: your station, at a real planet.'),
+            here ? null : h('span', { class: 'row-note' }, nextStage(o) ? 'Dock there to hand over the materials.' : `Fiction: your station, at a real ${site?.beltId ? 'belt' : 'planet'}.`),
           ),
           // Guards can be hired from any full-service dock (docs/PROCGEN.md §29).
-          o.stage > 0 && !atOwnOutpost(ctx) && !guardHireBlock(ctx.state, o)
+          o.stage > 0 && !here && !guardHireBlock(ctx.state, o)
             ? h('span', { class: 'row-actions' }, button('Hire guards', { size: 'sm', testId: 'outpost-hire-guards', onClick: () => void openGuardHire(ctx, o, refresh) }))
             : null,
-        ),
-      ),
-    );
-  }
+        );
+      }),
+    ),
+  );
+}
+
+/** The sites of this system to charter (or why none can be now). */
+function sitesSection(ctx: StationContext, refresh: Refresh): HTMLElement {
   const offers = charterOffers(ctx.state);
+  const own = outpostsOf(ctx.state);
+  const full = own.length >= OUTPOSTS.max;
+  const block = offers[0]?.blocked ?? null;
+  // Blocked by the pilot's own outposts (as many as a pilot can, or one in this system already): said once, without the sites.
+  const ownBlock = full || (!!block && offers.length > 0 && own.some((o) => outpostSiteOf(o)?.systemId === offers[0]!.site.systemId));
   return h(
     'section',
     { 'aria-label': 'Found an outpost', 'data-testid': 'outpost-sites' },
     h('div', { class: 'list-head' }, h('span', null, 'Found an outpost'), h('span', null, `charter ${formatCredits(OUTPOSTS.charter)}`)),
-    offers.length
-      ? h(
-          'ul',
-          { class: 'list' },
-          offers.map((offer) => siteRow(ctx, offer, refresh)),
-        )
-      : h('p', { class: 'list-empty' }, 'No sites in this system. An outpost can be built in orbit of a confirmed planet, outside Sol and the first systems settled: charter it from a station of its system.'),
+    ownBlock
+      ? h('p', { class: 'list-empty', 'data-testid': 'outpost-sites-block' }, full ? `You run ${OUTPOSTS.max} outposts, as many as a pilot can.` : 'You have an outpost in this system already: one to a system.')
+      : offers.length
+        ? h(
+            'ul',
+            { class: 'list' },
+            offers.map((offer) => siteRow(ctx, offer, refresh)),
+          )
+        : h('p', { class: 'list-empty' }, 'No sites in this system. An outpost can be built in orbit of a confirmed planet outside Sol and the first systems settled, or in a cited belt: charter it from a station of its system.'),
   );
 }
 
 function siteRow(ctx: StationContext, offer: CharterOffer, refresh: Refresh): HTMLElement {
-  const planet = getPlanet(offer.site.planetId)!;
+  const site = offer.site;
   return h(
     'li',
-    { class: 'trade-row fleet-row', 'data-testid': `outpost-site-${offer.site.planetId}` },
-    glyph('science'),
+    { class: 'trade-row fleet-row', 'data-testid': `outpost-site-${site.id}` },
+    glyph(site.beltId ? 'ore' : 'science'),
     h(
       'span',
       { class: 'trade-text' },
-      h('span', { class: 'row-name' }, `In orbit of ${planet.displayName}`),
-      h('span', { class: 'row-sub' }, `Can be ${offer.kinds.map((k) => article(kindWord(k.kind))).join(', ')}`),
+      h('span', { class: 'row-name' }, capital(siteWhere(site))),
+      h('span', { class: 'row-sub' }, site.beltId ? 'A refinery, to refine the rock you mine' : `Can be ${offer.kinds.map((k) => article(kindWord(k.kind))).join(', ')}`),
     ),
     h(
       'span',
       { class: 'row-actions' },
       button('Charter', {
         size: 'sm',
-        testId: `outpost-charter-${offer.site.planetId}`,
+        testId: `outpost-charter-${site.id}`,
         disabled: !!offer.blocked,
         title: offer.blocked ?? undefined,
         onClick: () => void openCharter(ctx, offer, refresh),
@@ -122,7 +144,6 @@ function siteRow(ctx: StationContext, offer: CharterOffer, refresh: Refresh): HT
 
 async function openCharter(ctx: StationContext, offer: CharterOffer, refresh: Refresh): Promise<void> {
   const site: OutpostSite = offer.site;
-  const planet = getPlanet(site.planetId)!;
   let kind: StationType = offer.kinds[0]!.kind;
   let name = offer.kinds[0]!.names[0]!;
   const kindSelect = h(
@@ -160,7 +181,7 @@ async function openCharter(ctx: StationContext, offer: CharterOffer, refresh: Re
     ]),
   );
   const answer = await showModal({
-    title: `An outpost in orbit of ${planet.displayName}`,
+    title: `An outpost ${siteWhere(site)}`,
     testId: 'outpost-charter-dialog',
     body: h(
       'div',
@@ -169,7 +190,7 @@ async function openCharter(ctx: StationContext, offer: CharterOffer, refresh: Re
       h('div', { class: 'hire-field' }, h('label', { for: 'outpost-kind' }, 'What it is'), kindSelect),
       h('div', { class: 'hire-field' }, h('label', { for: 'outpost-name' }, 'Its name'), nameSelect),
       stages,
-      h('p', { class: 'muted small' }, `The outpost and its people are fiction; ${planet.displayName} is a real planet. One outpost to a pilot.`),
+      h('p', { class: 'muted small' }, `The outpost and its people are fiction; ${sitePlace(site)} is a real ${site.beltId ? 'belt, as a cited source reports it' : 'planet'}. Up to ${OUTPOSTS.max} outposts to a pilot, one to a system.`),
     ),
     actions: [
       { label: 'Cancel', value: 'cancel', testId: 'outpost-charter-cancel' },
@@ -178,7 +199,7 @@ async function openCharter(ctx: StationContext, offer: CharterOffer, refresh: Re
     dismissValue: 'cancel',
   });
   if (answer !== 'ok') return;
-  const r = charterOutpost(ctx.state, site.planetId, kind, name);
+  const r = charterOutpost(ctx.state, site.id, kind, name);
   ctx.sfx(r.ok ? 'credits' : 'ui-error');
   toast(r.message, r.ok ? 'good' : 'bad', 5000);
   ctx.save();
@@ -189,13 +210,13 @@ async function openCharter(ctx: StationContext, offer: CharterOffer, refresh: Re
 
 export function outpostContent(ctx: StationContext, refresh: Refresh): HTMLElement {
   const { state } = ctx;
-  const o = outpostOf(state)!;
+  const o = outpostAt(state, ctx.locationId)!;
   const stage = nextStage(o);
   const needs = stillNeeded(o);
   return h(
     'div',
     { class: 'stack fleet', 'data-testid': 'outpost-content' },
-    h('p', { class: 'muted small' }, `${o.name}, your ${kindWord(o.kind)} (fiction) in orbit of ${outpostPlace(o)}.`),
+    h('p', { class: 'muted small' }, `${o.name}, your ${kindWord(o.kind)} (fiction) ${outpostWhere(o)}.`),
     h('p', { 'data-testid': 'outpost-window-status' }, outpostStatus(state, o)),
     stage
       ? h(
@@ -421,7 +442,7 @@ async function openGuardHire(ctx: StationContext, o: OutpostRecord, refresh: Ref
     dismissValue: 'cancel',
   });
   if (answer !== 'ok') return;
-  const r = hireGuard(state, pick, hours);
+  const r = hireGuard(state, o.site, pick, hours);
   ctx.sfx(r.ok ? 'credits' : 'ui-error');
   toast(r.message, r.ok ? 'good' : 'bad', 5000);
   ctx.save();

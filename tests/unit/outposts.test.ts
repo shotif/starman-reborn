@@ -56,7 +56,7 @@ function chartered(kind?: string): GameState {
 /** Puts the goods a stage needs in the hold (as if bought) and hands them all over. */
 function build(s: GameState, stages: number): void {
   for (let i = 0; i < stages; i++) {
-    for (const x of stillNeeded(s.world.outpost!)) {
+    for (const x of stillNeeded(s.world.outposts![0]!)) {
       s.ship.cargo = { [x.commodity]: x.left };
       expect(deliverToOutpost(s, x.commodity, x.left).ok).toBe(true);
     }
@@ -82,22 +82,24 @@ describe('outpost sites', () => {
   });
 
   it('one at each confirmed planet of the generated systems, none in Sol or the other hand-made systems', () => {
-    const sites = outpostSites();
+    const sites = outpostSites().filter((s) => s.planetId);
     expect(sites.length).toBeGreaterThan(50);
     expect(new Set(sites.map((s) => s.planetId)).size).toBe(sites.length);
     for (const s of sites) {
-      expect(getPlanet(s.planetId)?.status).toBe('confirmed');
+      expect(s.id).toBe(s.planetId);
+      expect(getPlanet(s.planetId!)?.status).toBe('confirmed');
       expect(WORLD_SEEDS.find((x) => x.id === s.systemId)?.curated).toBeUndefined();
     }
-    expect(sitesIn('sol')).toEqual([]);
-    expect(sitesIn('alpha-centauri')).toEqual([]);
+    // Sol's and Proxima's sites are in their belts (docs/PROCGEN.md §36).
+    expect(sitesIn('sol').every((s) => s.beltId)).toBe(true);
+    expect(sitesIn('alpha-centauri').every((s) => s.beltId)).toBe(true);
     expect(sitesIn(SYSTEM).map((s) => s.planetId)).toContain(PLANET);
   });
 });
 
 describe('the charter', () => {
   it('only from a station of the site’s system, for the charter fee, one to a pilot; it is chartered with a name offered', () => {
-    expect(charterOffers(pilotAt('earth-port')).map((x) => x.site.planetId)).toEqual([]);
+    expect(charterOffers(pilotAt('earth-port')).filter((x) => x.site.planetId)).toEqual([]);
     const s = pilotAt(DOCK);
     const offer = charterOffers(s).find((x) => x.site.planetId === PLANET)!;
     expect(offer.blocked).toBeNull();
@@ -107,7 +109,8 @@ describe('the charter', () => {
     const r = charterOutpost(s, PLANET, kind, names[1]!);
     expect(r.ok).toBe(true);
     expect(s.credits).toBe(before - OUTPOSTS.charter);
-    expect(s.world.outpost).toMatchObject({ site: PLANET, kind, name: names[1], stage: 0, delivered: {} });
+    expect(s.world.outposts).toHaveLength(1);
+    expect(s.world.outposts![0]).toMatchObject({ site: PLANET, kind, name: names[1], stage: 0, delivered: {} });
     expect(charterOffers(s)[0]!.blocked).toMatch(/already/);
     expect(charterOutpost(s, 'gj-411-c', kind, names[0]!).ok).toBe(false);
     const poor = pilotAt(DOCK, 100);
@@ -117,7 +120,7 @@ describe('the charter', () => {
   it('is a station of the save only: found by its id and in its system’s scene, never among the world’s stations', () => {
     const s = chartered();
     const id = outpostId(PLANET);
-    expect(getLocation(id)).toMatchObject({ name: s.world.outpost!.name, systemId: SYSTEM, services: [], nearBodyId: PLANET });
+    expect(getLocation(id)).toMatchObject({ name: s.world.outposts![0]!.name, systemId: SYSTEM, services: [], nearBodyId: PLANET });
     expect(ALL_LOCATIONS.some((l) => l.id === id)).toBe(false);
     expect(saveLocations(SYSTEM).map((l) => l.id)).toEqual([id]);
     const def = sceneDefFor(SYSTEM);
@@ -149,13 +152,13 @@ describe('building it', () => {
     expect(deliverToOutpost(s, 'metals', 25).ok).toBe(false);
     expect(deliverToOutpost(s, 'metals', 12).ok).toBe(true);
     expect(s.ship.cargo).toEqual({ metals: 18, food: 5 });
-    expect(outpostStatus(s, s.world.outpost!)).toMatch(/^Its frame is going up: it still needs /);
+    expect(outpostStatus(s, s.world.outposts![0]!)).toMatch(/^Its frame is going up: it still needs /);
     // Away from it, nothing can be handed over.
     const away = structuredClone(s);
     away.location.dockedAt = DOCK;
     expect(deliverToOutpost(away, 'metals', 1).ok).toBe(false);
     build(s, 1);
-    expect(s.world.outpost!.stage).toBe(1);
+    expect(s.world.outposts![0]!.stage).toBe(1);
     expect(getLocation(id).services).toEqual(['market', 'repair']);
     expect(hasMarket(id)).toBe(true);
     expect(stationRooms(id)).toContain('trader');
@@ -171,12 +174,12 @@ describe('building it', () => {
     expect(postedContracts(s, id).length).toBeGreaterThan(0);
     expect(hasOutfitter(id)).toBe(false);
     build(s, 1);
-    expect(s.world.outpost!.stage).toBe(OUTPOSTS.stages.length);
+    expect(s.world.outposts![0]!.stage).toBe(OUTPOSTS.stages.length);
     // Consumables only: repair kits (and rounds for what is fitted), no maker's equipment.
     expect(hasOutfitter(id)).toBe(true);
     expect(gearForSale(id)).toEqual([]);
     expect(repairKitOffer(s, id)).not.toBeNull();
-    expect(outpostStatus(s, s.world.outpost!)).toMatch(/complete/);
+    expect(outpostStatus(s, s.world.outposts![0]!)).toMatch(/complete/);
   });
 
   it('changes nobody else’s prices, board or the world’s list of markets', () => {
@@ -204,10 +207,10 @@ describe('its income', () => {
     s.clock = opened + 3 * 3_600 + 10;
     const once = structuredClone(s);
     const r = settleFleet(s);
-    const hours = [0, 1, 2].map((h) => incomeAt(s.world.outpost!, opened + h * 3_600 + 1_800));
+    const hours = [0, 1, 2].map((h) => incomeAt(s.world.outposts![0]!, opened + h * 3_600 + 1_800));
     expect(r.outpost).toBe(hours.reduce((a, b) => a + b, 0));
     expect(s.credits).toBe(before + r.outpost);
-    expect(s.world.outpost!.earned).toBe(r.outpost);
+    expect(s.world.outposts![0]!.earned).toBe(r.outpost);
     expect(hours.every((x) => x === OUTPOSTS.stages[0]!.income || x === Math.round(OUTPOSTS.stages[0]!.income * 0.6))).toBe(true);
     useWorldLog(once.world);
     for (let t = opened + 900; t <= s.clock; t += 900) {
@@ -216,11 +219,11 @@ describe('its income', () => {
     }
     once.clock = s.clock;
     settleFleet(once);
-    expect(once.world.outpost).toEqual(s.world.outpost);
+    expect(once.world.outposts).toEqual(s.world.outposts);
     // A raid in its system cuts that hour's income.
     for (let t = 0; t < 400 * 3_600; t += 1_800) {
       if (systemEventAt(SYSTEM, t)?.kind !== 'raid') continue;
-      expect(incomeAt(s.world.outpost!, t)).toBe(Math.round(OUTPOSTS.stages[0]!.income * 0.6));
+      expect(incomeAt(s.world.outposts![0]!, t)).toBe(Math.round(OUTPOSTS.stages[0]!.income * 0.6));
       break;
     }
   });
@@ -247,12 +250,12 @@ describe('saves', () => {
       patch(x);
       return () => assertValidState(x);
     };
-    expect(bad((x) => (x.world.outpost!.site = 'proxima-cen-b'))).toThrow(/outpost/);
-    expect(bad((x) => (x.world.outpost!.kind = 'military-base'))).toThrow(/outpost/);
-    expect(bad((x) => (x.world.outpost!.stage = 9))).toThrow(/outpost/);
-    expect(bad((x) => (x.world.outpost!.delivered = { stims: -1 } as never))).toThrow(/outpost/);
+    expect(bad((x) => (x.world.outposts![0]!.site = 'proxima-cen-b'))).toThrow(/outpost/);
+    expect(bad((x) => (x.world.outposts![0]!.kind = 'military-base'))).toThrow(/outpost/);
+    expect(bad((x) => (x.world.outposts![0]!.stage = 9))).toThrow(/outpost/);
+    expect(bad((x) => (x.world.outposts![0]!.delivered = { stims: -1 } as never))).toThrow(/outpost/);
     // Docked at an outpost the save does not have.
-    expect(bad((x) => delete x.world.outpost)).toThrow(/unknown dock/);
+    expect(bad((x) => delete x.world.outposts)).toThrow(/unknown dock/);
     // A save without an outpost is as it was.
     assertValidState(pilotAt(DOCK));
   });

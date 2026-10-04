@@ -1,8 +1,8 @@
-import { outpostSite } from '../../content/outposts/sites.ts';
+import { siteOfStation } from '../../content/outposts/sites.ts';
 import { saveLocations, saveLocationsKey } from '../../data/systems.ts';
 import type { SystemId } from '../../data/types.ts';
 import type { SceneStationDef, SystemSceneDef } from '../sceneTypes.ts';
-import { dirTo, polar, v } from './helpers.ts';
+import { siteDock } from '../siteDock.ts';
 import { ALPHA_CENTAURI_SCENE } from './alphaCentauri.ts';
 import { BARNARD_SCENE } from './barnard.ts';
 import { catalogSceneDef } from './generated.ts';
@@ -37,8 +37,8 @@ export function sceneDefFor(systemId: SystemId, jd: number | null = null, clock:
 const withOwn = new WeakMap<SystemSceneDef, { key: string; def: SystemSceneDef }>();
 
 /**
- * A scene with the save's own stations in it (the player's outpost, docs/PROCGEN.md §22): in orbit
- * of its planet where the site says, its bay facing away from the planet.
+ * A scene with the save's own stations in it (the player's outposts, docs/PROCGEN.md §22, §36):
+ * each where its site stands (world/siteDock.ts).
  */
 function withOwnStations(def: SystemSceneDef): SystemSceneDef {
   const own = saveLocations(def.systemId);
@@ -47,11 +47,10 @@ function withOwnStations(def: SystemSceneDef): SystemSceneDef {
   const hit = withOwn.get(def);
   if (hit?.key === key) return hit.def;
   const stations = own.flatMap((l): SceneStationDef[] => {
-    const site = l.nearBodyId ? outpostSite(l.nearBodyId) : undefined;
-    const planet = def.planets.find((p) => p.id === l.nearBodyId);
-    if (!site || !planet || !l.look) return [];
-    const position = polar(planet.position, site.orbit.distance + planet.radius, site.orbit.angle, site.orbit.height);
-    return [{ locationId: l.id, kind: 'proxima-outpost', look: l.look, position, approach: dirTo(planet.position, position).add(v(0, 0.15, 0)).normalize() }];
+    const site = siteOfStation(l.id);
+    const dock = site ? siteDock(def, site) : null;
+    if (!dock || !l.look) return [];
+    return [{ locationId: l.id, kind: 'proxima-outpost', look: l.look, ...dock }];
   });
   const out = { ...def, stations: [...def.stations, ...stations] };
   withOwn.set(def, { key, def: out });

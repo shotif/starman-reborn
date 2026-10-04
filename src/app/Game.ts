@@ -61,6 +61,7 @@ import { crewDeed } from '../economy/crewDeeds.ts';
 import type { CrewDeed, CrewHeart, CrewRole } from '../content/crew/rules.ts';
 import { STORY, STORY_NOTES } from '../content/rivals/storyLines.ts';
 import { defenceOf, foughtPlan, nextRaid, outpostSystem, raidNote, raidWarning, settleRaid, turretsUp } from '../economy/outpostRaids.ts';
+import { outpostAt, outpostIn, outpostsOf } from '../economy/outposts.ts';
 import { RAID_WATCH } from '../content/outposts/raidLines.ts';
 import { outpostId } from '../content/outposts/sites.ts';
 import { farStar, farStarLook, recordObservation, scheduleSky, skyComm, skyMoment, skyTimeline } from '../economy/stellar.ts';
@@ -612,27 +613,31 @@ export class Game {
     this.watchOutpost();
   }
 
-  /** The outpost's watch sees a raid coming (docs/PROCGEN.md §29): said once, a job to defend it, and armed in a flight there. */
+  /** An outpost's watch sees a raid coming (docs/PROCGEN.md §29): said once, a job to defend it, and armed in a flight there. */
   private watchOutpost(): void {
     const state = this.state;
-    const o = state?.world.outpost;
-    if (!state || !o || o.stage <= 0) return;
-    const w = raidWarning(state, o);
-    if (!w) return;
-    this.sfx('alert');
-    toast(w.text, 'bad', 8000);
-    this.comm(w.speaker, w.watch, 7000);
-    if (this.flight && this.mode === 'flight' && !state.location.dockedAt && state.location.systemId === outpostSystem(o)) {
-      this.flight.armOutpostRaid({ window: w.plan.window, at: w.plan.at, threat: w.plan.threat, ships: w.plan.ships });
+    if (!state) return;
+    let saw = false;
+    for (const o of outpostsOf(state)) {
+      if (o.stage <= 0) continue;
+      const w = raidWarning(state, o);
+      if (!w) continue;
+      saw = true;
+      this.sfx('alert');
+      toast(w.text, 'bad', 8000);
+      this.comm(w.speaker, w.watch, 7000);
+      if (this.flight && this.mode === 'flight' && !state.location.dockedAt && state.location.systemId === outpostSystem(o)) {
+        this.flight.armOutpostRaid({ window: w.plan.window, at: w.plan.at, threat: w.plan.threat, ships: w.plan.ships });
+      }
     }
-    this.persist();
+    if (saw) this.persist();
   }
 
-  /** Leaving a raid on the outpost under way (docking, jumping, the ship lost): the clock decides it, the raiders downed counted. */
+  /** Leaving a raid on an outpost under way (docking, jumping, the ship lost): the clock decides it, the raiders downed counted. */
   private leaveOutpostRaid(): void {
     const state = this.state;
-    const o = state?.world.outpost;
     const r = this.flight?.outpostRaidStatus();
+    const o = state ? outpostAt(state, r?.locationId) : undefined;
     if (!state || !o || r?.state !== 'on') return;
     const { raid, events } = settleRaid(state, o, foughtPlan(state, o, r.setup), 'away', { downed: r.downed });
     const note = raidNote(o, raid);
@@ -1153,8 +1158,9 @@ export class Game {
           this.persist();
         },
         onOutpostRaid: (window, what, downed) => {
-          const o = state.world.outpost;
-          const setup = this.flight?.outpostRaidStatus()?.setup;
+          const status = this.flight?.outpostRaidStatus();
+          const o = outpostAt(state, status?.locationId);
+          const setup = status?.setup;
           if (!o || !setup) return;
           const plan = foughtPlan(state, o, setup);
           if (what === 'struck') {
@@ -1494,8 +1500,8 @@ export class Game {
   /** The player's outpost in this system, as the flight scene needs it (docs/PROCGEN.md §29): turrets up, guards on post, a raid due. */
   private outpostHere(): NonNullable<ConstructorParameters<typeof FlightSession>[0]['traffic']>['outpost'] | null {
     const state = this.state!;
-    const o = state.world.outpost;
-    if (!o || o.stage <= 0 || outpostSystem(o) !== state.location.systemId) return null;
+    const o = outpostIn(state, state.location.systemId);
+    if (!o || o.stage <= 0) return null;
     defenceOf(o);
     const plan = nextRaid(state, o);
     return {
@@ -2820,10 +2826,10 @@ export class Game {
         }
         return null;
       },
-      /** Test-only: the player's outpost's next raid, how it stands against it, the raids met, and the raid in this flight (docs/PROCGEN.md §29). */
-      outpostRaid: () => {
+      /** Test-only: an outpost's next raid (the first chartered, unless its site is named), how it stands against it, the raids met, and the raid in this flight (docs/PROCGEN.md §29). */
+      outpostRaid: (site?: string) => {
         const state = this.state;
-        const o = state?.world.outpost;
+        const o = state ? outpostsOf(state).find((x) => !site || x.site === site) : undefined;
         if (!state || !o) return null;
         const next = nextRaid(state, o);
         return { next, warned: o.defence?.warned ?? null, raids: o.defence?.raids ?? [], turrets: o.defence?.turrets ?? 0, flight: this.flight?.outpostRaidStatus() ?? null };

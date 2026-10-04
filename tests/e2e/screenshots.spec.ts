@@ -462,7 +462,7 @@ for (const size of SIZES) {
       await press(page, 'room-deck');
       if (!(await page.getByTestId('outpost-window').isVisible().catch(() => false))) await press(page, 'station-outpost');
       for (const good of ['habitat-modules', 'metals']) await press(page, `outpost-deliver-${good}`);
-      await waitUntil(page, 'the outpost open', async () => ((await api<{ world: { outpost?: { stage: number } } }>(page, 'state')).world.outpost?.stage ?? 0) >= 1);
+      await waitUntil(page, 'the outpost open', async () => ((await api<{ world: { outposts?: { stage: number }[] } }>(page, 'state')).world.outposts?.[0]?.stage ?? 0) >= 1);
       await api(page, 'setCargo', { 'ship-parts': 4, machinery: 2, electronics: 3 });
       await press(page, 'room-deck');
       if (!(await page.getByTestId('outpost-window').isVisible().catch(() => false))) await press(page, 'station-outpost');
