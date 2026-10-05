@@ -14,6 +14,7 @@ import { postedContracts } from '../../src/economy/contracts.ts';
 import { hasMarket, marketTables, quote } from '../../src/economy/markets.ts';
 import { validateOutposts, type OutpostRules } from '../../src/economy/outpostGuards.ts';
 import { charterOffers, charterOutpost, deliverable, deliverToOutpost, incomeAt, newsFactor, outpostStatus, stillNeeded } from '../../src/economy/outposts.ts';
+import { folkFactor } from '../../src/economy/folk.ts';
 import { stationRooms } from '../../src/ui/station/StationHub.ts';
 import { SystemScene } from '../../src/world/SystemScene.ts';
 import { sceneDefFor } from '../../src/world/systems/index.ts';
@@ -220,7 +221,7 @@ describe('its income', () => {
     expect(hours.every((x, h) => {
       const t = opened + h * 3_600 + 1_800;
       const raid = systemEventAt(SYSTEM, t)?.kind === 'raid' ? 0.6 : 1;
-      return x === Math.round(OUTPOSTS.stages[0]!.income * raid * newsFactor(post, t));
+      return x === Math.round(OUTPOSTS.stages[0]!.income * raid * newsFactor(post, t) * folkFactor(post, t));
     })).toBe(true);
     useWorldLog(once.world);
     for (let t = opened + 900; t <= s.clock; t += 900) {
@@ -233,7 +234,8 @@ describe('its income', () => {
     // A raid in its system cuts that hour's income.
     for (let t = 0; t < 400 * 3_600; t += 1_800) {
       if (systemEventAt(SYSTEM, t)?.kind !== 'raid') continue;
-      expect(incomeAt(s.world.outposts![0]!, t)).toBe(Math.round(OUTPOSTS.stages[0]!.income * 0.6));
+      // Its people's spirit too (docs/PROCGEN.md §41.3): the pilot long gone, it has fallen.
+      expect(incomeAt(s.world.outposts![0]!, t)).toBe(Math.round(OUTPOSTS.stages[0]!.income * 0.6 * folkFactor(s.world.outposts![0]!, t)));
       break;
     }
   });

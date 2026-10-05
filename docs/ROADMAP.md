@@ -9,11 +9,11 @@ After the scripted opening (10–20 minutes), the neighbourhood is an open sandb
 systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
 of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
 packs in lawless space; 39 ships and 146 pieces of equipment; and generated contracts on every job
-board. Increments 1–39 (under [Done so far](#done-so-far)) added world events and news, contracts
+board. Increments 1–40 (under [Done so far](#done-so-far)) added world events and news, contracts
 of every kind, the law and the outlaw path, goals, ranks with each faction that open doors, races round real planets and moons against racers who really fly, a wing that takes orders and grows with every fight, border battles to see and join, six story arcs, combat depth, people in the
 bars and a trade computer, a world that answers, gluts that ship their surplus out and relief to
 escort through raided lanes, a fleet of your own whose captains fly the lanes, a crew aboard your own ship,
-up to three stations of your own to build and defend, refineries in the real belts, captains who supply them and mine for them, outposts that trade with their neighbours and have news of their own, passengers and sightseers, rival pilots with careers and stories of their own, a
+up to three stations of your own to build and defend, refineries in the real belts, captains who supply them and mine for them, outposts that trade with their neighbours, have news of their own and people who live there, passengers and sightseers, rival pilots with careers and stories of their own, a
 supernova in every sky (as fiction), an invented star at the map's edge that explodes and leaves a
 black hole to fly to (fiction too), encounters on the lanes between the docks, wrecks and derelicts to fly to with short trails across a few systems, mining in the real belts, the frontier with a life of its own,
 a border war whose fronts can be won for good, story endings that change stations for good, escorts
@@ -28,8 +28,13 @@ What it lacks now:
 
 ## Proposed next increments
 
-Chosen by the owner on 5 October 2026, once the outposts had joined the trade: Outposts have news
-and then A new written arc, both now done. The next are for the owner to choose.
+Chosen by the owner on 5 October 2026, once The Long Winter was live: People at your outposts (now
+done), then another written arc, next.
+
+### 41. Another written arc ⏳
+
+A seventh hand-written arc, with endings that change a station for good. Its story is for the owner
+to choose before it is written.
 
 ### How an increment ships
 
@@ -39,6 +44,20 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 40. People at your outposts ✅
+
+Each of your outposts has people of its own: a quartermaster from the day it opens, a resident more
+when it becomes a station and two more as a port, each with a trade (an engineer, a grower, a medic,
+a broker) and a face. Now and then one asks you for something: goods brought in, someone of theirs
+fetched from a station a jump or two away, or a body of its own system scanned. Each person has a
+story of two asks: the first adds a little to the income for good, the second builds their work (the
+engineer's workshop patches hulls there at cost, the grower's green bay grows food for its market,
+the medic's clinic keeps people well while you are away, the broker's desk sells what it makes). The
+outpost's spirit rises with asks done and raids held and falls with asks ignored, raids lost and long
+absences, nudging the income up to 5% either way. Meet them in the Outpost window's People, in a word
+as you dock, and in the Fleet window's reports while you are away
+([PROCGEN.md §41](PROCGEN.md#41-people-at-your-outposts)).
 
 ### 39. The Long Winter ✅
 

@@ -115,6 +115,13 @@ snapshot branch only when the archives changed.
   always a refinery, the only kind that refines, and only the ore, ice and gases the pilot brings or
   a mining captain cuts in its own belt. Selling one waits while goods are stored there, a captain
   is on a run to it or mining for it, or a job of its board is under way.
+- The people at the pilot's outposts (PROCGEN §41) are drawn, not met in a bar: they live only in
+  the Outpost window and the words said on docking, never walk the station or fly. Their asks are
+  not jobs: they are not on the job board, the HUD objective or the star map, and a scan ask's body
+  must be found and scanned by the pilot. One fetched rides in the jump seat, needing no berth. An
+  ask that comes in the second half of an hour shows once that hour is paid (a few minutes of game
+  time later); asks made or lapsed while away are told three at most an outpost. The spirit counts
+  raids and asks only: the outpost's news (§39) and its haulers do not move it.
 - Supply and mining captains (PROCGEN §37) are never raided, by the owner's choice: raiders do not
   hunt them in flight, and nothing is lost on the way. A supply captain carries only what the next
   stages need and buys nothing its home market does not sell; leftovers stay aboard. A mining captain

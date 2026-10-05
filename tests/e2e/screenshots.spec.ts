@@ -255,10 +255,21 @@ for (const size of SIZES) {
       await page.locator('.news-relief').first().scrollIntoViewIfNeeded();
       await shot(page, `${size.name}-6-news`, size.touch, results);
       // A station of your own (docs/PROCGEN.md §22): the charter at Lalande 21185, then the site's Outpost window.
+      /** Clicks through whatever is said (a story's lines, the people of an outpost on docking, §41.4) until nothing more comes. */
+      const quiet = async () => {
+        for (let q = 0, i = 0; q < 3 && i < 30; i++) {
+          const next = page.getByTestId('story-continue').or(page.getByTestId('folk-continue')).first();
+          if (await next.isVisible().catch(() => false)) {
+            q = 0;
+            await next.click().catch(() => {});
+          } else q++;
+          await page.waitForTimeout(250);
+        }
+      };
       const docked = async (id: string) => {
         await api(page, 'dockAt', id);
         await waitUntil(page, `docked at ${id}`, async () => (await api<{ location: { dockedAt: string | null } }>(page, 'state')).location.dockedAt === id);
-        for (let i = 0; i < 6 && (await page.getByTestId('story-continue').isVisible().catch(() => false)); i++) await press(page, 'story-continue');
+        await quiet();
       };
       await api(page, 'setCredits', 50_000);
       await docked('wayfarer-array');
@@ -863,7 +874,7 @@ for (const size of SIZES) {
       await docked('outpost.belt.sol-main-belt');
       const news = (await api<{ start: number } | null>(page, 'outpostEvent', { site: 'belt.sol-main-belt' }))!;
       await api(page, 'advanceClock', news.start - (await nowClock()) + 60);
-      for (let i = 0; i < 6 && (await page.getByTestId('story-continue').isVisible().catch(() => false)); i++) await press(page, 'story-continue');
+      await quiet();
       await openOutpost();
       await page.getByTestId('outpost-news').evaluate((el) => el.scrollIntoView({ block: 'start' }));
       await expect(page.getByTestId('outpost-news-headline')).not.toHaveText('All quiet');
@@ -901,6 +912,29 @@ for (const size of SIZES) {
       if (!size.touch) await page.mouse.move(size.width / 2, size.height / 2);
       expect(await api<boolean>(page, 'face', { id: 'stand:arc.kuiper.5.crews', below: size.height < 500 ? 4 : 9 })).toBe(true);
       await shot(page, `${size.name}-22b-stand`, size.touch, results);
+      // People at your outposts (docs/PROCGEN.md §41): at the main belt's refinery, an ask said as the
+      // pilot docks, then the Outpost window's People.
+      type FolkNow = { next: number | null; record: { told: number; ask?: { made: number } } } | null;
+      for (let i = 0; i < 20; i++) {
+        const f = await api<FolkNow>(page, 'folk', 'belt.sol-main-belt');
+        if (f?.record.ask && f.record.ask.made > f.record.told) break;
+        await api(page, 'advanceClock', f?.next ? f.next - (await nowClock()) + 3_660 : 6 * 3_600);
+      }
+      await api(page, 'dockAt', 'outpost.belt.sol-main-belt');
+      await waitUntil(page, 'a word on docking', async () => {
+        if (await page.getByTestId('folk-dialog').isVisible().catch(() => false)) return true;
+        const next = page.getByTestId('story-continue');
+        if (await next.isVisible().catch(() => false)) await next.click().catch(() => {});
+        return false;
+      }, 30_000);
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-23-folk-greeting`, size.touch, results);
+      await press(page, 'folk-continue');
+      for (let i = 0; i < 6 && (await page.getByTestId('story-continue').isVisible({ timeout: 1_000 }).catch(() => false)); i++) await press(page, 'story-continue');
+      await openOutpost();
+      await page.getByTestId('outpost-people').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-23b-outpost-people`, size.touch, results);
       for (const [name, r] of Object.entries(results)) {
         expect.soft(r.overflow, `${name}: page overflow`).toBe(false);
         expect.soft(r.clipped, `${name}: clipped controls`).toEqual([]);

@@ -7,7 +7,10 @@ import type { Lingering } from './state.ts';
 import { TRAFFIC } from '../world/traffic/plan.ts';
 import { leaveMark, markSettledFronts, raidKill, settleFront, storyMark } from '../economy/answers.ts';
 import { useWorldLog } from '../economy/events.ts';
-import { captainLost, captainSeen, fleetNews, haulEstimate, haulGoods, hireHauler, settleFleet, type FleetSettlement } from '../economy/fleet.ts';
+import { captainLost, captainSeen, fleetNews, folkUpTo, haulEstimate, haulGoods, hireHauler, settleFleet, type FleetSettlement } from '../economy/fleet.ts';
+import { folkPeople, nextAskAt, scanFolk, spiritAt } from '../economy/folk.ts';
+import { WORK_WORDS } from '../content/outposts/folk.ts';
+import { showFolkWords } from '../ui/station/folk.ts';
 import { lastView } from '../ui/station/lastView.ts';
 import { fill, PAYMENT } from '../content/people/lines.ts';
 import * as THREE from 'three';
@@ -61,7 +64,7 @@ import { crewDeed } from '../economy/crewDeeds.ts';
 import type { CrewDeed, CrewHeart, CrewRole } from '../content/crew/rules.ts';
 import { STORY, STORY_NOTES } from '../content/rivals/storyLines.ts';
 import { defenceOf, foughtPlan, nextRaid, outpostSystem, raidNote, raidWarning, settleRaid, turretsUp } from '../economy/outpostRaids.ts';
-import { outpostAt, outpostIn, outpostsOf } from '../economy/outposts.ts';
+import { incomeAt, outpostAt, outpostIn, outpostsOf } from '../economy/outposts.ts';
 import { nextHauler } from '../economy/outpostTrade.ts';
 import { RAID_WATCH } from '../content/outposts/raidLines.ts';
 import { outpostId } from '../content/outposts/sites.ts';
@@ -148,7 +151,7 @@ import type { Target } from '../world/targets.ts';
 import { collectDeviceFacts, formatReport, FrameRateLog } from './deviceReport.ts';
 import { GameRenderer, isTouchDevice, resolveQuality } from './GameRenderer.ts';
 import { Loop } from './Loop.ts';
-import { discoverBody, dockAt, jumpReadiness, performJump, rescueAfterDefeat, rescueFromPyre, RESCUE_FEE, routeFee, undock } from './rules.ts';
+import { discoverBody, dockAt, jumpReadiness, performJump, rescueAfterDefeat, rescueFromPyre, RESCUE_FEE, routeFee, undock, type DockOutcome } from './rules.ts';
 import type { SaveManager } from './save/SaveManager.ts';
 import { applyDocumentSettings, type Settings } from './settings.ts';
 import { Soundscape } from './soundscape.ts';
@@ -644,7 +647,9 @@ export class Game {
     const r = this.flight?.outpostRaidStatus();
     const o = state ? outpostAt(state, r?.locationId) : undefined;
     if (!state || !o || r?.state !== 'on') return;
-    const { raid, events } = settleRaid(state, o, foughtPlan(state, o, r.setup), 'away', { downed: r.downed });
+    const plan = foughtPlan(state, o, r.setup);
+    for (const n of folkUpTo(state, o, plan.at)) toast(n.text, n.tone, 6000);
+    const { raid, events } = settleRaid(state, o, plan, 'away', { downed: r.downed });
     const note = raidNote(o, raid);
     toast(note.text, note.tone, 7000);
     this.announceJobEvents(events);
@@ -1183,6 +1188,8 @@ export class Game {
             return;
           }
           // Fought here: held or lost as it went; undecided, the clock decides with the raiders downed counted.
+          // Its people's asks up to the raid first, as a settle does (docs/PROCGEN.md §41.3).
+          for (const n of folkUpTo(state, o, plan.at)) toast(n.text, n.tone, 6000);
           const { raid, events } = settleRaid(state, o, plan, 'flight', what === 'timeout' ? { downed } : { result: what, downed });
           const note = raidNote(o, raid);
           this.sfx(raid.result === 'held' ? 'mission-complete' : 'alert');
@@ -1646,6 +1653,26 @@ export class Game {
     );
     this.tellStory();
     this.announceRanks(out.ranks);
+    this.greetFolk(out.folk);
+  }
+
+  /**
+   * The people at the pilot's outposts on docking (docs/PROCGEN.md §41.4): one fetched come aboard
+   * at once; at an outpost, whoever has something to say, after any story told here.
+   */
+  private greetFolk(folk: DockOutcome['folk']): void {
+    for (const n of folk.toasts) toast(n, 'good', 6000);
+    const o = folk.outpost;
+    if (!o || !folk.lines.length) return;
+    this.persist();
+    this.storyQueue = this.storyQueue
+      .then(async () => {
+        if (this.mode !== 'docked' || !this.state) return;
+        await showFolkWords(this.state, o, folk.lines, folk.work ? WORK_WORDS[folk.work.trade].name : null);
+        // A work built changes the station (its market, its repairs): show it so.
+        if (folk.work) this.station?.render();
+      })
+      .catch((err) => console.error(err));
   }
 
   /** Ranks given or fallen at a dock (docs/PROCGEN.md §32): a fall said at once; a promotion's card after any story here. */
@@ -1735,6 +1762,7 @@ export class Game {
 
   private async onDiscovery(bodyId: string): Promise<void> {
     const state = this.state!;
+    this.scannedForFolk(bodyId);
     const { first, jobEvents } = discoverBody(state, bodyId);
     if (catalogue(state, bodyId)) this.hint = null;
     if (!first) return;
@@ -1757,9 +1785,17 @@ export class Game {
     this.setPaused(false);
   }
 
+  /** A body scanned for one of the people at an outpost (docs/PROCGEN.md §41.2): ready to tell there. */
+  private scannedForFolk(bodyId: string): void {
+    const notes = scanFolk(this.state!, bodyId);
+    for (const n of notes) toast(n, 'good', 6000);
+    if (notes.length) this.persist();
+  }
+
   private onScanInfo(t: Target): void {
     if (!t.bodyId) return;
     const state = this.state!;
+    this.scannedForFolk(t.bodyId);
     // Pyre and its black hole (docs/PROCGEN.md §26.5): a scan is a reading for the work that wants one.
     if (t.bodyId === PYRE_ID || t.bodyId === PYRE_HOLE_ID) {
       const jobs = recordObservation(state, t.bodyId, state.location.systemId);
@@ -2881,6 +2917,16 @@ export class Game {
         const from = q.from ?? state.clock;
         const e = stationEventsBetween(outpostId(o.site), from, from + 10 * 86_400).find((x) => x.start > from && (!q.kind || x.kind === q.kind));
         return e ? { id: e.id, kind: e.kind, start: e.start, end: e.end, goods: e.goods, headline: e.headline, deficit: e.kind === 'shortage' ? Math.ceil(shortfall(e) * EVENTS.react.relief) : 0 } : null;
+      },
+      /**
+       * Test-only: the people at an outpost (the first chartered, unless its site is named): who lives
+       * there, their record, when the next ask comes, the spirit and the hour's income now (docs/PROCGEN.md §41).
+       */
+      folk: (site?: string) => {
+        const state = this.state;
+        const o = state ? outpostsOf(state).find((x) => !site || x.site === site) : undefined;
+        if (!state || !o?.folk) return null;
+        return { people: folkPeople(state, o), record: structuredClone(o.folk), next: nextAskAt(state.seed, o), spirit: spiritAt(o, state.clock), income: incomeAt(o, state.clock) };
       },
       /**
        * Test-only: an outpost's haulers (the first chartered, unless its site is named): the next to set

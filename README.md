@@ -54,6 +54,11 @@ supply an outpost being built, or mine its belt for a refinery while you watch t
 come for an outpost now and then: build turrets there, hire guards, or be there to fight them off.
 Your outposts have news like any station: shortages, gluts, booms and strikes move their prices and
 income, draw relief haulers and work on the boards near by, and a toast tells you when one starts.
+Each outpost has people of its own: a quartermaster from the day it opens and residents as it grows.
+Now and then one asks you for something (goods, someone fetched from a station near by, a body of
+its system scanned), and each ask done leaves the place changed for good: a workshop that patches
+hulls at cost, a green bay that grows food, a clinic, a trading desk. Their spirit remembers what
+you do, and nudges the income a little either way.
 Sell one back for half of what went in, or abandon it.
 Sign on a crew of your own (an engineer who patches the ship up in flight, a gunner, a navigator):
 each has a heart that likes or hates what you do, a story, and a favour to ask, and they leave if

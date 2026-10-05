@@ -720,6 +720,25 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   near; then claim-jumpers come out of the dark in waves (3, then 2, each once the one before is down
   to one) and the stand is won; with two cutters down it is lost. A rescue's ship adrift in a belt
   lies in its ring, clear of stations, and a belt scanned within range is on record.
+- `folk.test.ts`: **people at your outposts**. The guardrails pass over thirty days at every belt
+  site and a planet site of each kind, every ask done as it comes, and broken rules are caught (people
+  not growing from one, a spirit moving the income more than 5%, steps the wrong way, bands out of
+  order, asks lasting less than a day, a first ask worth too much, a repair cut over a half, a market
+  work out of the marks' limits, a restricted good wanted, the quartermaster among the residents).
+  The main belt's refinery has a quartermaster, then two, then four people, named from their own
+  pool, the same every time and new for a new founding; an engineer comes first about half the time
+  at a refinery, and a trade whose work its market cannot carry never comes. The first ask comes six
+  hours after it opens, possible and in words; it lapses after two days with the spirit down and a
+  report, the next coming 12–36 hours later from someone else. Goods are handed over only docked
+  there with enough aboard: the spirit lifts, the first ask adds 2% to the income, the second builds
+  the work, and once every story is told the quartermaster asks for supplies. One fetched comes
+  aboard where they wait and is brought home by docking there; a scan counts only in the outpost's
+  system. The spirit starts at 50, falls after a day away and stops when the pilot is there, half as
+  fast with a clinic, moves with raids and stays within 0–100; it and the works move the income,
+  settled the same once or every quarter of an hour. The workshop cuts repairs there by a quarter,
+  the green bay and the trading desk move its market; the greeting on docking says each thing once,
+  three lines at most; an older save's outpost gets its people when first settled; saves keep the
+  record and refuse what cannot be.
 
 ### Browser tests (Playwright)
 
@@ -943,6 +962,13 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   the pilot came close, then claim-jumpers out of the dark wave after wave until the last was down;
   the job done there and then, Ashdown's debrief on the radio, and the News at Deimos Depot showing
   its mark *For good*.
+- `folk.spec.ts`: **people at your outposts**: a refinery chartered in Sol's main belt and its frame
+  built, its quartermaster appears in the Outpost window's *People*, the spirit steady at 50 and
+  nobody asking. Hours on, the first ask is told in a toast and the window says what it needs; done
+  (goods handed over from the hold, or the one waiting fetched home from their station), the
+  quartermaster says so with their portrait, the spirit rises and the window says *1 of 2 asks done*
+  and what they have made adds to the income. The next ask is named in the Fleet window's line and
+  said in a word as the pilot docks.
 - `wing.spec.ts`: **wing command**: a pilot hired in the bar shows their grade in *Your wing*; in
   flight the order card (V on a keyboard, the Wing chip on touch) pauses the game, lists the wingman,
   locks Defend and Cover with why, and gives Hold (the radio's reply, the HUD's *Wing 1 · Hold* or the

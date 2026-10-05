@@ -223,9 +223,10 @@ export interface FleetReport {
   at: number;
   /**
    * `supply`: a supply captain's delivery; `mine`: a mining captain's load refined (docs/PROCGEN.md
-   * §37); `news`: an event starting or ending at one of the pilot's outposts (§39).
+   * §37); `news`: an event starting or ending at one of the pilot's outposts (§39); `folk`: an ask
+   * made or lapsed at one (§41).
    */
-  kind: 'run' | 'raid' | 'lost' | 'wait' | 'home' | 'supply' | 'mine' | 'news';
+  kind: 'run' | 'raid' | 'lost' | 'wait' | 'home' | 'supply' | 'mine' | 'news' | 'folk';
   text: string;
   /** Credits it made (negative: cost) the player. */
   amount: number;
@@ -412,6 +413,62 @@ export interface OutpostRecord {
   heard?: number;
   /** A belt outpost's refining this hour (docs/PROCGEN.md §36.3): the hour (clock / 3,600, whole) and the units taken. */
   refined?: { hour: number; units: number };
+  /** Its people's record (docs/PROCGEN.md §41.5), once its people have come. */
+  folk?: FolkRecord;
+}
+
+/** An ask one of the people at an outpost made (docs/PROCGEN.md §41.2). */
+export interface FolkAsk {
+  /** Which of the outpost's asks it is (0, 1, 2…), and who asks (their slot: 0 is the quartermaster). */
+  n: number;
+  slot: number;
+  kind: 'goods' | 'fetch' | 'scan';
+  /** A step of the asker's story; false: the quartermaster's supplies. */
+  story: boolean;
+  /** goods: what, and how many. */
+  good?: CommodityId;
+  qty?: number;
+  /** fetch: who comes home, what they are to the asker, and the station they wait at. */
+  who?: string;
+  relation?: string;
+  stationId?: string;
+  /** scan: the planet, star or belt of the outpost's system. */
+  bodyId?: string;
+  /** Game clock when it was made, and when it lapses. */
+  made: number;
+  until: number;
+  /** fetch: the one fetched is aboard; scan: the body is scanned. */
+  aboard?: true;
+  scanned?: true;
+}
+
+/** What the people at an outpost made for good (docs/PROCGEN.md §41.2): whose work, the good it is on, when. */
+export interface FolkWorkDone {
+  slot: number;
+  trade: 'quartermaster' | 'engineer' | 'grower' | 'medic' | 'broker';
+  good?: CommodityId;
+  at: number;
+}
+
+/** The people at an outpost (docs/PROCGEN.md §41.5): they are drawn, never kept; this is what they remember. */
+export interface FolkRecord {
+  /** When its people first came (its first ask counts from then). */
+  start: number;
+  /** The spirit (0–100) as it stood when last changed, and when (docs/PROCGEN.md §41.3). */
+  spirit: number;
+  since: number;
+  /** The pilot's last visit: docked there, or launched from it. */
+  visited: number;
+  /** Asks done by each person (by slot, 0 to FOLK.asks.story), and asks made so far. */
+  steps: number[];
+  asked: number;
+  ask?: FolkAsk;
+  /** When the last ask ended, how, and whose it was ('none': no ask could be made then). */
+  ended?: { at: number; how: 'done' | 'lapsed' | 'none'; slot: number };
+  works: FolkWorkDone[];
+  /** Said on docking up to (game clock), and the spirit's band then. */
+  told: number;
+  band: 'low' | 'steady' | 'glad';
 }
 
 /** An outpost sold or abandoned (docs/PROCGEN.md §36.4). */

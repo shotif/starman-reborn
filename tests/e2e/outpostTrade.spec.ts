@@ -28,7 +28,7 @@ const haulers = (page: Page) => api<Haulers>(page, 'outpostHaulers');
 
 /** Clicks through whatever is said, until nothing more comes for a second. */
 async function hearOut(page: Page): Promise<void> {
-  const next = page.getByTestId('story-continue');
+  const next = page.getByTestId('story-continue').or(page.getByTestId('folk-continue')).first();
   for (let quiet = 0, i = 0; quiet < 3 && i < 40; i++) {
     if (await next.isVisible().catch(() => false)) {
       quiet = 0;

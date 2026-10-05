@@ -5,6 +5,7 @@ import { cargoUsed } from './cargo.ts';
 import { quartersBlock } from './crewQuarters.ts';
 import { repairDiscount, standingTier, TIER_LABEL } from './factions.ts';
 import { LAW } from '../content/law/rules.ts';
+import { repairCut } from './folk.ts';
 import { dockAccess } from './law.ts';
 import { ammoName, clampShip, fittedItem, fittedLaunchers, hullMax, newShipState, performanceOf, shieldCapacity, shipSlots } from './loadout.ts';
 import { dockFaction } from './markets.ts';
@@ -234,7 +235,8 @@ export function repairQuote(state: GameState, locationId: string): { points: num
   const points = Math.max(0, Math.ceil(hullMax(state.ship) - state.ship.hull));
   const faction = dockFaction(locationId);
   // A pilot on emergency docking pays a surcharge instead of any discount (docs/PROCGEN.md §12).
-  const discount = dockAccess(state, locationId) === 'emergency' ? -LAW.emergencyRepairSurcharge : faction ? repairDiscount(state.reputation[faction] ?? 0) : 0;
+  // At one of the pilot's outposts with an engineer's workshop (docs/PROCGEN.md §41.2), its cut.
+  const discount = dockAccess(state, locationId) === 'emergency' ? -LAW.emergencyRepairSurcharge : faction ? repairDiscount(state.reputation[faction] ?? 0) : repairCut(state, locationId);
   const cost = Math.round(points * REPAIR_COST_PER_POINT * (1 - discount));
   return { points, cost, discount };
 }

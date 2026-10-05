@@ -32,6 +32,7 @@ import { formatCredits, h, replaceChildren } from '../dom.ts';
 import { glyph } from '../glyphs.ts';
 import type { Refresh, StationContext } from './context.ts';
 import { COMMODITY_GLYPH } from './trader.ts';
+import { folkSummary, peopleSection } from './folk.ts';
 
 const outpostSiteOf = (o: OutpostRecord) => outpostSite(o.site);
 
@@ -82,6 +83,7 @@ function ownSection(ctx: StationContext, refresh: Refresh): HTMLElement {
             h('span', { class: 'row-sub' }, outpostPlace(o)),
             h('span', { class: 'row-sub fleet-status', 'data-testid': 'outpost-status' }, outpostStatus(ctx.state, o)),
             o.stage > 0 ? h('span', { class: 'row-sub', 'data-testid': 'outpost-defence-line' }, defenceLine(ctx.state, o)) : null,
+            folkSummary(ctx.state, o) ? h('span', { class: 'row-sub', 'data-testid': 'outpost-folk-line' }, folkSummary(ctx.state, o)) : null,
             here ? null : h('span', { class: 'row-note' }, nextStage(o) ? 'Dock there to hand over the materials.' : `Fiction: your station, at a real ${site?.beltId ? 'belt' : 'planet'}.`),
           ),
           rowActions(ctx, o, here, refresh),
@@ -279,6 +281,7 @@ export function outpostContent(ctx: StationContext, refresh: Refresh): HTMLEleme
           ),
         )
       : h('p', { class: 'callout' }, 'Complete: a port with a market, repairs, a job board and an outfitter.'),
+    o.stage > 0 && o.folk ? peopleSection(ctx, o, refresh) : null,
     o.stage > 0 ? newsSection(o, state.clock) : null,
     inBelt(o) ? refineSection(ctx, o, refresh) : null,
     o.stage > 0 ? haulerSection(o, state.clock) : null,

@@ -8,6 +8,7 @@ import { jumpsFrom } from '../content/world/network.ts';
 import { WORLD_SEED } from '../content/world/rules.ts';
 import { isOutpostId, outpostId, outpostLocation } from '../content/outposts/sites.ts';
 import { OUTPOST_RAIDS } from '../content/outposts/raids.ts';
+import { FOLK } from '../content/outposts/folk.ts';
 import { ALL_LOCATIONS, getLocation, getSystem, isFrontier, isInventedSystem, saveLocations, saveLocationsKey, setSaveLocations, SYSTEMS, WORLD } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { trafficPlan } from '../world/traffic/plan.ts';
@@ -589,8 +590,16 @@ export function marketEffect(locationId: string, commodity: CommodityId, clock: 
   // A raid lost at one of the player's outposts (§29): its market short of one good while the hurt lasts.
   const hurt = isOutpostId(locationId) ? worldLog?.outposts?.find((o) => outpostId(o.site) === locationId)?.defence?.hurt : undefined;
   const raid = hurt && hurt.good === commodity && clock >= hurt.from && clock < hurt.until ? OUTPOST_RAIDS.lost : null;
-  if (!event && !mark && sky === 1 && edge === 1 && !raid) return NEUTRAL;
-  return { price: (event?.price ?? 1) * (mark?.price ?? 1) * sky * edge * (raid?.price ?? 1), stock: (event?.stock ?? 1) * (mark?.stock ?? 1) * (raid?.stock ?? 1) };
+  // What its people made there (§41.2): a green bay's food, a trading desk's good, for good.
+  const own = isOutpostId(locationId) ? worldLog?.outposts?.find((o) => outpostId(o.site) === locationId) : undefined;
+  const work = own?.folk?.works.find((w) => w.good === commodity);
+  const rules = work ? FOLK.trades[work.trade].work : null;
+  const folk = rules?.kind === 'market' ? rules : null;
+  if (!event && !mark && sky === 1 && edge === 1 && !raid && !folk) return NEUTRAL;
+  return {
+    price: (event?.price ?? 1) * (mark?.price ?? 1) * sky * edge * (raid?.price ?? 1) * (folk?.price ?? 1),
+    stock: (event?.stock ?? 1) * (mark?.stock ?? 1) * (raid?.stock ?? 1) * (folk?.stock ?? 1),
+  };
 }
 
 /** How an event moves a good's price at a station right now, all effects together (1 without one). */

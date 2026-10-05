@@ -15,6 +15,7 @@ import { trafficFor } from '../world/traffic/setup.ts';
 import { cargoCount, removeCargo } from './cargo.ts';
 import { WING_FIRST, WING_LAST } from './combat.ts';
 import { boardEpoch } from './contracts.ts';
+import { raidFolk } from './folk.ts';
 import { activeOutposts, systemEventAt } from './events.ts';
 import { standingTier } from './factions.ts';
 import { advanceJobs, failJob, type JobDef, type JobEvent } from './jobs.ts';
@@ -229,6 +230,8 @@ export function settleRaid(state: GameState, o: OutpostRecord, plan: RaidPlan, w
     result = rng(state.seed, 'outpost-raid-luck', o.site, o.founded, plan.window).next() < p ? 'held' : 'lost';
   }
   const raid: OutpostRaid = { window: plan.window, at: plan.at, threat: plan.threat, result, where };
+  // Its people remember it (docs/PROCGEN.md §41.3).
+  raidFolk(o, plan.at, result);
   if (result === 'lost') {
     const took = hurt(state, o, plan);
     if (took) raid.took = took;

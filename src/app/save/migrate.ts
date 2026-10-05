@@ -13,6 +13,8 @@ import { markById } from '../../economy/marks.ts';
 import { FLEET } from '../../content/fleet/rules.ts';
 import { OUTPOSTS } from '../../content/outposts/rules.ts';
 import { OUTPOST_RAIDS } from '../../content/outposts/raids.ts';
+import { FOLK, FOLK_RELATIONS } from '../../content/outposts/folk.ts';
+import { scanBodies } from '../../economy/folk.ts';
 import { ROSTER } from '../../content/rivals/rules.ts';
 import { CREW, CREW_DEEDS, CREW_HEARTS, CREW_ROLES, type CrewDeed } from '../../content/crew/rules.ts';
 import { SITE_KINDS, WRECKS } from '../../content/wrecks/rules.ts';
@@ -152,10 +154,41 @@ function assertValidOutpost(o: OutpostRecord, fail: (msg: string) => never): voi
     // How far its news has been told (§39.5): from its founding on.
     (o.heard !== undefined && !(Number.isFinite(o.heard) && o.heard >= o.founded)) ||
     (o.defence !== undefined && !validDefence(o.defence, o.stage)) ||
-    (o.refined !== undefined && !validRefined(o.refined, site.beltId ? o.stage : 0))
+    (o.refined !== undefined && !validRefined(o.refined, site.beltId ? o.stage : 0)) ||
+    (o.folk !== undefined && !validFolk(o.folk, o, site.systemId))
   ) {
     fail('outpost');
   }
+}
+
+/**
+ * Its people's record (docs/PROCGEN.md §41.5): only once it is open; a spirit of 0–100; asks done
+ * per person within their story, and none by someone not there yet; the ask open of a known kind,
+ * good, station or body, made and lapsing in order; works one per trade.
+ */
+function validFolk(f: NonNullable<OutpostRecord['folk']>, o: OutpostRecord, systemId: string): boolean {
+  const time = (t: unknown) => Number.isFinite(t) && (t as number) >= 0;
+  if (!isRecord(f) || o.stage <= 0) return false;
+  const present = FOLK.people[Math.min(o.stage, FOLK.people.length) - 1]!;
+  const slot = (x: unknown) => Number.isInteger(x) && (x as number) >= 0 && (x as number) < present;
+  if (!time(f.start) || f.start < o.founded || !time(f.since) || f.since < f.start || !time(f.visited) || f.visited < f.start || !time(f.told)) return false;
+  if (!Number.isFinite(f.spirit) || f.spirit < 0 || f.spirit > 100 || !['low', 'steady', 'glad'].includes(f.band)) return false;
+  const people = FOLK.people[FOLK.people.length - 1]!;
+  if (!Array.isArray(f.steps) || f.steps.length !== people || !f.steps.every((x, i) => Number.isInteger(x) && x >= 0 && x <= FOLK.asks.story && (i < present || x === 0))) return false;
+  if (!Number.isInteger(f.asked) || f.asked < 0) return false;
+  if (f.ended !== undefined && !(isRecord(f.ended) && time(f.ended.at) && ['done', 'lapsed', 'none'].includes(f.ended.how) && Number.isInteger(f.ended.slot) && f.ended.slot >= 0 && f.ended.slot < people)) return false;
+  const trades = Object.keys(FOLK.trades);
+  if (!Array.isArray(f.works) || f.works.length > people || new Set(f.works.map((w) => w?.trade)).size !== f.works.length) return false;
+  if (!f.works.every((w) => isRecord(w) && slot(w.slot) && trades.includes(w.trade) && time(w.at) && (w.good === undefined || COMMODITY_IDS.includes(w.good)))) return false;
+  const a = f.ask;
+  if (a === undefined) return true;
+  if (!isRecord(a) || a.n !== f.asked - 1 || !slot(a.slot) || typeof a.story !== 'boolean' || !time(a.made) || a.until !== a.made + FOLK.asks.lasts) return false;
+  if (a.aboard !== undefined && !(a.aboard === true && a.kind === 'fetch')) return false;
+  if (a.scanned !== undefined && !(a.scanned === true && a.kind === 'scan')) return false;
+  if (a.kind === 'goods') return !!a.good && COMMODITY_IDS.includes(a.good) && Number.isInteger(a.qty) && a.qty! >= 1 && a.qty! <= FOLK.asks.qty[1];
+  if (a.kind === 'fetch') return typeof a.who === 'string' && !!a.who.trim() && (FOLK_RELATIONS as readonly string[]).includes(a.relation ?? '') && ALL_LOCATIONS.some((l) => l.id === a.stationId);
+  if (a.kind === 'scan') return typeof a.bodyId === 'string' && scanBodies(systemId).some((b) => b.id === a.bodyId);
+  return false;
 }
 
 /** What a belt outpost refined this hour (docs/PROCGEN.md §36.3): never more than its stages allow, nor at a planet's. */
@@ -583,7 +616,7 @@ function assertValidFleet(fl: GameState['fleet'], fail: (msg: string) => never):
     stakes.add(k.locationId);
   }
   if (stakes.size > FLEET.stakes.maxStations) fail('stakes');
-  const kinds = ['run', 'raid', 'lost', 'wait', 'home', 'supply', 'mine', 'news'];
+  const kinds = ['run', 'raid', 'lost', 'wait', 'home', 'supply', 'mine', 'news', 'folk'];
   if (!fl.reports.every((r) => isRecord(r) && Number.isFinite(r.at) && kinds.includes(r.kind) && typeof r.text === 'string' && Number.isFinite(r.amount) && (r.shipId === undefined || typeof r.shipId === 'string'))) fail('fleet reports');
 }
 

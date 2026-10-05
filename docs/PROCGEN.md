@@ -4183,3 +4183,115 @@ to three waves, at least as many ships as waves, a level of one to three, and a 
 meet. The tests play every way through the arc (with Castell's lines after each Clean Manifests
 answer), fly a stand in a real `FlightSession` (the cutters at their spot, the waves, won and lost),
 put the rescue's ship in the ring and check the close scan, and check saves.
+
+## 41. People at your outposts
+
+The pilot's outposts (§22, §36) now have people of their own: a quartermaster from the day one
+opens, and residents who come as it grows. Now and then one of them asks the pilot for something;
+done, each ask leaves the outpost changed for good. The outpost has a spirit that remembers what
+the pilot does, nudging its income a little either way (`src/economy/folk.ts`; the rules and words
+in `FOLK` and `FOLK_LINES`, `src/content/outposts/folk.ts`). The people, their names, their asks and
+what they make are fiction; the stations they are fetched from and the bodies they ask to have
+scanned are real.
+
+The owner chose (5 October 2026): people who grow with the stages; errands that leave lasting
+changes; a spirit that moves the income gently; and meeting them in the Outpost window, in a word
+as the pilot docks, and in the Fleet window's reports while away.
+
+### 41.1 Who lives there
+
+- **A quartermaster** from the day it opens; **one resident** more when it becomes a station; **two
+  more** as a port (`FOLK.people`: 1, 2, 4).
+- **Trades** (`FOLK.trades`): the quartermaster runs the place; the residents are drawn, without
+  repeats, from an engineer, a grower, a medic and a broker, likelier where they fit (an engineer at a
+  refinery or mine, a grower at a farm). A trade whose work needs something the outpost's market
+  does not trade is never drawn there.
+- **Names, faces and ages** are drawn per outpost (`rng(seed, 'folk', <site>, <founded>, <slot>)`)
+  from the bars' name lists (§16), so each outpost has its own people, the same whenever it is looked
+  at, and new people if the site is chartered again. Portraits as the bars' (independent; an officer's
+  look for the quartermaster, a miner's for the engineer, a colonist's for the grower, a scientist's
+  for the medic, a trader's for the broker).
+
+### 41.2 Asks
+
+- **One at a time** at an outpost. The first comes `FOLK.asks.first` (6 hours) after it opens (or
+  after the people first come, in an older save); each next one 12–36 hours (drawn) after the last
+  ended. An ask lasts `FOLK.asks.lasts` (48 hours); not done by then, it lapses.
+- **Who asks**: each person has a **story of two asks** (`FOLK.asks.story`). The people take turns,
+  the one with the fewest asks done first (after an ask lapses, someone else as few if there is
+  one), the quartermaster before residents. Once every present
+  person's story is told, the quartermaster still asks now and then for **supplies** (a goods ask
+  that leaves no change but lifts the spirit), so a finished outpost never goes quiet.
+- **Three kinds** (each trade asks only its own kinds, `FOLK.trades`):
+  - **Goods**: so many units of a good the trade wants (worth about 1,000–2,500 cr at galaxy base
+    prices, 4–20 units), one made within two jumps, never restricted or contraband; handed over
+    from the hold in the Outpost window.
+  - **Fetch**: someone of theirs (a sister, a colleague; fiction) waiting at a real open station
+    within one or two jumps, never a den nor the outpost itself. Docking there brings them aboard
+    (they ride in the jump seat: no berth or cargo space); docking at the outpost with them aboard
+    does it.
+  - **Scan**: a real planet, star or belt of the outpost's own system, scanned in flight after the
+    ask was made, as any scan is made (§19.2); then docking at the outpost does it.
+- **What it leaves** (`FOLK.works`), for good:
+  - each person's **first ask**: the outpost's income +2%;
+  - each person's **second ask**, their **work**: the quartermaster's proper stores (income +5%); the
+    engineer's workshop (hull repairs there cost 25% less); the grower's green bay (a food its market
+    trades, price ×0.85 and stock ×1.6); the medic's clinic (its spirit falls half as fast while the
+    pilot is away); the broker's trading desk (a good its market makes, price ×0.9 and stock ×1.5,
+    never the grower's good).
+  - **Supplies** leave no change.
+- No credits are paid for an ask: what it leaves is the pay.
+
+### 41.3 Spirit
+
+- **0 to 100**, starting at 50, steady and costing nothing (`FOLK.spirit`). An ask done +10 (supplies +6); an ask lapsed −8; a
+  raid held +6, a raid lost −10 (§29); and while the pilot stays away, after the first day it falls
+  by 1 every 6 hours (the medic's clinic halves it).
+- **Being there** is docking at the outpost or launching from it: it ends the time away, not the
+  falling already done.
+- **The income**, hour by hour, is multiplied by 0.95 at 0 up to 1.05 at 100 (1 at 50), on top of
+  everything else (§22.4, §29, §39.2), with the works' income on top of that.
+- **Words** by band (`FOLK.spirit.bands`): *low* under 35, *steady* to 69, *glad* from 70; what the
+  people say in the Outpost window and on docking follows the band.
+- **Worked out from the record**: the spirit is kept as it stood when last changed (an ask made,
+  done or lapsed, a raid, a visit) and when; the falling while away is worked out from the last
+  visit. Asks and lapses are settled with the fleet (§18.4) in time order with the income (what comes
+  in the second half of an hour waits until that hour is paid), so an outpost settles the same
+  however often the game is closed. An ask past its time is never done: it lapses.
+
+### 41.4 Meeting them
+
+- **The Outpost window** has a *People* section: each person's portrait, name and trade, what they
+  say now, how far their story has gone and what they made; the spirit, in words and what it does to
+  the income; and the ask open, if any, with what it needs (a *Hand over* button for goods, where the
+  one fetched waits or that they are aboard, the body to scan or that it is scanned).
+- **A word on docking**: docking at the outpost, whoever has something to say says it in a short
+  dialogue with their portrait, in this order: an ask that lapsed since the last visit, an ask done
+  there and then (one fetched home, a scan reported) or one made since, and the spirit's band if it
+  changed. At most three lines.
+- **Reports**: an ask made or lapsed while away goes into the Fleet window's reports (*folk*) with a
+  toast, as the outposts' news does (§39.4).
+- **The people go** with the outpost when it is sold or abandoned (§36.4).
+
+### 41.5 One save's own
+
+The people are drawn, never kept. Each outpost keeps its people's record (`folk`): the spirit and
+when it was last changed, the last visit, each person's asks done, how many asks have been made, the
+ask open (its kind, who asks, what it needs, when it was made and lapses, whether the one fetched is
+aboard or the body scanned), when the last one ended, and what has been said on docking. Saves refuse
+a spirit out of 0–100, asks done out of 0–2, an ask whose person is not there yet, an ask of an
+unknown kind, good, station or body, or times out of order. An older save's outposts get their people
+when first settled, the spirit at its start, the first ask `asks.first` from then.
+
+### 41.6 Guardrails
+
+`validateFolk` (`src/economy/folkGuards.ts`) checks the rules (the spirit's start and steps, the
+income factor within ±5%, the works within the marks' limits (§14.7), a repair cut of at most a
+half, the asks' times), the trades (each with words for every kind it asks, its work's good traded
+where it is drawn) and the words (only placeholders they can fill, no numbers written in, no *he* or
+*she*, not too long); and over 30 days at every belt site and a planet site of each kind, that people
+are drawn at every stage, that every ask made can be done (its good made within reach, its station
+open and within reach, its body in the system) and that the works' goods are traded there. The tests
+draw the people, make, do and lapse every kind of ask, settle the spirit the same however often,
+move the income, repairs and market by the works, greet on docking and report while away, and check
+saves.

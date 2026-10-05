@@ -29,7 +29,7 @@ async function openJobs(page: Page): Promise<void> {
 
 /** Clicks through whatever Kettering has to say, until nothing more comes for a second. */
 async function hearOut(page: Page): Promise<void> {
-  const next = page.getByTestId('story-continue');
+  const next = page.getByTestId('story-continue').or(page.getByTestId('folk-continue')).first();
   for (let quiet = 0, i = 0; quiet < 3 && i < 40; i++) {
     if (await next.isVisible().catch(() => false)) {
       quiet = 0;

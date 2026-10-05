@@ -9,6 +9,7 @@ import type { SystemId } from '../data/types.ts';
 import { cargoCount, removeCargo } from './cargo.ts';
 import type { Result } from './equipment.ts';
 import { refreshSaveStations, stationEventAt, systemEventAt } from './events.ts';
+import { ensureFolk, folkFactor } from './folk.ts';
 import { dockFees } from './hauls.ts';
 import { dockAccess } from './law.ts';
 import { hurtFactor, upkeep } from './outpostRaids.ts';
@@ -67,14 +68,15 @@ export function baseIncome(o: OutpostRecord): number {
 /**
  * This hour's income: moved by a raid or sweep in its system, as stakes' dividends are
  * (FLEET.stakes.events), and by an event of its own under way by its own rules (`news.income`,
- * docs/PROCGEN.md §39.2), cut while a raid it lost still hurts, less its turrets' upkeep (§29).
+ * docs/PROCGEN.md §39.2), cut while a raid it lost still hurts, moved by its people's spirit and
+ * what their asks done have made (§41.3), less its turrets' upkeep (§29).
  */
 export function incomeAt(o: OutpostRecord, clock: number): number {
   if (o.stage <= 0) return 0;
   const site = outpostSite(o.site);
   const system = site ? systemEventAt(site.systemId, clock) : null;
   const sys = system ? FLEET.stakes.events[system.kind] : 1;
-  return Math.max(0, Math.round(baseIncome(o) * sys * newsFactor(o, clock) * hurtFactor(o, clock)) - upkeep(o));
+  return Math.max(0, Math.round(baseIncome(o) * sys * newsFactor(o, clock) * hurtFactor(o, clock) * folkFactor(o, clock)) - upkeep(o));
 }
 
 /** What an event under way at the outpost does to its income (1 without one, docs/PROCGEN.md §39). */
@@ -175,6 +177,8 @@ export function handOver(o: OutpostRecord, c: CommodityId, qty: number, clock: n
   if (opened) {
     o.since = clock;
     o.opened = clock;
+    // Its people come (docs/PROCGEN.md §41.1).
+    ensureFolk(o, clock);
   }
   refreshSaveStations();
   return stage.id;

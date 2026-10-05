@@ -34,7 +34,7 @@ const PLANET = 'gj-411-b';
 const OUTPOST = `outpost.${PLANET}`;
 
 async function hearOut(page: Page): Promise<void> {
-  const next = page.getByTestId('story-continue');
+  const next = page.getByTestId('story-continue').or(page.getByTestId('folk-continue')).first();
   for (let quiet = 0, i = 0; quiet < 3 && i < 40; i++) {
     if (await next.isVisible().catch(() => false)) {
       quiet = 0;

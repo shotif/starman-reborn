@@ -3,6 +3,7 @@ import { shipModel, shipsForSale } from '../content/catalog.ts';
 import { CONTRACTS } from '../content/contracts/rules.ts';
 import { FLEET } from '../content/fleet/rules.ts';
 import { OUTPOSTS } from '../content/outposts/rules.ts';
+import { FOLK } from '../content/outposts/folk.ts';
 import { FIRST_NAMES, LAST_NAMES } from '../content/people/lines.ts';
 import { rng } from '../content/random.ts';
 import type { ShipModel } from '../content/types.ts';
@@ -17,6 +18,7 @@ import { quartersBlock } from './crewQuarters.ts';
 import { hasShipyard, shipStandingBlock, shipTradeIn, type Result } from './equipment.ts';
 import { stationEventAt, systemEventAt, type WorldEvent } from './events.ts';
 import { legsOf, type HaulLeg } from './hauls.ts';
+import { advanceFolk, ensureFolk, type FolkNews } from './folk.ts';
 import { tellOutpostNews, type OutpostNewsLine } from './outpostNews.ts';
 import { handOver, nextStage, outpostNext, payOldHours, payOutpostHour, stageLine, stillNeeded } from './outposts.ts';
 import { inBelt, takeLoad } from './outpostTrade.ts';
@@ -670,6 +672,8 @@ export interface FleetSettlement {
   steps: number;
   /** The news of the pilot's outposts told in this settle (docs/PROCGEN.md §39.4), for toasts. */
   news?: OutpostNewsLine[];
+  /** Asks made and lapsed at the pilot's outposts in this settle (docs/PROCGEN.md §41.4), for toasts. */
+  folk?: FolkNews[];
 }
 
 /** How a settle in flight treats the player's own haulers in sight (docs/PROCGEN.md §18.6). */
@@ -693,6 +697,17 @@ function report(state: GameState, out: FleetSettlement, r: FleetReport): void {
   list.push(r);
   if (list.length > FLEET.reports) list.splice(0, list.length - FLEET.reports);
   out.reports.push(r);
+}
+
+/**
+ * The people at an outpost up to a time, outside a settle (a raid fought in flight, docs/PROCGEN.md
+ * §41.3): their asks made and lapsed by then, put in the Fleet window's reports; the lines, for toasts.
+ */
+export function folkUpTo(state: GameState, o: OutpostRecord, at: number): FolkNews[] {
+  const lines = advanceFolk(state, o, at);
+  const out: FleetSettlement = { reports: [], runs: 0, hauled: 0, dividends: 0, outpost: 0, steps: 0, raids: [], raidJobs: [] };
+  for (const n of lines.slice(-FOLK.reports)) report(state, out, { at: n.at, kind: 'folk', text: n.text, amount: 0 });
+  return lines.slice(-FOLK.reports);
 }
 
 /** Stock moves in time order; a market already moved later (traffic in flight) takes it at its own time. */
@@ -1118,7 +1133,14 @@ export function settleFleet(state: GameState, opts: SettleOptions = {}): FleetSe
   if (!fleet.stakes.length && !fleet.ships.some((o) => o.hauler) && !posts.some((p) => p.stage > 0)) return out;
   const now = state.clock;
   const paid = new Set<OutpostRecord>();
+  // People at the outposts (docs/PROCGEN.md §41): their asks made and lapsed in time order with the hours.
+  const folk = new Map<OutpostRecord, FolkNews[]>();
+  const hear = (post: OutpostRecord, upTo: number) => {
+    const lines = advanceFolk(state, post, upTo);
+    if (lines.length) folk.set(post, [...(folk.get(post) ?? []), ...lines]);
+  };
   for (const post of posts) {
+    ensureFolk(post, now);
     skipQuietWindows(state, post);
     const old = payOldHours(post, now);
     if (old.pay > 0) paid.add(post);
@@ -1171,6 +1193,7 @@ export function settleFleet(state: GameState, opts: SettleOptions = {}): FleetSe
     out.steps += 1;
     if (next.outpostRaid) {
       const post = next.outpost!;
+      hear(post, next.outpostRaid.at);
       const { raid, events } = settleRaid(state, post, next.outpostRaid, 'away');
       const note = raidNote(post, raid);
       out.raids.push({ ...note, speaker: `${post.name} watch` });
@@ -1178,6 +1201,7 @@ export function settleFleet(state: GameState, opts: SettleOptions = {}): FleetSe
       continue;
     }
     if (next.outpost) {
+      hear(next.outpost, next.outpost.since + HOUR / 2);
       const pay = payOutpostHour(next.outpost, now);
       if (pay > 0) paid.add(next.outpost);
       out.outpost += pay;
@@ -1224,11 +1248,18 @@ export function settleFleet(state: GameState, opts: SettleOptions = {}): FleetSe
     }
   }
   if (paid.size) out.outposts = paid.size;
-  // The news of the outposts since it was last told (docs/PROCGEN.md §39.4): a report each, and toasts.
+  // Up to the middle of the hour not yet paid, as the hours are: what comes later in it waits for it,
+  // so an outpost settles the same however often (docs/PROCGEN.md §41.3).
+  for (const post of posts) hear(post, Math.min(now, post.since + HOUR / 2));
+  // The news of the outposts since it was last told (docs/PROCGEN.md §39.4), and their people's asks
+  // (§41.4, the latest few of each): a report each, and toasts.
   const news = tellOutpostNews(state, now);
-  if (news.length) {
+  const asks = [...folk.values()].flatMap((lines) => lines.slice(-FOLK.reports)).sort((a, b) => a.at - b.at);
+  if (news.length || asks.length) {
     for (const n of news) report(state, out, { at: n.at, kind: 'news', text: n.text, amount: 0 });
-    out.news = news;
+    for (const n of asks) report(state, out, { at: n.at, kind: 'folk', text: n.text, amount: 0 });
+    if (news.length) out.news = news;
+    if (asks.length) out.folk = asks;
     // In time order with the rest of this settle's reports (the list keeps the latest last).
     const byTime = (a: FleetReport, b: FleetReport) => a.at - b.at;
     out.reports.sort(byTime);
@@ -1395,9 +1426,9 @@ export function fleetNews(s: FleetSettlement): { text: string; tone: 'good' | 'b
   const lines: { text: string; tone: 'good' | 'bad' | 'info' }[] = [];
   const tone = (r: FleetReport) => (r.kind === 'lost' || r.kind === 'raid' || (r.amount < 0 && r.kind !== 'supply') ? 'bad' : r.kind === 'run' || r.kind === 'mine' || r.kind === 'supply' ? 'good' : 'info');
   for (const r of s.reports) if (r.kind === 'lost') lines.push({ text: r.text, tone: 'bad' });
-  // The outposts' news, each on its own (docs/PROCGEN.md §39.4).
-  for (const n of s.news ?? []) lines.push({ text: n.text, tone: n.tone });
-  const rest = s.reports.filter((r) => r.kind !== 'lost' && r.kind !== 'news');
+  // The outposts' news and their people's asks, each on its own (docs/PROCGEN.md §39.4, §41.4).
+  for (const n of [...(s.news ?? []), ...(s.folk ?? [])]) lines.push({ text: n.text, tone: n.tone });
+  const rest = s.reports.filter((r) => r.kind !== 'lost' && r.kind !== 'news' && r.kind !== 'folk');
   if (rest.length <= 2) {
     for (const r of rest) lines.push({ text: r.text, tone: tone(r) });
   } else {

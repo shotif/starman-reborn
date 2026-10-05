@@ -14,6 +14,7 @@ import { alliesDock, settleRivalStories, type StoryNote } from '../economy/rival
 import { crewFee, crewShipLost, settleCrew, type CrewNote } from '../economy/crew.ts';
 import { settleSites, tidySites, type SiteOutcome } from '../economy/wrecks.ts';
 import { settleRanks, type RankNote } from '../economy/ranks.ts';
+import { dockFolk, leaveFolk } from '../economy/folk.ts';
 import type { Route } from '../galaxy/routing.ts';
 import type { JumpReadiness } from '../galaxy/types.ts';
 import { applyCredits, markVisited, type GameState } from './state.ts';
@@ -42,6 +43,8 @@ export interface DockOutcome {
   sites: SiteOutcome;
   /** Ranks given here, or fallen (docs/PROCGEN.md §32). */
   ranks: RankNote[];
+  /** The people at the pilot's outposts (docs/PROCGEN.md §41.4): one fetched come aboard, and what is said docking at one. */
+  folk: ReturnType<typeof dockFolk>;
 }
 
 export function dockAt(state: GameState, locationId: string): DockOutcome {
@@ -54,6 +57,8 @@ export function dockAt(state: GameState, locationId: string): DockOutcome {
   markVisited(state, loc.systemId, locationId);
   // The fleet first: the prices seen here and the watched ones include what its haulers moved.
   const fleet = settleFleet(state);
+  // Then the people at the outposts, their asks settled with it (docs/PROCGEN.md §41.4).
+  const folk = dockFolk(state, locationId);
   recordMarketVisit(state, locationId);
   const watchNotes = watchOnDock(state, locationId);
   const lawNotes = settleLaw(state);
@@ -75,10 +80,12 @@ export function dockAt(state: GameState, locationId: string): DockOutcome {
   const crew = settleCrew(state, locationId);
   // Ranks after the jobs, so a contract finished here can earn a rank here.
   const ranks = settleRanks(state, locationId);
-  return { jobEvents, clearanceGranted, firstVisit, watchNotes, lawNotes, fleet, allies, stories, crew, sites, ranks };
+  return { jobEvents, clearanceGranted, firstVisit, watchNotes, lawNotes, fleet, allies, stories, crew, sites, ranks, folk };
 }
 
 export function undock(state: GameState): void {
+  // Launching from one of the pilot's outposts ends the time away too (docs/PROCGEN.md §41.3).
+  if (state.location.dockedAt) leaveFolk(state, state.location.dockedAt);
   state.location.dockedAt = null;
 }
 
