@@ -63,9 +63,11 @@ snapshot branch only when the archives changed.
 ## Deliberate prototype limits
 
 - The written story is the opening chain, three short optional jobs, three faction arcs of five
-  missions each, The Long Border (five steps, branching three ways at its choice) and First
-  Harvest, out in the frontier (five steps, branching two ways); everything else on the job boards
-  is generated. The faction arcs know about each other only through standing and through
+  missions each, The Long Border (five steps, branching three ways at its choice), First
+  Harvest, out in the frontier (five steps, branching two ways), and The Long Winter, among Sol's
+  belt crews (five steps, branching two ways, or ended early by a buy-out); everything else on the
+  job boards is generated. A stand in a belt (The Long Winter's crews' finale) is not saved while
+  it is under way: leaving Sol and coming back starts it afresh. The faction arcs know about each other only through standing and through
   Kettering, whose briefings follow the choices made in them. The lasting marks an arc leaves on
   the world are a dark den (for six hours), the Ross 154 – Wolf 1061 front, settled for good by
   The Long Border (with the markets and boards around it), and one station's market (and most

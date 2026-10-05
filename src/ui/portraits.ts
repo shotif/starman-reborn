@@ -52,6 +52,10 @@ export const STORY_PORTRAITS: Readonly<Record<CharacterId, { seed: number; look:
   halloway: { seed: 3008, look: { faction: 'independent', role: 'pilot', age: 'old' } },
   // Steward of Harrow Farmstead: grey curls and a work shirt.
   fenwick: { seed: 3016, look: { faction: 'independent', role: 'colonist', age: 'old' } },
+  // Spokeswoman for the belt crews: hair in a bun, cutting goggles pushed up, a work coverall.
+  rook: { seed: 4024, look: { faction: 'independent', role: 'miner', age: 'middle' } },
+  // Skipper of the Long Winter: a grey crop, a full beard, goggles pushed up, a coverall.
+  ashdown: { seed: 4063, look: { faction: 'independent', role: 'miner', age: 'old' } },
 };
 
 /* ---------------------------------------------------------------------------------------------- */

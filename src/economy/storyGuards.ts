@@ -6,7 +6,8 @@ import { MARK_LIMITS, type LastingMark } from '../content/story/marks.ts';
 import type { Line } from '../content/story/types.ts';
 import type { Issue } from '../content/validate.ts';
 import { jumpsFrom } from '../content/world/network.ts';
-import { ALL_LOCATIONS, getLocation, isFrontier, WORLD } from '../data/systems.ts';
+import { ALL_LOCATIONS, findBelt, getLocation, isFrontier, WORLD } from '../data/systems.ts';
+import { sceneDefFor } from '../world/systems/index.ts';
 import { getFront } from './border.ts';
 import { JOBS, LIFELINE_ID, type JobDef, type Objective } from './jobs.ts';
 import { LAWFUL } from './law.ts';
@@ -149,6 +150,19 @@ export function validateStory(arcJobs: readonly JobDef[] = ARC_JOBS): Issue[] {
           if (o.convoy && (o.convoy.need < 1 || o.convoy.need > o.convoy.names.length || o.convoy.waves < 1)) report('escort', subject, 'a convoy needs ships, waves and a need it can meet');
         }
         if (o.kind === 'deliver' && story.cargo && story.cargo.commodity === o.commodity && story.cargo.qty < o.qty) report('cargo', subject, 'hands over less cargo than it asks for');
+        // A belt scanned, a rescue in a belt, a stand in a belt (docs/PROCGEN.md §40.3): a cited belt of the system, drawn in its scene.
+        const belt = o.kind === 'scan' && findBelt(o.bodyId) ? o.bodyId : o.kind === 'rescue' || o.kind === 'stand' ? o.beltId : undefined;
+        if (belt !== undefined && 'systemId' in o) {
+          const drawn = sceneDefFor(o.systemId).belts.some((b) => b.beltId === belt && b.shape === 'ring');
+          if (findBelt(belt)?.systemId !== o.systemId || !drawn) report('belts', subject, `objective ${k}: ${belt} is not a cited belt drawn in ${o.systemId}`);
+        }
+        if (o.kind === 'stand') {
+          if (!story.finale) report('finale', subject, 'a stand is a finale');
+          const { names, need } = o.crews;
+          if (!names.length || need < 1 || need > names.length) report('stand', subject, 'crews with a need they can meet');
+          if (!Number.isInteger(o.waves) || o.waves < 1 || o.waves > 3 || !Number.isInteger(o.ships) || o.ships < o.waves || o.ships > 9) report('stand', subject, 'one to three waves, at least a ship a wave, nine at most');
+          if (![1, 2, 3].includes(o.level)) report('stand', subject, `a level of ${o.level}`);
+        }
         if (!o.text.trim()) report('text', subject, `objective ${k} has no text`);
       }
 

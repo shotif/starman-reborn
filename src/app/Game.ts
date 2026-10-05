@@ -93,6 +93,9 @@ import {
   LIFELINE_ID,
   primaryObjective,
   rescuesIn,
+  standLost,
+  standsIn,
+  standWon,
   wrecksIn,
   type JobEvent,
 } from '../economy/jobs.ts';
@@ -1135,6 +1138,11 @@ export class Game {
           }
           return r.missing;
         },
+        // A stand in a belt (docs/PROCGEN.md §40.3): won, the objective is done; lost, the mission goes back to its giver.
+        onStand: (jobId, outcome) => {
+          this.announceJobEvents(outcome === 'won' ? standWon(state, jobId) : standLost(state, jobId));
+          this.persist();
+        },
         onRescueLost: (jobId) => {
           const o = currentObjective(state, jobId);
           const ev = failJob(state, jobId, o?.kind === 'rescue' ? `the ${o.shipName} was destroyed` : 'the stranded ship was destroyed');
@@ -1381,6 +1389,7 @@ export class Game {
       escorts: escortsIn(state, here),
       wrecks: wrecksIn(state, here),
       rescues: rescuesIn(state, here),
+      stands: standsIn(state, here),
       assaults: assaultsIn(state, here),
       defences: defencesIn(state, here),
       downDens,
@@ -2859,6 +2868,8 @@ export class Game {
         const next = nextRaid(state, o);
         return { next, warned: o.defence?.warned ?? null, raids: o.defence?.raids ?? [], turrets: o.defence?.turrets ?? 0, flight: this.flight?.outpostRaidStatus() ?? null };
       },
+      /** Test-only: the stand in a belt in this flight (docs/PROCGEN.md §40.3), if one is under way here. */
+      stand: () => this.flight?.standStatus() ?? null,
       /**
        * Test-only: the first event at an outpost (the first chartered, unless its site is named) that
        * starts after `from` (the clock by default), of a kind if one is named, within ten days (docs/PROCGEN.md §39).

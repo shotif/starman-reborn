@@ -780,6 +780,8 @@ export function assertValidState(s: GameState): void {
     if (p.observed !== undefined && !(Array.isArray(p.observed) && p.observed.every((x) => isRecord(x) && Number.isFinite(x.at) && KNOWN_SYSTEM_IDS.includes(x.systemId)))) fail(`job ${id}`);
     // A rival's duel (§28), won.
     if (p.duel !== undefined && p.duel !== 'won') fail(`job ${id}`);
+    // A stand in a belt (§40.3), won.
+    if (p.stood !== undefined && p.stood !== true) fail(`job ${id}`);
   }
   if (s.location.flight) {
     const { position, quaternion } = s.location.flight;

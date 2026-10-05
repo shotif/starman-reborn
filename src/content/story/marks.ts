@@ -183,4 +183,30 @@ export const LASTING_MARKS: readonly LastingMark[] = [
       'The Authority raided Graveyard Nest with a list of its approaches and Salt’s name at the top. The Nest held, but its crews fly less, and Pinball Freeport feels it: salvage and weapons come in rarely, and cost more.',
     market: { goods: ['salvage', 'weapons'], price: 1.15, stock: 0.7 },
   },
+  {
+    // The Long Winter: Castell's case, every Hale coupling recalled (docs/PROCGEN.md §40.4).
+    id: 'kuiper.law',
+    locationId: 'mars-depot',
+    headline: 'Refits inspected at Deimos Depot',
+    detail: 'Since the Long Winter, the Transit Authority has recalled every coupling Hale Refits fitted and inspects every refit at Deimos Depot. Sound ship components are plentiful there, and the crews’ ice goes to Halcyon Ring as fuel, under seal.',
+    market: { goods: ['ship-parts'], price: 0.9, stock: 1.5 },
+    run: { commodity: 'deuterium', to: 'earth-port', title: 'Sealed fuel', why: 'The Authority buys the belt crews’ ice, cracked into deuterium at Deimos, for Halcyon Ring, under seal.', premium: 1.15 },
+  },
+  {
+    // The Long Winter: the crews settled it themselves, and fit their own (§40.4).
+    id: 'kuiper.crews',
+    locationId: 'mars-depot',
+    headline: 'The belt crews refit their own at Deimos Depot',
+    detail: 'The belt crews stood off Hale’s claim-jumpers in the Kuiper Belt and opened a refit bay of their own at Deimos Depot, which buys machinery at cost. Their refined metals go out by contract.',
+    market: { goods: ['machinery'], price: 0.85, stock: 1.5 },
+    run: { commodity: 'metals', to: 'sirius-platform', title: 'The crews’ cut', why: 'The belt crews sell their own refined metals now, to Horizon Platform, where the yards pay fairly.', premium: 1.1 },
+  },
+  {
+    // The Long Winter: Hale's money taken, and the arc ends (§40.4).
+    id: 'kuiper.bury',
+    locationId: 'mars-depot',
+    headline: 'Cheap refits at Deimos Depot',
+    detail: 'Hale Refits still fits couplings at Deimos Depot, cheaply and without questions. Ship components are cheap there. Ask what you are buying.',
+    market: { goods: ['ship-parts'], price: 0.8, stock: 1.6 },
+  },
 ];

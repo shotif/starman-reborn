@@ -109,6 +109,7 @@ export type MilestoneId =
   | 'story-wake'
   | 'story-border'
   | 'story-harvest'
+  | 'story-kuiper'
   | 'race-won'
   | 'course-record';
 
@@ -137,6 +138,7 @@ export const MILESTONES: readonly { id: MilestoneId; title: string }[] = [
   { id: 'story-wake', title: 'Salt’s Crew: the Hollow Wake’s story finished' },
   { id: 'story-border', title: 'The Long Border: the Ross 154 line settled' },
   { id: 'story-harvest', title: 'First Harvest: Harrow Farmstead’s harvest brought in' },
+  { id: 'story-kuiper', title: 'The Long Winter: the belt crews’ reckoning made' },
   { id: 'race-won', title: 'First heat won' },
   { id: 'course-record', title: 'A course record set' },
 ];

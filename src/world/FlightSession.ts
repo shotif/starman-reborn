@@ -21,7 +21,9 @@ import { CONTRACTS } from '../content/contracts/rules.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
 import { hashString } from '../content/random.ts';
 import { LAW } from '../content/law/rules.ts';
-import { duelTargetId, strandedTargetId, type EscortSetup } from '../economy/jobs.ts';
+import { duelTargetId, standTargetId, strandedTargetId, type EscortSetup, type StandSetup } from '../economy/jobs.ts';
+import { STAND, STAND_LINES } from '../content/story/stand.ts';
+import { polar } from './systems/helpers.ts';
 import type { Lingering } from '../app/state.ts';
 import { DENS } from '../content/dens/rules.ts';
 import { MINED_GOODS, MINING } from '../content/mining/rules.ts';
@@ -188,6 +190,8 @@ export interface FlightCallbacks {
   onHandOver?(jobId: string): number;
   /** The stranded ship of a rescue was destroyed. */
   onRescueLost?(jobId: string): void;
+  /** A stand in a belt (docs/PROCGEN.md §40.3) was won (the waves downed) or lost (too few cutters left). */
+  onStand?(jobId: string, outcome: 'won' | 'lost'): void;
   /** The player fired on (`attack`, once per ship) or destroyed a lawful ship. */
   onCrime?(kind: 'attack' | 'destroy', faction: FactionId | 'independent', name: string, role: 'trader' | 'patrol'): void;
   /** A patrol's cargo scan finished (`complete`) or the player flew off before it did (`evaded`). */
@@ -252,6 +256,10 @@ export interface NpcShip {
   rival?: { id: string; run?: RivalRun; leg?: RivalLeg };
   /** Hired by a rival to find the player (docs/PROCGEN.md §28): they want the player only, and pay no bounty. */
   hired?: string;
+  /** A belt crew's cutter in a stand (docs/PROCGEN.md §40.3): which stand it works for. */
+  cutter?: { jobId: string };
+  /** A claim-jumper of a stand's waves (§40.3): which stand it came for. */
+  jumper?: { jobId: string };
   /** The player's outpost's own (docs/PROCGEN.md §29): a turret, its stores, or a guard flying its loop round the outpost. */
   own?: { kind: 'turret' | 'stores' | 'guard'; centre: THREE.Vector3; angle: number };
   /** A raider of the raid on the player's outpost (its window). */
@@ -339,7 +347,9 @@ export interface TrafficSetup {
   /** Wrecks the player's recovery contracts send them to in this system. */
   wrecks?: readonly { jobId: string; locationId: string; item: string; guard: 1 | 2 | 3 | null }[];
   /** Ships stranded far from any dock that the player's rescues send them to here. */
-  rescues?: readonly { jobId: string; name: string; model: string; commodity: CommodityId; qty: number; guard: 1 | 2 | 3 | null }[];
+  rescues?: readonly { jobId: string; name: string; model: string; commodity: CommodityId; qty: number; guard: 1 | 2 | 3 | null; beltId?: string }[];
+  /** Stands in a belt the player's jobs want here (docs/PROCGEN.md §40.3). */
+  stands?: readonly StandSetup[];
   /** Den assaults under way here: the den, its turrets still standing, and whose wing flies with the player. */
   assaults?: readonly { jobId: string; locationId: string; turretsLeft: number; wing?: FactionId | null }[];
   /** Wingmen on the player's pay: they fly alongside wherever the player goes. */
@@ -2612,9 +2622,11 @@ export class FlightSession {
       this.spawnCrew(t.crew ?? []);
       if (t.duel) this.spawnDuelist(t.duel);
       if (t.outpost) this.spawnOutpostDefences(t.outpost);
+      for (const st of t.stands ?? []) this.startStand(st);
     }
     this.updateOutpostGuards();
     this.updateOutpostRaid();
+    this.updateStand(dt);
     // A rival's hired guns strike a little way into the flight (docs/PROCGEN.md §28).
     const hired = t.rivalAmbush;
     if (hired && !this.ambushSprung && this.time >= hired.delay && this.alive && !this.busy) {
@@ -2685,6 +2697,7 @@ export class FlightSession {
       else if (n.site && n.role === 'trader') this.flySiteShip(n, dt);
       else if (n.duel) this.flyDuelist(n, dt);
       else if (n.miner?.phase === 'cutting') this.flyMinerCutting(n, dt);
+      else if (n.jumper) this.flyJumper(n, dt);
       else if (n.role === 'trader') this.flyTrader(n);
       else if (n.role === 'patrol') this.flyPatrol(n, dt);
       else this.flyRaider(n, dt);
@@ -3343,7 +3356,8 @@ export class FlightSession {
     }
     // A cutting ship whose captain no longer works here (recalled and gone) goes too.
     for (const n of [...this.npcs]) {
-      if (n.miner?.phase !== 'cutting') continue;
+      // (A belt crew's cutter in a stand is no captain's: §40.3.)
+      if (n.miner?.phase !== 'cutting' || !n.captain) continue;
       const still = minersIn(this.state, this.state.location.systemId, this.state.clock).some((m) => m.ship.id === n.captain?.shipId && m.phase === 'cutting');
       if (!still) this.removeMiner(n);
     }
@@ -3370,7 +3384,7 @@ export class FlightSession {
   /** Test hook: the pilot's mining captains' ships in this scene: their phase, and how far from the refinery's dock. */
   minerStatus(): { shipId: string; phase: string; distance: number; beam: boolean }[] {
     return this.npcs
-      .filter((n) => n.miner && n.durability.hull > 0)
+      .filter((n) => n.miner && n.captain && n.durability.hull > 0)
       .map((n) => {
         const o = this.state.fleet.ships.find((x) => x.id === n.captain?.shipId);
         const dock = o?.hauler ? this.system.dock(o.hauler.route.to) : undefined;
@@ -3650,7 +3664,10 @@ export class FlightSession {
    * Where a rescue's ship drifts: far from any dock (CONTRACTS.rescue.clearOfDocksM) and clear of
    * stars and planets, the same every time for the same job.
    */
-  strandedPosition(jobId: string): THREE.Vector3 {
+  strandedPosition(jobId: string, beltId?: string): THREE.Vector3 {
+    // Adrift in a belt (docs/PROCGEN.md §40.3): in its ring, clear of stations.
+    const inBelt = beltId ? this.beltSpot(beltId, `stranded|${jobId}`) : null;
+    if (inBelt) return inBelt;
     const r = seededRandom(hashString(`stranded|${jobId}`));
     const from = this.system.def.arrival.position;
     const clear = (p: THREE.Vector3) =>
@@ -3664,9 +3681,138 @@ export class FlightSession {
     return best ?? from.clone().add(new THREE.Vector3(0, 2_000, -CONTRACTS.rescue.clearOfDocksM - 4_000));
   }
 
+  // ---------------------------------------------------------------- a stand in a belt (docs/PROCGEN.md §40.3)
+
+  /** The stand under way here: its setup, the crews' spot, the waves to come, and how it stands. */
+  private stand: { setup: StandSetup; spot: THREE.Vector3; waves: number[]; next: number; t: number; state: 'waiting' | 'on' | 'won' | 'lost' } | null = null;
+
+  /**
+   * A spot in a belt's ring in this scene (its first ring, halfway across and level with it), at an
+   * angle drawn from `key`, clear of every station by STAND.clear; null when the belt is not drawn here.
+   */
+  beltSpot(beltId: string, key: string): THREE.Vector3 | null {
+    const ring = this.system.def.belts.find((b) => b.beltId === beltId && b.shape === 'ring');
+    if (!ring) return null;
+    const r = (ring.innerRadius + ring.outerRadius) / 2;
+    const start = hashString(key) % 360;
+    for (let k = 0; k < 24; k++) {
+      const p = polar(ring.center, r, start + k * 15);
+      if (this.system.docks.every((d) => d.dockPoint.distanceTo(p) >= STAND.clear)) return p;
+    }
+    return polar(ring.center, r, start);
+  }
+
+  /** The crews' cutters at their rocks, side by side along the ring, each with its beam on its rock. */
+  private startStand(setup: StandSetup): void {
+    if (this.stand) return;
+    const ring = this.system.def.belts.find((b) => b.beltId === setup.beltId && b.shape === 'ring');
+    const spot = this.beltSpot(setup.beltId, `stand|${setup.jobId}`);
+    if (!ring || !spot) return;
+    const waves = Array.from({ length: setup.waves }, (_, i) => Math.ceil((setup.ships - i) / setup.waves));
+    this.stand = { setup, spot, waves, next: 0, t: STAND.waveDelay, state: 'waiting' };
+    const out = spot.clone().sub(ring.center).setY(0).normalize();
+    const along = new THREE.Vector3(-out.z, 0, out.x);
+    const n = setup.crews.names.length;
+    setup.crews.names.forEach((name, i) => {
+      const rockAt = spot.clone().addScaledVector(along, (i - (n - 1) / 2) * STAND.spacing);
+      const at = rockAt.clone().addScaledVector(out, STAND.standOff);
+      const npc = this.makeNpc(STAND.cutter, 'trader', 'independent', at, rockAt.clone().sub(at).normalize(), `${name} · belt crew · fiction`);
+      npc.name = name;
+      npc.target.name = name;
+      npc.target.cycle = true;
+      if (i === 0) npc.target.id = standTargetId(setup.jobId);
+      npc.cutter = { jobId: setup.jobId };
+      npc.body.velocity.set(0, 0, 0);
+      const rock = createMinableRock(hashString(`${setup.jobId}|${i}`) % 997, 42, { color: new THREE.Color('#9fb2c2'), ice: 0.8 }, this.ctx);
+      rock.object.position.copy(rockAt);
+      this.system.scene.add(rock.object);
+      const beam = createMiningBeam(this.ctx);
+      this.system.scene.add(beam.object);
+      npc.miner = { phase: 'cutting', rock, beam, rockAt: rockAt.clone() };
+    });
+  }
+
+  /**
+   * The stand: it begins when the pilot comes within range of the crews' spot; each wave of
+   * claim-jumpers comes out of the dark on the far side once the one before is down to one ship. All
+   * downed with enough cutters left, it is won; with too few cutters left, lost.
+   */
+  private updateStand(dt: number): void {
+    const st = this.stand;
+    if (!st || st.state === 'won' || st.state === 'lost') return;
+    const id = st.setup.jobId;
+    const cutters = this.npcs.filter((n) => n.cutter?.jobId === id && n.durability.hull > 0).length;
+    if (cutters < st.setup.crews.need) {
+      st.state = 'lost';
+      this.callbacks.onMessage(STAND_LINES.lost, 'bad');
+      this.callbacks.onStand?.(id, 'lost');
+      return;
+    }
+    if (st.state === 'waiting') {
+      if (!this.alive || this.busy || st.spot.distanceTo(this.player.position) > STAND.range) return;
+      st.state = 'on';
+      this.callbacks.onMessage(STAND_LINES.begin.replace('{lead}', st.setup.crews.names[0]!), 'info');
+    }
+    const jumpers = this.npcs.filter((n) => n.jumper?.jobId === id && n.durability.hull > 0).length;
+    if (st.next >= st.waves.length) {
+      if (jumpers > 0) return;
+      st.state = 'won';
+      this.callbacks.onMessage(STAND_LINES.won, 'good');
+      this.callbacks.onStand?.(id, 'won');
+      return;
+    }
+    if (st.next > 0 && jumpers > 1) return;
+    st.t -= dt;
+    if (st.t > 0) return;
+    const count = st.waves[st.next]!;
+    st.next += 1;
+    st.t = STAND.waveDelay;
+    // Out of the dark on the side away from the pilot.
+    const away = st.spot.clone().sub(this.player.position).setY(0);
+    if (away.lengthSq() < 1) away.set(1, 0, 0);
+    const home = st.spot.clone().addScaledVector(away.normalize(), STAND.from);
+    const pool = RAIDERS[st.setup.level];
+    for (let i = 0; i < count; i++) {
+      const position = home.clone().add(new THREE.Vector3((i - (count - 1) / 2) * 160, i * 30, i * 90));
+      const npc = this.makeNpc(pool[i % pool.length]!, 'raider', 'independent', position, st.spot.clone().sub(position).normalize(), 'Claim-jumper · hostile');
+      npc.name = 'Claim-jumper';
+      npc.target.name = npc.name;
+      npc.jumper = { jobId: id };
+    }
+    this.sfx('alert');
+    this.callbacks.onMessage((st.next === 1 ? STAND_LINES.first : STAND_LINES.next).replace('{n}', String(count)), 'bad');
+  }
+
+  /** A claim-jumper goes for the crews' cutters, and for the pilot once near. */
+  private flyJumper(n: NpcShip, dt: number): void {
+    const onPlayer = this.alive && !this.busy && this.autopilot.mode !== 'lane' && n.body.position.distanceTo(this.player.position) < 3_000;
+    const cutter = onPlayer ? null : this.nearestShip(n.body.position, Infinity, (x) => x.cutter?.jobId === n.jumper!.jobId);
+    n.foe = onPlayer ? 'player' : cutter;
+    if (onPlayer) this.fightNpc(n, this.player, dt, TRAFFIC.npcDamage * DIFFICULTY[this.settings.difficulty].enemyDamage);
+    else if (cutter) this.fightNpc(n, cutter.body, dt, TRAFFIC.npcDamage);
+    else this.flyRaider(n, dt);
+  }
+
+  /** Test hook: the stand here: how it stands, the waves sent, the cutters and claim-jumpers left, and how far the pilot is from the spot. */
+  standStatus(): { jobId: string; state: string; next: number; waves: number; cutters: number; jumpers: number; distance: number; spot: [number, number, number] } | null {
+    const st = this.stand;
+    if (!st) return null;
+    const id = st.setup.jobId;
+    return {
+      jobId: id,
+      state: st.state,
+      next: st.next,
+      waves: st.waves.length,
+      cutters: this.npcs.filter((n) => n.cutter?.jobId === id && n.durability.hull > 0).length,
+      jumpers: this.npcs.filter((n) => n.jumper?.jobId === id && n.durability.hull > 0).length,
+      distance: Math.round(st.spot.distanceTo(this.player.position)),
+      spot: [st.spot.x, st.spot.y, st.spot.z],
+    };
+  }
+
   /** A ship stranded by a drive failure: adrift far from any dock, perhaps watched by scavengers. */
   private spawnStranded(rescue: NonNullable<TrafficSetup['rescues']>[number]): void {
-    const at = this.strandedPosition(rescue.jobId);
+    const at = this.strandedPosition(rescue.jobId, rescue.beltId);
     const heading = new THREE.Vector3(1, 0, 0);
     const npc = this.makeNpc(rescue.model, 'trader', 'independent', at, heading, 'Adrift · drive failure');
     npc.name = rescue.name;
@@ -3877,7 +4023,7 @@ export class FlightSession {
   private raiderSparesPlayer(n: NpcShip): boolean {
     // A duelist fights only in the duel; hired guns never spare their mark (docs/PROCGEN.md §28).
     if (n.duel) return n.duel.state !== 'on';
-    if (n.hired) return false;
+    if (n.hired || n.jumper) return false;
     // A pilot the Wake trusts, or one who paid its toll here (docs/PROCGEN.md §27).
     return !n.hunter && !n.encounter && (wakeFriendly(this.state) || this.tollPaid) && !this.provoked(n);
   }
@@ -5103,6 +5249,8 @@ export class FlightSession {
     }
     this.sfx('scan');
     if (t.kind === 'belt' || !rock) {
+      // A belt scanned within range is on record (a story may want it scanned close, docs/PROCGEN.md §40.3).
+      if (t.kind === 'belt' && t.bodyId && !this.state.discoveredBodies.includes(t.bodyId)) this.callbacks.onDiscovery(t.bodyId);
       this.callbacks.onScanInfo(t);
       // A belt's scan may pick up a faint return (docs/PROCGEN.md §31.3).
       if (t.kind === 'belt') this.callbacks.onBodyScan?.();
@@ -5549,6 +5697,8 @@ export class FlightSession {
     outpostRaid: number | null;
     /** The marked site it belongs to (docs/PROCGEN.md §31). */
     site: string | null;
+    /** A crews' cutter or a claim-jumper of a stand in a belt (§40.3). */
+    stand: 'cutter' | 'jumper' | null;
     subtitle: string;
     state: string;
     hull: number;
@@ -5573,6 +5723,7 @@ export class FlightSession {
       own: n.own?.kind ?? null,
       outpostRaid: n.outpostRaid ?? null,
       site: n.site ?? null,
+      stand: n.cutter ? 'cutter' : n.jumper ? 'jumper' : null,
       subtitle: n.target.subtitle ?? '',
       state: n.trader?.state ?? (n.patrol && n.foe === null ? n.patrol.brain.state : n.brain.state),
       hull: n.durability.hull,

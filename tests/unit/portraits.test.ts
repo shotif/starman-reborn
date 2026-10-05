@@ -155,6 +155,8 @@ describe('portraits', () => {
     expect([t('salt').implant, t('salt').scar, t('salt').age]).toEqual(['eye', 'cheek', 'old']);
     expect([t('halloway').headwear, t('halloway').style, t('halloway').garment]).toEqual(['headset', 'bob', 'jacket']);
     expect([t('fenwick').style, t('fenwick').garment, t('fenwick').beard]).toEqual(['afro', 'shirt', null]);
+    expect([t('rook').headwear, t('rook').style, t('rook').garment]).toEqual(['goggles', 'bun', 'coverall']);
+    expect([t('ashdown').headwear, t('ashdown').beard, t('ashdown').garment]).toEqual(['goggles', 'full', 'coverall']);
   });
 
   it('describe themselves to screen readers', () => {

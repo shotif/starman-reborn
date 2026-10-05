@@ -77,7 +77,13 @@ export type Objective =
    * Bring `qty` of a good to a ship stranded by a drive failure far from any dock, perhaps watched
    * by scavengers of threat `guard`, and hand it over alongside (JobProgress.rescued).
    */
-  | { kind: 'rescue'; systemId: SystemId; shipName: string; model: string; commodity: CommodityId; qty: number; guard: 1 | 2 | 3 | null; text: string }
+  | { kind: 'rescue'; systemId: SystemId; shipName: string; model: string; commodity: CommodityId; qty: number; guard: 1 | 2 | 3 | null; text: string; beltId?: string }
+  /**
+   * A stand in a belt (docs/PROCGEN.md §40.3): the crews' cutters (`crews.names`) work their rocks in
+   * the belt's ring while `waves` waves of claim-jumpers, `ships` in all, of threat `level`, come for
+   * them; won with at least `crews.need` cutters left (JobProgress.stood).
+   */
+  | { kind: 'stand'; systemId: SystemId; beltId: string; crews: { names: readonly string[]; need: number }; waves: number; ships: number; level: 1 | 2 | 3; text: string }
   /** Meet a rival at a beacon for a duel, one on one, and win it (docs/PROCGEN.md §28; JobProgress.duel). */
   | { kind: 'duel'; systemId: SystemId; rival: string; text: string }
   /** Hold the player's outpost against a raid (docs/PROCGEN.md §29; JobProgress.outpost): the raid's window and when it strikes. */
@@ -467,6 +473,8 @@ function objectiveSatisfied(state: GameState, jobId: string, o: Objective, ctx: 
       return (state.jobs[jobId]?.mined ?? 0) >= o.qty;
     case 'rescue':
       return !!state.jobs[jobId]?.rescued;
+    case 'stand':
+      return state.jobs[jobId]?.stood === true;
     case 'duel':
       return state.jobs[jobId]?.duel === 'won';
     case 'outpost':
@@ -737,6 +745,9 @@ function describeCurrent(state: GameState, jobId: string): ObjectiveSummary | nu
       const when = left > 0 ? `${Math.max(1, Math.round(left / 60))} min` : 'under way';
       return { ...base, text: inOtherSystem(o.systemId, `${o.text} (${when})`), targetSystemId: o.systemId, targetLocationId: o.locationId };
     }
+    case 'stand':
+      // The crews' cutters at their rocks (docs/PROCGEN.md §40.3): steering to the lead cutter in its system.
+      return { ...base, text: inOtherSystem(o.systemId, o.text), targetSystemId: o.systemId, targetLocationId: null, ...(o.systemId === here ? { targetId: standTargetId(jobId) } : {}) };
     case 'duel':
       // The rival waits off the jump beacon (docs/PROCGEN.md §28).
       return { ...base, text: inOtherSystem(o.systemId, o.text), targetSystemId: o.systemId, targetLocationId: null, ...(o.systemId === here ? { targetId: duelTargetId(jobId) } : {}) };
@@ -902,12 +913,51 @@ export function duelTargetId(jobId: string): string {
   return `duel:${jobId}`;
 }
 
-/** Ships stranded far from any dock that the player's rescues send them to in a system (not yet helped). */
-export function rescuesIn(state: GameState, systemId: SystemId): { jobId: string; name: string; model: string; commodity: CommodityId; qty: number; guard: 1 | 2 | 3 | null }[] {
+/** Ships stranded far from any dock (or adrift in a belt) that the player's rescues send them to in a system (not yet helped). */
+export function rescuesIn(state: GameState, systemId: SystemId): { jobId: string; name: string; model: string; commodity: CommodityId; qty: number; guard: 1 | 2 | 3 | null; beltId?: string }[] {
   return activeJobIds(state).flatMap((jobId) => {
     const o = currentObjective(state, jobId);
-    return o?.kind === 'rescue' && o.systemId === systemId ? [{ jobId, name: o.shipName, model: o.model, commodity: o.commodity, qty: o.qty, guard: o.guard }] : [];
+    return o?.kind === 'rescue' && o.systemId === systemId ? [{ jobId, name: o.shipName, model: o.model, commodity: o.commodity, qty: o.qty, guard: o.guard, ...(o.beltId ? { beltId: o.beltId } : {}) }] : [];
   });
+}
+
+/** The flight target of a stand's lead cutter (docs/PROCGEN.md §40.3). */
+export function standTargetId(jobId: string): string {
+  return `stand:${jobId}`;
+}
+
+/** A stand in a belt under way in a system (docs/PROCGEN.md §40.3), as the flight needs it. */
+export interface StandSetup {
+  jobId: string;
+  beltId: string;
+  crews: { names: readonly string[]; need: number };
+  waves: number;
+  ships: number;
+  level: 1 | 2 | 3;
+}
+
+/** The stands the player's jobs want in a system now (not yet won). */
+export function standsIn(state: GameState, systemId: SystemId): StandSetup[] {
+  return activeJobIds(state).flatMap((jobId) => {
+    const o = currentObjective(state, jobId);
+    return o?.kind === 'stand' && o.systemId === systemId ? [{ jobId, beltId: o.beltId, crews: o.crews, waves: o.waves, ships: o.ships, level: o.level }] : [];
+  });
+}
+
+/** The stand was won (the waves downed with enough cutters left): the objective is done. */
+export function standWon(state: GameState, jobId: string): JobEvent[] {
+  const o = currentObjective(state, jobId);
+  if (o?.kind !== 'stand') return [];
+  state.jobs[jobId]!.stood = true;
+  return advanceJobs(state, { dockedAt: state.location.dockedAt, systemId: state.location.systemId });
+}
+
+/** The stand was lost (too few cutters left): the mission fails (a story mission goes back to its giver). */
+export function standLost(state: GameState, jobId: string): JobEvent[] {
+  const o = currentObjective(state, jobId);
+  if (o?.kind !== 'stand') return [];
+  const e = failJob(state, jobId, 'the crews’ cutters were lost');
+  return e ? [e] : [];
 }
 
 /**

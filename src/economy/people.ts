@@ -100,6 +100,8 @@ const STORY_ROLE: Record<CharacterId, PersonRole> = {
   salt: 'fixer',
   halloway: 'pilot',
   fenwick: 'colonist',
+  rook: 'miner',
+  ashdown: 'miner',
 };
 
 /** Everyone in the bar: story characters at home here, the regulars and the pilots for hire. */

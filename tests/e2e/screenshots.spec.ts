@@ -869,6 +869,35 @@ for (const size of SIZES) {
       await expect(page.getByTestId('outpost-news-headline')).not.toHaveText('All quiet');
       await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
       await shot(page, `${size.name}-15k-outpost-news`, size.touch, results);
+      // The Long Winter (docs/PROCGEN.md §40): its reckoning at Deimos Depot, then the crews' stand in
+      // the Kuiper Belt as the claim-jumpers come out of the dark.
+      await api(page, 'completeJobs', ['arc.kuiper.1', 'arc.kuiper.2', 'arc.kuiper.3']);
+      await docked('mars-depot');
+      await press(page, 'room-bar');
+      if (!(await page.getByTestId('jobs-window').isVisible().catch(() => false))) await press(page, 'station-jobs');
+      await press(page, 'accept-arc.kuiper.4');
+      await waitUntil(page, 'the reckoning', async () => {
+        if (await page.getByTestId('choice-dialog').isVisible().catch(() => false)) return true;
+        const next = page.getByTestId('story-continue');
+        if (await next.isVisible().catch(() => false)) await next.click().catch(() => {});
+        return false;
+      }, 30_000);
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-22-arc-choice`, size.touch, results);
+      await press(page, 'choice-crews');
+      for (let i = 0; i < 6 && (await page.getByTestId('story-continue').isVisible({ timeout: 1_000 }).catch(() => false)); i++) await press(page, 'story-continue');
+      if (!(await page.getByTestId('jobs-window').isVisible().catch(() => false))) await press(page, 'station-jobs');
+      await press(page, 'accept-arc.kuiper.5.crews');
+      for (let i = 0; i < 6 && (await page.getByTestId('story-continue').isVisible({ timeout: 1_000 }).catch(() => false)); i++) await press(page, 'story-continue');
+      await api(page, 'warp', 'sol');
+      await waitUntil(page, 'flying there', async () => (await api(page, 'mode')) === 'flight');
+      if (await page.getByTestId('sheet-close').isVisible().catch(() => false)) await press(page, 'sheet-close');
+      await waitUntil(page, 'the cutters at their rocks', async () => (await api<{ cutters: number } | null>(page, 'stand'))?.cutters === 3, 60_000);
+      expect(await api<boolean>(page, 'placeNear', { id: 'stand:arc.kuiper.5.crews', distance: 900 })).toBe(true);
+      await api(page, 'selectTarget', 'stand:arc.kuiper.5.crews');
+      await waitUntil(page, 'the claim-jumpers', async () => ((await api<{ jumpers: number } | null>(page, 'stand'))?.jumpers ?? 0) > 0, 60_000);
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-22b-stand`, size.touch, results);
       for (const [name, r] of Object.entries(results)) {
         expect.soft(r.overflow, `${name}: page overflow`).toBe(false);
         expect.soft(r.clipped, `${name}: clipped controls`).toEqual([]);

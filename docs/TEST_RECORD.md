@@ -677,6 +677,49 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   the journal keeps the last six. Saves: one from before keeps its outpost as the first; more than three,
   two in a system, a belt outpost of another kind, refining over the allowance or at a planet's, too
   many former outposts, an unknown former site, or an abandoned one that fetched something are refused.
+- `outpostTrade.test.ts`: **outposts join the trade**. The guardrails pass over a day at every belt
+  site and a planet site of each kind at each stage, and broken rules are caught (a chance missing
+  for a stage, above a half or falling as it grows, no fee or too large a one, fee hours too few,
+  fractional or past the income's, a board chance or passage share out of range, too long a reach).
+  An outpost sends and draws haulers of its own, none before it opened, more as it grows (about one
+  an hour at a frame, under four and a half at a port), the sent ones with goods it makes for the
+  world's stations, the drawn ones from makers of what it takes, each found again by its id; none
+  while it is built or once it is gone. The world's own timetable is the same, module for module,
+  with an outpost or without. Its haulers fly in the systems of their way, shown before the rest of
+  the trade. At lawless Fomalhaut nobody sets off into or out of a raid, and one lost on its way in
+  is missed by the outpost's market and pays no fee. Dock fees (3% of the cargo at base prices) come
+  with the hour's income, the same settled hour by hour or once, within a quarter of the income, and
+  only for the last 72 hours when away longer. The Outpost window names the next hauler and the fees
+  so far. Boards within two jumps post freight (a good the giver makes and the outpost takes) and
+  passages to it, about a third of the time, from their own stream: the rest of each board is as it
+  would be without, none goes to an outpost being built, none comes from a den, and a job bound for
+  it blocks giving it up. Its market is a spill neighbour both ways, and a glut left at Earth Port
+  drifts to it. The star map's search finds it by name, only with the save's entries. No calls are
+  left in the rules, and saves keep the fees and refuse negative, fractional or more-than-earned ones.
+- `outpostNews.test.ts`: **outposts have news**. The guardrails pass over ten days at every belt site
+  and a planet site of each kind, and broken rules are caught (a shortage that raises the income, a
+  boom that cuts it, a factor out of range, no reports or a fraction of one). The main belt's
+  refinery has the world's kinds from when it opened (Sol's too), found by id and in the News, none
+  while it is built or once it is gone; the world's own events are the same, module for module, with
+  an outpost or without. The income is moved by each kind's factor and plain when quiet; a shortage
+  the pilot relieves there ends the cut, with no bonus and no standing. A shortage draws two relief
+  haulers from makers, flying in Sol and found by id. The outpost's own board's jobs can be taken (its
+  ids read from the end) and it answers its own events; a board within two jumps posts a shortage run
+  or boom supplies to it that passes the contract guardrails and is delivered and paid there. Its news
+  is told once as it starts and ends, with a toast's tone; away for ten days only the latest three; an
+  older save starts telling from now. The Outpost window names the event and what it does, or all
+  quiet; saves keep how far the news is told and refuse a time before the founding.
+- `longWinter.test.ts`: **The Long Winter**. The arc passes the story guardrails and the marks'
+  rules, and broken ones are caught (a stand outside a finale, crews who cannot come through, waves or
+  claim-jumpers out of range, a belt not drawn in the system). It is given at Deimos Depot once the
+  opening delivery is done and asks no standing; Rhea Castell's lines remember the Clean Manifests
+  choice. Each way through is played to its end: the law's (the recall convoy, its mark), the crews'
+  (a stand lost and taken again, then won, its mark, kept in a save, a bad record refused) and Hale's
+  money (ends the arc there with its own mark); each leaves the milestone. In flight, the crews'
+  three cutters work their rocks inside the Kuiper Belt's ring and nothing comes until the pilot is
+  near; then claim-jumpers come out of the dark in waves (3, then 2, each once the one before is down
+  to one) and the stand is won; with two cutters down it is lost. A rescue's ship adrift in a belt
+  lies in its ring, clear of stations, and a belt scanned within range is on record.
 
 ### Browser tests (Playwright)
 
@@ -856,38 +899,6 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   won, with the record purse and the rating's points, and the prize and purse are paid; the racers
   then really finish, each within two thousandths of a second of the time worked out; and docked
   again, the journal shows the racing record and the Racing rating risen.
-- `outpostTrade.test.ts`: **outposts join the trade**. The guardrails pass over a day at every belt
-  site and a planet site of each kind at each stage, and broken rules are caught (a chance missing
-  for a stage, above a half or falling as it grows, no fee or too large a one, fee hours too few,
-  fractional or past the income's, a board chance or passage share out of range, too long a reach).
-  An outpost sends and draws haulers of its own, none before it opened, more as it grows (about one
-  an hour at a frame, under four and a half at a port), the sent ones with goods it makes for the
-  world's stations, the drawn ones from makers of what it takes, each found again by its id; none
-  while it is built or once it is gone. The world's own timetable is the same, module for module,
-  with an outpost or without. Its haulers fly in the systems of their way, shown before the rest of
-  the trade. At lawless Fomalhaut nobody sets off into or out of a raid, and one lost on its way in
-  is missed by the outpost's market and pays no fee. Dock fees (3% of the cargo at base prices) come
-  with the hour's income, the same settled hour by hour or once, within a quarter of the income, and
-  only for the last 72 hours when away longer. The Outpost window names the next hauler and the fees
-  so far. Boards within two jumps post freight (a good the giver makes and the outpost takes) and
-  passages to it, about a third of the time, from their own stream: the rest of each board is as it
-  would be without, none goes to an outpost being built, none comes from a den, and a job bound for
-  it blocks giving it up. Its market is a spill neighbour both ways, and a glut left at Earth Port
-  drifts to it. The star map's search finds it by name, only with the save's entries. No calls are
-  left in the rules, and saves keep the fees and refuse negative, fractional or more-than-earned ones.
-- `outpostNews.test.ts`: **outposts have news**. The guardrails pass over ten days at every belt site
-  and a planet site of each kind, and broken rules are caught (a shortage that raises the income, a
-  boom that cuts it, a factor out of range, no reports or a fraction of one). The main belt's
-  refinery has the world's kinds from when it opened (Sol's too), found by id and in the News, none
-  while it is built or once it is gone; the world's own events are the same, module for module, with
-  an outpost or without. The income is moved by each kind's factor and plain when quiet; a shortage
-  the pilot relieves there ends the cut, with no bonus and no standing. A shortage draws two relief
-  haulers from makers, flying in Sol and found by id. The outpost's own board's jobs can be taken (its
-  ids read from the end) and it answers its own events; a board within two jumps posts a shortage run
-  or boom supplies to it that passes the contract guardrails and is delivered and paid there. Its news
-  is told once as it starts and ends, with a toast's tone; away for ten days only the latest three; an
-  older save starts telling from now. The Outpost window names the event and what it does, or all
-  quiet; saves keep how far the news is told and refuse a time before the founding.
 - `battles.spec.ts`: **the border in sight** (battles turned on for this test, and Ross 154's raider
   packs kept away while the pilot waits in flight): at Ross 154 a clash
   opens at the beacon line a moment after launch from Waymark Waypoint; the battle strip names it,
@@ -923,6 +934,15 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   down 15% while it lasts, the Fleet window's reports keep the line, the Outpost window names it and
   when it ends, and the bar's News lists it. Selling the goods there relieves it (*Shortage relieved:
   … is supplied again, and its income is back to normal.*) and its News is all quiet again.
+- `longWinter.spec.ts`: **The Long Winter**: Tamsin Rook's call taken at Deimos Depot; out at the
+  Kuiper Belt, *Scan* on the action button heard the Long Winter's beacon on the radio; back at
+  Deimos the step was done and three ship components came aboard; the Long Winter was found adrift
+  in the ice (the HUD objective steering to her) and alongside her the parts went over; home, Ashdown
+  showed the sheared coupling and the journal kept the story. Then, the arc's choice offering Hale's
+  money among its three, the crews' way chosen: the crews' three cutters at their rocks, waiting until
+  the pilot came close, then claim-jumpers out of the dark wave after wave until the last was down;
+  the job done there and then, Ashdown's debrief on the radio, and the News at Deimos Depot showing
+  its mark *For good*.
 - `wing.spec.ts`: **wing command**: a pilot hired in the bar shows their grade in *Your wing*; in
   flight the order card (V on a keyboard, the Wing chip on touch) pauses the game, lists the wingman,
   locks Defend and Cover with why, and gives Hold (the radio's reply, the HUD's *Wing 1 · Hold* or the

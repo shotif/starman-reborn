@@ -908,7 +908,8 @@ with no fines and no milestones yet (they are awarded at the next save if alread
 ## 14. Story arcs
 
 Three short arcs give the sandbox a spine, one per faction, a fourth, The Long Border (§20.5),
-is where they meet, and a fifth, First Harvest (§14.6), belongs to the frontier's farms
+is where they meet, a fifth, First Harvest (§14.6), belongs to the frontier's farms, and a sixth,
+The Long Winter (§40), to Sol's belt crews
 (`src/content/story/arcs.ts`, played by `src/economy/story.ts`). Unlike
 everything else in this document they are written by hand, not generated, and reviewed like code:
 the guardrails below check them, unit tests play each one through, and a browser test flies the
@@ -4096,3 +4097,89 @@ outpost in Sol; the income moved and the cut ended by relief; relief by the pilo
 bonus; the board work (an outpost's own board's jobs taken; a shortage run to it from a board near
 by, delivered there); the news told once, the last three after long away; the Outpost window's line;
 and saves.
+
+## 40. The Long Winter
+
+A sixth written arc (§14), nobody's faction's, among the ice and ore crews of the Solar System's
+main asteroid belt and Kuiper Belt (`src/content/story/arcs.ts`, its new kinds of objective in
+`src/economy/jobs.ts` and `src/world/FlightSession.ts`, rules for its stand in `STAND`,
+`src/content/story/stand.ts`). Its people, their ships, Hale Refits and everything that happens are
+fiction; the belts are the real, cited ones (§19.1), drawn schematically.
+
+The owner chose (5 October 2026): an ice-cutter and its crew lost in the Kuiper dark, a search, a
+rescue and a reckoning with whoever cut corners on their ship; the crews' own story, told by their
+spokeswoman at Deimos Depot, with the Transit Authority's auditor Rhea Castell (§14.2) in it; a choice
+between the law, the crews' own way and a buy-out that ends the arc; and a finale of its own for each
+way on: a convoy across Sol for the law, a stand in the belt for the crews.
+
+### 40.1 The people
+
+- **Tamsin Rook**, spokeswoman for the belt crews, at Deimos Depot (Mars), gives the arc. It is
+  given after the opening delivery, asks no standing, and pays nobody's standing but what its steps
+  say.
+- **Bryn Ashdown**, skipper of an ice-cutter in the belt crews (the *Long Winter*), at Deimos Depot once he is home.
+- **Rhea Castell**, the Authority's auditor (§14.2), at Halcyon Ring, who has a lab and a long
+  memory: her lines remember what the pilot did in Clean Manifests.
+- Corwin Hale, of Hale Refits at Deimos Depot, is spoken of, never met.
+
+### 40.2 The steps
+
+| Step | What |
+| --- | --- |
+| 1. Gone quiet | The *Long Winter* has not called in for two days. Fly out to the Kuiper Belt and scan it from within scan range of its ring, listening for her beacon; then tell Rook at Deimos Depot. |
+| 2. Under the ice | Three ship components (handed over on acceptance) to the *Long Winter*, adrift in the Kuiper Belt itself with scavengers drawn by her beacon; then back to Deimos Depot, where Ashdown shows the sheared drive coupling, sold to him as new by Hale Refits. |
+| 3. The coupling | The coupling (one unit of salvage, handed over on acceptance) to Castell's lab at Halcyon Ring: reconditioned and stamped as new, one of twelve Hale fitted to belt crews this year. Then back to Rook. |
+| 4. What it's worth | The choice, at Deimos Depot: give Castell the case (the Authority recalls every coupling; Authority standing +6); let the crews settle it themselves (they stop buying from Hale and fit their own; Cooperative standing +4); or take Hale's money (3,000 cr and Authority standing −4, Rook walks out, and the arc ends). |
+| 5. The recall run (law) | The finale: a convoy of three ice-cutters (two must arrive) from Deimos Depot to Halcyon Ring with the recalled couplings and a season's ice, Hale's hired guns waiting on the way. |
+| 5. A stand in the ice (crews) | The finale: the crews' three cutters at their rocks in the Kuiper Belt, two waves of Hale's claim-jumpers coming for them, two cutters at least to come through. |
+
+The searching scan and the rescue's ship are in the belt itself, where the belt is drawn; the
+coupling's words never say anything of the Sun's real belts that the sources do not.
+
+### 40.3 New kinds of objective
+
+- **A belt scanned close**: a scan objective may name a cited belt; it is done when the pilot scans
+  the belt from within scan range of its ring, as any belt scan is made (27 km with a standard
+  scanner; from further off the scan says to fly closer). A belt scanned is on record from then on.
+- **A rescue in a belt**: a rescue (§10.2) may name a belt; its ship then drifts in the belt's ring,
+  halfway across and level with it, at an angle drawn from the job, clear of stations by
+  `STAND.clear`, rather than out in open space.
+- **A stand**: in the named belt of the system, at a spot in its ring drawn the same way, the crews'
+  cutters work their rocks, beams on, marked as friendly (*Long Winter · belt crew · fiction*).
+  When the pilot comes within `STAND.range` (6 km) of the spot, the first wave of claim-jumpers
+  comes out of the dark (`STAND.from`, 4 km off, from the side away from the pilot) and goes for the
+  cutters and the pilot; the next comes when the wave before is down to one ship. All the waves
+  downed with at least `need` cutters left, the stand is won; with fewer left it is lost, and the
+  mission goes back to its giver to try again, as a story mission does (§14.1). A stand under way is
+  not saved: leaving the system and coming back starts it afresh. The claim-jumpers fly raiders'
+  ships of the stand's level, never spare the pilot (they are Hale's, not the Wake's), and
+  destroying them is no crime.
+
+### 40.4 Lasting marks
+
+Each ending changes Deimos Depot for good (§14.7), on goods Clean Manifests' marks there never touch:
+
+| Ending | Market | Standing run |
+| --- | --- | --- |
+| The recall run: Castell's case, every coupling recalled | ship components: price ×0.9, stock ×1.5 (inspected refits) | Sealed fuel: deuterium cracked from the crews' ice to Halcyon Ring, pay ×1.15 |
+| A stand in the ice: the crews fit their own | machinery: price ×0.85, stock ×1.5 (the crews' refit bay buys at cost) | The crews' cut: refined metals to a station that takes them within reach, pay ×1.1 |
+| Hale's money taken (the arc ends) | ship components: price ×0.8, stock ×1.6 (cheap refits, no questions) | none |
+
+### 40.5 One save's own
+
+The arc's progress, choices and beats are kept as every arc's (§14.1); a stand won is kept on its
+job (`stood`). Saves refuse a `stood` that is not true. A save from before has none of it, and the
+arc waits at Deimos Depot.
+
+### 40.6 Guardrails
+
+`validateStory` and `validateMarks` (§14.4, §14.7) check the arc as every arc: six arcs now, this one
+of five steps branching at its choice to two finales, every place a real open station in Sol, every
+speaker where they give missions, its choice with one way on open to every pilot, the buy-out ending
+the arc with a mark, the finales paying the most, and the marks on Deimos Depot apart from Clean
+Manifests'. They also check the new objectives: a scanned belt, a rescue's belt and a stand's belt
+each a cited belt of the objective's system, drawn in its scene; a stand only in a finale, with one
+to three waves, at least as many ships as waves, a level of one to three, and a need the crews can
+meet. The tests play every way through the arc (with Castell's lines after each Clean Manifests
+answer), fly a stand in a real `FlightSession` (the cutters at their spot, the waves, won and lost),
+put the rescue's ship in the ring and check the close scan, and check saves.

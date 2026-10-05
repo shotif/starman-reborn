@@ -21,6 +21,8 @@ export const CHARACTERS: Record<CharacterId, Character> = {
   salt: { id: 'salt', name: 'Salt', role: 'Captain of the Graveyard Nest crews', factionId: 'hollow-wake', locationId: 'graveyard-nest' },
   halloway: { id: 'halloway', name: 'Ines Halloway', role: 'Keeper of Squall Relay', factionId: null, locationId: 'squall-relay' },
   fenwick: { id: 'fenwick', name: 'Orla Fenwick', role: 'Steward of Harrow Farmstead', factionId: null, locationId: 'harrow-farmstead' },
+  rook: { id: 'rook', name: 'Tamsin Rook', role: 'Spokeswoman for the belt crews', factionId: null, locationId: 'mars-depot' },
+  ashdown: { id: 'ashdown', name: 'Bryn Ashdown', role: 'Skipper of an ice-cutter in the belt crews', factionId: null, locationId: 'mars-depot' },
 };
 
 export const ARCS: Record<ArcId, Arc> = {
@@ -64,12 +66,24 @@ export const ARCS: Record<ArcId, Arc> = {
     summary: 'Past the edge of the core, at HD 219134, Harrow Farmstead is bringing in its first harvest, and its calls for help go unanswered.',
     hook: 'The keeper of Squall Relay has been hearing calls from the frontier farms.',
   },
+  kuiper: {
+    id: 'kuiper',
+    title: 'The Long Winter',
+    factionId: null,
+    giver: 'rook',
+    summary: 'An ice-cutter has gone quiet in the Kuiper Belt, at the dark edge of the Solar System, and the belt crews want to know why before it happens to them.',
+    hook: 'The belt crews’ spokeswoman needs a pilot who will fly out past Neptune.',
+  },
 };
 
-export const ARC_ORDER: readonly ArcId[] = ['sta', 'frontier', 'wake', 'border', 'harvest'];
+export const ARC_ORDER: readonly ArcId[] = ['sta', 'frontier', 'wake', 'border', 'harvest', 'kuiper'];
 
 /** The harvest convoy's three haulers (fiction). */
 const HARVEST_CONVOY = { names: ['Wrenna', 'Furrow', 'Late Swallow'], need: 2, waves: 1 } as const;
+
+/** The belt crews' three ice-cutters (fiction): the recall convoy, and the stand in the ice. */
+const KUIPER_CREWS = ['Long Winter', 'Hoarfrost', 'Meltwater'] as const;
+const KUIPER_CONVOY = { names: KUIPER_CREWS, need: 2, waves: 1 } as const;
 
 /** The front The Long Border decides (economy/border.ts): Maw Roost's den against Ross 154. */
 export const LONG_BORDER_FRONT = 'wolf-1061~ross-154';
@@ -1071,6 +1085,204 @@ export const ARC_JOBS: readonly JobDef[] = [
       comms: [{ at: 0, lines: [{ who: 'halloway', text: 'Squall Relay to the harvest convoy: we see you. Half the relay is at the windows. Bring them in.' }] }],
       debrief: [{ who: 'halloway', text: 'Fresh bread on a relay. I’d forgotten. The crews have put Harrow’s calls on the first channel, so nobody out there goes unanswered again. Tell Orla they have friends at the edge.' }],
       leaves: 'harvest.relay',
+    },
+  },
+  // ------------------------------------------------------------ The Long Winter (Sol's belt crews, nobody's, docs/PROCGEN.md §40)
+  {
+    id: 'arc.kuiper.1',
+    title: 'Gone quiet',
+    giverLocationId: 'mars-depot',
+    factionId: null,
+    briefing:
+      '“The Long Winter cuts ice out past Neptune: Bryn Ashdown and three crew, and she calls in every night. She hasn’t for two. The Authority has logged it and done nothing. Fly out to the Kuiper Belt and listen for her beacon: scan the belt from close by, where the cutters work, and tell me what you hear.”',
+    objectives: [
+      { kind: 'scan', bodyId: 'sol-kuiper-belt', systemId: 'sol', text: 'Scan the Kuiper Belt from close by, listening for the Long Winter' },
+      { kind: 'visit', locationId: 'mars-depot', text: 'Tell Tamsin Rook at Deimos Depot what you heard' },
+    ],
+    reward: 600,
+    repReward: { sta: 2 },
+    difficulty: 1,
+    difficultyNote: 'A long flight out to the edge of the Solar System',
+    destinationLocationId: 'mars-depot',
+    requires: { jobComplete: OPENING },
+    story: {
+      arc: 'kuiper',
+      step: 1,
+      speaker: 'rook',
+      beats: [{ after: 0, lines: [{ who: 'comm', text: 'Under the static, faint and slow: “Long Winter, Long Winter. Drive dead, air for four days. Anyone.” The beacon is coming from deep in the ice.' }] }],
+      debrief: [{ who: 'rook', text: 'Four days of air, and two of them gone. She’s alive, then, and nobody waits for the Authority. Not this time.' }],
+    },
+  },
+  {
+    id: 'arc.kuiper.2',
+    title: 'Under the ice',
+    giverLocationId: 'mars-depot',
+    factionId: null,
+    briefing:
+      '“Three ship components: a new drive coupling and what it takes to fit it. Bryn’s crew can do the fitting if you get alongside. She’s adrift in the ice itself, and her beacon has been calling for two days, so she won’t be the only one who has heard it. Go now.”',
+    objectives: [
+      { kind: 'rescue', systemId: 'sol', beltId: 'sol-kuiper-belt', shipName: 'Long Winter', model: 'ship.freighter.1.halden', commodity: 'ship-parts', qty: 3, guard: 1, text: 'Bring 3 ship components to the Long Winter, adrift in the Kuiper Belt' },
+      { kind: 'visit', locationId: 'mars-depot', text: 'Bring the Long Winter’s news to Deimos Depot' },
+    ],
+    reward: 1_200,
+    repReward: { sta: 3 },
+    difficulty: 2,
+    difficultyNote: 'Scavengers drawn by her beacon',
+    destinationLocationId: 'mars-depot',
+    requires: { jobComplete: 'arc.kuiper.1' },
+    story: {
+      arc: 'kuiper',
+      step: 2,
+      speaker: 'rook',
+      cargo: { commodity: 'ship-parts', qty: 3 },
+      beats: [{ after: 0, lines: [{ who: 'ashdown', text: 'Long Winter to whoever you are: the coupling’s in and the drive’s turning. Bryn Ashdown, skipper, and three crew who’ll stand you anything you like at Deimos.' }] }],
+      debrief: [
+        { who: 'ashdown', text: 'The old coupling sheared clean through. Three months old, fitted by Hale Refits here at Deimos and sold to me as new. It wasn’t new. I kept it.' },
+        { who: 'rook', text: 'Half the crews in the belt bought their couplings from Hale this year. If that one was worn, so are theirs.' },
+      ],
+    },
+  },
+  {
+    id: 'arc.kuiper.3',
+    title: 'The coupling',
+    giverLocationId: 'mars-depot',
+    factionId: null,
+    briefing:
+      '“Hale says the coupling failed because Bryn ran it hot. I say it was worn before it was ever fitted. The Authority’s auditor at Halcyon Ring, Rhea Castell, has a lab and no love for Hale. Take her the coupling, and bring me back what she finds.”',
+    objectives: [
+      { kind: 'deliver', commodity: 'salvage', qty: 1, locationId: 'earth-port', text: 'Take the sheared coupling to Rhea Castell at Halcyon Ring' },
+      { kind: 'visit', locationId: 'mars-depot', text: 'Bring Castell’s findings to Tamsin Rook at Deimos Depot' },
+    ],
+    reward: 900,
+    repReward: { sta: 3 },
+    difficulty: 1,
+    difficultyNote: 'Patrolled lanes between Mars and Earth',
+    destinationLocationId: 'mars-depot',
+    requires: { jobComplete: 'arc.kuiper.2' },
+    story: {
+      arc: 'kuiper',
+      step: 3,
+      speaker: 'rook',
+      cargo: { commodity: 'salvage', qty: 1 },
+      echoes: [
+        {
+          choiceId: 'sta.vail',
+          said: {
+            press: 'Castell will know you: the pilot who gave the Vail papers to the Frontier press. She didn’t sound sorry about it.',
+            internal: 'Castell will know you: you kept the Vail case inside the Authority for her. She trusts you, which is more than she does most of us.',
+            bribe: 'Castell will know you: you sold the Vail file back to him. She may not like you. She will still read the metal.',
+          },
+        },
+      ],
+      beats: [
+        {
+          after: 0,
+          lines: [{ who: 'castell', text: 'Reconditioned, polished and stamped as new. Hale Refits has fitted twelve of these to belt crews this year, every one running on worn metal. I can prove it. What happens next is the crews’ call, and yours.' }],
+        },
+      ],
+      debrief: [{ who: 'rook', text: 'Twelve. Mine among them. Hale has sent word he’d like to talk, and Castell wants to open a case. The crews are angry enough to do neither and settle it themselves.' }],
+    },
+  },
+  {
+    id: 'arc.kuiper.4',
+    title: 'What it’s worth',
+    giverLocationId: 'mars-depot',
+    factionId: null,
+    briefing:
+      '“Three ways this goes. Castell takes it to the Authority and every Hale coupling is recalled. Or the crews settle it: we stop buying from Hale, fit our own and sell our ice where we like. Or you take what Hale is offering, and I find out who you are. You flew out for Bryn. You choose.”',
+    objectives: [
+      {
+        kind: 'choice',
+        locationId: 'mars-depot',
+        choiceId: 'kuiper.reckoning',
+        text: 'Decide what happens to the case against Hale Refits',
+        prompt: 'Castell’s case, the crews’ own way, or Hale’s money?',
+        options: [
+          {
+            id: 'law',
+            label: 'Give Castell the case',
+            outcome: 'Rook nods. “The Authority, then. Castell wants the crews’ ice and the couplings at Halcyon Ring under escort: Hale has friends who’d rather they never got there.”',
+            rep: { sta: 6 },
+          },
+          {
+            id: 'crews',
+            label: 'Let the crews settle it',
+            outcome: 'Rook grins for the first time. “We fit our own and sell where we like. Hale won’t take that quietly: he’ll send someone out to the ice. We’ll be ready.”',
+            rep: { frontier: 4 },
+          },
+          {
+            id: 'bury',
+            label: 'Take Hale’s money',
+            outcome: 'Corwin Hale pays 3,000 cr for the coupling and your silence. Rook does not say a word. She does not need to.',
+            rep: { sta: -4 },
+            credits: 3_000,
+            ends: true,
+            leaves: 'kuiper.bury',
+          },
+        ],
+      },
+    ],
+    ...DECISION,
+    destinationLocationId: 'mars-depot',
+    requires: { jobComplete: 'arc.kuiper.3' },
+    story: { arc: 'kuiper', step: 4, speaker: 'rook' },
+  },
+  {
+    id: 'arc.kuiper.5.law',
+    title: 'The recall run',
+    giverLocationId: 'mars-depot',
+    factionId: null,
+    briefing:
+      '“The Long Winter, the Hoarfrost and the Meltwater, holds full of the season’s ice and twelve recalled couplings, for Halcyon Ring and Castell’s inspectors. Hale’s friends know what those couplings say. Keep the cutters close, and get two of the three in.”',
+    objectives: [
+      { kind: 'escort', systemId: 'sol', fromLocationId: 'mars-depot', locationId: 'earth-port', model: 'ship.freighter.1.halden', shipName: 'recall convoy', level: 2, convoy: KUIPER_CONVOY, text: 'Escort the crews’ convoy to Halcyon Ring' },
+    ],
+    reward: 2_800,
+    repReward: { sta: 5 },
+    difficulty: 2,
+    difficultyNote: 'Hale’s hired guns on the way in',
+    destinationLocationId: 'earth-port',
+    requires: { jobComplete: 'arc.kuiper.4', choice: { id: 'kuiper.reckoning', oneOf: ['law'] } },
+    story: {
+      arc: 'kuiper',
+      step: 5,
+      speaker: 'rook',
+      finale: true,
+      comms: [{ at: 0, lines: [{ who: 'castell', text: 'Halcyon Ring to the crews’ convoy: my inspectors are at bay nine with the forms already filled in. Bring the couplings in whole.' }] }],
+      debrief: [
+        { who: 'castell', text: 'Twelve couplings in evidence and Hale’s yard sealed. The Authority pays for new ones, and inspects every refit at Deimos from now on.' },
+        { who: 'rook', text: 'The crews will grumble about the inspectors. They’ll grumble alive. Thank you, pilot.' },
+      ],
+      leaves: 'kuiper.law',
+    },
+  },
+  {
+    id: 'arc.kuiper.5.crews',
+    title: 'A stand in the ice',
+    giverLocationId: 'mars-depot',
+    factionId: null,
+    briefing:
+      '“Hale has hired claim-jumpers to wreck our cutters on the ice, so that we come crawling back to him. We’re going out anyway: the Long Winter, the Hoarfrost and the Meltwater, beams on, in the Kuiper Belt. Stand with us. If two cutters come through, we’re free of him.”',
+    objectives: [
+      { kind: 'stand', systemId: 'sol', beltId: 'sol-kuiper-belt', crews: { names: KUIPER_CREWS, need: 2 }, waves: 2, ships: 5, level: 2, text: 'Stand with the crews’ cutters in the Kuiper Belt' },
+    ],
+    reward: 2_800,
+    repReward: { frontier: 4 },
+    difficulty: 3,
+    difficultyNote: 'Two waves of claim-jumpers at the crews’ rocks',
+    destinationLocationId: 'mars-depot',
+    requires: { jobComplete: 'arc.kuiper.4', choice: { id: 'kuiper.reckoning', oneOf: ['crews'] } },
+    story: {
+      arc: 'kuiper',
+      step: 5,
+      speaker: 'rook',
+      finale: true,
+      comms: [{ at: 0, lines: [{ who: 'ashdown', text: 'Long Winter to the crews: cutters out, beams on. If Hale wants us off the ice, he can come and say so himself.' }] }],
+      debrief: [
+        { who: 'ashdown', text: 'Not one beam went off. The crews have a refit bay of their own at Deimos now, and Hale has a yard full of couplings nobody wants.' },
+        { who: 'rook', text: 'We sell where we like, and we look after our own. Come and cut ice with us one day, pilot.' },
+      ],
+      leaves: 'kuiper.crews',
     },
   },
 ];

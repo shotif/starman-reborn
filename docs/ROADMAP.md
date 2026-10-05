@@ -29,12 +29,7 @@ What it lacks now:
 ## Proposed next increments
 
 Chosen by the owner on 5 October 2026, once the outposts had joined the trade: Outposts have news
-(now done) and then A new written arc.
-
-### A new written arc ⏳ (M)
-
-A third hand-written five-step story, set among the miners of Sol's main belt and the Kuiper Belt,
-branching at a choice, leaving a lasting mark on a belt station's market and board.
+and then A new written arc, both now done. The next are for the owner to choose.
 
 ### How an increment ships
 
@@ -44,6 +39,17 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 39. The Long Winter ✅
+
+A sixth written arc, the belt crews' own, told by their spokeswoman Tamsin Rook at Deimos Depot.
+The ice-cutter *Long Winter* has gone quiet in the Kuiper Belt: fly out and scan the belt for her
+beacon, take her the drive parts where she drifts in the ice, and carry her sheared coupling to
+Rhea Castell's lab at Halcyon Ring (Castell remembers what you did in Clean Manifests). Then
+choose: give Castell the case, and escort the crews' recall convoy across Sol to Halcyon Ring; let
+the crews settle it, and stand with their three cutters in the Kuiper Belt against two waves of
+claim-jumpers, a new kind of fight; or take Hale's money and end it there. Each ending changes
+Deimos Depot for good ([PROCGEN.md §40](PROCGEN.md#40-the-long-winter)).
 
 ### 38. Outposts have news ✅
 

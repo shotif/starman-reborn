@@ -564,6 +564,8 @@ export interface JobProgress {
   outpost?: 'held';
   /** A rival's duel (docs/PROCGEN.md §28): won by the player. */
   duel?: 'won';
+  /** A stand in a belt (docs/PROCGEN.md §40.3): won. */
+  stood?: true;
 }
 
 export type PirateOutcome = 'none' | 'destroyed' | 'bypassed' | 'escaped';
