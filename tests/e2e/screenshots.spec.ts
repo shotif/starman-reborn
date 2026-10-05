@@ -893,10 +893,13 @@ for (const size of SIZES) {
       await waitUntil(page, 'flying there', async () => (await api(page, 'mode')) === 'flight');
       if (await page.getByTestId('sheet-close').isVisible().catch(() => false)) await press(page, 'sheet-close');
       await waitUntil(page, 'the cutters at their rocks', async () => (await api<{ cutters: number } | null>(page, 'stand'))?.cutters === 3, 60_000);
-      expect(await api<boolean>(page, 'placeNear', { id: 'stand:arc.kuiper.5.crews', distance: 900 })).toBe(true);
+      expect(await api<boolean>(page, 'placeNear', { id: 'stand:arc.kuiper.5.crews', distance: 500 })).toBe(true);
       await api(page, 'selectTarget', 'stand:arc.kuiper.5.crews');
       await waitUntil(page, 'the claim-jumpers', async () => ((await api<{ jumpers: number } | null>(page, 'stand'))?.jumpers ?? 0) > 0, 60_000);
       await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      // The crews' rocks just above the ship, not hidden behind it (the mouse centred, so the ship holds still).
+      if (!size.touch) await page.mouse.move(size.width / 2, size.height / 2);
+      expect(await api<boolean>(page, 'face', { id: 'stand:arc.kuiper.5.crews', below: size.height < 500 ? 4 : 9 })).toBe(true);
       await shot(page, `${size.name}-22b-stand`, size.touch, results);
       for (const [name, r] of Object.entries(results)) {
         expect.soft(r.overflow, `${name}: page overflow`).toBe(false);
