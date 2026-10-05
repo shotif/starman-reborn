@@ -9,11 +9,11 @@ After the scripted opening (10–20 minutes), the neighbourhood is an open sandb
 systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
 of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
 packs in lawless space; 39 ships and 146 pieces of equipment; and generated contracts on every job
-board. Increments 1–36 (under [Done so far](#done-so-far)) added world events and news, contracts
-of every kind, the law and the outlaw path, goals, ranks with each faction that open doors, races round real planets and moons against racers who really fly, a wing that takes orders and grows with every fight, border battles to see and join, five story arcs, combat depth, people in the
+board. Increments 1–39 (under [Done so far](#done-so-far)) added world events and news, contracts
+of every kind, the law and the outlaw path, goals, ranks with each faction that open doors, races round real planets and moons against racers who really fly, a wing that takes orders and grows with every fight, border battles to see and join, six story arcs, combat depth, people in the
 bars and a trade computer, a world that answers, gluts that ship their surplus out and relief to
 escort through raided lanes, a fleet of your own whose captains fly the lanes, a crew aboard your own ship,
-up to three stations of your own to build and defend, refineries in the real belts, captains who supply them and mine for them, passengers and sightseers, rival pilots with careers and stories of their own, a
+up to three stations of your own to build and defend, refineries in the real belts, captains who supply them and mine for them, outposts that trade with their neighbours and have news of their own, passengers and sightseers, rival pilots with careers and stories of their own, a
 supernova in every sky (as fiction), an invented star at the map's edge that explodes and leaves a
 black hole to fly to (fiction too), encounters on the lanes between the docks, wrecks and derelicts to fly to with short trails across a few systems, mining in the real belts, the frontier with a life of its own,
 a border war whose fronts can be won for good, story endings that change stations for good, escorts
