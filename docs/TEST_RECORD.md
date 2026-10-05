@@ -875,6 +875,19 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   it blocks giving it up. Its market is a spill neighbour both ways, and a glut left at Earth Port
   drifts to it. The star map's search finds it by name, only with the save's entries. No calls are
   left in the rules, and saves keep the fees and refuse negative, fractional or more-than-earned ones.
+- `outpostNews.test.ts`: **outposts have news**. The guardrails pass over ten days at every belt site
+  and a planet site of each kind, and broken rules are caught (a shortage that raises the income, a
+  boom that cuts it, a factor out of range, no reports or a fraction of one). The main belt's
+  refinery has the world's kinds from when it opened (Sol's too), found by id and in the News, none
+  while it is built or once it is gone; the world's own events are the same, module for module, with
+  an outpost or without. The income is moved by each kind's factor and plain when quiet; a shortage
+  the pilot relieves there ends the cut, with no bonus and no standing. A shortage draws two relief
+  haulers from makers, flying in Sol and found by id. The outpost's own board's jobs can be taken (its
+  ids read from the end) and it answers its own events; a board within two jumps posts a shortage run
+  or boom supplies to it that passes the contract guardrails and is delivered and paid there. Its news
+  is told once as it starts and ends, with a toast's tone; away for ten days only the latest three; an
+  older save starts telling from now. The Outpost window names the event and what it does, or all
+  quiet; saves keep how far the news is told and refuse a time before the founding.
 - `battles.spec.ts`: **the border in sight** (battles turned on for this test, and Ross 154's raider
   packs kept away while the pilot waits in flight): at Ross 154 a clash
   opens at the beacon line a moment after launch from Waymark Waypoint; the battle strip names it,
@@ -905,6 +918,11 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   Sol, it is seen flying to or from the refinery and is a target (*The …*). Back at Earth Port, within
   a few time slots the board posts work to the refinery, shown in the jobs window; and the star map's
   search, given the first word of its name, finds Sol as *Your outpost …*.
+- `outpostNews.spec.ts`: **outposts have news**: a refinery chartered in Sol's main belt and its frame
+  built, its Outpost window has *News*; at its next shortage a toast says so and that its income is
+  down 15% while it lasts, the Fleet window's reports keep the line, the Outpost window names it and
+  when it ends, and the bar's News lists it. Selling the goods there relieves it (*Shortage relieved:
+  … is supplied again, and its income is back to normal.*) and its News is all quiet again.
 - `wing.spec.ts`: **wing command**: a pilot hired in the bar shows their grade in *Your wing*; in
   flight the order card (V on a keyboard, the Wing chip on touch) pauses the game, lists the wingman,
   locks Defend and Cover with why, and gives Hold (the radio's reply, the HUD's *Wing 1 · Hold* or the

@@ -24,6 +24,7 @@ import {
   turretNeeds,
 } from '../../economy/outpostRaids.ts';
 import { button, dataBadge, showModal, toast } from '../components.ts';
+import { newsLine } from '../../economy/outpostNews.ts';
 import { buyerOf, giveUpBlock, haulerLines, giveUpOutpost, inBelt, nearestDock, RAW_GOODS, refinable, refineAllowance, refineAtOutpost, refinedThisHour, refinePay, nextRefineHour, saleValue } from '../../economy/outpostTrade.ts';
 import { getLocation, getSystem } from '../../data/systems.ts';
 import type { GameState, OutpostRecord } from '../../app/state.ts';
@@ -278,10 +279,25 @@ export function outpostContent(ctx: StationContext, refresh: Refresh): HTMLEleme
           ),
         )
       : h('p', { class: 'callout' }, 'Complete: a port with a market, repairs, a job board and an outfitter.'),
+    o.stage > 0 ? newsSection(o, state.clock) : null,
     inBelt(o) ? refineSection(ctx, o, refresh) : null,
     o.stage > 0 ? haulerSection(o, state.clock) : null,
     o.stage > 0 ? defenceSection(ctx, o, refresh) : null,
     giveUpSection(ctx, o, refresh),
+  );
+}
+
+// ---------------------------------------------------------------- news (docs/PROCGEN.md §39)
+
+/** The event under way at an open outpost, and what it does to the income; or that all is quiet. */
+function newsSection(o: OutpostRecord, clock: number): HTMLElement {
+  const line = newsLine(o, clock);
+  return h(
+    'section',
+    { 'aria-label': 'News', 'data-testid': 'outpost-news' },
+    h('div', { class: 'list-head' }, h('span', null, 'News')),
+    h('p', { 'data-testid': 'outpost-news-headline' }, h('strong', null, line.headline)),
+    h('p', { class: 'muted small', 'data-testid': 'outpost-news-detail' }, line.detail),
   );
 }
 

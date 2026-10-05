@@ -70,7 +70,8 @@ import type { SkyNewsKind } from '../content/stellar/lines.ts';
 import { ROSTER } from '../content/rivals/rules.ts';
 import { recordMarketVisit } from '../economy/trade.ts';
 import { adjustReputation, FACTIONS, standingTier, TIER_LABEL } from '../economy/factions.ts';
-import { eventsAt, newsAt, systemEventAt } from '../economy/events.ts';
+import { eventsAt, newsAt, stationEventsBetween, systemEventAt } from '../economy/events.ts';
+import { EVENTS } from '../content/events/rules.ts';
 import {
   acceptJob,
   activeJobIds,
@@ -104,7 +105,7 @@ import { launchList, payWing, settleWing, trustBand, trustOf, wingFought, wingHu
 import { TRUST_PREFIX } from '../content/wing/lines.ts';
 import type { WingOrder } from '../content/wing/rules.ts';
 import { showWingCard } from '../ui/wing.ts';
-import { eventHauls, haulFate, raidsOnWay, recordHaul, reliefHauls, shipments, shipsOut } from '../economy/hauls.ts';
+import { eventHauls, haulFate, raidsOnWay, recordHaul, reliefHauls, shipments, shipsOut, shortfall } from '../economy/hauls.ts';
 import { HAULS } from '../content/economy/hauls.ts';
 import { commitCrime, customsScan, dockAccess, finesTravelling, isLawful, scansOnDocking, settleLaw, totalFines } from '../economy/law.ts';
 import { whatNext } from '../economy/advisor.ts';
@@ -2857,6 +2858,18 @@ export class Game {
         if (!state || !o) return null;
         const next = nextRaid(state, o);
         return { next, warned: o.defence?.warned ?? null, raids: o.defence?.raids ?? [], turrets: o.defence?.turrets ?? 0, flight: this.flight?.outpostRaidStatus() ?? null };
+      },
+      /**
+       * Test-only: the first event at an outpost (the first chartered, unless its site is named) that
+       * starts after `from` (the clock by default), of a kind if one is named, within ten days (docs/PROCGEN.md §39).
+       */
+      outpostEvent: (q: { kind?: string; from?: number; site?: string } = {}) => {
+        const state = this.state;
+        const o = state ? outpostsOf(state).find((x) => !q.site || x.site === q.site) : undefined;
+        if (!state || !o) return null;
+        const from = q.from ?? state.clock;
+        const e = stationEventsBetween(outpostId(o.site), from, from + 10 * 86_400).find((x) => x.start > from && (!q.kind || x.kind === q.kind));
+        return e ? { id: e.id, kind: e.kind, start: e.start, end: e.end, goods: e.goods, headline: e.headline, deficit: e.kind === 'shortage' ? Math.ceil(shortfall(e) * EVENTS.react.relief) : 0 } : null;
       },
       /**
        * Test-only: an outpost's haulers (the first chartered, unless its site is named): the next to set

@@ -28,8 +28,13 @@ What it lacks now:
 
 ## Proposed next increments
 
-Chosen by the owner on 4 October 2026, once the border and the belts were done: Captains supply
-outposts and then Outposts join the trade, both now done. The next are for the owner to choose.
+Chosen by the owner on 5 October 2026, once the outposts had joined the trade: Outposts have news
+(now done) and then A new written arc.
+
+### A new written arc ⏳ (M)
+
+A third hand-written five-step story, set among the miners of Sol's main belt and the Kuiper Belt,
+branching at a choice, leaving a lasting mark on a belt station's market and board.
 
 ### How an increment ships
 
@@ -39,6 +44,18 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 38. Outposts have news ✅
+
+Your outposts now have the world's events as any station does: shortages, gluts, booms and strikes
+(harvests and survey seasons in the frontier) on the same odds, Sol's outposts included. They move
+its prices and, gently, its income (a shortage × 0.85, a strike × 0.7, a boom × 1.2), and the world
+answers: relief haulers come for a shortage, a glut ships out, boards within two jumps post shortage
+runs and boom supplies to it, its own board answers its own events, and your sales there count
+toward relief (with no bonus from your own people). A toast and a line in the Fleet window's reports
+tell you when one starts or ends, and the Outpost window has its News. Jobs on an outpost's own board
+can now be taken: a fault in reading their ids had kept them from it
+([PROCGEN.md §39](PROCGEN.md#39-outposts-have-news)).
 
 ### 37. Outposts join the trade ✅
 

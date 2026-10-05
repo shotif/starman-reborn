@@ -50,6 +50,8 @@ mine for more than any market. Open outposts join the trade: haulers come and go
 timetable, each paying a dock fee, and boards near by post freight and passages to them. Your captains can
 supply an outpost being built, or mine its belt for a refinery while you watch them work. Raiders
 come for an outpost now and then: build turrets there, hire guards, or be there to fight them off.
+Your outposts have news like any station: shortages, gluts, booms and strikes move their prices and
+income, draw relief haulers and work on the boards near by, and a toast tells you when one starts.
 Sell one back for half of what went in, or abandon it.
 Sign on a crew of your own (an engineer who patches the ship up in flight, a gunner, a navigator):
 each has a heart that likes or hates what you do, a story, and a favour to ask, and they leave if

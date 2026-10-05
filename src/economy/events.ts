@@ -8,7 +8,7 @@ import { jumpsFrom } from '../content/world/network.ts';
 import { WORLD_SEED } from '../content/world/rules.ts';
 import { isOutpostId, outpostId, outpostLocation } from '../content/outposts/sites.ts';
 import { OUTPOST_RAIDS } from '../content/outposts/raids.ts';
-import { ALL_LOCATIONS, getLocation, getSystem, isFrontier, isInventedSystem, setSaveLocations, SYSTEMS, WORLD } from '../data/systems.ts';
+import { ALL_LOCATIONS, getLocation, getSystem, isFrontier, isInventedSystem, saveLocations, saveLocationsKey, setSaveLocations, SYSTEMS, WORLD } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { trafficPlan } from '../world/traffic/plan.ts';
 import { FACTIONS } from './factions.ts';
@@ -65,9 +65,16 @@ function solJumps(systemId: SystemId): number {
   return jumpsFromSol.get(systemId) ?? 99;
 }
 
-/** Stations whose markets can have events. */
+/** Stations whose markets can have events: the world's, and the pilot's open outposts (docs/PROCGEN.md §39). */
 export function eventStations(): string[] {
-  return [...marketTables().keys()].filter((id) => !NO_EVENT_SYSTEMS.has(getLocation(id).systemId) && getLocation(id).dockable !== false);
+  const world = [...marketTables().keys()].filter((id) => !NO_EVENT_SYSTEMS.has(getLocation(id).systemId) && getLocation(id).dockable !== false);
+  return [...world, ...openOutposts().map((x) => x.id)];
+}
+
+/** The pilot's open outposts with a market, with when each opened (the save's own, docs/PROCGEN.md §39). */
+function openOutposts(): { id: string; opened: number }[] {
+  const trading = new Set(saveLocations().filter((l) => l.services.includes('market')).map((l) => l.id));
+  return (worldLog?.outposts ?? []).filter((o) => o.stage > 0 && trading.has(outpostId(o.site))).map((o) => ({ id: outpostId(o.site), opened: o.opened ?? o.founded }));
 }
 
 function eligibleGoods(locationId: string, roles: readonly string[]): CommodityId[] {
@@ -185,10 +192,13 @@ function listGoods(goods: readonly CommodityId[]): string {
 const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 function stationEventIn(locationId: string, index: number): WorldEvent | null {
-  return cached(`s|${locationId}|${index}`, () => {
-    // The player's own outpost has no world events of its own (docs/PROCGEN.md §22): only its system's raids touch it.
-    // Nor do Pyre's stations (docs/PROCGEN.md §26): its own story is all that happens there.
-    if (isOutpostId(locationId) || NO_EVENT_SYSTEMS.has(getLocation(locationId).systemId) || isInventedSystem(getLocation(locationId).systemId)) return null;
+  // The pilot's outposts have events from when they open (docs/PROCGEN.md §39), Sol's too, worked out from what they are now.
+  const own = isOutpostId(locationId) ? (openOutposts().find((x) => x.id === locationId) ?? null) : undefined;
+  if (own === null) return null;
+  const key = own ? `s|${locationId}|${index}|${own.opened}|${saveLocationsKey()}` : `s|${locationId}|${index}`;
+  const e = cached(key, () => {
+    // Pyre's stations have none (docs/PROCGEN.md §26): its own story is all that happens there.
+    if ((!own && NO_EVENT_SYSTEMS.has(getLocation(locationId).systemId)) || isInventedSystem(getLocation(locationId).systemId)) return null;
     const r = rng(WORLD_SEED, 'events', locationId, index);
     const kind = pickKind<StationEventKind>(r, EVENTS.stationOdds);
     if (!kind || !frontierEligible(kind, locationId)) return null;
@@ -273,6 +283,8 @@ function stationEventIn(locationId: string, index: number): WorldEvent | null {
       ...(planet ? { bodyId: planet.id } : {}),
     };
   });
+  // None that would start before the outpost opened.
+  return own && e && e.start < own.opened ? null : e;
 }
 
 function systemEventIn(systemId: SystemId, index: number): WorldEvent | null {

@@ -14,7 +14,7 @@ import { hashString, rng, type Rng } from '../content/random.ts';
 import type { LastingMark } from '../content/story/marks.ts';
 import { jumpsFrom } from '../content/world/network.ts';
 import { WORLD_SEED } from '../content/world/rules.ts';
-import { ALL_LOCATIONS, BELTS, getLocation, getSystem, isFrontier, PYRE_LOCATIONS, saveLocationsKey, SYSTEMS, WORLD } from '../data/systems.ts';
+import { ALL_LOCATIONS, BELTS, getLocation, getSystem, isFrontier, PYRE_LOCATIONS, saveLocations, saveLocationsKey, SYSTEMS, WORLD } from '../data/systems.ts';
 import type { FactionId, FictionalLocation, SystemId } from '../data/types.ts';
 import { findRoute } from '../galaxy/routing.ts';
 import { FLEETS } from '../world/traffic/plan.ts';
@@ -263,16 +263,29 @@ function outpostWork(giver: FictionalLocation, r: Rng, id: string, clock: number
     .sort((a, b) => (a.id < b.id ? -1 : 1));
   if (!posts.length) return null;
   const to = r.pick(posts);
-  const job = r.next() < B.passage ? passage(giver, r, id, to) : (freight(giver, r, id, clock, { to }) ?? passage(giver, r, id, to));
+  // A shortage or boom there: supplies for it (docs/PROCGEN.md §39.3).
+  const event = stationEventAt(to.id, clock);
+  const wanted = event && (event.kind === 'shortage' || event.kind === 'boom') ? event.goods.filter((g) => marketTables().get(to.id)?.entries.get(g)?.role === 'consume') : [];
+  const job =
+    (wanted.length ? supply(giver, r, id, clock, { commodity: r.pick(wanted), event: event!, to }) : null) ??
+    (r.next() < B.passage ? passage(giver, r, id, to) : (freight(giver, r, id, clock, { to }) ?? passage(giver, r, id, to)));
   return job && { ...job, briefing: `${job.briefing} ${to.name} is your own outpost: its people will be glad of it.` };
 }
 
-/** Finds a posted contract by id (ids are `c.<station>.<time slot>.<index>`, or `.decisive` / `.run-<mark>` for those that come and go within a slot). */
+/**
+ * Finds a posted contract by id (ids are `c.<station>.<time slot>.<index>`, or `.decisive` /
+ * `.run-<mark>` and the like for those that come and go within a slot). The slot and what follows it
+ * are read from the end, as an outpost's station id has dots in it (docs/PROCGEN.md §39.3).
+ */
 export function postedContract(id: string): JobDef | null {
   if (!id.startsWith(CONTRACT_PREFIX)) return null;
-  const [locationId, epochText] = id.slice(CONTRACT_PREFIX.length).split('.');
-  const epoch = Number(epochText);
-  if (!locationId || !Number.isInteger(epoch) || !(ALL_LOCATIONS.some((l) => l.id === locationId) || PYRE_LOCATIONS.some((l) => l.id === locationId))) return null;
+  const rest = id.slice(CONTRACT_PREFIX.length);
+  const head = rest.slice(0, rest.lastIndexOf('.'));
+  const dot = head.lastIndexOf('.');
+  const locationId = head.slice(0, dot);
+  const epoch = Number(head.slice(dot + 1));
+  const known = ALL_LOCATIONS.some((l) => l.id === locationId) || PYRE_LOCATIONS.some((l) => l.id === locationId) || saveLocations().some((l) => l.id === locationId);
+  if (dot <= 0 || !Number.isInteger(epoch) || !known) return null;
   return boardFor(locationId, epoch).find((c) => c.id === id) ?? null;
 }
 
@@ -633,20 +646,25 @@ function freight(
   return !opts.event && !opts.run && r.next() < CONTRACTS.urgent.chance ? makeUrgent(job, giver.systemId, dest.systemId) : job;
 }
 
-function supply(giver: FictionalLocation, r: Rng, id: string, clock: number, opts: { commodity?: CommodityId; event?: WorldEvent } = {}): JobDef | null {
+/**
+ * A supply run: goods the giver's station uses, bought where they are made nearest it. With `to`
+ * (one of the pilot's outposts, docs/PROCGEN.md §39.3), they go there instead, bought nearest it.
+ */
+function supply(giver: FictionalLocation, r: Rng, id: string, clock: number, opts: { commodity?: CommodityId; event?: WorldEvent; to?: FictionalLocation } = {}): JobDef | null {
+  const need = opts.to ?? giver;
   // A station on a front line could fall before the goods arrive, and then take no delivery.
-  if (EXPOSED.has(giver.id)) return null;
+  if (EXPOSED.has(need.id)) return null;
   const markets = marketTables();
-  const here = markets.get(giver.id);
+  const here = markets.get(need.id);
   if (!here) return null;
   const wanted = [...here.entries.values()].filter((e) => e.role === 'consume' && isLegalCargo(e.commodity)).map((e) => e.commodity);
   if (!wanted.length || (opts.commodity && !wanted.includes(opts.commodity))) return null;
   const commodity = opts.commodity ?? r.pick(wanted);
   // Where to buy it: the nearest station that makes it.
   const sources = openStations()
-    .map((l) => ({ l, e: markets.get(l.id)?.entries.get(commodity), j: jumpsBetween(giver.systemId, l.systemId) }))
-    .filter((x) => x.e?.role === 'produce' && x.j <= CONTRACTS.maxJumps.supply && x.l.id !== giver.id)
-    .sort((a, b) => a.j - b.j || routeFeeBetween(giver.systemId, a.l.systemId) - routeFeeBetween(giver.systemId, b.l.systemId));
+    .map((l) => ({ l, e: markets.get(l.id)?.entries.get(commodity), j: jumpsBetween(need.systemId, l.systemId) }))
+    .filter((x) => x.e?.role === 'produce' && x.j <= CONTRACTS.maxJumps.supply && x.l.id !== need.id)
+    .sort((a, b) => a.j - b.j || routeFeeBetween(need.systemId, a.l.systemId) - routeFeeBetween(need.systemId, b.l.systemId));
   const source = sources[0];
   if (!source) return null;
   const good = COMMODITIES[commodity];
@@ -656,18 +674,19 @@ function supply(giver: FictionalLocation, r: Rng, id: string, clock: number, opt
   const rw = CONTRACTS.reward.supply;
   const markup = opts.event ? rw.urgentMarkup : rw.goodsMarkup;
   // The goods are paid back in full; the markup varies.
-  const reward = pay(r, routeFeeBetween(giver.systemId, source.l.systemId), (rw.base + (markup - 1) * qty * unit) * premium(opts.event), qty * unit);
+  const reward = pay(r, routeFeeBetween(need.systemId, source.l.systemId), (rw.base + (markup - 1) * qty * unit) * premium(opts.event), qty * unit);
   const difficulty = clampDifficulty(1 + (source.j >= 2 ? 1 : 0) + (security(source.l.systemId) < 0.35 ? 1 : 0));
   const name = good.name.toLowerCase();
-  const title = !opts.event ? `Supply run: ${qty} ${name}` : opts.event.kind === 'shortage' ? `Shortage run: ${qty} ${name}` : `Boom supplies: ${qty} ${name}`;
+  const kind = !opts.event ? 'Supply run' : opts.event.kind === 'shortage' ? 'Shortage run' : 'Boom supplies';
+  const title = opts.to ? `${kind} for ${need.name}: ${qty} ${name}` : `${kind}: ${qty} ${name}`;
   return {
     ...common(giver, id, difficulty),
     title,
-    briefing: `${opts.event ? `${opts.event.headline}. ` : ''}${giver.name} ${opts.event ? 'needs' : 'is short of'} ${name}. Bring ${qty} (${qty * good.unitSize} hold units). ${place(source.l)} makes them, at about ${unit} cr each.`,
-    objectives: [{ kind: 'deliver', commodity, qty, locationId: giver.id, text: `Bring ${qty} ${name} to ${giver.name}` }],
+    briefing: `${opts.event ? `${opts.event.headline}. ` : ''}${need.name} ${opts.event ? 'needs' : 'is short of'} ${name}. Bring ${qty} (${qty * good.unitSize} hold units). ${place(source.l)} makes them, at about ${unit} cr each.`,
+    objectives: [{ kind: 'deliver', commodity, qty, locationId: need.id, text: `Bring ${qty} ${name} to ${need.name}` }],
     reward,
-    difficultyNote: `Buy at ${source.l.name}: ${routeNote(giver.systemId, source.l.systemId).toLowerCase()}`,
-    destinationLocationId: giver.id,
+    difficultyNote: `Buy at ${source.l.name}: ${routeNote(need.systemId, source.l.systemId).toLowerCase()}`,
+    destinationLocationId: need.id,
     briefingPrices: { locationId: source.l.id, prices: { [commodity]: { buy: unit, sell: null } } as Partial<Record<CommodityId, { buy: number; sell: null }>> },
     contract: { kind: 'supply', ...(opts.event ? { event: opts.event.id } : {}) },
   };

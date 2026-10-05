@@ -858,6 +858,17 @@ for (const size of SIZES) {
       await page.getByTestId('battles-record').evaluate((el) => el.scrollIntoView({ block: 'start' }));
       await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
       await shot(page, `${size.name}-21d-battle-journal`, size.touch, results);
+      // Outposts have news (docs/PROCGEN.md §39): the next event at the main belt's refinery, under way,
+      // in its window. Last of all, as it moves the clock on.
+      await docked('outpost.belt.sol-main-belt');
+      const news = (await api<{ start: number } | null>(page, 'outpostEvent', { site: 'belt.sol-main-belt' }))!;
+      await api(page, 'advanceClock', news.start - (await nowClock()) + 60);
+      for (let i = 0; i < 6 && (await page.getByTestId('story-continue').isVisible().catch(() => false)); i++) await press(page, 'story-continue');
+      await openOutpost();
+      await page.getByTestId('outpost-news').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      await expect(page.getByTestId('outpost-news-headline')).not.toHaveText('All quiet');
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-15k-outpost-news`, size.touch, results);
       for (const [name, r] of Object.entries(results)) {
         expect.soft(r.overflow, `${name}: page overflow`).toBe(false);
         expect.soft(r.clipped, `${name}: clipped controls`).toEqual([]);

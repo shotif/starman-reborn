@@ -1,5 +1,6 @@
 import { applyCredits, type CommodityId, type GameState, type OutpostRecord } from '../app/state.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
+import { FLEET } from '../content/fleet/rules.ts';
 import { OUTPOSTS } from '../content/outposts/rules.ts';
 import { kindWord, outpostId, outpostNames, outpostSite, sitePlace, sitesIn, type OutpostSite } from '../content/outposts/sites.ts';
 import type { StationType } from '../content/world/types.ts';
@@ -7,8 +8,7 @@ import { getLocation, getSystem } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { cargoCount, removeCargo } from './cargo.ts';
 import type { Result } from './equipment.ts';
-import { refreshSaveStations } from './events.ts';
-import { dividendFactor } from './fleet.ts';
+import { refreshSaveStations, stationEventAt, systemEventAt } from './events.ts';
 import { dockFees } from './hauls.ts';
 import { dockAccess } from './law.ts';
 import { hurtFactor, upkeep } from './outpostRaids.ts';
@@ -66,12 +66,21 @@ export function baseIncome(o: OutpostRecord): number {
 
 /**
  * This hour's income: moved by a raid or sweep in its system, as stakes' dividends are
- * (FLEET.stakes.events), cut while a raid it lost still hurts, less its turrets' upkeep
- * (docs/PROCGEN.md §29).
+ * (FLEET.stakes.events), and by an event of its own under way by its own rules (`news.income`,
+ * docs/PROCGEN.md §39.2), cut while a raid it lost still hurts, less its turrets' upkeep (§29).
  */
 export function incomeAt(o: OutpostRecord, clock: number): number {
   if (o.stage <= 0) return 0;
-  return Math.max(0, Math.round(baseIncome(o) * dividendFactor(outpostId(o.site), clock).factor * hurtFactor(o, clock)) - upkeep(o));
+  const site = outpostSite(o.site);
+  const system = site ? systemEventAt(site.systemId, clock) : null;
+  const sys = system ? FLEET.stakes.events[system.kind] : 1;
+  return Math.max(0, Math.round(baseIncome(o) * sys * newsFactor(o, clock) * hurtFactor(o, clock)) - upkeep(o));
+}
+
+/** What an event under way at the outpost does to its income (1 without one, docs/PROCGEN.md §39). */
+export function newsFactor(o: OutpostRecord, clock: number): number {
+  const e = o.stage > 0 ? stationEventAt(outpostId(o.site), clock) : null;
+  return e ? OUTPOSTS.news.income[e.kind as keyof typeof OUTPOSTS.news.income] : 1;
 }
 
 // ---------------------------------------------------------------- the charter
@@ -118,7 +127,7 @@ export function charterOutpost(state: GameState, siteId: string, kind: StationTy
   const k = offer.kinds.find((x) => x.kind === kind);
   if (!k) return { ok: false, message: `No ${kindWord(kind)} can be built there.` };
   if (!k.names.includes(name)) return { ok: false, message: 'Choose one of the names offered.' };
-  (state.world.outposts ??= []).push({ site: siteId, kind, name, founded: state.clock, stage: 0, delivered: {}, since: state.clock, earned: 0 });
+  (state.world.outposts ??= []).push({ site: siteId, kind, name, founded: state.clock, stage: 0, delivered: {}, since: state.clock, earned: 0, heard: state.clock });
   applyCredits(state, -OUTPOSTS.charter, 'fleet', `Charter for ${name}`);
   refreshSaveStations();
   return { ok: true, message: `${name} is chartered ${siteWhere(offer.site)}. Bring the materials for its frame there.` };

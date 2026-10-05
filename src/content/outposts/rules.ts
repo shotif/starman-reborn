@@ -1,4 +1,5 @@
 import type { CommodityId } from '../economy/goods.ts';
+import type { StationEventKind } from '../events/rules.ts';
 import type { LocationService } from '../../data/types.ts';
 import type { StationType } from '../world/types.ts';
 
@@ -56,6 +57,15 @@ export const OUTPOSTS = {
     fee: 0.03,
     feeHours: 72,
     board: { jumps: 2, chance: 0.35, passage: 0.4 },
+  },
+  /**
+   * Outposts have news (docs/PROCGEN.md §39): while one of the world's events is under way at an
+   * outpost, the hour's income is multiplied by its kind's factor; away for long, at most
+   * `maxReports` of an outpost's events starting or ending are told in a settle (the latest).
+   */
+  news: {
+    income: { shortage: 0.85, glut: 0.95, boom: 1.2, strike: 0.7, harvest: 1.1, survey: 1.1 } satisfies Record<StationEventKind, number>,
+    maxReports: 3,
   },
   /** Where the outpost orbits its planet: distance from the surface and height (schematic units). */
   orbit: { distance: [1_600, 2_800] as const, height: [-450, 450] as const },

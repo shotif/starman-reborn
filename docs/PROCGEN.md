@@ -701,8 +701,8 @@ transit, so the world moves on while you travel.
 
 ### 11.1 What happens
 
-- **Stations** (every station with a market, except Sol's two, which keep the opening as designed)
-  have one two-hour window after another, each shifted by the station's own phase so the
+- **Stations** (every station with a market, except Sol's two, which keep the opening as designed;
+  the pilot's open outposts too, Sol's included, §39) have one two-hour window after another, each shifted by the station's own phase so the
   neighbourhood never goes quiet at once. In each window there may be one event, lasting 30–90
   minutes inside the window, so a station never has two at once:
   - **shortage** (18% of windows): one good the station wants; its price × 1.2–1.4 and its normal
@@ -2046,8 +2046,8 @@ Its size, which sets its market's normal stock, its structure and its crowd, gro
   can be hired to it once it trades.
 - **Its board** (from the station on) posts the work its kind posts anywhere (§10).
 - **Its income** is paid by the hour from when it opens, with the fleet (§18.4), and moved by what
-  happens in its system as stakes' dividends are: a raid that hour × 0.6. It has no world events
-  of its own. A save left very long is paid its oldest hours at the plain rate in one sum.
+  happens in its system as stakes' dividends are: a raid that hour × 0.6. Its own events (§39) move
+  it by their own rules. A save left very long is paid its oldest hours at the plain rate in one sum.
 - **On the map** it is listed with its system's stations, and it is a station of its system's
   scene, to fly to and dock at.
 
@@ -4009,3 +4009,90 @@ caught, and check that the world's timetable is the same with outposts or withou
 outpost's haulers fly in flight, are lost to raids and missed; fees paid with the income, the same
 however often settled, and none past the fee hours; the board job (its stream, its destination,
 its pay, none at a den); the spill both ways; the search; the calls gone; and saves.
+
+## 39. Outposts have news
+
+The pilot's outposts (§22, §36) now have the world's events (§11) as any station does: shortages,
+gluts, booms and strikes move their prices and stock, gently move their income, draw relief
+haulers and work on the boards, and are told in the News, in toasts and in the Fleet window's
+reports (`src/economy/events.ts`; the income in `src/economy/outposts.ts`, the telling in
+`src/economy/outpostNews.ts`; the rules in `OUTPOSTS.news`, `src/content/outposts/rules.ts`). The
+events, their causes and the outposts' people are fiction; the stars and planets are real.
+
+The owner chose (5 October 2026): the world's own kinds of event, on the same odds; events that move
+an outpost's income gently; relief haulers, boards near by and the pilot all answering a shortage or
+a boom; and the news told in the News, a toast and a report.
+
+### 39.1 Events at your outposts
+
+- **The world's kinds, on the world's odds**: from when it opened, an open outpost (its market
+  open) has one two-hour window after another, each with at most one event lasting 30–90 minutes
+  (§11.1): a shortage (18% of windows) of a good its market uses, a glut (10%) of one it makes, a
+  boom (7%) or a strike (5%); out in the frontier a farm's harvest (14%) and a research post's
+  survey season (12%). Their prices and stock move as any station's (`EVENTS.effects`).
+- **Sol's too**: Sol's own stations keep the opening prices as designed, but the pilot's outposts
+  in Sol's belts were never part of that opening, so they have events like any other.
+- **None while it is built** and none that would start before it opened. Each outpost draws its
+  events from its own stream (`rng(seed, 'events', <outpost station>, <window>)`), so the world's
+  events never change; an outpost's are worked out from what it is now (its kind and stages).
+- **Headlines** name it as any station's do (*Copperleaf Stillworks short of metal ore*).
+
+### 39.2 What they do to its income
+
+While one is under way at the middle of an hour, that hour's income is multiplied
+(`news.income`), on top of what its system's raids and sweeps do (§22.4) and before its turrets'
+upkeep (§29): a shortage × 0.85, a glut × 0.95, a strike × 0.7, a boom × 1.2, a harvest or a
+survey season × 1.1. A shortage relieved early, by its haulers or the pilot, ends the cut with it.
+Over a day the income moves by a few per cent at most: the market and the work are the news.
+
+### 39.3 Who answers
+
+- **Relief haulers**: a shortage draws two relief haulers from the nearest makers within three
+  jumps, as any station's does (§21.1); all of them arriving relieves it. They fly in flight, can
+  be escorted from their makers' boards where their way crosses a raid (§21.7), and can be lost.
+- **Shipments**: a glut ships its surplus out to the nearest stations that take it (§21.6).
+- **The pilot**: selling the goods there counts toward relief with what the haulers bring (§17.1).
+  At the pilot's own outpost there is no relief bonus and no standing: the higher prices paid, and
+  the income no longer cut, are the reward.
+- **Boards**: the outpost's own board (from the station on) posts a shortage run or boom supplies
+  into its own event, or a surplus haul out of its glut, as any station's board does (§11.3). And
+  while an outpost has a shortage or a boom, the work a board within two jumps posts to it (§38.3)
+  is a *shortage run* or *boom supplies* for it: bring so many of a good it wants, bought where it
+  is made nearest the outpost, at the event's pay (markup 60%, varying pay 30% higher).
+- **Jobs on an outpost's own board can now be taken**: a contract's id is `c.<station>.<slot>.<n>`,
+  and an outpost's station id has dots in it, which the board's lookup used to split wrongly; it now
+  reads the slot and number from the end, and knows the save's own stations.
+
+### 39.4 Telling
+
+- **The News** (§11.3) lists an outpost's events as any station's, within two jumps.
+- **Toasts and reports**: when an event starts at one of the pilot's outposts, or ends, the Fleet
+  window's reports keep a line, and a toast says it (*Copperleaf Stillworks short of metal ore: its
+  income down 15% while it lasts.*, *The shortage at Copperleaf Stillworks is over: its relief
+  haulers are in.*). Away for long,
+  only the last three a settle finds for each outpost are told (`news.maxReports`).
+- **The Outpost window** has a *News* line: the event under way (its headline and detail), what it
+  does to the income, and how long it has left; or that all is quiet.
+
+### 39.5 One save's own
+
+An outpost keeps the clock its news has been told to (`heard`), so nothing is told twice; a save
+from before starts telling from when it is loaded. Fleet reports may now be `news`. Saves refuse a
+`heard` that is not a time from the outpost's founding on. The events themselves are not saved: they
+are worked out from the seed, the clock and the save's outposts, and the relief tallied for them is
+kept as any event's (`world.relief`, `world.ended`).
+
+### 39.6 Guardrails
+
+`validateOutpostNews` (`src/economy/outpostNewsGuards.ts`, run in `tests/unit/outpostNews.test.ts`)
+checks the rules (a factor for every kind of station event, from a half to one and a half; below one
+for shortages, gluts and strikes, above it for booms, harvests and survey seasons; a whole number of
+reports, one to ten), and over ten days at every belt site and a planet site of each kind, with the
+outpost a port: no event starts before it opened or overlaps another; each concerns goods its
+market deals in the right way; a shortage's relief comes from makers within reach; and the events
+move its income by a tenth at most, on average over the days. The tests also break the rules to see them
+caught, and check that the world's own events are the same with outposts or without; events at an
+outpost in Sol; the income moved and the cut ended by relief; relief by the pilot's sales with no
+bonus; the board work (an outpost's own board's jobs taken; a shortage run to it from a board near
+by, delivered there); the news told once, the last three after long away; the Outpost window's line;
+and saves.

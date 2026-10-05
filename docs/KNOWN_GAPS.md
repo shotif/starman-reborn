@@ -101,8 +101,10 @@ snapshot branch only when the archives changed.
   schedule says; the sale goes by the schedule.
 - Stations of your own (PROCGEN §22, §36) are three to a save at most, one to a system. Their
   materials come by the player's hand or a supply captain's (§37), who loads only at the dock where
-  its ship is parked; their frames borrow a shipyard's look while they are built, and they have no
-  world events of their own (their system's raids still cut the income). Once open they trade (§38),
+  its ship is parked; their frames borrow a shipyard's look while they are built. Their events (§39)
+  are the world's kinds only, worked out from what the outpost is now (so one that grows mid-event
+  keeps its event, sized anew), and only the latest three an outpost's news has are told after a
+  long time away. Once open they trade (§38),
   but only with the world's stations: an outpost's haulers never run to another of the pilot's
   outposts, only lawful boards within two jumps post work to them (never the outposts' own boards),
   and a trade haul that docks there moves its market no more than any trade haul moves any market

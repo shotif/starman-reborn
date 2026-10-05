@@ -2,6 +2,7 @@ import { applyCredits, type BorderEnding, type CommodityId, type GameState } fro
 import { EVENTS } from '../content/events/rules.ts';
 import type { LastingMark } from '../content/story/marks.ts';
 import type { StoryMeta } from '../content/story/types.ts';
+import { isOutpostId } from '../content/outposts/sites.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
 import { getLocation, getSystem } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
@@ -79,9 +80,11 @@ export function relieveShortage(state: GameState, locationId: string, commodity:
   // What the relief hauls brought counts with what the player sold (docs/PROCGEN.md §21).
   if (deficit <= 0 || log[e.id]! + reliefDelivered(e, state.clock) < deficit * EVENTS.react.relief) return null;
   state.world.ended[e.id] = state.clock;
+  const loc = getLocation(locationId);
+  // At the pilot's own outpost there is no bonus and no standing (docs/PROCGEN.md §39.3): the prices paid, and the income no longer cut, are the reward.
+  if (isOutpostId(locationId)) return { paid: 0, text: `Shortage relieved: ${loc.name} is supplied again, and its income is back to normal.` };
   const units = log[e.id]!;
   const paid = Math.round(units * COMMODITIES[commodity].basePrice * EVENTS.react.reliefBonus);
-  const loc = getLocation(locationId);
   applyCredits(state, paid, 'reward', `Shortage relieved at ${loc.name}`);
   state.stats.rewards += paid;
   if (loc.factionId) adjustReputation(state.reputation, loc.factionId, EVENTS.react.standing);

@@ -221,8 +221,11 @@ export interface Stake {
 export interface FleetReport {
   /** Game clock when it happened. */
   at: number;
-  /** `supply`: a supply captain's delivery; `mine`: a mining captain's load refined (docs/PROCGEN.md §37). */
-  kind: 'run' | 'raid' | 'lost' | 'wait' | 'home' | 'supply' | 'mine';
+  /**
+   * `supply`: a supply captain's delivery; `mine`: a mining captain's load refined (docs/PROCGEN.md
+   * §37); `news`: an event starting or ending at one of the pilot's outposts (§39).
+   */
+  kind: 'run' | 'raid' | 'lost' | 'wait' | 'home' | 'supply' | 'mine' | 'news';
   text: string;
   /** Credits it made (negative: cost) the player. */
   amount: number;
@@ -405,6 +408,8 @@ export interface OutpostRecord {
   opened?: number;
   /** Its defences, and the raids it has met (docs/PROCGEN.md §29), once there is something to keep. */
   defence?: OutpostDefence;
+  /** The game clock its news has been told to (docs/PROCGEN.md §39.5); absent until first told. */
+  heard?: number;
   /** A belt outpost's refining this hour (docs/PROCGEN.md §36.3): the hour (clock / 3,600, whole) and the units taken. */
   refined?: { hour: number; units: number };
 }

@@ -354,7 +354,9 @@ const reliefCache = new Map<string, Haul[]>();
 /** The relief a shortage draws: hauls from the nearest stations that make what it lacks (none to a raider den, or a closed dock). */
 export function reliefHauls(e: WorldEvent): readonly Haul[] {
   if (e.kind !== 'shortage' || !e.locationId || !isOpen(getLocation(e.locationId))) return [];
-  let out = reliefCache.get(e.id);
+  // An outpost's shortage lacks what its market's size says (§39): kept while the outposts stay as they are.
+  const key = isOutpostId(e.locationId) ? `${e.id}|${ownKey()}` : e.id;
+  let out = reliefCache.get(key);
   if (out) return out;
   const to = getLocation(e.locationId);
   const commodity = e.goods[0]!;
@@ -387,7 +389,7 @@ export function reliefHauls(e: WorldEvent): readonly Haul[] {
       };
     });
   if (reliefCache.size > 4_000) reliefCache.clear();
-  reliefCache.set(e.id, out);
+  reliefCache.set(key, out);
   return out;
 }
 
@@ -415,7 +417,8 @@ const shipmentCache = new Map<string, Haul[]>();
  */
 export function shipments(e: WorldEvent): readonly Haul[] {
   if (!shipsOut(e) || !e.locationId || !e.goods[0]) return [];
-  let out = shipmentCache.get(e.id);
+  const key = isOutpostId(e.locationId) ? `${e.id}|${ownKey()}` : e.id;
+  let out = shipmentCache.get(key);
   if (out) return out;
   const from = getLocation(e.locationId);
   const commodity = e.goods[0];
@@ -451,7 +454,7 @@ export function shipments(e: WorldEvent): readonly Haul[] {
     }
   }
   if (shipmentCache.size > 4_000) shipmentCache.clear();
-  shipmentCache.set(e.id, out);
+  shipmentCache.set(key, out);
   return out;
 }
 
@@ -496,15 +499,19 @@ function sendersWithin(systemId: SystemId, jumps: number): FictionalLocation[] {
 }
 
 const marketsNear = new Map<SystemId, string[]>();
-/** Stations with a market within relief reach of a system (where a shortage could send relief through it). */
+/**
+ * Stations with a market within relief reach of a system (where a shortage could send relief
+ * through it): the world's, and the pilot's open outposts (docs/PROCGEN.md §39).
+ */
 function marketsWithin(systemId: SystemId): string[] {
+  const ways = waysFrom(systemId);
   let out = marketsNear.get(systemId);
   if (!out) {
-    const ways = waysFrom(systemId);
     out = [...marketTables().keys()].filter((l) => (ways.get(getLocation(l).systemId)?.length ?? 99) - 1 <= HAULS.relief.maxJumps);
     marketsNear.set(systemId, out);
   }
-  return out;
+  const own = tradingOutposts().filter(({ loc }) => (ways.get(loc.systemId)?.length ?? 99) - 1 <= HAULS.relief.maxJumps);
+  return own.length ? [...out, ...own.map(({ loc }) => loc.id)] : out;
 }
 
 /** Trade hauls with any part of their way between `from` and `to` in `systemId`. */
@@ -787,14 +794,20 @@ function shipSources(locationId: string): readonly string[] {
     }
     shipIndex = index;
   }
-  return shipIndex.get(locationId) ?? [];
+  // The pilot's open outposts' gluts ship to their nearest takers too (docs/PROCGEN.md §39).
+  const own = tradingOutposts()
+    .filter(({ loc }) => made(loc.id).some((good) => takersOf(loc, good).slice(0, HAULS.shipOut.hauls).some((t) => t.id === locationId)))
+    .map(({ loc }) => loc.id);
+  const world = shipIndex.get(locationId) ?? [];
+  return own.length ? [...world, ...own] : world;
 }
 
 const shipmentsToCache = new Map<string, Haul[]>();
 /** Shipments out of gluts bound for a station that may still be felt there around a moment (looked up by the hour). */
 function shipmentsTo(locationId: string, clock: number): Haul[] {
   const bucket = Math.floor(clock / RAID_BUCKET);
-  const key = `${locationId}|${bucket}`;
+  // The pilot's outposts' gluts among them (§39): kept while the outposts stay as they are.
+  const key = tradingOutposts().length ? `${locationId}|${bucket}|${ownKey()}` : `${locationId}|${bucket}`;
   let out = shipmentsToCache.get(key);
   if (!out) {
     const to = (bucket + 1) * RAID_BUCKET;

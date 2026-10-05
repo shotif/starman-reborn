@@ -13,7 +13,7 @@ import { dockFees } from '../../src/economy/hauls.ts';
 import { postedContracts } from '../../src/economy/contracts.ts';
 import { hasMarket, marketTables, quote } from '../../src/economy/markets.ts';
 import { validateOutposts, type OutpostRules } from '../../src/economy/outpostGuards.ts';
-import { charterOffers, charterOutpost, deliverable, deliverToOutpost, incomeAt, outpostStatus, stillNeeded } from '../../src/economy/outposts.ts';
+import { charterOffers, charterOutpost, deliverable, deliverToOutpost, incomeAt, newsFactor, outpostStatus, stillNeeded } from '../../src/economy/outposts.ts';
 import { stationRooms } from '../../src/ui/station/StationHub.ts';
 import { SystemScene } from '../../src/world/SystemScene.ts';
 import { sceneDefFor } from '../../src/world/systems/index.ts';
@@ -215,7 +215,13 @@ describe('its income', () => {
     expect(r.outpost).toBe(hours.reduce((a, b) => a + b, 0) + fees);
     expect(s.credits).toBe(before + r.outpost);
     expect(s.world.outposts![0]!.earned).toBe(r.outpost);
-    expect(hours.every((x) => x === OUTPOSTS.stages[0]!.income || x === Math.round(OUTPOSTS.stages[0]!.income * 0.6))).toBe(true);
+    // A raid that hour × 0.6, and an event of its own by its kind's factor (docs/PROCGEN.md §39.2).
+    const post = s.world.outposts![0]!;
+    expect(hours.every((x, h) => {
+      const t = opened + h * 3_600 + 1_800;
+      const raid = systemEventAt(SYSTEM, t)?.kind === 'raid' ? 0.6 : 1;
+      return x === Math.round(OUTPOSTS.stages[0]!.income * raid * newsFactor(post, t));
+    })).toBe(true);
     useWorldLog(once.world);
     for (let t = opened + 900; t <= s.clock; t += 900) {
       once.clock = t;

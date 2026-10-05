@@ -149,6 +149,8 @@ function assertValidOutpost(o: OutpostRecord, fail: (msg: string) => never): voi
     // Dock fees (§38.2): whole credits, part of what it has earned.
     (o.fees !== undefined && (!Number.isInteger(o.fees) || o.fees < 0 || o.fees > o.earned)) ||
     (o.opened !== undefined && !Number.isFinite(o.opened)) ||
+    // How far its news has been told (§39.5): from its founding on.
+    (o.heard !== undefined && !(Number.isFinite(o.heard) && o.heard >= o.founded)) ||
     (o.defence !== undefined && !validDefence(o.defence, o.stage)) ||
     (o.refined !== undefined && !validRefined(o.refined, site.beltId ? o.stage : 0))
   ) {
@@ -581,7 +583,7 @@ function assertValidFleet(fl: GameState['fleet'], fail: (msg: string) => never):
     stakes.add(k.locationId);
   }
   if (stakes.size > FLEET.stakes.maxStations) fail('stakes');
-  const kinds = ['run', 'raid', 'lost', 'wait', 'home', 'supply', 'mine'];
+  const kinds = ['run', 'raid', 'lost', 'wait', 'home', 'supply', 'mine', 'news'];
   if (!fl.reports.every((r) => isRecord(r) && Number.isFinite(r.at) && kinds.includes(r.kind) && typeof r.text === 'string' && Number.isFinite(r.amount) && (r.shipId === undefined || typeof r.shipId === 'string'))) fail('fleet reports');
 }
 

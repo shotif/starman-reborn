@@ -5,6 +5,7 @@ import { PASSENGERS } from '../content/passengers/rules.ts';
 import { sightById } from '../content/passengers/sights.ts';
 import { farStar } from './stellar.ts';
 import { PYRE_HOLE_ID } from './pyrePhysics.ts';
+import { isOutpostId } from '../content/outposts/sites.ts';
 import type { Issue } from '../content/validate.ts';
 import { jumpsFrom } from '../content/world/network.ts';
 import { ALL_LOCATIONS, findBelt, getLocation, getSystem, isFrontier, isInventedSystem, MAP_LINKS, PYRE_ID, WORLD } from '../data/systems.ts';
@@ -158,8 +159,10 @@ function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, numbe
     }
     case 'supply': {
       if (o.kind !== 'deliver') return report('objectives', c.id, `unexpected objective ${o.kind}`);
-      if (o.locationId !== c.giverLocationId) report('supply', c.id, 'supplies go to the station that posts the run');
-      if (markets.get(c.giverLocationId)?.entries.get(o.commodity)?.role !== 'consume') report('supply', c.id, `${c.giverLocationId} does not want ${o.commodity}`);
+      // Supplies go to the station that posts the run, or to one of the pilot's outposts in its news (docs/PROCGEN.md §39.3).
+      const to = isOutpostId(o.locationId) && c.contract?.event ? o.locationId : c.giverLocationId;
+      if (o.locationId !== to) report('supply', c.id, 'supplies go to the station that posts the run');
+      if (markets.get(to)?.entries.get(o.commodity)?.role !== 'consume') report('supply', c.id, `${to} does not want ${o.commodity}`);
       const source = c.briefingPrices?.locationId;
       const e = source ? markets.get(source)?.entries.get(o.commodity) : undefined;
       if (!source || e?.role !== 'produce') return report('supply', c.id, 'no source that makes the goods');
@@ -327,7 +330,8 @@ function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, numbe
   // Work answering an event answers one that is under way where it says.
   const eventId = c.contract?.event;
   if (eventId) {
-    const station = stationEventAt(c.giverLocationId, clock);
+    // A supply run answers the event where it goes (one of the pilot's outposts, §39.3, or its own station).
+    const station = stationEventAt(kind === 'supply' ? (c.destinationLocationId ?? c.giverLocationId) : c.giverLocationId, clock);
     const raid = o.kind === 'bounty' ? systemEventAt(o.systemId, clock) : null;
     const good = o.kind === 'deliver' ? o.commodity : null;
     const answers =

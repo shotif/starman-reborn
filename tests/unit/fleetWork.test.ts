@@ -164,7 +164,8 @@ describe('supply captains', () => {
     expect(post.stage).toBe(OUTPOSTS.stages.length);
     expect(reports.some((x) => x.kind === 'supply' && /is now a port/.test(x.text))).toBe(true);
     expect(o.hauler).toBeUndefined();
-    expect(reports.at(-1)!.text).toMatch(/signed off: .* is complete/);
+    // The last of the captain's reports (the outpost's own news may come after, docs/PROCGEN.md §39).
+    expect(reports.filter((x) => x.kind !== 'news').at(-1)!.text).toMatch(/signed off: .* is complete/);
     assertValidState(s);
   });
 });
@@ -225,7 +226,7 @@ describe('mining captains', () => {
     runFor(s, 3 * HOUR, 120);
     expect(o.hauler).toBeUndefined();
     expect(o.ship.cargo).toEqual({});
-    expect(s.fleet.reports.at(-1)!.text).toMatch(/signed off/);
+    expect(s.fleet.reports.filter((x) => x.kind !== 'news').at(-1)!.text).toMatch(/signed off/);
   });
 
   it('settle the same however often, and never take more than the allowance an hour', () => {
@@ -247,7 +248,8 @@ describe('mining captains', () => {
     const earned = b.s.fleet.ships[0]!.hauler!.earned;
     expect(earned).toBeGreaterThan(0);
     expect(earned).toBeLessThanOrEqual(12 * OUTPOSTS.refining.perHour[2] * refinePay('gases'));
-    expect(fleetNews({ reports: b.s.fleet.reports.slice(-5), runs: 0, hauled: 0, dividends: 0, outpost: 0, steps: 1, raids: [], raidJobs: [] })[0]!.text).toMatch(/loads? refined/);
+    const captains = b.s.fleet.reports.filter((x) => x.kind !== 'news');
+    expect(fleetNews({ reports: captains.slice(-5), runs: 0, hauled: 0, dividends: 0, outpost: 0, steps: 1, raids: [], raidJobs: [] })[0]!.text).toMatch(/loads? refined/);
     // The refinery's market has the refined goods.
     expect(stockAvailable(outpostId(MAIN), 'metals', b.s)).toBeGreaterThan(0);
     expect(outpostAt(b.s, outpostId(MAIN))).toBeDefined();

@@ -17,6 +17,7 @@ import { quartersBlock } from './crewQuarters.ts';
 import { hasShipyard, shipStandingBlock, shipTradeIn, type Result } from './equipment.ts';
 import { stationEventAt, systemEventAt, type WorldEvent } from './events.ts';
 import { legsOf, type HaulLeg } from './hauls.ts';
+import { tellOutpostNews, type OutpostNewsLine } from './outpostNews.ts';
 import { handOver, nextStage, outpostNext, payOldHours, payOutpostHour, stageLine, stillNeeded } from './outposts.ts';
 import { inBelt, takeLoad } from './outpostTrade.ts';
 import { loadUnits, mineLoad, miningRig, phaseEnd, siteIdOf } from './fleetWork.ts';
@@ -667,6 +668,8 @@ export interface FleetSettlement {
   raidJobs: JobEvent[];
   /** Steps worked out (loads, arrivals, homecomings, looks, hours of dividends): 0 when nothing was due. */
   steps: number;
+  /** The news of the pilot's outposts told in this settle (docs/PROCGEN.md §39.4), for toasts. */
+  news?: OutpostNewsLine[];
 }
 
 /** How a settle in flight treats the player's own haulers in sight (docs/PROCGEN.md §18.6). */
@@ -1221,6 +1224,18 @@ export function settleFleet(state: GameState, opts: SettleOptions = {}): FleetSe
     }
   }
   if (paid.size) out.outposts = paid.size;
+  // The news of the outposts since it was last told (docs/PROCGEN.md §39.4): a report each, and toasts.
+  const news = tellOutpostNews(state, now);
+  if (news.length) {
+    for (const n of news) report(state, out, { at: n.at, kind: 'news', text: n.text, amount: 0 });
+    out.news = news;
+    // In time order with the rest of this settle's reports (the list keeps the latest last).
+    const byTime = (a: FleetReport, b: FleetReport) => a.at - b.at;
+    out.reports.sort(byTime);
+    const list = state.fleet.reports;
+    const mine = Math.min(out.reports.length, list.length);
+    list.splice(list.length - mine, mine, ...list.slice(list.length - mine).sort(byTime));
+  }
   return out;
 }
 
@@ -1380,7 +1395,9 @@ export function fleetNews(s: FleetSettlement): { text: string; tone: 'good' | 'b
   const lines: { text: string; tone: 'good' | 'bad' | 'info' }[] = [];
   const tone = (r: FleetReport) => (r.kind === 'lost' || r.kind === 'raid' || (r.amount < 0 && r.kind !== 'supply') ? 'bad' : r.kind === 'run' || r.kind === 'mine' || r.kind === 'supply' ? 'good' : 'info');
   for (const r of s.reports) if (r.kind === 'lost') lines.push({ text: r.text, tone: 'bad' });
-  const rest = s.reports.filter((r) => r.kind !== 'lost');
+  // The outposts' news, each on its own (docs/PROCGEN.md §39.4).
+  for (const n of s.news ?? []) lines.push({ text: n.text, tone: n.tone });
+  const rest = s.reports.filter((r) => r.kind !== 'lost' && r.kind !== 'news');
   if (rest.length <= 2) {
     for (const r of rest) lines.push({ text: r.text, tone: tone(r) });
   } else {
