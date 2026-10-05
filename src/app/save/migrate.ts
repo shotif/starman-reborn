@@ -14,6 +14,7 @@ import { FLEET } from '../../content/fleet/rules.ts';
 import { OUTPOSTS } from '../../content/outposts/rules.ts';
 import { OUTPOST_RAIDS } from '../../content/outposts/raids.ts';
 import { FOLK, FOLK_RELATIONS } from '../../content/outposts/folk.ts';
+import { ARC_JOBS } from '../../content/story/arcs.ts';
 import { scanBodies } from '../../economy/folk.ts';
 import { ROSTER } from '../../content/rivals/rules.ts';
 import { CREW, CREW_DEEDS, CREW_HEARTS, CREW_ROLES, type CrewDeed } from '../../content/crew/rules.ts';
@@ -815,6 +816,12 @@ export function assertValidState(s: GameState): void {
     if (p.duel !== undefined && p.duel !== 'won') fail(`job ${id}`);
     // A stand in a belt (§40.3), won.
     if (p.stood !== undefined && p.stood !== true) fail(`job ${id}`);
+    // Pyre's lifeboats (§42.6): a whole count no more than the objective's boats, and clear only when true.
+    if (p.gathered !== undefined) {
+      const o = ARC_JOBS.find((j) => j.id === id)?.objectives.find((x) => x.kind === 'lifeboats');
+      if (!o || o.kind !== 'lifeboats' || !Number.isInteger(p.gathered) || p.gathered < 0 || p.gathered > o.count) fail(`job ${id}`);
+    }
+    if (p.clear !== undefined && p.clear !== true) fail(`job ${id}`);
   }
   if (s.location.flight) {
     const { position, quaternion } = s.location.flight;

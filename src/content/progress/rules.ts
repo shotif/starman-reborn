@@ -110,6 +110,7 @@ export type MilestoneId =
   | 'story-border'
   | 'story-harvest'
   | 'story-kuiper'
+  | 'story-embers'
   | 'race-won'
   | 'course-record';
 
@@ -139,6 +140,7 @@ export const MILESTONES: readonly { id: MilestoneId; title: string }[] = [
   { id: 'story-border', title: 'The Long Border: the Ross 154 line settled' },
   { id: 'story-harvest', title: 'First Harvest: Harrow Farmstead’s harvest brought in' },
   { id: 'story-kuiper', title: 'The Long Winter: the belt crews’ reckoning made' },
+  { id: 'story-embers', title: 'Last Light at Pyre: its people brought out' },
   { id: 'race-won', title: 'First heat won' },
   { id: 'course-record', title: 'A course record set' },
 ];

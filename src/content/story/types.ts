@@ -8,9 +8,9 @@ import type { CommodityId } from '../economy/goods.ts';
  * objectives plus scripted beats. Everything here is fiction.
  */
 
-export type ArcId = 'sta' | 'frontier' | 'wake' | 'border' | 'harvest' | 'kuiper';
+export type ArcId = 'sta' | 'frontier' | 'wake' | 'border' | 'harvest' | 'kuiper' | 'embers';
 
-export type CharacterId = 'castell' | 'kettering' | 'quist' | 'brandt' | 'ansari' | 'salt' | 'halloway' | 'fenwick' | 'rook' | 'ashdown';
+export type CharacterId = 'castell' | 'kettering' | 'quist' | 'brandt' | 'ansari' | 'salt' | 'halloway' | 'fenwick' | 'rook' | 'ashdown' | 'oduya' | 'achterberg' | 'penhaligon';
 
 export interface Character {
   id: CharacterId;

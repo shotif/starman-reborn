@@ -102,6 +102,9 @@ const STORY_ROLE: Record<CharacterId, PersonRole> = {
   fenwick: 'colonist',
   rook: 'miner',
   ashdown: 'miner',
+  oduya: 'officer',
+  achterberg: 'scientist',
+  penhaligon: 'miner',
 };
 
 /** Everyone in the bar: story characters at home here, the regulars and the pilots for hire. */

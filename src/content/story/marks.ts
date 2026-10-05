@@ -209,4 +209,30 @@ export const LASTING_MARKS: readonly LastingMark[] = [
     detail: 'Hale Refits still fits couplings at Deimos Depot, cheaply and without questions. Ship components are cheap there. Ask what you are buying.',
     market: { goods: ['ship-parts'], price: 0.8, stock: 1.6 },
   },
+  {
+    // Last Light at Pyre: the Authority's lift, its records copied (§42.5).
+    id: 'embers.law',
+    locationId: 'gj-4274-institute',
+    headline: 'Pyre Observatory’s records at GJ 4274 Institute',
+    detail: 'Pyre Observatory’s people came out on an Authority cutter, and its records with them: GJ 4274 Institute copies them for anyone who asks. Data cores are cheap and plentiful there, and go out by contract. (Fiction: there is no star called Pyre.)',
+    market: { goods: ['data-cores'], price: 0.85, stock: 1.5 },
+    run: { commodity: 'data-cores', to: 'gj-915-freeport', title: 'The Pyre records', why: 'GJ 4274 Institute sends copies of Pyre Observatory’s records to GJ 915 Freeport, where Pyre was watched from.', premium: 1.15 },
+  },
+  {
+    // Last Light at Pyre: the Co-op's barges, new hands in the orchards (§42.5).
+    id: 'embers.coop',
+    locationId: 'fomalhaut-b-orchard',
+    headline: 'Pyre’s people farm at Fomalhaut B Orchard',
+    detail: 'Pyre Observatory’s people came out on the Cooperative’s barges and stayed to farm. With new hands in the fields, staple food is cheap and plentiful at Fomalhaut B Orchard, and their harvest goes out by contract. (Fiction: there is no star called Pyre.)',
+    market: { goods: ['food'], price: 0.85, stock: 1.5 },
+    run: { commodity: 'food', to: 'gj-915-freeport', title: 'Pyre’s people’s harvest', why: 'The orchard’s new hands send their first harvest to GJ 915 Freeport, where they waited for the barges.', premium: 1.15 },
+  },
+  {
+    // Last Light at Pyre: six stayed for the light, and came out in lifeboats (§42.5).
+    id: 'embers.stay',
+    locationId: 'gj-915-freeport',
+    headline: 'The Pyre Archive at GJ 915 Freeport',
+    detail: 'Six of Pyre Observatory’s people recorded the last hour of their star and came out in lifeboats. Their archive at GJ 915 Freeport sells copies: data cores are cheap and plentiful there. (Fiction: there is no star called Pyre.)',
+    market: { goods: ['data-cores'], price: 0.85, stock: 1.6 },
+  },
 ];

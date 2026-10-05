@@ -6,7 +6,9 @@ import { MARK_LIMITS, type LastingMark } from '../content/story/marks.ts';
 import type { Line } from '../content/story/types.ts';
 import type { Issue } from '../content/validate.ts';
 import { jumpsFrom } from '../content/world/network.ts';
-import { ALL_LOCATIONS, findBelt, getLocation, isFrontier, WORLD } from '../data/systems.ts';
+import { ALL_LOCATIONS, findBelt, getLocation, isFrontier, MAP_LINKS, WORLD } from '../data/systems.ts';
+import { DOOMED } from '../content/stellar/doomed.ts';
+import { EMBERS } from '../content/story/embers.ts';
 import { sceneDefFor } from '../world/systems/index.ts';
 import { getFront } from './border.ts';
 import { JOBS, LIFELINE_ID, type JobDef, type Objective } from './jobs.ts';
@@ -63,6 +65,11 @@ export function validateStory(arcJobs: readonly JobDef[] = ARC_JOBS): Issue[] {
   const report = (rule: string, subject: string, message: string) => issues.push({ rule, subject, message });
   const ids = new Set<string>();
   const functional = new Set(ALL_LOCATIONS.filter((l) => l.status === 'functional').map((l) => l.id));
+  // Pyre Observatory (fiction, docs/PROCGEN.md §26) is a place only for an arc held before Pyre warns
+  // (§42.1), and only in its steps that ask for Pyre as it is: before its warning, or while it stands.
+  const PYRE_OBSERVATORY = DOOMED.stations.observatory.id;
+  const pyreArcs = new Set(arcJobs.filter((j) => j.requires?.pyre === 'before' && j.story).map((j) => j.story!.arc));
+  const pyrePeople = new Set(arcJobs.filter((j) => j.story && pyreArcs.has(j.story.arc)).flatMap((j) => [j.story!.speaker, ...(j.story!.debrief ?? []).map((l) => l.who), ...(j.story!.beats ?? []).flatMap((b) => b.lines.map((l) => l.who))]));
   const isDen = (id: string) => getLocation(id).stationType === 'pirate-den';
   const checkLines = (subject: string, lines: readonly Line[]) => {
     for (const l of lines) {
@@ -73,7 +80,7 @@ export function validateStory(arcJobs: readonly JobDef[] = ARC_JOBS): Issue[] {
 
   if (!JOBS.some((j) => j.id === LIFELINE_ID)) report('opening', LIFELINE_ID, 'the opening delivery is missing');
   for (const c of Object.values(CHARACTERS)) {
-    if (!functional.has(c.locationId)) report('people', c.id, `${c.locationId} is not an open station`);
+    if (!functional.has(c.locationId) && !(c.locationId === PYRE_OBSERVATORY && pyrePeople.has(c.id))) report('people', c.id, `${c.locationId} is not an open station`);
   }
 
   for (const arcId of ARC_ORDER) {
@@ -122,7 +129,9 @@ export function validateStory(arcJobs: readonly JobDef[] = ARC_JOBS): Issue[] {
       else if (speaker.locationId !== job.giverLocationId) report('people', subject, `${speaker.name} is not at ${job.giverLocationId}`);
       if (job.factionId !== arc.factionId) report('people', subject, 'given by another faction');
       const places = [job.giverLocationId, job.destinationLocationId, ...job.objectives.flatMap((o) => ('locationId' in o ? [o.locationId] : [])), ...job.objectives.flatMap((o) => (o.kind === 'escort' ? [o.fromLocationId] : []))];
+      const atPyre = pyreArcs.has(arcId) && (job.requires?.pyre === 'before' || job.requires?.pyre === 'observatory');
       for (const id of places) {
+        if (id === PYRE_OBSERVATORY && atPyre) continue;
         if (!functional.has(id)) {
           report('places', subject, `${id} is not a functional station`);
           continue;
@@ -133,7 +142,8 @@ export function validateStory(arcJobs: readonly JobDef[] = ARC_JOBS): Issue[] {
         if (!isDen(id) && loc.dockable === false) report('places', subject, `${id} cannot be docked at`);
       }
       const giverSystem = getLocation(job.giverLocationId).systemId;
-      const jumps = jumpsFrom(WORLD.links, giverSystem);
+      // An arc of Pyre's reaches it through its one lane (the map's links, §26).
+      const jumps = jumpsFrom(pyreArcs.has(arcId) ? MAP_LINKS : WORLD.links, giverSystem);
       for (const [k, o] of job.objectives.entries()) {
         const sys = objectiveSystem(o);
         if ('systemId' in o && 'locationId' in o && getLocation(o.locationId).systemId !== o.systemId) report('places', subject, `objective ${k}: ${o.locationId} is not in ${o.systemId}`);
@@ -162,6 +172,14 @@ export function validateStory(arcJobs: readonly JobDef[] = ARC_JOBS): Issue[] {
           if (!names.length || need < 1 || need > names.length) report('stand', subject, 'crews with a need they can meet');
           if (!Number.isInteger(o.waves) || o.waves < 1 || o.waves > 3 || !Number.isInteger(o.ships) || o.ships < o.waves || o.ships > 9) report('stand', subject, 'one to three waves, at least a ship a wave, nine at most');
           if (![1, 2, 3].includes(o.level)) report('stand', subject, `a level of ${o.level}`);
+        }
+        // Pyre's lifeboats (§42.4): a finale in Pyre's system, two to eight boats, a need it can meet, launched before the collapse.
+        if (o.kind === 'lifeboats') {
+          if (!story.finale) report('finale', subject, 'lifeboats are a finale');
+          if (o.systemId !== DOOMED.star.id) report('lifeboats', subject, `lifeboats in ${o.systemId}, not Pyre's system`);
+          if (!Number.isInteger(o.count) || o.count < 2 || o.count > 8 || !Number.isInteger(o.need) || o.need < 1 || o.need > o.count) report('lifeboats', subject, 'two to eight boats, and a need they can meet');
+          if (!(EMBERS.launch > 0 && EMBERS.launch < DOOMED.timeline.collapseAfterWarning - 300)) report('lifeboats', subject, 'launched too late to be gathered before the collapse');
+          if (job.requires?.pyre !== 'observatory') report('lifeboats', subject, 'offered only while the observatory stands');
         }
         if (!o.text.trim()) report('text', subject, `objective ${k} has no text`);
       }

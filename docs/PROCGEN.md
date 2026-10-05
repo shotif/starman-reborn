@@ -4295,3 +4295,94 @@ open and within reach, its body in the system) and that the works' goods are tra
 draw the people, make, do and lapse every kind of ask, settle the spirit the same however often,
 move the income, repairs and market by the works, greet on docking and report while away, and check
 saves.
+
+## 42. Last Light at Pyre
+
+A seventh written arc (§14), nobody's faction's, at the edge of the map: the people of Pyre
+Observatory, the station that watches Pyre, the invented star (§26), must get out before it dies
+(`src/content/story/arcs.ts`; its new objective in `src/economy/jobs.ts` and
+`src/world/FlightSession.ts`, its rules in `EMBERS`, `src/content/story/embers.ts`). Pyre, its
+observatory, its people and all that happens there are fiction, labelled so wherever they show, as
+§26 has them; GJ 915, Fomalhaut B and GJ 4274 are real systems, their stations generated.
+
+The owner chose (5 October 2026): Pyre's last refugees, getting out before it dies, a holdout who
+will not leave and who gets the last berths; new people to tell it; a choice of three ways near the
+end, each with its own finale and its own lasting mark; and a new kind of thing to fly.
+
+### 42.1 Pyre waits for it
+
+Pyre's warning (§26.2) comes some hours after the pilot first reaches the frontier, and once it has
+come the star is gone within the hour: no arc fits after it. So this arc is offered only before it,
+and **Pyre waits for the arc**:
+
+- **Offered** at GJ 915 Freeport, the station at the near end of Pyre's lane, once the opening
+  delivery is done, the pilot has reached the frontier and Antares has gone (so a warning could
+  come, §25), and only while Pyre has given no warning.
+- **Held**: taking its first step withdraws a warning not yet come, and none is set while the arc
+  is under way before its choice (`scheduleEdge` waits).
+- **Started by the choice**: the choice made, the warning comes `EMBERS.warnAfter` (a minute) later,
+  and Pyre's last hour runs as §26 has it, its News, sky, jobs and black hole with it.
+- An arc never taken never holds anything; a save where Pyre has already gone never offers it.
+
+### 42.2 The people
+
+- **Neve Oduya**, Pyre Observatory's liaison at GJ 915 Freeport, gives the arc.
+- **Dr Selene Achterberg**, director of Pyre Observatory, sixty-two people in her care and one
+  transport to carry them.
+- **Jory Penhaligon**, a prospector who has worked the dust round Pyre for twenty years and will not
+  leave it.
+
+### 42.3 The steps
+
+| Step | What |
+| --- | --- |
+| 1. A short fuse | The observatory's own readings say Pyre has days, not years (fiction). Take three units of electronics (handed over) through Pyre's lane to Pyre Observatory; it needs a long-range jump drive. |
+| 2. Berths for sixty | The transport has room for forty. Bring ten units of refined metals (sold at GJ 915 Freeport) to the observatory for bunks. |
+| 3. The man who stays | Penhaligon's skiff, the *Tinder*, at his claim in Pyre's system: two units of medical supplies alongside, and a word; then back to Achterberg. |
+| 4. The last berths | The choice, at the observatory, sixty-two people and fifty-four berths: the Authority's lift (it sends a cutter for everyone, and takes the observatory's records; Authority standing +5); the Co-op's barges (slow and unarmed, to new lives on the frontier's farms; Cooperative standing +4); or stay for the light (six of the scientists, Penhaligon with them, stay to record the end and come out in lifeboats; Cooperative standing +2). Pyre's warning comes a minute later. |
+| 5. The cutter (Authority) | The finale: escort the Authority's cutter with the evacuees from GJ 915 Freeport to GJ 4274 Institute, two jumps, past the Wake's dens at GJ 2005 and Fomalhaut B. |
+| 5. The barges (Co-op) | The finale: a convoy of three barges from GJ 915 Freeport to Fomalhaut B Orchard, one jump; two must arrive. |
+| 5. The last six (stay) | The finale, in Pyre's system as it dies: the new objective (42.4). |
+
+### 42.4 Lifeboats
+
+A new kind of objective, flown in Pyre's system after its warning:
+
+- **The launch**: at `EMBERS.launch` (25 minutes) after the warning, the six lifeboats leave the
+  observatory, each on its own heading drawn from the job, and drift outward slowly, from half a
+  kilometre out to about five by the collapse. Each is a friendly target (*Lifeboat 3 · Pyre Observatory · fiction*); the HUD
+  objective steers to the nearest.
+- **Gathering**: flying within `EMBERS.pickup` (250 m) of one takes it aboard (its people ride in the
+  hold's spare air; no berth or cargo space).
+- **Getting clear**: with at least five aboard (`need`), jumping out through Pyre's lane before the
+  collapse does it. At the collapse, not clear, it fails, and with the observatory gone it is not
+  offered again: the arc ends there, unmarked.
+- Lifeboats are kept on the job (how many gathered, and whether clear); one not yet gathered is not
+  saved, and a flight there starts them where they would be by then.
+
+### 42.5 Lasting marks
+
+| Ending | Station | Market | Standing run |
+| --- | --- | --- | --- |
+| The Authority's lift | GJ 4274 Institute | data cores ×0.85 price, ×1.5 stock (the observatory's records, copied) | The Pyre records: data cores to GJ 915 Freeport, pay ×1.15 |
+| The Co-op's barges | Fomalhaut B Orchard | staple food ×0.85, ×1.5 (new hands in the fields) | Pyre's people's harvest: staple food to GJ 915 Freeport, pay ×1.15 |
+| The last six | GJ 915 Freeport | data cores ×0.85, ×1.6 (the Pyre Archive, its last hour recorded) | none |
+
+### 42.6 One save's own
+
+The arc's progress, choices and beats are kept as every arc's (§14.1); the lifeboats gathered and
+whether clear are kept on the job (`gathered`, `clear`). Saves refuse a count out of 0 to the
+objective's lifeboats, or a `clear` not true. Pyre's warning is the save's as ever (§26.6), withdrawn
+and set again by the arc. A save from before has none of it: the arc is offered if Pyre has not yet
+warned.
+
+### 42.7 Guardrails
+
+`validateStory` and `validateMarks` (§14.4, §14.7) check the arc as every arc: seven arcs now, this
+one of four steps branching at its choice to three finales; its places real open stations, but for
+Pyre Observatory, which only an arc held before Pyre's warning may name; every speaker where they
+give missions; the finales paying the most; marks on stations that trade their goods and apart from
+the others'. They also check the lifeboats: only in a finale, in Pyre's system, two to eight boats,
+a need it can meet, launched before the collapse. The tests play every way through the arc, hold and
+start Pyre's warning, fly the lifeboats in a real `FlightSession` (launched, gathered, got clear,
+and lapsed at the collapse), and check saves.

@@ -1,4 +1,6 @@
 import { applyCredits, type GameState } from '../app/state.ts';
+import { EMBERS } from '../content/story/embers.ts';
+import { startPyre } from './embers.ts';
 import { LAW } from '../content/law/rules.ts';
 import { ARC_JOBS, ARC_ORDER, ARCS, CHARACTERS } from '../content/story/arcs.ts';
 import type { Arc, ArcId, Line, StoryOption } from '../content/story/types.ts';
@@ -122,6 +124,8 @@ export function makeChoice(state: GameState, jobId: string, optionId: string): {
   const lock = optionLock(state, option);
   if (lock) return { ok: false, message: lock, events: [] };
   state.story.choices[o.choiceId] = option.id;
+  // Last Light at Pyre's choice made: Pyre's warning comes a minute later (docs/PROCGEN.md §42.1).
+  if (o.choiceId === EMBERS.choice) startPyre(state);
   if (option.pardon) {
     // A deal with the law: every fine cleared and standing lifted to Wary.
     state.law.pending = [];

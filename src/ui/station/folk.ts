@@ -37,7 +37,7 @@ function storyLine(o: OutpostRecord, p: FolkPerson): string {
   const done = f?.steps[p.slot] ?? 0;
   const work = f?.works.find((w) => w.slot === p.slot);
   if (work) return `Made ${WORK_WORDS[p.trade].name.replace(/^The /, 'the ').replace(/^Proper/, 'proper')}`;
-  return done === 0 ? 'Has asked nothing of you yet' : `${done} of ${FOLK.asks.story} asks done`;
+  return done === 0 ? 'No asks done yet' : `${done} of ${FOLK.asks.story} asks done`;
 }
 
 /** The spirit and what it and the works do to the income, in a line. */
@@ -73,7 +73,7 @@ export function peopleSection(ctx: StationContext, o: OutpostRecord, refresh: Re
     ask && asker
       ? h(
           'div',
-          { class: 'callout stack-tight', 'data-testid': 'folk-ask' },
+          { class: 'folk-ask', 'data-testid': 'folk-ask' },
           h('div', { class: 'person-head' }, folkPortrait(asker.seed, asker.trade, asker.age, asker.name), h('div', { class: 'stack-tight' }, h('span', { class: 'row-name' }, `${asker.name} asks`), h('span', { class: 'row-sub' }, TRADE_WORD[asker.trade]))),
           h('p', { class: 'comm speech', 'data-testid': 'folk-ask-line' }, `“${askLine(state, o, ask).text}”`),
           h('p', { class: 'muted small', 'data-testid': 'folk-ask-needs' }, askNeeds(state, o, ask)),

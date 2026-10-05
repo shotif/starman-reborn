@@ -165,6 +165,8 @@ function earned(state: GameState, id: MilestoneId): boolean {
       return finaleDone(state, 'harvest');
     case 'story-kuiper':
       return finaleDone(state, 'kuiper');
+    case 'story-embers':
+      return finaleDone(state, 'embers');
     case 'race-won':
       return Object.values(state.world.racing?.courses ?? {}).some((c) => c.wins > 0);
     case 'course-record':

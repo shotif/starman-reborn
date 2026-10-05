@@ -208,3 +208,19 @@
 .trade-row.claim-row .trade-text .row-name {
   white-space: normal;
 }
+
+/* An ask at one of the pilot's outposts (docs/PROCGEN.md §41.4): who asks, what they say, what it needs. */
+.folk-ask {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.4rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--panel-border);
+}
+
+.folk-ask .comm,
+.folk-ask p {
+  margin: 0;
+}

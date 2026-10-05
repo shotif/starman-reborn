@@ -26,13 +26,15 @@ raids take haulers whose cargo never arrives, and a hauler bound through raided 
 for an escort. Where lawful space meets a raider den, a border war swings back
 and forth, fought in sight in clashes off the beacons and battles for the stations on the line,
 and your work tips it, until you win a front for good, for the law or for the Wake.
-Six hand-written story arcs give the sandbox a spine: three faction arcs; The Long Border, which
+Seven hand-written story arcs give the sandbox a spine: three faction arcs; The Long Border, which
 reads the choices made in the other three and settles a front for good, as a lawful pilot, an
-outlaw or neither; First Harvest, out among the frontier's farms; and The Long Winter, with Sol's
-belt crews out in the Kuiper dark, where you may stand with their cutters against claim-jumpers.
-However each of the faction arcs, First Harvest and The Long Winter ends, it changes a station's
-market, and most often its job board, for good. Pilot ratings, a codex of 361 real bodies, 27
-milestones and a hint of what to do next
+outlaw or neither; First Harvest, out among the frontier's farms; The Long Winter, with Sol's
+belt crews out in the Kuiper dark, where you may stand with their cutters against claim-jumpers;
+and Last Light at Pyre, where the people of the invented star's observatory must get out before
+it dies (Pyre waits for you once you take it on), perhaps in lifeboats you gather as it collapses.
+However each of the faction arcs and the last three ends, it changes a station's market, and most
+often its job board, for good. Pilot ratings, a codex of 361 real bodies, 28 milestones and a hint
+of what to do next
 give it goals. Fights have seekers and decoy
 flares, mines, damage to a ship's systems, loot, wingmen for hire who take six orders from a
 paused card, grow with every fight and are picked up when shot down, and raider dens that defend

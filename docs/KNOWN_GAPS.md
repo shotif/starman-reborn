@@ -64,10 +64,15 @@ snapshot branch only when the archives changed.
 
 - The written story is the opening chain, three short optional jobs, three faction arcs of five
   missions each, The Long Border (five steps, branching three ways at its choice), First
-  Harvest, out in the frontier (five steps, branching two ways), and The Long Winter, among Sol's
-  belt crews (five steps, branching two ways, or ended early by a buy-out); everything else on the
-  job boards is generated. A stand in a belt (The Long Winter's crews' finale) is not saved while
-  it is under way: leaving Sol and coming back starts it afresh. The faction arcs know about each other only through standing and through
+  Harvest, out in the frontier (five steps, branching two ways), The Long Winter, among Sol's
+  belt crews (five steps, branching two ways, or ended early by a buy-out), and Last Light at Pyre
+  (five steps, branching three ways); everything else on the job boards is generated. A stand in a
+  belt (The Long Winter's crews' finale) is not saved while it is under way: leaving Sol and coming
+  back starts it afresh. Last Light at Pyre is offered only before Pyre's warning, so a save where
+  Pyre has gone never sees it; once taken, Pyre's death waits for its choice however long that
+  takes, holding back Pyre's own work too. Its lifeboats not yet gathered are not saved, and a
+  flight there starts them where they would be by then; staying for the light, a pilot not clear by
+  the collapse loses the arc for good, unmarked. The faction arcs know about each other only through standing and through
   Kettering, whose briefings follow the choices made in them. The lasting marks an arc leaves on
   the world are a dark den (for six hours), the Ross 154 – Wolf 1061 front, settled for good by
   The Long Border (with the markets and boards around it), and one station's market (and most

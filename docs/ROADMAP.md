@@ -9,8 +9,8 @@ After the scripted opening (10–20 minutes), the neighbourhood is an open sandb
 systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
 of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
 packs in lawless space; 39 ships and 146 pieces of equipment; and generated contracts on every job
-board. Increments 1–40 (under [Done so far](#done-so-far)) added world events and news, contracts
-of every kind, the law and the outlaw path, goals, ranks with each faction that open doors, races round real planets and moons against racers who really fly, a wing that takes orders and grows with every fight, border battles to see and join, six story arcs, combat depth, people in the
+board. Increments 1–41 (under [Done so far](#done-so-far)) added world events and news, contracts
+of every kind, the law and the outlaw path, goals, ranks with each faction that open doors, races round real planets and moons against racers who really fly, a wing that takes orders and grows with every fight, border battles to see and join, seven story arcs, combat depth, people in the
 bars and a trade computer, a world that answers, gluts that ship their surplus out and relief to
 escort through raided lanes, a fleet of your own whose captains fly the lanes, a crew aboard your own ship,
 up to three stations of your own to build and defend, refineries in the real belts, captains who supply them and mine for them, outposts that trade with their neighbours, have news of their own and people who live there, passengers and sightseers, rival pilots with careers and stories of their own, a
@@ -28,13 +28,8 @@ What it lacks now:
 
 ## Proposed next increments
 
-Chosen by the owner on 5 October 2026, once The Long Winter was live: People at your outposts (now
-done), then another written arc, next.
-
-### 41. Another written arc ⏳
-
-A seventh hand-written arc, with endings that change a station for good. Its story is for the owner
-to choose before it is written.
+Chosen by the owner on 5 October 2026, once The Long Winter was live: People at your outposts and
+then another written arc, both now done. The next are for the owner to choose.
 
 ### How an increment ships
 
@@ -44,6 +39,17 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 41. Last Light at Pyre ✅
+
+A seventh written arc, at the edge of the map: the people of Pyre Observatory, which watches Pyre,
+the invented star, must get out before it dies. It is offered at GJ 915 Freeport before Pyre's
+warning, and once taken Pyre waits for it. Carry instruments and metals for bunks through Pyre's
+lane, visit a prospector who will not leave, then choose who gets the last berths: the Authority's
+cutter (escort it to GJ 4274 Institute), the Co-op's barges (two of three to Fomalhaut B Orchard),
+or six who stay for the light. The choice starts Pyre's last hour; staying, gather the observatory's
+lifeboats as it dies and take them out through the lane before the collapse, a new kind of flight.
+Each ending changes a station for good ([PROCGEN.md §42](PROCGEN.md#42-last-light-at-pyre)).
 
 ### 40. People at your outposts ✅
 

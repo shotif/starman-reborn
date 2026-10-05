@@ -7,6 +7,7 @@ import { EVENTS } from '../content/events/rules.ts';
 import { jumpsFrom } from '../content/world/network.ts';
 import { ALL_LOCATIONS, getLocation, getSystem, SYSTEMS, WORLD } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
+import { pyreHeld } from './embers.ts';
 import { activeEdge } from './events.ts';
 import type { ObserveObjective } from './stellar.ts';
 import { apparentAt, lyFromPyre, pyreAbsoluteMagnitude } from './pyrePhysics.ts';
@@ -66,7 +67,8 @@ export function fadedIn(systemId: SystemId | 'pyre', edge: number): number {
 export function scheduleEdge(state: GameState): boolean {
   const sky = state.world.sky;
   const frontier = state.milestones['frontier-first'];
-  if (!sky || sky.edge !== undefined || frontier === undefined) return false;
+  // Last Light at Pyre under way holds it until its choice (docs/PROCGEN.md §42.1).
+  if (!sky || sky.edge !== undefined || frontier === undefined || pyreHeld(state)) return false;
   const S = DOOMED.schedule;
   sky.edge = Math.round(Math.max(skyTimeline(sky.from).bhGone + S.afterAntares, frontier + S.afterFrontier, state.clock + S.afterLoad));
   return true;

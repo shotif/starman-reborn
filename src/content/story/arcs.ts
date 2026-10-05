@@ -23,6 +23,9 @@ export const CHARACTERS: Record<CharacterId, Character> = {
   fenwick: { id: 'fenwick', name: 'Orla Fenwick', role: 'Steward of Harrow Farmstead', factionId: null, locationId: 'harrow-farmstead' },
   rook: { id: 'rook', name: 'Tamsin Rook', role: 'Spokeswoman for the belt crews', factionId: null, locationId: 'mars-depot' },
   ashdown: { id: 'ashdown', name: 'Bryn Ashdown', role: 'Skipper of an ice-cutter in the belt crews', factionId: null, locationId: 'mars-depot' },
+  oduya: { id: 'oduya', name: 'Neve Oduya', role: 'Liaison for the observatory at the edge', factionId: null, locationId: 'gj-915-freeport' },
+  achterberg: { id: 'achterberg', name: 'Dr Selene Achterberg', role: 'Director of the observatory at the edge', factionId: null, locationId: 'pyre-observatory' },
+  penhaligon: { id: 'penhaligon', name: 'Jory Penhaligon', role: 'Prospector of the dust round a dying star', factionId: null, locationId: 'pyre-observatory' },
 };
 
 export const ARCS: Record<ArcId, Arc> = {
@@ -74,9 +77,17 @@ export const ARCS: Record<ArcId, Arc> = {
     summary: 'An ice-cutter has gone quiet in the Kuiper Belt, at the dark edge of the Solar System, and the belt crews want to know why before it happens to them.',
     hook: 'The belt crews’ spokeswoman needs a pilot who will fly out past Neptune.',
   },
+  embers: {
+    id: 'embers',
+    title: 'Last Light at Pyre',
+    factionId: null,
+    giver: 'oduya',
+    summary: 'Pyre Observatory watches Pyre, the invented star at the edge of the map, and its own readings say the star has days, not years. Sixty-two people live there, with one transport to carry them. (Fiction: there is no star called Pyre.)',
+    hook: 'Pyre Observatory’s liaison is looking for a pilot with a long-range drive and no fear of the edge.',
+  },
 };
 
-export const ARC_ORDER: readonly ArcId[] = ['sta', 'frontier', 'wake', 'border', 'harvest', 'kuiper'];
+export const ARC_ORDER: readonly ArcId[] = ['sta', 'frontier', 'wake', 'border', 'harvest', 'kuiper', 'embers'];
 
 /** The harvest convoy's three haulers (fiction). */
 const HARVEST_CONVOY = { names: ['Wrenna', 'Furrow', 'Late Swallow'], need: 2, waves: 1 } as const;
@@ -84,6 +95,9 @@ const HARVEST_CONVOY = { names: ['Wrenna', 'Furrow', 'Late Swallow'], need: 2, w
 /** The belt crews' three ice-cutters (fiction): the recall convoy, and the stand in the ice. */
 const KUIPER_CREWS = ['Long Winter', 'Hoarfrost', 'Meltwater'] as const;
 const KUIPER_CONVOY = { names: KUIPER_CREWS, need: 2, waves: 1 } as const;
+
+/** The Co-op's three barges out of GJ 915 with Pyre's people (fiction). */
+const EMBERS_BARGES = { names: ['Seedbank', 'Long Furrow', 'Hearthstone'], need: 2, waves: 1 } as const;
 
 /** The front The Long Border decides (economy/border.ts): Maw Roost's den against Ross 154. */
 export const LONG_BORDER_FRONT = 'wolf-1061~ross-154';
@@ -1283,6 +1297,202 @@ export const ARC_JOBS: readonly JobDef[] = [
         { who: 'rook', text: 'We sell where we like, and we look after our own. Come and cut ice with us one day, pilot.' },
       ],
       leaves: 'kuiper.crews',
+    },
+  },
+  // ------------------------------------------------------------ Last Light at Pyre (nobody's, docs/PROCGEN.md §42; Pyre and its people are fiction)
+  {
+    id: 'arc.embers.1',
+    title: 'A short fuse',
+    giverLocationId: 'gj-915-freeport',
+    factionId: null,
+    briefing:
+      '“The observatory out at Pyre says the star has days left, not years. Nobody believes them except the people who live there. Take these instruments through the lane to Dr Achterberg, and tell her someone is listening. You will need a long-range drive.”',
+    objectives: [{ kind: 'deliver', commodity: 'electronics', qty: 3, locationId: 'pyre-observatory', text: 'Take the instruments to Dr Achterberg at Pyre Observatory (fiction)' }],
+    reward: 1_000,
+    repReward: {},
+    difficulty: 2,
+    difficultyNote: 'Pyre’s lane needs a long-range jump drive',
+    destinationLocationId: 'pyre-observatory',
+    requires: { jobComplete: OPENING, pyre: 'before' },
+    story: {
+      arc: 'embers',
+      step: 1,
+      speaker: 'oduya',
+      cargo: { commodity: 'electronics', qty: 3 },
+      debrief: [{ who: 'achterberg', text: 'Neve sent you? Good. Look at the pulse on that screen: it skips now. Days, pilot. Sixty-two people live here, and our transport has berths for forty.' }],
+    },
+  },
+  {
+    id: 'arc.embers.2',
+    title: 'Berths for sixty',
+    giverLocationId: 'pyre-observatory',
+    factionId: null,
+    briefing:
+      '“Forty berths, sixty-two people. With refined metals we can weld bunks into the transport’s hold. GJ 915 Freeport sells them. Bring ten units, and quickly.”',
+    objectives: [{ kind: 'deliver', commodity: 'metals', qty: 10, locationId: 'pyre-observatory', text: 'Bring 10 refined metals to Pyre Observatory for bunks' }],
+    reward: 1_400,
+    repReward: {},
+    difficulty: 1,
+    difficultyNote: 'Two runs of Pyre’s long lane',
+    destinationLocationId: 'pyre-observatory',
+    requires: { jobComplete: 'arc.embers.1', pyre: 'observatory' },
+    story: {
+      arc: 'embers',
+      step: 2,
+      speaker: 'achterberg',
+      debrief: [{ who: 'achterberg', text: 'Fifty-four berths now. Fifty-four, and sixty-two of us, and one of those will not come at all. Jory Penhaligon. Go and talk to him.' }],
+    },
+  },
+  {
+    id: 'arc.embers.3',
+    title: 'The man who stays',
+    giverLocationId: 'pyre-observatory',
+    factionId: null,
+    briefing:
+      '“Jory has prospected the dust round Pyre for twenty years from a skiff called the Tinder. He is ill and he will not come in. Take him these medical supplies, and listen to him. Then come back and tell me what he said.”',
+    objectives: [
+      { kind: 'rescue', systemId: 'pyre', shipName: 'Tinder', model: 'ship.freighter.1.halden', commodity: 'medical', qty: 2, guard: null, text: 'Take 2 medical supplies to Jory Penhaligon’s skiff, the Tinder' },
+      { kind: 'visit', locationId: 'pyre-observatory', text: 'Tell Dr Achterberg what Penhaligon said' },
+    ],
+    reward: 1_200,
+    repReward: {},
+    difficulty: 1,
+    difficultyNote: 'Nobody else is out there',
+    destinationLocationId: 'pyre-observatory',
+    requires: { jobComplete: 'arc.embers.2', pyre: 'observatory' },
+    story: {
+      arc: 'embers',
+      step: 3,
+      speaker: 'achterberg',
+      cargo: { commodity: 'medical', qty: 2 },
+      beats: [{ after: 0, lines: [{ who: 'penhaligon', text: 'Tinder here. Tell Selene I will take the pills and not the berth. Somebody ought to watch it go. Twenty years I have watched it. I will not look away at the end.' }] }],
+      debrief: [{ who: 'achterberg', text: 'He wants to watch. So do half my people, if I am honest. Somebody has to decide who goes and how.' }],
+    },
+  },
+  {
+    id: 'arc.embers.4',
+    title: 'The last berths',
+    giverLocationId: 'pyre-observatory',
+    factionId: null,
+    briefing:
+      '“The Authority will send a cutter for everyone, if they can have our records. The Cooperative will send barges, slow ones, and take my people to their farms. Or six of us stay with the instruments to the end, Jory with them, and come out in the lifeboats, and you come and get us. You decide.”',
+    objectives: [
+      {
+        kind: 'choice',
+        locationId: 'pyre-observatory',
+        choiceId: 'embers.reckoning',
+        text: 'Decide how Pyre’s people get out',
+        prompt: 'The Authority’s cutter, the Cooperative’s barges, or stay for the light?',
+        options: [
+          {
+            id: 'law',
+            label: 'Call the Authority',
+            outcome: 'Achterberg signs the Authority’s form. Then every counter in the room jumps at once. “That is the core. It has begun. Get to GJ 915, pilot: the cutter will meet you there.”',
+            rep: { sta: 5 },
+          },
+          {
+            id: 'coop',
+            label: 'Send for the Co-op’s barges',
+            outcome: 'Achterberg sends for the barges. Then every counter in the room jumps at once. “It has begun. Our people go out on the transport tonight: meet the barges at GJ 915 and bring them to the farms.”',
+            rep: { frontier: 4 },
+          },
+          {
+            id: 'stay',
+            label: 'Stay for the light',
+            outcome: 'Achterberg smiles for the first time. Then every counter in the room jumps at once. “It has begun. The transport goes now. Six of us stay and watch. When the boats go, come and get us.”',
+            rep: { frontier: 2 },
+          },
+        ],
+      },
+    ],
+    ...DECISION,
+    destinationLocationId: 'pyre-observatory',
+    requires: { jobComplete: 'arc.embers.3', pyre: 'observatory' },
+    story: { arc: 'embers', step: 4, speaker: 'achterberg' },
+  },
+  {
+    id: 'arc.embers.5.law',
+    title: 'The cutter',
+    giverLocationId: 'gj-915-freeport',
+    factionId: null,
+    briefing:
+      '“The Authority cutter is here with Pyre’s people aboard, bound for GJ 4274 Institute. The Wake has dens at GJ 2005 and Fomalhaut B, and they know what a ship full of scientists carries. Keep it whole.”',
+    objectives: [
+      { kind: 'escort', systemId: 'gj-4274', fromLocationId: 'gj-915-freeport', locationId: 'gj-4274-institute', model: 'ship.freighter.1.halden', shipName: 'Authority cutter Lantern Rock', level: 2, text: 'Escort the Authority’s cutter to GJ 4274 Institute' },
+    ],
+    reward: 3_200,
+    repReward: { sta: 4 },
+    difficulty: 2,
+    difficultyNote: 'Wake raiders on the way to GJ 4274',
+    destinationLocationId: 'gj-4274-institute',
+    requires: { jobComplete: 'arc.embers.4', choice: { id: 'embers.reckoning', oneOf: ['law'] } },
+    story: {
+      arc: 'embers',
+      step: 5,
+      speaker: 'oduya',
+      finale: true,
+      comms: [{ at: 0, lines: [{ who: 'achterberg', text: 'Cutter Lantern Rock, all aboard. Behind us the sky is about to change. Do not look back, pilot. Fly.' }] }],
+      debrief: [
+        { who: 'achterberg', text: 'Everyone out. Everyone. The Authority has our records and copies them to anyone who asks, which I did not expect. The Institute has given us a corridor and a kettle.' },
+        { who: 'oduya', text: 'And Jory watched it from the cutter’s window, so he got his way after all.' },
+      ],
+      leaves: 'embers.law',
+    },
+  },
+  {
+    id: 'arc.embers.5.coop',
+    title: 'The barges',
+    giverLocationId: 'gj-915-freeport',
+    factionId: null,
+    briefing:
+      '“Three Cooperative barges, slow and unarmed, Pyre’s people packed into their holds, for Fomalhaut B Orchard. The Wake’s den is in that very system. If two of the three get in, everyone has somewhere to live.”',
+    objectives: [
+      { kind: 'escort', systemId: 'fomalhaut-b', fromLocationId: 'gj-915-freeport', locationId: 'fomalhaut-b-orchard', model: 'ship.freighter.1.halden', shipName: 'Co-op barges', level: 2, convoy: EMBERS_BARGES, text: 'Escort the Co-op’s barges to Fomalhaut B Orchard' },
+    ],
+    reward: 3_200,
+    repReward: { frontier: 4 },
+    difficulty: 2,
+    difficultyNote: 'Slow barges past a den',
+    destinationLocationId: 'fomalhaut-b-orchard',
+    requires: { jobComplete: 'arc.embers.4', choice: { id: 'embers.reckoning', oneOf: ['coop'] } },
+    story: {
+      arc: 'embers',
+      step: 5,
+      speaker: 'oduya',
+      finale: true,
+      comms: [{ at: 0, lines: [{ who: 'achterberg', text: 'Seedbank, Long Furrow, Hearthstone: all full. Somebody is singing in the hold. Take us to the orchards, pilot.' }] }],
+      debrief: [
+        { who: 'achterberg', text: 'Astronomers picking fruit. My people will learn. The orchard folk say there is room for all of us, and work.' },
+        { who: 'penhaligon', text: 'Saw it go through a barge porthole. Twenty years waiting, and it was over in a breath. Now show me how these trees work.' },
+      ],
+      leaves: 'embers.coop',
+    },
+  },
+  {
+    id: 'arc.embers.5.stay',
+    title: 'The last six',
+    giverLocationId: 'pyre-observatory',
+    factionId: null,
+    briefing:
+      '“The transport has gone with the rest. Six of us stay with the instruments until the end. When the lifeboats go, gather at least five of them and take us out through the lane before the core collapses. Do not be late, pilot. Nobody gets a second try at this.”',
+    objectives: [{ kind: 'lifeboats', systemId: 'pyre', count: 6, need: 5, text: 'Gather Pyre Observatory’s lifeboats and get clear before the collapse' }],
+    reward: 3_200,
+    repReward: {},
+    difficulty: 3,
+    difficultyNote: 'The star is collapsing',
+    destinationLocationId: 'gj-915-freeport',
+    requires: { jobComplete: 'arc.embers.4', choice: { id: 'embers.reckoning', oneOf: ['stay'] }, pyre: 'observatory' },
+    story: {
+      arc: 'embers',
+      step: 5,
+      speaker: 'achterberg',
+      finale: true,
+      comms: [{ at: 0, lines: [{ who: 'achterberg', text: 'Instruments recording. Everything recording. Whatever happens, pilot, nobody has ever seen this from so close.' }] }],
+      debrief: [
+        { who: 'achterberg', text: 'We have it. The last hour of a star, every second of it. GJ 915 Freeport is going to be the most famous dump at the edge of the map.' },
+        { who: 'penhaligon', text: 'I watched it all. Thank you for coming back for an old fool.' },
+      ],
+      leaves: 'embers.stay',
     },
   },
 ];

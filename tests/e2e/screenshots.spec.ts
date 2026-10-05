@@ -944,6 +944,88 @@ for (const size of SIZES) {
         expect.soft(r.overlaps, `${name}: overlapping HUD panels`).toEqual([]);
       }
     });
+
+    // Last Light at Pyre (docs/PROCGEN.md §42): Pyre is gone by the journey's end, so its last hour is
+    // shot on its own: the choice at its observatory, then the lifeboats as it dies.
+    test(`Pyre's last hour at ${size.name}`, async ({ page }) => {
+      test.setTimeout(10 * 60_000);
+      mkdirSync(OUT, { recursive: true });
+      const results: Record<string, AuditResult> = {};
+      if (size.textScale) {
+        const px = 16 * size.textScale;
+        await page.addInitScript((fontPx) => {
+          document.addEventListener('DOMContentLoaded', () => {
+            const style = document.createElement('style');
+            style.textContent = `html { font-size: ${fontPx}px !important; }`;
+            document.head.appendChild(style);
+          });
+        }, px);
+      }
+      const hearAll = async () => {
+        for (let q = 0, i = 0; q < 3 && i < 30; i++) {
+          const next = page.getByTestId('story-continue').or(page.getByTestId('folk-continue')).first();
+          if (await next.isVisible().catch(() => false)) {
+            q = 0;
+            await next.click().catch(() => {});
+          } else q++;
+          await page.waitForTimeout(250);
+        }
+      };
+      const clock = async () => (await api<{ clock: number }>(page, 'state')).clock;
+      const docked = async (id: string) => {
+        await api(page, 'dockAt', id);
+        await waitUntil(page, `docked at ${id}`, async () => (await api<{ location: { dockedAt: string | null } }>(page, 'state')).location.dockedAt === id);
+        await hearAll();
+      };
+      await openFresh(page);
+      await press(page, 'title-play');
+      await press(page, 'intro-ok');
+      await api(page, 'completeJobs', ['lifeline']);
+      await api(page, 'skyFrom', 0);
+      const sky = (await api<{ timeline: { bhGone: number } }>(page, 'sky'))!;
+      await api(page, 'advanceClock', sky.timeline.bhGone + 600 - (await clock()));
+      await docked('gj-915-freeport');
+      await api(page, 'completeJobs', ['arc.embers.1', 'arc.embers.2', 'arc.embers.3']);
+      await docked('pyre-observatory');
+      await press(page, 'room-bar');
+      if (!(await page.getByTestId('jobs-window').isVisible().catch(() => false))) await press(page, 'station-jobs');
+      await press(page, 'accept-arc.embers.4');
+      await waitUntil(page, 'the last berths', async () => {
+        if (await page.getByTestId('choice-dialog').isVisible().catch(() => false)) return true;
+        const next = page.getByTestId('story-continue');
+        if (await next.isVisible().catch(() => false)) await next.click().catch(() => {});
+        return false;
+      }, 30_000);
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-24-pyre-choice`, size.touch, results);
+      await press(page, 'choice-stay');
+      await hearAll();
+      if (!(await page.getByTestId('jobs-window').isVisible().catch(() => false))) await press(page, 'station-jobs');
+      await press(page, 'accept-arc.embers.5.stay');
+      await hearAll();
+      await press(page, 'dock-launch');
+      if (await page.getByTestId('controls-sheet').isVisible().catch(() => false)) await press(page, 'sheet-close');
+      await waitUntil(page, 'undocked', async () => (await api<{ autopilot: string } | null>(page, 'player'))?.autopilot === 'none', 60_000);
+      const edge = (await api<{ world: { sky: { edge: number } } }>(page, 'state')).world.sky.edge;
+      await api(page, 'advanceClock', edge + 1_500 + 20 - (await clock()));
+      await waitUntil(page, 'the lifeboats away', async () => (await api<{ out: number } | null>(page, 'lifeboats'))?.out === 6, 30_000);
+      const boat = (await api<{ id: string }[]>(page, 'targets')).find((t) => t.id.startsWith('lifeboat:'))!;
+      expect(await api<boolean>(page, 'placeNear', { id: boat.id, distance: 900 })).toBe(true);
+      await api(page, 'selectTarget', boat.id);
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      // The lifeboat just above the ship, the mouse centred so the ship holds still.
+      if (!size.touch) await page.mouse.move(size.width / 2, size.height / 2);
+      expect(await api<boolean>(page, 'face', { id: boat.id, below: size.height < 500 ? 4 : 9 })).toBe(true);
+      await shot(page, `${size.name}-24b-lifeboats`, size.touch, results);
+      for (const [name, r] of Object.entries(results)) {
+        expect.soft(r.overflow, `${name}: page overflow`).toBe(false);
+        expect.soft(r.clipped, `${name}: clipped controls`).toEqual([]);
+        expect.soft(r.cutOff, `${name}: content cut off inside a box`).toEqual([]);
+        expect.soft(r.tinyText, `${name}: text below 10px`).toEqual([]);
+        expect.soft(r.smallTargets, `${name}: touch targets below 40px`).toEqual([]);
+        expect.soft(r.overlaps, `${name}: overlapping HUD panels`).toEqual([]);
+      }
+    });
   });
 }
 

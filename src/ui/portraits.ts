@@ -56,6 +56,9 @@ export const STORY_PORTRAITS: Readonly<Record<CharacterId, { seed: number; look:
   rook: { seed: 4024, look: { faction: 'independent', role: 'miner', age: 'middle' } },
   // Skipper of the Long Winter: a grey crop, a full beard, goggles pushed up, a coverall.
   ashdown: { seed: 4063, look: { faction: 'independent', role: 'miner', age: 'old' } },
+  oduya: { seed: 4111, look: { faction: 'independent', role: 'officer', age: 'middle' } },
+  achterberg: { seed: 4127, look: { faction: 'independent', role: 'scientist', age: 'middle' } },
+  penhaligon: { seed: 4139, look: { faction: 'independent', role: 'miner', age: 'old' } },
 };
 
 /* ---------------------------------------------------------------------------------------------- */

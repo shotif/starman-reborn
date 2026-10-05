@@ -24,6 +24,8 @@ import { leaveMark, settleFront, storyMark } from './answers.ts';
 import { observeBaseline, observeDone, type ObserveObjective } from './stellar.ts';
 import { firstLightSeen, PYRE_HOLE_ID } from './doomed.ts';
 import { DOOMED } from '../content/stellar/doomed.ts';
+import { EMBERS } from '../content/story/embers.ts';
+import { holdPyre, lifeboatTimes, observatoryStands, pyreArcOpen } from './embers.ts';
 import { haulById, recordHaul, releaseHaul } from './hauls.ts';
 
 export type Objective =
@@ -84,6 +86,8 @@ export type Objective =
    * them; won with at least `crews.need` cutters left (JobProgress.stood).
    */
   | { kind: 'stand'; systemId: SystemId; beltId: string; crews: { names: readonly string[]; need: number }; waves: number; ships: number; level: 1 | 2 | 3; text: string }
+  /** Lifeboats launched from Pyre Observatory as it dies (docs/PROCGEN.md §42.4): gather `need` of `count`, then get clear through the lane before the collapse. */
+  | { kind: 'lifeboats'; systemId: SystemId; count: number; need: number; text: string }
   /** Meet a rival at a beacon for a duel, one on one, and win it (docs/PROCGEN.md §28; JobProgress.duel). */
   | { kind: 'duel'; systemId: SystemId; rival: string; text: string }
   /** Hold the player's outpost against a raid (docs/PROCGEN.md §29; JobProgress.outpost): the raid's window and when it strikes. */
@@ -112,6 +116,11 @@ export interface JobDef {
     choice?: { id: string; oneOf: readonly string[] };
     /** A commission: a rank with this faction, this high or higher (docs/PROCGEN.md §32.4). */
     rank?: { faction: FactionId; rank: number };
+    /**
+     * Pyre's state (docs/PROCGEN.md §42.1): `before`, only before it has warned (and once a warning
+     * could come); `observatory`, only while Pyre Observatory stands.
+     */
+    pyre?: 'before' | 'observatory';
   };
   /** Jumps ending in this system cost nothing while the job is active. */
   coversJumpFeesTo?: SystemId;
@@ -261,6 +270,8 @@ export function jobLockReason(state: GameState, job: JobDef): string | null {
     return `Requires ${TIER_LABEL[standingTier(req.minRep.value)]} standing with the ${FACTIONS[req.minRep.faction].name}`;
   }
   if (req?.choice && !req.choice.oneOf.includes(state.story.choices[req.choice.id] ?? '')) return 'Not after what you chose';
+  if (req?.pyre === 'before' && !state.jobs[job.id] && !pyreArcOpen(state)) return 'Not while Pyre is as it is';
+  if (req?.pyre === 'observatory' && !observatoryStands(state)) return 'Pyre Observatory is gone';
   const cargo = job.story?.cargo;
   if (cargo && itemsThatFit(state.ship.cargo, cargo.commodity, cargoCapacity(state.ship)) < cargo.qty) {
     return `Needs ${cargo.qty * COMMODITIES[cargo.commodity].unitSize} free hold units`;
@@ -312,6 +323,9 @@ export function storyVisible(state: GameState, job: JobDef): boolean {
   if (state.jobs[job.id]) return true;
   const req = job.requires;
   if (req?.choice && !req.choice.oneOf.includes(state.story.choices[req.choice.id] ?? '')) return false;
+  // An arc of Pyre's (docs/PROCGEN.md §42.1): offered only before it warns, its steps there only while the observatory stands.
+  if (req?.pyre === 'before' && !pyreArcOpen(state)) return false;
+  if (req?.pyre === 'observatory' && !observatoryStands(state)) return false;
   if (story.step === 1) return true;
   return !!req?.jobComplete && state.jobs[req.jobComplete]?.status === 'complete';
 }
@@ -361,6 +375,8 @@ export function acceptJob(state: GameState, jobId: string): { ok: boolean; messa
   // A story mission may hand over cargo to carry (it was checked to fit).
   if (job.story?.cargo) addCargo(state.ship.cargo, job.story.cargo.commodity, job.story.cargo.qty, cargoCapacity(state.ship));
   state.jobs[jobId] = { status: 'active', objectiveIndex: 0, acceptedAt: state.clock };
+  // Last Light at Pyre taken: Pyre's warning waits for its choice (docs/PROCGEN.md §42.1).
+  if (jobId === EMBERS.first) holdPyre(state);
   // The haul waits for its escort, off its timetable (docs/PROCGEN.md §21.7).
   if (job.contract?.haul) recordHaul(state.world, job.contract.haul, { at: state.clock, fate: 'escort', systemId: getLocation(job.giverLocationId).systemId });
   if (job.briefingPrices) {
@@ -475,6 +491,8 @@ function objectiveSatisfied(state: GameState, jobId: string, o: Objective, ctx: 
       return !!state.jobs[jobId]?.rescued;
     case 'stand':
       return state.jobs[jobId]?.stood === true;
+    case 'lifeboats':
+      return state.jobs[jobId]?.clear === true;
     case 'duel':
       return state.jobs[jobId]?.duel === 'won';
     case 'outpost':
@@ -748,6 +766,12 @@ function describeCurrent(state: GameState, jobId: string): ObjectiveSummary | nu
     case 'stand':
       // The crews' cutters at their rocks (docs/PROCGEN.md §40.3): steering to the lead cutter in its system.
       return { ...base, text: inOtherSystem(o.systemId, o.text), targetSystemId: o.systemId, targetLocationId: null, ...(o.systemId === here ? { targetId: standTargetId(jobId) } : {}) };
+    case 'lifeboats': {
+      // Pyre's lifeboats (docs/PROCGEN.md §42.4): to the nearest still out; with enough aboard, out through the lane.
+      const got = state.jobs[jobId]?.gathered ?? 0;
+      if (got >= o.need) return { ...base, text: `${o.text} (${got} aboard: get clear through the lane)`, targetSystemId: DOOMED.star.anchor, targetLocationId: null };
+      return { ...base, text: inOtherSystem(o.systemId, `${o.text} (${got} of ${o.need} aboard)`), targetSystemId: o.systemId, targetLocationId: null, ...(o.systemId === here ? { targetId: lifeboatTargetId(jobId) } : {}) };
+    }
     case 'duel':
       // The rival waits off the jump beacon (docs/PROCGEN.md §28).
       return { ...base, text: inOtherSystem(o.systemId, o.text), targetSystemId: o.systemId, targetLocationId: null, ...(o.systemId === here ? { targetId: duelTargetId(jobId) } : {}) };
@@ -924,6 +948,70 @@ export function rescuesIn(state: GameState, systemId: SystemId): { jobId: string
 /** The flight target of a stand's lead cutter (docs/PROCGEN.md §40.3). */
 export function standTargetId(jobId: string): string {
   return `stand:${jobId}`;
+}
+
+/** The HUD target of a lifeboats objective: the flight points it at the nearest lifeboat still out (docs/PROCGEN.md §42.4). */
+export function lifeboatTargetId(jobId: string): string {
+  return `lifeboat:${jobId}`;
+}
+
+/** Pyre's lifeboats under way in a system (docs/PROCGEN.md §42.4), as the flight needs them. */
+export interface LifeboatSetup {
+  jobId: string;
+  count: number;
+  need: number;
+  /** How many are aboard already; when they leave the observatory, and when Pyre collapses. */
+  gathered: number;
+  launch: number;
+  collapse: number;
+}
+
+/** The lifeboats objective under way in a system, once Pyre has warned. */
+export function lifeboatsIn(state: GameState, systemId: SystemId): LifeboatSetup[] {
+  const times = lifeboatTimes(state);
+  if (!times) return [];
+  return activeJobIds(state).flatMap((jobId) => {
+    const o = currentObjective(state, jobId);
+    return o?.kind === 'lifeboats' && o.systemId === systemId ? [{ jobId, count: o.count, need: o.need, gathered: state.jobs[jobId]?.gathered ?? 0, ...times }] : [];
+  });
+}
+
+/** A lifeboat taken aboard (docs/PROCGEN.md §42.4). How many are aboard now. */
+export function lifeboatAboard(state: GameState, jobId: string): number {
+  const o = currentObjective(state, jobId);
+  const p = state.jobs[jobId];
+  if (o?.kind !== 'lifeboats' || !p) return 0;
+  p.gathered = Math.min(o.count, (p.gathered ?? 0) + 1);
+  return p.gathered;
+}
+
+/**
+ * Leaving a system (a jump begun): with enough lifeboats aboard, out of their system before the
+ * collapse, they are clear and the objective is done.
+ */
+export function lifeboatsClear(state: GameState, fromSystemId: SystemId): JobEvent[] {
+  const times = lifeboatTimes(state);
+  let done = false;
+  for (const jobId of activeJobIds(state)) {
+    const o = currentObjective(state, jobId);
+    const p = state.jobs[jobId];
+    if (o?.kind !== 'lifeboats' || !p || o.systemId !== fromSystemId || (p.gathered ?? 0) < o.need || !times || state.clock >= times.collapse) continue;
+    p.clear = true;
+    done = true;
+  }
+  return done ? advanceJobs(state, { dockedAt: state.location.dockedAt, systemId: state.location.systemId }) : [];
+}
+
+/** At Pyre's collapse, lifeboats not got clear: the mission fails, and with the observatory gone it is not offered again. */
+export function lifeboatsLapse(state: GameState): JobEvent[] {
+  const times = lifeboatTimes(state);
+  if (!times || state.clock < times.collapse) return [];
+  return activeJobIds(state).flatMap((jobId) => {
+    const o = currentObjective(state, jobId);
+    if (o?.kind !== 'lifeboats' || state.jobs[jobId]?.clear) return [];
+    const e = failJob(state, jobId, 'the collapse came with the lifeboats still out');
+    return e ? [e] : [];
+  });
 }
 
 /** A stand in a belt under way in a system (docs/PROCGEN.md §40.3), as the flight needs it. */

@@ -10,6 +10,7 @@ import { useWorldLog } from '../economy/events.ts';
 import { captainLost, captainSeen, fleetNews, folkUpTo, haulEstimate, haulGoods, hireHauler, settleFleet, type FleetSettlement } from '../economy/fleet.ts';
 import { folkPeople, nextAskAt, scanFolk, spiritAt } from '../economy/folk.ts';
 import { WORK_WORDS } from '../content/outposts/folk.ts';
+import { LIFEBOAT_LINES } from '../content/story/embers.ts';
 import { showFolkWords } from '../ui/station/folk.ts';
 import { lastView } from '../ui/station/lastView.ts';
 import { fill, PAYMENT } from '../content/people/lines.ts';
@@ -99,6 +100,10 @@ import {
   standLost,
   standsIn,
   standWon,
+  lifeboatAboard,
+  lifeboatsClear,
+  lifeboatsIn,
+  lifeboatsLapse,
   wrecksIn,
   type JobEvent,
 } from '../economy/jobs.ts';
@@ -1148,6 +1153,12 @@ export class Game {
           this.announceJobEvents(outcome === 'won' ? standWon(state, jobId) : standLost(state, jobId));
           this.persist();
         },
+        // One of Pyre's lifeboats taken aboard (docs/PROCGEN.md §42.4).
+        onLifeboat: (jobId) => {
+          const n = lifeboatAboard(state, jobId);
+          this.persist();
+          return n;
+        },
         onRescueLost: (jobId) => {
           const o = currentObjective(state, jobId);
           const ev = failJob(state, jobId, o?.kind === 'rescue' ? `the ${o.shipName} was destroyed` : 'the stranded ship was destroyed');
@@ -1397,6 +1408,7 @@ export class Game {
       wrecks: wrecksIn(state, here),
       rescues: rescuesIn(state, here),
       stands: standsIn(state, here),
+      lifeboats: lifeboatsIn(state, here),
       assaults: assaultsIn(state, here),
       defences: defencesIn(state, here),
       downDens,
@@ -1579,6 +1591,13 @@ export class Game {
   /** Pyre (docs/PROCGEN.md §26): its warning set once the player is at the frontier, and the stations' word as each moment comes where the player is. */
   private watchEdge(state: GameState): void {
     if (scheduleEdge(state)) this.persist();
+    // Pyre's lifeboats not got clear by the collapse (docs/PROCGEN.md §42.4).
+    const lapsed = lifeboatsLapse(state);
+    if (lapsed.length) {
+      toast(LIFEBOAT_LINES.lapsed, 'bad', 7000);
+      this.announceJobEvents(lapsed);
+      this.persist();
+    }
     const here = state.location.systemId;
     const now = edgeMoment(here, state.clock);
     const said = this.edgeSaid;
@@ -2103,7 +2122,10 @@ export class Game {
         // The wing's order carries over the jump (docs/PROCGEN.md §34).
         this.wingCarry = this.flight?.wingCarry() ?? 'free';
         this.disposeFlight();
-        const events = performJump(state, j.route, j.fee);
+        // Out of Pyre's system with its lifeboats aboard before the collapse (docs/PROCGEN.md §42.4).
+        const clear = lifeboatsClear(state, state.location.systemId);
+        if (clear.length) toast(LIFEBOAT_LINES.clear, 'good', 6000);
+        const events = [...clear, ...performJump(state, j.route, j.fee)];
         this.announceJobEvents(events);
         for (const n of settleLaw(state)) toast(n, 'good', 6000);
         const wing = payWing(state, j.route.hops.length);
@@ -2906,6 +2928,8 @@ export class Game {
       },
       /** Test-only: the stand in a belt in this flight (docs/PROCGEN.md §40.3), if one is under way here. */
       stand: () => this.flight?.standStatus() ?? null,
+      /** Test-only: Pyre's lifeboats in this flight (docs/PROCGEN.md §42.4). */
+      lifeboats: () => this.flight?.lifeboatStatus() ?? null,
       /**
        * Test-only: the first event at an outpost (the first chartered, unless its site is named) that
        * starts after `from` (the clock by default), of a kind if one is named, within ten days (docs/PROCGEN.md §39).

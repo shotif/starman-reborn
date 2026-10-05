@@ -739,6 +739,18 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   the green bay and the trading desk move its market; the greeting on docking says each thing once,
   three lines at most; an older save's outpost gets its people when first settled; saves keep the
   record and refuse what cannot be.
+- `embers.test.ts`: **Last Light at Pyre**. The arc passes the story and mark guardrails, and broken
+  ones are caught (lifeboats outside a finale or Pyre's system, boats it cannot meet, offered after
+  the observatory has gone, Pyre Observatory named by an arc Pyre does not wait for). It is offered at
+  GJ 915 Freeport only past the frontier and Antares and before Pyre warns; taken, it withdraws a
+  warning not yet come and holds the schedule; the choice made, the warning comes a minute later. Each
+  way is played to its end: the Authority's cutter to GJ 4274 Institute, the Co-op's barges to
+  Fomalhaut B Orchard (two of three), and the last six's lifeboats (four aboard not enough, five got
+  clear through the lane before the collapse), each with its mark and the milestone; not clear by the
+  collapse, it fails and is never offered again. In a real `FlightSession` at Pyre: no lifeboats
+  before the launch or after the collapse, six at it on their own headings drifting out, one taken
+  aboard by flying close, and those gathered before not there again. Saves keep the count and refuse
+  too many, a fraction, a `clear` not true, or a count on a job without lifeboats.
 
 ### Browser tests (Playwright)
 
@@ -969,6 +981,12 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   quartermaster says so with their portrait, the spirit rises and the window says *1 of 2 asks done*
   and what they have made adds to the income. The next ask is named in the Fleet window's line and
   said in a word as the pilot docks.
+- `embers.spec.ts`: **Last Light at Pyre**: with Antares gone, Neve Oduya's call taken at GJ 915
+  Freeport (Pyre's warning held, none set even hours on); at Pyre Observatory the choice of three,
+  *Stay for the light* chosen, the warning set a minute later; the last six's finale taken and the
+  ship launched; at the launch six lifeboats away, the HUD counting them aboard as the pilot comes
+  alongside five; then out through Pyre's lane from the star map's Missions list, arriving at GJ 915
+  before the collapse with the job done, and the News at GJ 915 Freeport showing the Pyre Archive.
 - `wing.spec.ts`: **wing command**: a pilot hired in the bar shows their grade in *Your wing*; in
   flight the order card (V on a keyboard, the Wing chip on touch) pauses the game, lists the wingman,
   locks Defend and Cover with why, and gives Hold (the radio's reply, the HUD's *Wing 1 · Hold* or the

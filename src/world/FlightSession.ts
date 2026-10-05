@@ -21,8 +21,10 @@ import { CONTRACTS } from '../content/contracts/rules.ts';
 import { COMMODITIES } from '../content/economy/goods.ts';
 import { hashString } from '../content/random.ts';
 import { LAW } from '../content/law/rules.ts';
-import { duelTargetId, standTargetId, strandedTargetId, type EscortSetup, type StandSetup } from '../economy/jobs.ts';
+import { duelTargetId, lifeboatTargetId, standTargetId, strandedTargetId, type EscortSetup, type LifeboatSetup, type StandSetup } from '../economy/jobs.ts';
 import { STAND, STAND_LINES } from '../content/story/stand.ts';
+import { EMBERS, LIFEBOAT_LINES } from '../content/story/embers.ts';
+import { DOOMED } from '../content/stellar/doomed.ts';
 import { polar } from './systems/helpers.ts';
 import type { Lingering } from '../app/state.ts';
 import { DENS } from '../content/dens/rules.ts';
@@ -192,6 +194,8 @@ export interface FlightCallbacks {
   onRescueLost?(jobId: string): void;
   /** A stand in a belt (docs/PROCGEN.md §40.3) was won (the waves downed) or lost (too few cutters left). */
   onStand?(jobId: string, outcome: 'won' | 'lost'): void;
+  /** One of Pyre's lifeboats taken aboard (docs/PROCGEN.md §42.4): how many are aboard now. */
+  onLifeboat?(jobId: string): number;
   /** The player fired on (`attack`, once per ship) or destroyed a lawful ship. */
   onCrime?(kind: 'attack' | 'destroy', faction: FactionId | 'independent', name: string, role: 'trader' | 'patrol'): void;
   /** A patrol's cargo scan finished (`complete`) or the player flew off before it did (`evaded`). */
@@ -258,6 +262,8 @@ export interface NpcShip {
   hired?: string;
   /** A belt crew's cutter in a stand (docs/PROCGEN.md §40.3): which stand it works for. */
   cutter?: { jobId: string };
+  /** One of Pyre Observatory's lifeboats (docs/PROCGEN.md §42.4): its job, and which of them. */
+  lifeboat?: { jobId: string; i: number };
   /** A claim-jumper of a stand's waves (§40.3): which stand it came for. */
   jumper?: { jobId: string };
   /** The player's outpost's own (docs/PROCGEN.md §29): a turret, its stores, or a guard flying its loop round the outpost. */
@@ -350,6 +356,8 @@ export interface TrafficSetup {
   rescues?: readonly { jobId: string; name: string; model: string; commodity: CommodityId; qty: number; guard: 1 | 2 | 3 | null; beltId?: string }[];
   /** Stands in a belt the player's jobs want here (docs/PROCGEN.md §40.3). */
   stands?: readonly StandSetup[];
+  /** Pyre's lifeboats, once Pyre has warned (docs/PROCGEN.md §42.4). */
+  lifeboats?: readonly LifeboatSetup[];
   /** Den assaults under way here: the den, its turrets still standing, and whose wing flies with the player. */
   assaults?: readonly { jobId: string; locationId: string; turretsLeft: number; wing?: FactionId | null }[];
   /** Wingmen on the player's pay: they fly alongside wherever the player goes. */
@@ -915,6 +923,11 @@ export class FlightSession {
     const race = this.race?.objectiveId();
     if (race) return race;
     const id = this.objective.targetId;
+    // Pyre's lifeboats (docs/PROCGEN.md §42.4): the nearest still out.
+    if (id?.startsWith('lifeboat:')) {
+      const near = this.nearestLifeboat(id);
+      if (near) return near.target.id;
+    }
     if (id && (this.loot.some((l) => l.target.id === id) || this.mining.find(id) || this.npcs.some((n) => n.target.id === id && n.target.alive) || ((id.startsWith('star:') || id.startsWith('sky:') || id.startsWith('site:')) && this.findTarget(id)))) return id;
     if (this.objective.locationId) return `station:${this.objective.locationId}`;
     if (this.objective.bodyId) return `planet:${this.objective.bodyId}`;
@@ -2623,10 +2636,13 @@ export class FlightSession {
       if (t.duel) this.spawnDuelist(t.duel);
       if (t.outpost) this.spawnOutpostDefences(t.outpost);
       for (const st of t.stands ?? []) this.startStand(st);
+      const boats = t.lifeboats?.[0];
+      if (boats) this.lifeboats = { setup: boats, spawned: false, aboard: boats.gathered };
     }
     this.updateOutpostGuards();
     this.updateOutpostRaid();
     this.updateStand(dt);
+    this.updateLifeboats();
     // A rival's hired guns strike a little way into the flight (docs/PROCGEN.md §28).
     const hired = t.rivalAmbush;
     if (hired && !this.ambushSprung && this.time >= hired.delay && this.alive && !this.busy) {
@@ -2693,6 +2709,7 @@ export class FlightSession {
       else if (n.wingman) this.flyWingman(n, dt);
       else if (n.sweep) this.flySweep(n, dt);
       else if (n.escort?.follow) this.flyEscortFollowing(n, dt);
+      else if (n.lifeboat) n.controls.throttle = 0;
       else if (n.stranded && !n.trader) this.flyStranded(n, dt);
       else if (n.site && n.role === 'trader') this.flySiteShip(n, dt);
       else if (n.duel) this.flyDuelist(n, dt);
@@ -3784,6 +3801,77 @@ export class FlightSession {
   }
 
   /** A claim-jumper goes for the crews' cutters, and for the pilot once near. */
+  private lifeboats: { setup: LifeboatSetup; spawned: boolean; aboard: number } | null = null;
+
+  /** Where lifeboat `i` is at a time: out from the observatory on its own heading, drifting slowly (null without the observatory). */
+  lifeboatPosition(setup: LifeboatSetup, i: number, clock: number): THREE.Vector3 | null {
+    const site = this.system.dock(DOOMED.stations.observatory.id);
+    if (!site) return null;
+    const h = hashString(`${setup.jobId}|lifeboat|${i}`);
+    const angle = ((i + (h % 1_000) / 2_000) / setup.count) * Math.PI * 2;
+    const rise = (((h >>> 10) % 1_000) / 1_000 - 0.5) * 0.3;
+    const dir = new THREE.Vector3(Math.cos(angle), rise, Math.sin(angle)).normalize();
+    const out = EMBERS.start + EMBERS.drift * Math.max(0, clock - setup.launch);
+    return site.def.position.clone().addScaledVector(dir, site.radius + out);
+  }
+
+  private nearestLifeboat(prefix: string): NpcShip | null {
+    let best: NpcShip | null = null;
+    for (const n of this.npcs) {
+      if (!n.lifeboat || !n.target.alive || !n.target.id.startsWith(`${prefix}#`)) continue;
+      if (!best || n.body.position.distanceTo(this.player.position) < best.body.position.distanceTo(this.player.position)) best = n;
+    }
+    return best;
+  }
+
+  /**
+   * Pyre's lifeboats (docs/PROCGEN.md §42.4): they leave the observatory at the launch, drift out,
+   * and are taken aboard as the pilot comes within reach; none before the launch or after the collapse.
+   */
+  private updateLifeboats(): void {
+    const lb = this.lifeboats;
+    if (!lb) return;
+    const clock = this.state.clock;
+    const { setup } = lb;
+    if (clock < setup.launch || clock >= setup.collapse) return;
+    if (!lb.spawned) {
+      lb.spawned = true;
+      for (let i = setup.gathered; i < setup.count; i++) {
+        const at = this.lifeboatPosition(setup, i, clock);
+        if (!at) return;
+        const npc = this.makeNpc(EMBERS.boat, 'trader', 'independent', at, at.clone().sub(this.player.position).normalize(), 'Pyre Observatory · fiction');
+        npc.name = `Lifeboat ${i + 1}`;
+        npc.target.name = npc.name;
+        npc.target.id = `${lifeboatTargetId(setup.jobId)}#${i}`;
+        npc.target.hostile = false;
+        npc.lifeboat = { jobId: setup.jobId, i };
+        npc.body.velocity.set(0, 0, 0);
+      }
+      if (clock - setup.launch < 30) this.callbacks.onMessage(LIFEBOAT_LINES.launch.replace('{n}', String(setup.count - setup.gathered)), 'info');
+    }
+    for (const n of [...this.npcs]) {
+      if (!n.lifeboat || n.lifeboat.jobId !== setup.jobId || !n.target.alive) continue;
+      const at = this.lifeboatPosition(setup, n.lifeboat.i, clock);
+      if (at) n.body.position.copy(at);
+      n.body.velocity.set(0, 0, 0);
+      if (!this.alive || this.busy || n.body.position.distanceTo(this.player.position) > EMBERS.pickup) continue;
+      n.target.alive = false;
+      this.removeNpc(n);
+      lb.aboard = this.callbacks.onLifeboat?.(setup.jobId) ?? lb.aboard + 1;
+      this.sfx('mission-complete');
+      this.callbacks.onMessage(lb.aboard === setup.need ? `${LIFEBOAT_LINES.aboard.replace('{name}', n.name)} ${LIFEBOAT_LINES.enough}` : LIFEBOAT_LINES.aboard.replace('{name}', n.name), 'good');
+    }
+  }
+
+  /** Test hook: the lifeboats here: launched, how many still out and aboard, the nearest's distance, and when the launch and collapse are. */
+  lifeboatStatus(): { jobId: string; launched: boolean; out: number; aboard: number; nearest: number | null; launch: number; collapse: number } | null {
+    const lb = this.lifeboats;
+    if (!lb) return null;
+    const out = this.npcs.filter((n) => n.lifeboat?.jobId === lb.setup.jobId && n.target.alive);
+    const near = this.nearestLifeboat(lifeboatTargetId(lb.setup.jobId));
+    return { jobId: lb.setup.jobId, launched: lb.spawned, out: out.length, aboard: lb.aboard, nearest: near ? Math.round(near.body.position.distanceTo(this.player.position)) : null, launch: lb.setup.launch, collapse: lb.setup.collapse };
+  }
+
   private flyJumper(n: NpcShip, dt: number): void {
     const onPlayer = this.alive && !this.busy && this.autopilot.mode !== 'lane' && n.body.position.distanceTo(this.player.position) < 3_000;
     const cutter = onPlayer ? null : this.nearestShip(n.body.position, Infinity, (x) => x.cutter?.jobId === n.jumper!.jobId);
