@@ -152,6 +152,27 @@ export interface SceneBlackHoleDef {
   glow: { color: string; light: number };
 }
 
+/**
+ * A comet (Sol's, docs/PROCGEN.md §45): its nucleus where it stands on the game's date, drawn larger
+ * than life, with a coma and two tails while it is near enough the Sun.
+ */
+export interface SceneCometDef {
+  /** Body id (its science card), e.g. `comet-1p`. */
+  id: string;
+  name: string;
+  subtitle: string;
+  position: THREE.Vector3;
+  /** The nucleus's drawn radius. */
+  radius: number;
+  /** The coma's radius and the tails' length (0 for a bare nucleus). */
+  coma: number;
+  tail: number;
+  /** Unit directions: the gas tail's, straight away from the Sun, and the dust tail's, bent back along its path. */
+  gasDir: THREE.Vector3;
+  dustDir: THREE.Vector3;
+  scanRange: number;
+}
+
 /** Harmless target drones for aiming practice (no reward). */
 export interface PracticeRangeDef {
   center: THREE.Vector3;
@@ -176,6 +197,8 @@ export interface SystemSceneDef {
   practice?: PracticeRangeDef;
   /** A black hole (Pyre's, once it has gone: docs/PROCGEN.md §26). */
   blackHole?: SceneBlackHoleDef;
+  /** Comets (Sol's: docs/PROCGEN.md §45). */
+  comets?: SceneCometDef[];
   /** Where ships appear after a jump, and what they face. */
   arrival: { position: THREE.Vector3; lookAt: THREE.Vector3 };
   /** Draw faint schematic orbit lines around the host star. */

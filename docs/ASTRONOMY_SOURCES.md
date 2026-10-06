@@ -179,6 +179,39 @@ Visual Binary Stars** (ORB6, kept at Georgia State University with the US Naval 
   side of the sky the secondary's far side lies on is not known; the game takes the catalogue's
   convention for the line of sight. Separations in flight are compressed (only directions are true).
 
+## Comets
+
+Fourteen of the Sun's periodic comets fly in Sol, in `src/data/generated/comets.json`
+([PROCGEN.md §45](PROCGEN.md#45-real-comets-in-sol)): 1P/Halley, 2P/Encke, 9P/Tempel 1,
+12P/Pons-Brooks, 13P/Olbers, 19P/Borrelly, 21P/Giacobini-Zinner, 29P/Schwassmann-Wachmann 1,
+46P/Wirtanen, 55P/Tempel-Tuttle, 67P/Churyumov-Gerasimenko, 81P/Wild 2, 103P/Hartley 2 and
+109P/Swift-Tuttle.
+
+- **Source.** The sky snapshot workflow fetches, for each, its record from the **JPL Small-Body
+  Database** (<https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html>, through its API) and, from **JPL
+  Horizons** (<https://ssd.jpl.nasa.gov/horizons/>, through its API), its osculating elements on the
+  snapshot's day (heliocentric, J2000 ecliptic, from the comet's latest apparition's solution with the
+  planets' pulls included) and its positions every 30 days from two years before that day to four
+  after, into `data/snapshot/orbits/<date>/` beside the binary orbits. `npm run data:comets`
+  (`scripts/comets-process.ts`, also run by `npm run data:process`) reads them offline.
+- **What is taken.** From the Small-Body Database: the comet's full name, its orbit class (in sentence
+  case, without the mark JPL adds to a class assigned by the Tisserand parameter), its nucleus's
+  effective diameter with the reference JPL gives (12P and 13P have none) and its total-magnitude
+  parameters M1 and K1. From Horizons: eccentricity, perihelion distance, semi-major axis,
+  inclination, node, argument of perihelion, time of perihelion, mean motion and period, as given.
+  Horizons' positions go to `src/data/generated/comet-checks.json`, read only by the tests.
+- **Checks.** `validateComets` (`npm run data:validate`) and the unit tests: cited and dated, each
+  comet once, bound orbits with elements that agree (Kepler's third law, q = a(1 − e)); and the
+  game's two-body reckoning against every one of Horizons' positions: within 0.1° and 0.2% for a year
+  either side of the snapshot, 3.5° and 7% over the six years. It matches within 0.06° and 0.14%, and
+  3.1° and 6.5% (2P/Encke and 21P/Giacobini-Zinner, four years on).
+- **Not claimed.** The reckoning leaves out the planets' pulls and the push of a comet's own gas, so
+  dates further from the snapshot are less sure (a perihelion outside the six years checked is given
+  only by its year; Halley's next is reckoned for August 2061, where it is predicted for late July).
+  The brightness law holds only while a comet is active, so beyond 4 AU from the Sun no magnitude is
+  given. When a comet grows a coma and tails in flight follows one simple rule (within 4 AU of the
+  Sun); some comets, such as 29P, are active further out. Sizes in flight are far larger than life.
+
 ## Pipeline: the sky snapshot
 
 1. **Fetch** (`scripts/sky-fetch.ts`) is the only step that needs the network. It saves raw

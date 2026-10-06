@@ -173,6 +173,15 @@ snapshot branch only when the archives changed.
   schematic places; so does Proxima Centauri, whose orbit round A and B the catalogue grades
   indeterminate. A measurement is read with a single scan of the companion; the pair's primary is not
   scanned.
+- Comets (PROCGEN §45): where a comet stands is reckoned as if only the Sun pulled on it, from JPL
+  Horizons' elements on 6 October 2026; it matches Horizons within 0.06° for a year either side, but
+  drifts by up to 3° four years on, and further from the snapshot it is less sure (perihelia outside
+  the six years checked are given only by their year). A comet grows its coma and tails by one rule,
+  within 4 AU of the Sun, so 29P, which is active much further out, is drawn bare; its brightness is
+  given only within 4 AU, where the magnitude law holds. Comets are drawn far larger than life, are
+  not solid, and are not in the codex (it stays the catalogue of stars and planets, so no finished
+  survey of Sol reopens). Only these fourteen periodic comets are in Sol; none of the long-period or
+  newly found comets of the day.
 - Flare stars (PROCGEN §43) flare on a schedule the game draws, about once every four hours of game
   time each for ten to fifty minutes, far fewer and longer than real flares; how strongly a star
   flares is not tied to how active it really is (all ten are alike). A flare does only two things to

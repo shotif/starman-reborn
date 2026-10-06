@@ -1,0 +1,328 @@
+{
+  "generatedBy": "scripts/comets-process.ts",
+  "retrieved": "2026-10-06",
+  "epochJd": 2461319.5,
+  "sources": {
+    "sbdb": {
+      "label": "JPL Small-Body Database",
+      "url": "https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html",
+      "retrieved": "2026-10-06"
+    },
+    "horizons": {
+      "label": "JPL Horizons",
+      "url": "https://ssd.jpl.nasa.gov/horizons/",
+      "retrieved": "2026-10-06"
+    }
+  },
+  "description": "Periodic comets: names, orbit classes, nucleus diameters (km, with the reference) and total-magnitude parameters M1 and K1 from the JPL Small-Body Database; osculating elements on the snapshot’s day from JPL Horizons (heliocentric, J2000 ecliptic: e, q and a in au, i, Ω and ω in degrees, Tp as a Julian date, n in degrees a day, the period in days).",
+  "comets": [
+    {
+      "id": "comet-1p",
+      "designation": "1P",
+      "name": "1P/Halley",
+      "orbitClass": "Halley-type comet",
+      "solution": "JPL#75",
+      "elements": {
+        "e": 0.9680284651483646,
+        "qAu": 0.5709958562639785,
+        "aAu": 17.85950718079986,
+        "inclinationDeg": 162.1906827170887,
+        "nodeDeg": 59.26872926294642,
+        "periDeg": 112.1693081143201,
+        "perihelionJd": 2474040.159497779,
+        "motionDegPerDay": 0.01305869768425168,
+        "periodDays": 27567.83323302959
+      },
+      "diameterKm": 11,
+      "diameterRef": "Lamy,P.L.;Toth,I.;Fernandez,Y.R.;Weaver,H.A. (2004) Comets II, pp. 223-264",
+      "m1": 5.5,
+      "k1": 8
+    },
+    {
+      "id": "comet-2p",
+      "designation": "2P",
+      "name": "2P/Encke",
+      "orbitClass": "Encke-type comet",
+      "solution": "JPL#K273/20",
+      "elements": {
+        "e": 0.8473180419212851,
+        "qAu": 0.3386076572775114,
+        "aAu": 2.217731954308205,
+        "inclinationDeg": 11.34776828471579,
+        "nodeDeg": 334.0190073558618,
+        "periDeg": 187.2877292087977,
+        "perihelionJd": 2461446.728454982,
+        "motionDegPerDay": 0.2984286352072659,
+        "periodDays": 1206.318555020604
+      },
+      "diameterKm": 4.8,
+      "diameterRef": "Lamy,P.L.;Toth,I.;Fernandez,Y.R.;Weaver,H.A. (2004) Comets II, pp. 223-264",
+      "m1": 15.7,
+      "k1": 4.5
+    },
+    {
+      "id": "comet-9p",
+      "designation": "9P",
+      "name": "9P/Tempel 1",
+      "orbitClass": "Jupiter-family comet",
+      "solution": "JPL#K284/2",
+      "elements": {
+        "e": 0.4648394830793424,
+        "qAu": 1.769056875195883,
+        "aAu": 3.305656563333803,
+        "inclinationDeg": 10.46833619951959,
+        "nodeDeg": 66.76071607396534,
+        "periDeg": 184.6126538323792,
+        "perihelionJd": 2461813.386804495,
+        "motionDegPerDay": 0.1639900420287697,
+        "periodDays": 2195.25524566207
+      },
+      "diameterKm": 6,
+      "diameterRef": "A'Hearn, M.F. et al. (2005) Science 310:258-264",
+      "m1": 12.9,
+      "k1": 9
+    },
+    {
+      "id": "comet-12p",
+      "designation": "12P",
+      "name": "12P/Pons-Brooks",
+      "orbitClass": "Halley-type comet",
+      "solution": "JPL#K242/84",
+      "elements": {
+        "e": 0.9547891461010771,
+        "qAu": 0.7819469319429107,
+        "aAu": 17.29555769265272,
+        "inclinationDeg": 74.14802574506588,
+        "nodeDeg": 255.8674248061908,
+        "periDeg": 199.0384651347815,
+        "perihelionJd": 2460421.703603887,
+        "motionDegPerDay": 0.01370257596431457,
+        "periodDays": 26272.43234684801
+      },
+      "diameterKm": null,
+      "diameterRef": null,
+      "m1": 5,
+      "k1": 15
+    },
+    {
+      "id": "comet-13p",
+      "designation": "13P",
+      "name": "13P/Olbers",
+      "orbitClass": "Halley-type comet",
+      "solution": "JPL#74",
+      "elements": {
+        "e": 0.9307015808582731,
+        "qAu": 1.175409581806408,
+        "aAu": 16.96156415058322,
+        "inclinationDeg": 44.64913757024637,
+        "nodeDeg": 85.83790831135877,
+        "periDeg": 64.44279591650687,
+        "perihelionJd": 2460491.728115951,
+        "motionDegPerDay": 0.01410929211295996,
+        "periodDays": 25515.10005731083
+      },
+      "diameterKm": null,
+      "diameterRef": null,
+      "m1": 6.7,
+      "k1": 18.5
+    },
+    {
+      "id": "comet-19p",
+      "designation": "19P",
+      "name": "19P/Borrelly",
+      "orbitClass": "Jupiter-family comet",
+      "solution": "JPL#K283/1",
+      "elements": {
+        "e": 0.637436051836435,
+        "qAu": 1.308487287220093,
+        "aAu": 3.608983446500284,
+        "inclinationDeg": 29.30164886852736,
+        "nodeDeg": 74.21380505871576,
+        "periDeg": 352.0189764701241,
+        "perihelionJd": 2462117.178632637,
+        "motionDegPerDay": 0.1437562511517929,
+        "periodDays": 2504.238926068505
+      },
+      "diameterKm": 4.8,
+      "diameterRef": "Lamy,P.L.,Toth,I.,Fernandez,Y.R.,Weaver,H.A. (to be published)",
+      "m1": 9.9,
+      "k1": 14
+    },
+    {
+      "id": "comet-21p",
+      "designation": "21P",
+      "name": "21P/Giacobini-Zinner",
+      "orbitClass": "Jupiter-family comet",
+      "solution": "JPL#K253/4",
+      "elements": {
+        "e": 0.7112186430344017,
+        "qAu": 1.007577667308697,
+        "aAu": 3.48906756965176,
+        "inclinationDeg": 32.08204195490583,
+        "nodeDeg": 195.2600227460902,
+        "periDeg": 172.9355610096884,
+        "perihelionJd": 2460759.857254636,
+        "motionDegPerDay": 0.1512307143939931,
+        "periodDays": 2380.468818404915
+      },
+      "diameterKm": 2,
+      "diameterRef": "Lamy,P.L.,Toth,I.,Fernandez,Y.R.,Weaver,H.A. (2004) Comets II, pp. 223-264",
+      "m1": 13.2,
+      "k1": 8.25
+    },
+    {
+      "id": "comet-29p",
+      "designation": "29P",
+      "name": "29P/Schwassmann-Wachmann 1",
+      "orbitClass": "Jupiter-family comet",
+      "solution": "JPL#K192/82",
+      "elements": {
+        "e": 0.0429176222525106,
+        "qAu": 5.797901847050701,
+        "aAu": 6.057892175066652,
+        "inclinationDeg": 9.35494293959329,
+        "nodeDeg": 312.3993004112988,
+        "periDeg": 51.27165627749732,
+        "perihelionJd": 2464037.10018052,
+        "motionDegPerDay": 0.06610309064469724,
+        "periodDays": 5446.038853689801
+      },
+      "diameterKm": 60.4,
+      "diameterRef": "Schambeau, C. A.; Fernandez, Y. R.; Lisse, C. M.; Samarasinha, N.; Woodney, L. M. (2015), Icarus 260, pp. 60-72",
+      "m1": 10.1,
+      "k1": 4.5
+    },
+    {
+      "id": "comet-46p",
+      "designation": "46P",
+      "name": "46P/Wirtanen",
+      "orbitClass": "Jupiter-family comet",
+      "solution": "JPL#K243/4",
+      "elements": {
+        "e": 0.6584059166386932,
+        "qAu": 1.056636894387654,
+        "aAu": 3.093252915830048,
+        "inclinationDeg": 11.7464512526822,
+        "nodeDeg": 82.16790545929896,
+        "periDeg": 356.3670009819116,
+        "perihelionJd": 2460449.504941314,
+        "motionDegPerDay": 0.1811677653306943,
+        "periodDays": 1987.108464592885
+      },
+      "diameterKm": 1.2,
+      "diameterRef": "Lamy,P.L.,Toth,I.,Fernandez,Y.R.,Weaver,H.A. (2004) Comets II, pp. 223-264",
+      "m1": 16.6,
+      "k1": 4.75
+    },
+    {
+      "id": "comet-55p",
+      "designation": "55P",
+      "name": "55P/Tempel-Tuttle",
+      "orbitClass": "Halley-type comet",
+      "solution": "JPL#J985/69",
+      "elements": {
+        "e": 0.9055185944726484,
+        "qAu": 0.9760129661568192,
+        "aAu": 10.33021217994341,
+        "inclinationDeg": 162.4755854993792,
+        "nodeDeg": 235.3971760041272,
+        "periDeg": 172.5501195903775,
+        "perihelionJd": 2463010.722771388,
+        "motionDegPerDay": 0.02968521584138393,
+        "periodDays": 12127.24886096758
+      },
+      "diameterKm": 3.6,
+      "diameterRef": "Lamy,P.L.,Toth,I.,Fernandez,Y.R.,Weaver,H.A. (2004) Comets II, pp. 223-264",
+      "m1": 10,
+      "k1": 25
+    },
+    {
+      "id": "comet-67p",
+      "designation": "67P",
+      "name": "67P/Churyumov-Gerasimenko",
+      "orbitClass": "Jupiter-family comet",
+      "solution": "JPL#K284/1",
+      "elements": {
+        "e": 0.6494846649767931,
+        "qAu": 1.212431845602102,
+        "aAu": 3.458998007952576,
+        "inclinationDeg": 3.866082621145869,
+        "nodeDeg": 36.28768639615192,
+        "periDeg": 22.23784243581366,
+        "perihelionJd": 2461871.049340631,
+        "motionDegPerDay": 0.1532069991025549,
+        "periodDays": 2349.762100353002
+      },
+      "diameterKm": 3.4,
+      "diameterRef": "Sierks et al., Science 347, aaa1044 (2015)",
+      "m1": 12.9,
+      "k1": 7.5
+    },
+    {
+      "id": "comet-81p",
+      "designation": "81P",
+      "name": "81P/Wild 2",
+      "orbitClass": "Jupiter-family comet",
+      "solution": "JPL#K222/37",
+      "elements": {
+        "e": 0.5381448680624743,
+        "qAu": 1.593445806968921,
+        "aAu": 3.450098736121576,
+        "inclinationDeg": 3.238906414570575,
+        "nodeDeg": 136.1108309657179,
+        "periDeg": 41.55725912287655,
+        "perihelionJd": 2462270.999985614,
+        "motionDegPerDay": 0.1538001602010091,
+        "periodDays": 2340.699772545737
+      },
+      "diameterKm": 4,
+      "diameterRef": "Lamy,P.L.,Toth,I.,Fernandez,Y.R.,Weaver,H.A. (2004) Comets II, pp. 223-264",
+      "m1": 9.8,
+      "k1": 12.5
+    },
+    {
+      "id": "comet-103p",
+      "designation": "103P",
+      "name": "103P/Hartley 2",
+      "orbitClass": "Jupiter-family comet",
+      "solution": "JPL#K233/5",
+      "elements": {
+        "e": 0.6930513273936825,
+        "qAu": 1.067149685069389,
+        "aAu": 3.476638866062408,
+        "inclinationDeg": 13.59850485211667,
+        "nodeDeg": 219.7646220823362,
+        "periDeg": 181.3333857064044,
+        "perihelionJd": 2460229.517396825,
+        "motionDegPerDay": 0.1520423951517076,
+        "periodDays": 2367.760647553549
+      },
+      "diameterKm": 1.6,
+      "diameterRef": "Lamy,P.L.,Toth,I.,Fernandez,Y.R.,Weaver,H.A. (2004) Comets II, pp. 223-264",
+      "m1": 16,
+      "k1": 4.5
+    },
+    {
+      "id": "comet-109p",
+      "designation": "109P",
+      "name": "109P/Swift-Tuttle",
+      "orbitClass": "Halley-type comet",
+      "solution": "JPL#32",
+      "elements": {
+        "e": 0.9633478607590039,
+        "qAu": 0.9593674377190341,
+        "aAu": 26.1749370592251,
+        "inclinationDeg": 112.8516547629867,
+        "nodeDeg": 139.8936742544565,
+        "periDeg": 153.2359966805827,
+        "perihelionJd": 2448974.038708483,
+        "motionDegPerDay": 0.007359962555646496,
+        "periodDays": 48913.29232698491
+      },
+      "diameterKm": 26,
+      "diameterRef": "Lamy,P.L.;Toth,I.;Fernandez,Y.R.;Weaver,H.A. (2004) Comets II, pp. 223-264",
+      "m1": 4.5,
+      "k1": 15
+    }
+  ]
+}

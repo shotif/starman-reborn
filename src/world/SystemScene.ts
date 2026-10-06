@@ -3,6 +3,7 @@ import type { Obstacle } from '../flight/autopilot.ts';
 import { getLocation, isInventedSystem } from '../data/systems.ts';
 import { createAsteroidField, createDustRing, type AsteroidFieldArt, type AsteroidHit } from './art/asteroids.ts';
 import { createBlackHole, type BlackHoleArt } from './art/blackHole.ts';
+import { createComet } from './art/comets.ts';
 import { createPlanet, type PlanetArt } from './art/planets.ts';
 import { createSkybox } from './art/skybox.ts';
 import { createStar, type StarArt } from './art/stars.ts';
@@ -10,7 +11,7 @@ import { createStation, type StationArt } from './art/stations.ts';
 import { createGeneratedStation } from './art/stationgen/index.ts';
 import { createJumpBeacon, createLaneRing, createNavBuoy, type LaneRingArt } from './art/structures.ts';
 import type { ArtContext, ArtObject } from './art/types.ts';
-import type { SceneBlackHoleDef, SceneLaneDef, ScenePlanetDef, SceneStarDef, SceneStationDef, SystemSceneDef } from './sceneTypes.ts';
+import type { SceneBlackHoleDef, SceneCometDef, SceneLaneDef, ScenePlanetDef, SceneStarDef, SceneStationDef, SystemSceneDef } from './sceneTypes.ts';
 import type { Target } from './targets.ts';
 
 export interface StarRuntime {
@@ -70,6 +71,8 @@ export class SystemScene {
   readonly scene = new THREE.Scene();
   readonly stars: StarRuntime[] = [];
   readonly planets: PlanetRuntime[] = [];
+  /** Sol's comets (docs/PROCGEN.md §45). */
+  readonly comets: SceneCometDef[] = [];
   readonly docks: DockSite[] = [];
   readonly lanes: LaneRuntime[] = [];
   readonly belts: AsteroidFieldArt[] = [];
@@ -170,6 +173,15 @@ export class SystemScene {
       if (def.orbitLines && p.orbitCenter && ctx.quality !== 'low') {
         this.scene.add(this.orbitLine(p.orbitCenter, p.position));
       }
+    }
+
+    // Comets (docs/PROCGEN.md §45.3): real objects where they stand on the game's date, drawn larger than life.
+    for (const [i, c] of (def.comets ?? []).entries()) {
+      const art = createComet({ radius: c.radius, coma: c.coma, tail: c.tail, gasDir: c.gasDir, dustDir: c.dustDir, seed: 701 + i * 37 }, ctx);
+      art.object.position.copy(c.position);
+      this.add(art);
+      this.comets.push(c);
+      this.targets.push({ id: `comet:${c.id}`, name: c.name, kind: 'comet', position: c.position, radius: Math.max(c.radius, c.coma * 0.4), subtitle: c.subtitle, dataClass: 'observed', bodyId: c.id, alive: true, cycle: true });
     }
 
     for (const s of def.stations) {
@@ -390,6 +402,7 @@ export class SystemScene {
     // The autopilot keeps out of a black hole's tides (flying to it, it stops outside them).
     if (this.blackHole && `hole:${this.blackHole.def.id}` !== exceptId) list.push({ id: `hole:${this.blackHole.def.id}`, center: this.blackHole.def.position, radius: this.blackHole.def.tidalRadius });
     for (const p of this.planets) if (`planet:${p.def.id}` !== exceptId) list.push({ id: `planet:${p.def.id}`, center: p.def.position, radius: p.def.radius });
+    for (const c of this.comets) if (`comet:${c.id}` !== exceptId) list.push({ id: `comet:${c.id}`, center: c.position, radius: c.radius * 2 });
     for (const d of this.docks) if (`station:${d.def.locationId}` !== exceptId) list.push({ id: `station:${d.def.locationId}`, center: d.def.position, radius: d.radius });
     return list;
   }

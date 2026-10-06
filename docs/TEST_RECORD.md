@@ -784,6 +784,22 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   Measurements are posted by research stations within reach about one slot in three, pass the
   contract guardrails, count a reading only in the pair's own system, and are paid on return.
 
+- `comets.test.ts`: **real comets in Sol**. JPL's fourteen comets, Halley's name, size and elements
+  checked against the raw Small-Body Database and Horizons records as fetched. The comets pass
+  `validateCometRules` (every scene on 110 dates over six years among them), and broken ones are
+  caught (an orbit not bound, a period that disagrees with the axis, a node that misses Horizons, pay
+  above the ceiling, odds of one, a line with a number). The reckoning matches every one of Horizons'
+  positions within 0.06° and 0.14% for a year either side of the snapshot and within 3.1° and 6.5%
+  over six years; Halley is next at the Sun in 2061 and was last in 1986, Encke next on 10 February
+  2027, at its perihelion distance and far brighter then, and a whole period brings a comet back.
+  What is said comes from the elements and the date (a far perihelion only by its year, a date far
+  from the snapshot said to be unsure, what it takes to see one). In flight each comet stands in its
+  real direction from the Sun on three dates, its tails away from the Sun while within 4 AU, Encke in
+  full flow at perihelion and Halley quiet, on the planets' own compressed scale. The News tells of
+  Encke three weeks before its perihelion and after, not two months out, at Sol's stations and
+  research stations within reach only. Imaging is posted by research stations near Sol about one slot
+  in three, passes the contract guardrails, counts a scan only in Sol, and is paid on return.
+
 ### Browser tests (Playwright)
 
 - `journey.spec.ts`: **the nine-step journey from the spec** on desktop and on touch.
@@ -1019,6 +1035,12 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   ship launched; at the launch six lifeboats away, the HUD counting them aboard as the pilot comes
   alongside five; then out through Pyre's lane from the star map's Missions list, arriving at GJ 915
   before the collapse with the job done, and the News at GJ 915 Freeport showing the Pyre Archive.
+- `comets.spec.ts`: **real comets in Sol**: three weeks before Encke passes the Sun, imaging of 2P/Encke
+  taken at Ledger Institute's bar; Earth Port's News telling of Encke nearing the Sun; out in Sol all
+  fourteen comets drawn, Encke's gas tail straight away from the Sun and Halley quiet; Encke scanned
+  from near it, its card giving its orbit class, period, next perihelion on 10 February 2027 and its
+  distance from Earth; Sol's card on the star map listing it; and the images paid for back at the
+  institute.
 - `binaries.spec.ts`: **real binary orbits**: at Dawnfield Institute, a measurement of Procyon B taken
   from the bar; out in flight Procyon B scanned from near it, its card giving the orbit (40.8 years,
   its eccentricity, where the pair stands on the game's date, and that in flight it stands as it did
@@ -1093,8 +1115,9 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   and the battle line selected, the Wake's assault on Regent Concourse, the News of it beaten off, the
   journal's border battles, the News with a shortage's relief
   haulers on their way, the News at Ledger Institute telling of a strong flare on Wolf 359, Wolf
-  359 flaring in flight with the HUD's flare line, Procyon B's science card with its orbit, and the
-  star map's card with Procyon's orbit, at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
+  359 flaring in flight with the HUD's flare line, Procyon B's science card with its orbit, the
+  star map's card with Procyon's orbit, Encke with its coma and tails seen from beside them, and
+  Encke's science card, at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
   zoom). Saved in `docs/screenshots/` once any smooth scrolling has come to rest. Each is audited
   for page scroll overflow, clipped controls (controls inside a scrolling panel count only if the

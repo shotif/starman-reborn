@@ -1,4 +1,5 @@
 import { equatorialToCartesian, parallaxToLightYears } from './coords.ts';
+import type { CometsDataset } from './comets.ts';
 import type { OrbitsDataset } from './orbits.ts';
 import type { AstrometryDataset, ExoplanetDataset } from './systems.ts';
 import type { FarStarsDataset, SourceRef, StarSystemRecord, SystemId } from './types.ts';
@@ -253,6 +254,29 @@ export function validateOrbits(orbits: OrbitsDataset, astrometry: AstrometryData
       issues.push({ level: 'error', code: 'orbit-elements', message: `${label}: an element out of range` });
     const mass = (o.axisArcsec / (a.parallaxMas / 1000)) ** 3 / o.periodYears ** 2;
     if (!(mass >= 0.03 && mass <= 6)) issues.push({ level: 'error', code: 'orbit-mass', message: `${label}: ${mass.toFixed(2)} solar masses in all` });
+  }
+  return issues;
+}
+
+/**
+ * Sol's comets (docs/PROCGEN.md §45): JPL cited and dated, each named once by its designation, its
+ * elements bound and in range, and its period, motion, axis and perihelion agreeing.
+ */
+export function validateComets(data: CometsDataset): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const { sbdb, horizons } = data.sources;
+  if (!sbdb.url.startsWith('http') || !horizons.url.startsWith('http') || !/^\d{4}-\d{2}-\d{2}$/.test(data.retrieved) || !(data.epochJd > 2_400_000))
+    issues.push({ level: 'error', code: 'comet-source', message: 'the comets are not cited and dated' });
+  const seen = new Set<string>();
+  for (const c of data.comets) {
+    if (seen.has(c.id) || !c.name.startsWith(`${c.designation}/`)) issues.push({ level: 'error', code: 'comet-name', message: `${c.id}: named twice, or not by its designation` });
+    seen.add(c.id);
+    const el = c.elements;
+    if (!(el.e >= 0 && el.e < 1 && el.qAu > 0 && el.aAu > el.qAu && el.inclinationDeg >= 0 && el.inclinationDeg <= 180 && Number.isFinite(el.perihelionJd) && el.periodDays > 0))
+      issues.push({ level: 'error', code: 'comet-elements', message: `${c.id}: an element out of range, or an orbit that is not bound` });
+    else if (Math.abs((el.periodDays / 365.25) ** 2 / el.aAu ** 3 - 1) > 0.002 || Math.abs(el.aAu * (1 - el.e) - el.qAu) > 1e-6 * el.aAu)
+      issues.push({ level: 'error', code: 'comet-elements', message: `${c.id}: its period, axis and perihelion do not agree` });
+    if (c.diameterKm !== null && !(c.diameterKm > 0)) issues.push({ level: 'error', code: 'comet-size', message: `${c.id}: a nucleus ${c.diameterKm} km across` });
   }
   return issues;
 }

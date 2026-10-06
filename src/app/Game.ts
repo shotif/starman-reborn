@@ -73,6 +73,8 @@ import { farStar, farStarLook, recordObservation, scheduleSky, skyComm, skyMomen
 import { flareStar, flareStatus, flaresBetween, flareSystems } from '../economy/flares.ts';
 import { ORBIT_EPOCH_JD, orbitOf } from '../data/orbits.ts';
 import { measureOffer } from '../economy/binaries.ts';
+import { cometOf } from '../data/comets.ts';
+import { imageOffer } from '../economy/comets.ts';
 import type { SkyNewsKind } from '../content/stellar/lines.ts';
 import { ROSTER } from '../content/rivals/rules.ts';
 import { recordMarketVisit } from '../economy/trade.ts';
@@ -1818,8 +1820,8 @@ export class Game {
     if (!t.bodyId) return;
     const state = this.state!;
     this.scannedForFolk(t.bodyId);
-    // Pyre and its black hole (docs/PROCGEN.md §26.5), a flaring star (§43.5) and a pair's secondary (§44.5): a scan is a reading for the work that wants one.
-    if (t.bodyId === PYRE_ID || t.bodyId === PYRE_HOLE_ID || flareStar(t.bodyId) || orbitOf(t.bodyId)?.secondary === t.bodyId) {
+    // Pyre and its black hole (docs/PROCGEN.md §26.5), a flaring star (§43.5), a pair's secondary (§44.5) and a comet (§45.5): a scan is a reading for the work that wants one.
+    if (t.bodyId === PYRE_ID || t.bodyId === PYRE_HOLE_ID || flareStar(t.bodyId) || orbitOf(t.bodyId)?.secondary === t.bodyId || cometOf(t.bodyId)) {
       const jobs = recordObservation(state, t.bodyId, state.location.systemId);
       if (jobs.length) {
         toast(`${t.name}: readings recorded.`, 'good', 3000);
@@ -2949,6 +2951,28 @@ export class Game {
         }
         return null;
       },
+      /** Test-only: the first time slot from now (or `from`) in which a station posts a comet to image (docs/PROCGEN.md §45.5), of a comet if one is named. */
+      imageJob: (q: { locationId: string; from?: number; comet?: string }) => {
+        const state = this.state;
+        if (!state) return null;
+        const first = boardEpoch(q.from ?? state.clock);
+        for (let epoch = first; epoch < first + 400; epoch++) {
+          const offer = imageOffer(q.locationId, epoch);
+          if (offer && (!q.comet || offer.comet.id === q.comet)) return { epoch, start: epoch * CONTRACTS.epochSeconds, comet: offer.comet.id };
+        }
+        return null;
+      },
+      /** Test-only: the comets in this flight (docs/PROCGEN.md §45.3), where they stand and how they are drawn. */
+      comets: () =>
+        this.flight?.system.comets.map((c) => ({ id: c.id, name: c.name, position: c.position.toArray(), radius: c.radius, coma: c.coma, tail: c.tail, gasDir: c.gasDir.toArray(), dustDir: c.dustDir.toArray() })) ?? null,
+      /** Test-only: the day the save began (ISO), which with the clock makes the game's date. */
+      startedOn: (iso: string) => {
+        const state = this.state;
+        if (!state || !Number.isFinite(Date.parse(iso))) return false;
+        state.createdAt = new Date(Date.parse(iso)).toISOString();
+        this.persist();
+        return true;
+      },
       /** Test-only: the flare under way in this flight's system, what it does and how its star glows (docs/PROCGEN.md §43.3). */
       flare: () => this.flight?.debugFlare() ?? null,
       /** Test-only: the first flare in a system (this one by default) starting after `from` (the clock by default), of a kind if one is named, within ten days (§43.2). */
@@ -3108,6 +3132,8 @@ export class Game {
       },
       /** Test-only: put the ship at rest `distance` metres from a target's surface, facing it. */
       placeNear: (arg: { id: string; distance: number }) => this.flight?.placeNear(arg.id, arg.distance) ?? false,
+      /** Test-only: places the ship beside a comet, looking at its tails (for screenshots). */
+      viewComet: (arg: { id: string; distance: number }) => this.flight?.viewComet(arg.id, arg.distance) ?? false,
       /** Test-only: turns the ship to face a target (for screenshots of the sky). */
       face: (arg: string | { id: string; below?: number }) => (typeof arg === 'string' ? this.flight?.face(arg) : this.flight?.face(arg.id, arg.below)) ?? false,
       /** Test-only: the mining laser, the rocks near the player and any pack hunting the miner. */

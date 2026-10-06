@@ -27,6 +27,8 @@ import { EDGE_JOBS } from '../content/stellar/doomedLines.ts';
 import { FLARE_WATCH } from '../content/stellar/flareLines.ts';
 import { BINARIES, BINARY_LINES } from '../content/stellar/binaries.ts';
 import { fillPair, measureOffer, measureReward } from './binaries.ts';
+import { COMET_LINES, COMETS } from '../content/stellar/comets.ts';
+import { fillComet, imageOffer, imageReward } from './comets.ts';
 import { fillFlare, flareWatchOffers, flareWatchReward } from './flares.ts';
 import { fillPyreJob, pyreOffers, pyreRefugeId, PYRE_HOLE_ID } from './doomed.ts';
 import { STELLAR } from '../content/stellar/rules.ts';
@@ -200,6 +202,9 @@ export function boardFor(locationId: string, epoch: number): JobDef[] {
     // A pair's measurement at a research station near it (docs/PROCGEN.md §44.5), from its own stream and id.
     const m = pairContract(loc, epoch);
     if (m) out.push(m);
+    // A comet to image at a research station near Sol (docs/PROCGEN.md §45.5), from its own stream and id.
+    const ci = cometContract(loc, epoch);
+    if (ci) out.push(ci);
     // Escorts for this station's relief and shipments bound through raided lanes (docs/PROCGEN.md §21.7).
     out.push(...reliefEscorts(loc, epoch));
     // A commission for the owner's own ranks (docs/PROCGEN.md §32.4), from its own stream and id.
@@ -478,6 +483,28 @@ function pairContract(giver: FictionalLocation, epoch: number): JobDef | null {
     difficultyNote: `${jumps === 0 ? 'In this system' : jumps === 1 ? `One jump, in ${system}` : `${jumps} jumps, in ${system}`}, within a day`,
     destinationLocationId: giver.id,
     contract: { kind: 'observe', pair: orbit.secondary },
+  };
+}
+
+/** A comet to image (docs/PROCGEN.md §45.5): scan it in Sol within a day of the posting, then back. */
+function cometContract(giver: FictionalLocation, epoch: number): JobDef | null {
+  const offer = imageOffer(giver.id, epoch);
+  if (!offer) return null;
+  const { comet, jumps } = offer;
+  const start = epoch * CONTRACTS.epochSeconds;
+  const fill = (t: string) => fillComet(t, comet, { giver: giver.name });
+  return {
+    ...common(giver, `${CONTRACT_PREFIX}${giver.id}.${epoch}.comet-${comet.designation.toLowerCase()}`, 1),
+    title: fill(COMET_LINES.image.title),
+    briefing: fill(COMET_LINES.image.briefing),
+    objectives: [
+      { kind: 'observe', star: comet.id, systemId: 'sol', from: start, to: start + COMETS.image.window, text: fill(COMET_LINES.image.objective) },
+      { kind: 'visit', locationId: giver.id, text: `Bring the images back to ${giver.name}` },
+    ],
+    reward: imageReward(jumps),
+    difficultyNote: `${jumps === 0 ? 'In this system' : jumps === 1 ? 'One jump, in Sol' : `${jumps} jumps, in Sol`}, within a day`,
+    destinationLocationId: giver.id,
+    contract: { kind: 'observe', comet: comet.id },
   };
 }
 

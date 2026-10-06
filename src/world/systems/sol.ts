@@ -1,10 +1,24 @@
 import * as THREE from "three";
+import { COMET_LINES, COMETS } from "../../content/stellar/comets.ts";
+import {
+  COMET_DATA,
+  COMET_EPOCH_JD,
+  cometAt,
+  cometHeading,
+  type Comet,
+} from "../../data/comets.ts";
 import {
   eclipticLongitude,
   hasSolarElements,
+  SOLAR,
   type SolarPlanetId,
 } from "../../data/solar.ts";
-import type { ScenePlanetDef, SystemSceneDef } from "../sceneTypes.ts";
+import { activity, fillComet } from "../../economy/comets.ts";
+import type {
+  SceneCometDef,
+  ScenePlanetDef,
+  SystemSceneDef,
+} from "../sceneTypes.ts";
 import { dirTo, polar, v } from "./helpers.ts";
 
 const SUN = v(0, 0, 0);
@@ -148,10 +162,136 @@ export function solScene(jd: number | null): SystemSceneDef {
       polar(SUN, p.orbit, real?.angles[p.id] ?? p.angle),
     ]),
   ) as Record<string, THREE.Vector3>;
-  return buildSolScene(
+  const def = buildSolScene(
     positions,
     real ? (real.marsNudged ? "real-nudged" : "real") : "schematic",
   );
+  // The comets where they stand on the game date (without one, on the day their elements were taken).
+  def.comets = placeComets(def, jd ?? COMET_EPOCH_JD);
+  return def;
+}
+
+// ---------------------------------------------------------------- comets (docs/PROCGEN.md §45.3)
+
+/** The planets' mean distances from the Sun (JPL's elements, au) against their orbits in flight. */
+let scale: { au: number; orbit: number }[] | null | undefined;
+function solScale(): { au: number; orbit: number }[] | null {
+  if (scale !== undefined) return scale;
+  const el = SOLAR.elements;
+  scale = el
+    ? PLANETS.map((p) => ({
+        au: el[p.id as SolarPlanetId].a[0],
+        orbit: p.orbit,
+      })).sort((a, b) => a.au - b.au)
+    : null;
+  return scale;
+}
+
+/**
+ * A distance from the Sun (au) on the planets' compressed scale: between two planets' orbits as it
+ * lies between their distances, by the logarithm; inside Mercury's, in proportion (never nearer than
+ * `COMETS.nearest`); beyond Neptune's, on at the rate between Uranus and Neptune.
+ */
+export function compressedSolDistance(au: number): number | null {
+  const s = solScale();
+  if (!s || !(au > 0) || !Number.isFinite(au)) return null;
+  const first = s[0]!;
+  const last = s.at(-1)!;
+  const before = s.at(-2)!;
+  if (au <= first.au)
+    return Math.max(COMETS.nearest, (first.orbit * au) / first.au);
+  if (au >= last.au)
+    return (
+      last.orbit +
+      ((last.orbit - before.orbit) / Math.log(last.au / before.au)) *
+        Math.log(au / last.au)
+    );
+  const i = s.findIndex((x) => x.au >= au);
+  const a = s[i - 1]!;
+  const b = s[i]!;
+  return (
+    a.orbit + ((b.orbit - a.orbit) * Math.log(au / a.au)) / Math.log(b.au / a.au)
+  );
+}
+
+/** The J2000 ecliptic in the scene's frame: x toward the equinox, the ecliptic's north up. */
+export function eclipticToScene([x, y, z]: readonly [
+  number,
+  number,
+  number,
+]): THREE.Vector3 {
+  return new THREE.Vector3(x, z, -y);
+}
+
+/** A comet's nucleus as drawn: larger than life, larger for a larger nucleus. */
+export function nucleusRadius(comet: Comet): number {
+  const n = COMETS.nucleus;
+  return n.base + n.perRootKm * Math.sqrt(comet.diameterKm ?? n.unknownKm);
+}
+
+const STRETCH = 1.05;
+const STRETCH_TRIES = 24;
+
+/** What a comet of this size here would crowd that is not its own, if anything (§45.3). */
+export function cometCrowds(
+  def: SystemSceneDef,
+  at: THREE.Vector3,
+  size: number,
+): string | null {
+  const c = COMETS.clear;
+  if (at.distanceTo(def.arrival.position) < size + c.arrival) return "arrival";
+  for (const b of def.beacons)
+    if (at.distanceTo(b.position) < size + c.arrival) return b.id;
+  for (const s of def.stations)
+    if (at.distanceTo(s.position) < size + c.station) return s.locationId;
+  for (const p of def.planets)
+    if (at.distanceTo(p.position) < size + p.radius + c.planet) return p.id;
+  for (const st of def.stars)
+    if (at.distanceTo(st.position) < size + st.radius + c.planet) return st.id;
+  const near = new THREE.Vector3();
+  for (const l of def.lanes) {
+    new THREE.Line3(l.from, l.to).closestPointToPoint(at, true, near);
+    if (near.distanceTo(at) < size + c.lane) return l.id;
+  }
+  return null;
+}
+
+/** The comets in Sol's scene on a date, each moved out along its direction while it crowds anything. */
+function placeComets(def: SystemSceneDef, jd: number): SceneCometDef[] {
+  return COMET_DATA.comets.flatMap((comet): SceneCometDef[] => {
+    const at = cometAt(comet, jd);
+    let d = compressedSolDistance(at.r);
+    if (d === null) return [];
+    const dir = eclipticToScene(at.xyz).normalize();
+    const k = activity(at.r);
+    const radius = nucleusRadius(comet);
+    const coma = radius * COMETS.activity.coma * k;
+    for (
+      let i = 0;
+      i < STRETCH_TRIES &&
+      cometCrowds(def, dir.clone().multiplyScalar(d), radius + coma);
+      i++
+    )
+      d *= STRETCH;
+    const heading = eclipticToScene(cometHeading(comet, jd)).normalize();
+    return [
+      {
+        id: comet.id,
+        name: comet.name,
+        subtitle: fillComet(COMET_LINES.target, comet),
+        position: dir.clone().multiplyScalar(d),
+        radius,
+        coma,
+        tail: COMETS.activity.tail * k,
+        gasDir: dir.clone(),
+        dustDir: dir
+          .clone()
+          .addScaledVector(heading, -COMETS.activity.dustBend)
+          .normalize(),
+        scanRange: COMETS.scanRange,
+      },
+    ];
+  });
 }
 
 function buildSolScene(
@@ -330,7 +470,7 @@ function buildSolScene(
     scaleNote:
       layout === "schematic"
         ? "Planet sizes, spacing and positions are schematic, not today’s sky; the belts are placed schematically."
-        : `Planets sit in their real directions from the Sun on the game date (JPL's elements); sizes and spacing are compressed, and the belts are placed schematically.${layout === "real-nudged" ? " Mars, behind the Sun, is drawn a little off its true place." : ""}`,
+        : `Planets and comets sit in their real directions from the Sun on the game date (JPL's elements); sizes and spacing are compressed, and the belts are placed schematically.${layout === "real-nudged" ? " Mars, behind the Sun, is drawn a little off its true place." : ""}`,
   };
 }
 

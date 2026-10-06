@@ -11,7 +11,8 @@ import { button, dataBadge } from '../components.ts';
 import { formatCredits, h, signed } from '../dom.ts';
 import { glyph, type GlyphName } from '../glyphs.ts';
 import { icon } from '../icons.ts';
-import { borderNewsList, denNews, edgeNewsList, flareNewsList, haulNews, markNews, newsList, outpostRaidNewsList, rivalNewsList, skyNewsList } from '../news.ts';
+import { gameJulianDate } from '../../data/solar.ts';
+import { borderNewsList, cometNewsList, denNews, edgeNewsList, flareNewsList, haulNews, markNews, newsList, outpostRaidNewsList, rivalNewsList, skyNewsList } from '../news.ts';
 import { fineOwed, isLawful, pardonCost, payFines } from '../../economy/law.ts';
 import { buysSurveys, sellSurvey, surveysForSale, surveyValue } from '../../economy/progress.ts';
 import { toast } from '../components.ts';
@@ -375,6 +376,7 @@ export function newsContent(ctx: StationContext): HTMLElement {
     skyNewsList(state.clock),
     h('div', { class: 'list-head' }, h('span', null, 'Local news'), h('span', null, 'within two jumps')),
     flareNewsList(loc.systemId, state.clock),
+    cometNewsList(locationId, gameJulianDate(state.createdAt, state.clock)),
     markNews(loc.systemId),
     borderNewsList(loc.systemId, state.clock),
     denNews(state, loc.systemId),

@@ -7,6 +7,9 @@ import { farStar } from './stellar.ts';
 import { flaresBetween, flareStar } from './flares.ts';
 import { orbitOf } from '../data/orbits.ts';
 import { BINARIES } from '../content/stellar/binaries.ts';
+import { COMETS } from '../content/stellar/comets.ts';
+import { cometOf } from '../data/comets.ts';
+import { imagingJumps } from './comets.ts';
 import { PYRE_HOLE_ID } from './pyrePhysics.ts';
 import { isOutpostId } from '../content/outposts/sites.ts';
 import type { Issue } from '../content/validate.ts';
@@ -331,10 +334,15 @@ function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, numbe
       const back = c.objectives[1];
       if (o.kind !== 'observe' || back?.kind !== 'visit' || back.locationId !== c.giverLocationId) return report('objectives', c.id, 'an observation, then back with the readings');
       if (getLocation(c.giverLocationId).stationType !== 'research-station') report('observe', c.id, 'posted by a station that is not a research station');
-      if (!(farStar(o.star) || o.star === PYRE_ID || o.star === PYRE_HOLE_ID || flareStar(o.star) || orbitOf(o.star)?.secondary === o.star) || !(o.to > o.from)) report('observe', c.id, `${o.star}: not a far star, Pyre, a flare star or a pair's secondary, or a window that never opens`);
-      // A star read where it is is read in its own system.
-      if (o.systemId !== undefined && o.systemId !== getComponent(o.star)?.systemId) report('observe', c.id, `${o.star} is not read in its own system`);
-      if (c.contract?.pair !== undefined) {
+      if (!(farStar(o.star) || o.star === PYRE_ID || o.star === PYRE_HOLE_ID || flareStar(o.star) || orbitOf(o.star)?.secondary === o.star || cometOf(o.star)) || !(o.to > o.from)) report('observe', c.id, `${o.star}: not a far star, Pyre, a flare star, a pair's secondary or a comet, or a window that never opens`);
+      // A star read where it is is read in its own system; a comet in Sol.
+      if (o.systemId !== undefined && o.systemId !== (cometOf(o.star) ? 'sol' : getComponent(o.star)?.systemId)) report('observe', c.id, `${o.star} is not read in its own system`);
+      if (c.contract?.comet !== undefined) {
+        // A comet's imaging (docs/PROCGEN.md §45.5): a catalogued comet, in Sol, within a day, for a research station within reach.
+        if (!cometOf(o.star) || c.contract.comet !== o.star || o.systemId !== 'sol') report('observe', c.id, `${o.star}: imaging not of a catalogued comet, read in Sol`);
+        else if (o.to - o.from !== COMETS.image.window || o.from !== Math.floor(clock / CONTRACTS.epochSeconds) * CONTRACTS.epochSeconds) report('observe', c.id, 'imaging whose window is not the day from its posting');
+        if (imagingJumps(c.giverLocationId) === null) report('observe', c.id, 'imaging posted by a station not within reach of Sol');
+      } else if (c.contract?.pair !== undefined) {
         // A pair's measurement (docs/PROCGEN.md §44.5): its secondary, in its system, within a day.
         if (orbitOf(o.star)?.secondary !== o.star || c.contract.pair !== o.star || o.systemId === undefined) report('observe', c.id, `${o.star}: a measurement not of a catalogued pair's secondary, read in its system`);
         else if (o.to - o.from !== BINARIES.measure.window || o.from !== Math.floor(clock / CONTRACTS.epochSeconds) * CONTRACTS.epochSeconds) report('observe', c.id, 'a measurement whose window is not the day from its posting');

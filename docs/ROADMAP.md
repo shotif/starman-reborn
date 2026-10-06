@@ -9,12 +9,12 @@ After the scripted opening (10–20 minutes), the neighbourhood is an open sandb
 systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
 of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
 packs in lawless space; 39 ships and 146 pieces of equipment; and generated contracts on every job
-board. Increments 1–43 (under [Done so far](#done-so-far)) added world events and news, contracts
+board. Increments 1–44 (under [Done so far](#done-so-far)) added world events and news, contracts
 of every kind, the law and the outlaw path, goals, ranks with each faction that open doors, races round real planets and moons against racers who really fly, a wing that takes orders and grows with every fight, border battles to see and join, seven story arcs, combat depth, people in the
 bars and a trade computer, a world that answers, gluts that ship their surplus out and relief to
 escort through raided lanes, a fleet of your own whose captains fly the lanes, a crew aboard your own ship,
 up to three stations of your own to build and defend, refineries in the real belts, captains who supply them and mine for them, outposts that trade with their neighbours, have news of their own and people who live there, passengers and sightseers, rival pilots with careers and stories of their own, a
-supernova in every sky (as fiction), real flare stars that flare (when is fiction), real binary orbits, an invented star at the map's edge that explodes and leaves a
+supernova in every sky (as fiction), real flare stars that flare (when is fiction), real binary orbits, real comets in Sol, an invented star at the map's edge that explodes and leaves a
 black hole to fly to (fiction too), encounters on the lanes between the docks, wrecks and derelicts to fly to with short trails across a few systems, mining in the real belts, the frontier with a life of its own,
 a border war whose fronts can be won for good, story endings that change stations for good, escorts
 and convoys across jumps, haulers with real cargo on a timetable, and a game measured and tuned on a
@@ -29,13 +29,7 @@ What it lacks now:
 ## Proposed next increments
 
 Chosen by the owner on 6 October 2026, once flare stars were live: real binary orbits (done), then
-real comets in Sol, then a pilot's logbook.
-
-### Real comets in Sol ⏳
-
-Periodic comets (Halley, Encke, Tempel 1, 67P and others) placed in the Solar System from JPL's
-orbital elements on the game's date, flyable and scannable, their tails pointing away from the Sun,
-with codex entries. Their elements are already in the sky snapshot.
+real comets in Sol (done), then a pilot's logbook.
 
 ### Pilot's logbook ⏳
 
@@ -50,6 +44,17 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 44. Real comets in Sol ✅
+
+Fourteen of the Sun's periodic comets, among them Halley, Encke, Tempel 1 and 67P, now fly in Sol
+where JPL Horizons has them on the game's date, above or below the planets as they really are, their
+distances compressed onto the planets' scale. Within 4 AU of the Sun each grows a coma and two tails,
+the gas tail straight away from the Sun and the dust tail bent back along its path. A comet can be
+flown to and scanned: its card gives its orbit, when it last and next passes the Sun, its nucleus's
+size, how far it is from the Sun and Earth, and how bright it looks from Earth. Sol's card on the star
+map and the encyclopedia list them, the News tells when one nears the Sun, and research stations near
+Sol pay pilots to image one ([PROCGEN.md §45](PROCGEN.md#45-real-comets-in-sol)).
 
 ### 43. Real binary orbits ✅
 

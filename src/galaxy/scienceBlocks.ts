@@ -21,6 +21,8 @@ import type {
 import { dataBadge, sourceLink } from '../ui/components.ts';
 import { ORBITS, orbitOf } from '../data/orbits.ts';
 import { dateText, pairFacts, systemPairs, type PairFacts } from '../economy/binaries.ts';
+import { COMET_DATA, cometOf } from '../data/comets.ts';
+import { allCometFacts, cometFacts, type CometFacts } from '../economy/comets.ts';
 import { h, type Child } from '../ui/dom.ts';
 import { icon } from '../ui/icons.ts';
 import { formatHeightLong, formatLy } from './mapData.ts';
@@ -365,6 +367,63 @@ export function orbitCard(starId: string, jd: number): HTMLElement | null {
   if (!orbit) return null;
   const f = pairFacts(orbit, jd);
   return h('section', { class: 'science-orbit', 'data-testid': 'science-orbit' }, h('h4', null, 'Orbit ', dataBadge('observed')), h('p', null, f.headline), ...orbitLines(f, jd, 'full'));
+}
+
+// ---------- Comets (docs/PROCGEN.md §45.4) ----------
+
+function cometLines(f: CometFacts, jd: number, detail: Detail): HTMLElement[] {
+  const now = `On ${dateText(jd)}`;
+  const rows: [string, string][] = [
+    ['Kind', f.orbitClass],
+    ['Period', f.period],
+    ['Nearest the Sun', f.perihelion],
+    ['Furthest from the Sun', f.aphelion],
+    ['Eccentricity', f.eccentricity],
+    ['Inclination', f.inclination],
+    ['Last at the Sun', f.lastPerihelion],
+    ['Next at the Sun', f.nextPerihelion],
+    ...(f.nucleus ? ([['Nucleus', f.nucleus]] as [string, string][]) : []),
+    [now, f.now],
+  ];
+  const shown = detail === 'compact' ? rows.filter(([k]) => k === now || k === 'Next at the Sun') : rows;
+  const c = f.comet;
+  const lines: (HTMLElement | null)[] = [
+    h('dl', { class: 'kv' }, shown.flatMap(([k, v]) => [h('dt', null, k), h('dd', null, v)])),
+    detail === 'full' ? h('p', { 'data-testid': 'comet-brightness' }, f.brightness) : null,
+    detail === 'full' && f.unsure ? h('p', { class: 'muted small' }, f.unsure) : null,
+    h(
+      'p',
+      { class: 'row wrap' },
+      sourceLink(COMET_DATA.sources.horizons, `${c.designation}, orbit ${c.solution}`),
+      detail === 'full' ? [' ', sourceLink(COMET_DATA.sources.sbdb, c.diameterRef ? `size: ${c.diameterRef}` : c.designation)] : null,
+    ),
+    h('p', { class: 'muted small' }, dataBadge('estimated'), ' ', f.scene),
+  ];
+  return lines.filter((x): x is HTMLElement => x !== null);
+}
+
+/** Sol's comets, on a date (another system: null). */
+export function cometBlock(systemId: SystemId, jd: number, detail: Detail): HTMLElement | null {
+  if (systemId !== 'sol') return null;
+  return h(
+    'ul',
+    { class: 'sci-list sci-comets', 'data-testid': 'science-comets' },
+    allCometFacts(jd).map((f) => h('li', { class: 'sci-item', 'data-testid': `comet-${f.comet.designation.toLowerCase()}` }, h('div', { class: 'sci-item-head' }, h('strong', null, detail === 'compact' ? f.comet.name : f.headline)), cometLines(f, jd, detail))),
+  );
+}
+
+/** A comet's science card, on a date (not a comet: null). */
+export function cometCard(bodyId: string, jd: number): HTMLElement | null {
+  const comet = cometOf(bodyId);
+  if (!comet) return null;
+  const f = cometFacts(comet, jd);
+  return h(
+    'div',
+    { class: 'stack science-card', 'data-testid': 'science-comet' },
+    h('div', { class: 'row wrap' }, dataBadge('observed', 'Real comet')),
+    h('p', null, f.headline),
+    ...cometLines(f, jd, 'full'),
+  );
 }
 
 // ---------- Facts ----------

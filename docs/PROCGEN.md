@@ -4618,3 +4618,109 @@ see them caught, check the physics (Alpha Centauri's two Suns' worth of mass, it
 the 2030s, a full period bringing a pair back), a pair turned about, what is said, every scene, and
 the measurements (posted as often as the rules say, only by research stations within reach, paid on
 return, counted only in the pair's system).
+
+## 45. Real comets in Sol
+
+Fourteen of the Sun's periodic comets fly in Sol on their real orbits: 1P/Halley, 2P/Encke,
+9P/Tempel 1, 12P/Pons-Brooks, 13P/Olbers, 19P/Borrelly, 21P/Giacobini-Zinner,
+29P/Schwassmann-Wachmann 1, 46P/Wirtanen, 55P/Tempel-Tuttle, 67P/Churyumov-Gerasimenko, 81P/Wild 2,
+103P/Hartley 2 and 109P/Swift-Tuttle (`src/data/comets.ts`, read from JPL by
+`scripts/comets-process.ts`; what the game does with them in `COMETS` and what it says in
+`COMET_LINES`, `src/content/stellar/comets.ts`; the engine in `src/economy/comets.ts`). Nothing
+about them is invented: every element and size is JPL's, and every number shown is reckoned from
+those and a date. They were chosen as the best-known periodic comets: the ones spacecraft have
+visited, the parents of well-known meteor showers, and the famous returning ones.
+
+The owner chose (6 October 2026): real binary orbits, then real comets in Sol, then a pilot's
+logbook.
+
+### 45.1 The comets
+
+The sky snapshot (`scripts/sky-fetch.ts`, on GitHub's runners: [ASTRONOMY_SOURCES.md,
+*Comets*](ASTRONOMY_SOURCES.md#comets)) fetches, for each comet, JPL's Small-Body Database record
+(its name, its orbit class, its nucleus's size where measured, with the reference, and its
+magnitude parameters) and, from JPL Horizons, its osculating elements on the snapshot's day (from
+its latest apparition's solution, the planets' pulls included) and where Horizons has it every 30
+days from two years before that day to four years after. `scripts/comets-process.ts` takes the
+elements as they are, converted only in units, and keeps Horizons' positions to test against.
+
+### 45.2 The reckoning
+
+Where a comet stands on a date is reckoned from those elements as if only the Sun pulled on it: the
+mean anomaly from the time of perihelion, Kepler's equation, then the rotation by the argument of
+perihelion, the inclination and the node, into the J2000 ecliptic, the frame of the planets'
+elements ([ASTRONOMY_SOURCES.md, *The Solar System on the real date*](ASTRONOMY_SOURCES.md#the-solar-system-on-the-real-date)). Tested against Horizons, every comet stands within 0.06° and 0.14% of where Horizons
+has it for a year either side of the snapshot, and within 3.1° and 6.5% for the whole six years (the
+planets' pulls, and the gas a comet throws off, move it off a pure two-body orbit; 2P/Encke and
+21P/Giacobini-Zinner drift most, four years on). Further from the snapshot it is less sure, and the
+cards say so. The last and next perihelia are reckoned the same way: within the six years checked
+they are given to the day, further off only by the year (Halley's next is reckoned for August 2061,
+its published prediction is late July, so the card says 2061).
+
+How bright a comet looks from Earth is reckoned by the standard law for a comet's total brightness,
+from JPL's magnitude parameters: *m* = *M1* + 5 log *Δ* + *K1* log *r*, with *r* its distance from
+the Sun and *Δ* from Earth (Earth's place from the planets' elements). The law holds only while
+a comet is active: further out the cards say it is too faint for all but the largest telescopes, and
+give no number.
+
+### 45.3 In flight
+
+In Sol, each comet stands in its real direction from the Sun on the game's date, above or below the
+planets' plane as it really is, at its distance from the Sun compressed onto the planets' own scale
+(between two planets' orbits as its distance lies between theirs, by the logarithm of the distance;
+beyond Neptune, on at the rate between Uranus and Neptune). A comet that would crowd what is not its
+own (the arrival point and beacons, the stations, the planets, the lane: `COMETS.clear`) is moved
+further out along its direction until it does not. Its nucleus is drawn far larger than life (real
+ones are 1 to 60 km across), larger for a larger nucleus. Within 4 AU of the Sun, where water ice
+starts to turn to gas, it grows a coma and two tails, fuller the nearer the Sun (in full by 1 AU):
+the gas tail straight away from the Sun, and the dust tail curving back along its path. A comet is a
+new kind of target: it can be selected, flown to and scanned like a planet, but it is not part of the
+codex (the codex stays the catalogue of stars and planets, so no survey already finished changes).
+
+### 45.4 What the game says
+
+- **The science card** of a comet: its name and orbit class, how often it comes round, its nearest
+  and furthest from the Sun, the eccentricity and the inclination, when it last passed the Sun and
+  when it next will, the nucleus's size where measured (with the reference), where it is on the
+  game's date (how far from the Sun and from Earth), how bright it looks from Earth and what it takes
+  to see it (the naked eye, binoculars, a small telescope, a large one), JPL cited, and that in
+  flight it is drawn far larger than life.
+- **Sol's card on the star map** lists the comets: how far each is from the Sun on the game's date,
+  and when it next passes the Sun.
+- **The encyclopedia** gives Sol's comets in full.
+- **The News**, at Sol's stations and at research stations within reach of Sol: a comet within 60
+  days of perihelion is news (`COMETS.news`): when it passes the Sun and how close, and how bright it
+  looks from Earth.
+
+### 45.5 Imaging a comet
+
+Comets are imaged again and again, to follow how they wake and fade. Research stations within two
+jumps of Sol post, from a random stream of their own, a comet to image in a time slot with odds of
+about one in three (`image.odds`): **Image {comet}**: scan the comet in Sol within a day of the
+posting, then bring the images back. It pays 700 cr and 300 cr a jump. Which comet is the station's
+own pick from all fourteen; the briefing claims nothing about how active it is.
+
+### 45.6 One save's own
+
+Nothing new is kept: the comets are JPL's, where they stand follows from the game's date, and an
+imaging job taken on is kept like every contract, its images on the job like every observation
+(§25.5).
+
+### 45.7 Guardrails
+
+`validateComets` (`src/data/validate.ts`, run by `npm run data:validate`) and `validateCometRules`
+(`src/economy/cometGuards.ts`, run in `tests/unit/comets.test.ts`): each comet named once, its
+elements in range (bound orbits, a period matching its semi-major axis by Kepler's third law), its
+size and magnitude parameters sensible; the game's reckoning matching Horizons at every one of its
+positions (within 0.1° and 0.2% for a year either side of the snapshot, 3.5° and 7% for the whole
+six years); in Sol, on every one of many dates, each comet in its real direction from the Sun (to
+0.01 radian), no nearer than its compressed distance, crowding nothing that is not its own, and its
+tails pointing away from the Sun; the News only within its window and only of a real perihelion;
+imaging paying more for further stations and within what any contract pays, near enough for a young
+pilot; and no line with a number of its own or a field it cannot fill. The contract guardrails check
+every imaging job (a research station within reach, a catalogued comet read in Sol, a day from its
+posting, back with the images). The tests also check JPL's raw records against the game's elements,
+break the rules and the elements to see them caught, check the physics (Halley next at the Sun in
+2061, Encke on 10 February 2027, a full period bringing a comet back), what is said, the scene on
+many dates, the News, and the work (posted as often as the rules say, only by research stations
+within reach, paid on return, counted only in Sol).

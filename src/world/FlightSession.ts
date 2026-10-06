@@ -538,7 +538,7 @@ function boltKind(type: DamageType, tier: number): ProjectileKind {
 
 /** Targets whose distance is shown to their surface rather than their centre (a belt's is to its band of rock). */
 function surfaced(kind: Target['kind']): boolean {
-  return kind === 'planet' || kind === 'star' || kind === 'rock' || kind === 'hole' || kind === 'wreck';
+  return kind === 'planet' || kind === 'star' || kind === 'rock' || kind === 'hole' || kind === 'wreck' || kind === 'comet';
 }
 
 /** A site's words with its ship and body filled in. */
@@ -1285,7 +1285,7 @@ export class FlightSession {
     if (this.hail && !this.hail.held) return { label: 'Answer', action: 'answer', icon: 'info' };
     // A far star is observed from wherever the ship is, when a contract wants it now; it is never flown to.
     if (sel?.kind === 'sky') return observationsWanted(this.state, sel.id.slice('sky:'.length)).length ? { label: 'Observe', action: 'scan', icon: 'scan' } : null;
-    if (sel && (sel.kind === 'planet' || sel.kind === 'star' || sel.kind === 'hole') && sel.position.distanceTo(this.player.position) < this.scanRangeFor(sel) * 3) {
+    if (sel && (sel.kind === 'planet' || sel.kind === 'star' || sel.kind === 'hole' || sel.kind === 'comet') && sel.position.distanceTo(this.player.position) < this.scanRangeFor(sel) * 3) {
       return { label: 'Scan', action: 'scan', icon: 'scan' };
     }
     // A site in scan range not yet scanned this flight, or a wreck whose log is unread.
@@ -1431,6 +1431,8 @@ export class FlightSession {
       return (def?.scanRange ?? DEFAULT_SCAN_RANGE) * scanner;
     }
     if (t.kind === 'star') return Math.max(20_000, t.radius * 6) * scanner;
+    // A comet (docs/PROCGEN.md §45.3).
+    if (t.kind === 'comet') return (this.system.comets.find((c) => c.id === t.bodyId)?.scanRange ?? DEFAULT_SCAN_RANGE) * scanner;
     // A black hole is read from outside its tides (docs/PROCGEN.md §26).
     if (t.kind === 'hole') return ((this.system.blackHole?.def.tidalRadius ?? 0) + 10_000) * scanner;
     return DEFAULT_SCAN_RANGE * scanner;
@@ -1452,8 +1454,8 @@ export class FlightSession {
       this.scanSite(site);
       return;
     }
-    if (!t || (t.kind !== 'planet' && t.kind !== 'star' && t.kind !== 'hole')) {
-      this.callbacks.onMessage('Select a planet, star, belt, rock or wreck to scan.', 'info');
+    if (!t || (t.kind !== 'planet' && t.kind !== 'star' && t.kind !== 'hole' && t.kind !== 'comet')) {
+      this.callbacks.onMessage('Select a planet, star, comet, belt, rock or wreck to scan.', 'info');
       return;
     }
     const d = t.position.distanceTo(this.player.position);
@@ -1468,7 +1470,7 @@ export class FlightSession {
       this.callbacks.onScanInfo(t);
     }
     // A scan of a planet or star may pick up a faint return (docs/PROCGEN.md §31.3).
-    if (t.kind !== 'hole') this.callbacks.onBodyScan?.();
+    if (t.kind !== 'hole' && t.kind !== 'comet') this.callbacks.onBodyScan?.();
   }
 
   private fireMissile(): void {
@@ -5591,6 +5593,25 @@ export class FlightSession {
     this.player.angularVelocity.set(0, 0, 0);
     this.player.lookAlong(dir);
     this.throttle = 0;
+    this.chase.snap(this.player);
+    return true;
+  }
+
+  /** Test-only: places the ship beside a comet, `distance` off its tails, looking at them (docs/PROCGEN.md §45.3). */
+  viewComet(cometId: string, distance: number): boolean {
+    const c = this.system.comets.find((x) => x.id === cometId);
+    if (!c || this.busy) return false;
+    const along = c.gasDir.clone();
+    const side = new THREE.Vector3().crossVectors(along, WORLD_UP);
+    if (side.lengthSq() < 1e-6) side.set(1, 0, 0);
+    side.normalize();
+    const look = c.position.clone().addScaledVector(along, c.tail * 0.12);
+    this.player.position.copy(look).addScaledVector(side, distance).addScaledVector(WORLD_UP, distance * 0.15);
+    this.player.velocity.set(0, 0, 0);
+    this.player.angularVelocity.set(0, 0, 0);
+    this.player.lookAlong(look.sub(this.player.position).normalize());
+    this.throttle = 0;
+    this.autopilot = { mode: 'none' };
     this.chase.snap(this.player);
     return true;
   }

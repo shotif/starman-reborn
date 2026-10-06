@@ -14,6 +14,7 @@ import { outpostRaidNews } from '../economy/outpostRaids.ts';
 import { skyNews } from '../economy/stellar.ts';
 import { edgeNews, fillEdge } from '../economy/doomed.ts';
 import { flareNews } from '../economy/flares.ts';
+import { cometNews, hearsOfComets } from '../economy/comets.ts';
 import { FLARE_WORD } from '../content/stellar/flareLines.ts';
 import { EDGE_EARTH, EDGE_FICTION } from '../content/stellar/doomedLines.ts';
 import { DOOMED } from '../content/stellar/doomed.ts';
@@ -346,6 +347,36 @@ export function edgeNewsList(systemId: SystemId, clock: number): HTMLElement | n
     { class: 'list news-list', 'data-testid': 'edge-news' },
     light ? item('earth', fillEdge(EDGE_EARTH.headline), fillEdge(EDGE_EARTH.detail), light.at) : null,
     items.map((n) => item(n.kind, n.headline, n.detail, n.at)),
+  );
+}
+
+/**
+ * Comets near the Sun (docs/PROCGEN.md §45.4), at Sol's stations and research stations within reach:
+ * real comets and real perihelia, on the game's date, badged as observed.
+ */
+export function cometNewsList(locationId: string, jd: number | null): HTMLElement | null {
+  if (jd === null || !hearsOfComets(locationId)) return null;
+  const items = cometNews(jd);
+  if (!items.length) return null;
+  return h(
+    'ul',
+    { class: 'list news-list', 'data-testid': 'comet-news' },
+    items.map((n) => {
+      const days = Math.round(Math.abs(n.perihelionJd - jd));
+      const when = days === 0 ? 'today' : n.passed ? `${days} day${days > 1 ? 's' : ''} ago` : `in ${days} day${days > 1 ? 's' : ''}`;
+      return h(
+        'li',
+        { class: `news-item kind-comet${n.passed ? ' over' : ''}`, 'data-testid': `news-${n.comet.id}` },
+        glyph('science'),
+        h(
+          'span',
+          { class: 'news-text' },
+          h('span', { class: 'row-name' }, n.headline, ' ', dataBadge('observed')),
+          h('span', { class: 'row-sub' }, `Comet · Sol · nearest the Sun ${when}`),
+          h('span', { class: 'news-detail' }, n.detail, ' ', n.brightness),
+        ),
+      );
+    }),
   );
 }
 

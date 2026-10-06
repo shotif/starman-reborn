@@ -88,7 +88,9 @@ less far while it lasts, and research stations near by pay you to scan it before
 they flare is real; when is fiction). Twenty-two pairs of stars, Alpha Centauri A and B and Sirius A
 and B among them, have their real orbits from the Sixth Catalog of Orbits of Visual Binary Stars:
 each companion stands in its real direction, and its card says where the pair is on the game's
-date. And between the docks, the lanes call: a mayday that may be bait, a lifepod, a Wake
+date. In Sol fourteen real comets, Halley and Encke among them, stand where JPL has them on the
+game's date, growing a coma and tails that stream away from the Sun as they near it; the News tells
+when one passes the Sun, and research stations near Sol pay you to image one. And between the docks, the lanes call: a mayday that may be bait, a lifepod, a Wake
 toll gate, a customs patrol open to a bribe, a stranded scientist, cargo adrift, a lost trader, a
 wreck's beacon or an old hulk's, each a choice with consequences. Many lead somewhere to fly: a ship
 in distress to reach, pods to tractor in, a wreck to salvage, an old derelict (invented, and labelled
@@ -252,7 +254,7 @@ src/economy/   live markets, world events and the world's answers, trade, cargo,
                ranks, racing, the wing, and border battles
 src/audio/     procedural Web Audio music and sound effects
 src/ui/        HUD, touch controls, station screens, encyclopedia, styles
-scripts/       the sky snapshot (sky-fetch on GitHub's runners, sky-process and orbits-process here), catalogue
+scripts/       the sky snapshot (sky-fetch on GitHub's runners, sky-process, orbits-process and comets-process here), catalogue
                extraction (HYG, Open Exoplanet Catalogue, the far stars), dataset build and
                validation
 tests/         unit tests (Vitest) and browser journeys (Playwright)
