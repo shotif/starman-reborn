@@ -61,7 +61,7 @@ async function goTo(page: Page, o: Offer): Promise<string> {
   await api(page, 'warp', o.systemId);
   await waitUntil(page, 'in flight', async () => (await api(page, 'mode')) === 'flight');
   if (await page.getByTestId('sheet-close').isVisible().catch(() => false)) await press(page, 'sheet-close');
-  await waitUntil(page, `${o.kind} hails`, async () => (await dismissDiscovery(page), (await api<{ hail: { id: string } | null }>(page, 'lanes')).hail?.id === o.id), 60_000);
+  await waitUntil(page, `${o.kind} hails`, async () => (await dismissDiscovery(page), (await api<{ hail: { id: string } | null }>(page, 'lanes')).hail?.id === o.id), 120_000);
   await press(page, (await isTouch(page)) ? 'touch-context' : 'hail-answer');
   await expect(page.getByTestId('lane-dialog')).toBeVisible();
   await press(page, 'lane-go');

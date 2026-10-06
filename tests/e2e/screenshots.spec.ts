@@ -426,7 +426,7 @@ for (const size of SIZES) {
       await api(page, 'warp', hail.systemId);
       await waitUntil(page, 'flying there', async () => (await api(page, 'mode')) === 'flight');
       if (await page.getByTestId('sheet-close').isVisible().catch(() => false)) await press(page, 'sheet-close');
-      await waitUntil(page, 'a hail', async () => (await api<{ hail: { id: string } | null }>(page, 'lanes')).hail?.id === hail.id, 60_000);
+      await waitUntil(page, 'a hail', async () => (await api<{ hail: { id: string } | null }>(page, 'lanes')).hail?.id === hail.id, 120_000);
       await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
       await shot(page, `${size.name}-13-hail`, size.touch, results);
       await press(page, size.touch ? 'touch-context' : 'hail-answer');
@@ -650,7 +650,7 @@ for (const size of SIZES) {
         await api(page, 'warp', o.systemId);
         await waitUntil(page, 'flying there', async () => (await api(page, 'mode')) === 'flight');
         if (await page.getByTestId('sheet-close').isVisible().catch(() => false)) await press(page, 'sheet-close');
-        await waitUntil(page, `the ${kind} hail`, async () => (await putAway(), (await api<{ hail: { id: string } | null }>(page, 'lanes')).hail?.id === o.id), 60_000);
+        await waitUntil(page, `the ${kind} hail`, async () => (await putAway(), (await api<{ hail: { id: string } | null }>(page, 'lanes')).hail?.id === o.id), 120_000);
         await press(page, size.touch ? 'touch-context' : 'hail-answer');
         await press(page, 'lane-go');
         const target = `site:lane.${o.id}`;

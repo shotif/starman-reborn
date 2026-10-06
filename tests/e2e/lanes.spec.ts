@@ -81,7 +81,7 @@ async function meet(page: Page, o: Offer): Promise<void> {
   await api(page, 'warp', o.systemId);
   await waitUntil(page, 'in flight', async () => (await api(page, 'mode')) === 'flight');
   if (await page.getByTestId('sheet-close').isVisible().catch(() => false)) await press(page, 'sheet-close');
-  await waitUntil(page, `${o.kind} hails`, async () => (await api<Lanes>(page, 'lanes')).hail?.id === o.id, 60_000);
+  await waitUntil(page, `${o.kind} hails`, async () => (await api<Lanes>(page, 'lanes')).hail?.id === o.id, 120_000);
 }
 
 test('lane encounters: a trader helped, a toll paid, a slot met once, a bribe, and a mayday answered with a pad', async ({ page }) => {

@@ -11,12 +11,12 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | --- | --- | --- |
 | TypeScript typecheck (app + scripts/tests) | `npm run typecheck` | Pass |
 | Astronomy data validation | `npm run data:validate` | Pass (22 warnings: the contested planets this edition keeps) |
-| Unit tests | `npm test` | Pass: 1054 tests in 68 files |
+| Unit tests | `npm test` | Pass: 1065 tests in 69 files |
 | Production build | `npm run build` | Pass |
-| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 788 KB of 800 (gzipped) |
-| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 59 passed (5 touch-only tests skipped) |
-| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 59 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
-| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 729 screenshots, no audit findings |
+| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 795 KB of 800 (gzipped) |
+| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 60 passed (5 touch-only tests skipped) |
+| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 60 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
+| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 747 screenshots, no audit findings |
 
 ### Unit tests (Vitest)
 
@@ -1124,6 +1124,12 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   panel itself is off-screen), content cut off inside any box that is not meant to scroll, text
   under 10 px, touch targets under 40 px, and overlaps between HUD panels (the battle strip among
   them), touch clusters and toasts.
+
+Lane hails in the browser tests: a hail comes only after eight seconds of flight time with the ship
+flying quietly, and under SwiftShader flight time runs well behind real time, so a hail can take
+most of a minute to come. The tests that wait for one (`lanes.spec.ts`, `wrecks.spec.ts` and the
+screenshot journey) allow two minutes; with one minute, a derelict's hail in the screenshot journey
+now and then came too late.
 
 ## Performance notes (not representative)
 
