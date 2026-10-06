@@ -278,6 +278,31 @@ async function fetchOrbits(): Promise<void> {
   console.log(`Orbits ${today} → ${orbitsDir}`);
   for (const [label, ext, urls] of ORB6) await save(label, ext, urls);
   for (const c of COMETS) await save(`jpl-sbdb-${c}`, 'json', [`https://ssd-api.jpl.nasa.gov/sbdb.api?sstr=${encodeURIComponent(c)}&phys-par=1&full-prec=1`]);
+  // JPL Horizons: each comet's osculating elements on the day (from its latest apparition's solution,
+  // the planets' pulls included), and where Horizons has it every 30 days from two years before to
+  // four after, which the game's reckoning is tested against.
+  const day = Date.parse(`${today}T00:00:00Z`) / 86_400_000 + 2_440_587.5;
+  const horizons = (c: string, ephem: 'ELEMENTS' | 'VECTORS', from: number, to: number, step: string) =>
+    `https://ssd.jpl.nasa.gov/api/horizons.api?${new URLSearchParams({
+      format: 'json',
+      COMMAND: `'DES=${c};CAP;NOFRAG'`,
+      OBJ_DATA: "'NO'",
+      MAKE_EPHEM: "'YES'",
+      EPHEM_TYPE: `'${ephem}'`,
+      CENTER: "'500@10'",
+      REF_PLANE: "'ECLIPTIC'",
+      REF_SYSTEM: "'ICRF'",
+      ...(ephem === 'VECTORS' ? { VEC_TABLE: "'1'" } : {}),
+      OUT_UNITS: "'AU-D'",
+      CSV_FORMAT: "'YES'",
+      START_TIME: `'JD${from}'`,
+      STOP_TIME: `'JD${to}'`,
+      STEP_SIZE: `'${step}'`,
+    }).toString()}`;
+  for (const c of COMETS) {
+    await save(`jpl-horizons-elements-${c}`, 'json', [horizons(c, 'ELEMENTS', day, day + 1, '1 d')]);
+    await save(`jpl-horizons-vectors-${c}`, 'json', [horizons(c, 'VECTORS', day - 730, day + 1460, '30 d')]);
+  }
   writeFileSync(resolve(orbitsDir, 'manifest.json'), JSON.stringify({ retrieved: today, comets: COMETS, queries: entries }, null, 2) + '\n');
 }
 
