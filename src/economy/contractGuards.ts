@@ -5,6 +5,8 @@ import { PASSENGERS } from '../content/passengers/rules.ts';
 import { sightById } from '../content/passengers/sights.ts';
 import { farStar } from './stellar.ts';
 import { flaresBetween, flareStar } from './flares.ts';
+import { orbitOf } from '../data/orbits.ts';
+import { BINARIES } from '../content/stellar/binaries.ts';
 import { PYRE_HOLE_ID } from './pyrePhysics.ts';
 import { isOutpostId } from '../content/outposts/sites.ts';
 import type { Issue } from '../content/validate.ts';
@@ -329,11 +331,17 @@ function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, numbe
       const back = c.objectives[1];
       if (o.kind !== 'observe' || back?.kind !== 'visit' || back.locationId !== c.giverLocationId) return report('objectives', c.id, 'an observation, then back with the readings');
       if (getLocation(c.giverLocationId).stationType !== 'research-station') report('observe', c.id, 'posted by a station that is not a research station');
-      if (!(farStar(o.star) || o.star === PYRE_ID || o.star === PYRE_HOLE_ID || flareStar(o.star)) || !(o.to > o.from)) report('observe', c.id, `${o.star}: not a far star, Pyre or a flare star, or a window that never opens`);
-      // Flare watch (docs/PROCGEN.md §43.5): a flare star read in its own system, for a flare of its, while it flares.
-      if (flareStar(o.star) || o.systemId !== undefined || c.contract?.flare !== undefined) {
+      if (!(farStar(o.star) || o.star === PYRE_ID || o.star === PYRE_HOLE_ID || flareStar(o.star) || orbitOf(o.star)?.secondary === o.star) || !(o.to > o.from)) report('observe', c.id, `${o.star}: not a far star, Pyre, a flare star or a pair's secondary, or a window that never opens`);
+      // A star read where it is is read in its own system.
+      if (o.systemId !== undefined && o.systemId !== getComponent(o.star)?.systemId) report('observe', c.id, `${o.star} is not read in its own system`);
+      if (c.contract?.pair !== undefined) {
+        // A pair's measurement (docs/PROCGEN.md §44.5): its secondary, in its system, within a day.
+        if (orbitOf(o.star)?.secondary !== o.star || c.contract.pair !== o.star || o.systemId === undefined) report('observe', c.id, `${o.star}: a measurement not of a catalogued pair's secondary, read in its system`);
+        else if (o.to - o.from !== BINARIES.measure.window || o.from !== Math.floor(clock / CONTRACTS.epochSeconds) * CONTRACTS.epochSeconds) report('observe', c.id, 'a measurement whose window is not the day from its posting');
+      } else if (flareStar(o.star) || o.systemId !== undefined || c.contract?.flare !== undefined) {
+        // Flare watch (docs/PROCGEN.md §43.5): a flare star read in its own system, for a flare of its, while it flares.
         const f = c.contract?.flare ? flaresBetween(o.from, o.from).find((x) => x.id === c.contract!.flare) : undefined;
-        if (!flareStar(o.star) || o.systemId !== getComponent(o.star)?.systemId) report('observe', c.id, `${o.star} is not read in its own system`);
+        if (!flareStar(o.star) || o.systemId === undefined) report('observe', c.id, `${o.star} is not a flare star read in its own system`);
         else if (!f || f.star !== o.star || f.start !== o.from || f.end !== o.to) report('observe', c.id, 'a window that is not its flare');
         else if (c.contract?.posted !== f.start || c.contract.until !== f.end || c.contract.posted > clock + CONTRACTS.epochSeconds || c.contract.until <= clock) report('observe', c.id, 'not on the board while its flare lasts');
       }

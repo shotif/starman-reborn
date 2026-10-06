@@ -162,6 +162,17 @@ snapshot branch only when the archives changed.
   but Betelgeuse's and Antares' still reach every system at once. On the 3D star map its label says
   Fiction, but only the flat map draws a dashed ring round it. A pilot docked when a moment comes
   hears of it in the News, not on the radio (the clock stands still while docked).
+- Binary orbits (PROCGEN §44): in flight each pair stands as it did when the orbits were taken from
+  the catalogue (6 October 2026), not as it stands on the game's date; only the cards, the star map
+  and the encyclopedia follow the date. Separations in flight are compressed, and a companion that
+  would crowd the arrival point, a lane or another station stands further out along its real
+  direction. Which side of the sky a companion's far side lies on is unknown for every pair (the
+  catalogue identifies none of their nodes), so the game takes the catalogue's convention. Pairs the
+  catalogue holds no orbit for, grades poorly, or holds only for components the game does not draw
+  apart (Epsilon Indi Ba and Bb, LTT 1445's B and C, GJ 1245's A and its close companion) keep their
+  schematic places; so does Proxima Centauri, whose orbit round A and B the catalogue grades
+  indeterminate. A measurement is read with a single scan of the companion; the pair's primary is not
+  scanned.
 - Flare stars (PROCGEN §43) flare on a schedule the game draws, about once every four hours of game
   time each for ten to fifty minutes, far fewer and longer than real flares; how strongly a star
   flares is not tied to how active it really is (all ten are alike). A flare does only two things to

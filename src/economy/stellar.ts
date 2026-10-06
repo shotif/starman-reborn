@@ -2,6 +2,7 @@ import type { GameState } from '../app/state.ts';
 import { OBSERVE_LINES, SKY_COMMS, SKY_NEWS, SKY_SPEAKER, type SkyNewsKind } from '../content/stellar/lines.ts';
 import { STELLAR } from '../content/stellar/rules.ts';
 import { FAR_STARS, getLocation, getSystem } from '../data/systems.ts';
+import { equatorialToScene } from '../data/coords.ts';
 import type { CommodityId } from '../content/economy/goods.ts';
 import type { FarStar, SystemId } from '../data/types.ts';
 import { activeSkyFrom } from './events.ts';
@@ -130,8 +131,6 @@ export function skyPhase(id: string, clock: number, from: number | null = active
   return clock < start ? 'catalogue' : clock < end ? 'dying' : 'after';
 }
 
-const OBLIQUITY = (23.4392911 * Math.PI) / 180;
-
 /**
  * The direction from a system to a far star, in the flight scene's frame: the ecliptic, +x toward
  * the March equinox and +y toward the ecliptic's north, the frame Sol's planets are placed in
@@ -144,12 +143,9 @@ export function skyDirection(systemId: SystemId, starId: string): [number, numbe
 /** The direction from a system to a place (light-years from the Sun, in the map's frame), in the flight scene's frame. */
 export function skyDirectionTo(systemId: SystemId, positionLy: readonly [number, number, number]): [number, number, number] {
   const sys = getSystem(systemId);
-  let [x, y, z] = [0, 1, 2].map((i) => positionLy[i]! - sys.positionLy[i]!) as [number, number, number];
+  const [x, y, z] = [0, 1, 2].map((i) => positionLy[i]! - sys.positionLy[i]!) as [number, number, number];
   const n = Math.hypot(x, y, z);
-  [x, y, z] = [x / n, y / n, z / n];
-  const ye = y * Math.cos(OBLIQUITY) + z * Math.sin(OBLIQUITY);
-  const ze = -y * Math.sin(OBLIQUITY) + z * Math.cos(OBLIQUITY);
-  return [x, ze, -ye];
+  return equatorialToScene([x / n, y / n, z / n]);
 }
 
 // ---------------------------------------------------------------- what is said

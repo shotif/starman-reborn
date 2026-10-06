@@ -8,6 +8,8 @@ import type { StarKind } from '../art/stars.ts';
 import type { StationKind } from '../art/stations.ts';
 import type { SceneBeltDef, SceneDustDef, SceneLaneDef, ScenePlanetDef, SceneStarDef, SceneStationDef, SystemSceneDef } from '../sceneTypes.ts';
 import { confirmedPlanets, dirTo, polar, v } from './helpers.ts';
+import { arcsecToAu, ORBIT_EPOCH_JD, orbitOf, pairAt, relativeVectorLy, type BinaryOrbit } from '../../data/orbits.ts';
+import { equatorialToScene } from '../../data/coords.ts';
 
 /**
  * Scenes for the catalogue systems, built from the observed stars and confirmed planets plus the
@@ -62,6 +64,24 @@ function projectedSeparationAu(a: StellarComponent, b: StellarComponent): number
   return Math.acos(Math.min(1, Math.max(-1, cos))) * a.distanceLightYears * LY_TO_AU;
 }
 
+/** A separation in AU as a compressed scene distance: wider real pairs further apart. */
+export function compressedSeparation(au: number): number {
+  return Math.min(110_000, Math.max(22_000, 12_000 * Math.log2(1 + au / 5)));
+}
+
+/**
+ * Where a pair's secondary stands from its primary in a scene (docs/PROCGEN.md §44.3): its real
+ * direction (on the sky and along the line of sight, in the scene's frame) when the orbits were
+ * taken, at its true separation compressed like every companion's.
+ */
+export function orbitOffset(orbit: BinaryOrbit): THREE.Vector3 {
+  const primary = getComponent(orbit.primary)!;
+  const place = pairAt(orbit, ORBIT_EPOCH_JD);
+  const [x, y, z] = equatorialToScene(relativeVectorLy(place, primary.raDegrees, primary.decDegrees, primary.distanceLightYears));
+  const dir = new THREE.Vector3(x, y, z).normalize();
+  return dir.multiplyScalar(compressedSeparation(arcsecToAu(place.radiusArcsec, primary.parallaxMas)));
+}
+
 const cache = new Map<SystemId, SystemSceneDef>();
 
 export function catalogSceneDef(systemId: SystemId): SystemSceneDef {
@@ -73,7 +93,52 @@ export function catalogSceneDef(systemId: SystemId): SystemSceneDef {
   return def;
 }
 
+/**
+ * How far a pair's secondary must keep from what is not its own (docs/PROCGEN.md §44.3), beyond its
+ * surface: the arrival point and beacons, other stations and planets, and the lanes. Placed by its
+ * real direction, a companion that would crowd them is moved further out along that direction
+ * (its distance is compressed and schematic anyway).
+ */
+export const COMPANION_CLEAR = { arrival: 12_000, station: 8_000, planet: 6_000, lane: 8_000 } as const;
+
+/** The orbit-placed companions in a scene that crowd what is not their own, by id. */
+export function crowdedCompanions(def: SystemSceneDef): string[] {
+  const out: string[] = [];
+  for (const star of def.stars) {
+    const orbit = orbitOf(star.id);
+    if (orbit?.secondary !== star.id) continue;
+    const away = (p: THREE.Vector3) => p.distanceTo(star.position) - star.radius;
+    const ownPlanets = new Set(def.planets.filter((p) => p.hostStarId === star.id).map((p) => p.id));
+    const own = (locationId: string) => {
+      const anchor = WORLD.stations.find((g) => g.id === locationId)?.anchorId;
+      return anchor === star.id || (anchor !== undefined && ownPlanets.has(anchor));
+    };
+    const lane = (from: THREE.Vector3, to: THREE.Vector3) => new THREE.Line3(from, to).closestPointToPoint(star.position, true, new THREE.Vector3()).distanceTo(star.position) - star.radius;
+    const crowded =
+      away(def.arrival.position) < COMPANION_CLEAR.arrival ||
+      def.beacons.some((b) => away(b.position) < COMPANION_CLEAR.arrival) ||
+      def.stations.some((st) => !own(st.locationId) && away(st.position) < COMPANION_CLEAR.station) ||
+      def.planets.some((p) => !ownPlanets.has(p.id) && away(p.position) - p.radius < COMPANION_CLEAR.planet) ||
+      def.lanes.some((l) => lane(l.from, l.to) < COMPANION_CLEAR.lane);
+    if (crowded) out.push(star.id);
+  }
+  return out;
+}
+
+/** A catalogue scene, its orbit-placed companions moved out along their real directions until clear. */
 function buildCatalogScene(systemId: SystemId): SystemSceneDef {
+  const stretch = new Map<string, number>();
+  let def = layCatalogScene(systemId, stretch);
+  for (let k = 0; k < 12; k++) {
+    const crowded = crowdedCompanions(def);
+    if (!crowded.length) break;
+    for (const id of crowded) stretch.set(id, (stretch.get(id) ?? 1) * 1.15);
+    def = layCatalogScene(systemId, stretch);
+  }
+  return def;
+}
+
+function layCatalogScene(systemId: SystemId, stretch: ReadonlyMap<string, number>): SystemSceneDef {
   const sys = getSystem(systemId);
   const r = rng(hashString(systemId), 'scene');
   const comps = sys.componentIds.map((id) => getComponent(id)).filter((c): c is StellarComponent => !!c);
@@ -89,8 +154,14 @@ function buildCatalogScene(systemId: SystemId): SystemSceneDef {
     if (i > 0) {
       const parent = comps.find((p) => p.id === c.parentId) ?? primary;
       const sepAu = projectedSeparationAu(parent, c);
-      const dist = Math.min(110_000, Math.max(22_000, 12_000 * Math.log2(1 + sepAu / 5)));
-      starPos.set(c.id, polar(starPos.get(parent.id) ?? v(0, 0, 0), dist, r.range(0, 360), r.range(-4_000, 4_000)));
+      const angle = r.range(0, 360);
+      const lift = r.range(-4_000, 4_000);
+      // A pair with a catalogued orbit (docs/PROCGEN.md §44.3) stands as it did when the orbits were
+      // taken: in its real direction from its primary, at its true separation (compressed alike).
+      const orbit = orbitOf(c.id);
+      const host = orbit?.secondary === c.id ? starPos.get(orbit.primary) : undefined;
+      if (orbit && host) starPos.set(c.id, host.clone().add(orbitOffset(orbit).multiplyScalar(stretch.get(c.id) ?? 1)));
+      else starPos.set(c.id, polar(starPos.get(parent.id) ?? v(0, 0, 0), compressedSeparation(sepAu), angle, lift));
     }
     stars.push({
       id: c.id,

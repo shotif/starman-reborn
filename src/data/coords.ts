@@ -80,3 +80,16 @@ export function formatDec(decDeg: number): string {
   const s = Math.round(((abs - d) * 60 - m) * 60);
   return `${sign}${d}° ${String(m).padStart(2, '0')}′ ${String(s).padStart(2, '0')}″`;
 }
+
+const OBLIQUITY = (23.4392911 * Math.PI) / 180;
+
+/**
+ * A vector in the map's equatorial frame (x toward RA 0, y toward RA 90°, z toward the north
+ * celestial pole) turned into the flight scene's frame: the ecliptic, +x toward the March equinox,
+ * +y toward the ecliptic's north (the frame Sol's planets are placed in, and every system's sky).
+ */
+export function equatorialToScene([x, y, z]: Vec3Tuple): Vec3Tuple {
+  const ye = y * Math.cos(OBLIQUITY) + z * Math.sin(OBLIQUITY);
+  const ze = -y * Math.sin(OBLIQUITY) + z * Math.cos(OBLIQUITY);
+  return [x, ze, -ye];
+}

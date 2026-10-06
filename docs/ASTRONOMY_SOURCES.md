@@ -148,6 +148,37 @@ of game fiction: they flare in the game, on a schedule the game draws (see *Fict
 - **Not claimed:** how often each star really flares, how strongly, or how its flares compare with
   another's. The game's flares are alike for all ten and are fiction.
 
+## Binary orbits
+
+Twenty-two of the game's pairs of stars have orbits, taken from the **Sixth Catalog of Orbits of
+Visual Binary Stars** (ORB6, kept at Georgia State University with the US Naval Observatory,
+<http://www.astro.gsu.edu/wds/orb6.html>), in `src/data/generated/orbits.json`
+([PROCGEN.md §44](PROCGEN.md#44-real-binary-orbits)).
+
+- **Source.** The sky snapshot workflow fetches the whole catalogue (`orb6orbits.txt`), its format
+  notes and its own ephemeris (`orb6ephem.txt`) on GitHub's runners (the development container cannot
+  reach the catalogue's host) into `data/snapshot/orbits/<date>/`, with a manifest of what was asked,
+  apart from the stars' snapshot so that neither depends on the other. `npm run data:orbits`
+  (`scripts/orbits-process.ts`, also run by `npm run data:process`) reads them offline.
+- **What is taken.** Each pair the game has, named by the catalogue's WDS designation and name and the
+  game's two stars: period, semi-major axis, inclination, node, time of periastron, eccentricity and
+  argument of periastron, each with its published error where the catalogue gives one, the
+  catalogue's grade, the reference it takes the orbit from, and the catalogue's own predicted positions
+  for 2025 to 2029. Units are converted (periods to years, semi-major axes to arcseconds, times of
+  periastron from Besselian years, MJD or truncated JD to Julian dates); nothing else is changed.
+- **What is left out.** Pairs the catalogue grades 5 (indeterminate), 7, 8 or 9, and pairs whose
+  elements imply a total mass, by Kepler's third law at the primary's parallax, outside 0.03 to 6
+  solar masses. Of the pairs asked for, EQ Pegasi's catalogued elements (a period of 3,664.63 days
+  with a semi-major axis of 5.06″) give 316 solar masses, and it is left out, recorded with the
+  reason in the output's `left`. Pairs the game has whose orbits the catalogue does not hold, or holds
+  only for components the game does not draw apart, keep their places as before.
+- **Checks.** `validateOrbits` (`npm run data:validate`) and the unit tests: two stars of one system,
+  grade 1 to 4, elements in range, a plausible mass; and the game's reckoning against the catalogue's
+  own ephemeris, within 0.5° and 0.5% (or 2 milliarcseconds). It matches within 0.33° and 0.4%.
+- **Not claimed.** For none of these pairs does the catalogue identify the ascending node, so which
+  side of the sky the secondary's far side lies on is not known; the game takes the catalogue's
+  convention for the line of sight. Separations in flight are compressed (only directions are true).
+
 ## Pipeline: the sky snapshot
 
 1. **Fetch** (`scripts/sky-fetch.ts`) is the only step that needs the network. It saves raw

@@ -71,6 +71,8 @@ import { RAID_WATCH } from '../content/outposts/raidLines.ts';
 import { outpostId } from '../content/outposts/sites.ts';
 import { farStar, farStarLook, recordObservation, scheduleSky, skyComm, skyMoment, skyTimeline } from '../economy/stellar.ts';
 import { flareStar, flareStatus, flaresBetween, flareSystems } from '../economy/flares.ts';
+import { ORBIT_EPOCH_JD, orbitOf } from '../data/orbits.ts';
+import { measureOffer } from '../economy/binaries.ts';
 import type { SkyNewsKind } from '../content/stellar/lines.ts';
 import { ROSTER } from '../content/rivals/rules.ts';
 import { recordMarketVisit } from '../economy/trade.ts';
@@ -1816,8 +1818,8 @@ export class Game {
     if (!t.bodyId) return;
     const state = this.state!;
     this.scannedForFolk(t.bodyId);
-    // Pyre and its black hole (docs/PROCGEN.md §26.5), and a flaring star (§43.5): a scan is a reading for the work that wants one.
-    if (t.bodyId === PYRE_ID || t.bodyId === PYRE_HOLE_ID || flareStar(t.bodyId)) {
+    // Pyre and its black hole (docs/PROCGEN.md §26.5), a flaring star (§43.5) and a pair's secondary (§44.5): a scan is a reading for the work that wants one.
+    if (t.bodyId === PYRE_ID || t.bodyId === PYRE_HOLE_ID || flareStar(t.bodyId) || orbitOf(t.bodyId)?.secondary === t.bodyId) {
       const jobs = recordObservation(state, t.bodyId, state.location.systemId);
       if (jobs.length) {
         toast(`${t.name}: readings recorded.`, 'good', 3000);
@@ -1832,7 +1834,7 @@ export class Game {
       this.persist();
     }
     this.setPaused(true, false);
-    const s = sheet(this.screenLayer, t.name, bodyCard(t.bodyId, t.name, state.clock), () => this.setPaused(false), 'science-sheet');
+    const s = sheet(this.screenLayer, t.name, bodyCard(t.bodyId, t.name, state.clock, this.gameDate() ?? ORBIT_EPOCH_JD), () => this.setPaused(false), 'science-sheet');
     void s;
   }
 
@@ -2004,6 +2006,8 @@ export class Game {
       ...(state ? { inventedNote: pyreStatus(state.clock), inventedStations: pyreStationsNow(state.clock) } : {}),
       // Flare stars, and whether one flares now (docs/PROCGEN.md §43.4).
       ...(state ? { flares: new Map(flareSystems().map((id) => [id, flareStatus(id, state.clock)!] as const)) } : {}),
+      // The game's date, for where the pairs with catalogued orbits stand (docs/PROCGEN.md §44.4).
+      ...(this.gameDate() !== null ? { gameDate: this.gameDate()! } : {}),
     };
   }
 
@@ -2288,6 +2292,7 @@ export class Game {
       discoveredBodies: new Set(this.state?.discoveredBodies ?? []),
       ...(this.state ? { catalogued: new Set(this.state.codex) } : {}),
       ...(systemId ? { initialSystemId: systemId } : {}),
+      ...(this.gameDate() !== null ? { gameDate: this.gameDate()! } : {}),
       onClose: () => {
         this.sheetsOpen--;
         if (this.mode === 'flight' && !wasPaused) this.setPaused(false);
@@ -2933,6 +2938,17 @@ export class Game {
       stand: () => this.flight?.standStatus() ?? null,
       /** Test-only: Pyre's lifeboats in this flight (docs/PROCGEN.md §42.4). */
       lifeboats: () => this.flight?.lifeboatStatus() ?? null,
+      /** Test-only: the first time slot from now (or `from`) in which a station posts a pair's measurement (docs/PROCGEN.md §44.5), of a star if one is named. */
+      measureJob: (q: { locationId: string; from?: number; secondary?: string }) => {
+        const state = this.state;
+        if (!state) return null;
+        const first = boardEpoch(q.from ?? state.clock);
+        for (let epoch = first; epoch < first + 400; epoch++) {
+          const offer = measureOffer(q.locationId, epoch);
+          if (offer && (!q.secondary || offer.orbit.secondary === q.secondary)) return { epoch, start: epoch * CONTRACTS.epochSeconds, secondary: offer.orbit.secondary, systemId: offer.orbit.systemId };
+        }
+        return null;
+      },
       /** Test-only: the flare under way in this flight's system, what it does and how its star glows (docs/PROCGEN.md §43.3). */
       flare: () => this.flight?.debugFlare() ?? null,
       /** Test-only: the first flare in a system (this one by default) starting after `from` (the clock by default), of a kind if one is named, within ten days (§43.2). */

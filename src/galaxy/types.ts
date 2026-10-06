@@ -45,6 +45,8 @@ export interface MapState {
    * flaring now and for how long (fiction).
    */
   flares?: ReadonlyMap<SystemId, readonly string[]>;
+  /** The game's date (Julian), for where its pairs with catalogued orbits stand now (docs/PROCGEN.md §44.4). */
+  gameDate?: number;
 }
 
 export interface MapMission {

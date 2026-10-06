@@ -162,6 +162,8 @@ export interface JobDef {
     crew?: string;
     /** Flare watch (docs/PROCGEN.md §43.5): the flare it is for (`f.<star>.<window>`). */
     flare?: string;
+    /** A pair's measurement (docs/PROCGEN.md §44.5): the secondary measured. */
+    pair?: string;
   };
   /** Story arc missions (content/story/arcs.ts): arc, step, speaker and beats. */
   story?: StoryMeta;

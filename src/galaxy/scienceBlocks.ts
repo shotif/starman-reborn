@@ -19,6 +19,8 @@ import type {
   Verification,
 } from '../data/types.ts';
 import { dataBadge, sourceLink } from '../ui/components.ts';
+import { ORBITS, orbitOf } from '../data/orbits.ts';
+import { dateText, pairFacts, systemPairs, type PairFacts } from '../economy/binaries.ts';
 import { h, type Child } from '../ui/dom.ts';
 import { icon } from '../ui/icons.ts';
 import { formatHeightLong, formatLy } from './mapData.ts';
@@ -321,6 +323,48 @@ export function beltBlock(systemId: SystemId, detail: Detail): HTMLElement | nul
 /** The science card a belt scan in flight opens. */
 export function beltCard(b: BeltRecord): HTMLElement {
   return h('div', { class: 'stack science-card', 'data-testid': 'belt-card' }, h('div', { class: 'row wrap' }, dataBadge('observed', `Real ${BELT_KIND[b.kind]}`)), beltLines(b, 'full'));
+}
+
+// ---------- Orbits (docs/PROCGEN.md §44) ----------
+
+/** A pair's orbit as the catalogue gives it, and where the pair stands on a date (`jd`). */
+function orbitLines(f: PairFacts, jd: number, detail: Detail): HTMLElement[] {
+  const now = `On ${dateText(jd)}`;
+  const rows: [string, string][] = [
+    ['Period', f.period],
+    ['Semi-major axis', f.axis],
+    ['Eccentricity', f.eccentricity],
+    ['Inclination', f.inclination],
+    ['Next periastron', f.periastron],
+    ['Total mass', f.mass],
+    [now, f.now],
+    ['Catalogue grade', f.grade],
+  ];
+  const shown = detail === 'compact' ? rows.filter(([k]) => k === 'Period' || k === 'Semi-major axis' || k === now) : rows;
+  return [
+    h('dl', { class: 'kv' }, shown.flatMap(([k, v]) => [h('dt', null, k), h('dd', null, v)])),
+    h('p', { class: 'row wrap' }, sourceLink(ORBITS.source, `${f.orbit.wds} ${f.orbit.name.trim()}, orbit ${f.orbit.reference}`)),
+    h('p', { class: 'muted small' }, dataBadge('estimated'), ' ', f.scene),
+  ];
+}
+
+/** The pairs of a system with catalogued orbits (none: null), on a date. */
+export function orbitBlock(systemId: SystemId, jd: number, detail: Detail): HTMLElement | null {
+  const pairs = systemPairs(systemId, jd);
+  if (!pairs.length) return null;
+  return h(
+    'ul',
+    { class: 'sci-list sci-orbits', 'data-testid': 'science-orbits' },
+    pairs.map((f) => h('li', { class: 'sci-item', 'data-testid': `orbit-${f.orbit.secondary}` }, h('div', { class: 'sci-item-head' }, h('strong', null, f.headline)), orbitLines(f, jd, detail))),
+  );
+}
+
+/** The orbit a star is part of, for its science card (none: null), on a date. */
+export function orbitCard(starId: string, jd: number): HTMLElement | null {
+  const orbit = orbitOf(starId);
+  if (!orbit) return null;
+  const f = pairFacts(orbit, jd);
+  return h('section', { class: 'science-orbit', 'data-testid': 'science-orbit' }, h('h4', null, 'Orbit ', dataBadge('observed')), h('p', null, f.headline), ...orbitLines(f, jd, 'full'));
 }
 
 // ---------- Facts ----------

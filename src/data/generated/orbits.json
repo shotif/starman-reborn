@@ -1,0 +1,1229 @@
+{
+  "generatedBy": "scripts/orbits-process.ts",
+  "retrieved": "2026-10-06",
+  "source": {
+    "label": "Sixth Catalog of Orbits of Visual Binary Stars (ORB6)",
+    "url": "http://www.astro.gsu.edu/wds/orb6.html",
+    "retrieved": "2026-10-06"
+  },
+  "description": "Binary orbits from ORB6 for the game’s pairs, as the catalogue gives them: P in years, a in arcseconds, i, Ω and ω in degrees, T (periastron) as a Julian date, with published errors where the catalogue has them; and the catalogue’s own ephemeris (position angle and separation) for the years listed.",
+  "pairs": [
+    {
+      "primary": "alpha-centauri-a",
+      "secondary": "alpha-centauri-b",
+      "systemId": "alpha-centauri",
+      "wds": "14396-6050",
+      "name": "RHD   1AB",
+      "hip": 71683,
+      "periodYears": 79.762,
+      "periodError": 0.019,
+      "axisArcsec": 17.493,
+      "axisError": 0.0096,
+      "inclinationDeg": 79.243,
+      "inclinationError": 0.0089,
+      "nodeDeg": 205.073,
+      "nodeFlag": "",
+      "nodeError": 0.025,
+      "periastronJd": 2435314.6310530673,
+      "periastronError": 5.47875,
+      "eccentricity": 0.51947,
+      "eccentricityError": 0.00015,
+      "argumentDeg": 231.519,
+      "argumentFlag": "",
+      "argumentError": 0.027,
+      "equinox": null,
+      "lastObservation": null,
+      "grade": 2,
+      "reference": "Ake2021",
+      "ephemeris": [
+        {
+          "year": 2025,
+          "thetaDeg": 9.2,
+          "rhoArcsec": 8.737
+        },
+        {
+          "year": 2026,
+          "thetaDeg": 11.9,
+          "rhoArcsec": 9.294
+        },
+        {
+          "year": 2027,
+          "thetaDeg": 14.3,
+          "rhoArcsec": 9.765
+        },
+        {
+          "year": 2028,
+          "thetaDeg": 16.5,
+          "rhoArcsec": 10.121
+        },
+        {
+          "year": 2029,
+          "thetaDeg": 18.6,
+          "rhoArcsec": 10.329
+        }
+      ]
+    },
+    {
+      "primary": "sirius-a",
+      "secondary": "sirius-b",
+      "systemId": "sirius",
+      "wds": "06451-1643",
+      "name": "AGC   1AB",
+      "hip": 32349,
+      "periodYears": 50.1284,
+      "periodError": 0.0043,
+      "axisArcsec": 7.4957,
+      "axisError": 0.0025,
+      "inclinationDeg": 136.336,
+      "inclinationError": 0.04,
+      "nodeDeg": 45.4,
+      "nodeFlag": "",
+      "nodeError": 0.071,
+      "periastronJd": 2449561.8161220173,
+      "periastronError": 2.1184499999999997,
+      "eccentricity": 0.59142,
+      "eccentricityError": 0.00037,
+      "argumentDeg": 149.161,
+      "argumentFlag": "",
+      "argumentError": 0.075,
+      "equinox": 2000,
+      "lastObservation": 2016,
+      "grade": 2,
+      "reference": "BdH2017",
+      "ephemeris": [
+        {
+          "year": 2025,
+          "thetaDeg": 59,
+          "rhoArcsec": 11.256
+        },
+        {
+          "year": 2026,
+          "thetaDeg": 57.1,
+          "rhoArcsec": 11.163
+        },
+        {
+          "year": 2027,
+          "thetaDeg": 55.2,
+          "rhoArcsec": 11.032
+        },
+        {
+          "year": 2028,
+          "thetaDeg": 53.3,
+          "rhoArcsec": 10.861
+        },
+        {
+          "year": 2029,
+          "thetaDeg": 51.2,
+          "rhoArcsec": 10.648
+        }
+      ]
+    },
+    {
+      "primary": "bl-ceti",
+      "secondary": "uv-ceti",
+      "systemId": "luyten-726-8",
+      "wds": "01388-1758",
+      "name": "LDS 838",
+      "hip": null,
+      "periodYears": 26.351,
+      "periodError": 0.049,
+      "axisArcsec": 2.022,
+      "axisError": 0.0042,
+      "inclinationDeg": 128.78,
+      "inclinationError": 0.52,
+      "nodeDeg": 146.22,
+      "nodeFlag": "",
+      "nodeError": 0.43,
+      "periastronJd": 2460622.6282488015,
+      "periastronError": 12.418500000000002,
+      "eccentricity": 0.6143,
+      "eccentricityError": 0.0034,
+      "argumentDeg": 284.27,
+      "argumentFlag": "",
+      "argumentError": 0.81,
+      "equinox": null,
+      "lastObservation": null,
+      "grade": 2,
+      "reference": "Msn2023",
+      "ephemeris": [
+        {
+          "year": 2025,
+          "thetaDeg": 199.9,
+          "rhoArcsec": 0.554
+        },
+        {
+          "year": 2026,
+          "thetaDeg": 151,
+          "rhoArcsec": 1.02
+        },
+        {
+          "year": 2027,
+          "thetaDeg": 131.1,
+          "rhoArcsec": 1.327
+        },
+        {
+          "year": 2028,
+          "thetaDeg": 117.4,
+          "rhoArcsec": 1.499
+        },
+        {
+          "year": 2029,
+          "thetaDeg": 106,
+          "rhoArcsec": 1.605
+        }
+      ]
+    },
+    {
+      "primary": "61-cygni-a",
+      "secondary": "61-cygni-b",
+      "systemId": "61-cygni",
+      "wds": "21069+3845",
+      "name": "STF2758AB",
+      "hip": 104214,
+      "periodYears": 664.37,
+      "periodError": 26.84,
+      "axisArcsec": 24.36,
+      "axisError": 0.47,
+      "inclinationDeg": 53.29,
+      "inclinationError": 1.87,
+      "nodeDeg": 174.88,
+      "nodeFlag": "",
+      "nodeError": 1.8,
+      "periastronJd": 2342107.013377349,
+      "periastronError": 4729.9875,
+      "eccentricity": 0.457,
+      "eccentricityError": 0.034,
+      "argumentDeg": 149.32,
+      "argumentFlag": "",
+      "argumentError": 5.97,
+      "equinox": null,
+      "lastObservation": 2006,
+      "grade": 4,
+      "reference": "PkO2017b",
+      "ephemeris": [
+        {
+          "year": 2025,
+          "thetaDeg": 154,
+          "rhoArcsec": 32.04
+        },
+        {
+          "year": 2026,
+          "thetaDeg": 154.1,
+          "rhoArcsec": 32.088
+        },
+        {
+          "year": 2027,
+          "thetaDeg": 154.3,
+          "rhoArcsec": 32.136
+        },
+        {
+          "year": 2028,
+          "thetaDeg": 154.5,
+          "rhoArcsec": 32.182
+        },
+        {
+          "year": 2029,
+          "thetaDeg": 154.6,
+          "rhoArcsec": 32.229
+        }
+      ]
+    },
+    {
+      "primary": "procyon-a",
+      "secondary": "procyon-b",
+      "systemId": "procyon",
+      "wds": "07393+0514",
+      "name": "SHB   1AB",
+      "hip": 37279,
+      "periodYears": 40.84,
+      "periodError": 0.022,
+      "axisArcsec": 4.3075,
+      "axisError": 0.0016,
+      "inclinationDeg": 31.408,
+      "inclinationError": 0.05,
+      "nodeDeg": 100.683,
+      "nodeFlag": "",
+      "nodeError": 0.095,
+      "periastronJd": 2439884.541444215,
+      "periastronError": 8.40075,
+      "eccentricity": 0.39785,
+      "eccentricityError": 0.00025,
+      "argumentDeg": 89.23,
+      "argumentFlag": "",
+      "argumentError": 0.11,
+      "equinox": 2000,
+      "lastObservation": 2014,
+      "grade": 3,
+      "reference": "BdH2015",
+      "ephemeris": [
+        {
+          "year": 2025,
+          "thetaDeg": 348.7,
+          "rhoArcsec": 5.07
+        },
+        {
+          "year": 2026,
+          "thetaDeg": 353.7,
+          "rhoArcsec": 5.101
+        },
+        {
+          "year": 2027,
+          "thetaDeg": 358.6,
+          "rhoArcsec": 5.122
+        },
+        {
+          "year": 2028,
+          "thetaDeg": 3.4,
+          "rhoArcsec": 5.135
+        },
+        {
+          "year": 2029,
+          "thetaDeg": 8.3,
+          "rhoArcsec": 5.139
+        }
+      ]
+    },
+    {
+      "primary": "struve-2398-a",
+      "secondary": "struve-2398-b",
+      "systemId": "struve-2398",
+      "wds": "18428+5938",
+      "name": "STF2398AB",
+      "hip": 91768,
+      "periodYears": 408,
+      "periodError": null,
+      "axisArcsec": 13.88,
+      "axisError": null,
+      "inclinationDeg": 66,
+      "inclinationError": null,
+      "nodeDeg": 136.9,
+      "nodeFlag": "",
+      "nodeError": null,
+      "periastronJd": 2369365.038672375,
+      "periastronError": null,
+      "eccentricity": 0.53,
+      "eccentricityError": null,
+      "argumentDeg": 234.6,
+      "argumentFlag": "",
+      "argumentError": null,
+      "equinox": 2000,
+      "lastObservation": 1987,
+      "grade": 4,
+      "reference": "Hei1987b",
+      "ephemeris": [
+        {
+          "year": 2025,
+          "thetaDeg": 184.3,
+          "rhoArcsec": 10.544
+        },
+        {
+          "year": 2026,
+          "thetaDeg": 184.8,
+          "rhoArcsec": 10.462
+        },
+        {
+          "year": 2027,
+          "thetaDeg": 185.4,
+          "rhoArcsec": 10.379
+        },
+        {
+          "year": 2028,
+          "thetaDeg": 185.9,
+          "rhoArcsec": 10.297
+        },
+        {
+          "year": 2029,
+          "thetaDeg": 186.5,
+          "rhoArcsec": 10.215
+        }
+      ]
+    },
+    {
+      "primary": "kruger-60-a",
+      "secondary": "kruger-60-b",
+      "systemId": "kruger-60",
+      "wds": "22280+5742",
+      "name": "KR   60AB",
+      "hip": 110893,
+      "periodYears": 44.5814,
+      "periodError": 0.0345,
+      "axisArcsec": 2.40113,
+      "axisError": 0.01042,
+      "inclinationDeg": 165.701,
+      "inclinationError": 1.277,
+      "nodeDeg": 150.665,
+      "nodeFlag": "",
+      "nodeError": 5.42,
+      "periastronJd": 2440672.8071576245,
+      "periastronError": 14.208224999999999,
+      "eccentricity": 0.40847,
+      "eccentricityError": 0.00223,
+      "argumentDeg": 207.481,
+      "argumentFlag": "",
+      "argumentError": 5.577,
+      "equinox": null,
+      "lastObservation": 2013,
+      "grade": 1,
+      "reference": "Izm2019",
+      "ephemeris": [
+        {
+          "year": 2025,
+          "thetaDeg": 175.4,
+          "rhoArcsec": 2.638
+        },
+        {
+          "year": 2026,
+          "thetaDeg": 169.7,
+          "rhoArcsec": 2.759
+        },
+        {
+          "year": 2027,
+          "thetaDeg": 164.5,
+          "rhoArcsec": 2.869
+        },
+        {
+          "year": 2028,
+          "thetaDeg": 159.7,
+          "rhoArcsec": 2.968
+        },
+        {
+          "year": 2029,
+          "thetaDeg": 155.1,
+          "rhoArcsec": 3.056
+        }
+      ]
+    },
+    {
+      "primary": "ross-614-a",
+      "secondary": "ross-614-b",
+      "systemId": "ross-614",
+      "wds": "06293-0248",
+      "name": "B  2601AB",
+      "hip": 30920,
+      "periodYears": 16.5777,
+      "periodError": 0.0027,
+      "axisArcsec": 1.08604,
+      "axisError": 0.0016,
+      "inclinationDeg": 52.91,
+      "inclinationError": 0.016,
+      "nodeDeg": 30.385,
+      "nodeFlag": "",
+      "nodeError": 0.03,
+      "periastronJd": 2457342.99,
+      "periastronError": 0.23,
+      "eccentricity": 0.38229,
+      "eccentricityError": 0.00013,
+      "argumentDeg": 220.942,
+      "argumentFlag": "",
+      "argumentError": 0.02,
+      "equinox": null,
+      "lastObservation": 2016,
+      "grade": 2,
+      "reference": "MnA2019",
+      "ephemeris": [
+        {
+          "year": 2025,
+          "thetaDeg": 66,
+          "rhoArcsec": 1.182
+        },
+        {
+          "year": 2026,
+          "thetaDeg": 77.6,
+          "rhoArcsec": 1.041
+        },
+        {
+          "year": 2027,
+          "thetaDeg": 93,
+          "rhoArcsec": 0.892
+        },
+        {
+          "year": 2028,
+          "thetaDeg": 114,
+          "rhoArcsec": 0.769
+        },
+        {
+          "year": 2029,
+          "thetaDeg": 140.5,
+          "rhoArcsec": 0.711
+        }
+      ]
+    },
+    {
+      "primary": "40-eridani-b",
+      "secondary": "40-eridani-c",
+      "systemId": "40-eridani",
+      "wds": "04153-0739",
+      "name": "STF 518BC",
+      "hip": null,
+      "periodYears": 233.2,
+      "periodError": 0.65,
+      "axisArcsec": 6.88788,
+      "axisError": 0.03488,
+      "inclinationDeg": 107.98,
+      "inclinationError": 0.36,
+      "nodeDeg": 151.58,
+      "nodeFlag": "",
+      "nodeError": 0.2,
+      "periastronJd": 2396315.8514491622,
+      "periastronError": 470.76342,
+      "eccentricity": 0.4141,
+      "eccentricityError": 0.0072,
+      "argumentDeg": 321.2,
+      "argumentFlag": "",
+      "argumentError": 1.3,
+      "equinox": null,
+      "lastObservation": 2019,
+      "grade": 3,
+      "reference": "WSI2021",
+      "ephemeris": [
+        {
+          "year": 2025,
+          "thetaDeg": 328.7,
+          "rhoArcsec": 7.776
+        },
+        {
+          "year": 2026,
+          "thetaDeg": 328.4,
+          "rhoArcsec": 7.69
+        },
+        {
+          "year": 2027,
+          "thetaDeg": 328.1,
+          "rhoArcsec": 7.6
+        },
+        {
+          "year": 2028,
+          "thetaDeg": 327.7,
+          "rhoArcsec": 7.507
+        },
+        {
+          "year": 2029,
+          "thetaDeg": 327.3,
+          "rhoArcsec": 7.41
+        }
+      ]
+    },
+    {
+      "primary": "70-ophiuchi-a",
+      "secondary": "70-ophiuchi-b",
+      "systemId": "70-ophiuchi",
+      "wds": "18055+0230",
+      "name": "STF2272AB",
+      "hip": 88601,
+      "periodYears": 88.3983,
+      "periodError": 0.0384,
+      "axisArcsec": 4.55038,
+      "axisError": 0.00625,
+      "inclinationDeg": 120.892,
+      "inclinationError": 0.089,
+      "nodeDeg": 121.692,
+      "nodeFlag": "",
+      "nodeError": 0.126,
+      "periastronJd": 2413494.1855166135,
+      "periastronError": 19.175625,
+      "eccentricity": 0.49803,
+      "eccentricityError": 0.00052,
+      "argumentDeg": 193.376,
+      "argumentFlag": "",
+      "argumentError": 0.252,
+      "equinox": null,
+      "lastObservation": 2015,
+      "grade": 1,
+      "reference": "Izm2019",
+      "ephemeris": [
+        {
+          "year": 2025,
+          "thetaDeg": 117.4,
+          "rhoArcsec": 6.738
+        },
+        {
+          "year": 2026,
+          "thetaDeg": 116.6,
+          "rhoArcsec": 6.732
+        },
+        {
+          "year": 2027,
+          "thetaDeg": 115.8,
+          "rhoArcsec": 6.717
+        },
+        {
+          "year": 2028,
+          "thetaDeg": 114.9,
+          "rhoArcsec": 6.693
+        },
+        {
+          "year": 2029,
+          "thetaDeg": 114.1,
+          "rhoArcsec": 6.661
+        }
+      ]
+    },
+    {
+      "primary": "achird-a",
+      "secondary": "achird-b",
+      "systemId": "achird",
+      "wds": "00491+5749",
+      "name": "STF  60AB",
+      "hip": 3821,
+      "periodYears": 479.27,
+      "periodError": null,
+      "axisArcsec": 12.04,
+      "axisError": null,
+      "inclinationDeg": 35.6,
+      "inclinationError": null,
+      "nodeDeg": 278,
+      "nodeFlag": "",
+      "nodeError": null,
+      "periastronJd": 2411342.324578275,
+      "periastronError": null,
+      "eccentricity": 0.497,
+      "eccentricityError": null,
+      "argumentDeg": 269.8,
+      "argumentFlag": "",
+      "argumentError": null,
+      "equinox": 2000,
+      "lastObservation": 2014,
+      "grade": 3,
+      "reference": "Sca2015c",
+      "ephemeris": [
+        {
+          "year": 2025,
+          "thetaDeg": 328.5,
+          "rhoArcsec": 13.534
+        },
+        {
+          "year": 2026,
+          "thetaDeg": 328.9,
+          "rhoArcsec": 13.558
+        },
+        {
+          "year": 2027,
+          "thetaDeg": 329.3,
+          "rhoArcsec": 13.582
+        },
+        {
+          "year": 2028,
+          "thetaDeg": 329.7,
+          "rhoArcsec": 13.606
+        },
+        {
+          "year": 2029,
+          "thetaDeg": 330.2,
+          "rhoArcsec": 13.63
+        }
+      ]
+    },
+    {
+      "primary": "gj-338-a",
+      "secondary": "gj-338-b",
+      "systemId": "gj-338",
+      "wds": "09144+5241",
+      "name": "STF1321AB",
+      "hip": 45343,
+      "periodYears": 1986.3,
+      "periodError": 246.4,
+      "axisArcsec": 25.77,
+      "axisError": 0.07,
+      "inclinationDeg": 38.3,
+      "inclinationError": 1.8,
+      "nodeDeg": 48.7,
+      "nodeFlag": "",
+      "nodeError": 3.1,
+      "periastronJd": 2428607.3233146532,
+      "periastronError": 8473.8,
+      "eccentricity": 0.241,
+      "eccentricityError": 0.062,
+      "argumentDeg": 32.1,
+      "argumentFlag": "",
+      "argumentError": 6.6,
+      "equinox": null,
+      "lastObservation": null,
+      "grade": 4,
+      "reference": "PkO2020",
+      "ephemeris": [
+        {
+          "year": 2025,
+          "thetaDeg": 100.9,
+          "rhoArcsec": 16.947
+        },
+        {
+          "year": 2026,
+          "thetaDeg": 101.2,
+          "rhoArcsec": 16.934
+        },
+        {
+          "year": 2027,
+          "thetaDeg": 101.6,
+          "rhoArcsec": 16.921
+        },
+        {
+          "year": 2028,
+          "thetaDeg": 101.9,
+          "rhoArcsec": 16.909
+        },
+        {
+          "year": 2029,
+          "thetaDeg": 102.2,
+          "rhoArcsec": 16.896
+        }
+      ]
+    },
+    {
+      "primary": "xi-bootis-a",
+      "secondary": "xi-bootis-b",
+      "systemId": "xi-bootis",
+      "wds": "14514+1906",
+      "name": "STF1888AB",
+      "hip": 72659,
+      "periodYears": 151.870304,
+      "periodError": null,
+      "axisArcsec": 4.92219,
+      "axisError": null,
+      "inclinationDeg": 140.2816,
+      "inclinationError": null,
+      "nodeDeg": 167.9575,
+      "nodeFlag": "",
+      "nodeError": null,
+      "periastronJd": 2418445.0084578386,
+      "periastronError": null,
+      "eccentricity": 0.51168,
+      "eccentricityError": null,
+      "argumentDeg": 23.8399,
+      "argumentFlag": "",
+      "argumentError": null,
+      "equinox": null,
+      "lastObservation": null,
+      "grade": 2,
+      "reference": "Kpp2020f",
+      "ephemeris": [
+        {
+          "year": 2025,
+          "thetaDeg": 288.9,
+          "rhoArcsec": 4.81
+        },
+        {
+          "year": 2026,
+          "thetaDeg": 287.3,
+          "rhoArcsec": 4.716
+        },
+        {
+          "year": 2027,
+          "thetaDeg": 285.5,
+          "rhoArcsec": 4.622
+        },
+        {
+          "year": 2028,
+          "thetaDeg": 283.7,
+          "rhoArcsec": 4.527
+        },
+        {
+          "year": 2029,
+          "thetaDeg": 281.8,
+          "rhoArcsec": 4.432
+        }
+      ]
+    },
+    {
+      "primary": "gj-667-a",
+      "secondary": "gj-667-b",
+      "systemId": "gj-667",
+      "wds": "17190-3459",
+      "name": "MLO   4AB",
+      "hip": 84709,
+      "periodYears": 42.152,
+      "periodError": 0.039,
+      "axisArcsec": 1.826,
+      "axisError": 0.0017,
+      "inclinationDeg": 127.662,
+      "inclinationError": 0.034,
+      "nodeDeg": 133.574,
+      "nodeFlag": "",
+      "nodeError": 0.063,
+      "periastronJd": 2427347.968213256,
+      "periastronError": 28.85475,
+      "eccentricity": 0.57374,
+      "eccentricityError": 0.00029,
+      "argumentDeg": 68.451,
+      "argumentFlag": "",
+      "argumentError": 0.056,
+      "equinox": null,
+      "lastObservation": null,
+      "grade": 1,
+      "reference": "Msn2023",
+      "ephemeris": [
+        {
+          "year": 2025,
+          "thetaDeg": 304,
+          "rhoArcsec": 1.825
+        },
+        {
+          "year": 2026,
+          "thetaDeg": 299.9,
+          "rhoArcsec": 1.926
+        },
+        {
+          "year": 2027,
+          "thetaDeg": 296.2,
+          "rhoArcsec": 2.003
+        },
+        {
+          "year": 2028,
+          "thetaDeg": 292.8,
+          "rhoArcsec": 2.061
+        },
+        {
+          "year": 2029,
+          "thetaDeg": 289.5,
+          "rhoArcsec": 2.101
+        }
+      ]
+    },
+    {
+      "primary": "36-ophiuchi-a",
+      "secondary": "36-ophiuchi-b",
+      "systemId": "36-ophiuchi",
+      "wds": "17153-2636",
+      "name": "SHJ 243AB",
+      "hip": 84405,
+      "periodYears": 470.9,
+      "periodError": null,
+      "axisArcsec": 13,
+      "axisError": null,
+      "inclinationDeg": 99.794,
+      "inclinationError": null,
+      "nodeDeg": 94.155,
+      "nodeFlag": "",
+      "nodeError": null,
+      "periastronJd": 2333885.4114827886,
+      "periastronError": null,
+      "eccentricity": 0.916,
+      "eccentricityError": null,
+      "argumentDeg": 89.8,
+      "argumentFlag": "",
+      "argumentError": null,
+      "equinox": null,
+      "lastObservation": null,
+      "grade": 4,
+      "reference": "Irw1996",
+      "ephemeris": [
+        {
+          "year": 2025,
+          "thetaDeg": 137.4,
+          "rhoArcsec": 5.148
+        },
+        {
+          "year": 2026,
+          "thetaDeg": 137,
+          "rhoArcsec": 5.161
+        },
+        {
+          "year": 2027,
+          "thetaDeg": 136.7,
+          "rhoArcsec": 5.173
+        },
+        {
+          "year": 2028,
+          "thetaDeg": 136.4,
+          "rhoArcsec": 5.185
+        },
+        {
+          "year": 2029,
+          "thetaDeg": 136,
+          "rhoArcsec": 5.197
+        }
+      ]
+    },
+    {
+      "primary": "gj-66-a",
+      "secondary": "gj-66-b",
+      "systemId": "gj-66",
+      "flip": true,
+      "wds": "01398-5612",
+      "name": "DUN   5",
+      "hip": 7751,
+      "periodYears": 467.699574,
+      "periodError": null,
+      "axisArcsec": 7.95563,
+      "axisError": null,
+      "inclinationDeg": 135.4299,
+      "inclinationError": null,
+      "nodeDeg": 13.8831,
+      "nodeFlag": "",
+      "nodeError": null,
+      "periastronJd": 2380906.310475757,
+      "periastronError": null,
+      "eccentricity": 0.462287,
+      "eccentricityError": null,
+      "argumentDeg": 18.0095,
+      "argumentFlag": "",
+      "argumentError": null,
+      "equinox": null,
+      "lastObservation": null,
+      "grade": 4,
+      "reference": "Kpp2020f",
+      "ephemeris": [
+        {
+          "year": 2025,
+          "thetaDeg": 184.6,
+          "rhoArcsec": 11.449
+        },
+        {
+          "year": 2026,
+          "thetaDeg": 184.4,
+          "rhoArcsec": 11.447
+        },
+        {
+          "year": 2027,
+          "thetaDeg": 184.1,
+          "rhoArcsec": 11.444
+        },
+        {
+          "year": 2028,
+          "thetaDeg": 183.9,
+          "rhoArcsec": 11.44
+        },
+        {
+          "year": 2029,
+          "thetaDeg": 183.7,
+          "rhoArcsec": 11.436
+        }
+      ]
+    },
+    {
+      "primary": "luhman-16-a",
+      "secondary": "luhman-16-b",
+      "systemId": "luhman-16",
+      "wds": "10493-5319",
+      "name": "LUH  16",
+      "hip": null,
+      "periodYears": 26.55,
+      "periodError": 0.08,
+      "axisArcsec": 1.764,
+      "axisError": 0.003,
+      "inclinationDeg": 79.92,
+      "inclinationError": 0.008,
+      "nodeDeg": 130.02,
+      "nodeFlag": "",
+      "nodeError": 0.01,
+      "periastronJd": 2458140.807508085,
+      "periastronError": 1.09575,
+      "eccentricity": 0.344,
+      "eccentricityError": 0.001,
+      "argumentDeg": 136.67,
+      "argumentFlag": "",
+      "argumentError": 0.09,
+      "equinox": null,
+      "lastObservation": null,
+      "grade": 4,
+      "reference": "Bdi2024",
+      "ephemeris": [
+        {
+          "year": 2025,
+          "thetaDeg": 20.7,
+          "rhoArcsec": 0.369
+        },
+        {
+          "year": 2026,
+          "thetaDeg": 70.7,
+          "rhoArcsec": 0.425
+        },
+        {
+          "year": 2027,
+          "thetaDeg": 96,
+          "rhoArcsec": 0.663
+        },
+        {
+          "year": 2028,
+          "thetaDeg": 107.1,
+          "rhoArcsec": 0.94
+        },
+        {
+          "year": 2029,
+          "thetaDeg": 113.2,
+          "rhoArcsec": 1.211
+        }
+      ]
+    },
+    {
+      "primary": "ei-cancri-a",
+      "secondary": "ei-cancri-b",
+      "systemId": "ei-cancri",
+      "wds": "08582+1945",
+      "name": "LDS3836",
+      "hip": null,
+      "periodYears": 123.6412,
+      "periodError": null,
+      "axisArcsec": 3.1449,
+      "axisError": null,
+      "inclinationDeg": 38.9225,
+      "inclinationError": null,
+      "nodeDeg": 139.9971,
+      "nodeFlag": "",
+      "nodeError": null,
+      "periastronJd": 2452379.4040160733,
+      "periastronError": null,
+      "eccentricity": 0.4888,
+      "eccentricityError": null,
+      "argumentDeg": 351.5415,
+      "argumentFlag": "",
+      "argumentError": null,
+      "equinox": null,
+      "lastObservation": null,
+      "grade": 4,
+      "reference": "Kpp2020f",
+      "ephemeris": [
+        {
+          "year": 2025,
+          "thetaDeg": 260.2,
+          "rhoArcsec": 2.668
+        },
+        {
+          "year": 2026,
+          "thetaDeg": 262.9,
+          "rhoArcsec": 2.754
+        },
+        {
+          "year": 2027,
+          "thetaDeg": 265.4,
+          "rhoArcsec": 2.839
+        },
+        {
+          "year": 2028,
+          "thetaDeg": 267.8,
+          "rhoArcsec": 2.924
+        },
+        {
+          "year": 2029,
+          "thetaDeg": 270,
+          "rhoArcsec": 3.008
+        }
+      ]
+    },
+    {
+      "primary": "scholzs-star-a",
+      "secondary": "scholzs-star-b",
+      "systemId": "scholzs-star",
+      "wds": "07200-0847",
+      "name": "BUG  17",
+      "hip": null,
+      "periodYears": 8.263735,
+      "periodError": null,
+      "axisArcsec": 0.3211,
+      "axisError": null,
+      "inclinationDeg": 106.5003,
+      "inclinationError": null,
+      "nodeDeg": 59.415,
+      "nodeFlag": "",
+      "nodeError": null,
+      "periastronJd": 2457285.7174472287,
+      "periastronError": null,
+      "eccentricity": 0.248445,
+      "eccentricityError": null,
+      "argumentDeg": 182.7214,
+      "argumentFlag": "",
+      "argumentError": null,
+      "equinox": null,
+      "lastObservation": null,
+      "grade": 4,
+      "reference": "Kpp2020f",
+      "ephemeris": [
+        {
+          "year": 2025,
+          "thetaDeg": 198.8,
+          "rhoArcsec": 0.114
+        },
+        {
+          "year": 2026,
+          "thetaDeg": 87.4,
+          "rhoArcsec": 0.181
+        },
+        {
+          "year": 2027,
+          "thetaDeg": 68.3,
+          "rhoArcsec": 0.341
+        },
+        {
+          "year": 2028,
+          "thetaDeg": 59.7,
+          "rhoArcsec": 0.401
+        },
+        {
+          "year": 2029,
+          "thetaDeg": 51.3,
+          "rhoArcsec": 0.35
+        }
+      ]
+    },
+    {
+      "primary": "mu2-herculis-a",
+      "secondary": "mu2-herculis-b",
+      "systemId": "mu2-herculis",
+      "wds": "17465+2743",
+      "name": "AC    7BC",
+      "hip": null,
+      "periodYears": 43.46,
+      "periodError": 0.23,
+      "axisArcsec": 1.402,
+      "axisError": 0.006,
+      "inclinationDeg": 65.821,
+      "inclinationError": 0.098,
+      "nodeDeg": 61.11,
+      "nodeFlag": "",
+      "nodeError": 0.8,
+      "periastronJd": 2454592,
+      "periastronError": 13,
+      "eccentricity": 0.1834,
+      "eccentricityError": 0.0031,
+      "argumentDeg": 172.21,
+      "argumentFlag": "",
+      "argumentError": 0.48,
+      "equinox": null,
+      "lastObservation": null,
+      "grade": 1,
+      "reference": "MnA2019",
+      "ephemeris": [
+        {
+          "year": 2025,
+          "thetaDeg": 43.3,
+          "rhoArcsec": 1.334
+        },
+        {
+          "year": 2026,
+          "thetaDeg": 46.7,
+          "rhoArcsec": 1.427
+        },
+        {
+          "year": 2027,
+          "thetaDeg": 49.7,
+          "rhoArcsec": 1.506
+        },
+        {
+          "year": 2028,
+          "thetaDeg": 52.5,
+          "rhoArcsec": 1.569
+        },
+        {
+          "year": 2029,
+          "thetaDeg": 55.1,
+          "rhoArcsec": 1.616
+        }
+      ]
+    },
+    {
+      "primary": "fl-virginis-a",
+      "secondary": "fl-virginis-b",
+      "systemId": "fl-virginis",
+      "wds": "12335+0901",
+      "name": "REU   1",
+      "hip": null,
+      "periodYears": 15.811,
+      "periodError": 0.007,
+      "axisArcsec": 0.91,
+      "axisError": 0.069,
+      "inclinationDeg": 102.8,
+      "inclinationError": 0.2,
+      "nodeDeg": 143.2,
+      "nodeFlag": "",
+      "nodeError": 0.3,
+      "periastronJd": 2454510.3000522014,
+      "periastronError": 14.61,
+      "eccentricity": 0.301,
+      "eccentricityError": 0.002,
+      "argumentDeg": 347.7,
+      "argumentFlag": "",
+      "argumentError": 1.1,
+      "equinox": null,
+      "lastObservation": 2022,
+      "grade": 2,
+      "reference": "Lin2022b",
+      "ephemeris": [
+        {
+          "year": 2025,
+          "thetaDeg": 135,
+          "rhoArcsec": 0.579
+        },
+        {
+          "year": 2026,
+          "thetaDeg": 115.8,
+          "rhoArcsec": 0.347
+        },
+        {
+          "year": 2027,
+          "thetaDeg": 42.3,
+          "rhoArcsec": 0.202
+        },
+        {
+          "year": 2028,
+          "thetaDeg": 351.4,
+          "rhoArcsec": 0.433
+        },
+        {
+          "year": 2029,
+          "thetaDeg": 338.5,
+          "rhoArcsec": 0.706
+        }
+      ]
+    },
+    {
+      "primary": "gj-2005-b",
+      "secondary": "gj-2005-c",
+      "systemId": "gj-2005",
+      "wds": "00247-2653",
+      "name": "LEI   1BC",
+      "hip": null,
+      "periodYears": 17.247,
+      "periodError": 0.016,
+      "axisArcsec": 0.4598,
+      "axisError": 0.0007,
+      "inclinationDeg": 62.04,
+      "inclinationError": 0.11,
+      "nodeDeg": 14.82,
+      "nodeFlag": "",
+      "nodeError": 0.12,
+      "periastronJd": 2453896.6931582494,
+      "periastronError": 2.55675,
+      "eccentricity": 0.0172,
+      "eccentricityError": 0.0008,
+      "argumentDeg": 202.53,
+      "argumentFlag": "",
+      "argumentError": null,
+      "equinox": null,
+      "lastObservation": 2017,
+      "grade": 2,
+      "reference": "Tok2018j",
+      "ephemeris": [
+        {
+          "year": 2025,
+          "thetaDeg": 224.8,
+          "rhoArcsec": 0.33
+        },
+        {
+          "year": 2026,
+          "thetaDeg": 250.6,
+          "rhoArcsec": 0.246
+        },
+        {
+          "year": 2027,
+          "thetaDeg": 292.4,
+          "rhoArcsec": 0.216
+        },
+        {
+          "year": 2028,
+          "thetaDeg": 329.1,
+          "rhoArcsec": 0.274
+        },
+        {
+          "year": 2029,
+          "thetaDeg": 349.9,
+          "rhoArcsec": 0.362
+        }
+      ]
+    }
+  ],
+  "left": [
+    {
+      "pair": "gj-896-a/gj-896-b",
+      "why": "its elements imply 315.82 solar masses in all, which no pair of these stars has"
+    }
+  ]
+}

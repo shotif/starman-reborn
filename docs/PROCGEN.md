@@ -4522,3 +4522,99 @@ line, flare watch (posted only by research stations within reach while a flare l
 contract guardrails, its reading only in the star's system while it flares, paid on return, not
 offered twice for one flare), and the flight scene (shields and scanners cut while it lasts, and
 back after, the star's glow, the HUD line, the target's subtitle).
+
+## 44. Real binary orbits
+
+Twenty-two of the game's pairs of stars have orbits the Sixth Catalog of Orbits of Visual Binary
+Stars (ORB6) grades as definitive, good, reliable or preliminary, among them Alpha Centauri A and B,
+Sirius A and B, Procyon A and B, 70 Ophiuchi A and B, Kruger 60 A and B and Luyten 726-8's BL and UV
+Ceti (`src/data/orbits.ts`, read from the catalogue by `scripts/orbits-process.ts`; what the game does
+with them in `BINARIES` and what it says in `BINARY_LINES`, `src/content/stellar/binaries.ts`; the
+engine in `src/economy/binaries.ts`). Nothing about them is invented: every element is the
+catalogue's, and every number shown is reckoned from those elements and a date.
+
+The owner chose (6 October 2026): real binary orbits, then real comets in Sol, then a pilot's
+logbook; and, asked where each companion should stand in flight, *as of the snapshot*: each pair
+stands as it did on the day the orbits were taken from the catalogue, while the cards, the star map
+and the encyclopedia give where it stands on the game's own date.
+
+### 44.1 The orbits
+
+The sky snapshot (`scripts/sky-fetch.ts`, on GitHub's runners: [ASTRONOMY_SOURCES.md, *Binary
+orbits*](ASTRONOMY_SOURCES.md#binary-orbits)) fetches the whole catalogue, its format notes and its
+own ephemeris into `data/snapshot/orbits/<date>/`, apart from the stars' snapshot.
+`scripts/orbits-process.ts` takes the orbits of the game's pairs (each named by the catalogue's WDS
+designation and name, and the game's two stars), with every element and published error, converted
+only in units (periods to years, semi-major axes to arcseconds, times of periastron to Julian dates).
+A pair graded worse than 4 is left out, as is one whose elements imply a total mass no pair of these
+stars could have: EQ Pegasi's catalogued elements give 316 solar masses, so it is left out and
+says why. GJ 66's two stars are named the other way round in the game from the catalogue, so its
+reckoning is turned about. 40 Eridani's and GJ 2005's orbits are of their B and C, the inner pairs of
+triples.
+
+### 44.2 The reckoning
+
+Where a secondary stands relative to its primary at a date is the standard reckoning for a visual
+binary: the mean anomaly from the period and the time of periastron, Kepler's equation, the true
+anomaly and radius vector, then the projection by the inclination, the node and the argument of
+periastron. It gives the position angle (from north through east) and the separation on the sky, how
+far apart the two truly are, and their distance along the line of sight. Tested against the
+catalogue's own ephemeris for 2025 to 2029, every pair matches within 0.33° and 0.4% (the
+catalogue rounds to a tenth of a degree and a milliarcsecond). Which side of the sky a secondary's
+far side lies on is unknown wherever the catalogue has not identified the ascending node (none of
+these pairs has one): the game takes the catalogue's convention.
+
+### 44.3 In flight
+
+Each secondary stands in the scene where its orbit had it on the day the orbits were taken (6
+October 2026, the snapshot's date): in its real direction from its primary, on the sky and along the
+line of sight, in the scene's frame (the ecliptic, as every system's sky), at its true separation
+compressed as every companion's is (`compressedSeparation`, 22,000 to 110,000 units, wider real
+pairs further apart). A secondary whose real direction would crowd what is not its own (the arrival
+point and beacons, other stations and planets, the lanes: `COMPANION_CLEAR`) is moved further out
+along that direction until it does not; its planets and stations go with it. In Alpha Centauri, ships
+arrive below the pair, clear of B. When a later snapshot is taken, the pairs move on to where it finds
+them.
+
+### 44.4 What the game says
+
+- **The science card** of a star in a pair has an *Orbit* section: which star orbits which and how
+  often, the semi-major axis on the sky and in AU (at the primary's parallax), the eccentricity, the
+  inclination, the next periastron, the total mass by Kepler's third law, where the pair stands on
+  the game's date (separation on the sky and position angle, and how far apart they truly are), the
+  catalogue's grade, the catalogue cited with the pair's designation and the orbit's reference, and
+  that in flight the pair stands as it did when the orbits were taken.
+- **The star map's card** gives the same, shorter, for every pair in the system.
+- **The encyclopedia** gives each system's orbits in full.
+
+### 44.5 Measuring a pair
+
+Double stars are measured again and again over the years, the angle and distance of one from the
+other set against the orbit to test it. Research stations within two jumps of a pair post, from a
+random stream of their own, a measurement in a time slot with odds of about one in three
+(`measure.odds`): **Measure {secondary}**: scan the secondary in its system within a day of the
+posting, then bring the reading back. It pays 600 cr and 300 cr a jump. A reading counts only in the
+pair's own system and in time.
+
+### 44.6 One save's own
+
+Nothing new is kept: the orbits are the catalogue's, the scenes follow from them, and a measurement
+taken on is kept like every contract, its reading on the job like every observation (§25.5).
+
+### 44.7 Guardrails
+
+`validateOrbits` (`src/data/validate.ts`, run by `npm run data:validate`) and `validateBinaries`
+(`src/economy/binaryGuards.ts`, run in `tests/unit/binaries.test.ts`): each pair two stars of one
+system on the map, graded 1 to 4, its elements in range and its total mass between 0.03 and 6 Suns;
+the game's reckoning matching the catalogue's own ephemeris for every year it gives (0.5° and 0.5%,
+or 2 milliarcseconds); in every scene, each secondary in its real direction from its primary (to
+0.01 radian), no nearer than its compressed separation, and crowding nothing that is not its own;
+measurements paying more for farther pairs and within what any contract pays, near enough for a
+young pilot, posted for at least half the pairs; and no line with a number of its own or a field it
+cannot fill. The contract guardrails check every measurement (a research station, a catalogued
+pair's secondary read in its own system, a day from its posting, back with the reading). The tests
+also check the catalogue's raw line against the game's elements, break the rules and the elements to
+see them caught, check the physics (Alpha Centauri's two Suns' worth of mass, its next periastron in
+the 2030s, a full period bringing a pair back), a pair turned about, what is said, every scene, and
+the measurements (posted as often as the rules say, only by research stations within reach, paid on
+return, counted only in the pair's system).

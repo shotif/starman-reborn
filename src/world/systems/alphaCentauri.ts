@@ -1,8 +1,13 @@
 import type { SystemSceneDef } from '../sceneTypes.ts';
 import { confirmedPlanets, dirTo, v } from './helpers.ts';
+import { orbitOffset } from './generated.ts';
+import { orbitOf } from '../../data/orbits.ts';
 
 const A = v(0, 0, 0);
-const B = v(26_000, 3_000, -14_000);
+// B stands as its catalogued orbit had it when the orbits were taken (docs/PROCGEN.md §44.3); ships
+// arrive below the pair, clear of it.
+const B = A.clone().add(orbitOffset(orbitOf('alpha-centauri-b')!));
+const arrival = v(-14_000, -22_000, 30_000);
 // Proxima lies far from the A/B pair (about 13,000 AU in reality); compressed here.
 const PROXIMA = v(-170_000, 25_000, 160_000);
 
@@ -16,7 +21,6 @@ const planets = confirmedPlanets(
   },
 );
 const proximaB = planets.find((p) => p.id === 'proxima-cen-b')?.position ?? PROXIMA.clone().add(v(5_400, 300, 2_600));
-const arrival = v(-14_000, 3_500, 30_000);
 const toProxima = dirTo(arrival, PROXIMA);
 const meridian = proximaB.clone().add(v(1_500, 400, 900));
 const laneFrom = arrival.clone().addScaledVector(toProxima, 3_000);

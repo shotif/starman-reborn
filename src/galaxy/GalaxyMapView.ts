@@ -768,6 +768,7 @@ export class GalaxyMapView {
       discoveredBodies: this.state?.discoveredBodies ?? new Set<string>(),
       ...(this.state?.catalogued ? { catalogued: this.state.catalogued } : {}),
       ...(systemId ? { initialSystemId: systemId } : {}),
+      ...(this.state?.gameDate !== undefined ? { gameDate: this.state.gameDate } : {}),
       onClose: () => {
         this.encyclopedia = null;
         this.viewDirty = true;

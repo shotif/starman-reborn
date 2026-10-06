@@ -1027,6 +1027,69 @@ for (const size of SIZES) {
       }
     });
 
+    // Binary orbits (docs/PROCGEN.md §44): Procyon B scanned, its card with its orbit; then the star map's card.
+    test(`A pair's orbit at ${size.name}`, async ({ page }) => {
+      test.setTimeout(10 * 60_000);
+      mkdirSync(OUT, { recursive: true });
+      const results: Record<string, AuditResult> = {};
+      if (size.textScale) {
+        const px = 16 * size.textScale;
+        await page.addInitScript((fontPx) => {
+          document.addEventListener('DOMContentLoaded', () => {
+            const style = document.createElement('style');
+            style.textContent = `html { font-size: ${fontPx}px !important; }`;
+            document.head.appendChild(style);
+          });
+        }, px);
+      }
+      await openFresh(page);
+      await press(page, 'title-play');
+      await press(page, 'intro-ok');
+      await api(page, 'completeJobs', ['lifeline']);
+      await api(page, 'dockAt', 'dawnfield-institute');
+      await waitUntil(page, 'docked at Dawnfield Institute', async () => (await api<{ location: { dockedAt: string | null } }>(page, 'state')).location.dockedAt === 'dawnfield-institute');
+      for (let q = 0, i = 0; q < 3 && i < 30; i++) {
+        const next = page.getByTestId('story-continue').or(page.getByTestId('folk-continue')).first();
+        if (await next.isVisible().catch(() => false)) {
+          q = 0;
+          await next.click().catch(() => {});
+        } else q++;
+        await page.waitForTimeout(250);
+      }
+      await press(page, 'dock-launch');
+      if (await page.getByTestId('controls-sheet').isVisible().catch(() => false)) await press(page, 'sheet-close');
+      await waitUntil(page, 'undocked', async () => (await api<{ autopilot: string } | null>(page, 'player'))?.autopilot === 'none', 60_000);
+      await api(page, 'selectTarget', 'star:procyon-b');
+      expect(await api<boolean>(page, 'placeNear', { id: 'star:procyon-b', distance: 6_000 })).toBe(true);
+      await waitUntil(page, 'Scan offered', async () => {
+        const ok = page.getByTestId('discovery-ok').last();
+        if (await ok.isVisible().catch(() => false)) await ok.click({ timeout: 2_000 }).catch(() => {});
+        return (await api<{ context: { label: string } | null } | null>(page, 'hud'))?.context?.label === 'Scan';
+      }, 30_000);
+      await press(page, size.touch ? 'touch-context' : 'hud-context');
+      await page.getByTestId('science-orbit').scrollIntoViewIfNeeded();
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-26-orbit-card`, size.touch, results);
+      await press(page, 'sheet-close');
+      if (size.touch) await press(page, 'hud-map');
+      else await page.keyboard.press('Tab');
+      await expect(page.getByTestId('galaxy-map')).toBeVisible();
+      await press(page, 'map-system-procyon');
+      // On a narrow screen the card is a bottom sheet, opened by Details.
+      const details = page.getByTestId('map-card-toggle');
+      if ((await details.isVisible().catch(() => false)) && (await details.getAttribute('aria-expanded')) === 'false') await press(page, 'map-card-toggle');
+      await page.getByTestId('orbit-procyon-b').scrollIntoViewIfNeeded();
+      await shot(page, `${size.name}-26b-orbit-map`, size.touch, results);
+      for (const [name, r] of Object.entries(results)) {
+        expect.soft(r.overflow, `${name}: page overflow`).toBe(false);
+        expect.soft(r.clipped, `${name}: clipped controls`).toEqual([]);
+        expect.soft(r.cutOff, `${name}: content cut off inside a box`).toEqual([]);
+        expect.soft(r.tinyText, `${name}: text below 10px`).toEqual([]);
+        expect.soft(r.smallTargets, `${name}: touch targets below 40px`).toEqual([]);
+        expect.soft(r.overlaps, `${name}: overlapping HUD panels`).toEqual([]);
+      }
+    });
+
     // Flare stars (docs/PROCGEN.md §43): Wolf 359 in a strong flare, told in Ledger Institute's News,
     // then flown in, the star glowing and the HUD saying so.
     test(`A flare at ${size.name}`, async ({ page }) => {

@@ -771,6 +771,19 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   so, the radio and the HUD line on arriving, shields recharging at 45% of their rate; after it, the
   radio saying it has settled and everything back.
 
+- `binaries.test.ts`: **real binary orbits**. Twenty-two pairs from the Sixth Orbit Catalog, EQ
+  Pegasi left out for elements implying 316 solar masses, Sirius's elements checked against the raw
+  catalogue line as fetched, GJ 66 named the other way round. The orbits pass `validateBinaries`, and
+  broken ones are caught (a grade of 5, an eccentricity above one, an orbit too wide for its stars, a
+  node that misses the catalogue's predictions, a star not of the pair's system, pay above the
+  ceiling, odds of one, a line with a number). The reckoning matches the catalogue's own ephemeris
+  (Sirius in 2026: 57°, 11.16″), turns about for a pair named the other way, gives Alpha Centauri
+  about two Suns' worth of mass and its next periastron in the 2030s, and brings a pair back after a
+  full period; what is said comes from the elements and the date. Every pair's scene keeps its
+  companion clear of what is not its own, and Alpha Centauri's arrival and lane clear of B.
+  Measurements are posted by research stations within reach about one slot in three, pass the
+  contract guardrails, count a reading only in the pair's own system, and are paid on return.
+
 ### Browser tests (Playwright)
 
 - `journey.spec.ts`: **the nine-step journey from the spec** on desktop and on touch.
@@ -1006,6 +1019,11 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   ship launched; at the launch six lifeboats away, the HUD counting them aboard as the pilot comes
   alongside five; then out through Pyre's lane from the star map's Missions list, arriving at GJ 915
   before the collapse with the job done, and the News at GJ 915 Freeport showing the Pyre Archive.
+- `binaries.spec.ts`: **real binary orbits**: at Dawnfield Institute, a measurement of Procyon B taken
+  from the bar; out in flight Procyon B scanned from near it, its card giving the orbit (40.8 years,
+  its eccentricity, where the pair stands on the game's date, and that in flight it stands as it did
+  on 6 October 2026); the star map's card giving the orbit too; and the reading paid for back at the
+  institute.
 - `flares.spec.ts`: **flare stars**: two minutes into a strong flare on Wolf 359, the News at Ledger
   Institute telling of it (the Fiction line naming CN Leo); flare watch taken at its bar; out in the
   system the radio's word and the HUD's flare line, shields and scanners cut and the star glowing,
@@ -1074,8 +1092,9 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   the journal's wing with those who flew before, a clash at Ross 154's beacon line with its battle strip
   and the battle line selected, the Wake's assault on Regent Concourse, the News of it beaten off, the
   journal's border battles, the News with a shortage's relief
-  haulers on their way, the News at Ledger Institute telling of a strong flare on Wolf 359, and Wolf
-  359 flaring in flight with the HUD's flare line, at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
+  haulers on their way, the News at Ledger Institute telling of a strong flare on Wolf 359, Wolf
+  359 flaring in flight with the HUD's flare line, Procyon B's science card with its orbit, and the
+  star map's card with Procyon's orbit, at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
   zoom). Saved in `docs/screenshots/` once any smooth scrolling has come to rest. Each is audited
   for page scroll overflow, clipped controls (controls inside a scrolling panel count only if the

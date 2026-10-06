@@ -1,0 +1,201 @@
+{
+  "retrieved": "2026-10-06",
+  "comets": [
+    "1P",
+    "2P",
+    "9P",
+    "12P",
+    "13P",
+    "19P",
+    "21P",
+    "29P",
+    "46P",
+    "55P",
+    "67P",
+    "81P",
+    "103P",
+    "109P"
+  ],
+  "queries": [
+    {
+      "label": "orb6-orbits",
+      "service": "www.astro.gsu.edu",
+      "query": "https://www.astro.gsu.edu/wds/orb6/orb6orbits.txt",
+      "ok": false,
+      "file": "orb6-orbits.txt",
+      "ms": 14673,
+      "error": "fetch failed"
+    },
+    {
+      "label": "orb6-orbits",
+      "service": "www.astro.gsu.edu",
+      "query": "http://www.astro.gsu.edu/wds/orb6/orb6orbits.txt",
+      "ok": true,
+      "file": "orb6-orbits.txt",
+      "ms": 659
+    },
+    {
+      "label": "orb6-format",
+      "service": "www.astro.gsu.edu",
+      "query": "https://www.astro.gsu.edu/wds/orb6/orb6format.txt",
+      "ok": false,
+      "file": "orb6-format.txt",
+      "ms": 14478,
+      "error": "fetch failed"
+    },
+    {
+      "label": "orb6-format",
+      "service": "www.astro.gsu.edu",
+      "query": "http://www.astro.gsu.edu/wds/orb6/orb6format.txt",
+      "ok": true,
+      "file": "orb6-format.txt",
+      "ms": 225
+    },
+    {
+      "label": "orb6-ephem",
+      "service": "www.astro.gsu.edu",
+      "query": "https://www.astro.gsu.edu/wds/orb6/orb6ephem.txt",
+      "ok": false,
+      "file": "orb6-ephem.txt",
+      "ms": 14474,
+      "error": "fetch failed"
+    },
+    {
+      "label": "orb6-ephem",
+      "service": "www.astro.gsu.edu",
+      "query": "http://www.astro.gsu.edu/wds/orb6/orb6ephem.txt",
+      "ok": true,
+      "file": "orb6-ephem.txt",
+      "ms": 603
+    },
+    {
+      "label": "orb6-page",
+      "service": "www.astro.gsu.edu",
+      "query": "https://www.astro.gsu.edu/wds/orb6.html",
+      "ok": false,
+      "file": "orb6-page.html",
+      "ms": 14466,
+      "error": "fetch failed"
+    },
+    {
+      "label": "orb6-page",
+      "service": "www.astro.gsu.edu",
+      "query": "http://www.astro.gsu.edu/wds/orb6.html",
+      "ok": true,
+      "file": "orb6-page.html",
+      "ms": 226
+    },
+    {
+      "label": "jpl-sbdb-1P",
+      "service": "ssd-api.jpl.nasa.gov",
+      "query": "https://ssd-api.jpl.nasa.gov/sbdb.api?sstr=1P&phys-par=1&full-prec=1",
+      "ok": true,
+      "file": "jpl-sbdb-1P.json",
+      "ms": 240
+    },
+    {
+      "label": "jpl-sbdb-2P",
+      "service": "ssd-api.jpl.nasa.gov",
+      "query": "https://ssd-api.jpl.nasa.gov/sbdb.api?sstr=2P&phys-par=1&full-prec=1",
+      "ok": true,
+      "file": "jpl-sbdb-2P.json",
+      "ms": 78
+    },
+    {
+      "label": "jpl-sbdb-9P",
+      "service": "ssd-api.jpl.nasa.gov",
+      "query": "https://ssd-api.jpl.nasa.gov/sbdb.api?sstr=9P&phys-par=1&full-prec=1",
+      "ok": true,
+      "file": "jpl-sbdb-9P.json",
+      "ms": 75
+    },
+    {
+      "label": "jpl-sbdb-12P",
+      "service": "ssd-api.jpl.nasa.gov",
+      "query": "https://ssd-api.jpl.nasa.gov/sbdb.api?sstr=12P&phys-par=1&full-prec=1",
+      "ok": true,
+      "file": "jpl-sbdb-12P.json",
+      "ms": 71
+    },
+    {
+      "label": "jpl-sbdb-13P",
+      "service": "ssd-api.jpl.nasa.gov",
+      "query": "https://ssd-api.jpl.nasa.gov/sbdb.api?sstr=13P&phys-par=1&full-prec=1",
+      "ok": true,
+      "file": "jpl-sbdb-13P.json",
+      "ms": 64
+    },
+    {
+      "label": "jpl-sbdb-19P",
+      "service": "ssd-api.jpl.nasa.gov",
+      "query": "https://ssd-api.jpl.nasa.gov/sbdb.api?sstr=19P&phys-par=1&full-prec=1",
+      "ok": true,
+      "file": "jpl-sbdb-19P.json",
+      "ms": 80
+    },
+    {
+      "label": "jpl-sbdb-21P",
+      "service": "ssd-api.jpl.nasa.gov",
+      "query": "https://ssd-api.jpl.nasa.gov/sbdb.api?sstr=21P&phys-par=1&full-prec=1",
+      "ok": true,
+      "file": "jpl-sbdb-21P.json",
+      "ms": 109
+    },
+    {
+      "label": "jpl-sbdb-29P",
+      "service": "ssd-api.jpl.nasa.gov",
+      "query": "https://ssd-api.jpl.nasa.gov/sbdb.api?sstr=29P&phys-par=1&full-prec=1",
+      "ok": true,
+      "file": "jpl-sbdb-29P.json",
+      "ms": 101
+    },
+    {
+      "label": "jpl-sbdb-46P",
+      "service": "ssd-api.jpl.nasa.gov",
+      "query": "https://ssd-api.jpl.nasa.gov/sbdb.api?sstr=46P&phys-par=1&full-prec=1",
+      "ok": true,
+      "file": "jpl-sbdb-46P.json",
+      "ms": 84
+    },
+    {
+      "label": "jpl-sbdb-55P",
+      "service": "ssd-api.jpl.nasa.gov",
+      "query": "https://ssd-api.jpl.nasa.gov/sbdb.api?sstr=55P&phys-par=1&full-prec=1",
+      "ok": true,
+      "file": "jpl-sbdb-55P.json",
+      "ms": 80
+    },
+    {
+      "label": "jpl-sbdb-67P",
+      "service": "ssd-api.jpl.nasa.gov",
+      "query": "https://ssd-api.jpl.nasa.gov/sbdb.api?sstr=67P&phys-par=1&full-prec=1",
+      "ok": true,
+      "file": "jpl-sbdb-67P.json",
+      "ms": 81
+    },
+    {
+      "label": "jpl-sbdb-81P",
+      "service": "ssd-api.jpl.nasa.gov",
+      "query": "https://ssd-api.jpl.nasa.gov/sbdb.api?sstr=81P&phys-par=1&full-prec=1",
+      "ok": true,
+      "file": "jpl-sbdb-81P.json",
+      "ms": 64
+    },
+    {
+      "label": "jpl-sbdb-103P",
+      "service": "ssd-api.jpl.nasa.gov",
+      "query": "https://ssd-api.jpl.nasa.gov/sbdb.api?sstr=103P&phys-par=1&full-prec=1",
+      "ok": true,
+      "file": "jpl-sbdb-103P.json",
+      "ms": 81
+    },
+    {
+      "label": "jpl-sbdb-109P",
+      "service": "ssd-api.jpl.nasa.gov",
+      "query": "https://ssd-api.jpl.nasa.gov/sbdb.api?sstr=109P&phys-par=1&full-prec=1",
+      "ok": true,
+      "file": "jpl-sbdb-109P.json",
+      "ms": 114
+    }
+  ]
+}

@@ -9,6 +9,7 @@ import { SOURCES } from '../data/sources.ts';
 import { ASTROMETRY, BELTS, EXOPLANETS, FAR_STARS, SYSTEMS, beltsOf, getComponent, getSystem, hasProvisionalData, isInventedSystem, PYRE_ID, saveLocations } from '../data/systems.ts';
 import { DOOMED } from '../content/stellar/doomed.ts';
 import { FLARE_SOURCES, FLARE_STARS, variableSource } from '../content/stellar/flares.ts';
+import { ORBIT_EPOCH_JD } from '../data/orbits.ts';
 import { PYRE_HOLE_ID } from '../economy/pyrePhysics.ts';
 import { pyreCard } from './screens/pyreCard.ts';
 import type { SourceRef, StarSystemRecord, SystemId } from '../data/types.ts';
@@ -20,6 +21,7 @@ import {
   badgeHeading,
   beltBlock,
   componentList,
+  orbitBlock,
   factList,
   locationList,
   planetBlock,
@@ -37,6 +39,8 @@ export interface EncyclopediaOptions {
   catalogued?: ReadonlySet<string>;
   /** Section to open at; the introduction when omitted. */
   initialSystemId?: SystemId;
+  /** The game's date (Julian), for where pairs with catalogued orbits stand now; the orbits' own date when omitted. */
+  gameDate?: number;
   /** Runs when the player closes the panel (button or Esc). Not called by the returned close(). */
   onClose: () => void;
 }
@@ -141,7 +145,8 @@ function codexLine(systemId: SystemId, catalogued: ReadonlySet<string> | undefin
   );
 }
 
-function systemSection(system: StarSystemRecord, id: string, discovered: ReadonlySet<string>, catalogued?: ReadonlySet<string>): HTMLElement {
+function systemSection(system: StarSystemRecord, id: string, discovered: ReadonlySet<string>, catalogued: ReadonlySet<string> | undefined, jd: number): HTMLElement {
+  const orbits = orbitBlock(system.id, jd, 'full');
   const isSol = system.id === 'sol';
   return h(
     'section',
@@ -153,6 +158,7 @@ function systemSection(system: StarSystemRecord, id: string, discovered: Readonl
     positionList(system, 'full'),
     badgeHeading('h4', isSol ? 'The Sun' : 'Stars', 'observed', undefined, observedMark(system, 'stars')),
     componentList(system.id, 'full'),
+    orbits ? [badgeHeading('h4', 'Orbits', 'observed'), orbits] : null,
     badgeHeading('h4', isSol ? 'Planets' : 'Confirmed planets', 'observed', undefined, observedMark(system, 'planets')),
     planetBlock(system, discovered, 'full'),
     beltsOf(system.id).length ? [badgeHeading('h4', 'Belts and debris discs', 'observed'), beltBlock(system.id, 'full')] : null,
@@ -425,7 +431,7 @@ export function openEncyclopedia(root: HTMLElement, opts: EncyclopediaOptions): 
     'div',
     { class: 'enc-body scroll', tabindex: '-1' },
     introSection(ids.intro),
-    SYSTEMS.map((s) => systemSection(s, ids.system(s.id), opts.discoveredBodies, opts.catalogued)),
+    SYSTEMS.map((s) => systemSection(s, ids.system(s.id), opts.discoveredBodies, opts.catalogued, opts.gameDate ?? ORBIT_EPOCH_JD)),
     farStarsSection(ids.far),
     flareStarsSection(ids.flares),
     inventedSection(ids.invented),

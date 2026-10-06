@@ -25,6 +25,8 @@ import { OBSERVE_LINES } from '../content/stellar/lines.ts';
 import { DOOMED } from '../content/stellar/doomed.ts';
 import { EDGE_JOBS } from '../content/stellar/doomedLines.ts';
 import { FLARE_WATCH } from '../content/stellar/flareLines.ts';
+import { BINARIES, BINARY_LINES } from '../content/stellar/binaries.ts';
+import { fillPair, measureOffer, measureReward } from './binaries.ts';
 import { fillFlare, flareWatchOffers, flareWatchReward } from './flares.ts';
 import { fillPyreJob, pyreOffers, pyreRefugeId, PYRE_HOLE_ID } from './doomed.ts';
 import { STELLAR } from '../content/stellar/rules.ts';
@@ -195,6 +197,9 @@ export function boardFor(locationId: string, epoch: number): JobDef[] {
     out.push(...pyreContracts(loc, epoch));
     // Flare watch at research stations near a flaring star (docs/PROCGEN.md §43.5).
     out.push(...flareContracts(loc, epoch));
+    // A pair's measurement at a research station near it (docs/PROCGEN.md §44.5), from its own stream and id.
+    const m = pairContract(loc, epoch);
+    if (m) out.push(m);
     // Escorts for this station's relief and shipments bound through raided lanes (docs/PROCGEN.md §21.7).
     out.push(...reliefEscorts(loc, epoch));
     // A commission for the owner's own ranks (docs/PROCGEN.md §32.4), from its own stream and id.
@@ -448,6 +453,32 @@ function flareContracts(giver: FictionalLocation, epoch: number): JobDef[] {
       contract: { kind: 'observe', posted: f.start, until: f.end, flare: f.id },
     };
   });
+}
+
+/**
+ * Measuring a pair (docs/PROCGEN.md §44.5): a research station near a pair with a catalogued orbit
+ * wants its secondary's place measured afresh, read where it is, within a day of the posting.
+ */
+function pairContract(giver: FictionalLocation, epoch: number): JobDef | null {
+  const offer = measureOffer(giver.id, epoch);
+  if (!offer) return null;
+  const { orbit, jumps } = offer;
+  const start = epoch * CONTRACTS.epochSeconds;
+  const fill = (t: string) => fillPair(t, orbit, giver.name);
+  const system = getSystem(orbit.systemId as SystemId).displayName;
+  return {
+    ...common(giver, `${CONTRACT_PREFIX}${giver.id}.${epoch}.pair-${orbit.secondary}`, 1),
+    title: fill(BINARY_LINES.measure.title),
+    briefing: fill(BINARY_LINES.measure.briefing),
+    objectives: [
+      { kind: 'observe', star: orbit.secondary, systemId: orbit.systemId as SystemId, from: start, to: start + BINARIES.measure.window, text: fill(BINARY_LINES.measure.objective) },
+      { kind: 'visit', locationId: giver.id, text: `Bring the reading back to ${giver.name}` },
+    ],
+    reward: measureReward(jumps),
+    difficultyNote: `${jumps === 0 ? 'In this system' : jumps === 1 ? `One jump, in ${system}` : `${jumps} jumps, in ${system}`}, within a day`,
+    destinationLocationId: giver.id,
+    contract: { kind: 'observe', pair: orbit.secondary },
+  };
 }
 
 /**

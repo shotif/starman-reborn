@@ -1,0 +1,133 @@
+<HEAD>
+<TITLE> Sixth Orbit Catalog </TITLE>
+</HEAD>
+<p>
+<body alink = #000000 bgcolor="eeeeee" marginheight = 0 link = FF0000 vlink = #27408b>
+<font face="helvetica">
+<br><br>
+
+
+<H1><center>
+Sixth Catalog of Orbits of Visual Binary Stars
+</center></H1><br> 
+
+<H3><center>
+Rachel A. Matson, Stephen J. Williams, William I. Hartkopf & Brian D. Mason
+<h4>U.S. Naval Observatory, Washington, DC<br></h4><br>
+
+(last catalog update : 
+Fri Sep  4 10:57:07 AM EDT 2026
+)<br>
+</center></H3><br><br>
+
+This catalog continues the series of compilations of visual binary star orbits previously 
+published by Finsen (1934, 1938), Worley (1963), Finsen & Worley (1970), Worley & Heintz 
+(1983), and most recently by Hartkopf, Mason, & Worley (2001) in their Fifth Catalog of 
+Orbits of Visual Binary Stars.  That catalog, containing orbits published through 1 
+January 2001, was one of four double star catalogs maintained at the USNO that were 
+written to CD-ROM in 2001 and distributed. The 30 June 2006 edition of the Sixth Catalog 
+was included on the second USNO Double Star CD-ROM, which is available upon request.
+
+The <i>Fifth Catalog</i> was removed from the web in August 2007, as it had long been
+supplanted by the <i>Sixth Catalog</i>.  </font>
+<br><br>
+
+As of the above date, the <i>Sixth Catalog</i> included 
+4051
+ of 
+3938
+ systems (from a "master file" database currently containing 
+11955.
+ orbits).  All orbits have been 
+graded on a 1 - 5 scale, as in earlier catalogs; the grading scheme has been modified, 
+however, as described below.  Ephemerides are included for all orbits with complete 
+elements, as are plots including all associated data in the current Washington Double Star 
+database.
+<br><br><br>
+
+<font color = green>2005 Mar:</font> The format of the catalog was extensively modifed. A 
+description of the new format is given <a href="orb6/format.html">here</a>. 
+<br><br>
+
+<font color = green>2007 Aug/Sep:</font> Orbit catalog notes were merged with those of the 
+Washington Double Star Catalog and later the Fourth Interferometric Catalog, in order to 
+create a common notes file (and file format) for all USNO double star catalogs. Cleanup of 
+old notes is never really completed, of course - we welcome notification of any errors you 
+may run across.
+<br><br>
+
+<font color = green>2013 Aug:</font> A version of the elements file was created which 
+includes delimiters, for those users who work with SQL-type databases. This is a work in 
+progress - please let us know of any problems with this file.
+<br><br>
+
+<font color = green>2013 Nov:</font> A link was added to the "master file" database of all 
+orbits. A few comments are in order. First, the grade (col. 244-246) is here a decimal; 
+the range of grades is 0.0 - 5.5 (rounded to an integer value in the main catalog) and 
+differences in grade of a few tenths are usually insignificant. A grade of 6.0 is given 
+for orbits considered too old to be worth grading; vales of 7.0 are reserved for orbits 
+with incomplete elements, values of 8.0 for interferometric orbits lacking rho/theta information; 
+and values of 9.0 for astrometric orbits.  Column 248 is a flag indicating a note, while column 
+250 is a yes/no flag indicating the solution considered currently "best".
+<br><br>
+
+<font color = green>2014 Sep:</font> A new flag "m" was added for values of T0 expressed in 
+modified Julian date. Although MJD (= JD-2,400,000.5) differs by only 0.5d from the truncated 
+JD values (JD-2,400,000) flagged with "d", it was felt that a separate code for T0 values 
+published in this unit would be less confusing than modifying published values for the catalog.
+
+<font color = green>2015 Mar:</font> The routine for generating ephemerides was extensively
+modified by George Kaplan (USNO), who converted it to double precision, with IAU expressions 
+for Besselian epochs. This mainly affects those orbits with very short periods, resulting
+in changes to predicted theta values at the 0.1deg level or smaller. Also, separations for any 
+set of ephemerides where the minimum value of rho is 0.01" or less are converted to mas; a
+flag "m" is added to the right of the last value. (Separations greater than 999" will similarly 
+be converted to arcmin - with an "M" flag - although no such pairs are currently included in 
+the catalog.)
+
+<font color = green>2017 Sep:</font> The routine for weighting individual measures was 
+modified. All orbits were then regraded, and new figures were generated which included all
+measures in the WDS. The new weighting scheme is described in the "grading" section below.
+
+<br><br><br>
+
+<h3>Contents:</h3>
+<ul>
+
+<li> <a href="orb6/orb6text.html#intro">        Introduction </a> 
+<li> <a href="orb6/orb6text.html#grading">      Orbit grading method </a> 
+<li> <a href="orb6/orb6text.html#description">  Description of the catalog </a> 
+<li> <a href="orb6/orb6text.html#stats">        Catalog statistics </a> 
+<li> <a href="orb6/orb6text.html#thanks">       Acknowledgments and references </a> 
+<br>
+<br>
+<li> <b><font color = green>Orbital elements:</font></b> <a href="orb6/orb6orbits.html">html</a> , 
+                                                         <a href="orb6/orb6orbits.txt">text</a> , 
+                                                         <a href="orb6/orb6orbits.sql">sql</a> (text file with delimiters)
+<li> <b><font color = green>Ephemerides:</font></b>      <a href="orb6/orb6ephem.html">html</a> , 
+                                                         <a href="orb6/orb6ephem.txt">text</a>
+<li> <b><font color = green>Notes:</font></b>            <a href="orb6/orb6notes.html">html</a> , 
+                                                         <a href="orb6/orb6notes.txt">text</a>
+<li> <b><font color = green>References:</font></b>       <a href="orb6/wdsref.html">html</a> , 
+                                                         <a href="orb6/wdsref.txt">text</a>
+<br>
+<br>
+<li> <b><font color = green>Orbital elements:</font></b> <a href="orb6/orb6frames.html">frames version</a> *
+<br>
+<br>
+<li> <a href="orb6/orb6format.txt">             Formats of elements and ephemerides files</a> (text versions)
+<li> <a href="orb6/orb6c.html">                 Calibration Candidates </a> 
+<li> <a href="orb6/top_25.txt">                 Top 25 Orbit Calculators</a> 
+<li> <a href="orb6/orb6.master">                "Master file" database</a> 
+</ul>
+<br>
+*  Please note: The frames version of the orbit catalog appears to be incompatible with some operating systems / browsers. <i>Cavaeat emptor!</i>
+<br>
+<br>
+Your comments regarding either style or substance are welcome.  Please inform the authors 
+of any errors you run across in the catalog, as well as missing orbits, etc. We would also 
+welcome notification (and/or copies) of any newly published elements.
+<br><br><br>
+
+</BODY>
+</html>

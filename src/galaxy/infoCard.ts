@@ -13,7 +13,8 @@ import { icon } from '../ui/icons.ts';
 import { evaluateJump, type JumpEvaluation } from './jumpRules.ts';
 import { mapIcon } from './mapIcons.ts';
 import { formatLy } from './mapData.ts';
-import { badgeHeading, beltBlock, componentList, factList, locationList, observedMark, planetBlock, positionList, securityNote } from './scienceBlocks.ts';
+import { badgeHeading, beltBlock, componentList, factList, locationList, observedMark, orbitBlock, planetBlock, positionList, securityNote } from './scienceBlocks.ts';
+import { ORBIT_EPOCH_JD } from '../data/orbits.ts';
 import type { MapState } from './types.ts';
 
 export interface InfoCardHandlers {
@@ -73,6 +74,7 @@ export class InfoCard {
       {
         type: 'button',
         class: 'gmap-sheet-toggle',
+        'data-testid': 'map-card-toggle',
         'aria-expanded': 'false',
         'aria-controls': this.ids.body,
         onClick: () => this.setExpanded(!this.expanded),
@@ -193,6 +195,7 @@ export class InfoCard {
           h('h4', null, systemId === 'sol' ? 'Star' : 'Stars'),
           componentList(systemId, 'compact'),
           flares ? h('p', { 'data-testid': 'gmap-flare-star' }, flares.slice(0, -1).join(' · ')) : null,
+          orbitBlock(systemId, state.gameDate ?? ORBIT_EPOCH_JD, 'compact'),
           h('h4', null, systemId === 'sol' ? 'Planets' : 'Confirmed planets'),
           planetBlock(system, state.discoveredBodies, 'compact'),
           beltsOf(systemId).length ? [h('h4', null, 'Belts and debris discs'), beltBlock(systemId, 'compact')] : null,

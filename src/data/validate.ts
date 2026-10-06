@@ -1,4 +1,5 @@
 import { equatorialToCartesian, parallaxToLightYears } from './coords.ts';
+import type { OrbitsDataset } from './orbits.ts';
 import type { AstrometryDataset, ExoplanetDataset } from './systems.ts';
 import type { FarStarsDataset, SourceRef, StarSystemRecord, SystemId } from './types.ts';
 
@@ -229,3 +230,29 @@ export function validateFarStars(farStars: FarStarsDataset, systems: readonly St
   return issues;
 }
 
+
+/**
+ * The binary orbits (docs/ASTRONOMY_SOURCES.md, *Binary orbits*): each pair two stars of one system
+ * on the map, graded 1 to 4 by the catalogue, its elements in range and its total mass, by Kepler's
+ * third law at the primary's parallax, one these stars could have, with the catalogue cited and dated.
+ */
+export function validateOrbits(orbits: OrbitsDataset, astrometry: AstrometryDataset): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const star = new Map(astrometry.stars.map((s) => [s.id, s]));
+  if (!orbits.source.url.startsWith('http') || !/^\d{4}-\d{2}-\d{2}$/.test(orbits.retrieved)) issues.push({ level: 'error', code: 'orbit-source', message: 'the orbit catalogue is not cited and dated' });
+  for (const o of orbits.pairs) {
+    const label = `${o.primary}/${o.secondary}`;
+    const a = star.get(o.primary);
+    const b = star.get(o.secondary);
+    if (!a || !b || a.systemId !== b.systemId || a.systemId !== o.systemId) {
+      issues.push({ level: 'error', code: 'orbit-stars', message: `${label}: not two stars of one system on the map` });
+      continue;
+    }
+    if (![1, 2, 3, 4].includes(o.grade)) issues.push({ level: 'error', code: 'orbit-grade', message: `${label}: graded ${o.grade}` });
+    if (!(o.periodYears > 0 && o.axisArcsec > 0 && o.eccentricity >= 0 && o.eccentricity < 1 && o.inclinationDeg >= 0 && o.inclinationDeg <= 180 && Number.isFinite(o.periastronJd)))
+      issues.push({ level: 'error', code: 'orbit-elements', message: `${label}: an element out of range` });
+    const mass = (o.axisArcsec / (a.parallaxMas / 1000)) ** 3 / o.periodYears ** 2;
+    if (!(mass >= 0.03 && mass <= 6)) issues.push({ level: 'error', code: 'orbit-mass', message: `${label}: ${mass.toFixed(2)} solar masses in all` });
+  }
+  return issues;
+}

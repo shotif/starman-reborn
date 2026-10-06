@@ -1,8 +1,11 @@
 import type { SystemSceneDef } from '../sceneTypes.ts';
 import { dirTo, v } from './helpers.ts';
+import { orbitOffset } from './generated.ts';
+import { orbitOf } from '../../data/orbits.ts';
 
 const A = v(0, 0, 0);
-const B = v(70_000, -4_000, -30_000);
+// B stands as its catalogued orbit had it when the orbits were taken (docs/PROCGEN.md §44.3).
+const B = A.clone().add(orbitOffset(orbitOf('sirius-b')!));
 const platform = B.clone().add(v(-9_000, 1_200, 7_500));
 // The platform's radiation shield faces the white dwarf; ships dock on the far side.
 const awayFromB = dirTo(B, platform);
