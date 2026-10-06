@@ -27,7 +27,8 @@
  * And, kept apart in data/snapshot/orbits/<date>/ (with a manifest of their own, so the stars'
  * snapshot above never depends on them; scripts/orbits-process.ts reads them):
  *   - The Sixth Catalog of Orbits of Visual Binary Stars (ORB6, Georgia State University and the US
- *     Naval Observatory): the whole catalogue as published, its format notes and its index page.
+ *     Naval Observatory): the whole catalogue as published, its own ephemeris (predicted positions),
+ *     its format notes and its index page.
  *   - JPL's Small-Body Database: the orbital elements and physical parameters of a list of periodic
  *     comets, at full precision.
  *
@@ -238,6 +239,8 @@ const orbitsDir = resolve(root, 'data/snapshot/orbits', today);
 const ORB6 = [
   ['orb6-orbits', 'txt', ['https://www.astro.gsu.edu/wds/orb6/orb6orbits.txt', 'http://www.astro.gsu.edu/wds/orb6/orb6orbits.txt']],
   ['orb6-format', 'txt', ['https://www.astro.gsu.edu/wds/orb6/orb6format.txt', 'http://www.astro.gsu.edu/wds/orb6/orb6format.txt']],
+  // The catalogue's own predicted positions, which the game's reckoning is tested against.
+  ['orb6-ephem', 'txt', ['https://www.astro.gsu.edu/wds/orb6/orb6ephem.txt', 'http://www.astro.gsu.edu/wds/orb6/orb6ephem.txt']],
   ['orb6-page', 'html', ['https://www.astro.gsu.edu/wds/orb6.html', 'http://www.astro.gsu.edu/wds/orb6.html']],
 ] as const;
 
