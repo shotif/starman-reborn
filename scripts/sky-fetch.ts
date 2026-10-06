@@ -24,6 +24,13 @@
  *   - JPL: the Keplerian elements for approximate planet positions (1800-2050), and Horizons
  *     heliocentric vectors for the eight planets at three dates, to test the elements against.
  *
+ * And, kept apart in data/snapshot/orbits/<date>/ (with a manifest of their own, so the stars'
+ * snapshot above never depends on them; scripts/orbits-process.ts reads them):
+ *   - The Sixth Catalog of Orbits of Visual Binary Stars (ORB6, Georgia State University and the US
+ *     Naval Observatory): the whole catalogue as published, its format notes and its index page.
+ *   - JPL's Small-Body Database: the orbital elements and physical parameters of a list of periodic
+ *     comets, at full precision.
+ *
  * Usage: node scripts/sky-fetch.ts   (then node scripts/sky-process.ts)
  * Behind an HTTPS proxy, run with NODE_USE_ENV_PROXY=1 so Node's fetch honours HTTPS_PROXY.
  */
@@ -223,7 +230,57 @@ function candidateIds(s: GameStar): string[] {
 
 // ---------------------------------------------------------------- main
 
+// ---------------------------------------------------------------- orbits: binary stars and comets
+
+const orbitsDir = resolve(root, 'data/snapshot/orbits', today);
+
+/** The ORB6 files, each at the catalogue's home and, failing that, over plain HTTP. */
+const ORB6 = [
+  ['orb6-orbits', 'txt', ['https://www.astro.gsu.edu/wds/orb6/orb6orbits.txt', 'http://www.astro.gsu.edu/wds/orb6/orb6orbits.txt']],
+  ['orb6-format', 'txt', ['https://www.astro.gsu.edu/wds/orb6/orb6format.txt', 'http://www.astro.gsu.edu/wds/orb6/orb6format.txt']],
+  ['orb6-page', 'html', ['https://www.astro.gsu.edu/wds/orb6.html', 'http://www.astro.gsu.edu/wds/orb6.html']],
+] as const;
+
+/** Periodic comets for the Solar System (docs/PROCGEN.md), by their JPL designations. */
+const COMETS = ['1P', '2P', '9P', '12P', '13P', '19P', '21P', '29P', '46P', '55P', '67P', '81P', '103P', '109P'];
+
+/**
+ * Binary orbits and comets, saved apart from the stars' snapshot with a manifest of their own: a
+ * failure here never touches it, and one there never stops these.
+ */
+async function fetchOrbits(): Promise<void> {
+  mkdirSync(orbitsDir, { recursive: true });
+  const entries: ManifestEntry[] = [];
+  const save = async (label: string, ext: string, urls: readonly string[]): Promise<void> => {
+    const file = `${label}.${ext}`;
+    for (const url of urls) {
+      const started = Date.now();
+      const entry: ManifestEntry = { label, service: new URL(url).host, query: url, ok: false, file, ms: 0 };
+      entries.push(entry);
+      try {
+        const res = await httpText(url);
+        if (res.status < 200 || res.status >= 300) throw new Error(`HTTP ${res.status}: ${res.text.slice(0, 200)}`);
+        writeFileSync(resolve(orbitsDir, file), res.text);
+        Object.assign(entry, { ok: true, ms: Date.now() - started });
+        console.log(`  ${label}: ${res.text.length} bytes from ${url}`);
+        return;
+      } catch (err) {
+        Object.assign(entry, { error: err instanceof Error ? err.message : String(err), ms: Date.now() - started });
+        console.log(`  ${label}: FAILED at ${url}: ${entry.error}`);
+      } finally {
+        await sleep(300);
+      }
+    }
+  };
+  console.log(`Orbits ${today} → ${orbitsDir}`);
+  for (const [label, ext, urls] of ORB6) await save(label, ext, urls);
+  for (const c of COMETS) await save(`jpl-sbdb-${c}`, 'json', [`https://ssd-api.jpl.nasa.gov/sbdb.api?sstr=${encodeURIComponent(c)}&phys-par=1&full-prec=1`]);
+  writeFileSync(resolve(orbitsDir, 'manifest.json'), JSON.stringify({ retrieved: today, comets: COMETS, queries: entries }, null, 2) + '\n');
+}
+
 async function main(): Promise<void> {
+  // Binary orbits and comets first: they stand on their own.
+  await fetchOrbits().catch((err) => console.log(`Orbits failed: ${err instanceof Error ? err.message : String(err)}`));
   console.log(`Sky snapshot ${today} → ${rawDir}`);
   const stars = gameStars();
   console.log(`The game has ${stars.length} stars.`);
