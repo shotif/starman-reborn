@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import checksFile from '../data/generated/orbit-checks.json' with { type: 'json' };
 import { BINARIES, BINARY_LINES, GRADE_WORD } from '../content/stellar/binaries.ts';
 import { CONTRACTS } from '../content/contracts/rules.ts';
 import type { Issue } from '../content/validate.ts';
@@ -12,6 +13,9 @@ import { MAX_REWARD } from './contractGuards.ts';
 
 /** The rules a guardrail checks (the real ones, or a broken copy in the tests). */
 export type BinaryRules = typeof BINARIES;
+
+/** The catalogue's own predictions for each pair, by its secondary (kept out of the game: only the tests read them). */
+export const ORBIT_CHECKS = (checksFile as unknown as { ephemeris: Record<string, { year: number; thetaDeg: number; rhoArcsec: number }[]> }).ephemeris;
 
 /** How closely the game's reckoning must match the catalogue's own ephemeris. */
 export const EPHEMERIS_TOLERANCE = { thetaDeg: 0.5, rhoFraction: 0.005, rhoArcsec: 0.002 } as const;
@@ -49,8 +53,9 @@ export function validateBinaries(pairs: readonly BinaryOrbit[] = ORBITS.pairs, r
     if (!(mass >= PAIR_MASS[0] && mass <= PAIR_MASS[1])) report('mass', label, `${mass.toFixed(2)} solar masses in all: not a pair of these stars`);
     // The game's reckoning against the catalogue's own predictions (as the catalogue has the pair).
     const asCatalogued = { ...o, flip: undefined };
-    if (!o.ephemeris.length) report('ephemeris', label, 'no catalogue ephemeris to test the reckoning against');
-    for (const x of o.ephemeris) {
+    const ephemeris = ORBIT_CHECKS[o.secondary] ?? [];
+    if (!ephemeris.length) report('ephemeris', label, 'no catalogue ephemeris to test the reckoning against');
+    for (const x of ephemeris) {
       const at = pairAt(asCatalogued, besselJd(x.year));
       const dTheta = Math.abs(((at.thetaDeg - x.thetaDeg + 540) % 360) - 180);
       const dRho = Math.abs(at.rhoArcsec - x.rhoArcsec);

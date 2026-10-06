@@ -4724,3 +4724,76 @@ break the rules and the elements to see them caught, check the physics (Halley n
 2061, Encke on 10 February 2027, a full period bringing a comet back), what is said, the scene on
 many dates, the News, and the work (posted as often as the rules say, only by research stations
 within reach, paid on return, counted only in Sol).
+
+## 46. A pilot's logbook
+
+A logbook of the pilot's career, kept by the game as it goes: each moment that matters, with the
+game's date and where it happened, and the pilot's bests (rules and lines in
+`src/content/progress/logbook.ts`; the engine in `src/economy/logbook.ts`; the screen in
+`src/ui/logbook.ts`). The ratings, milestones and journal already say
+what the pilot has done; the logbook says when and where, in order.
+
+The owner chose (6 October 2026): real binary orbits, then real comets in Sol, then a pilot's
+logbook.
+
+### 46.1 What is written in it
+
+An entry is written when (`LOG_LINES`, each with the place):
+
+- **Signed on**: a new pilot's first entry, at Earth Port.
+- **A first visit** to a system: each system a jump's route passes through, the first time.
+- **A ship bought**: traded in for, or bought and the old one kept.
+- **A story finished**: an arc's finale flown to the end.
+- **A promotion** with a faction.
+- **A milestone** earned.
+- **A race won**, or a course record set.
+- **A station of your own** chartered.
+- **Towed home** after the ship was lost.
+- **A comet** scanned for the first time (§45).
+- **A planet** discovered: a confirmed exoplanet scanned for the first time.
+
+Each entry keeps its game clock, the kind, what it is about (a system, a ship, an arc, a faction and
+rank, a milestone, a course, a site, a comet, a planet) and the place; the words are filled in when
+it is shown, from the lines, so they follow the game's own names. At most `LOGBOOK.keep` (400)
+entries are kept; past that the oldest go, but never the first.
+
+### 46.2 The bests
+
+- **Most credits held**, sampled whenever the game saves, with when and where.
+- **The longest jump**: a single hop, in light-years, with its two ends.
+- **The biggest pay** for a single contract, with its title.
+- **The farthest real star visited** from Sol (from the systems visited; Pyre, invented, is left out).
+- **Systems visited** and **ships flown** (the starter and every one bought), counted from the save.
+
+### 46.3 Milestones drawn from it
+
+Four new milestones (`MILESTONES`): **A jump of nine light-years** (the longest hops on the map are
+about twelve, the median five and a half), **Twenty-five light-years from Sol** (the map reaches a
+little over twenty-seven), **Five comets scanned**, and **Five ships flown**.
+
+### 46.4 Where it is seen
+
+The journal has a *Logbook* section: the bests and the latest five entries, with **Open the
+logbook**. The logbook itself lists every entry, newest first, under the game's month and year, each
+with its day and place; chips filter it by kind (*Places*, *Ships*, *Stories and ranks*,
+*Milestones*, *The sky*: comets and planets, *Races*). Dates are the game's: when the save began
+plus the time played.
+
+### 46.5 One save's own
+
+The logbook is kept in the save (`logbook`: the entries, the bests, the comets scanned and the ship
+models flown). A save from before the logbook begins one the first time anything is written in it or
+it is shown (at the latest, the next time the game saves), with what the save can date: its milestones, promotions, finished
+stories and stations of its own, each at its own time, and one entry saying how many systems had
+been visited before the logbook was kept.
+
+### 46.6 Guardrails
+
+`validateLogbook` (`src/economy/logbookGuards.ts`, run in `tests/unit/logbook.test.ts`): the rules
+in range (something kept, thresholds the map can reach and the old milestones do not already
+cover); every kind with a line and a filter; and no line with a number of its own or a field it
+cannot fill. The save's validation checks the record (entries in time order, none after the clock,
+known kinds and known ids, bests that are numbers in range). The tests also write every kind of
+entry through the game's own functions (a jump, a ship bought, a finale, a promotion, a milestone,
+a race won, a station chartered, a tow home, a comet and a planet scanned), check the bests and the
+new milestones, start a logbook for an old save, and keep the record within its size.

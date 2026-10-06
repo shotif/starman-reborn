@@ -28,6 +28,7 @@ import { cometOf } from '../data/comets.ts';
 import { EMBERS } from '../content/story/embers.ts';
 import { holdPyre, lifeboatTimes, observatoryStands, pyreArcOpen } from './embers.ts';
 import { haulById, recordHaul, releaseHaul } from './hauls.ts';
+import { notePaid } from './logbook.ts';
 
 export type Objective =
   | { kind: 'have-cargo'; commodity: CommodityId; qty: number; text: string }
@@ -603,6 +604,8 @@ function payOut(state: GameState, job: JobDef): Payout {
   }
   state.stats.deliveries += 1;
   state.stats.rewards += paid;
+  // The logbook (docs/PROCGEN.md §46): the biggest pay, and an arc's finale.
+  notePaid(state, paid, job.title, job.story?.finale ? job.story.arc : undefined);
   // A stranded hauler rescued, contraband run: deeds the crew aboard saw (docs/PROCGEN.md §30.4).
   crewDeed(state, job.contract ? CREW.jobDeeds[job.contract.kind] : undefined);
   // War work pushes its front the poster's way; The Long Border's finale settles its front for good (docs/PROCGEN.md §20).

@@ -75,6 +75,8 @@ import { ORBIT_EPOCH_JD, orbitOf } from '../data/orbits.ts';
 import { measureOffer } from '../economy/binaries.ts';
 import { cometOf } from '../data/comets.ts';
 import { imageOffer } from '../economy/comets.ts';
+import { logWrite, noteComet, noteJump, notePaid, notePeak } from '../economy/logbook.ts';
+import { openLogbook } from '../ui/logbook.ts';
 import type { SkyNewsKind } from '../content/stellar/lines.ts';
 import { ROSTER } from '../content/rivals/rules.ts';
 import { recordMarketVisit } from '../economy/trade.ts';
@@ -776,6 +778,7 @@ export class Game {
         launch: () => this.launch(),
         openMap: () => this.openMap(),
         openEncyclopedia: () => this.openAbout(state.location.systemId),
+        openLogbook: () => this.openLogbook(),
         openSettings: () => this.openSettings(),
         openControls: () => this.openControls(),
         openSaves: () => this.openSaves(),
@@ -1820,6 +1823,8 @@ export class Game {
     if (!t.bodyId) return;
     const state = this.state!;
     this.scannedForFolk(t.bodyId);
+    // A comet's first scan goes in the logbook (docs/PROCGEN.md §46.1).
+    if (cometOf(t.bodyId) && noteComet(state, t.bodyId)) this.persist();
     // Pyre and its black hole (docs/PROCGEN.md §26.5), a flaring star (§43.5), a pair's secondary (§44.5) and a comet (§45.5): a scan is a reading for the work that wants one.
     if (t.bodyId === PYRE_ID || t.bodyId === PYRE_HOLE_ID || flareStar(t.bodyId) || orbitOf(t.bodyId)?.secondary === t.bodyId || cometOf(t.bodyId)) {
       const jobs = recordObservation(state, t.bodyId, state.location.systemId);
@@ -2284,6 +2289,14 @@ export class Game {
         if (this.mode === 'flight' && !wasPaused) this.setPaused(false);
       },
     });
+  }
+
+  /** The pilot's logbook (docs/PROCGEN.md §46.4). */
+  private openLogbook(): void {
+    const state = this.state;
+    if (!state) return;
+    this.sheetsOpen++;
+    openLogbook(this.screenLayer, state, () => this.sheetsOpen--);
   }
 
   private openAbout(systemId?: SystemId): void {
@@ -2965,6 +2978,32 @@ export class Game {
       /** Test-only: the comets in this flight (docs/PROCGEN.md §45.3), where they stand and how they are drawn. */
       comets: () =>
         this.flight?.system.comets.map((c) => ({ id: c.id, name: c.name, position: c.position.toArray(), radius: c.radius, coma: c.coma, tail: c.tail, gasDir: c.gasDir.toArray(), dustDir: c.dustDir.toArray() })) ?? null,
+      /** Test-only: a few weeks of a career written in the logbook through its own functions, for screenshots (docs/PROCGEN.md §46). */
+      logbookSample: () => {
+        const state = this.state;
+        if (!state) return false;
+        const day = 86_400;
+        const step = (days: number) => (state.clock += days * day);
+        for (const to of ['alpha-centauri', 'barnard', 'wolf-359'] as SystemId[]) {
+          step(2);
+          const route = findRoute(SYSTEMS, state.location.systemId, to);
+          if (!route) continue;
+          const firsts = route.path.filter((id) => !state.visitedSystems.includes(id));
+          for (const id of route.path) if (!state.visitedSystems.includes(id)) state.visitedSystems.push(id);
+          state.location = { ...state.location, systemId: to };
+          noteJump(state, firsts, route.hops);
+        }
+        step(3);
+        noteComet(state, 'comet-2p');
+        step(4);
+        state.credits += 9_400;
+        notePaid(state, 2_400, 'Image 2P/Encke');
+        notePeak(state);
+        step(5);
+        logWrite(state, { kind: 'milestone', id: 'first-contract', where: 'earth-port' });
+        this.persist();
+        return true;
+      },
       /** Test-only: the day the save began (ISO), which with the clock makes the game's date. */
       startedOn: (iso: string) => {
         const state = this.state;

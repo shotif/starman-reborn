@@ -18,6 +18,8 @@ import { button, confirmDialog, dataBadge, toast } from '../components.ts';
 import { formatCredits, h, signed } from '../dom.ts';
 import { MILESTONES, RATINGS, type RatingKind } from '../../content/progress/rules.ts';
 import { codexProgress, rating } from '../../economy/progress.ts';
+import { LOG_BESTS, LOGBOOK } from '../../content/progress/logbook.ts';
+import { logBests, logbookOf, logDate, logText, placeName } from '../../economy/logbook.ts';
 import { icon } from '../icons.ts';
 import type { Refresh, StationContext } from './context.ts';
 
@@ -100,9 +102,27 @@ export function journalContent(ctx: StationContext, refresh: Refresh): HTMLEleme
     wrecksRecord(state),
     formerOutpostsRecord(state),
     heardRecord(state),
+    logbookRecord(ctx),
     pilotRecord(state),
     voyage ? h('div', { class: 'list-head' }, h('span', null, 'Voyage report'), h('span', null, '')) : null,
     voyage,
+  );
+}
+
+/** The logbook's bests and latest entries, and the way into it (docs/PROCGEN.md §46.4). */
+function logbookRecord(ctx: StationContext): HTMLElement {
+  const { state } = ctx;
+  const latest = logbookOf(state).entries.slice(-LOGBOOK.latest).reverse();
+  return h(
+    'section',
+    { class: 'journal-logbook', 'aria-label': 'Logbook', 'data-testid': 'journal-logbook' },
+    h('div', { class: 'list-head' }, h('span', null, 'Logbook'), button('Open the logbook', { size: 'sm', variant: 'ghost', testId: 'logbook-open', onClick: () => ctx.openLogbook() })),
+    h('dl', { class: 'kv' }, logBests(state).flatMap((b) => [h('dt', null, LOG_BESTS[b.key as keyof typeof LOG_BESTS]), h('dd', null, b.value)])),
+    h(
+      'ul',
+      { class: 'plain' },
+      latest.map((e) => h('li', { class: 'logbook-entry' }, h('span', { class: 'muted small' }, [logDate(state, e.at), placeName(e.where)].filter(Boolean).join(' · ')), h('span', null, logText(e)))),
+    ),
   );
 }
 

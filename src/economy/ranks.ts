@@ -11,6 +11,7 @@ import { occupied } from './border.ts';
 import { FACTIONS } from './factions.ts';
 import { dockAccess, huntedBy, isLawful } from './law.ts';
 import { rating } from './progress.ts';
+import { logWrite } from './logbook.ts';
 
 /**
  * Ranks that open doors (docs/PROCGEN.md §32; rules in src/content/ranks/rules.ts): a rank with each
@@ -134,6 +135,7 @@ export function settleRanks(state: GameState, locationId: string): RankNote[] {
     const earned = earnedRank(state, f);
     if (earned <= saved) continue;
     (state.ranks ??= {})[f] = { rank: earned as RankRecord['rank'], at: state.clock, where: locationId };
+    logWrite(state, { kind: 'rank', id: f, x: earned, where: locationId });
     const rank = rankName(f, earned)!;
     notes.push({ faction: f, kind: 'promoted', rank: earned, from: saved, title: fill(RANK_NOTES.title, { rank, faction }), text: fill(RANK_LINES[f].ceremony, { rank }), perks: perksOf(f, earned) });
   }

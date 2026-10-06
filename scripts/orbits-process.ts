@@ -11,7 +11,8 @@
  * catalogue grades worse than 4 (preliminary), or whose elements imply a total mass no pair of these
  * stars could have, is left out, and said so in the output.
  *
- *   src/data/generated/orbits.json
+ *   src/data/generated/orbits.json        what the game uses
+ *   src/data/generated/orbit-checks.json  the catalogue's own ephemeris, for the guardrails only
  *
  * Usage: node scripts/orbits-process.ts [date]
  */
@@ -152,6 +153,7 @@ const astrometry = JSON.parse(readFileSync(resolve(root, 'src/data/generated/ast
 const starOf = new Map(astrometry.stars.map((s) => [s.id, s]));
 
 const pairs: unknown[] = [];
+const checks: Record<string, { year: number; thetaDeg: number; rhoArcsec: number }[]> = {};
 const left: { pair: string; why: string }[] = [];
 for (const want of PAIRS) {
   const label = `${want.primary}/${want.secondary}`;
@@ -185,7 +187,8 @@ for (const want of PAIRS) {
         return ephemEpochs.map((year, k) => ({ year, thetaDeg: values[2 * k]!, rhoArcsec: values[2 * k + 1]! })).filter((x) => Number.isFinite(x.thetaDeg) && Number.isFinite(x.rhoArcsec));
       })()
     : [];
-  pairs.push({ primary: want.primary, secondary: want.secondary, systemId: a.systemId, ...(want.flip ? { flip: true } : {}), ...row, ephemeris: predicted });
+  pairs.push({ primary: want.primary, secondary: want.secondary, systemId: a.systemId, ...(want.flip ? { flip: true } : {}), ...row });
+  checks[want.secondary] = predicted;
 }
 
 const out = {
@@ -197,10 +200,14 @@ const out = {
     retrieved: date,
   },
   description:
-    'Binary orbits from ORB6 for the game’s pairs, as the catalogue gives them: P in years, a in arcseconds, i, Ω and ω in degrees, T (periastron) as a Julian date, with published errors where the catalogue has them; and the catalogue’s own ephemeris (position angle and separation) for the years listed.',
+    'Binary orbits from ORB6 for the game’s pairs, as the catalogue gives them: P in years, a in arcseconds, i, Ω and ω in degrees, T (periastron) as a Julian date, with published errors where the catalogue has them. The catalogue’s own ephemeris is in orbit-checks.json.',
   pairs,
   left,
 };
 writeFileSync(resolve(root, 'src/data/generated/orbits.json'), JSON.stringify(out, null, 2) + '\n');
+writeFileSync(
+  resolve(root, 'src/data/generated/orbit-checks.json'),
+  JSON.stringify({ generatedBy: 'scripts/orbits-process.ts', retrieved: date, source: out.source, description: 'The catalogue’s own ephemeris for each pair, by its secondary: position angle (degrees) and separation (arcseconds) for the years listed.', ephemeris: checks }, null, 2) + '\n',
+);
 console.log(`ORB6 ${date}: ${pairs.length} pairs, ${left.length} left out.`);
 for (const l of left) console.log(`  left out: ${l.pair}: ${l.why}`);

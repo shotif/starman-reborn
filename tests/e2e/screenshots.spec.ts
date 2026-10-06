@@ -1149,6 +1149,53 @@ for (const size of SIZES) {
       }
     });
 
+    // The pilot's logbook (docs/PROCGEN.md §46): a few weeks of a career; the journal's Logbook, then the logbook itself.
+    test(`A logbook at ${size.name}`, async ({ page }) => {
+      test.setTimeout(10 * 60_000);
+      mkdirSync(OUT, { recursive: true });
+      const results: Record<string, AuditResult> = {};
+      if (size.textScale) {
+        const px = 16 * size.textScale;
+        await page.addInitScript((fontPx) => {
+          document.addEventListener('DOMContentLoaded', () => {
+            const style = document.createElement('style');
+            style.textContent = `html { font-size: ${fontPx}px !important; }`;
+            document.head.appendChild(style);
+          });
+        }, px);
+      }
+      await openFresh(page);
+      await press(page, 'title-play');
+      await press(page, 'intro-ok');
+      await api(page, 'completeJobs', ['lifeline']);
+      expect(await api<boolean>(page, 'logbookSample')).toBe(true);
+      await api(page, 'dockAt', 'earth-port');
+      await waitUntil(page, 'docked at Earth Port', async () => (await api<{ location: { dockedAt: string | null } }>(page, 'state')).location.dockedAt === 'earth-port');
+      for (let q = 0, i = 0; q < 3 && i < 30; i++) {
+        const next = page.getByTestId('story-continue').or(page.getByTestId('folk-continue')).first();
+        if (await next.isVisible().catch(() => false)) {
+          q = 0;
+          await next.click().catch(() => {});
+        } else q++;
+        await page.waitForTimeout(250);
+      }
+      await press(page, 'station-journal');
+      await page.getByTestId('journal-logbook').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-28-logbook-journal`, size.touch, results);
+      await press(page, 'logbook-open');
+      await expect(page.getByTestId('logbook')).toBeVisible();
+      await shot(page, `${size.name}-28b-logbook`, size.touch, results);
+      for (const [name, r] of Object.entries(results)) {
+        expect.soft(r.overflow, `${name}: page overflow`).toBe(false);
+        expect.soft(r.clipped, `${name}: clipped controls`).toEqual([]);
+        expect.soft(r.cutOff, `${name}: content cut off inside a box`).toEqual([]);
+        expect.soft(r.tinyText, `${name}: text below 10px`).toEqual([]);
+        expect.soft(r.smallTargets, `${name}: touch targets below 40px`).toEqual([]);
+        expect.soft(r.overlaps, `${name}: overlapping HUD panels`).toEqual([]);
+      }
+    });
+
     // Flare stars (docs/PROCGEN.md §43): Wolf 359 in a strong flare, told in Ledger Institute's News,
     // then flown in, the star glowing and the HUD saying so.
     test(`A flare at ${size.name}`, async ({ page }) => {

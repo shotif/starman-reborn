@@ -7,6 +7,8 @@ import { getComponent, getLocation, getSystem, isFrontier, SOLAR_BODIES, SYSTEMS
 import type { SystemId } from '../data/types.ts';
 import { standingTier } from './factions.ts';
 import { wakeFriendly } from './law.ts';
+import { LOGBOOK } from '../content/progress/logbook.ts';
+import { farthestVisited, logbookOf, logWrite, notePeak } from './logbook.ts';
 
 /**
  * Progress (docs/PROCGEN.md §13): pilot ratings from the career record, the codex of the real sky
@@ -171,6 +173,14 @@ function earned(state: GameState, id: MilestoneId): boolean {
       return Object.values(state.world.racing?.courses ?? {}).some((c) => c.wins > 0);
     case 'course-record':
       return Object.values(state.world.racing?.courses ?? {}).some((c) => c.record !== undefined);
+    case 'jump-long':
+      return (logbookOf(state).bests.jump?.ly ?? 0) >= LOGBOOK.milestones.jumpLy;
+    case 'far-out':
+      return (farthestVisited(state)?.ly ?? 0) >= LOGBOOK.milestones.farLy;
+    case 'comets-five':
+      return logbookOf(state).comets.length >= LOGBOOK.milestones.comets;
+    case 'ships-five':
+      return logbookOf(state).ships.length >= LOGBOOK.milestones.ships;
   }
 }
 
@@ -185,9 +195,12 @@ function finaleDone(state: GameState, arc: ArcId): boolean {
  */
 export function checkMilestones(state: GameState): { id: MilestoneId; title: string }[] {
   const out: { id: MilestoneId; title: string }[] = [];
+  // The logbook (docs/PROCGEN.md §46): begun for a save from before it, its credits sampled.
+  notePeak(state);
   for (const m of MILESTONES) {
     if (state.milestones[m.id] !== undefined || !earned(state, m.id)) continue;
     state.milestones[m.id] = state.clock;
+    logWrite(state, { kind: 'milestone', id: m.id, where: state.location.dockedAt ?? state.location.systemId });
     if (m.id === 'codex-all') applyCredits(state, CODEX_GRANT, 'reward', 'Frontier Cooperative grant: the whole sky catalogued');
     out.push(m);
   }

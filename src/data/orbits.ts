@@ -40,8 +40,6 @@ export interface BinaryOrbit {
   argumentFlag: string;
   argumentError: number | null;
   lastObservation: number | null;
-  /** The catalogue's own predictions, which the game's reckoning is tested against. */
-  ephemeris: readonly { year: number; thetaDeg: number; rhoArcsec: number }[];
 }
 
 export interface OrbitsDataset {

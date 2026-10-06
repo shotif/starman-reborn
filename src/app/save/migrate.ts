@@ -20,6 +20,11 @@ import { ROSTER } from '../../content/rivals/rules.ts';
 import { CREW, CREW_DEEDS, CREW_HEARTS, CREW_ROLES, type CrewDeed } from '../../content/crew/rules.ts';
 import { SITE_KINDS, WRECKS } from '../../content/wrecks/rules.ts';
 import { RANKS } from '../../content/ranks/rules.ts';
+import { LOG_KINDS, LOGBOOK } from '../../content/progress/logbook.ts';
+import { MILESTONES } from '../../content/progress/rules.ts';
+import { ARCS } from '../../content/story/arcs.ts';
+import { cometOf } from '../../data/comets.ts';
+import { getPlanet } from '../../data/systems.ts';
 import { WING, WING_MEMORIES } from '../../content/wing/rules.ts';
 import { BATTLE_KINDS, BATTLES } from '../../content/border/battles.ts';
 import { getFront } from '../../economy/border.ts';
@@ -783,6 +788,7 @@ export function assertValidState(s: GameState): void {
       if (!ladder || !isRecord(r) || !Number.isInteger(r.rank) || r.rank < 1 || r.rank > ladder.names.length || !Number.isFinite(r.at) || r.at < 0 || r.at > s.clock || !LOCATION_IDS.has(r.where) || (r.fell !== undefined && r.fell !== true)) fail(`rank ${f}`);
     }
   }
+  if (s.logbook !== undefined) assertValidLogbook(s.logbook, s.clock, fail);
   if (!Array.isArray(s.priceWatch) || !s.priceWatch.every((w) => isRecord(w) && LOCATION_IDS.has(w.locationId) && COMMODITY_IDS.includes(w.commodity))) fail('price watch');
   const kinds = ['price', 'event', 'den', 'ace', 'wreck', 'story', 'front'];
   if (!Array.isArray(s.rumours) || !s.rumours.every((r) => isRecord(r) && typeof r.key === 'string' && typeof r.text === 'string' && kinds.includes(r.kind) && Number.isFinite(r.at))) fail('rumours');
@@ -828,4 +834,45 @@ export function assertValidState(s: GameState): void {
     if (!Array.isArray(position) || position.length !== 3 || !position.every(Number.isFinite)) fail('flight position');
     if (!Array.isArray(quaternion) || quaternion.length !== 4 || !quaternion.every(Number.isFinite)) fail('flight orientation');
   }
+}
+
+/**
+ * The pilot's logbook (docs/PROCGEN.md §46): entries in time order, none after the clock, of known
+ * kinds about known things in known places; bests that are numbers in range; comets and ships known.
+ */
+function assertValidLogbook(b: unknown, clock: number, fail: (msg: string) => never): void {
+  if (!isRecord(b) || !Array.isArray(b.entries) || !b.entries.length || b.entries.length > LOGBOOK.keep || !isRecord(b.bests) || !Array.isArray(b.comets) || !Array.isArray(b.ships)) fail('logbook');
+  const kinds: readonly string[] = LOG_KINDS;
+  const place = (w: unknown) => typeof w === 'string' && (LOCATION_IDS.has(w) || (KNOWN_SYSTEM_IDS as readonly string[]).includes(w) || siteOfStation(w) !== undefined);
+  const system = (id: unknown) => typeof id === 'string' && (KNOWN_SYSTEM_IDS as readonly string[]).includes(id);
+  const about: Record<string, (id: unknown, x: unknown) => boolean> = {
+    signed: () => true,
+    begun: (_, x) => Number.isInteger(x) && (x as number) >= 0,
+    visit: system,
+    ship: (id, x) => typeof id === 'string' && !!findShip(id) && (x === 'traded' || x === 'kept'),
+    story: (id) => typeof id === 'string' && id in ARCS,
+    rank: (id, x) => {
+      const ladder = RANKS.ladders[id as keyof typeof RANKS.ladders];
+      return !!ladder && Number.isInteger(x) && (x as number) >= 1 && (x as number) <= ladder.names.length;
+    },
+    milestone: (id) => MILESTONES.some((m) => m.id === id),
+    race: (id, x) => typeof id === 'string' && !!courseById(id) && (x === 'won' || x === 'record'),
+    outpost: (id, x) => typeof id === 'string' && !!outpostSite(id) && typeof x === 'string',
+    towed: system,
+    comet: (id) => typeof id === 'string' && !!cometOf(id),
+    planet: (id) => typeof id === 'string' && !!getPlanet(id),
+  };
+  let last = 0;
+  for (const e of b.entries) {
+    if (!isRecord(e) || !kinds.includes(e.kind as string) || !Number.isFinite(e.at) || (e.at as number) < last || (e.at as number) > clock) fail('logbook entry');
+    last = e.at as number;
+    if ((e.where !== undefined && !place(e.where)) || !about[e.kind as string]!(e.id, e.x)) fail(`logbook entry ${String(e.kind)}`);
+  }
+  const at = (v: unknown) => Number.isFinite(v) && (v as number) >= 0 && (v as number) <= clock;
+  const { credits, jump, pay } = b.bests as Record<string, unknown>;
+  if (credits !== undefined && (!isRecord(credits) || !(Number.isFinite(credits.n) && (credits.n as number) >= 0) || !at(credits.at) || !place(credits.where))) fail('logbook bests');
+  if (jump !== undefined && (!isRecord(jump) || !(Number.isFinite(jump.ly) && (jump.ly as number) > 0) || !at(jump.at) || !system(jump.from) || !system(jump.to))) fail('logbook bests');
+  if (pay !== undefined && (!isRecord(pay) || !(Number.isFinite(pay.n) && (pay.n as number) > 0) || !at(pay.at) || typeof pay.title !== 'string')) fail('logbook bests');
+  if (!b.comets.every((c) => typeof c === 'string' && !!cometOf(c)) || new Set(b.comets).size !== b.comets.length) fail('logbook comets');
+  if (!b.ships.every((m) => typeof m === 'string' && !!findShip(m)) || new Set(b.ships).size !== b.ships.length) fail('logbook ships');
 }

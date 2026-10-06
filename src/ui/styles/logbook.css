@@ -1,0 +1,31 @@
+/* The pilot's logbook (docs/PROCGEN.md §46.4): loaded with its screen. */
+.logbook-bests dd {
+  overflow-wrap: anywhere;
+}
+
+.logbook-filters {
+  margin-top: 0.25rem;
+}
+
+.logbook-month-head {
+  margin: 0.9rem 0 0.35rem;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+.logbook-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.logbook-when {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The journal's short view. */
+.journal-logbook .logbook-entry:last-child {
+  border-bottom: none;
+}

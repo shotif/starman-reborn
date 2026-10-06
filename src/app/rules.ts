@@ -1,6 +1,6 @@
 import { CONTRACTS } from '../content/contracts/rules.ts';
 import { EVENTS } from '../content/events/rules.ts';
-import { getLocation, getSystem } from '../data/systems.ts';
+import { getLocation, getPlanet, getSystem } from '../data/systems.ts';
 import { rechargeShield } from '../economy/equipment.ts';
 import { activeFeeCoverage, advanceJobs, leaveSystem, type JobEvent } from '../economy/jobs.ts';
 import { hullMax } from '../economy/loadout.ts';
@@ -15,6 +15,7 @@ import { crewFee, crewShipLost, settleCrew, type CrewNote } from '../economy/cre
 import { settleSites, tidySites, type SiteOutcome } from '../economy/wrecks.ts';
 import { settleRanks, type RankNote } from '../economy/ranks.ts';
 import { dockFolk, leaveFolk } from '../economy/folk.ts';
+import { logWrite, noteJump } from '../economy/logbook.ts';
 import type { Route } from '../galaxy/routing.ts';
 import type { JumpReadiness } from '../galaxy/types.ts';
 import { applyCredits, markVisited, type GameState } from './state.ts';
@@ -122,6 +123,8 @@ export function performJump(state: GameState, route: Route, fee: number): JobEve
   if (fee > 0) {
     applyCredits(state, -fee, 'fee', `Jump fee ${getSystem(route.from).displayName} → ${getSystem(route.to).displayName}`);
   }
+  // The systems reached for the first time go in the logbook on arrival (docs/PROCGEN.md §46.1).
+  const firsts = route.path.filter((id) => !state.visitedSystems.includes(id));
   for (const id of route.path) markVisited(state, id);
   // Escorted ships on their way elsewhere jump too; an escort left in its destination's system fails.
   const left = leaveSystem(state, route.from, route.to);
@@ -131,6 +134,7 @@ export function performJump(state: GameState, route: Route, fee: number): JobEve
   state.location.dockedAt = null;
   state.location.flight = null;
   state.stats.jumps += route.hops.length;
+  noteJump(state, firsts, route.hops);
   return [...left, ...advanceJobs(state, { dockedAt: null, systemId: route.to })];
 }
 
@@ -138,6 +142,7 @@ export function performJump(state: GameState, route: Route, fee: number): JobEve
 export function discoverBody(state: GameState, bodyId: string): { first: boolean; jobEvents: JobEvent[] } {
   if (state.discoveredBodies.includes(bodyId)) return { first: false, jobEvents: [] };
   state.discoveredBodies.push(bodyId);
+  if (getPlanet(bodyId)) logWrite(state, { kind: 'planet', id: bodyId, where: state.location.systemId });
   const jobEvents = advanceJobs(state, { dockedAt: state.location.dockedAt, systemId: state.location.systemId });
   return { first: true, jobEvents };
 }
@@ -151,8 +156,10 @@ export const RESCUE_FEE = 150;
 export function rescueAfterDefeat(state: GameState): { fee: number; dockId: string } {
   // The crew came through it hurt and shaken (docs/PROCGEN.md §30.5).
   crewShipLost(state);
+  const lostIn = state.location.systemId;
   const r = rescueTo(state, rescueDockId(state.location.lastDockId, state.clock, state.world.sky?.edge ?? null), 'Rescue tow and repairs');
   state.stats.deaths += 1;
+  logWrite(state, { kind: 'towed', id: lostIn, where: r.dockId });
   return r;
 }
 

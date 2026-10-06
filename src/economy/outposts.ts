@@ -13,6 +13,7 @@ import { ensureFolk, folkFactor } from './folk.ts';
 import { dockFees } from './hauls.ts';
 import { dockAccess } from './law.ts';
 import { hurtFactor, upkeep } from './outpostRaids.ts';
+import { logWrite } from './logbook.ts';
 
 /**
  * Stations of your own (docs/PROCGEN.md §22, §36; rules in src/content/outposts/rules.ts): the
@@ -131,6 +132,7 @@ export function charterOutpost(state: GameState, siteId: string, kind: StationTy
   if (!k.names.includes(name)) return { ok: false, message: 'Choose one of the names offered.' };
   (state.world.outposts ??= []).push({ site: siteId, kind, name, founded: state.clock, stage: 0, delivered: {}, since: state.clock, earned: 0, heard: state.clock });
   applyCredits(state, -OUTPOSTS.charter, 'fleet', `Charter for ${name}`);
+  logWrite(state, { kind: 'outpost', id: siteId, x: name, where: offer.site.systemId });
   refreshSaveStations();
   return { ok: true, message: `${name} is chartered ${siteWhere(offer.site)}. Bring the materials for its frame there.` };
 }

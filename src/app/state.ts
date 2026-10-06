@@ -10,6 +10,7 @@ import type { CommodityId } from '../content/economy/goods.ts';
 import type { StationType } from '../content/world/types.ts';
 import { STARTER_SHIP_ID } from '../content/rules/index.ts';
 import type { MilestoneId } from '../content/progress/rules.ts';
+import type { LogKind } from '../content/progress/logbook.ts';
 import type { JobDef } from '../economy/jobs.ts';
 import type { FactionId, SystemId, Vec3Tuple } from '../data/types.ts';
 import { newShipState } from '../economy/loadout.ts';
@@ -67,6 +68,33 @@ export interface Wingman {
   notice?: number;
   /** Fees flown on credit, owed at the next dock. */
   owed?: number;
+}
+
+/**
+ * An entry in the pilot's logbook (docs/PROCGEN.md §46.1): when (game clock), what kind, what it is
+ * about (`id`: a system, ship model, arc, faction, milestone, course, site, comet or planet), a detail
+ * (`x`: a rank, how a ship was bought, a race won or a record, a station's name, a count) and where
+ * (a location or system id). The words are filled in when it is shown.
+ */
+export interface LogEntry {
+  at: number;
+  kind: LogKind;
+  id?: string;
+  x?: string | number;
+  where?: string;
+}
+
+/** The pilot's logbook (docs/PROCGEN.md §46): entries in time order, the bests, comets scanned and ships flown. */
+export interface Logbook {
+  entries: LogEntry[];
+  bests: {
+    credits?: { n: number; at: number; where: string };
+    jump?: { ly: number; from: SystemId; to: SystemId; at: number };
+    pay?: { n: number; title: string; at: number };
+  };
+  /** Comets scanned (ids) and ship models flown, kept whole (entries may be trimmed). */
+  comets: string[];
+  ships: string[];
 }
 
 /** A wingman who has left the pilot's wing, remembered in the journal (docs/PROCGEN.md §34). */
@@ -744,6 +772,8 @@ export interface GameState {
   wingFormer?: FormerWingman[];
   /** The people aboard (docs/PROCGEN.md §30); absent until the first is hired. */
   aboard?: CrewLog;
+  /** The pilot's logbook (docs/PROCGEN.md §46): absent in saves from before it, until it begins. */
+  logbook?: Logbook;
   /** Ranks with each faction (docs/PROCGEN.md §32): absent until the first promotion. */
   ranks?: Partial<Record<FactionId, RankRecord>>;
   /** Confirmed-planet / body ids the player has scanned. */
@@ -808,6 +838,7 @@ export function createNewGame(seed: number = Math.floor(Math.random() * 2 ** 31)
     ledger: [],
     voyageStartClock: 0,
     stats: { kills: 0, jumps: 0, deliveries: 0, deaths: 0, sales: 0, rewards: 0 },
+    logbook: { entries: [{ at: 0, kind: 'signed', where: START_DOCK_ID }], bests: {}, comets: [], ships: [STARTER_SHIP_ID] },
   };
 }
 

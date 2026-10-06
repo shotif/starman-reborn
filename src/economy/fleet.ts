@@ -34,6 +34,7 @@ import { barKind } from './people.ts';
 import { knownAt, marketContext } from './trade.ts';
 import { riskOf, security, type RouteRisk } from './tradeComputer.ts';
 import { discounted, yardDiscount } from './ranks.ts';
+import { noteShip } from './logbook.ts';
 
 /**
  * A fleet of your own (docs/PROCGEN.md §18): ships parked at stations, captains flying them on the
@@ -139,6 +140,7 @@ export function buyAndKeep(state: GameState, locationId: string, modelId: string
   state.fleet.ships.push({ id: nextShipId(state), ship: old, locationId });
   state.ship = fresh;
   applyCredits(state, -offer.price, 'equipment', `Bought ${offer.model.name}`);
+  noteShip(state, fresh.model, 'kept', locationId);
   return { ok: true, message: `The ${offer.model.name} is yours. Your ${shipName(old)} is parked here${offer.cargoMoves ? '' : ' with its cargo'}.` };
 }
 

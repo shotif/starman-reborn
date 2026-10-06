@@ -164,7 +164,7 @@ Visual Binary Stars** (ORB6, kept at Georgia State University with the US Naval 
   game's two stars: period, semi-major axis, inclination, node, time of periastron, eccentricity and
   argument of periastron, each with its published error where the catalogue gives one, the
   catalogue's grade, the reference it takes the orbit from, and the catalogue's own predicted positions
-  for 2025 to 2029. Units are converted (periods to years, semi-major axes to arcseconds, times of
+  for 2025 to 2029 (kept apart in `src/data/generated/orbit-checks.json`, read only by the tests). Units are converted (periods to years, semi-major axes to arcseconds, times of
   periastron from Besselian years, MJD or truncated JD to Julian dates); nothing else is changed.
 - **What is left out.** Pairs the catalogue grades 5 (indeterminate), 7, 8 or 9, and pairs whose
   elements imply a total mass, by Kepler's third law at the primary's parallax, outside 0.03 to 6

@@ -182,6 +182,13 @@ snapshot branch only when the archives changed.
   not solid, and are not in the codex (it stays the catalogue of stars and planets, so no finished
   survey of Sol reopens). Only these fourteen periodic comets are in Sol; none of the long-period or
   newly found comets of the day.
+- The logbook (PROCGEN §46) writes only what happens from when it began: a save from before it starts
+  with what the save can date (milestones, the current rank with each faction, finished stories and
+  stations of its own) and one line for the systems visited before, with no dates for them. Raiders
+  downed, contracts finished and goods traded are not written one by one (the ratings and the
+  ledger keep them), and the most credits held is sampled when the game saves, so a peak spent
+  before the next save can be missed. At most 400 entries are kept; past that the oldest go, but
+  never the first.
 - Flare stars (PROCGEN §43) flare on a schedule the game draws, about once every four hours of game
   time each for ten to fifty minutes, far fewer and longer than real flares; how strongly a star
   flares is not tied to how active it really is (all ten are alike). A flare does only two things to

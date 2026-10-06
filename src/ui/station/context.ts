@@ -18,6 +18,8 @@ export interface StationContext {
   launch(): void;
   openMap(): void;
   openEncyclopedia(): void;
+  /** The pilot's logbook (docs/PROCGEN.md §46), loaded the first time it opens. */
+  openLogbook(): void;
   openSettings(): void;
   openControls(): void;
   /** The Saves sheet: save slots, export and import. */

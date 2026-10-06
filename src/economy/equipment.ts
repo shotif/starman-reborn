@@ -11,6 +11,7 @@ import { ammoName, clampShip, fittedItem, fittedLaunchers, hullMax, newShipState
 import { dockFaction } from './markets.ts';
 import { berthBlock } from './passengers.ts';
 import { discounted, yardDiscount } from './ranks.ts';
+import { noteShip } from './logbook.ts';
 
 /**
  * Outfitter and shipyard: buying, replacing and selling equipment, ammunition, repair kits, hull
@@ -320,6 +321,7 @@ export function buyShip(state: GameState, locationId: string, modelId: string): 
   state.ship.hull = fresh.hull;
   state.ship.shield = fresh.shield;
   state.ship.systems = fresh.systems;
+  noteShip(state, fresh.model, 'traded', locationId);
   return { ok: true, message: `The ${offer.model.name} is yours.` };
 }
 

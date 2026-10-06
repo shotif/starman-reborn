@@ -33,9 +33,11 @@ belt crews out in the Kuiper dark, where you may stand with their cutters agains
 and Last Light at Pyre, where the people of the invented star's observatory must get out before
 it dies (Pyre waits for you once you take it on), perhaps in lifeboats you gather as it collapses.
 However each of the faction arcs and the last three ends, it changes a station's market, and most
-often its job board, for good. Pilot ratings, a codex of 361 real bodies, 28 milestones and a hint
+often its job board, for good. Pilot ratings, a codex of 361 real bodies, 32 milestones and a hint
 of what to do next
-give it goals. Fights have seekers and decoy
+give it goals, and a logbook keeps the career as it goes: each first arrival, ship, story, promotion,
+milestone, race won and comet or planet first scanned, dated on the game's calendar, with the
+pilot's bests. Fights have seekers and decoy
 flares, mines, damage to a ship's systems, loot, wingmen for hire who take six orders from a
 paused card, grow with every fight and are picked up when shot down, and raider dens that defend
 themselves and can be knocked out.

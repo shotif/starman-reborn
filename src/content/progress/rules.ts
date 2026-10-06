@@ -112,7 +112,11 @@ export type MilestoneId =
   | 'story-kuiper'
   | 'story-embers'
   | 'race-won'
-  | 'course-record';
+  | 'course-record'
+  | 'jump-long'
+  | 'far-out'
+  | 'comets-five'
+  | 'ships-five';
 
 export const MILESTONES: readonly { id: MilestoneId; title: string }[] = [
   { id: 'first-contract', title: 'First contract completed' },
@@ -143,4 +147,9 @@ export const MILESTONES: readonly { id: MilestoneId; title: string }[] = [
   { id: 'story-embers', title: 'Last Light at Pyre: its people brought out' },
   { id: 'race-won', title: 'First heat won' },
   { id: 'course-record', title: 'A course record set' },
+  // Drawn from the logbook (docs/PROCGEN.md §46.3): the thresholds are LOGBOOK.milestones.
+  { id: 'jump-long', title: 'A jump of nine light-years' },
+  { id: 'far-out', title: 'Twenty-five light-years from Sol' },
+  { id: 'comets-five', title: 'Five comets scanned' },
+  { id: 'ships-five', title: 'Five ships flown' },
 ];

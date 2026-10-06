@@ -6,7 +6,7 @@
     "url": "http://www.astro.gsu.edu/wds/orb6.html",
     "retrieved": "2026-10-06"
   },
-  "description": "Binary orbits from ORB6 for the game’s pairs, as the catalogue gives them: P in years, a in arcseconds, i, Ω and ω in degrees, T (periastron) as a Julian date, with published errors where the catalogue has them; and the catalogue’s own ephemeris (position angle and separation) for the years listed.",
+  "description": "Binary orbits from ORB6 for the game’s pairs, as the catalogue gives them: P in years, a in arcseconds, i, Ω and ω in degrees, T (periastron) as a Julian date, with published errors where the catalogue has them. The catalogue’s own ephemeris is in orbit-checks.json.",
   "pairs": [
     {
       "primary": "alpha-centauri-a",
@@ -34,34 +34,7 @@
       "equinox": null,
       "lastObservation": null,
       "grade": 2,
-      "reference": "Ake2021",
-      "ephemeris": [
-        {
-          "year": 2025,
-          "thetaDeg": 9.2,
-          "rhoArcsec": 8.737
-        },
-        {
-          "year": 2026,
-          "thetaDeg": 11.9,
-          "rhoArcsec": 9.294
-        },
-        {
-          "year": 2027,
-          "thetaDeg": 14.3,
-          "rhoArcsec": 9.765
-        },
-        {
-          "year": 2028,
-          "thetaDeg": 16.5,
-          "rhoArcsec": 10.121
-        },
-        {
-          "year": 2029,
-          "thetaDeg": 18.6,
-          "rhoArcsec": 10.329
-        }
-      ]
+      "reference": "Ake2021"
     },
     {
       "primary": "sirius-a",
@@ -89,34 +62,7 @@
       "equinox": 2000,
       "lastObservation": 2016,
       "grade": 2,
-      "reference": "BdH2017",
-      "ephemeris": [
-        {
-          "year": 2025,
-          "thetaDeg": 59,
-          "rhoArcsec": 11.256
-        },
-        {
-          "year": 2026,
-          "thetaDeg": 57.1,
-          "rhoArcsec": 11.163
-        },
-        {
-          "year": 2027,
-          "thetaDeg": 55.2,
-          "rhoArcsec": 11.032
-        },
-        {
-          "year": 2028,
-          "thetaDeg": 53.3,
-          "rhoArcsec": 10.861
-        },
-        {
-          "year": 2029,
-          "thetaDeg": 51.2,
-          "rhoArcsec": 10.648
-        }
-      ]
+      "reference": "BdH2017"
     },
     {
       "primary": "bl-ceti",
@@ -144,34 +90,7 @@
       "equinox": null,
       "lastObservation": null,
       "grade": 2,
-      "reference": "Msn2023",
-      "ephemeris": [
-        {
-          "year": 2025,
-          "thetaDeg": 199.9,
-          "rhoArcsec": 0.554
-        },
-        {
-          "year": 2026,
-          "thetaDeg": 151,
-          "rhoArcsec": 1.02
-        },
-        {
-          "year": 2027,
-          "thetaDeg": 131.1,
-          "rhoArcsec": 1.327
-        },
-        {
-          "year": 2028,
-          "thetaDeg": 117.4,
-          "rhoArcsec": 1.499
-        },
-        {
-          "year": 2029,
-          "thetaDeg": 106,
-          "rhoArcsec": 1.605
-        }
-      ]
+      "reference": "Msn2023"
     },
     {
       "primary": "61-cygni-a",
@@ -199,34 +118,7 @@
       "equinox": null,
       "lastObservation": 2006,
       "grade": 4,
-      "reference": "PkO2017b",
-      "ephemeris": [
-        {
-          "year": 2025,
-          "thetaDeg": 154,
-          "rhoArcsec": 32.04
-        },
-        {
-          "year": 2026,
-          "thetaDeg": 154.1,
-          "rhoArcsec": 32.088
-        },
-        {
-          "year": 2027,
-          "thetaDeg": 154.3,
-          "rhoArcsec": 32.136
-        },
-        {
-          "year": 2028,
-          "thetaDeg": 154.5,
-          "rhoArcsec": 32.182
-        },
-        {
-          "year": 2029,
-          "thetaDeg": 154.6,
-          "rhoArcsec": 32.229
-        }
-      ]
+      "reference": "PkO2017b"
     },
     {
       "primary": "procyon-a",
@@ -254,34 +146,7 @@
       "equinox": 2000,
       "lastObservation": 2014,
       "grade": 3,
-      "reference": "BdH2015",
-      "ephemeris": [
-        {
-          "year": 2025,
-          "thetaDeg": 348.7,
-          "rhoArcsec": 5.07
-        },
-        {
-          "year": 2026,
-          "thetaDeg": 353.7,
-          "rhoArcsec": 5.101
-        },
-        {
-          "year": 2027,
-          "thetaDeg": 358.6,
-          "rhoArcsec": 5.122
-        },
-        {
-          "year": 2028,
-          "thetaDeg": 3.4,
-          "rhoArcsec": 5.135
-        },
-        {
-          "year": 2029,
-          "thetaDeg": 8.3,
-          "rhoArcsec": 5.139
-        }
-      ]
+      "reference": "BdH2015"
     },
     {
       "primary": "struve-2398-a",
@@ -309,34 +174,7 @@
       "equinox": 2000,
       "lastObservation": 1987,
       "grade": 4,
-      "reference": "Hei1987b",
-      "ephemeris": [
-        {
-          "year": 2025,
-          "thetaDeg": 184.3,
-          "rhoArcsec": 10.544
-        },
-        {
-          "year": 2026,
-          "thetaDeg": 184.8,
-          "rhoArcsec": 10.462
-        },
-        {
-          "year": 2027,
-          "thetaDeg": 185.4,
-          "rhoArcsec": 10.379
-        },
-        {
-          "year": 2028,
-          "thetaDeg": 185.9,
-          "rhoArcsec": 10.297
-        },
-        {
-          "year": 2029,
-          "thetaDeg": 186.5,
-          "rhoArcsec": 10.215
-        }
-      ]
+      "reference": "Hei1987b"
     },
     {
       "primary": "kruger-60-a",
@@ -364,34 +202,7 @@
       "equinox": null,
       "lastObservation": 2013,
       "grade": 1,
-      "reference": "Izm2019",
-      "ephemeris": [
-        {
-          "year": 2025,
-          "thetaDeg": 175.4,
-          "rhoArcsec": 2.638
-        },
-        {
-          "year": 2026,
-          "thetaDeg": 169.7,
-          "rhoArcsec": 2.759
-        },
-        {
-          "year": 2027,
-          "thetaDeg": 164.5,
-          "rhoArcsec": 2.869
-        },
-        {
-          "year": 2028,
-          "thetaDeg": 159.7,
-          "rhoArcsec": 2.968
-        },
-        {
-          "year": 2029,
-          "thetaDeg": 155.1,
-          "rhoArcsec": 3.056
-        }
-      ]
+      "reference": "Izm2019"
     },
     {
       "primary": "ross-614-a",
@@ -419,34 +230,7 @@
       "equinox": null,
       "lastObservation": 2016,
       "grade": 2,
-      "reference": "MnA2019",
-      "ephemeris": [
-        {
-          "year": 2025,
-          "thetaDeg": 66,
-          "rhoArcsec": 1.182
-        },
-        {
-          "year": 2026,
-          "thetaDeg": 77.6,
-          "rhoArcsec": 1.041
-        },
-        {
-          "year": 2027,
-          "thetaDeg": 93,
-          "rhoArcsec": 0.892
-        },
-        {
-          "year": 2028,
-          "thetaDeg": 114,
-          "rhoArcsec": 0.769
-        },
-        {
-          "year": 2029,
-          "thetaDeg": 140.5,
-          "rhoArcsec": 0.711
-        }
-      ]
+      "reference": "MnA2019"
     },
     {
       "primary": "40-eridani-b",
@@ -474,34 +258,7 @@
       "equinox": null,
       "lastObservation": 2019,
       "grade": 3,
-      "reference": "WSI2021",
-      "ephemeris": [
-        {
-          "year": 2025,
-          "thetaDeg": 328.7,
-          "rhoArcsec": 7.776
-        },
-        {
-          "year": 2026,
-          "thetaDeg": 328.4,
-          "rhoArcsec": 7.69
-        },
-        {
-          "year": 2027,
-          "thetaDeg": 328.1,
-          "rhoArcsec": 7.6
-        },
-        {
-          "year": 2028,
-          "thetaDeg": 327.7,
-          "rhoArcsec": 7.507
-        },
-        {
-          "year": 2029,
-          "thetaDeg": 327.3,
-          "rhoArcsec": 7.41
-        }
-      ]
+      "reference": "WSI2021"
     },
     {
       "primary": "70-ophiuchi-a",
@@ -529,34 +286,7 @@
       "equinox": null,
       "lastObservation": 2015,
       "grade": 1,
-      "reference": "Izm2019",
-      "ephemeris": [
-        {
-          "year": 2025,
-          "thetaDeg": 117.4,
-          "rhoArcsec": 6.738
-        },
-        {
-          "year": 2026,
-          "thetaDeg": 116.6,
-          "rhoArcsec": 6.732
-        },
-        {
-          "year": 2027,
-          "thetaDeg": 115.8,
-          "rhoArcsec": 6.717
-        },
-        {
-          "year": 2028,
-          "thetaDeg": 114.9,
-          "rhoArcsec": 6.693
-        },
-        {
-          "year": 2029,
-          "thetaDeg": 114.1,
-          "rhoArcsec": 6.661
-        }
-      ]
+      "reference": "Izm2019"
     },
     {
       "primary": "achird-a",
@@ -584,34 +314,7 @@
       "equinox": 2000,
       "lastObservation": 2014,
       "grade": 3,
-      "reference": "Sca2015c",
-      "ephemeris": [
-        {
-          "year": 2025,
-          "thetaDeg": 328.5,
-          "rhoArcsec": 13.534
-        },
-        {
-          "year": 2026,
-          "thetaDeg": 328.9,
-          "rhoArcsec": 13.558
-        },
-        {
-          "year": 2027,
-          "thetaDeg": 329.3,
-          "rhoArcsec": 13.582
-        },
-        {
-          "year": 2028,
-          "thetaDeg": 329.7,
-          "rhoArcsec": 13.606
-        },
-        {
-          "year": 2029,
-          "thetaDeg": 330.2,
-          "rhoArcsec": 13.63
-        }
-      ]
+      "reference": "Sca2015c"
     },
     {
       "primary": "gj-338-a",
@@ -639,34 +342,7 @@
       "equinox": null,
       "lastObservation": null,
       "grade": 4,
-      "reference": "PkO2020",
-      "ephemeris": [
-        {
-          "year": 2025,
-          "thetaDeg": 100.9,
-          "rhoArcsec": 16.947
-        },
-        {
-          "year": 2026,
-          "thetaDeg": 101.2,
-          "rhoArcsec": 16.934
-        },
-        {
-          "year": 2027,
-          "thetaDeg": 101.6,
-          "rhoArcsec": 16.921
-        },
-        {
-          "year": 2028,
-          "thetaDeg": 101.9,
-          "rhoArcsec": 16.909
-        },
-        {
-          "year": 2029,
-          "thetaDeg": 102.2,
-          "rhoArcsec": 16.896
-        }
-      ]
+      "reference": "PkO2020"
     },
     {
       "primary": "xi-bootis-a",
@@ -694,34 +370,7 @@
       "equinox": null,
       "lastObservation": null,
       "grade": 2,
-      "reference": "Kpp2020f",
-      "ephemeris": [
-        {
-          "year": 2025,
-          "thetaDeg": 288.9,
-          "rhoArcsec": 4.81
-        },
-        {
-          "year": 2026,
-          "thetaDeg": 287.3,
-          "rhoArcsec": 4.716
-        },
-        {
-          "year": 2027,
-          "thetaDeg": 285.5,
-          "rhoArcsec": 4.622
-        },
-        {
-          "year": 2028,
-          "thetaDeg": 283.7,
-          "rhoArcsec": 4.527
-        },
-        {
-          "year": 2029,
-          "thetaDeg": 281.8,
-          "rhoArcsec": 4.432
-        }
-      ]
+      "reference": "Kpp2020f"
     },
     {
       "primary": "gj-667-a",
@@ -749,34 +398,7 @@
       "equinox": null,
       "lastObservation": null,
       "grade": 1,
-      "reference": "Msn2023",
-      "ephemeris": [
-        {
-          "year": 2025,
-          "thetaDeg": 304,
-          "rhoArcsec": 1.825
-        },
-        {
-          "year": 2026,
-          "thetaDeg": 299.9,
-          "rhoArcsec": 1.926
-        },
-        {
-          "year": 2027,
-          "thetaDeg": 296.2,
-          "rhoArcsec": 2.003
-        },
-        {
-          "year": 2028,
-          "thetaDeg": 292.8,
-          "rhoArcsec": 2.061
-        },
-        {
-          "year": 2029,
-          "thetaDeg": 289.5,
-          "rhoArcsec": 2.101
-        }
-      ]
+      "reference": "Msn2023"
     },
     {
       "primary": "36-ophiuchi-a",
@@ -804,34 +426,7 @@
       "equinox": null,
       "lastObservation": null,
       "grade": 4,
-      "reference": "Irw1996",
-      "ephemeris": [
-        {
-          "year": 2025,
-          "thetaDeg": 137.4,
-          "rhoArcsec": 5.148
-        },
-        {
-          "year": 2026,
-          "thetaDeg": 137,
-          "rhoArcsec": 5.161
-        },
-        {
-          "year": 2027,
-          "thetaDeg": 136.7,
-          "rhoArcsec": 5.173
-        },
-        {
-          "year": 2028,
-          "thetaDeg": 136.4,
-          "rhoArcsec": 5.185
-        },
-        {
-          "year": 2029,
-          "thetaDeg": 136,
-          "rhoArcsec": 5.197
-        }
-      ]
+      "reference": "Irw1996"
     },
     {
       "primary": "gj-66-a",
@@ -860,34 +455,7 @@
       "equinox": null,
       "lastObservation": null,
       "grade": 4,
-      "reference": "Kpp2020f",
-      "ephemeris": [
-        {
-          "year": 2025,
-          "thetaDeg": 184.6,
-          "rhoArcsec": 11.449
-        },
-        {
-          "year": 2026,
-          "thetaDeg": 184.4,
-          "rhoArcsec": 11.447
-        },
-        {
-          "year": 2027,
-          "thetaDeg": 184.1,
-          "rhoArcsec": 11.444
-        },
-        {
-          "year": 2028,
-          "thetaDeg": 183.9,
-          "rhoArcsec": 11.44
-        },
-        {
-          "year": 2029,
-          "thetaDeg": 183.7,
-          "rhoArcsec": 11.436
-        }
-      ]
+      "reference": "Kpp2020f"
     },
     {
       "primary": "luhman-16-a",
@@ -915,34 +483,7 @@
       "equinox": null,
       "lastObservation": null,
       "grade": 4,
-      "reference": "Bdi2024",
-      "ephemeris": [
-        {
-          "year": 2025,
-          "thetaDeg": 20.7,
-          "rhoArcsec": 0.369
-        },
-        {
-          "year": 2026,
-          "thetaDeg": 70.7,
-          "rhoArcsec": 0.425
-        },
-        {
-          "year": 2027,
-          "thetaDeg": 96,
-          "rhoArcsec": 0.663
-        },
-        {
-          "year": 2028,
-          "thetaDeg": 107.1,
-          "rhoArcsec": 0.94
-        },
-        {
-          "year": 2029,
-          "thetaDeg": 113.2,
-          "rhoArcsec": 1.211
-        }
-      ]
+      "reference": "Bdi2024"
     },
     {
       "primary": "ei-cancri-a",
@@ -970,34 +511,7 @@
       "equinox": null,
       "lastObservation": null,
       "grade": 4,
-      "reference": "Kpp2020f",
-      "ephemeris": [
-        {
-          "year": 2025,
-          "thetaDeg": 260.2,
-          "rhoArcsec": 2.668
-        },
-        {
-          "year": 2026,
-          "thetaDeg": 262.9,
-          "rhoArcsec": 2.754
-        },
-        {
-          "year": 2027,
-          "thetaDeg": 265.4,
-          "rhoArcsec": 2.839
-        },
-        {
-          "year": 2028,
-          "thetaDeg": 267.8,
-          "rhoArcsec": 2.924
-        },
-        {
-          "year": 2029,
-          "thetaDeg": 270,
-          "rhoArcsec": 3.008
-        }
-      ]
+      "reference": "Kpp2020f"
     },
     {
       "primary": "scholzs-star-a",
@@ -1025,34 +539,7 @@
       "equinox": null,
       "lastObservation": null,
       "grade": 4,
-      "reference": "Kpp2020f",
-      "ephemeris": [
-        {
-          "year": 2025,
-          "thetaDeg": 198.8,
-          "rhoArcsec": 0.114
-        },
-        {
-          "year": 2026,
-          "thetaDeg": 87.4,
-          "rhoArcsec": 0.181
-        },
-        {
-          "year": 2027,
-          "thetaDeg": 68.3,
-          "rhoArcsec": 0.341
-        },
-        {
-          "year": 2028,
-          "thetaDeg": 59.7,
-          "rhoArcsec": 0.401
-        },
-        {
-          "year": 2029,
-          "thetaDeg": 51.3,
-          "rhoArcsec": 0.35
-        }
-      ]
+      "reference": "Kpp2020f"
     },
     {
       "primary": "mu2-herculis-a",
@@ -1080,34 +567,7 @@
       "equinox": null,
       "lastObservation": null,
       "grade": 1,
-      "reference": "MnA2019",
-      "ephemeris": [
-        {
-          "year": 2025,
-          "thetaDeg": 43.3,
-          "rhoArcsec": 1.334
-        },
-        {
-          "year": 2026,
-          "thetaDeg": 46.7,
-          "rhoArcsec": 1.427
-        },
-        {
-          "year": 2027,
-          "thetaDeg": 49.7,
-          "rhoArcsec": 1.506
-        },
-        {
-          "year": 2028,
-          "thetaDeg": 52.5,
-          "rhoArcsec": 1.569
-        },
-        {
-          "year": 2029,
-          "thetaDeg": 55.1,
-          "rhoArcsec": 1.616
-        }
-      ]
+      "reference": "MnA2019"
     },
     {
       "primary": "fl-virginis-a",
@@ -1135,34 +595,7 @@
       "equinox": null,
       "lastObservation": 2022,
       "grade": 2,
-      "reference": "Lin2022b",
-      "ephemeris": [
-        {
-          "year": 2025,
-          "thetaDeg": 135,
-          "rhoArcsec": 0.579
-        },
-        {
-          "year": 2026,
-          "thetaDeg": 115.8,
-          "rhoArcsec": 0.347
-        },
-        {
-          "year": 2027,
-          "thetaDeg": 42.3,
-          "rhoArcsec": 0.202
-        },
-        {
-          "year": 2028,
-          "thetaDeg": 351.4,
-          "rhoArcsec": 0.433
-        },
-        {
-          "year": 2029,
-          "thetaDeg": 338.5,
-          "rhoArcsec": 0.706
-        }
-      ]
+      "reference": "Lin2022b"
     },
     {
       "primary": "gj-2005-b",
@@ -1190,34 +623,7 @@
       "equinox": null,
       "lastObservation": 2017,
       "grade": 2,
-      "reference": "Tok2018j",
-      "ephemeris": [
-        {
-          "year": 2025,
-          "thetaDeg": 224.8,
-          "rhoArcsec": 0.33
-        },
-        {
-          "year": 2026,
-          "thetaDeg": 250.6,
-          "rhoArcsec": 0.246
-        },
-        {
-          "year": 2027,
-          "thetaDeg": 292.4,
-          "rhoArcsec": 0.216
-        },
-        {
-          "year": 2028,
-          "thetaDeg": 329.1,
-          "rhoArcsec": 0.274
-        },
-        {
-          "year": 2029,
-          "thetaDeg": 349.9,
-          "rhoArcsec": 0.362
-        }
-      ]
+      "reference": "Tok2018j"
     }
   ],
   "left": [

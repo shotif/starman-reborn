@@ -800,6 +800,19 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   research stations within reach only. Imaging is posted by research stations near Sol about one slot
   in three, passes the contract guardrails, counts a scan only in Sol, and is paid on return.
 
+- `logbook.test.ts`: **a pilot's logbook**. The rules pass `validateLogbook`, and broken ones are
+  caught (a jump no hop on the map reaches or one shorter than the median hop, a star farther than
+  the map, more comets than Sol has, a kind with no filter, a line with a number). A new pilot signs
+  on at Earth Port, dated on the game's calendar. Every kind of entry is written through the game's
+  own functions: a jump (one first arrival, not two, and the longest hop), a ship traded in for and
+  one bought and kept, The Long Border's finale flown (the story and the biggest pay), a promotion at
+  the Authority's dock, milestones at the next save, a race won with the course record, a station
+  chartered, a tow home, a comet's first scan (once) and a planet discovered; every entry said with
+  no field left unfilled, in time order, and the save sound. The bests (most credits, the longest
+  hop on the map, the farthest real star) and the four new milestones are earned. A save from before
+  the logbook begins one with its milestones and rank at their own times and a line for the systems
+  visited before; past 400 entries the oldest go but never the first; a damaged record is caught.
+
 ### Browser tests (Playwright)
 
 - `journey.spec.ts`: **the nine-step journey from the spec** on desktop and on touch.
@@ -1041,6 +1054,11 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   from near it, its card giving its orbit class, period, next perihelion on 10 February 2027 and its
   distance from Earth; Sol's card on the star map listing it; and the images paid for back at the
   institute.
+- `logbook.spec.ts`: **a pilot's logbook**: a new pilot signed on; out in Sol Encke scanned for the
+  first time, then a jump through the star map to Alpha Centauri, never visited; back at Earth Port
+  the journal's Logbook giving the first arrival, the comet's first scan and the longest jump; the
+  logbook itself listing every entry newest first, its bests, and filtered to the sky (the comet
+  alone) and to places (the first arrival, no comet).
 - `binaries.spec.ts`: **real binary orbits**: at Dawnfield Institute, a measurement of Procyon B taken
   from the bar; out in flight Procyon B scanned from near it, its card giving the orbit (40.8 years,
   its eccentricity, where the pair stands on the game's date, and that in flight it stands as it did
@@ -1116,8 +1134,8 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   journal's border battles, the News with a shortage's relief
   haulers on their way, the News at Ledger Institute telling of a strong flare on Wolf 359, Wolf
   359 flaring in flight with the HUD's flare line, Procyon B's science card with its orbit, the
-  star map's card with Procyon's orbit, Encke with its coma and tails seen from beside them, and
-  Encke's science card, at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
+  star map's card with Procyon's orbit, Encke with its coma and tails seen from beside them,
+  Encke's science card, the journal's Logbook and the logbook itself, at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
   zoom). Saved in `docs/screenshots/` once any smooth scrolling has come to rest. Each is audited
   for page scroll overflow, clipped controls (controls inside a scrolling panel count only if the

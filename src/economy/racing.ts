@@ -18,6 +18,7 @@ import { FACTIONS, standingTier } from './factions.ts';
 import { dockAccess, isLawful } from './law.ts';
 import { performanceOf } from './loadout.ts';
 import { patchOf, rivalTier, rivalWhere, shift, standingWith } from './rivals.ts';
+import { logWrite } from './logbook.ts';
 
 /**
  * Races on the lanes (docs/PROCGEN.md §33): where the clubs are, their courses and members, each
@@ -485,6 +486,9 @@ export function finishRace(state: GameState, raw: number, field: readonly Standi
   const club = clubRecord(e.course, e.cls);
   const isRecord = !c.record && !!club && time < club.time;
   if (isRecord) c.record = state.clock;
+  // The logbook (docs/PROCGEN.md §46.1): a race won, a course record.
+  if (place === 1) logWrite(state, { kind: 'race', id: e.course, x: 'won', where: state.location.systemId });
+  if (isRecord) logWrite(state, { kind: 'race', id: e.course, x: 'record', where: state.location.systemId });
   const recordPrize = isRecord ? RACING.pay.record : 0;
   const name = courseName(line);
   if (prize + recordPrize > 0) applyCredits(state, prize + recordPrize, 'reward', `Race prize: ${name}`);
