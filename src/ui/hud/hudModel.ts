@@ -167,6 +167,8 @@ export interface HudModel {
   race: HudRace | null;
   /** A border battle under way here (docs/PROCGEN.md §35), or null. */
   battle: HudBattle | null;
+  /** A flare under way in this system (docs/PROCGEN.md §43.3), as a line, or null. */
+  flare: string | null;
 }
 
 export function emptyHudModel(): HudModel {
@@ -206,5 +208,6 @@ export function emptyHudModel(): HudModel {
     nearestDock: null,
     race: null,
     battle: null,
+    flare: null,
   };
 }

@@ -136,6 +136,7 @@ export class Hud {
   private readonly raceCount: HTMLElement;
   private readonly autopilotText: HTMLElement;
   private readonly warningText: HTMLElement;
+  private readonly flareText: HTMLElement;
   private readonly targetPanel: HTMLElement;
   /** Toast container used during touch flight (flows below the target panel). */
   readonly toastSlot: HTMLElement;
@@ -302,6 +303,8 @@ export class Hud {
     );
     this.autopilotText = h('div', { class: 'hud-autopilot', 'aria-live': 'polite' });
     this.miningText = h('div', { class: 'hud-mining', 'data-testid': 'hud-mining', hidden: true });
+    // Not a live region: the radio tells of a flare as it comes, and this line's minutes tick down.
+    this.flareText = h('div', { class: 'hud-flare', 'data-testid': 'hud-flare', hidden: true });
     this.warningText = h('div', { class: 'hud-warning', role: 'alert' });
 
     this.targetPanel = h('div', { class: 'hud-panel frame hud-target', 'data-testid': 'hud-target', hidden: true });
@@ -402,7 +405,7 @@ export class Hud {
     this.root.classList.toggle('touch-mode', !full);
     if (full) {
       this.left.replaceChildren(this.wallet, this.scaleText);
-      this.centerColumn.replaceChildren(this.commandRail, this.objectivePanel, this.racePanel, this.battlePanel, this.autopilotText, this.miningText, this.warningText, this.encounterBanner, this.hailBanner);
+      this.centerColumn.replaceChildren(this.commandRail, this.objectivePanel, this.racePanel, this.battlePanel, this.autopilotText, this.miningText, this.flareText, this.warningText, this.encounterBanner, this.hailBanner);
       this.right.replaceChildren(this.buttons);
       this.bottomLeft.replaceChildren(this.targetPanel);
       this.bottomCenter.replaceChildren(this.contextHint, this.status);
@@ -411,7 +414,7 @@ export class Hud {
       // Touch: the target panel and toasts stack in the centre column under the objective and
       // any alert (never on top of them).
       this.left.replaceChildren(this.status);
-      this.centerColumn.replaceChildren(this.objectivePanel, this.racePanel, this.battlePanel, this.autopilotText, this.miningText, this.warningText, this.encounterBanner, this.hailBanner, this.targetPanel, this.toastSlot);
+      this.centerColumn.replaceChildren(this.objectivePanel, this.racePanel, this.battlePanel, this.autopilotText, this.miningText, this.flareText, this.warningText, this.encounterBanner, this.hailBanner, this.targetPanel, this.toastSlot);
       this.right.replaceChildren(this.buttons, this.wallet);
       this.bottomLeft.replaceChildren();
       this.bottomCenter.replaceChildren(this.contextHint);
@@ -490,6 +493,9 @@ export class Hud {
     this.objectivePanel.setAttribute('aria-expanded', String(!this.objectivePanel.classList.contains('collapsed')));
     setText(this.autopilotText, model.autopilot ?? '');
     setText(this.warningText, model.warnings.join(' · '));
+    // A flare under way here (docs/PROCGEN.md §43.3).
+    this.flareText.hidden = !model.flare;
+    if (model.flare) setText(this.flareText, model.flare);
 
     // Command rail: lit command = what is flying the ship; Dock is live only when it is offered.
     const ap = model.autopilotMode;

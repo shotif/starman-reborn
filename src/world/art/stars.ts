@@ -22,6 +22,11 @@ export interface StarArtOptions {
 
 export interface StarArt extends ArtObject {
   readonly radius: number;
+  /**
+   * A flare under way (docs/PROCGEN.md §43.3), 0 (none) to 1 (a superflare's peak): the glow swells
+   * and whitens, and (not with reduced motion) a bright patch spreads on the face toward the viewer.
+   */
+  setFlare(level: number): void;
 }
 
 const PHOTOSPHERE_VERT = /* glsl */ `
@@ -348,6 +353,13 @@ export function createStar(opts: StarArtOptions, ctx: ArtContext): StarArt {
   const flareLife = 3.2;
   const flareDir = new THREE.Vector3();
   const baseGlow = coronaUniforms.uIntensity.value;
+  const baseFar = farUniforms.uIntensity.value;
+  const baseColor = glowColor.clone();
+  const white = new THREE.Color(1, 1, 1);
+  const toViewer = new THREE.Vector3();
+  // A flare under way (set by the flight scene), held until it changes.
+  let held = 0;
+  let swell = 0;
   const timeScale = ctx.reducedMotion ? 0.4 : 1;
   // A supergiant pulses slowly, swelling a little and brightening (not with reduced motion).
   const pulse = kind === 'supergiant' && !ctx.reducedMotion;
@@ -368,6 +380,16 @@ export function createStar(opts: StarArtOptions, ctx: ArtContext): StarArt {
         photosphere.scale.setScalar(1 + 0.012 * w);
         photoUniforms.uBright.value = baseBright * (1 + 0.07 * w);
       }
+      if (held > 0) {
+        // The flare's patch faces whoever looks (its brightening is what the eye would catch).
+        if (!ctx.reducedMotion) {
+          toViewer.copy(camera.position);
+          group.worldToLocal(toViewer).normalize();
+          photoUniforms.uFlare.value.set(toViewer.x, toViewer.y, toViewer.z, Math.max(swell * 0.9, held));
+        }
+        coronaUniforms.uIntensity.value = baseGlow * (1 + 0.18 * swell) * (1 + 1.4 * held);
+        return;
+      }
       if (!flares) return;
       if (flareAge < 0) {
         nextFlare -= dt;
@@ -381,15 +403,30 @@ export function createStar(opts: StarArtOptions, ctx: ArtContext): StarArt {
         const x = flareAge / flareLife;
         // Fast-ish rise, slow decay; smooth so it never reads as a flash.
         const s = x < 0.25 ? THREE.MathUtils.smootherstep(x / 0.25, 0, 1) : 1 - THREE.MathUtils.smoothstep(x, 0.25, 1);
+        swell = s;
         photoUniforms.uFlare.value.w = s * 0.9;
         coronaUniforms.uIntensity.value = baseGlow * (1 + 0.18 * s);
         if (x >= 1) {
           flareAge = -1;
           nextFlare = 9 + rand() * 14;
+          swell = 0;
           photoUniforms.uFlare.value.w = 0;
           coronaUniforms.uIntensity.value = baseGlow;
         }
       }
+    },
+    setFlare(level) {
+      const l = Math.min(1, Math.max(0, level));
+      if (l === held) return;
+      held = l;
+      glowColor.copy(baseColor).lerp(white, 0.35 * l);
+      farUniforms.uIntensity.value = baseFar * (1 + 1.6 * l);
+      photoUniforms.uBright.value = baseBright * (1 + 0.5 * l);
+      if (l === 0) {
+        photoUniforms.uFlare.value.w = 0;
+        coronaUniforms.uIntensity.value = baseGlow;
+        swell = 0;
+      } else if (ctx.reducedMotion) coronaUniforms.uIntensity.value = baseGlow * (1 + 1.4 * l);
     },
     dispose: () => disposeObject(group),
   };

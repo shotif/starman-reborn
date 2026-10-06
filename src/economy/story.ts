@@ -173,7 +173,7 @@ export interface Beat {
 /** The system an objective takes place in, when it has one. */
 export function objectiveSystem(o: Objective | undefined): SystemId | null {
   if (!o) return null;
-  if ('systemId' in o) return o.systemId;
+  if ('systemId' in o && o.systemId) return o.systemId;
   if ('locationId' in o) return getLocation(o.locationId).systemId;
   return null;
 }

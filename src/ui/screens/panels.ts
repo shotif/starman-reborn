@@ -5,6 +5,7 @@ import { formatDec, formatRa } from '../../data/coords.ts';
 import type { ConfirmedBody } from '../../data/types.ts';
 import { beltCard } from '../../galaxy/scienceBlocks.ts';
 import { pyreCard } from './pyreCard.ts';
+import { flareCard, flareStar } from '../../economy/flares.ts';
 import { KEY_BINDINGS, keyLabel } from '../../flight/input/DesktopInput.ts';
 import { PAD_FOR, PAD_HOLDS, padLabel, type PadButton } from '../../flight/input/GamepadInput.ts';
 import type { InputScheme } from '../../flight/input/types.ts';
@@ -370,9 +371,12 @@ export function planetCard(body: ConfirmedBody, discovered: boolean): HTMLElemen
 }
 
 /** Science card for other real bodies (stars, Solar System planets). */
-export function bodyCard(bodyId: string, name: string): HTMLElement {
+export function bodyCard(bodyId: string, name: string, clock = 0): HTMLElement {
   const comp = getComponent(bodyId);
   if (comp) {
+    // A flare star (docs/PROCGEN.md §43): its variable-star name and what it is are real; its flaring now is fiction.
+    const variable = flareStar(bodyId)?.variable;
+    const [what, flaring] = flareCard(bodyId, clock);
     return h(
       'div',
       { class: 'stack science-card' },
@@ -388,7 +392,10 @@ export function bodyCard(bodyId: string, name: string): HTMLElement {
         h('dd', { class: 'num' }, `${formatRa(comp.raDegrees)} ${formatDec(comp.decDegrees)} · J${comp.referenceEpoch.toFixed(1)}`),
         h('dt', null, 'Catalog'),
         h('dd', null, comp.catalogIds.gaiaDr3 ?? comp.catalogIds.hip ?? comp.catalogIds.simbad ?? comp.id),
+        variable ? [h('dt', null, 'Variable star'), h('dd', { 'data-testid': 'science-variable' }, variable)] : null,
       ),
+      what ? h('p', { 'data-testid': 'science-flare-star' }, what) : null,
+      flaring ? h('p', { 'data-testid': 'science-flaring' }, dataBadge('fictional'), ' ', flaring) : null,
       h('p', { class: 'row wrap' }, sourceLink(comp.astrometrySource), ' ', sourceLink(comp.parallaxSource, 'parallax')),
       h('p', { class: 'muted small' }, dataBadge('estimated'), ' Size, colour and glow in flight are illustrative.'),
     );

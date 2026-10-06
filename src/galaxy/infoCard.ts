@@ -172,6 +172,8 @@ export class InfoCard {
       tags.childElementCount ? tags : null,
     );
 
+    // A flare star's line is real; whether it is flaring now is fiction (docs/PROCGEN.md §43.4).
+    const flares = state.flares?.get(systemId);
     // Body: observed, fiction, route. Pyre is invented (docs/PROCGEN.md §26): nothing about it is observed.
     const observed = isInventedSystem(systemId)
       ? h(
@@ -190,6 +192,7 @@ export class InfoCard {
           positionList(system, 'compact'),
           h('h4', null, systemId === 'sol' ? 'Star' : 'Stars'),
           componentList(systemId, 'compact'),
+          flares ? h('p', { 'data-testid': 'gmap-flare-star' }, flares.slice(0, -1).join(' · ')) : null,
           h('h4', null, systemId === 'sol' ? 'Planets' : 'Confirmed planets'),
           planetBlock(system, state.discoveredBodies, 'compact'),
           beltsOf(systemId).length ? [h('h4', null, 'Belts and debris discs'), beltBlock(systemId, 'compact')] : null,
@@ -202,6 +205,7 @@ export class InfoCard {
       badgeHeading('h3', 'Fiction', 'fictional', `${this.ids.title}-fic`),
       h('p', { class: 'gmap-summary' }, system.fiction),
       securityNote(systemId),
+      flares ? h('p', { 'data-testid': 'gmap-flare' }, flares.at(-1)) : null,
       newsBlock(systemId, state),
       // The system's stations, and the player's own outpost there (docs/PROCGEN.md §22); at Pyre, the one there now.
       isInventedSystem(systemId) && state.inventedStations

@@ -162,7 +162,7 @@ export function validateStory(arcJobs: readonly JobDef[] = ARC_JOBS): Issue[] {
         if (o.kind === 'deliver' && story.cargo && story.cargo.commodity === o.commodity && story.cargo.qty < o.qty) report('cargo', subject, 'hands over less cargo than it asks for');
         // A belt scanned, a rescue in a belt, a stand in a belt (docs/PROCGEN.md §40.3): a cited belt of the system, drawn in its scene.
         const belt = o.kind === 'scan' && findBelt(o.bodyId) ? o.bodyId : o.kind === 'rescue' || o.kind === 'stand' ? o.beltId : undefined;
-        if (belt !== undefined && 'systemId' in o) {
+        if (belt !== undefined && 'systemId' in o && o.systemId) {
           const drawn = sceneDefFor(o.systemId).belts.some((b) => b.beltId === belt && b.shape === 'ring');
           if (findBelt(belt)?.systemId !== o.systemId || !drawn) report('belts', subject, `objective ${k}: ${belt} is not a cited belt drawn in ${o.systemId}`);
         }

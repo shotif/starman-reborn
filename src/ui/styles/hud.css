@@ -1124,6 +1124,28 @@
   }
 }
 
+/* A flare under way in this system (docs/PROCGEN.md §43.3). */
+.hud-flare {
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  letter-spacing: 0.05em;
+  color: var(--warning);
+  text-shadow: 0 1px 3px #000;
+}
+
+.hud-flare[hidden] {
+  display: none;
+}
+
+/* On touch it wraps rather than run on: a line that cannot wrap would widen the centre column and
+   squeeze the status panel beside it on narrow phones. */
+.hud.touch-mode .hud-flare {
+  max-width: 100%;
+  font-size: 0.72rem;
+  line-height: 1.2;
+  text-align: center;
+}
+
 /* The mining beam under way (docs/PROCGEN.md §19). */
 .hud-mining {
   font-family: var(--font-ui);

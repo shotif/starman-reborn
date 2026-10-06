@@ -160,6 +160,8 @@ export interface JobDef {
     rival?: string;
     /** A favour for someone of the crew (docs/PROCGEN.md §30): their id. */
     crew?: string;
+    /** Flare watch (docs/PROCGEN.md §43.5): the flare it is for (`f.<star>.<window>`). */
+    flare?: string;
   };
   /** Story arc missions (content/story/arcs.ts): arc, step, speaker and beats. */
   story?: StoryMeta;
@@ -720,6 +722,8 @@ function describeCurrent(state: GameState, jobId: string): ObjectiveSummary | nu
       const now = state.clock;
       const mins = (s: number) => Math.max(1, Math.round(s / 60));
       const when = now < o.from ? `opens in ${mins(o.from - now)} min` : now <= o.to ? `${mins(o.to - now)} min left` : 'closed';
+      // A flaring star is read where it is, in its own system (docs/PROCGEN.md §43.5).
+      if (o.systemId) return { ...base, text: inOtherSystem(o.systemId, `${o.text} (${when})`), targetSystemId: o.systemId, targetLocationId: null, ...(o.systemId === here ? { targetId: `star:${o.star}` } : {}) };
       // Pyre's black hole is read where it is (docs/PROCGEN.md §26.5).
       if (o.star === PYRE_HOLE_ID) {
         const pyre = DOOMED.star.id as SystemId;

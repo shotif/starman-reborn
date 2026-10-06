@@ -536,7 +536,7 @@ describe('the faction arcs leave their marks (docs/PROCGEN.md §14.7)', () => {
     if (o.kind === 'assault') s.jobs[e.finale]!.assault = 'done';
     if (o.kind === 'defend') s.jobs[e.finale]!.kills = o.count;
     if (o.kind === 'escort') for (let i = 0; i < 3; i++) escortArrived(s, e.finale);
-    inSpace(s, 'systemId' in o ? o.systemId : s.location.systemId);
+    inSpace(s, 'systemId' in o && o.systemId ? o.systemId : s.location.systemId);
     expect(done(s, e.finale)).toBe(true);
   }
 

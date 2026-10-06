@@ -123,6 +123,31 @@ To regenerate the provisional file (the raw catalogue is not committed):
 node scripts/extract-far-stars.ts data/raw/hygdata_v40.csv && npm run data:build && npm run data:validate
 ```
 
+## Flare stars
+
+Ten stars of the map are flare stars (`FLARE_STARS`, `src/content/stellar/flares.ts`), for a piece
+of game fiction: they flare in the game, on a schedule the game draws (see *Fiction* below and
+[PROCGEN.md §43](PROCGEN.md#43-flare-stars)). What is real about them is cited:
+
+- **Their names as variable stars** (V645 Cen for Proxima Centauri, CN Leo for Wolf 359, BL Cet and
+  UV Cet in Luyten 726-8, EV Lac, AD Leo, YZ Cet, V1216 Sgr for Ross 154, YZ CMi and DX Cnc) are
+  SIMBAD identifiers as the sky snapshot of 30 September 2026 holds them
+  (`data/snapshot/raw/2026-09-30/simbad-idents-*.json`). A unit test finds each star's SIMBAD
+  record through its Gaia DR3 source and checks the name is among its identifiers, so a new
+  snapshot that drops one fails the tests. Such names are given by the General Catalogue of
+  Variable Stars (Samus et al. 2017, *General catalogue of variable stars: Version GCVS 5.1*,
+  Astronomy Reports 61, 80, [2017ARep...61...80S](https://ui.adsabs.harvard.edu/abs/2017ARep...61...80S)).
+  Barnard's Star has a variable-star name too (V2500 Oph), but SIMBAD's object type for it is a BY
+  Draconis variable, so it is not counted among them.
+- **Their spectral types** are the map's own (above), all red dwarfs (M).
+- **What flares are**, as the encyclopedia tells it, is general knowledge of these stars; one of
+  Proxima Centauri's flares is cited: MacGregor et al. 2021, *Discovery of an extremely short
+  duration flare from Proxima Centauri using millimeter through far-ultraviolet observations*, ApJL
+  911, L25 ([2021ApJ...911L..25M](https://ui.adsabs.harvard.edu/abs/2021ApJ...911L..25M)), a paper
+  SIMBAD lists for Proxima in the snapshot.
+- **Not claimed:** how often each star really flares, how strongly, or how its flares compare with
+  another's. The game's flares are alike for all ten and are fiction.
+
 ## Pipeline: the sky snapshot
 
 1. **Fetch** (`scripts/sky-fetch.ts`) is the only step that needs the network. It saves raw
@@ -344,3 +369,11 @@ The fading of its black hole's infalling gas follows the fallback rate's t^−5/
 346, 847), and what such a supernova would mean for Earth is told as the published estimates: ozone
 thinned within somewhere from 8 pc (Gehrels et al. 2003, ApJ 585, 1169) to 20 pc (Fields et al. 2020,
 PNAS 117, 21008). What is real: no star near enough to harm Earth is known to be about to explode.
+
+**Flare stars** flare on a schedule the game draws from its world seed and the clock
+([PROCGEN.md §43](PROCGEN.md#43-flare-stars)): when each flares, how strongly, for how long, and what
+a flare does to ships (shields recharging slower, scanners reaching less far) are fiction. The stars,
+their variable-star names and that they flare are real (see *Flare stars* above). Every story in the
+News wears the **Fiction** badge and says *Fiction: when {star} flares, and what it does to ships, is
+the game's. {star} is a real flare star, the variable star {name}.*; the science card badges its line
+on the flare under way as fiction; and the encyclopedia's *Flare stars* says which is which.

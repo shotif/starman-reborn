@@ -17,6 +17,8 @@ export interface StarRuntime {
   def: SceneStarDef;
   art: StarArt;
   light: THREE.DirectionalLight;
+  /** A flare under way (docs/PROCGEN.md §43.3), 0 to 1: the star glows brighter and lights the ships a little more. */
+  flare: number;
 }
 
 /** The black hole where Pyre was (docs/PROCGEN.md §26), and the light of its infalling gas. */
@@ -106,7 +108,7 @@ export class SystemScene {
       this.add(art);
       const light = new THREE.DirectionalLight(s.color, s.light);
       this.scene.add(light, light.target);
-      this.stars.push({ def: s, art, light });
+      this.stars.push({ def: s, art, light, flare: 0 });
       // Pyre is the one invented star (docs/PROCGEN.md §26): its target says so.
       const invented = isInventedSystem(def.systemId);
       this.targets.push({
@@ -351,7 +353,7 @@ export class SystemScene {
     for (const s of this.stars) {
       const d = focus.distanceTo(s.def.position);
       const falloff = d <= s.def.lightRange ? 1 : Math.max(0.04, (s.def.lightRange / d) ** 2);
-      s.light.intensity = s.def.light * falloff;
+      s.light.intensity = s.def.light * falloff * (1 + 0.6 * s.flare);
       this.tmp.copy(s.def.position).sub(focus).normalize();
       s.light.position.copy(focus).addScaledVector(this.tmp, 1000);
       s.light.target.position.copy(focus);
@@ -364,6 +366,14 @@ export class SystemScene {
       b.light.position.copy(focus).addScaledVector(this.tmp, 1000);
       b.light.target.position.copy(focus);
     }
+  }
+
+  /** How brightly a star is flaring now (docs/PROCGEN.md §43.3), 0 to 1. */
+  setStarFlare(starId: string, level: number): void {
+    const s = this.stars.find((x) => x.def.id === starId);
+    if (!s || s.flare === level) return;
+    s.flare = level;
+    s.art.setFlare(level);
   }
 
   setLaneActive(laneId: string, active: boolean): void {

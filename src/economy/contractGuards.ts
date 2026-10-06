@@ -4,11 +4,12 @@ import { beltGoods } from '../content/mining/rules.ts';
 import { PASSENGERS } from '../content/passengers/rules.ts';
 import { sightById } from '../content/passengers/sights.ts';
 import { farStar } from './stellar.ts';
+import { flaresBetween, flareStar } from './flares.ts';
 import { PYRE_HOLE_ID } from './pyrePhysics.ts';
 import { isOutpostId } from '../content/outposts/sites.ts';
 import type { Issue } from '../content/validate.ts';
 import { jumpsFrom } from '../content/world/network.ts';
-import { ALL_LOCATIONS, findBelt, getLocation, getSystem, isFrontier, isInventedSystem, MAP_LINKS, PYRE_ID, WORLD } from '../data/systems.ts';
+import { ALL_LOCATIONS, findBelt, getComponent, getLocation, getSystem, isFrontier, isInventedSystem, MAP_LINKS, PYRE_ID, WORLD } from '../data/systems.ts';
 import { inViewFromGates, inViewFromStation } from '../world/sightseeing.ts';
 import { trafficFor } from '../world/traffic/setup.ts';
 import { shipModel } from '../content/catalog.ts';
@@ -133,7 +134,14 @@ function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, numbe
   if (!o || c.objectives.length !== expected) return report('objectives', c.id, `expected ${expected} objective(s)`);
 
   // Where it sends you, and what the trip costs.
-  const target = o.kind === 'scan' || o.kind === 'sight' || o.kind === 'bounty' || o.kind === 'recover' || o.kind === 'escort' || o.kind === 'piracy' || o.kind === 'mine' || o.kind === 'rescue' ? o.systemId : 'locationId' in o ? getLocation(o.locationId).systemId : from;
+  const target =
+    o.kind === 'scan' || o.kind === 'sight' || o.kind === 'bounty' || o.kind === 'recover' || o.kind === 'escort' || o.kind === 'piracy' || o.kind === 'mine' || o.kind === 'rescue'
+      ? o.systemId
+      : o.kind === 'observe' && o.systemId
+        ? o.systemId
+        : 'locationId' in o
+          ? getLocation(o.locationId).systemId
+          : from;
   const j = jumps.get(target) ?? Infinity;
   if (j > CONTRACTS.maxJumps[kind]) report('reach', c.id, `${j} jumps (at most ${CONTRACTS.maxJumps[kind]})`);
   let tripFrom = from;
@@ -321,7 +329,14 @@ function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, numbe
       const back = c.objectives[1];
       if (o.kind !== 'observe' || back?.kind !== 'visit' || back.locationId !== c.giverLocationId) return report('objectives', c.id, 'an observation, then back with the readings');
       if (getLocation(c.giverLocationId).stationType !== 'research-station') report('observe', c.id, 'posted by a station that is not a research station');
-      if (!(farStar(o.star) || o.star === PYRE_ID || o.star === PYRE_HOLE_ID) || !(o.to > o.from)) report('observe', c.id, `${o.star}: not a far star or Pyre, or a window that never opens`);
+      if (!(farStar(o.star) || o.star === PYRE_ID || o.star === PYRE_HOLE_ID || flareStar(o.star)) || !(o.to > o.from)) report('observe', c.id, `${o.star}: not a far star, Pyre or a flare star, or a window that never opens`);
+      // Flare watch (docs/PROCGEN.md §43.5): a flare star read in its own system, for a flare of its, while it flares.
+      if (flareStar(o.star) || o.systemId !== undefined || c.contract?.flare !== undefined) {
+        const f = c.contract?.flare ? flaresBetween(o.from, o.from).find((x) => x.id === c.contract!.flare) : undefined;
+        if (!flareStar(o.star) || o.systemId !== getComponent(o.star)?.systemId) report('observe', c.id, `${o.star} is not read in its own system`);
+        else if (!f || f.star !== o.star || f.start !== o.from || f.end !== o.to) report('observe', c.id, 'a window that is not its flare');
+        else if (c.contract?.posted !== f.start || c.contract.until !== f.end || c.contract.posted > clock + CONTRACTS.epochSeconds || c.contract.until <= clock) report('observe', c.id, 'not on the board while its flare lasts');
+      }
       if (o.firstLight !== undefined && (o.star !== PYRE_ID || !(o.firstLight > 0) || !((o.aheadLy ?? 0) > 0))) report('observe', c.id, 'first light wanted of a star that is not Pyre, or with no time or distance');
       if (o.baselineLy !== undefined && !(o.baselineLy > 0)) report('observe', c.id, 'a baseline that is not positive');
       break;

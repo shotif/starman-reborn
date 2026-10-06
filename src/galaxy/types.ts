@@ -40,6 +40,11 @@ export interface MapState {
   inventedNote?: string;
   /** Pyre's stations that exist now, and why one takes no ships (null: open). */
   inventedStations?: readonly { id: string; note: string | null }[];
+  /**
+   * Flare-star systems (docs/PROCGEN.md §43.4): each flare star's line (real), then whether one is
+   * flaring now and for how long (fiction).
+   */
+  flares?: ReadonlyMap<SystemId, readonly string[]>;
 }
 
 export interface MapMission {

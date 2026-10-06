@@ -46,11 +46,11 @@ export function applyDamage(d: Durability, amount: number, type?: DamageType): D
   };
 }
 
-/** Regenerates shields after the delay. Hull never regenerates. */
-export function regenerate(d: Durability, dt: number): void {
+/** Regenerates shields after the delay, at `rate` of their rate (slowed by a flare in the system, docs/PROCGEN.md §43.3). Hull never regenerates. */
+export function regenerate(d: Durability, dt: number, rate = 1): void {
   d.sinceHit += dt;
   if (d.hull <= 0) return;
   if (d.sinceHit >= d.shieldDelay && d.shield < d.shieldMax) {
-    d.shield = Math.min(d.shieldMax, d.shield + d.shieldRegen * dt);
+    d.shield = Math.min(d.shieldMax, d.shield + d.shieldRegen * rate * dt);
   }
 }

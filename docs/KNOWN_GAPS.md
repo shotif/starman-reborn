@@ -162,6 +162,15 @@ snapshot branch only when the archives changed.
   but Betelgeuse's and Antares' still reach every system at once. On the 3D star map its label says
   Fiction, but only the flat map draws a dashed ring round it. A pilot docked when a moment comes
   hears of it in the News, not on the radio (the clock stands still while docked).
+- Flare stars (PROCGEN §43) flare on a schedule the game draws, about once every four hours of game
+  time each for ten to fifty minutes, far fewer and longer than real flares; how strongly a star
+  flares is not tied to how active it really is (all ten are alike). A flare does only two things to
+  ships, shields and scanners, and to every ship in its system alike; nothing else feels it (no
+  radiation damage, no effect on traffic, prices or the planets' people). The star map's card and the
+  News say a flare is under way, but the map draws nothing different. A flare watch whose flare ends
+  before the pilot gets a reading stays in the journal, closed, until abandoned. The variable-star
+  names were checked against the sky snapshot's SIMBAD identifiers; that each is a flare star (rather
+  than another kind of variable) is the General Catalogue's, not re-read by the snapshot.
 - Raids on the player's outpost (PROCGEN §29) strike only the outpost: never its captains or
   stakes, and nobody repairs a stores barge between raids (it is whole each time). In flight the
   raiders come out of the dark rather than flying in from a den the player can see them leave, and

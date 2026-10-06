@@ -24,6 +24,8 @@ import { farStar, fillSky, skyOffers } from './stellar.ts';
 import { OBSERVE_LINES } from '../content/stellar/lines.ts';
 import { DOOMED } from '../content/stellar/doomed.ts';
 import { EDGE_JOBS } from '../content/stellar/doomedLines.ts';
+import { FLARE_WATCH } from '../content/stellar/flareLines.ts';
+import { fillFlare, flareWatchOffers, flareWatchReward } from './flares.ts';
 import { fillPyreJob, pyreOffers, pyreRefugeId, PYRE_HOLE_ID } from './doomed.ts';
 import { STELLAR } from '../content/stellar/rules.ts';
 import { trafficFor } from '../world/traffic/setup.ts';
@@ -191,6 +193,8 @@ export function boardFor(locationId: string, epoch: number): JobDef[] {
     out.push(...skyContracts(loc, epoch));
     // Pyre's work, once its warning has come (docs/PROCGEN.md §26.5).
     out.push(...pyreContracts(loc, epoch));
+    // Flare watch at research stations near a flaring star (docs/PROCGEN.md §43.5).
+    out.push(...flareContracts(loc, epoch));
     // Escorts for this station's relief and shipments bound through raided lanes (docs/PROCGEN.md §21.7).
     out.push(...reliefEscorts(loc, epoch));
     // A commission for the owner's own ranks (docs/PROCGEN.md §32.4), from its own stream and id.
@@ -416,6 +420,32 @@ function pyreContracts(giver: FictionalLocation, epoch: number): JobDef[] {
       difficultyNote: o.kind === 'record' ? 'Any system, from open space, before it explodes' : o.kind === 'twice' ? 'Two systems, timed to its light' : `${DOOMED.star.name}, beyond the lane from ${getSystem(DOOMED.star.anchor).displayName}`,
       destinationLocationId: giver.id,
       contract: { kind: 'observe', ...timing },
+    };
+  });
+}
+
+/**
+ * Flare watch (docs/PROCGEN.md §43.5): a research station near a flaring star wants it scanned, in its
+ * own system, while it flares. On the board from the flare's start until it ends, within the time
+ * slot; ids their own, one for each flare.
+ */
+function flareContracts(giver: FictionalLocation, epoch: number): JobDef[] {
+  const start = epoch * CONTRACTS.epochSeconds;
+  return flareWatchOffers(giver.id, start, start + CONTRACTS.epochSeconds).map(({ flare: f, jumps }): JobDef => {
+    const fill = (t: string) => fillFlare(t, f, f.start, giver.name);
+    const system = getSystem(f.systemId).displayName;
+    return {
+      ...common(giver, `${CONTRACT_PREFIX}${giver.id}.${epoch}.flare-${f.star}-${f.id.slice(f.id.lastIndexOf('.') + 1)}`, f.kind === 'flare' ? 1 : 2),
+      title: fill(FLARE_WATCH.title),
+      briefing: fill(FLARE_WATCH.briefing),
+      objectives: [
+        { kind: 'observe', star: f.star, systemId: f.systemId, from: f.start, to: f.end, text: fill(FLARE_WATCH.objective) },
+        { kind: 'visit', locationId: giver.id, text: `Bring the readings back to ${giver.name}` },
+      ],
+      reward: flareWatchReward(f.kind, jumps),
+      difficultyNote: `${jumps === 0 ? 'In this system' : jumps === 1 ? `One jump, in ${system}` : `${jumps} jumps, in ${system}`}, while it flares`,
+      destinationLocationId: giver.id,
+      contract: { kind: 'observe', posted: f.start, until: f.end, flare: f.id },
     };
   });
 }
@@ -1284,6 +1314,9 @@ export function postedContracts(state: GameState, locationId: string): JobDef[] 
     // An escort for a haul goes once it has an escort.
     const haul = c.contract?.haul;
     if (haul && state.world.hauls?.[haul]) return false;
+    // One flare watch for a flare is enough (docs/PROCGEN.md §43.5): its copy from the next time slot is not offered.
+    const flare = c.contract?.flare;
+    if (flare && Object.keys(state.jobs).some((id) => state.contracts[id]?.contract?.flare === flare)) return false;
     const o = c.objectives[0];
     return !(c.contract?.kind === 'survey' && o?.kind === 'scan' && state.discoveredBodies.includes(o.bodyId));
   });

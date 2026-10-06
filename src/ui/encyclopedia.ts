@@ -6,8 +6,9 @@
 import './styles/encyclopedia.css';
 import { LY_PER_PARSEC } from '../data/coords.ts';
 import { SOURCES } from '../data/sources.ts';
-import { ASTROMETRY, BELTS, EXOPLANETS, FAR_STARS, SYSTEMS, beltsOf, getSystem, hasProvisionalData, isInventedSystem, PYRE_ID, saveLocations } from '../data/systems.ts';
+import { ASTROMETRY, BELTS, EXOPLANETS, FAR_STARS, SYSTEMS, beltsOf, getComponent, getSystem, hasProvisionalData, isInventedSystem, PYRE_ID, saveLocations } from '../data/systems.ts';
 import { DOOMED } from '../content/stellar/doomed.ts';
+import { FLARE_SOURCES, FLARE_STARS, variableSource } from '../content/stellar/flares.ts';
 import { PYRE_HOLE_ID } from '../economy/pyrePhysics.ts';
 import { pyreCard } from './screens/pyreCard.ts';
 import type { SourceRef, StarSystemRecord, SystemId } from '../data/types.ts';
@@ -240,6 +241,41 @@ function farStarsSection(id: string): HTMLElement {
 }
 
 /**
+ * Flare stars (docs/PROCGEN.md §43): the ten on the map, their variable-star names and what is real
+ * about them, cited; and what the game makes of them, marked as fiction.
+ */
+function flareStarsSection(id: string): HTMLElement {
+  return h(
+    'section',
+    { class: 'enc-section', id, 'aria-labelledby': `${id}-h`, 'data-testid': 'enc-flare-stars' },
+    h('h3', { id: `${id}-h`, tabindex: '-1' }, 'Flare stars'),
+    h(
+      'p',
+      null,
+      dataBadge('observed'),
+      ' Some red dwarfs flare: their strong magnetic fields now and then let go of the energy stored in them all at once, and the star brightens within minutes, most of all in blue and ultraviolet light and X-rays, then fades over minutes to hours. Small flares come often, big ones seldom. Flare stars are also called UV Ceti variables, after UV Ceti. Proxima Centauri, the nearest star to the Sun, is one: one of its flares, seen from millimetre waves to the far ultraviolet, was extremely short. ',
+      sourceLink(FLARE_SOURCES.gcvs),
+      ' ',
+      sourceLink(FLARE_SOURCES.proxima),
+    ),
+    h(
+      'ul',
+      { class: 'enc-flare-stars' },
+      FLARE_STARS.map((s) => {
+        const c = getComponent(s.star)!;
+        return h('li', null, h('strong', null, c.name), ` (${getSystem(c.systemId).displayName}): the variable star ${s.variable}, ${c.spectralType} `, sourceLink(variableSource(s)));
+      }),
+    ),
+    h(
+      'p',
+      null,
+      dataBadge('fictional'),
+      ' In this game each of them flares now and then, about once every four hours of game time, for ten to fifty minutes; while one does, shields in its system recharge slower and scanners reach less far. When they flare, how strongly, and what it does to ships are the game’s; real flares come at random, and many are far shorter.',
+    ),
+  );
+}
+
+/**
  * Pyre, the one invented star (docs/PROCGEN.md §26): said to be invented, its numbers worked out
  * with the real physics, and what is real behind it.
  */
@@ -372,6 +408,7 @@ export function openEncyclopedia(root: HTMLElement, opts: EncyclopediaOptions): 
     intro: `enc-${uid}-intro`,
     data: `enc-${uid}-data`,
     far: `enc-${uid}-far`,
+    flares: `enc-${uid}-flares`,
     invented: `enc-${uid}-invented`,
     system: (id: SystemId) => `enc-${uid}-${id}`,
   };
@@ -379,6 +416,7 @@ export function openEncyclopedia(root: HTMLElement, opts: EncyclopediaOptions): 
     { id: ids.intro, label: 'How to read this' },
     ...SYSTEMS.map((s) => ({ id: ids.system(s.id), label: s.displayName })),
     { id: ids.far, label: 'Far stars' },
+    { id: ids.flares, label: 'Flare stars' },
     { id: ids.invented, label: 'The invented star' },
     { id: ids.data, label: 'Data and sources' },
   ];
@@ -389,6 +427,7 @@ export function openEncyclopedia(root: HTMLElement, opts: EncyclopediaOptions): 
     introSection(ids.intro),
     SYSTEMS.map((s) => systemSection(s, ids.system(s.id), opts.discoveredBodies, opts.catalogued)),
     farStarsSection(ids.far),
+    flareStarsSection(ids.flares),
     inventedSection(ids.invented),
     dataSection(ids.data),
   );

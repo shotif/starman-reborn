@@ -60,7 +60,7 @@ export const CONTRACTS = {
   /** At most this many generated contracts in progress at once. */
   maxActive: 5,
   /** How far contracts send you, in jumps. */
-  maxJumps: { freight: 3, parcel: 4, supply: 3, bounty: 2, survey: 3, escort: 2, ace: 3, recovery: 3, smuggle: 3, piracy: 2, den: 3, claim: 3, war: 2, rescue: 2, passage: 3, tour: 2, observe: 0 } satisfies Record<ContractKind, number>,
+  maxJumps: { freight: 3, parcel: 4, supply: 3, bounty: 2, survey: 3, escort: 2, ace: 3, recovery: 3, smuggle: 3, piracy: 2, den: 3, claim: 3, war: 2, rescue: 2, passage: 3, tour: 2, observe: 2 } satisfies Record<ContractKind, number>,
   /** Hold units a freight or supply contract asks for (before the good's unit size). */
   cargoUnits: [8, 30] as const,
   /** Most the cargo may be worth at base prices (keeps deposits and purchases within a young pilot's reach). */

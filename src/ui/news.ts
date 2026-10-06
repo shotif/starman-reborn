@@ -1,5 +1,5 @@
 import type { EventKind } from '../content/events/rules.ts';
-import { getLocation, getSystem } from '../data/systems.ts';
+import { getComponent, getLocation, getSystem } from '../data/systems.ts';
 import type { GameState } from '../app/state.ts';
 import { borderNews, type FrontPhase } from '../economy/border.ts';
 import { battleNews } from '../economy/battles.ts';
@@ -13,6 +13,8 @@ import { rivalName, rivalNews } from '../economy/rivals.ts';
 import { outpostRaidNews } from '../economy/outpostRaids.ts';
 import { skyNews } from '../economy/stellar.ts';
 import { edgeNews, fillEdge } from '../economy/doomed.ts';
+import { flareNews } from '../economy/flares.ts';
+import { FLARE_WORD } from '../content/stellar/flareLines.ts';
 import { EDGE_EARTH, EDGE_FICTION } from '../content/stellar/doomedLines.ts';
 import { DOOMED } from '../content/stellar/doomed.ts';
 import { dataBadge } from './components.ts';
@@ -344,5 +346,36 @@ export function edgeNewsList(systemId: SystemId, clock: number): HTMLElement | n
     { class: 'list news-list', 'data-testid': 'edge-news' },
     light ? item('earth', fillEdge(EDGE_EARTH.headline), fillEdge(EDGE_EARTH.detail), light.at) : null,
     items.map((n) => item(n.kind, n.headline, n.detail, n.at)),
+  );
+}
+
+/**
+ * Flares within two jumps (docs/PROCGEN.md §43.4), under way first, then nearest: the stars and that
+ * they flare are real, badged as observed; when they flare and what it does to ships is fiction, said so.
+ */
+export function flareNewsList(systemId: SystemId, clock: number): HTMLElement | null {
+  const items = flareNews(systemId, clock);
+  if (!items.length) return null;
+  return h(
+    'ul',
+    { class: 'list news-list', 'data-testid': 'flare-news' },
+    items.map((n) => {
+      const f = n.flare;
+      const c = getComponent(f.star)!;
+      const place = n.jumps === 0 ? 'this system' : `${getSystem(f.systemId).displayName}, ${n.jumps} jump${n.jumps > 1 ? 's' : ''}`;
+      const when = n.active ? `about ${minutes(f.end - clock)} min to go` : `over ${minutes(clock - f.end)} min ago`;
+      return h(
+        'li',
+        { class: `news-item kind-flare${n.active ? '' : ' over'}`, 'data-testid': `news-${f.id}` },
+        glyph('science'),
+        h(
+          'span',
+          { class: 'news-text' },
+          h('span', { class: 'row-name' }, n.headline, ' ', dataBadge('fictional')),
+          h('span', { class: 'row-sub' }, `${FLARE_WORD[f.kind]} · ${place} · ${when}`),
+          h('span', { class: 'news-detail' }, n.detail, ' ', h('em', null, n.fiction), ' ', dataBadge('observed', `${c.name}: ${c.spectralType}, ${c.distanceLightYears.toFixed(1)} ly`)),
+        ),
+      );
+    }),
   );
 }

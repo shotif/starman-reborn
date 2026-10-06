@@ -4386,3 +4386,139 @@ the others'. They also check the lifeboats: only in a finale, in Pyre's system, 
 a need it can meet, launched before the collapse. The tests play every way through the arc, hold and
 start Pyre's warning, fly the lifeboats in a real `FlightSession` (launched, gathered, got clear,
 and lapsed at the collapse), and check saves.
+
+## 43. Flare stars
+
+Ten real red dwarfs on the map are **flare stars**. Every so often one flares: it brightens within a
+minute and fades over the next half-hour or so, and while it lasts its system is a harder place to
+fly, with shields recharging slower and scanners reaching less far (`src/economy/flares.ts`; the
+rules in `FLARES` and `FLARE_STARS`, `src/content/stellar/flares.ts`; what is said in
+`src/content/stellar/flareLines.ts`). That these stars flare is real: each is a catalogued variable
+star of the flare kind, and its variable-star name is the one SIMBAD lists. When each flares, how
+strongly, and what a flare does to a ship are the game's fiction, labelled so wherever they show.
+
+The owner left the choice of what came next to me (6 October 2026, *no preference*). I chose flare
+stars, the option I had recommended, and settled its design myself: real stars, flares drawn from
+the clock like the world's events (§11) so every save sees the same sky, two effects a pilot feels
+in flight, the News and the radio telling it straight, and work for research stations near by.
+
+The idea: the real neighbourhood is restless, and a pilot can tell which stars are by flying there.
+
+### 43.1 The stars
+
+| Star | System | Variable-star name | Spectral type |
+| --- | --- | --- | --- |
+| Proxima Centauri | Alpha Centauri | V645 Cen | M5.5Ve |
+| Wolf 359 | Wolf 359 | CN Leo | dM6 |
+| BL Ceti | Luyten 726-8 | BL Cet | M5.5V |
+| UV Ceti | Luyten 726-8 | UV Cet | M6V |
+| EV Lacertae | EV Lacertae | EV Lac | M4.0Ve |
+| AD Leonis | AD Leonis | AD Leo | dM3 |
+| YZ Ceti | YZ Ceti | YZ Cet | M4.0Ve |
+| Ross 154 | Ross 154 | V1216 Sgr | M3.5Ve |
+| YZ Canis Minoris | YZ Canis Minoris | YZ CMi | M4.0Ve |
+| DX Cancri | DX Cancri | DX Cnc | M6.5Ve |
+
+The spectral types are the archives' (`src/data/generated/astrometry.json`). The variable-star names
+are SIMBAD identifiers as the sky snapshot of 30 September 2026 holds them
+(`data/snapshot/raw/2026-09-30/simbad-idents-*.json`), matched to each star through its Gaia DR3
+source; such names are given by the General Catalogue of Variable Stars (Samus et al. 2017,
+*General catalogue of variable stars: Version GCVS 5.1*, Astronomy Reports 61, 80). Flare stars are
+also called UV Ceti variables, after UV Ceti. Barnard's Star has a variable-star name too (V2500
+Oph), but SIMBAD lists it as a BY Draconis variable, one whose light changes with the spots on it,
+so it is left out.
+
+What is real, told in the encyclopedia's *Flare stars*: these are red dwarfs with strong magnetic
+fields; a flare is magnetic energy let go all at once, and it brightens the star within minutes,
+most strongly in blue and ultraviolet light and X-rays, then fades over minutes to hours. Small
+flares come often, big ones seldom. Proxima Centauri, the nearest star to the Sun, is one: one of its
+flares, seen from millimetre waves to the far ultraviolet, was extremely short (MacGregor et
+al. 2021, *Discovery of an extremely short duration flare from Proxima Centauri using millimeter
+through far-ultraviolet observations*, ApJL 911, L25).
+
+### 43.2 When they flare
+
+Each flare star has one window after another, two hours of game time long (`window`), shifted by a
+phase of its own so its neighbours do not keep time with it. In each window it flares at most once,
+with odds of one in two (`odds`), drawn from its own random stream (the world seed, the star, the
+window): every save sees the same flares at the same clock, and nothing needs saving. None starts in
+a game's first hour (`quietUntil`), while a new pilot learns to fly and makes the opening delivery
+to Proxima.
+
+| Kind | Share | Lasts | Shields recharge at | Scanners reach |
+| --- | --- | --- | --- | --- |
+| Flare | 65% | 10–20 min | 70% | 80% |
+| Strong flare | 28% | 20–35 min | 45% | 60% |
+| Superflare | 7% | 35–50 min | 20% | 40% |
+
+A flare starts and ends on whole minutes inside its window. It rises over its first minute (`rise`)
+and fades over the rest; its effects hold from its start to its end. Real flares come at random,
+many of them far shorter; the game's are fewer (about one a star every four hours of game time) and
+longer, so a pilot can get there while one lasts.
+
+### 43.3 In its system
+
+- **The star** brightens: its glow swells and a bright patch spreads on its face as the flare rises,
+  and both fade with it (`flareGlow`; artistic, like every star's look). With reduced motion it
+  brightens and fades without the patch moving.
+- **Shields** recharge at the kind's share of their rate: the player's and every other ship's alike.
+- **Scanners** reach the kind's share as far: scanning a planet, a star, a wreck or a rock wants the
+  ship nearer.
+- **The radio** (*Flare watch*) says when one starts with the pilot in its system, when the pilot
+  arrives in or launches into a system with one under way, and when it ends.
+- **The HUD** shows a line while it lasts (*Superflare on Proxima Centauri · shields 20% · scanners
+  40% · 31 min to go*).
+- **The star's target** reads *Flare star · flaring now* while it lasts; scanned, its science card
+  gives its variable-star name, says it is a flare star, and whether it is flaring.
+
+### 43.4 What the world says
+
+- **The News** at stations within two jumps (`EVENTS.newsJumps`) tells each flare while it lasts and
+  for half an hour after (`EVENTS.newsRecent`), nearest first: the kind and the star, what it does
+  to ships there and for how long. Each story wears the **Fiction** badge and says *Fiction: when
+  {star} flares, and what it does to ships, is the game's. {star} is a real flare star, the variable
+  star {name}.*, with the star's catalogue values badged as observed.
+- **The star map**: a flare-star system's card says *Flare star: {star} ({name})* and whether one is
+  under way, and for how long (`flareStatus`).
+- **The encyclopedia**: *Flare stars*, the ten with their names, and what is real about them.
+
+### 43.5 Flare watch
+
+Research stations within two jumps of a flaring star (`watch.reach`) post **Flare watch: {star}**
+from the flare's start until it ends (`contract.posted`, `contract.until`), with ids of their own
+(`.flare-<star>-<window>`): fly to its system, scan the star while it flares, from within a
+scanner's reach cut by the flare like any other, then bring the readings back. A reading counts only
+in the star's own system and only while it flares; the objective points at the star. A pilot who
+holds one for a flare is not offered another for the same flare.
+
+| Kind | Pay | Difficulty |
+| --- | --- | --- |
+| Flare | 700 cr + 300 cr a jump | 1 |
+| Strong flare | 1,100 cr + 300 cr a jump | 2 |
+| Superflare | 1,800 cr + 300 cr a jump | 2 |
+
+Seven of the ten have a research station within reach; AD Leonis, Ross 154 and YZ Canis Minoris have
+none, so their flares bring no work, only the sky.
+
+### 43.6 One save's own
+
+Nothing new is kept: the flares follow from the world seed and the clock. A flare watch taken on is
+kept like every contract, and its readings on the job like every observation (§25.5).
+
+### 43.7 Guardrails
+
+`validateFlares` (`src/economy/flareGuards.ts`, run in `tests/unit/flares.test.ts`): every flare star
+a star of the archives, a red dwarf (spectral type M), in a system on the map, listed once, with a
+variable-star name of the catalogue's form; shares adding up to one, stronger flares rarer, lasting
+longer and hurting more; every effect a share between none and all; a window longer than the longest
+flare; odds between none and all; a quiet first hour shorter than a window; flare watch paying more
+for stronger flares and within what any contract pays, near enough for a young pilot's drive, and
+posted for at least half the stars; and no line with a number of its own or a field it cannot fill.
+The tests also check each variable-star name against the sky snapshot's SIMBAD identifiers (the star
+found through its Gaia DR3 source), break the rules to see them caught, and check the flares (the
+same for every save, at most one a window, none in the first hour, their effects in their system
+only, the strongest of two stars in Luyten 726-8), the News within reach, the radio, the star map's
+line, flare watch (posted only by research stations within reach while a flare lasts, sound by the
+contract guardrails, its reading only in the star's system while it flares, paid on return, not
+offered twice for one flare), and the flight scene (shields and scanners cut while it lasts, and
+back after, the star's glow, the HUD line, the target's subtitle).

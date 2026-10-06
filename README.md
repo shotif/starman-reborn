@@ -82,7 +82,10 @@ Betelgeuse's distance by parallax from two systems far apart. Later, once you ha
 frontier, Pyre dies: the one star the game invents, labelled so wherever it shows, a red supergiant
 just beyond the edge of the map. Carry its observers out before it explodes, outrun its light
 through the lanes, then fly to the black hole it leaves, read it from outside its tides, and keep
-clear of them. And between the docks, the lanes call: a mayday that may be bait, a lifepod, a Wake
+clear of them. Nearer home, ten real red dwarfs are flare stars, Proxima Centauri and Wolf 359 among
+them: now and then one flares, its system's shields recharging slower and its scanners reaching
+less far while it lasts, and research stations near by pay you to scan it before it settles (that
+they flare is real; when is fiction). And between the docks, the lanes call: a mayday that may be bait, a lifepod, a Wake
 toll gate, a customs patrol open to a bribe, a stranded scientist, cargo adrift, a lost trader, a
 wreck's beacon or an old hulk's, each a choice with consequences. Many lead somewhere to fly: a ship
 in distress to reach, pods to tractor in, a wreck to salvage, an old derelict (invented, and labelled
@@ -234,13 +237,15 @@ src/content/   rule-driven generators and guardrails (docs/PROCGEN.md): ships an
                (src/content/progress), the story arcs (src/content/story), dens under fire
                (src/content/dens), combat depth (src/content/combat), people in the bars
                (src/content/people), the fleet (src/content/fleet), mining (src/content/mining),
-               the border war (src/content/border), stellar death (src/content/stellar), lane
+               the border war (src/content/border), stellar death and flare stars
+               (src/content/stellar), lane
                encounters (src/content/lanes), wrecks to fly to (src/content/wrecks), ranks
                (src/content/ranks), races (src/content/racing) and the wing (src/content/wing)
 src/economy/   live markets, world events and the world's answers, trade, cargo, outfitter and
                shipyard, factions, jobs and generated contracts, the law, ratings, the codex,
                milestones, the story, people and rumours, the fleet, mining, the border war,
-               the far stars' deaths and Pyre's (the invented star), lane encounters, wrecks,
+               the far stars' deaths and Pyre's (the invented star), flare stars, lane
+               encounters, wrecks,
                ranks, racing, the wing, and border battles
 src/audio/     procedural Web Audio music and sound effects
 src/ui/        HUD, touch controls, station screens, encyclopedia, styles

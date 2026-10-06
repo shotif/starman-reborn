@@ -272,6 +272,8 @@ export interface ObserveObjective {
   firstLight?: number;
   /** ...from two systems, the second at least this many light-years farther from Pyre. */
   aheadLy?: number;
+  /** A star read where it is, in its own system: a flaring star (docs/PROCGEN.md §43.5). */
+  systemId?: SystemId;
   text: string;
 }
 
@@ -282,7 +284,7 @@ const lyBetween = (a: SystemId, b: SystemId) => {
 
 /** Whether the observations made meet the objective: one in its window, or (parallax) two in it from systems far enough apart. */
 export function observeDone(o: ObserveObjective, observed: readonly { at: number; systemId: SystemId }[]): boolean {
-  const inside = observed.filter((x) => x.at >= o.from && x.at <= o.to);
+  const inside = observed.filter((x) => x.at >= o.from && x.at <= o.to && (!o.systemId || x.systemId === o.systemId));
   if (!o.baselineLy) return inside.length > 0;
   return inside.some((a) => inside.some((b) => lyBetween(a.systemId, b.systemId) >= o.baselineLy!));
 }

@@ -276,7 +276,7 @@ function postedFact(state: GameState, locationId: string, r: Rng, kind: 'ace' | 
     const giver = getLocation(job.giverLocationId).name;
     const o = job.objectives[0];
     if (kind === 'ace' && o) {
-      const systemId = 'systemId' in o ? o.systemId : 'locationId' in o ? getLocation(o.locationId).systemId : getLocation(job.giverLocationId).systemId;
+      const systemId = 'systemId' in o && o.systemId ? o.systemId : 'locationId' in o ? getLocation(o.locationId).systemId : getLocation(job.giverLocationId).systemId;
       return { kind, text: fill(r.pick(TELL.ace), { system: getSystem(systemId).displayName, giver, reward: job.reward }) };
     }
     if (kind === 'wreck' && o && o.kind === 'recover') {

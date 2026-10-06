@@ -70,6 +70,7 @@ import { nextHauler } from '../economy/outpostTrade.ts';
 import { RAID_WATCH } from '../content/outposts/raidLines.ts';
 import { outpostId } from '../content/outposts/sites.ts';
 import { farStar, farStarLook, recordObservation, scheduleSky, skyComm, skyMoment, skyTimeline } from '../economy/stellar.ts';
+import { flareStar, flareStatus, flaresBetween, flareSystems } from '../economy/flares.ts';
 import type { SkyNewsKind } from '../content/stellar/lines.ts';
 import { ROSTER } from '../content/rivals/rules.ts';
 import { recordMarketVisit } from '../economy/trade.ts';
@@ -1815,8 +1816,8 @@ export class Game {
     if (!t.bodyId) return;
     const state = this.state!;
     this.scannedForFolk(t.bodyId);
-    // Pyre and its black hole (docs/PROCGEN.md §26.5): a scan is a reading for the work that wants one.
-    if (t.bodyId === PYRE_ID || t.bodyId === PYRE_HOLE_ID) {
+    // Pyre and its black hole (docs/PROCGEN.md §26.5), and a flaring star (§43.5): a scan is a reading for the work that wants one.
+    if (t.bodyId === PYRE_ID || t.bodyId === PYRE_HOLE_ID || flareStar(t.bodyId)) {
       const jobs = recordObservation(state, t.bodyId, state.location.systemId);
       if (jobs.length) {
         toast(`${t.name}: readings recorded.`, 'good', 3000);
@@ -1831,7 +1832,7 @@ export class Game {
       this.persist();
     }
     this.setPaused(true, false);
-    const s = sheet(this.screenLayer, t.name, bodyCard(t.bodyId, t.name), () => this.setPaused(false), 'science-sheet');
+    const s = sheet(this.screenLayer, t.name, bodyCard(t.bodyId, t.name, state.clock), () => this.setPaused(false), 'science-sheet');
     void s;
   }
 
@@ -2001,6 +2002,8 @@ export class Game {
       // The lane to Pyre takes no arrivals from its collapse until its debris has thinned (docs/PROCGEN.md §26).
       ...(state ? this.pyreClosed(state, current) : {}),
       ...(state ? { inventedNote: pyreStatus(state.clock), inventedStations: pyreStationsNow(state.clock) } : {}),
+      // Flare stars, and whether one flares now (docs/PROCGEN.md §43.4).
+      ...(state ? { flares: new Map(flareSystems().map((id) => [id, flareStatus(id, state.clock)!] as const)) } : {}),
     };
   }
 
@@ -2930,6 +2933,16 @@ export class Game {
       stand: () => this.flight?.standStatus() ?? null,
       /** Test-only: Pyre's lifeboats in this flight (docs/PROCGEN.md §42.4). */
       lifeboats: () => this.flight?.lifeboatStatus() ?? null,
+      /** Test-only: the flare under way in this flight's system, what it does and how its star glows (docs/PROCGEN.md §43.3). */
+      flare: () => this.flight?.debugFlare() ?? null,
+      /** Test-only: the first flare in a system (this one by default) starting after `from` (the clock by default), of a kind if one is named, within ten days (§43.2). */
+      nextFlare: (q: { systemId?: string; kind?: string; from?: number } = {}) => {
+        const state = this.state;
+        if (!state) return null;
+        const from = q.from ?? state.clock;
+        const systemId = q.systemId ?? state.location.systemId;
+        return flaresBetween(from, from + 10 * 86_400).find((f) => f.systemId === systemId && f.start > from && (!q.kind || f.kind === q.kind)) ?? null;
+      },
       /**
        * Test-only: the first event at an outpost (the first chartered, unless its site is named) that
        * starts after `from` (the clock by default), of a kind if one is named, within ten days (docs/PROCGEN.md §39).

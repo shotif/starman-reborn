@@ -79,6 +79,8 @@ import { sightInView } from './sightseeing.ts';
 import { createFarStars, type FarStarsArt } from './art/farStars.ts';
 import { STELLAR } from '../content/stellar/rules.ts';
 import { farStarLook, magnitudeText, observationsWanted, skyDirection, skyDirectionTo, skyPhase } from '../economy/stellar.ts';
+import { fillFlare, flareAt, flareComm, flareEffects, flareStar, flareSubtitle, starGlow, type Flare } from '../economy/flares.ts';
+import { FLARE_HUD } from '../content/stellar/flareLines.ts';
 import { fallbackGlow, lightArrives, lyFromPyre, pyreDockRefusal, pyreLook, pyreStage, tidalStrain } from '../economy/doomed.ts';
 import { LANES } from '../content/lanes/rules.ts';
 import { laneOfferFor, laneWords, stageLane, type LaneOffer, type LaneOutcome } from '../economy/lanes.ts';
@@ -661,6 +663,10 @@ export class FlightSession {
   private readonly crewRand: () => number;
   private crewTick = 0;
   private crewMending = false;
+  /** A flare in this system (docs/PROCGEN.md §43.3): the one under way (undefined before the first look), what it does, and when to look again. */
+  private flare: Flare | null | undefined = undefined;
+  private flareFx: { shields: number; scanner: number } = { shields: 1, scanner: 1 };
+  private flareTick = 0;
   /** Session time of the last chatter line (rate limit), and dens whose defences are awake. */
   private chatterAt = -99;
   /** The wing's standing order (docs/PROCGEN.md §16). */
@@ -1572,8 +1578,9 @@ export class FlightSession {
     this.updateHole(dt);
     this.tickHail(dt);
     for (const n of this.npcs) if (!n.den) this.collide(n.body, n.durability, false);
-    regenerate(this.playerDurability, dt);
-    for (const n of this.npcs) regenerate(n.durability, dt);
+    this.updateFlare(dt);
+    regenerate(this.playerDurability, dt, this.flareFx.shields);
+    for (const n of this.npcs) regenerate(n.durability, dt, this.flareFx.shields);
     this.updateCrew(dt);
     this.updateEncounters(dt);
     this.updateTraffic(dt);
@@ -4580,9 +4587,47 @@ export class FlightSession {
     if (changed) this.applySystems();
   }
 
-  /** The ship's scanner reach (a factor), the navigator's on top (docs/PROCGEN.md §30.2). */
+  /** The ship's scanner reach (a factor), the navigator's on top (docs/PROCGEN.md §30.2), cut by a flare in the system (§43.3). */
   private scanner(): number {
-    return this.perf.scanRange * (1 + this.crewNow.scan);
+    return this.perf.scanRange * (1 + this.crewNow.scan) * this.flareFx.scanner;
+  }
+
+  /**
+   * A flare star flaring in this system (docs/PROCGEN.md §43.3), looked at twice a second: shields
+   * and scanners cut while it lasts, the star glowing, its target saying so, and the radio telling
+   * of it when it starts, when the pilot finds one under way, and when it ends.
+   */
+  private updateFlare(dt: number): void {
+    this.flareTick -= dt;
+    if (this.flareTick > 0) return;
+    this.flareTick = 0.5;
+    const clock = this.state.clock;
+    const systemId = this.state.location.systemId;
+    const f = flareAt(systemId, clock);
+    const before = this.flare;
+    if ((f?.id ?? null) !== (before === undefined ? undefined : (before?.id ?? null))) {
+      this.flare = f;
+      this.flareFx = flareEffects(systemId, clock);
+      const say = f ? flareComm(before !== undefined && clock - f.start < 30 ? 'start' : 'under', f, clock) : before ? flareComm('end', before, clock) : null;
+      if (say) {
+        this.callbacks.onComm?.(say.speaker, say.text);
+        if (f && before !== undefined) this.sfx('alert', 0.5);
+      }
+    }
+    for (const star of this.system.stars) {
+      if (!flareStar(star.def.id)) continue;
+      this.system.setStarFlare(star.def.id, starGlow(star.def.id, clock));
+      const t = this.system.targets.find((x) => x.id === `star:${star.def.id}`);
+      if (t) t.subtitle = flareSubtitle(star.def.id, clock);
+    }
+  }
+
+  /** Test-only: the flare under way here, what it does, and how brightly its star glows (null without one). */
+  debugFlare(): { id: string; star: string; kind: string; shields: number; scanner: number; glow: number; subtitle: string } | null {
+    const f = this.flare;
+    if (!f) return null;
+    const t = this.system.targets.find((x) => x.id === `star:${f.star}`);
+    return { id: f.id, star: f.star, kind: f.kind, shields: this.flareFx.shields, scanner: this.flareFx.scanner, glow: this.system.stars.find((x) => x.def.id === f.star)?.flare ?? 0, subtitle: t?.subtitle ?? '' };
   }
 
   /** Raiders who carry seekers fire one at the player now and then, when in range and roughly facing. */
@@ -5735,6 +5780,7 @@ export class FlightSession {
     const near = this.nearestDock();
     hud.nearestDock = near ? { name: near.site.name, distance: Math.max(0, near.distance - near.site.radius) } : null;
     hud.race = this.race && this.race.phase !== 'done' ? this.race.hud(p.position) : null;
+    hud.flare = this.flare ? fillFlare(FLARE_HUD, this.flare, this.state.clock) : null;
 
     const warnings: string[] = [];
     if (hud.incoming && this.alive) warnings.push(`Seeker inbound${hud.incoming > 1 ? ` ×${hud.incoming}` : ''}: drop a decoy`);

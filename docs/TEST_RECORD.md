@@ -751,6 +751,25 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   before the launch or after the collapse, six at it on their own headings drifting out, one taken
   aboard by flying close, and those gathered before not there again. Saves keep the count and refuse
   too many, a fraction, a `clear` not true, or a count on a job without lifeboats.
+- `flares.test.ts`: **flare stars**. The ten are red dwarfs of the archives in systems on the map,
+  once each (two in Luyten 726-8), and each variable-star name is among the SIMBAD identifiers the
+  sky snapshot holds for the star, found through its Gaia DR3 source. The rules pass `validateFlares`,
+  and broken ones are caught (shares that do not add up, a superflare gentler on shields, a scanner
+  share above one, a window shorter than a flare, odds of one, pay above the ceiling or no more for a
+  stronger flare, a star that is not a red dwarf or listed twice, a name not of the catalogue's form,
+  a line with a number or a field it cannot fill). Over 400 windows a star the flares are the same at
+  every call, on whole minutes, inside their windows, none in the first hour, about one window in
+  two, flares commoner than strong ones and those than superflares. A flare works only in its own
+  system while it lasts, its glow rising over the first minute and gone at its end, and in Luyten
+  726-8 the stronger of two at once rules. The News within two jumps tells it while it lasts and half
+  an hour after, not beyond; the radio, the star map's line, the target's subtitle and the science
+  card say how things stand. Flare watch is posted only by research stations within reach, only while
+  the flare lasts, passes the contract guardrails (every one on 120 time slots' boards), points at the
+  star, counts a reading only in its system and in time, pays on return, and is not offered again to
+  a pilot who holds one; AD Leonis, Ross 154 and YZ Canis Minoris get none. In a real `FlightSession`
+  at Wolf 359 during a strong flare: shields and scanners cut, the star glowing and its target saying
+  so, the radio and the HUD line on arriving, shields recharging at 45% of their rate; after it, the
+  radio saying it has settled and everything back.
 
 ### Browser tests (Playwright)
 
@@ -987,6 +1006,12 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   ship launched; at the launch six lifeboats away, the HUD counting them aboard as the pilot comes
   alongside five; then out through Pyre's lane from the star map's Missions list, arriving at GJ 915
   before the collapse with the job done, and the News at GJ 915 Freeport showing the Pyre Archive.
+- `flares.spec.ts`: **flare stars**: two minutes into a strong flare on Wolf 359, the News at Ledger
+  Institute telling of it (the Fiction line naming CN Leo); flare watch taken at its bar; out in the
+  system the radio's word and the HUD's flare line, shields and scanners cut and the star glowing,
+  its target reading *Flare star · flaring now*; the star scanned from within the cut reach, its card
+  giving CN Leo and that it is flaring; the star map's card saying so; the clock past its end, the
+  radio saying it has settled and the HUD line gone; and the readings paid for at the institute.
 - `wing.spec.ts`: **wing command**: a pilot hired in the bar shows their grade in *Your wing*; in
   flight the order card (V on a keyboard, the Wing chip on touch) pauses the game, lists the wingman,
   locks Defend and Cover with why, and gives Hold (the radio's reply, the HUD's *Wing 1 · Hold* or the
@@ -1048,8 +1073,9 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   wing's order card in flight, the HUD with a wingman hurt, the wing in the bar, a word with a wingman,
   the journal's wing with those who flew before, a clash at Ross 154's beacon line with its battle strip
   and the battle line selected, the Wake's assault on Regent Concourse, the News of it beaten off, the
-  journal's border battles, and the News with a shortage's relief
-  haulers on their way, at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
+  journal's border battles, the News with a shortage's relief
+  haulers on their way, the News at Ledger Institute telling of a strong flare on Wolf 359, and Wolf
+  359 flaring in flight with the HUD's flare line, at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
   zoom). Saved in `docs/screenshots/` once any smooth scrolling has come to rest. Each is audited
   for page scroll overflow, clipped controls (controls inside a scrolling panel count only if the
