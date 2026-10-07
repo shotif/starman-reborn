@@ -179,7 +179,7 @@ describe('the first-load budget (docs/PROCGEN.md §4.6)', () => {
   });
 
   it('catches a first load over budget, and a page that lists no game files', () => {
-    expect(overBudget(report(15, LOAD_BUDGET.firstLoadKB))).toEqual([expect.stringMatching(/first load .* over its 800 KB budget/)]);
+    expect(overBudget(report(15, LOAD_BUDGET.firstLoadKB))).toEqual([expect.stringMatching(new RegExp(`first load .* over its ${LOAD_BUDGET.firstLoadKB} KB budget`))]);
     expect(overBudget(report(15, 0))).toEqual([expect.stringMatching(/lists no game files/)]);
   });
 });
