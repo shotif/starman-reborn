@@ -252,6 +252,14 @@ const COMETS = ['1P', '2P', '9P', '12P', '13P', '19P', '21P', '29P', '46P', '55P
  * main belt, those spacecraft have visited, and near-Earth ones that pass close (Apophis in 2029).
  */
 const ASTEROIDS = ['1', '2', '4', '10', '16', '21', '243', '433', '951', '3200', '25143', '65803', '99942', '101955', '162173'];
+/** Moons of the giant planets (docs/PROCGEN.md), by their Horizons ids, each with its planet's: Io, Europa, Ganymede and Callisto round Jupiter, Titan round Saturn. */
+const MOONS: [string, string][] = [
+  ['501', '599'],
+  ['502', '599'],
+  ['503', '599'],
+  ['504', '599'],
+  ['606', '699'],
+];
 /** Asteroids whose orbit a close pass of Earth changes: their elements again on these days, after it. */
 const ASTEROID_AFTER: Record<string, string[]> = { '99942': ['2029-05-13'] };
 
@@ -298,7 +306,7 @@ async function fetchOrbits(): Promise<void> {
   // the planets' pulls included), and where Horizons has it every 30 days from two years before to
   // four after, which the game's reckoning is tested against.
   const day = Date.parse(`${today}T00:00:00Z`) / 86_400_000 + 2_440_587.5;
-  const horizons = (command: string, ephem: 'ELEMENTS' | 'VECTORS', from: number, to: number, step: string, center = '500@10') =>
+  const horizons = (command: string, ephem: 'ELEMENTS' | 'VECTORS', from: number, to: number, step: string, center = '500@10', extra: Record<string, string> = {}) =>
     `https://ssd.jpl.nasa.gov/api/horizons.api?${new URLSearchParams({
       format: 'json',
       COMMAND: `'${command}'`,
@@ -314,6 +322,7 @@ async function fetchOrbits(): Promise<void> {
       START_TIME: `'JD${from}'`,
       STOP_TIME: `'JD${to}'`,
       STEP_SIZE: `'${step}'`,
+      ...extra,
     }).toString()}`;
   for (const c of COMETS) {
     await save(`jpl-horizons-elements-${c}`, 'json', [horizons(`DES=${c};CAP;NOFRAG`, 'ELEMENTS', day, day + 1, '1 d')]);
@@ -336,7 +345,14 @@ async function fetchOrbits(): Promise<void> {
     for (const jd of closeApproaches(resolve(orbitsDir, `jpl-cad-a${a}.json`)))
       await save(`jpl-horizons-geo-a${a}-${Math.round(jd)}`, 'json', [horizons(`${a};`, 'VECTORS', jd - 16, jd + 16, '1 h', '500@399')]);
   }
-  writeFileSync(resolve(orbitsDir, 'manifest.json'), JSON.stringify({ retrieved: today, comets: COMETS, asteroids: ASTEROIDS, asteroidAfter: ASTEROID_AFTER, queries: entries }, null, 2) + '\n');
+  // Moons of the giant planets: Horizons' record of each (its size, density and albedo) with its
+  // elements round its planet on the day, and where it is from its planet's centre every three and a
+  // half days from two years before to four after (in km): half to reckon its motion from, half to test it.
+  for (const [moon, planet] of MOONS) {
+    await save(`jpl-horizons-moon-elements-${moon}`, 'json', [horizons(moon, 'ELEMENTS', day, day + 1, '1 d', `500@${planet}`, { OBJ_DATA: "'YES'", OUT_UNITS: "'KM-D'" })]);
+    await save(`jpl-horizons-moon-vectors-${moon}`, 'json', [horizons(moon, 'VECTORS', day - 730, day + 1460, '84 h', `500@${planet}`, { OUT_UNITS: "'KM-D'" })]);
+  }
+  writeFileSync(resolve(orbitsDir, 'manifest.json'), JSON.stringify({ retrieved: today, comets: COMETS, asteroids: ASTEROIDS, asteroidAfter: ASTEROID_AFTER, moons: MOONS, queries: entries }, null, 2) + '\n');
 }
 
 async function main(): Promise<void> {
