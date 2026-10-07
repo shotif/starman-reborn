@@ -5605,6 +5605,25 @@ export class FlightSession {
     return true;
   }
 
+  /** Test-only: places the ship `distance` beyond a giant planet's moon from its planet, looking at the moon with the planet behind it (docs/PROCGEN.md §48.3). */
+  viewMoon(moonId: string, planetId: string, distance: number): boolean {
+    const m = this.system.planets.find((p) => p.def.id === moonId)?.def;
+    const planet = this.system.planets.find((p) => p.def.id === planetId)?.def;
+    if (!m || !planet || this.busy) return false;
+    const back = m.position.clone().sub(planet.position).normalize();
+    const side = new THREE.Vector3().crossVectors(back, WORLD_UP);
+    if (side.lengthSq() < 1e-6) side.set(1, 0, 0);
+    side.normalize();
+    this.player.position.copy(m.position).addScaledVector(back, distance).addScaledVector(side, distance * 0.35).addScaledVector(WORLD_UP, distance * 0.12);
+    this.player.velocity.set(0, 0, 0);
+    this.player.angularVelocity.set(0, 0, 0);
+    this.player.lookAlong(m.position.clone().sub(this.player.position).normalize());
+    this.throttle = 0;
+    this.autopilot = { mode: 'none' };
+    this.chase.snap(this.player);
+    return true;
+  }
+
   /**
    * Test-only: places the ship `distance` from a named asteroid, looking at it (docs/PROCGEN.md §47.3):
    * from its sunlit side, or for one passing Earth from beyond it, with Earth behind it.

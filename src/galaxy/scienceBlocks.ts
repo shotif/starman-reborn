@@ -24,6 +24,8 @@ import { dateText, pairFacts, systemPairs, type PairFacts } from '../economy/bin
 import { ASTEROID_DATA, asteroidOf } from '../data/asteroids.ts';
 import { COMET_DATA, cometOf } from '../data/comets.ts';
 import { allAsteroidFacts, asteroidFacts, type AsteroidFacts } from '../economy/asteroids.ts';
+import { MOON_DATA, moonOf } from '../data/moons.ts';
+import { allMoonFacts, moonFacts, type MoonFacts } from '../economy/moons.ts';
 import { allCometFacts, cometFacts, type CometFacts } from '../economy/comets.ts';
 import { h, type Child } from '../ui/dom.ts';
 import { icon } from '../ui/icons.ts';
@@ -276,7 +278,7 @@ export function solarBodyList(): HTMLElement {
   const planets = SOLAR_BODIES.filter((b) => b.kind !== 'star' && b.kind !== 'moon').sort(
     (a, b) => (a.order ?? 0) - (b.order ?? 0),
   );
-  const moon = SOLAR_BODIES.find((b) => b.kind === 'moon');
+  const moon = SOLAR_BODIES.find((b) => b.id === 'moon');
   return h(
     'div',
     { class: 'sci-solar' },
@@ -467,6 +469,50 @@ function asteroidLines(f: AsteroidFacts, jd: number, detail: Detail): HTMLElemen
     detail === 'full' ? h('p', { class: 'muted small' }, dataBadge('estimated'), ' ', f.scene) : null,
   ];
   return lines.filter((x): x is HTMLElement => x !== null);
+}
+
+function moonLines(f: MoonFacts, jd: number, detail: Detail): HTMLElement[] {
+  const now = `On ${dateText(jd)}`;
+  const opt = (k: string, v: string | null): [string, string][] => (v ? [[k, v]] : []);
+  const rows: [string, string][] = [
+    ['Kind', f.kind],
+    ['Goes round in', f.period],
+    ['Distance', f.distance],
+    ['Size', f.size],
+    ...opt('Density', f.density),
+    ...opt('Albedo', f.albedo),
+    ...opt(now, f.side),
+  ];
+  const shown = detail === 'compact' ? rows.filter(([k]) => k === 'Goes round in' || k === now) : rows;
+  const lines: (HTMLElement | null)[] = [
+    h('dl', { class: 'kv' }, shown.flatMap(([k, v]) => [h('dt', null, k), h('dd', null, v)])),
+    detail === 'full' ? h('p', { class: 'row wrap' }, sourceLink(MOON_DATA.source, `${f.moon.name} (${f.moon.horizonsId})`)) : null,
+    detail === 'full' ? h('p', { class: 'muted small' }, dataBadge('estimated'), ' ', f.scene) : null,
+  ];
+  return lines.filter((x): x is HTMLElement => x !== null);
+}
+
+/** The giant planets' large moons, on a date (another system: null). */
+export function moonBlock(systemId: SystemId, jd: number, detail: Detail): HTMLElement | null {
+  if (systemId !== 'sol') return null;
+  return h(
+    'div',
+    { class: 'stack' },
+    h(
+      'ul',
+      { class: 'sci-list sci-moons', 'data-testid': 'science-moons' },
+      allMoonFacts(jd).map((f) => h('li', { class: 'sci-item', 'data-testid': `moon-${f.moon.id}` }, h('div', { class: 'sci-item-head' }, h('strong', null, detail === 'compact' ? f.moon.name : f.headline)), moonLines(f, jd, detail))),
+    ),
+    detail === 'compact' ? h('p', { class: 'row wrap' }, sourceLink(MOON_DATA.source)) : null,
+  );
+}
+
+/** A giant planet's moon's science card, on a date (not one: null). */
+export function moonCard(bodyId: string, jd: number): HTMLElement | null {
+  const moon = moonOf(bodyId);
+  if (!moon) return null;
+  const f = moonFacts(moon, jd);
+  return h('div', { class: 'stack science-card', 'data-testid': 'science-moon' }, h('div', { class: 'row wrap' }, dataBadge('observed', 'Real moon')), h('p', null, f.headline), ...moonLines(f, jd, 'full'));
 }
 
 /** Sol's named asteroids, on a date (another system: null). */

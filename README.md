@@ -33,7 +33,7 @@ belt crews out in the Kuiper dark, where you may stand with their cutters agains
 and Last Light at Pyre, where the people of the invented star's observatory must get out before
 it dies (Pyre waits for you once you take it on), perhaps in lifeboats you gather as it collapses.
 However each of the faction arcs and the last three ends, it changes a station's market, and most
-often its job board, for good. Pilot ratings, a codex of 361 real bodies, 32 milestones and a hint
+often its job board, for good. Pilot ratings, a codex of 366 real bodies, 32 milestones and a hint
 of what to do next
 give it goals, and a logbook keeps the career as it goes: each first arrival, ship, story, promotion,
 milestone, race won and comet, asteroid or planet first scanned, dated on the game's calendar, with the
@@ -95,7 +95,9 @@ game's date, growing a coma and tails that stream away from the Sun as they near
 when one passes the Sun, and research stations near Sol pay you to image one. Fifteen named
 asteroids fly there too, Ceres, Vesta, Bennu and Apophis among them, each on JPL's orbit and drawn in
 its real shape; on 13 April 2029 Apophis passes Earth nearer than the Moon, as it really will, the
-News tells of it and research stations pay you to track it. And between the docks, the lanes call: a mayday that may be bait, a lifepod, a Wake
+News tells of it and research stations pay you to track it. Jupiter's four large moons and Saturn's
+Titan go round their planets where JPL Horizons has them on the game's date, each in the codex to
+scan. And between the docks, the lanes call: a mayday that may be bait, a lifepod, a Wake
 toll gate, a customs patrol open to a bribe, a stranded scientist, cargo adrift, a lost trader, a
 wreck's beacon or an old hulk's, each a choice with consequences. Many lead somewhere to fly: a ship
 in distress to reach, pods to tractor in, a wreck to salvage, an old derelict (invented, and labelled
@@ -259,7 +261,7 @@ src/economy/   live markets, world events and the world's answers, trade, cargo,
                ranks, racing, the wing, and border battles
 src/audio/     procedural Web Audio music and sound effects
 src/ui/        HUD, touch controls, station screens, encyclopedia, styles
-scripts/       the sky snapshot (sky-fetch on GitHub's runners, sky-process, orbits-process, comets-process and asteroids-process here), catalogue
+scripts/       the sky snapshot (sky-fetch on GitHub's runners, sky-process, orbits-process, comets-process, asteroids-process and moons-process here), catalogue
                extraction (HYG, Open Exoplanet Catalogue, the far stars), dataset build and
                validation
 tests/         unit tests (Vitest) and browser journeys (Playwright)

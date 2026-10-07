@@ -13,7 +13,7 @@ import { icon } from '../ui/icons.ts';
 import { evaluateJump, type JumpEvaluation } from './jumpRules.ts';
 import { mapIcon } from './mapIcons.ts';
 import { formatLy } from './mapData.ts';
-import { asteroidBlock, badgeHeading, beltBlock, cometBlock, componentList, factList, locationList, observedMark, orbitBlock, planetBlock, positionList, securityNote } from './scienceBlocks.ts';
+import { asteroidBlock, badgeHeading, moonBlock, beltBlock, cometBlock, componentList, factList, locationList, observedMark, orbitBlock, planetBlock, positionList, securityNote } from './scienceBlocks.ts';
 import { ORBIT_EPOCH_JD } from '../data/orbits.ts';
 import type { MapState } from './types.ts';
 
@@ -200,6 +200,8 @@ export class InfoCard {
           planetBlock(system, state.discoveredBodies, 'compact'),
           beltsOf(systemId).length ? [h('h4', null, 'Belts and debris discs'), beltBlock(systemId, 'compact')] : null,
           // Sol's comets where they stand on the game's date (docs/PROCGEN.md §45.4).
+          // The giant planets' large moons (§48.4).
+          systemId === 'sol' ? [h('h4', null, 'Moons of Jupiter and Saturn'), moonBlock(systemId, state.gameDate ?? ORBIT_EPOCH_JD, 'compact')] : null,
           systemId === 'sol' ? [h('h4', null, 'Comets'), cometBlock(systemId, state.gameDate ?? ORBIT_EPOCH_JD, 'compact')] : null,
           // And its named asteroids (§47.4).
           systemId === 'sol' ? [h('h4', null, 'Asteroids'), asteroidBlock(systemId, state.gameDate ?? ORBIT_EPOCH_JD, 'compact')] : null,

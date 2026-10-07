@@ -8,6 +8,12 @@ export type PlanetStyle =
   | 'venus'
   | 'earth'
   | 'moon'
+  /** The large moons of the giant planets (docs/PROCGEN.md §48): illustrative colours. */
+  | 'io'
+  | 'europa'
+  | 'ganymede'
+  | 'callisto'
+  | 'titan'
   | 'mars'
   | 'jupiter'
   | 'saturn'
@@ -36,6 +42,8 @@ export interface PlanetArtOptions {
   spinSpeed?: number;
   /** Axial tilt, radians. */
   tilt?: number;
+  /** Its axis as a direction (in place of the tilt): the rings and the spin follow it. */
+  pole?: THREE.Vector3;
 }
 
 export interface PlanetArt extends ArtObject {
@@ -480,6 +488,51 @@ const STYLES: Record<PlanetStyle, StyleDef> = {
     twilight: 0.015,
     rocky: { c0: '#3f3f41', c1: '#7c7a77', c2: '#a3a09b', freq: 2.2, bump: 0.014, maria: 0.9, craters: 0.9, rays: 0.16 },
   },
+  io: {
+    family: 'rocky',
+    atmosphere: false,
+    atmoColor: '#000000',
+    atmoStrength: 0,
+    shell: 0,
+    twilight: 0.015,
+    rocky: { c0: '#6e4a17', c1: '#c79a35', c2: '#efe08c', freq: 2.6, bump: 0.01, maria: 0.75, craters: 0, rays: 0 },
+  },
+  europa: {
+    family: 'rocky',
+    atmosphere: false,
+    atmoColor: '#000000',
+    atmoStrength: 0,
+    shell: 0,
+    twilight: 0.015,
+    rocky: { c0: '#8d7a5e', c1: '#cdbfa5', c2: '#f2eee6', freq: 3.4, bump: 0.006, maria: 0.35, craters: 0.1, rays: 0 },
+  },
+  ganymede: {
+    family: 'rocky',
+    atmosphere: false,
+    atmoColor: '#000000',
+    atmoStrength: 0,
+    shell: 0,
+    twilight: 0.015,
+    rocky: { c0: '#3f3a33', c1: '#7a7166', c2: '#bdb5a8', freq: 2.4, bump: 0.012, maria: 0.7, craters: 0.6, rays: 0.25 },
+  },
+  callisto: {
+    family: 'rocky',
+    atmosphere: false,
+    atmoColor: '#000000',
+    atmoStrength: 0,
+    shell: 0,
+    twilight: 0.015,
+    rocky: { c0: '#26221e', c1: '#4f4943', c2: '#8e877e', freq: 2.8, bump: 0.016, maria: 0.4, craters: 1, rays: 0.35 },
+  },
+  titan: {
+    family: 'rocky',
+    atmosphere: true,
+    atmoColor: '#d99a45',
+    atmoStrength: 0.85,
+    shell: 1.06,
+    twilight: 0.08,
+    rocky: { c0: '#8a5520', c1: '#b47a34', c2: '#d0a057', freq: 1.6, bump: 0.002, maria: 0.3, craters: 0, rays: 0 },
+  },
   mars: {
     family: 'rocky',
     atmosphere: true,
@@ -812,7 +865,8 @@ export function createPlanet(opts: PlanetArtOptions, ctx: ArtContext): PlanetArt
   const group = new THREE.Group();
   group.name = `planet-${opts.style}`;
   const tiltGroup = new THREE.Group();
-  tiltGroup.rotation.z = opts.tilt ?? 0;
+  if (opts.pole) tiltGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), opts.pole.clone().normalize());
+  else tiltGroup.rotation.z = opts.tilt ?? 0;
   group.add(tiltGroup);
 
   const lightPos = { value: opts.lightPosition.clone() };

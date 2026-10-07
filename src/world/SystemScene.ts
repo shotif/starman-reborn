@@ -154,6 +154,7 @@ export class SystemScene {
           lightColor: host.color,
           ...(p.rings ? { rings: p.rings } : {}),
           ...(p.tilt !== undefined ? { tilt: p.tilt } : {}),
+          ...(p.pole ? { pole: p.pole } : {}),
           ...(p.spinSpeed !== undefined ? { spinSpeed: p.spinSpeed } : {}),
         },
         ctx,

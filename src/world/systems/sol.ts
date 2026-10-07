@@ -2,6 +2,16 @@ import * as THREE from "three";
 import { ASTEROID_LINES, ASTEROIDS } from "../../content/stellar/asteroids.ts";
 import { COMET_LINES, COMETS } from "../../content/stellar/comets.ts";
 import { outpostSites } from "../../content/outposts/sites.ts";
+import { MOON_LINES, MOONS } from "../../content/stellar/moons.ts";
+import {
+  MOON_EPOCH_JD,
+  MOON_RADIUS_KM,
+  moonAt,
+  moonsOf,
+  planetPole,
+  type Moon,
+} from "../../data/moons.ts";
+import type { PlanetStyle } from "../art/planets.ts";
 import {
   ASTEROID_DATA,
   asteroidAt,
@@ -183,7 +193,9 @@ export function solScene(jd: number | null): SystemSceneDef {
     positions,
     real ? (real.marsNudged ? "real-nudged" : "real") : "schematic",
   );
-  // The comets and asteroids where they stand on the game date (without one, on the day their elements were taken).
+  // The giant planets' large moons round them on the game date (§48), then the comets and asteroids
+  // where they stand (without a date, on the day their elements were taken), clear of them all.
+  addMoons(def, jd ?? MOON_EPOCH_JD);
   def.comets = placeComets(def, jd ?? COMET_EPOCH_JD);
   def.asteroids = placeAsteroids(def, jd ?? ASTEROID_DATA.epochJd);
   return def;
@@ -331,6 +343,63 @@ function placeComets(def: SystemSceneDef, jd: number): SceneCometDef[] {
       },
     ];
   });
+}
+
+// ---------------------------------------------------------------- moons (docs/PROCGEN.md §48.3)
+
+/** A moon's name and its planet's, filled into a line. */
+export function fillMoon(text: string, moon: Moon): string {
+  const planet = moon.planet.charAt(0).toUpperCase() + moon.planet.slice(1);
+  return text.replace(/\{moon\}/g, moon.name).replace(/\{planet\}/g, planet);
+}
+
+/** How far out from its planet's drawn centre a moon is drawn: the planet's drawn radius × (distance in the planet's radii) ^ spread. */
+export function moonDistance(planetRadius: number, moon: Moon): number {
+  return (
+    planetRadius *
+    (moon.motion.aKm / moon.planetRadiusKm) ** MOONS.spread[moon.planet]
+  );
+}
+
+/** A moon's drawn radius: on the scale Earth's Moon is drawn. */
+export function moonRadius(moonDrawn: number, moon: Moon): number {
+  return (moonDrawn * moon.radiusKm) / MOON_RADIUS_KM;
+}
+
+/**
+ * The giant planets' large moons in Sol's scene on a date: each in its real direction from its
+ * planet, at its compressed distance; and the planet turned to the axis its moons orbit round, so its
+ * rings and its moons agree.
+ */
+function addMoons(def: SystemSceneDef, jd: number): void {
+  const earthsMoon = def.planets.find((p) => p.id === "moon");
+  if (!earthsMoon) return;
+  for (const planet of [...def.planets]) {
+    const moons = moonsOf(planet.id);
+    const pole = planetPole(planet.id);
+    if (!moons.length || !pole) continue;
+    planet.pole = eclipticToScene(pole).normalize();
+    for (const moon of moons) {
+      const radius = moonRadius(earthsMoon.radius, moon);
+      def.planets.push({
+        id: moon.id,
+        name: moon.name,
+        subtitle: fillMoon(MOON_LINES.target, moon),
+        position: planet.position
+          .clone()
+          .addScaledVector(
+            eclipticToScene(moonAt(moon, jd)).normalize(),
+            moonDistance(planet.radius, moon),
+          ),
+        radius,
+        style: moon.id as PlanetStyle,
+        hostStarId: "sun",
+        spinSpeed: 0.004,
+        scannable: true,
+        scanRange: Math.max(9_000, radius * 4),
+      });
+    }
+  }
 }
 
 // ---------------------------------------------------------------- asteroids (docs/PROCGEN.md §47.3)

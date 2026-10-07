@@ -1,0 +1,153 @@
+{
+  "generatedBy": "scripts/moons-process.ts",
+  "retrieved": "2026-10-07",
+  "epochJd": 2461320.5,
+  "source": {
+    "label": "JPL Horizons",
+    "url": "https://ssd.jpl.nasa.gov/horizons/",
+    "retrieved": "2026-10-07"
+  },
+  "description": "The large moons of Jupiter and Saturn: names, mean radii (km), densities (g/cm³) and geometric albedos from JPL Horizons, with their planets’ equatorial radii (km); and each one’s motion round its planet reckoned from Horizons’ positions of it every seven days from two years before the snapshot to four after (J2000 ecliptic): the normal of the plane it orbits in and the direction longitudes count from, its mean distance (km), its mean longitude on the snapshot’s day and mean motion (degrees, degrees a day), its period (days), and to first order its orbit’s eccentricity and the longitude of its nearest point to the planet.",
+  "moons": [
+    {
+      "id": "io",
+      "horizonsId": "501",
+      "name": "Io",
+      "planet": "jupiter",
+      "planetRadiusKm": 71492,
+      "radiusKm": 1821.49,
+      "densityGcm3": 3.528,
+      "albedo": 0.63,
+      "motion": {
+        "normal": [
+          -0.01469389,
+          -0.03580252,
+          0.99925085
+        ],
+        "from": [
+          0.99989204,
+          -0.00052614,
+          0.01468447
+        ],
+        "aKm": 421777.2,
+        "lambdaDeg": 224.521212,
+        "motionDegPerDay": 203.48891598,
+        "periodDays": 1.769138,
+        "e": 0.000226,
+        "periDeg": 110.3583
+      }
+    },
+    {
+      "id": "europa",
+      "horizonsId": "502",
+      "name": "Europa",
+      "planet": "jupiter",
+      "planetRadiusKm": 71492,
+      "radiusKm": 1560.8,
+      "densityGcm3": 3.013,
+      "albedo": 0.67,
+      "motion": {
+        "normal": [
+          -0.01858687,
+          -0.02961454,
+          0.99938857
+        ],
+        "from": [
+          0.99982725,
+          -0.00055054,
+          0.01857872
+        ],
+        "aKm": 671530.4,
+        "lambdaDeg": 121.35446,
+        "motionDegPerDay": 101.37476548,
+        "periodDays": 3.55118,
+        "e": 0.000887,
+        "periDeg": 289.1802
+      }
+    },
+    {
+      "id": "ganymede",
+      "horizonsId": "503",
+      "name": "Ganymede",
+      "planet": "jupiter",
+      "planetRadiusKm": 71492,
+      "radiusKm": 2631.2,
+      "densityGcm3": 1.942,
+      "albedo": 0.43,
+      "motion": {
+        "normal": [
+          -0.01477527,
+          -0.03814913,
+          0.99916282
+        ],
+        "from": [
+          0.99989084,
+          -0.00056373,
+          0.01476451
+        ],
+        "aKm": 1070476.7,
+        "lambdaDeg": 339.789205,
+        "motionDegPerDay": 50.31764193,
+        "periodDays": 7.154548,
+        "e": 0.002009,
+        "periDeg": 342.4477
+      }
+    },
+    {
+      "id": "callisto",
+      "horizonsId": "504",
+      "name": "Callisto",
+      "planet": "jupiter",
+      "planetRadiusKm": 71492,
+      "radiusKm": 2410.3,
+      "densityGcm3": 1.834,
+      "albedo": 0.17,
+      "motion": {
+        "normal": [
+          -0.0133831,
+          -0.03123213,
+          0.99942256
+        ],
+        "from": [
+          0.99991044,
+          -0.00041802,
+          0.01337657
+        ],
+        "aKm": 1882768.2,
+        "lambdaDeg": 347.214862,
+        "motionDegPerDay": 21.57109674,
+        "periodDays": 16.688998,
+        "e": 0.007237,
+        "periDeg": 11.2615
+      }
+    },
+    {
+      "id": "titan",
+      "horizonsId": "606",
+      "name": "Titan",
+      "planet": "saturn",
+      "planetRadiusKm": 60268,
+      "radiusKm": 2575.5,
+      "densityGcm3": 1.88,
+      "albedo": 0.2,
+      "motion": {
+        "normal": [
+          0.08809348,
+          0.45637909,
+          0.88541384
+        ],
+        "from": [
+          0.99611221,
+          -0.04036094,
+          -0.07830361
+        ],
+        "aKm": 1222418.6,
+        "lambdaDeg": 159.521817,
+        "motionDegPerDay": 22.57697132,
+        "periodDays": 15.945451,
+        "e": 0.028696,
+        "periDeg": 349.1993
+      }
+    }
+  ]
+}

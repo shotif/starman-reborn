@@ -837,6 +837,19 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   why. A first scan is written in the logbook once, said by number and name, and a save with a
   damaged list of them is caught.
 
+- `moons.test.ts`: **moons of the giant planets**. Horizons' five moons, Io's radius, density and
+  albedo and Titan's density checked against the raw records as fetched. The moons pass
+  `validateMoonRules` (every scene on 147 dates over four years among them), and broken ones are
+  caught (a longitude 5° off Horizons, an eccentric orbit, a spread out of range, a line with a
+  number). The motion matches every one of Horizons' positions it was not reckoned from within 1.5°
+  and 2%; Io goes round in 1.769 days and Titan in 15.945 on an orbit of eccentricity 0.029; the
+  Laplace resonance holds (λ(Io) − 3λ(Europa) + 2λ(Ganymede) within a degree of 180° on three dates
+  across the six years, their motions balanced); a whole period brings a moon back. In flight each
+  moon stands in its real direction from its planet on three dates, scannable; Saturn is turned to
+  Titan's axis, Titan in the plane of its rings and outside them; the moons are drawn without a
+  date too. Io's card gives its period, distance, size, density, albedo and side of Jupiter. The
+  codex holds the five, so Sol's survey wants them, and each is catalogued once.
+
 ### Browser tests (Playwright)
 
 - `journey.spec.ts`: **the nine-step journey from the spec** on desktop and on touch.
@@ -1091,6 +1104,10 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   hazardous does not mean it will hit; its first scan in the logbook; Sol's card on the star map
   listing Apophis and Vesta; the positions paid for back at the institute; and minutes before the
   pass, out from Earth Port, Apophis drawn by Earth, nearer than the Moon.
+- `moons.spec.ts`: **moons of the giant planets**: out from Earth Port, Jupiter's four moons drawn
+  outside Jupiter and Titan well outside Saturn; Io scanned from near it, its card giving its period,
+  distance, size and density and that it stands in its real direction, and one more body in the
+  codex; Sol's card on the star map listing Io and Titan.
 - `binaries.spec.ts`: **real binary orbits**: at Dawnfield Institute, a measurement of Procyon B taken
   from the bar; out in flight Procyon B scanned from near it, its card giving the orbit (40.8 years,
   its eccentricity, where the pair stands on the game's date, and that in flight it stands as it did

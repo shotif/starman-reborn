@@ -1,5 +1,6 @@
 import { equatorialToCartesian, parallaxToLightYears } from './coords.ts';
 import type { AsteroidsDataset } from './asteroids.ts';
+import type { MoonsDataset } from './moons.ts';
 import type { CometsDataset } from './comets.ts';
 import type { OrbitsDataset } from './orbits.ts';
 import type { AstrometryDataset, ExoplanetDataset } from './systems.ts';
@@ -281,6 +282,19 @@ export function validateAsteroids(data: AsteroidsDataset): ValidationIssue[] {
     }
     if (a.diameterKm !== null && !(a.diameterKm > 0)) issues.push({ level: 'error', code: 'asteroid-size', message: `${a.id}: ${a.diameterKm} km across` });
     if (!a.approaches.every((p, i) => p.distAu > 0 && p.distAu <= 0.05 && (i === 0 || p.jd > a.approaches[i - 1]!.jd))) issues.push({ level: 'error', code: 'asteroid-pass', message: `${a.id}: a pass of Earth out of range or out of order` });
+  }
+  return issues;
+}
+
+/** The giant planets' large moons (docs/PROCGEN.md §48.6): cited and dated, each named once, round Jupiter or Saturn, its size and motion sensible. */
+export function validateMoons(data: MoonsDataset): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  if (!data.source.url.startsWith('http') || !/^\d{4}-\d{2}-\d{2}$/.test(data.retrieved) || !(data.epochJd > 2_400_000)) issues.push({ level: 'error', code: 'moon-source', message: 'the moons are not cited and dated' });
+  const seen = new Set<string>();
+  for (const m of data.moons) {
+    if (seen.has(m.id) || (m.planet !== 'jupiter' && m.planet !== 'saturn')) issues.push({ level: 'error', code: 'moon-name', message: `${m.id}: named twice, or round no giant planet` });
+    seen.add(m.id);
+    if (!(m.radiusKm > 0 && m.radiusKm < m.planetRadiusKm && m.motion.aKm > m.planetRadiusKm && m.motion.periodDays > 0)) issues.push({ level: 'error', code: 'moon-size', message: `${m.id}: a size, distance or period out of range` });
   }
   return issues;
 }

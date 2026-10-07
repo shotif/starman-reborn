@@ -10,6 +10,7 @@ import farStarsFile from './generated/far-stars.json' with { type: 'json' };
 import { DOOMED } from '../content/stellar/doomed.ts';
 import { rng } from '../content/random.ts';
 import { distance3, equatorialToCartesian } from './coords.ts';
+import { MOON_DATA } from './moons.ts';
 import { SOURCES } from './sources.ts';
 import type {
   BeltRecord,
@@ -65,6 +66,8 @@ export const SOLAR_BODIES: readonly SolarBody[] = [
   { id: 'uranus', name: 'Uranus', kind: 'ice giant', order: 7, source: SOURCES.nasaPlanets },
   { id: 'neptune', name: 'Neptune', kind: 'ice giant', order: 8, source: SOURCES.nasaPlanets },
   { id: 'moon', name: 'Moon', kind: 'moon', source: SOURCES.nasaMoon },
+  // The large moons of Jupiter and Saturn (docs/PROCGEN.md §48), from JPL Horizons.
+  ...MOON_DATA.moons.map((m): SolarBody => ({ id: m.id, name: m.name, kind: 'moon', source: MOON_DATA.source })),
 ];
 
 const LOCATIONS: readonly FictionalLocation[] = [

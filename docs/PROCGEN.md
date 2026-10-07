@@ -843,8 +843,8 @@ for this game.
 ### 13.1 The codex of the real sky
 
 - The codex lists every real body the game shows: each catalogued star, each confirmed planet,
-  and the Solar System's eight planets and the Moon (361 entries today, contested planets
-  included). It grows only with the dataset: no invented body is ever an entry.
+  and the Solar System's eight planets, the Moon and the giant planets' five large moons (§48;
+  366 entries today, contested planets included). It grows only with the dataset: no invented body is ever an entry.
 - Scanning a body fills in its entry once. The encyclopedia's system page shows the system's
   entries with a tick for each one scanned, and the journal shows the total.
 - **Survey sales**: once every entry of a system is scanned, a research station (or one of the
@@ -4932,3 +4932,84 @@ check every tracking job. The tests also check JPL's raw records against the gam
 and the records to see them caught, follow Apophis through its pass (38,000 km at 21:46 on 13 April
 2029, an Aten before and an Apollo after, bright enough for the naked eye), and check what is said,
 the scene, the News, the work and the logbook.
+
+## 48. Moons of the giant planets
+
+Jupiter's four large moons, Io, Europa, Ganymede and Callisto, and Saturn's Titan go round their
+planets in flight, each where it really is on the game's date, and each is a body of the codex
+(`src/data/moons.ts`, read from JPL Horizons by `scripts/moons-process.ts`; how they are drawn in
+`MOONS` and what is said in `MOON_LINES`, `src/content/stellar/moons.ts`; the cards in
+`src/economy/moons.ts`). Nothing about them is invented: every size and every motion is
+reckoned from JPL Horizons' own records and positions.
+
+The owner chose (7 October 2026): real asteroids and Apophis, then moons of the giant planets, then
+spacecraft out in Sol; the moons "scannable, in the codex".
+
+### 48.1 The moons
+
+The sky snapshot (`scripts/sky-fetch.ts`: [ASTRONOMY_SOURCES.md, *Moons of the giant
+planets*](ASTRONOMY_SOURCES.md#moons-of-the-giant-planets)) fetches, for each moon, Horizons'
+record (its mean radius, density and geometric albedo, and its planet's equatorial radius), its
+osculating elements round its planet on the snapshot's day, and where Horizons has it from its
+planet's centre every three and a half days for two years before that day and four after.
+
+### 48.2 The motion
+
+A moon's osculating elements drift fast round an oblate planet, so its motion is reckoned instead
+from Horizons' positions of it: every other one of them (one a week). The plane it orbits in is the
+plane those positions lie in; its mean longitude runs on in a straight line through time, fitted to
+them, its turns between positions counted from its osculating motion on the day; and to first order
+its orbit's eccentricity and the direction of its nearest point to the planet are fitted to what is
+left. Tested against the other half, the positions it was not reckoned from, every moon stands
+within 1.1° of where Horizons has it over the six years (Ganymede, Callisto and Titan within 0.2°;
+Io within 0.6°; Europa, whose orbit's long axis turns with its resonance with Io and Ganymede, within
+1.1°), and within 1.2% of its distance. The motions reckoned for Io, Europa and Ganymede keep their
+Laplace resonance: their longitudes λ(Io) − 3λ(Europa) + 2λ(Ganymede) come within a degree of 180°
+on dates across the six years, as they really do. Titan's orbit comes out with an eccentricity of 0.029,
+as published.
+
+### 48.3 In flight
+
+Each moon stands in its real direction from its planet on the game's date, out from the planet's
+drawn centre by the planet's drawn radius × its real distance in the planet's radii to a power of
+its planet's own (`MOONS.spread`: 0.26 for Jupiter, 0.32 for Saturn): farther moons stay farther,
+Jupiter's system stays inside the gap between Jupiter and the main belt's outpost site on any date,
+and Titan stays outside Saturn's rings. Each is drawn on the scale Earth's Moon is (its size against
+the Moon's mean radius), so Ganymede and Titan, larger than Mercury, are drawn larger than it too.
+Jupiter and Saturn are turned to the axis their moons orbit round (the mean of their planes, which
+lie near the planets' equators), so Saturn's rings and Titan agree; before, both planets were tilted
+schematically. Each moon has a surface of its own colours (illustrative): sulphur-yellow Io, pale icy
+Europa, grey Ganymede, dark cratered Callisto and Titan in its orange haze. A moon is a planet as
+far as flight goes: selected, flown to and scanned, and catalogued in the codex.
+
+### 48.4 What the game says
+
+- **The science card** of a moon: how long it takes to go round, its distance from its planet's
+  centre (in km and in its planet's radii), its size, density and albedo, which side of its planet
+  it is on, seen from the Sun, on the game's date, JPL Horizons cited, and that in flight its
+  distance is compressed and its size drawn on the planets' scale.
+- **Sol's card on the star map** lists the five moons: how long each takes to go round and where it
+  is on the game's date.
+- **The encyclopedia** gives them in full, under *Moons of Jupiter and Saturn*.
+
+### 48.5 One save's own
+
+The five moons are codex entries (366 in all), so a save that had scanned all of Sol's has its
+survey of Sol open again until the moons are scanned too; a survey of Sol already sold stays sold, and
+milestones already earned stay earned. Nothing new is kept.
+
+### 48.6 Guardrails
+
+`validateMoons` (`src/data/validate.ts`, run by `npm run data:validate`) and `validateMoonRules`
+(`src/economy/moonGuards.ts`, run in `tests/unit/moons.test.ts`): each moon named once, round Jupiter
+or Saturn, smaller than its planet and beyond twice its radius, with a sensible size, density and
+albedo; its plane a true plane and its motion, period and eccentricity in range; the motion within
+1.5° and 2% of every one of Horizons' positions it was not reckoned from; in the codex; as drawn,
+larger for a larger moon, clear of its planet, its rings and the moons either side, in their real
+order, each within a degree of its planet's drawn axis, and in its real direction from its planet at
+its drawn distance on a date every 10 days for four years; and no line with a number of its own or a
+field it cannot fill. The belt outposts' guardrails keep the main belt's site clear of every moon on
+400 dates. The tests also check Horizons' raw records against the game's, break the motion and the
+rules to see them caught, check the real physics (Io's 1.77 days, Titan's 15.95 and its eccentricity,
+the Laplace resonance, a whole period bringing a moon back), the scene, what is said and the codex.
+

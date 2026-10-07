@@ -257,6 +257,35 @@ Fifteen named asteroids fly in Sol, in `src/data/generated/asteroids.json`
   What a spectral type says an asteroid is made of is the usual reading of the type's letter, not a
   measurement of that asteroid. Sizes in flight are far larger than life, and they turn faster.
 
+## Moons of the giant planets
+
+Io, Europa, Ganymede and Callisto round Jupiter, and Titan round Saturn, in
+`src/data/generated/moons.json` ([PROCGEN.md §48](PROCGEN.md#48-moons-of-the-giant-planets)).
+
+- **Source.** The sky snapshot workflow fetches from **JPL Horizons**, for each moon, its record
+  (with its physical properties) and its osculating elements round its planet on the snapshot's day,
+  and its positions from its planet's centre (J2000 ecliptic, km) every 84 hours from two years
+  before that day to four after. `npm run data:moons` (`scripts/moons-process.ts`, also run by
+  `npm run data:process`) reads them offline. First fetched in the snapshot of 7 October 2026 (the
+  asteroids' files of that day were refreshed from the same run, and process to the same data).
+- **What is taken.** From the record: the name, the mean radius, the density and the geometric
+  albedo, and the planet's equatorial radius (Jupiter 71,492 km, Saturn 60,268 km). From the
+  positions, every other one (one a week): the plane the moon orbits in, its mean distance, mean
+  longitude and mean motion (a straight-line fit through time, its turns between positions counted
+  from its osculating motion on the day), and to first order its orbit's eccentricity and the
+  direction of its nearest point to the planet. The other half of the positions go to
+  `src/data/generated/moon-checks.json`, read only by the tests. Earth's Moon's mean radius
+  (1,737.4 km, NASA's Moon fact sheet) sets the scale the moons are drawn on.
+- **Checks.** `validateMoons` (`npm run data:validate`) and the unit tests: cited and dated, each moon
+  once, sizes and distances in range; the reckoned motion against every one of the positions it was
+  not reckoned from: within 1.5° and 2%. It matches within 0.53° for Io, 1.09° for Europa, 0.11° for
+  Ganymede, 0.04° for Callisto and 0.15° for Titan, and keeps the Laplace resonance of Io, Europa and
+  Ganymede to within a degree.
+- **Not claimed.** A turning circle with first-order eccentricity is not a full theory of the moons'
+  motion: further from the snapshot it is less sure, and Europa's eccentricity, forced by its
+  resonance, turns faster than the fit follows. Distances in flight are compressed, and Jupiter's
+  and Saturn's axes are drawn along their moons' mean orbit plane rather than from the IAU's poles.
+
 ## Pipeline: the sky snapshot
 
 1. **Fetch** (`scripts/sky-fetch.ts`) is the only step that needs the network. It saves raw

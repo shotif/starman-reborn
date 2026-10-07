@@ -39,6 +39,8 @@ export interface ScenePlanetDef {
   hostStarId: string;
   rings?: { inner: number; outer: number; color?: string; opacity?: number };
   tilt?: number;
+  /** Its axis as a direction in the scene, in place of `tilt` (Jupiter's and Saturn's: docs/PROCGEN.md §48.3). */
+  pole?: THREE.Vector3;
   spinSpeed?: number;
   /** Centre of the schematic orbit line (host star position), when drawn. */
   orbitCenter?: THREE.Vector3;

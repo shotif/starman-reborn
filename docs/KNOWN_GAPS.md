@@ -182,6 +182,14 @@ snapshot branch only when the archives changed.
   not solid, and are not in the codex (it stays the catalogue of stars and planets, so no finished
   survey of Sol reopens). Only these fourteen periodic comets are in Sol; none of the long-period or
   newly found comets of the day.
+- Moons of the giant planets (PROCGEN §48): only five large moons are drawn (none of Saturn's others,
+  nor Uranus's or Neptune's), and Earth's Moon stays where it was drawn before, at a fixed place by
+  Earth, not its real one. A moon's motion is a turning circle with first-order eccentricity fitted to
+  Horizons' positions: within a degree for six years, Europa's the least sure, and less sure beyond.
+  Distances from the planets are compressed by a power of their own for each planet, so Jupiter's
+  four look closer together than they are. Jupiter's and Saturn's axes are drawn along their moons'
+  mean orbit plane, not from the IAU's poles. A save
+  that had finished its survey of Sol has it open again until the moons are scanned.
 - Asteroids (PROCGEN §47): only fifteen named asteroids are in Sol, not the main belt's million;
   the belts' rocks stay schematic. Where one stands is reckoned as if only the Sun pulled on it,
   from JPL Horizons' elements on 7 October 2026: within 0.05° of Horizons for a year either side and

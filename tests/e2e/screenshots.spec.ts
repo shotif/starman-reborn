@@ -1264,6 +1264,63 @@ for (const size of SIZES) {
       }
     });
 
+    // The giant planets' moons (docs/PROCGEN.md §48): Io with Jupiter behind it, and Io's card.
+    test(`A moon at ${size.name}`, async ({ page }) => {
+      test.setTimeout(10 * 60_000);
+      mkdirSync(OUT, { recursive: true });
+      const results: Record<string, AuditResult> = {};
+      if (size.textScale) {
+        const px = 16 * size.textScale;
+        await page.addInitScript((fontPx) => {
+          document.addEventListener('DOMContentLoaded', () => {
+            const style = document.createElement('style');
+            style.textContent = `html { font-size: ${fontPx}px !important; }`;
+            document.head.appendChild(style);
+          });
+        }, px);
+      }
+      await openFresh(page);
+      await press(page, 'title-play');
+      await press(page, 'intro-ok');
+      await api(page, 'completeJobs', ['lifeline']);
+      await api(page, 'dockAt', 'earth-port');
+      await waitUntil(page, 'docked at Earth Port', async () => (await api<{ location: { dockedAt: string | null } }>(page, 'state')).location.dockedAt === 'earth-port');
+      for (let q = 0, i = 0; q < 3 && i < 30; i++) {
+        const next = page.getByTestId('story-continue').or(page.getByTestId('folk-continue')).first();
+        if (await next.isVisible().catch(() => false)) {
+          q = 0;
+          await next.click().catch(() => {});
+        } else q++;
+        await page.waitForTimeout(250);
+      }
+      await press(page, 'dock-launch');
+      if (await page.getByTestId('controls-sheet').isVisible().catch(() => false)) await press(page, 'sheet-close');
+      await waitUntil(page, 'undocked', async () => (await api<{ autopilot: string } | null>(page, 'player'))?.autopilot === 'none', 60_000);
+      await api(page, 'selectTarget', 'planet:io');
+      expect(await api<boolean>(page, 'viewMoon', { id: 'io', planet: 'jupiter', distance: 1_800 })).toBe(true);
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await page.waitForTimeout(800);
+      await shot(page, `${size.name}-30-moon`, size.touch, results);
+      expect(await api<boolean>(page, 'placeNear', { id: 'planet:io', distance: 3_000 })).toBe(true);
+      await waitUntil(page, 'Scan offered', async () => {
+        const ok = page.getByTestId('discovery-ok').last();
+        if (await ok.isVisible().catch(() => false)) await ok.click({ timeout: 2_000 }).catch(() => {});
+        return (await api<{ context: { label: string } | null } | null>(page, 'hud'))?.context?.label === 'Scan';
+      }, 30_000);
+      await press(page, size.touch ? 'touch-context' : 'hud-context');
+      await expect(page.getByTestId('science-moon')).toBeVisible();
+      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+      await shot(page, `${size.name}-30b-moon-card`, size.touch, results);
+      for (const [name, r] of Object.entries(results)) {
+        expect.soft(r.overflow, `${name}: page overflow`).toBe(false);
+        expect.soft(r.clipped, `${name}: clipped controls`).toEqual([]);
+        expect.soft(r.cutOff, `${name}: content cut off inside a box`).toEqual([]);
+        expect.soft(r.tinyText, `${name}: text below 10px`).toEqual([]);
+        expect.soft(r.smallTargets, `${name}: touch targets below 40px`).toEqual([]);
+        expect.soft(r.overlaps, `${name}: overlapping HUD panels`).toEqual([]);
+      }
+    });
+
     // Flare stars (docs/PROCGEN.md §43): Wolf 359 in a strong flare, told in Ledger Institute's News,
     // then flown in, the star glowing and the HUD saying so.
     test(`A flare at ${size.name}`, async ({ page }) => {

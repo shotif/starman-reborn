@@ -2999,6 +2999,8 @@ export class Game {
         this.flight?.system.asteroids.map((a) => ({ id: a.id, name: a.name, position: a.position.toArray(), radius: a.radius, shape: a.shape, near: a.near, color: a.color })) ?? null,
       /** Test-only: the planets (and moons) in this flight, where they are drawn. */
       planets: () => this.flight?.system.planets.map((p) => ({ id: p.def.id, position: p.def.position.toArray(), radius: p.def.radius })) ?? null,
+      /** Test-only: places the ship beyond a giant planet's moon, looking at it with its planet behind (for screenshots). */
+      viewMoon: (arg: { id: string; planet: string; distance: number }) => this.flight?.viewMoon(arg.id, arg.planet, arg.distance) ?? false,
       /** Test-only: places the ship by a named asteroid, looking at it (for screenshots). */
       viewAsteroid: (arg: { id: string; distance: number }) => this.flight?.viewAsteroid(arg.id, arg.distance) ?? false,
       /** Test-only: the comets in this flight (docs/PROCGEN.md §45.3), where they stand and how they are drawn. */

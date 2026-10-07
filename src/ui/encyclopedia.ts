@@ -23,6 +23,7 @@ import {
   componentList,
   orbitBlock,
   asteroidBlock,
+  moonBlock,
   cometBlock,
   factList,
   locationList,
@@ -151,6 +152,7 @@ function systemSection(system: StarSystemRecord, id: string, discovered: Readonl
   const orbits = orbitBlock(system.id, jd, 'full');
   const comets = cometBlock(system.id, jd, 'full');
   const asteroids = asteroidBlock(system.id, jd, 'full');
+  const moons = moonBlock(system.id, jd, 'full');
   const isSol = system.id === 'sol';
   return h(
     'section',
@@ -166,6 +168,7 @@ function systemSection(system: StarSystemRecord, id: string, discovered: Readonl
     badgeHeading('h4', isSol ? 'Planets' : 'Confirmed planets', 'observed', undefined, observedMark(system, 'planets')),
     planetBlock(system, discovered, 'full'),
     beltsOf(system.id).length ? [badgeHeading('h4', 'Belts and debris discs', 'observed'), beltBlock(system.id, 'full')] : null,
+    moons ? [badgeHeading('h4', 'Moons of Jupiter and Saturn', 'observed'), moons] : null,
     comets ? [badgeHeading('h4', 'Comets', 'observed'), comets] : null,
     asteroids ? [badgeHeading('h4', 'Asteroids', 'observed'), asteroids] : null,
     h('h4', { class: 'sci-heading' }, 'Science notes'),
