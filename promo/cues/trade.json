@@ -1,0 +1,59 @@
+{
+ "shot": "trade",
+ "fps": 60,
+ "frames": 402,
+ "seconds": 6.7,
+ "captureSeconds": 35.4,
+ "notes": [
+  {
+   "frame": 90,
+   "t": 1.5,
+   "label": "buy dialog"
+  },
+  {
+   "frame": 150,
+   "t": 2.5,
+   "label": "plus"
+  },
+  {
+   "frame": 161,
+   "t": 2.683333333333333,
+   "label": "plus"
+  },
+  {
+   "frame": 172,
+   "t": 2.8666666666666667,
+   "label": "plus"
+  },
+  {
+   "frame": 183,
+   "t": 3.05,
+   "label": "plus"
+  },
+  {
+   "frame": 194,
+   "t": 3.2333333333333334,
+   "label": "plus"
+  },
+  {
+   "frame": 205,
+   "t": 3.4166666666666665,
+   "label": "plus"
+  },
+  {
+   "frame": 252,
+   "t": 4.2,
+   "label": "bought"
+  }
+ ],
+ "cues": [
+  {
+   "t": 4.2,
+   "kind": "sfx",
+   "id": "credits",
+   "opts": {
+    "volume": 1
+   }
+  }
+ ]
+}

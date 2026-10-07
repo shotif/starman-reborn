@@ -1,0 +1,20 @@
+{
+ "shot": "map",
+ "fps": 60,
+ "frames": 630,
+ "seconds": 10.5,
+ "captureSeconds": 47.4,
+ "notes": [
+  {
+   "frame": 420,
+   "t": 7,
+   "label": "select Alpha Centauri"
+  },
+  {
+   "frame": 438,
+   "t": 7.3,
+   "label": "centre Alpha Centauri"
+  }
+ ],
+ "cues": []
+}

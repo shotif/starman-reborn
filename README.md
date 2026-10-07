@@ -261,6 +261,8 @@ scripts/       the sky snapshot (sky-fetch on GitHub's runners, sky-process, orb
                validation
 tests/         unit tests (Vitest) and browser journeys (Playwright)
 docs/          sources, design notes, test record, known gaps, screenshots
+promo/         the 60-second trailer, made from the game itself: capture, soundtrack and edit
+               (promo/README.md)
 ```
 
 ## Tests
