@@ -1,0 +1,689 @@
+{
+ "shot": "c-lane",
+ "fps": 24,
+ "frames": 168,
+ "seconds": 7,
+ "clock": "frame-start",
+ "captureSeconds": 57.6,
+ "notes": [],
+ "cues": [
+  {
+   "t": 0,
+   "kind": "music",
+   "mood": "sol"
+  },
+  {
+   "t": 0,
+   "kind": "ambience",
+   "room": null
+  },
+  {
+   "t": 0,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.4,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0,
+   "kind": "intensity",
+   "value": 0
+  },
+  {
+   "t": 0.073,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.38,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.271,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.36,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.49,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.34,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.688,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.34,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.708,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.32,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.948,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.3,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.198,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.458,
+   "kind": "sfx",
+   "id": "lane-enter",
+   "opts": {
+    "volume": 1
+   }
+  },
+  {
+   "t": 1.458,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 1.469,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.16,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 1.479,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.2,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 1.49,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.22,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 1.5,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 1.51,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.28,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 1.521,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.32,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 1.531,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.34,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 1.542,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.38,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 1.552,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.4,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 1.563,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.44,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 1.573,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.46,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 1.583,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.5,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 1.594,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.52,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 1.604,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.56,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 1.615,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.58,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 1.625,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.62,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 1.635,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.64,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 1.646,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.68,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 1.656,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.72,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 1.667,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.74,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 1.677,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.78,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 1.688,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.8,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 1.698,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.84,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 1.708,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.86,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 1.719,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.9,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 1.729,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.92,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 1.74,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.96,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 1.75,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.98,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 1.76,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 1,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 3.469,
+   "kind": "music",
+   "mood": "deep-space"
+  },
+  {
+   "t": 6.781,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.98,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 6.792,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.96,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 6.802,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.92,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 6.813,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.9,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 6.823,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.86,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 6.833,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.82,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 6.844,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.8,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 6.854,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.76,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 6.865,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.74,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 6.875,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.7,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 6.885,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.68,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 6.896,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.64,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 6.906,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.62,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 6.917,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.58,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 6.927,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.56,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 6.938,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.52,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 6.948,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.5,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 6.958,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.46,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 6.969,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.44,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 6.979,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.4,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 6.99,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.38,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  }
+ ],
+ "repaired": 4
+}

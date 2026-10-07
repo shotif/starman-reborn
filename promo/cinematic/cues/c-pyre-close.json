@@ -1,0 +1,49 @@
+{
+ "shot": "c-pyre-close",
+ "fps": 24,
+ "frames": 168,
+ "seconds": 7,
+ "clock": "frame-start",
+ "captureSeconds": 45,
+ "notes": [],
+ "cues": [
+  {
+   "t": 0,
+   "kind": "music",
+   "mood": "barnard"
+  },
+  {
+   "t": 0,
+   "kind": "ambience",
+   "room": null
+  },
+  {
+   "t": 0,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.36,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0,
+   "kind": "intensity",
+   "value": 0
+  },
+  {
+   "t": 0.094,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.36,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  }
+ ],
+ "repaired": 0
+}

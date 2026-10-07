@@ -1,0 +1,11 @@
+{
+ "shot": "c-earth",
+ "fps": 24,
+ "frames": 288,
+ "seconds": 12,
+ "clock": "frame-start",
+ "captureSeconds": 77.8,
+ "notes": [],
+ "cues": [],
+ "repaired": 24
+}

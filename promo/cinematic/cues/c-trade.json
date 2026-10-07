@@ -1,0 +1,71 @@
+{
+ "shot": "c-trade",
+ "fps": 24,
+ "frames": 127,
+ "seconds": 5.3125,
+ "clock": "frame-start",
+ "captureSeconds": 40.2,
+ "notes": [
+  {
+   "frame": 77,
+   "t": 0.8020833333333334,
+   "label": "buy dialog"
+  },
+  {
+   "frame": 144,
+   "t": 1.5,
+   "label": "plus"
+  },
+  {
+   "frame": 165,
+   "t": 1.71875,
+   "label": "plus"
+  },
+  {
+   "frame": 186,
+   "t": 1.9375,
+   "label": "plus"
+  },
+  {
+   "frame": 207,
+   "t": 2.15625,
+   "label": "plus"
+  },
+  {
+   "frame": 228,
+   "t": 2.375,
+   "label": "plus"
+  },
+  {
+   "frame": 249,
+   "t": 2.59375,
+   "label": "plus"
+  },
+  {
+   "frame": 318,
+   "t": 3.3125,
+   "label": "bought"
+  }
+ ],
+ "cues": [
+  {
+   "t": 0,
+   "kind": "music",
+   "mood": "docked"
+  },
+  {
+   "t": 0,
+   "kind": "ambience",
+   "room": "trader"
+  },
+  {
+   "t": 3.302,
+   "kind": "sfx",
+   "id": "credits",
+   "opts": {
+    "volume": 1
+   }
+  }
+ ],
+ "repaired": 0
+}

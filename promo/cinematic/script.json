@@ -1,0 +1,316 @@
+{
+  "title": "The Stars Are Real",
+  "voice": {
+    "use": "clyde",
+    "sets": {
+      "clyde": {
+        "voiceId": "2EiwWnXFnvU5JabPnv8n",
+        "name": "Clyde",
+        "model": "eleven_multilingual_v2",
+        "settings": {
+          "stability": 0.42,
+          "similarity_boost": 0.8,
+          "style": 0.3,
+          "speed": 0.86,
+          "use_speaker_boost": true
+        }
+      },
+      "callum": {
+        "voiceId": "N2lVS1w4EtoT3dr4eOWO",
+        "name": "Callum",
+        "model": "eleven_multilingual_v2",
+        "settings": {
+          "stability": 0.42,
+          "similarity_boost": 0.8,
+          "style": 0.3,
+          "speed": 0.86,
+          "use_speaker_boost": true
+        }
+      },
+      "sam": {
+        "voiceId": "yoZ06aMxZJJ28mfd3POQ",
+        "name": "Sam",
+        "model": "eleven_multilingual_v2",
+        "settings": {
+          "stability": 0.42,
+          "similarity_boost": 0.8,
+          "style": 0.3,
+          "speed": 0.86,
+          "use_speaker_boost": true
+        }
+      },
+      "clyde-v3": {
+        "voiceId": "2EiwWnXFnvU5JabPnv8n",
+        "name": "Clyde",
+        "model": "eleven_v3",
+        "settings": {
+          "stability": 0.5
+        }
+      }
+    },
+    "seed": 2071,
+    "lines": [
+      {
+        "id": "01",
+        "text": "Two hundred and seven star systems lie within twenty-seven light-years of the Sun."
+      },
+      {
+        "id": "02",
+        "text": "Every one of them is real."
+      },
+      {
+        "id": "03",
+        "text": "I've docked at most of them."
+      },
+      {
+        "id": "04",
+        "text": "I started at Earth... with a small courier, and a hold full of medical supplies."
+      },
+      {
+        "id": "05",
+        "text": "Four light-years to Alpha Centauri."
+      },
+      {
+        "id": "06",
+        "text": "There's a planet at Proxima. That part is true."
+      },
+      {
+        "id": "07",
+        "text": "After that, you fly for whoever pays. Freight. Passengers. Bounties."
+      },
+      {
+        "id": "08",
+        "text": "You learn who to trust."
+      },
+      {
+        "id": "09",
+        "text": "And who's coming for you."
+      },
+      {
+        "id": "10",
+        "text": "I built a station at a star most people have never heard of."
+      },
+      {
+        "id": "11",
+        "text": "I watched a comet round the Sun."
+      },
+      {
+        "id": "12",
+        "text": "And I was there... the night Pyre died."
+      },
+      {
+        "id": "13",
+        "text": "The stars are real."
+      },
+      {
+        "id": "14",
+        "text": "What you do among them... is up to you."
+      }
+    ]
+  },
+  "music": {
+    "use": "score-own",
+    "model": "music_v1",
+    "plan": {
+      "positive_global_styles": [
+        "epic cinematic space score",
+        "orchestral film trailer music",
+        "hybrid orchestra with deep analog synth pads",
+        "wide reverberant concert hall",
+        "awe and wonder",
+        "D minor",
+        "90 BPM",
+        "instrumental"
+      ],
+      "negative_global_styles": [
+        "lyrics",
+        "lead vocals",
+        "singing words",
+        "spoken word",
+        "pop",
+        "rock guitar",
+        "drum kit",
+        "EDM",
+        "dubstep",
+        "comedy",
+        "lo-fi"
+      ],
+      "sections": [
+        {
+          "section_name": "Void",
+          "duration_ms": 13333,
+          "positive_local_styles": [
+            "near silence",
+            "single low sustained cello and synth drone",
+            "distant shimmering high strings",
+            "vast empty space",
+            "no percussion"
+          ],
+          "negative_local_styles": [
+            "drums",
+            "melody",
+            "loud"
+          ],
+          "lines": []
+        },
+        {
+          "section_name": "First light",
+          "duration_ms": 21333,
+          "positive_local_styles": [
+            "solo piano motif enters",
+            "warm legato strings swell underneath",
+            "hopeful",
+            "gentle",
+            "slow build"
+          ],
+          "negative_local_styles": [
+            "drums",
+            "brass fanfare"
+          ],
+          "lines": []
+        },
+        {
+          "section_name": "Outbound",
+          "duration_ms": 16000,
+          "positive_local_styles": [
+            "string ostinato begins",
+            "french horn theme",
+            "soft pulsing low percussion",
+            "rising",
+            "sense of departure and speed"
+          ],
+          "negative_local_styles": [
+            "full climax"
+          ],
+          "lines": []
+        },
+        {
+          "section_name": "Trade winds",
+          "duration_ms": 13333,
+          "positive_local_styles": [
+            "staccato strings",
+            "taiko drums building",
+            "tension rising",
+            "driving rhythm",
+            "crescendo into the next section"
+          ],
+          "negative_local_styles": [
+            "calm"
+          ],
+          "lines": []
+        },
+        {
+          "section_name": "Battle",
+          "duration_ms": 16000,
+          "positive_local_styles": [
+            "full orchestra",
+            "pounding taiko and epic percussion",
+            "brass stabs",
+            "fast string ostinato",
+            "heroic action",
+            "loud"
+          ],
+          "negative_local_styles": [
+            "quiet",
+            "solo piano"
+          ],
+          "lines": []
+        },
+        {
+          "section_name": "Stillness",
+          "duration_ms": 13333,
+          "positive_local_styles": [
+            "sudden drop to quiet",
+            "solo piano with airy synth pad",
+            "wonder",
+            "intimate",
+            "no percussion"
+          ],
+          "negative_local_styles": [
+            "drums",
+            "brass",
+            "loud"
+          ],
+          "lines": []
+        },
+        {
+          "section_name": "Collapse",
+          "duration_ms": 13333,
+          "positive_local_styles": [
+            "massive crescendo",
+            "wordless choir",
+            "low brass swells",
+            "rising strings",
+            "pounding drums accelerating",
+            "ends on one huge final orchestral hit"
+          ],
+          "negative_local_styles": [
+            "calm",
+            "quiet"
+          ],
+          "lines": []
+        },
+        {
+          "section_name": "Afterglow",
+          "duration_ms": 13333,
+          "positive_local_styles": [
+            "silence after the hit",
+            "one quiet resolved chord",
+            "solo piano echoes the motif",
+            "long reverb tail fading to nothing"
+          ],
+          "negative_local_styles": [
+            "drums",
+            "loud",
+            "new melody"
+          ],
+          "lines": []
+        }
+      ]
+    },
+    "candidates": {
+      "score-a": {
+        "seed": 4107
+      },
+      "score-b": {
+        "seed": 9126
+      }
+    },
+    "note": "score-own is promo/cinematic/score.mjs (written and synthesised here). The plan and candidates below are for ElevenLabs' music model, which the EU data centre does not offer; a track made from them elsewhere can be dropped into assets/music/ and named in \"use\"."
+  },
+  "sfx": {
+    "note": "Trailer sound design from ElevenLabs' sound-effects model: weight and movement on cuts. Not music.",
+    "sounds": {
+      "impact": {
+        "text": "Massive cinematic trailer impact: one deep sub-bass boom with a heavy metallic slam and a long dark reverberant tail. No music, no melody.",
+        "seconds": 6,
+        "influence": 0.6
+      },
+      "riser": {
+        "text": "Cinematic tension riser: a whoosh of rushing air and noise rising steadily in pitch and loudness for six seconds, then stopping dead. No music, no melody.",
+        "seconds": 6.5,
+        "influence": 0.6
+      },
+      "whoosh": {
+        "text": "A spacecraft flying past fast: deep whoosh pass-by with a low engine rumble, left to right. No music.",
+        "seconds": 3,
+        "influence": 0.6
+      },
+      "drone": {
+        "text": "Deep dark ambient space drone: a low sustained hum and distant airy wind, vast emptiness, very calm, steady. No melody, no rhythm.",
+        "seconds": 16,
+        "influence": 0.5
+      },
+      "suck": {
+        "text": "Reverse whoosh: air being sucked away, swelling quickly and cutting to sudden silence. No music.",
+        "seconds": 3,
+        "influence": 0.6
+      },
+      "rumble": {
+        "text": "A deep ominous rumble like a distant star collapsing: low earthquake-like sub-bass growl slowly building for ten seconds. No music, no melody.",
+        "seconds": 11,
+        "influence": 0.55
+      }
+    }
+  }
+}

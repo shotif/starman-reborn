@@ -3,7 +3,8 @@
 //   node promo/capture.mjs <shot> [<shot> …]     full capture into promo/out/frames/<shot>/
 //   node promo/capture.mjs --preview <shot> …    one frame in 20 into promo/out/preview/<shot>/, with a contact sheet
 //   node promo/capture.mjs --list                the shots there are
-//   node promo/capture.mjs --all [--jobs 3]      every shot the edit uses (promo/edl.json), a few browsers at a time
+//   node promo/capture.mjs --all [--jobs 3]      every shot the Steam cut uses (promo/edl.json), a few browsers at a time
+//   node promo/capture.mjs --cinematic           every shot the cinematic cut uses (promo/cinematic/edl.json)
 //
 // Each shot runs in its own browser on a new save, so shots never depend on one another.
 import { spawn } from 'node:child_process';
@@ -12,7 +13,11 @@ import { join } from 'node:path';
 import { OUT, PROMO, Recorder, ensureServer, open } from './lib/harness.mjs';
 import { ffmpeg, framePattern } from './lib/media.mjs';
 import { scan } from './scan.mjs';
-import { SHOTS } from './shots.mjs';
+import { CINE } from './cinematic/shots.mjs';
+import { SHOTS as STEAM } from './shots.mjs';
+
+/** The Steam cut's shots, and the cinematic cut's (their names begin "c-"). */
+const SHOTS = { ...STEAM, ...CINE };
 
 const args = process.argv.slice(2);
 const flag = (name) => {
@@ -29,7 +34,8 @@ const option = (name, fallback) => {
 };
 
 const preview = flag('--preview');
-const all = flag('--all');
+const cinematic = flag('--cinematic');
+const all = flag('--all') || cinematic;
 const jobs = Number(option('--jobs', 3));
 const every = Number(option('--every', 20));
 
@@ -53,10 +59,18 @@ async function capture(name) {
   if (!shot) throw new Error(`No shot called "${name}" (see --list)`);
   const session = await open({ layout: shot.layout ?? 'hud' });
   try {
-    const rec = new Recorder(session, name, { halfRate: !!shot.halfRate, every: preview ? every : 1 });
+    const cine = name in CINE ? (shot.cine ?? {}) : null;
+    const rec = new Recorder(session, name, { halfRate: !!shot.halfRate, every: preview ? (cine ? every * 2 : every) : 1, cine });
     await shot.run(session, rec);
     if (rec.count === 0) throw new Error(`${name}: nothing recorded`);
     if (!rec.finished) await rec.finish();
+    if (rec.video) {
+      // A frame every half second of the finished shot.
+      const out = join(OUT, 'sheets', `${name}.jpg`);
+      ffmpeg(['-i', rec.video, '-vf', `select='not(mod(n\\,12))',scale=480:-1,tile=6x${Math.ceil(Math.ceil(rec.count / rec.cine.sub / 12) / 6)}:padding=4:color=0x202020`, '-frames:v', '1', '-q:v', '3', out]);
+      console.log(`[${name}] sheet ${out}`);
+      return;
+    }
     const sheet = preview ? contactSheet(rec.dir, name, { cols: 5, width: 640 }) : contactSheet(rec.dir, name, { step: 15, cols: 6 });
     if (sheet) console.log(`[${name}] sheet ${sheet}`);
     if (!preview) {
@@ -75,7 +89,7 @@ async function capture(name) {
 if (all || args.length > 1) {
   // Several shots: each in a process of its own, `jobs` at a time, against one dev server.
   const server = await ensureServer();
-  const edl = all ? JSON.parse(readFileSync(join(PROMO, 'edl.json'), 'utf8')) : null;
+  const edl = all ? JSON.parse(readFileSync(join(PROMO, cinematic ? 'cinematic/edl.json' : 'edl.json'), 'utf8')) : null;
   // Every shot the edit draws on: its clips, the end card's plate and the silent loop.
   const names = edl ? [...new Set([...edl.clips.map((c) => c.shot ?? c.plate), edl.loop?.shot].filter((s) => s && SHOTS[s]))] : args;
   const queue = [...names];
@@ -98,5 +112,5 @@ if (all || args.length > 1) {
 } else if (args.length === 1) {
   await capture(args[0]);
 } else {
-  console.log(readFileSync(new URL(import.meta.url), 'utf8').split('\n').slice(0, 8).join('\n'));
+  console.log(readFileSync(new URL(import.meta.url), 'utf8').split('\n').slice(0, 9).join('\n'));
 }

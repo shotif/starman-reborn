@@ -3,21 +3,21 @@
 // See SHOTLIST.md for what each is for.
 import { api, centreMouse, clock, dockAt, ease, freeze, launch, look, newGame, place, press, putAway, rig, step, targets, waitUntil, warp } from './lib/harness.mjs';
 
-const size = (page) => page.cssSize;
+export const size = (page) => page.cssSize;
 
 /** Moves the cursor to a point given from the screen centre, in half-screens (+x right, +y down). */
-async function cursor(page, nx, ny) {
+export async function cursor(page, nx, ny) {
   const v = size(page);
   await page.mouse.move(v.width / 2 + (nx * v.width) / 2, v.height / 2 + (ny * v.height) / 2);
 }
 
 /** No toast on screen (they run on wall-clock time, so a shot starts without one). */
-async function quiet(page, timeout = 20_000) {
+export async function quiet(page, timeout = 20_000) {
   await page.locator('.toast').first().waitFor({ state: 'detached', timeout }).catch(() => {});
 }
 
 /** A new game in flight out of Halcyon Ring, on a date (the comets stand where JPL has them on it). */
-async function inSol(page, { date = '2027-01-20T00:00:00Z' } = {}) {
+export async function inSol(page, { date = '2027-01-20T00:00:00Z' } = {}) {
   await newGame(page);
   await api(page, 'startedOn', date);
   await dockAt(page, 'earth-port');
@@ -29,7 +29,7 @@ async function inSol(page, { date = '2027-01-20T00:00:00Z' } = {}) {
  * A pilot's hands in a fight, a frame at a time: the cursor eased toward the selected hostile's
  * lead marker (or toward the edge of the screen it is off), the trigger held while the aim is close.
  */
-function gunner(page, { follow = 0.16, trigger = 70 } = {}) {
+export function gunner(page, { follow = 0.16, trigger = 70 } = {}) {
   const v = size(page);
   let x = v.width / 2;
   let y = v.height / 2;
@@ -77,7 +77,7 @@ function gunner(page, { follow = 0.16, trigger = 70 } = {}) {
 }
 
 /** Two pilots hired for the wing at Halcyon Ring and Deimos Depot, as the screenshots journey hires them. */
-async function hireWing(page) {
+export async function hireWing(page) {
   await api(page, 'setCredits', 60_000);
   const hire = async () => {
     await press(page, 'room-bar');
@@ -92,7 +92,7 @@ async function hireWing(page) {
 }
 
 /** A border battle of a kind at Ross 154, under way, the ship just launched from Waymark Waypoint. */
-async function toBattle(page, kind) {
+export async function toBattle(page, kind) {
   await api(page, 'meetBattles', true);
   await api(page, 'quietPacks', true);
   const found = await api(page, 'findBattle', { system: 'ross-154', kind, from: await clock(page) });
@@ -108,7 +108,7 @@ async function toBattle(page, kind) {
 }
 
 /** In flight at Pyre once its black hole can be reached (the lane open again), the hole selected: its target id. */
-async function atHole(page) {
+export async function atHole(page) {
   await newGame(page);
   await api(page, 'skyFrom', 0);
   const sky = await api(page, 'sky');

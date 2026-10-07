@@ -180,6 +180,42 @@ async function withPage(fn) {
   }
 }
 
+/** Renders a plan's stems (see buildPlan) and writes each as <dir>/<name>.wav; returns their paths. */
+export async function renderStems(plan, dir) {
+  const stems = await withPage((page) => page.evaluate(renderInPage, plan));
+  mkdirSync(dir, { recursive: true });
+  const files = {};
+  for (const name of ['music', 'sfx', 'engine', 'ambience']) {
+    if (!stems[name]) continue;
+    files[name] = join(dir, `${name}.wav`);
+    writeFileSync(files[name], Buffer.from(stems[name], 'base64'));
+  }
+  return { files, skipped: stems.sfxSkipped ?? 0 };
+}
+
+/**
+ * Masters a mix: gain into a limiter that works at four times the sample rate (so it holds the true
+ * peak), the gain found by trial until the integrated loudness is on target; then the fade at the end.
+ */
+export function master(premaster, out, { lufs, truePeak, tailFade, seconds }) {
+  const stereo = 'aformat=sample_fmts=fltp:channel_layouts=stereo';
+  const ceiling = 10 ** (truePeak / 20);
+  let gain = lufs - loudness(premaster).integrated;
+  let got;
+  for (let pass = 0; pass < 8; pass++) {
+    ffmpeg([
+      '-i', premaster,
+      '-af', `${stereo},volume=${gain.toFixed(2)}dB,aresample=${RATE * 4},alimiter=limit=${ceiling.toFixed(4)}:attack=2:release=60:level=false,aresample=${RATE},afade=t=out:st=${seconds - tailFade}:d=${tailFade},apad=whole_dur=${seconds},atrim=0:${seconds}`,
+      '-ar', String(RATE), '-c:a', 'pcm_s24le', out,
+    ]);
+    got = loudness(out);
+    console.log(`master pass ${pass + 1}: gain ${gain.toFixed(2)} dB → ${got.integrated} LUFS, true peak ${got.truePeak} dBTP`);
+    if (Math.abs(got.integrated - lufs) <= 0.1) break;
+    gain += lufs - got.integrated;
+  }
+  return { gain, ...got };
+}
+
 /** Integrated loudness, range and true peak of a file (EBU R128). */
 export function loudness(file) {
   const report = ffmpegReport(['-i', file, '-af', 'ebur128=peak=true', '-f', 'null', '-']);
@@ -202,14 +238,19 @@ const save = (name, base64) => {
 };
 
 /** The render plan: where the edit puts every sound of the shots it uses. */
-export function buildPlan(edl) {
+/**
+ * `cuesDir` is where the shots' cue sheets are; an EDL without `music.mood` (the cinematic cut, whose
+ * score is not the game's) gets no music stem, and its effects are left in the pitch the game plays them at.
+ */
+export function buildPlan(edl, cuesDir = join(PROMO, 'cues')) {
+  const inKey = edl.music?.mood ? IN_KEY : {};
   const sfx = [];
   const engine = [];
   const ambience = [];
   const notes = [];
   for (const clip of edl.clips) {
     const sound = clip.sound ?? {};
-    const path = clip.shot ? join(PROMO, 'cues', `${clip.shot}.json`) : null;
+    const path = clip.shot ? join(cuesDir, `${clip.shot}.json`) : null;
     if (!path || sound === false) {
       engine.push({ t: clip.at, state: null });
       ambience.push({ t: clip.at, room: null });
@@ -237,7 +278,7 @@ export function buildPlan(edl) {
       if (cue.t < from || cue.t >= to) continue;
       if (cue.kind === 'sfx' && sound.sfx !== false && !(sound.mute ?? []).includes(cue.id)) {
         const opts = { ...cue.opts };
-        if (IN_KEY[cue.id]) opts.pitch = (opts.pitch ?? 1) * IN_KEY[cue.id];
+        if (inKey[cue.id]) opts.pitch = (opts.pitch ?? 1) * inKey[cue.id];
         if (sound.gain !== undefined) opts.volume = Math.min(1, (opts.volume ?? 1) * sound.gain);
         sfx.push({ t: place(cue.t), id: cue.id, opts, clip: clip.id });
         used++;
@@ -246,8 +287,8 @@ export function buildPlan(edl) {
     }
     notes.push(`${clip.id.padEnd(14)} ${clip.shot.padEnd(12)} ${String(used).padStart(3)} effects`);
   }
-  for (const h of edl.hits) {
-    const opts = { volume: h.volume ?? 1, pan: h.pan ?? 0, pitch: h.pitch ?? IN_KEY[h.id] ?? 1 };
+  for (const h of edl.hits ?? []) {
+    const opts = { volume: h.volume ?? 1, pan: h.pan ?? 0, pitch: h.pitch ?? inKey[h.id] ?? 1 };
     sfx.push({ t: h.at, id: h.id, opts, clip: 'hit' });
   }
   const m = edl.music;
@@ -255,7 +296,7 @@ export function buildPlan(edl) {
     rate: RATE,
     seconds: edl.seconds,
     seed: 7,
-    music: { mood: m.mood, seed: m.seed, bar: edl.bar, prerollBars: m.prerollBars ?? 2, intensity: m.intensity },
+    music: m?.mood ? { mood: m.mood, seed: m.seed, bar: edl.bar, prerollBars: m.prerollBars ?? 2, intensity: m.intensity } : null,
     sfx,
     engine,
     ambience,
