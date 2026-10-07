@@ -1,0 +1,20 @@
+{
+  "name": "starman-reborn-promo",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Tooling for the 60-second trailer: capture, audio render and edit. See README.md.",
+  "type": "module",
+  "scripts": {
+    "capture": "node capture.mjs --all",
+    "build": "node build.mjs",
+    "draft": "node build.mjs --draft",
+    "audio": "node audio.mjs",
+    "cards": "node cards.mjs",
+    "scan": "node scan.mjs",
+    "sync": "node sync.mjs"
+  },
+  "devDependencies": {
+    "ffmpeg-static": "5.2.0",
+    "ffprobe-static": "3.1.0"
+  }
+}

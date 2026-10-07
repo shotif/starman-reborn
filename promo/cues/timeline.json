@@ -1,0 +1,4337 @@
+{
+ "sfx": [
+  {
+   "t": 0.30033333333333356,
+   "id": "cruise-engage",
+   "opts": {
+    "volume": 1
+   },
+   "clip": "hook"
+  },
+  {
+   "t": 5.3,
+   "id": "undock",
+   "opts": {
+    "volume": 1
+   },
+   "clip": "undock"
+  },
+  {
+   "t": 8.216333333333333,
+   "id": "lane-enter",
+   "opts": {
+    "volume": 1,
+    "pitch": 1.122462048309373
+   },
+   "clip": "lane"
+  },
+  {
+   "t": 18.00133333333333,
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-1"
+  },
+  {
+   "t": 18.034333333333333,
+   "id": "missile-lock",
+   "opts": {
+    "volume": 0.6
+   },
+   "clip": "fight-1"
+  },
+  {
+   "t": 18.051333333333332,
+   "id": "missile-launch",
+   "opts": {
+    "volume": 1
+   },
+   "clip": "fight-1"
+  },
+  {
+   "t": 18.11733333333333,
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-1"
+  },
+  {
+   "t": 18.13433333333333,
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-1"
+  },
+  {
+   "t": 18.36733333333333,
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-1"
+  },
+  {
+   "t": 18.45133333333333,
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-1"
+  },
+  {
+   "t": 18.45133333333333,
+   "id": "laser-enemy",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-1"
+  },
+  {
+   "t": 18.45133333333333,
+   "id": "laser-enemy",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-1"
+  },
+  {
+   "t": 18.467333333333332,
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-1"
+  },
+  {
+   "t": 18.467333333333332,
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-1"
+  },
+  {
+   "t": 18.717333333333332,
+   "id": "laser-enemy",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-1"
+  },
+  {
+   "t": 18.734333333333332,
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-1"
+  },
+  {
+   "t": 18.784333333333333,
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-1"
+  },
+  {
+   "t": 18.801333333333332,
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-1"
+  },
+  {
+   "t": 19.084333333333333,
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-1"
+  },
+  {
+   "t": 19.101333333333333,
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-1"
+  },
+  {
+   "t": 19.101333333333333,
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-1"
+  },
+  {
+   "t": 19.417333333333332,
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-1"
+  },
+  {
+   "t": 19.417333333333332,
+   "id": "explosion-large",
+   "opts": {
+    "volume": 0.8
+   },
+   "clip": "fight-1"
+  },
+  {
+   "t": 19.417333333333332,
+   "id": "credits",
+   "opts": {
+    "volume": 1
+   },
+   "clip": "fight-1"
+  },
+  {
+   "t": 19.417333333333332,
+   "id": "explosion-small",
+   "opts": {
+    "volume": 0.6
+   },
+   "clip": "fight-1"
+  },
+  {
+   "t": 19.417333333333332,
+   "id": "radio-blip",
+   "opts": {
+    "volume": 1
+   },
+   "clip": "fight-1"
+  },
+  {
+   "t": 19.56733333333333,
+   "id": "laser-enemy",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-1"
+  },
+  {
+   "t": 19.734333333333332,
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-1"
+  },
+  {
+   "t": 19.734333333333332,
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-1"
+  },
+  {
+   "t": 19.767333333333333,
+   "id": "target-lock",
+   "opts": {
+    "volume": 0.5
+   },
+   "clip": "fight-1"
+  },
+  {
+   "t": 19.834333333333333,
+   "id": "laser-enemy",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-1"
+  },
+  {
+   "t": 19.909333333333336,
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-2"
+  },
+  {
+   "t": 20.276333333333334,
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-2"
+  },
+  {
+   "t": 20.576333333333334,
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-2"
+  },
+  {
+   "t": 20.626333333333335,
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-2"
+  },
+  {
+   "t": 20.642333333333333,
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-2"
+  },
+  {
+   "t": 20.676333333333336,
+   "id": "laser-enemy",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-2"
+  },
+  {
+   "t": 20.676333333333336,
+   "id": "laser-enemy",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-2"
+  },
+  {
+   "t": 20.859333333333336,
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-2"
+  },
+  {
+   "t": 20.859333333333336,
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-2"
+  },
+  {
+   "t": 20.992333333333335,
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-2"
+  },
+  {
+   "t": 21.009333333333334,
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-2"
+  },
+  {
+   "t": 21.142333333333333,
+   "id": "missile-launch",
+   "opts": {
+    "volume": 1
+   },
+   "clip": "fight-2"
+  },
+  {
+   "t": 21.359333333333336,
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-2"
+  },
+  {
+   "t": 21.376333333333335,
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-2"
+  },
+  {
+   "t": 21.742333333333335,
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-2"
+  },
+  {
+   "t": 21.792333333333335,
+   "id": "laser-enemy",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-2"
+  },
+  {
+   "t": 21.909333333333336,
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-2"
+  },
+  {
+   "t": 21.909333333333336,
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-2"
+  },
+  {
+   "t": 22.042333333333335,
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-2"
+  },
+  {
+   "t": 22.042333333333335,
+   "id": "explosion-large",
+   "opts": {
+    "volume": 0.8
+   },
+   "clip": "fight-2"
+  },
+  {
+   "t": 22.042333333333335,
+   "id": "credits",
+   "opts": {
+    "volume": 1
+   },
+   "clip": "fight-2"
+  },
+  {
+   "t": 22.042333333333335,
+   "id": "explosion-small",
+   "opts": {
+    "volume": 0.6
+   },
+   "clip": "fight-2"
+  },
+  {
+   "t": 22.192333333333334,
+   "id": "player-hit-shield",
+   "opts": {
+    "volume": 0.8
+   },
+   "clip": "fight-2"
+  },
+  {
+   "t": 22.209333333333333,
+   "id": "player-hit-shield",
+   "opts": {
+    "volume": 0.8
+   },
+   "clip": "fight-2"
+  },
+  {
+   "t": 22.209333333333333,
+   "id": "player-hit-shield",
+   "opts": {
+    "volume": 0.8
+   },
+   "clip": "fight-2"
+  },
+  {
+   "t": 22.392333333333333,
+   "id": "target-lock",
+   "opts": {
+    "volume": 0.5
+   },
+   "clip": "fight-2"
+  },
+  {
+   "t": 22.609333333333336,
+   "id": "pickup",
+   "opts": {
+    "volume": 1
+   },
+   "clip": "fight-2"
+  },
+  {
+   "t": 22.659333333333336,
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-2"
+  },
+  {
+   "t": 23.063666666666666,
+   "id": "laser-enemy",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-3"
+  },
+  {
+   "t": 23.596666666666664,
+   "id": "player-hit-shield",
+   "opts": {
+    "volume": 0.8
+   },
+   "clip": "fight-3"
+  },
+  {
+   "t": 23.679666666666666,
+   "id": "laser-enemy",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-3"
+  },
+  {
+   "t": 23.913666666666664,
+   "id": "laser-enemy",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-3"
+  },
+  {
+   "t": 24.429666666666666,
+   "id": "laser-enemy",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-3"
+  },
+  {
+   "t": 24.446666666666665,
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-3"
+  },
+  {
+   "t": 24.46366666666667,
+   "id": "laser-enemy",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-3"
+  },
+  {
+   "t": 24.746666666666666,
+   "id": "player-hit-shield",
+   "opts": {
+    "volume": 0.8
+   },
+   "clip": "fight-3"
+  },
+  {
+   "t": 24.763666666666666,
+   "id": "player-hit-shield",
+   "opts": {
+    "volume": 0.8
+   },
+   "clip": "fight-3"
+  },
+  {
+   "t": 24.763666666666666,
+   "id": "shield-down",
+   "opts": {
+    "volume": 1
+   },
+   "clip": "fight-3"
+  },
+  {
+   "t": 24.796666666666667,
+   "id": "laser-enemy",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-3"
+  },
+  {
+   "t": 24.813666666666666,
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-3"
+  },
+  {
+   "t": 24.996666666666666,
+   "id": "laser-enemy",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-3"
+  },
+  {
+   "t": 24.996666666666666,
+   "id": "missile-lock",
+   "opts": {
+    "volume": 0.6
+   },
+   "clip": "fight-3"
+  },
+  {
+   "t": 25.013666666666666,
+   "id": "missile-launch",
+   "opts": {
+    "volume": 1
+   },
+   "clip": "fight-3"
+  },
+  {
+   "t": 25.029666666666664,
+   "id": "laser-enemy",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-3"
+  },
+  {
+   "t": 25.179666666666666,
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-3"
+  },
+  {
+   "t": 25.296666666666667,
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-3"
+  },
+  {
+   "t": 25.296666666666667,
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-3"
+  },
+  {
+   "t": 25.513666666666666,
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-3"
+  },
+  {
+   "t": 25.513666666666666,
+   "id": "explosion-small",
+   "opts": {
+    "volume": 0.6
+   },
+   "clip": "fight-3"
+  },
+  {
+   "t": 25.563666666666666,
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-3"
+  },
+  {
+   "t": 25.579666666666668,
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-3"
+  },
+  {
+   "t": 25.733666666666664,
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-4"
+  },
+  {
+   "t": 25.766666666666666,
+   "id": "missile-lock",
+   "opts": {
+    "volume": 0.6
+   },
+   "clip": "fight-4"
+  },
+  {
+   "t": 25.783666666666665,
+   "id": "missile-launch",
+   "opts": {
+    "volume": 1
+   },
+   "clip": "fight-4"
+  },
+  {
+   "t": 26.066666666666663,
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-4"
+  },
+  {
+   "t": 26.099666666666664,
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-4"
+  },
+  {
+   "t": 26.216666666666665,
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-4"
+  },
+  {
+   "t": 26.466666666666665,
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-4"
+  },
+  {
+   "t": 26.833666666666666,
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-4"
+  },
+  {
+   "t": 27.116666666666667,
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-4"
+  },
+  {
+   "t": 27.199666666666666,
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-4"
+  },
+  {
+   "t": 27.316666666666663,
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-4"
+  },
+  {
+   "t": 27.316666666666663,
+   "id": "explosion-small",
+   "opts": {
+    "volume": 0.6
+   },
+   "clip": "fight-4"
+  },
+  {
+   "t": 27.416666666666664,
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-4"
+  },
+  {
+   "t": 27.433666666666667,
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-4"
+  },
+  {
+   "t": 27.433666666666667,
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-4"
+  },
+  {
+   "t": 27.483666666666664,
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-4"
+  },
+  {
+   "t": 27.566666666666663,
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-4"
+  },
+  {
+   "t": 27.849666666666664,
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-4"
+  },
+  {
+   "t": 27.849666666666664,
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-4"
+  },
+  {
+   "t": 27.933666666666667,
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-4"
+  },
+  {
+   "t": 28.166666666666664,
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-4"
+  },
+  {
+   "t": 28.166666666666664,
+   "id": "radio-blip",
+   "opts": {
+    "volume": 1
+   },
+   "clip": "fight-4"
+  },
+  {
+   "t": 28.183666666666667,
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-4"
+  },
+  {
+   "t": 28.216666666666665,
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-4"
+  },
+  {
+   "t": 28.216666666666665,
+   "id": "explosion-large",
+   "opts": {
+    "volume": 0.8
+   },
+   "clip": "fight-4"
+  },
+  {
+   "t": 28.216666666666665,
+   "id": "credits",
+   "opts": {
+    "volume": 1
+   },
+   "clip": "fight-4"
+  },
+  {
+   "t": 29.033666666666665,
+   "id": "pickup",
+   "opts": {
+    "volume": 1
+   },
+   "clip": "fight-4"
+  },
+  {
+   "t": 29.128,
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 29.278,
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 29.412,
+   "id": "player-hit-shield",
+   "opts": {
+    "volume": 0.8
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 29.412,
+   "id": "player-hit-shield",
+   "opts": {
+    "volume": 0.8
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 29.495,
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 29.595,
+   "id": "pickup",
+   "opts": {
+    "volume": 1
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 29.812,
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 29.812,
+   "id": "missile-lock",
+   "opts": {
+    "volume": 0.6
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 29.828,
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 29.862000000000002,
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 29.995,
+   "id": "laser-enemy",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 30.112000000000002,
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 30.128,
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 30.212,
+   "id": "laser-enemy",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 30.228,
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 30.228,
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 30.312,
+   "id": "player-hit-shield",
+   "opts": {
+    "volume": 0.8
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 30.312,
+   "id": "player-hit-shield",
+   "opts": {
+    "volume": 0.8
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 30.328,
+   "id": "missile-launch",
+   "opts": {
+    "volume": 1
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 30.345,
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 30.428,
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 30.428,
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 30.595,
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 30.712,
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 30.712,
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 30.728,
+   "id": "player-hit-shield",
+   "opts": {
+    "volume": 0.8
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 30.728,
+   "id": "player-hit-shield",
+   "opts": {
+    "volume": 0.8
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 30.862000000000002,
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 30.862000000000002,
+   "id": "explosion-large",
+   "opts": {
+    "volume": 0.8
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 30.862000000000002,
+   "id": "credits",
+   "opts": {
+    "volume": 1
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 30.862000000000002,
+   "id": "explosion-small",
+   "opts": {
+    "volume": 0.6
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 31.178,
+   "id": "pickup",
+   "opts": {
+    "volume": 1
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 31.212,
+   "id": "target-lock",
+   "opts": {
+    "volume": 0.5
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 31.312,
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 31.328,
+   "id": "laser-enemy",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 31.412,
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 31.595,
+   "id": "player-hit-shield",
+   "opts": {
+    "volume": 0.8
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 31.595,
+   "id": "player-hit-shield",
+   "opts": {
+    "volume": 0.8
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 31.678,
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   },
+   "clip": "fight-5"
+  },
+  {
+   "t": 31.949666666666666,
+   "id": "ui-confirm",
+   "opts": {
+    "volume": 1
+   },
+   "clip": "race"
+  },
+  {
+   "t": 34.717,
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   },
+   "clip": "mine"
+  },
+  {
+   "t": 35.183,
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   },
+   "clip": "mine"
+  },
+  {
+   "t": 35.65,
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   },
+   "clip": "mine"
+  },
+  {
+   "t": 36.117,
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   },
+   "clip": "mine"
+  },
+  {
+   "t": 36.567,
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   },
+   "clip": "mine"
+  },
+  {
+   "t": 37.016999999999996,
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   },
+   "clip": "mine"
+  },
+  {
+   "t": 40.40833333333333,
+   "id": "credits",
+   "opts": {
+    "volume": 1
+   },
+   "clip": "trade"
+  },
+  {
+   "t": 49.666666666666664,
+   "id": "cruise-engage",
+   "opts": {
+    "volume": 1
+   },
+   "clip": "hole"
+  },
+  {
+   "t": 0,
+   "id": "jump-exit",
+   "opts": {
+    "volume": 0.85,
+    "pan": 0,
+    "pitch": 1.122462048309373
+   },
+   "clip": "hit"
+  },
+  {
+   "t": 10.583333333333334,
+   "id": "scan",
+   "opts": {
+    "volume": 0.6,
+    "pan": 0,
+    "pitch": 1
+   },
+   "clip": "hit"
+  },
+  {
+   "t": 15.249999999999998,
+   "id": "jump-charge",
+   "opts": {
+    "volume": 0.9,
+    "pan": 0,
+    "pitch": 1
+   },
+   "clip": "hit"
+  },
+  {
+   "t": 17.65,
+   "id": "jump-exit",
+   "opts": {
+    "volume": 1,
+    "pan": 0,
+    "pitch": 1.122462048309373
+   },
+   "clip": "hit"
+  },
+  {
+   "t": 31.766666666666666,
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.8,
+    "pan": 0,
+    "pitch": 1
+   },
+   "clip": "hit"
+  },
+  {
+   "t": 37.06666666666667,
+   "id": "dock-clamp",
+   "opts": {
+    "volume": 0.6,
+    "pan": 0,
+    "pitch": 1
+   },
+   "clip": "hit"
+  },
+  {
+   "t": 46.78333333333333,
+   "id": "cruise-charge",
+   "opts": {
+    "volume": 0.8,
+    "pan": 0,
+    "pitch": 1
+   },
+   "clip": "hit"
+  },
+  {
+   "t": 48.53333333333333,
+   "id": "explosion-large",
+   "opts": {
+    "volume": 0.9,
+    "pan": 0,
+    "pitch": 0.75
+   },
+   "clip": "hit"
+  },
+  {
+   "t": 50.3,
+   "id": "lane-enter",
+   "opts": {
+    "volume": 0.5,
+    "pan": 0,
+    "pitch": 1.122462048309373
+   },
+   "clip": "hit"
+  },
+  {
+   "t": 50.53333333333333,
+   "id": "jump-charge",
+   "opts": {
+    "volume": 0.9,
+    "pan": 0,
+    "pitch": 1
+   },
+   "clip": "hit"
+  },
+  {
+   "t": 52.93333333333333,
+   "id": "jump-exit",
+   "opts": {
+    "volume": 1,
+    "pan": 0,
+    "pitch": 1.122462048309373
+   },
+   "clip": "hit"
+  },
+  {
+   "t": 54.73333333333333,
+   "id": "mission-complete",
+   "opts": {
+    "volume": 0.75,
+    "pan": 0,
+    "pitch": 1.3348
+   },
+   "clip": "hit"
+  }
+ ],
+ "engine": [
+  {
+   "t": 0,
+   "state": {
+    "throttle": 1,
+    "speed": 0.16,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.30033333333333356,
+   "state": {
+    "throttle": 1,
+    "speed": 0.18,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.3333333333333335,
+   "state": {
+    "throttle": 1,
+    "speed": 0.2,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.3663333333333334,
+   "state": {
+    "throttle": 1,
+    "speed": 0.22,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.4003333333333332,
+   "state": {
+    "throttle": 1,
+    "speed": 0.24,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.43333333333333357,
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.4663333333333335,
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.5003333333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.5333333333333332,
+   "state": {
+    "throttle": 1,
+    "speed": 0.32,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.5663333333333336,
+   "state": {
+    "throttle": 1,
+    "speed": 0.34,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.6003333333333334,
+   "state": {
+    "throttle": 1,
+    "speed": 0.36,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.6503333333333332,
+   "state": {
+    "throttle": 1,
+    "speed": 0.38,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.6833333333333336,
+   "state": {
+    "throttle": 1,
+    "speed": 0.4,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.7333333333333334,
+   "state": {
+    "throttle": 1,
+    "speed": 0.42,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.7663333333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.44,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.8163333333333336,
+   "state": {
+    "throttle": 1,
+    "speed": 0.46,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.8663333333333334,
+   "state": {
+    "throttle": 1,
+    "speed": 0.48,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.9003333333333332,
+   "state": {
+    "throttle": 1,
+    "speed": 0.5,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.9503333333333335,
+   "state": {
+    "throttle": 1,
+    "speed": 0.52,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.0163333333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.54,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.0663333333333336,
+   "state": {
+    "throttle": 1,
+    "speed": 0.56,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.1163333333333334,
+   "state": {
+    "throttle": 1,
+    "speed": 0.58,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.1833333333333336,
+   "state": {
+    "throttle": 1,
+    "speed": 0.6,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.2503333333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.62,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.3163333333333336,
+   "state": {
+    "throttle": 1,
+    "speed": 0.64,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.3833333333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.66,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.4503333333333335,
+   "state": {
+    "throttle": 1,
+    "speed": 0.68,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.5333333333333332,
+   "state": {
+    "throttle": 1,
+    "speed": 0.7,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.6163333333333334,
+   "state": {
+    "throttle": 1,
+    "speed": 0.72,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.7003333333333335,
+   "state": {
+    "throttle": 1,
+    "speed": 0.74,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.8003333333333336,
+   "state": {
+    "throttle": 1,
+    "speed": 0.76,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.9003333333333332,
+   "state": {
+    "throttle": 1,
+    "speed": 0.78,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 2.0163333333333338,
+   "state": {
+    "throttle": 1,
+    "speed": 0.8,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 2.150333333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.82,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 2.283333333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.84,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 2.4333333333333336,
+   "state": {
+    "throttle": 1,
+    "speed": 0.86,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 2.6163333333333334,
+   "state": {
+    "throttle": 1,
+    "speed": 0.88,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 2.833333333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.9,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 3.083333333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.92,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 3.400333333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.94,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 3.8163333333333336,
+   "state": {
+    "throttle": 1,
+    "speed": 0.96,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.483333333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.98,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.3,
+   "state": null
+  },
+  {
+   "t": 5.3,
+   "state": null
+  },
+  {
+   "t": 5.300333333333334,
+   "state": {
+    "throttle": 0,
+    "speed": 0.18,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 7.683333333333334,
+   "state": {
+    "throttle": 0,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 7.700333333333333,
+   "state": {
+    "throttle": 0.36,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 7.866333333333333,
+   "state": {
+    "throttle": 0.36,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 7.933333333333334,
+   "state": {
+    "throttle": 0.3,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 7.966333333333333,
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 8.216333333333333,
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 8.233333333333334,
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.18,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 8.250333333333334,
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.22,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 8.266333333333334,
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.28,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 8.283333333333333,
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.32,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 8.300333333333334,
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.38,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 8.316333333333333,
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.42,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 8.333333333333334,
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.48,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 8.350333333333333,
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.52,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 8.366333333333333,
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.56,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 8.383333333333333,
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.62,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 8.400333333333334,
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.66,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 8.416333333333334,
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.72,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 8.433333333333334,
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.76,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 8.450333333333333,
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.82,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 8.466333333333333,
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.86,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 8.483333333333334,
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.92,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 8.500333333333334,
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.96,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 8.516333333333334,
+   "state": {
+    "throttle": 0.28,
+    "speed": 1,
+    "boost": false,
+    "cruise": false,
+    "lane": true
+   }
+  },
+  {
+   "t": 10.583333333333334,
+   "state": null
+  },
+  {
+   "t": 15,
+   "state": null
+  },
+  {
+   "t": 17.65,
+   "state": {
+    "throttle": 0.36,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 17.651333333333334,
+   "state": {
+    "throttle": 0.38,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 17.667333333333332,
+   "state": {
+    "throttle": 0.4,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 17.70133333333333,
+   "state": {
+    "throttle": 0.42,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 17.717333333333332,
+   "state": {
+    "throttle": 0.44,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 17.734333333333332,
+   "state": {
+    "throttle": 0.46,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 17.767333333333333,
+   "state": {
+    "throttle": 0.48,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 17.784333333333333,
+   "state": {
+    "throttle": 0.5,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 17.801333333333332,
+   "state": {
+    "throttle": 0.52,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 17.834333333333333,
+   "state": {
+    "throttle": 0.54,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 17.851333333333333,
+   "state": {
+    "throttle": 0.56,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 17.86733333333333,
+   "state": {
+    "throttle": 0.58,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 17.901333333333334,
+   "state": {
+    "throttle": 0.6,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 17.917333333333332,
+   "state": {
+    "throttle": 0.62,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 17.93433333333333,
+   "state": {
+    "throttle": 0.64,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 17.967333333333332,
+   "state": {
+    "throttle": 0.66,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 17.984333333333332,
+   "state": {
+    "throttle": 0.68,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 18.00133333333333,
+   "state": {
+    "throttle": 0.7,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 18.034333333333333,
+   "state": {
+    "throttle": 0.72,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 18.051333333333332,
+   "state": {
+    "throttle": 0.74,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 18.06733333333333,
+   "state": {
+    "throttle": 0.76,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 18.101333333333333,
+   "state": {
+    "throttle": 0.78,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 18.11733333333333,
+   "state": {
+    "throttle": 0.8,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 18.13433333333333,
+   "state": {
+    "throttle": 0.82,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 18.151333333333334,
+   "state": {
+    "throttle": 0.82,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 18.167333333333332,
+   "state": {
+    "throttle": 0.84,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 18.18433333333333,
+   "state": {
+    "throttle": 0.86,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 18.20133333333333,
+   "state": {
+    "throttle": 0.88,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 18.234333333333332,
+   "state": {
+    "throttle": 0.9,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 18.25133333333333,
+   "state": {
+    "throttle": 0.92,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 18.267333333333333,
+   "state": {
+    "throttle": 0.94,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 18.301333333333332,
+   "state": {
+    "throttle": 0.96,
+    "speed": 0.1,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 18.31733333333333,
+   "state": {
+    "throttle": 0.98,
+    "speed": 0.1,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 18.334333333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.1,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 18.467333333333332,
+   "state": {
+    "throttle": 1,
+    "speed": 0.12,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 18.68433333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.14,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 19.034333333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.16,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 19.85,
+   "state": {
+    "throttle": 1,
+    "speed": 0.16,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 19.926333333333336,
+   "state": {
+    "throttle": 1,
+    "speed": 0.18,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 20.792333333333335,
+   "state": {
+    "throttle": 1,
+    "speed": 0.16,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 22.192333333333334,
+   "state": {
+    "throttle": 1,
+    "speed": 0.18,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 22.933333333333334,
+   "state": {
+    "throttle": 1,
+    "speed": 0.18,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 23.513666666666666,
+   "state": {
+    "throttle": 1,
+    "speed": 0.16,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 25.583333333333332,
+   "state": {
+    "throttle": 1,
+    "speed": 0.16,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 26.699666666666666,
+   "state": {
+    "throttle": 1,
+    "speed": 0.18,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 29.116666666666667,
+   "state": {
+    "throttle": 1,
+    "speed": 0.18,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 31.766666666666666,
+   "state": {
+    "throttle": 0,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 31.966666666666665,
+   "state": {
+    "throttle": 0.02,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 31.983666666666664,
+   "state": {
+    "throttle": 0.04,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.016666666666666,
+   "state": {
+    "throttle": 0.06,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.03366666666667,
+   "state": {
+    "throttle": 0.08,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.04966666666667,
+   "state": {
+    "throttle": 0.1,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.083666666666666,
+   "state": {
+    "throttle": 0.12,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.099666666666664,
+   "state": {
+    "throttle": 0.14,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.11666666666667,
+   "state": {
+    "throttle": 0.16,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.14966666666667,
+   "state": {
+    "throttle": 0.18,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.166666666666664,
+   "state": {
+    "throttle": 0.2,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.18366666666667,
+   "state": {
+    "throttle": 0.22,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.21666666666667,
+   "state": {
+    "throttle": 0.24,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.233666666666664,
+   "state": {
+    "throttle": 0.26,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.24966666666666,
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.28366666666667,
+   "state": {
+    "throttle": 0.3,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.29966666666667,
+   "state": {
+    "throttle": 0.32,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.31666666666666,
+   "state": {
+    "throttle": 0.34,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.349666666666664,
+   "state": {
+    "throttle": 0.36,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.36666666666667,
+   "state": {
+    "throttle": 0.38,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.38366666666666,
+   "state": {
+    "throttle": 0.4,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.416666666666664,
+   "state": {
+    "throttle": 0.42,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.43366666666667,
+   "state": {
+    "throttle": 0.44,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.449666666666666,
+   "state": {
+    "throttle": 0.46,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.483666666666664,
+   "state": {
+    "throttle": 0.48,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.49966666666667,
+   "state": {
+    "throttle": 0.5,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.516666666666666,
+   "state": {
+    "throttle": 0.52,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.54966666666667,
+   "state": {
+    "throttle": 0.54,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.56666666666666,
+   "state": {
+    "throttle": 0.56,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.583666666666666,
+   "state": {
+    "throttle": 0.58,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.61666666666667,
+   "state": {
+    "throttle": 0.6,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.63366666666666,
+   "state": {
+    "throttle": 0.62,
+    "speed": 0.04,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.64966666666667,
+   "state": {
+    "throttle": 0.64,
+    "speed": 0.06,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.68366666666667,
+   "state": {
+    "throttle": 0.66,
+    "speed": 0.06,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.699666666666666,
+   "state": {
+    "throttle": 0.68,
+    "speed": 0.08,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.71666666666667,
+   "state": {
+    "throttle": 0.7,
+    "speed": 0.08,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.74966666666667,
+   "state": {
+    "throttle": 0.72,
+    "speed": 0.08,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.766666666666666,
+   "state": {
+    "throttle": 0.74,
+    "speed": 0.1,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.78366666666667,
+   "state": {
+    "throttle": 0.76,
+    "speed": 0.1,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.81666666666666,
+   "state": {
+    "throttle": 0.78,
+    "speed": 0.1,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.833666666666666,
+   "state": {
+    "throttle": 0.8,
+    "speed": 0.12,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.849666666666664,
+   "state": {
+    "throttle": 0.82,
+    "speed": 0.12,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.88366666666666,
+   "state": {
+    "throttle": 0.84,
+    "speed": 0.12,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.89966666666667,
+   "state": {
+    "throttle": 0.86,
+    "speed": 0.14,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.916666666666664,
+   "state": {
+    "throttle": 0.88,
+    "speed": 0.14,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.949666666666666,
+   "state": {
+    "throttle": 0.9,
+    "speed": 0.14,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.96666666666667,
+   "state": {
+    "throttle": 0.92,
+    "speed": 0.14,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 32.983666666666664,
+   "state": {
+    "throttle": 0.94,
+    "speed": 0.16,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 33.016666666666666,
+   "state": {
+    "throttle": 0.96,
+    "speed": 0.16,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 33.03366666666667,
+   "state": {
+    "throttle": 0.98,
+    "speed": 0.16,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 33.04966666666667,
+   "state": {
+    "throttle": 1,
+    "speed": 0.18,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 33.13366666666666,
+   "state": {
+    "throttle": 1,
+    "speed": 0.2,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 33.233666666666664,
+   "state": {
+    "throttle": 1,
+    "speed": 0.22,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 33.349666666666664,
+   "state": {
+    "throttle": 1,
+    "speed": 0.24,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 33.483666666666664,
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 33.666666666666664,
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 33.916666666666664,
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 34.333666666666666,
+   "state": {
+    "throttle": 1,
+    "speed": 0.32,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 34.416666666666664,
+   "state": null
+  },
+  {
+   "t": 37.06666666666667,
+   "state": null
+  },
+  {
+   "t": 39.266666666666666,
+   "state": null
+  },
+  {
+   "t": 40.583333333333336,
+   "state": null
+  },
+  {
+   "t": 42.35,
+   "state": {
+    "throttle": 1,
+    "speed": 0.14,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 42.61633333333334,
+   "state": {
+    "throttle": 1,
+    "speed": 0.16,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 43.45033333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.18,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 45,
+   "state": {
+    "throttle": 0.9,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 45.00033333333333,
+   "state": {
+    "throttle": 0.92,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 45.016333333333336,
+   "state": {
+    "throttle": 0.94,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 45.03333333333333,
+   "state": {
+    "throttle": 0.96,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 45.050333333333334,
+   "state": {
+    "throttle": 0.96,
+    "speed": 0.1,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 45.06633333333333,
+   "state": {
+    "throttle": 0.98,
+    "speed": 0.1,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 45.083333333333336,
+   "state": {
+    "throttle": 1,
+    "speed": 0.1,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 45.21633333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.12,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 45.43333333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.14,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 45.78333333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.16,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 46.60033333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.18,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 46.766666666666666,
+   "state": {
+    "throttle": 0.1,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 46.766999999999996,
+   "state": {
+    "throttle": 0.12,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 46.783,
+   "state": {
+    "throttle": 0.14,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 46.817,
+   "state": {
+    "throttle": 0.16,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 46.833,
+   "state": {
+    "throttle": 0.18,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 46.85,
+   "state": {
+    "throttle": 0.2,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 46.882999999999996,
+   "state": {
+    "throttle": 0.22,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 46.9,
+   "state": {
+    "throttle": 0.24,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 46.917,
+   "state": {
+    "throttle": 0.26,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 46.933,
+   "state": {
+    "throttle": 0.26,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 46.949999999999996,
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 46.967,
+   "state": {
+    "throttle": 0.3,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 46.983,
+   "state": {
+    "throttle": 0.32,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.016999999999996,
+   "state": {
+    "throttle": 0.34,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.033,
+   "state": {
+    "throttle": 0.36,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.05,
+   "state": {
+    "throttle": 0.38,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.083,
+   "state": {
+    "throttle": 0.4,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.1,
+   "state": {
+    "throttle": 0.42,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.117,
+   "state": {
+    "throttle": 0.44,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.15,
+   "state": {
+    "throttle": 0.46,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.167,
+   "state": {
+    "throttle": 0.48,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.183,
+   "state": {
+    "throttle": 0.5,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.199999999999996,
+   "state": {
+    "throttle": 0.5,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.217,
+   "state": {
+    "throttle": 0.52,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.233,
+   "state": {
+    "throttle": 0.54,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.25,
+   "state": {
+    "throttle": 0.56,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.283,
+   "state": {
+    "throttle": 0.58,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.3,
+   "state": {
+    "throttle": 0.6,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.317,
+   "state": {
+    "throttle": 0.62,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.35,
+   "state": {
+    "throttle": 0.64,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.367,
+   "state": {
+    "throttle": 0.66,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.382999999999996,
+   "state": {
+    "throttle": 0.68,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.417,
+   "state": {
+    "throttle": 0.7,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.433,
+   "state": {
+    "throttle": 0.72,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.449999999999996,
+   "state": {
+    "throttle": 0.74,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.483,
+   "state": {
+    "throttle": 0.76,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.5,
+   "state": {
+    "throttle": 0.78,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.516999999999996,
+   "state": {
+    "throttle": 0.8,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.55,
+   "state": {
+    "throttle": 0.82,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.567,
+   "state": {
+    "throttle": 0.84,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.583,
+   "state": {
+    "throttle": 0.86,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.617,
+   "state": {
+    "throttle": 0.88,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.632999999999996,
+   "state": {
+    "throttle": 0.9,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.65,
+   "state": {
+    "throttle": 0.92,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.683,
+   "state": {
+    "throttle": 0.94,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.699999999999996,
+   "state": {
+    "throttle": 0.96,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.717,
+   "state": {
+    "throttle": 0.98,
+    "speed": 0.1,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.75,
+   "state": {
+    "throttle": 1,
+    "speed": 0.1,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 47.882999999999996,
+   "state": {
+    "throttle": 1,
+    "speed": 0.12,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 48.1,
+   "state": {
+    "throttle": 1,
+    "speed": 0.14,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 48.433,
+   "state": {
+    "throttle": 1,
+    "speed": 0.16,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 48.53333333333333,
+   "state": {
+    "throttle": 0.92,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 48.54966666666667,
+   "state": {
+    "throttle": 0.94,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 48.56666666666666,
+   "state": {
+    "throttle": 0.96,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 48.583666666666666,
+   "state": {
+    "throttle": 0.98,
+    "speed": 0.1,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 48.61666666666667,
+   "state": {
+    "throttle": 1,
+    "speed": 0.1,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 48.74966666666666,
+   "state": {
+    "throttle": 1,
+    "speed": 0.12,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 48.96666666666666,
+   "state": {
+    "throttle": 1,
+    "speed": 0.14,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 49.29966666666667,
+   "state": {
+    "throttle": 1,
+    "speed": 0.16,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 49.666666666666664,
+   "state": {
+    "throttle": 1,
+    "speed": 0.18,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 49.699666666666666,
+   "state": {
+    "throttle": 1,
+    "speed": 0.2,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 49.733666666666664,
+   "state": {
+    "throttle": 1,
+    "speed": 0.22,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 49.766666666666666,
+   "state": {
+    "throttle": 1,
+    "speed": 0.24,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 49.79966666666667,
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 49.833666666666666,
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 49.86666666666667,
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 49.89966666666666,
+   "state": {
+    "throttle": 1,
+    "speed": 0.32,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 49.93366666666667,
+   "state": {
+    "throttle": 1,
+    "speed": 0.34,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 49.983666666666664,
+   "state": {
+    "throttle": 1,
+    "speed": 0.36,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 50.016666666666666,
+   "state": {
+    "throttle": 1,
+    "speed": 0.38,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 50.04966666666667,
+   "state": {
+    "throttle": 1,
+    "speed": 0.4,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 50.099666666666664,
+   "state": {
+    "throttle": 1,
+    "speed": 0.42,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 50.13366666666666,
+   "state": {
+    "throttle": 1,
+    "speed": 0.44,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 50.18366666666667,
+   "state": {
+    "throttle": 1,
+    "speed": 0.46,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 50.233666666666664,
+   "state": {
+    "throttle": 1,
+    "speed": 0.48,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 50.28366666666666,
+   "state": {
+    "throttle": 1,
+    "speed": 0.5,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 50.3,
+   "state": {
+    "throttle": 1,
+    "speed": 0.64,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 50.31633333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.66,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 50.38333333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.68,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 50.46633333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.7,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 50.55033333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.72,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 50.63333333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.74,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 50.73333333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.76,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 50.83333333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.78,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 50.95033333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.8,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 51.08333333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.82,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 51.21633333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.84,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 51.38333333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.86,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 51.55033333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.88,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 51.76633333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.9,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 52.01633333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.92,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 52.33333333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.94,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 52.75033333333333,
+   "state": {
+    "throttle": 1,
+    "speed": 0.96,
+    "boost": false,
+    "cruise": true,
+    "lane": false
+   }
+  },
+  {
+   "t": 52.93333333333333,
+   "state": null
+  }
+ ],
+ "ambience": [
+  {
+   "t": 0,
+   "room": null
+  },
+  {
+   "t": 5.3,
+   "room": null
+  },
+  {
+   "t": 5.3,
+   "room": "deck"
+  },
+  {
+   "t": 5.3,
+   "room": null
+  },
+  {
+   "t": 7.933333333333334,
+   "room": null
+  },
+  {
+   "t": 10.583333333333334,
+   "room": null
+  },
+  {
+   "t": 15,
+   "room": null
+  },
+  {
+   "t": 17.65,
+   "room": null
+  },
+  {
+   "t": 19.85,
+   "room": null
+  },
+  {
+   "t": 22.933333333333334,
+   "room": null
+  },
+  {
+   "t": 25.583333333333332,
+   "room": null
+  },
+  {
+   "t": 29.116666666666667,
+   "room": null
+  },
+  {
+   "t": 31.766666666666666,
+   "room": null
+  },
+  {
+   "t": 34.416666666666664,
+   "room": null
+  },
+  {
+   "t": 37.06666666666667,
+   "room": "deck"
+  },
+  {
+   "t": 39.266666666666666,
+   "room": "trader"
+  },
+  {
+   "t": 40.583333333333336,
+   "room": "bar"
+  },
+  {
+   "t": 42.35,
+   "room": null
+  },
+  {
+   "t": 45,
+   "room": null
+  },
+  {
+   "t": 46.766666666666666,
+   "room": null
+  },
+  {
+   "t": 48.53333333333333,
+   "room": null
+  },
+  {
+   "t": 50.3,
+   "room": null
+  },
+  {
+   "t": 52.93333333333333,
+   "room": null
+  }
+ ],
+ "music": {
+  "mood": "title",
+  "seed": 7,
+  "bar": 3.5294117647058822,
+  "prerollBars": 2,
+  "intensity": [
+   [
+    0,
+    0
+   ],
+   [
+    5.3,
+    0.3
+   ],
+   [
+    10.583333333333334,
+    0.25
+   ],
+   [
+    15,
+    0.6
+   ],
+   [
+    17.65,
+    1
+   ],
+   [
+    31.766666666666666,
+    0.6
+   ],
+   [
+    45,
+    0.8
+   ],
+   [
+    48.53333333333333,
+    1
+   ],
+   [
+    52.06666666666667,
+    0
+   ]
+  ]
+ }
+}

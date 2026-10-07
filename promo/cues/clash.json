@@ -1,0 +1,1631 @@
+{
+ "shot": "clash",
+ "fps": 60,
+ "frames": 900,
+ "seconds": 15,
+ "captureSeconds": 90.6,
+ "notes": [
+  {
+   "frame": 48,
+   "t": 0.8,
+   "label": "seeker"
+  },
+  {
+   "frame": 229,
+   "t": 3.816666666666667,
+   "label": "seeker"
+  },
+  {
+   "frame": 522,
+   "t": 8.7,
+   "label": "seeker"
+  }
+ ],
+ "cues": [
+  {
+   "t": 0,
+   "kind": "sfx",
+   "id": "target-lock",
+   "opts": {
+    "volume": 0.5
+   }
+  },
+  {
+   "t": 0,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.02,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0,
+   "kind": "intensity",
+   "value": 1
+  },
+  {
+   "t": 0.033,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 0.033,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.04,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.067,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.06,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.083,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.08,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.1,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.1,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.133,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.12,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.15,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.14,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.167,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.16,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.2,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.18,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.217,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.2,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.233,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.22,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.267,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.24,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.283,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.26,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.3,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.333,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.3,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.35,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.32,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.367,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.34,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.4,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 0.4,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.36,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.417,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.38,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.433,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.4,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.467,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.42,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.483,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.44,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.5,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.46,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.533,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.48,
+    "speed": 0.02,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.55,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.5,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.567,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.52,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.6,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.54,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.617,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.56,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.633,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.58,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.667,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.6,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.683,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.62,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.7,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.64,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.733,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.66,
+    "speed": 0.04,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.75,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.68,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.767,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 0.767,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.7,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.8,
+   "kind": "sfx",
+   "id": "missile-lock",
+   "opts": {
+    "volume": 0.6
+   }
+  },
+  {
+   "t": 0.8,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.72,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.817,
+   "kind": "sfx",
+   "id": "missile-launch",
+   "opts": {
+    "volume": 1
+   }
+  },
+  {
+   "t": 0.817,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.74,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.833,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.76,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.867,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.78,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.883,
+   "kind": "sfx",
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 0.883,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.8,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.9,
+   "kind": "sfx",
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 0.9,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.82,
+    "speed": 0.06,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.917,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.82,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.933,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.84,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.95,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.86,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0.967,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.88,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.9,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.017,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.92,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.033,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.94,
+    "speed": 0.08,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.067,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.96,
+    "speed": 0.1,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.083,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.98,
+    "speed": 0.1,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.1,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.1,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.133,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 1.217,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   }
+  },
+  {
+   "t": 1.217,
+   "kind": "sfx",
+   "id": "laser-enemy",
+   "opts": {
+    "volume": 0.3
+   }
+  },
+  {
+   "t": 1.217,
+   "kind": "sfx",
+   "id": "laser-enemy",
+   "opts": {
+    "volume": 0.3
+   }
+  },
+  {
+   "t": 1.233,
+   "kind": "sfx",
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 1.233,
+   "kind": "sfx",
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 1.233,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.12,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.45,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.14,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.483,
+   "kind": "sfx",
+   "id": "laser-enemy",
+   "opts": {
+    "volume": 0.3
+   }
+  },
+  {
+   "t": 1.5,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 1.55,
+   "kind": "sfx",
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 1.567,
+   "kind": "sfx",
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 1.8,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.16,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.85,
+   "kind": "sfx",
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 1.867,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 1.867,
+   "kind": "sfx",
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 2.183,
+   "kind": "sfx",
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 2.183,
+   "kind": "sfx",
+   "id": "explosion-large",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 2.183,
+   "kind": "sfx",
+   "id": "credits",
+   "opts": {
+    "volume": 1
+   }
+  },
+  {
+   "t": 2.183,
+   "kind": "sfx",
+   "id": "explosion-small",
+   "opts": {
+    "volume": 0.6
+   }
+  },
+  {
+   "t": 2.183,
+   "kind": "sfx",
+   "id": "radio-blip",
+   "opts": {
+    "volume": 1
+   }
+  },
+  {
+   "t": 2.333,
+   "kind": "sfx",
+   "id": "laser-enemy",
+   "opts": {
+    "volume": 0.3
+   }
+  },
+  {
+   "t": 2.5,
+   "kind": "sfx",
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 2.5,
+   "kind": "sfx",
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 2.533,
+   "kind": "sfx",
+   "id": "target-lock",
+   "opts": {
+    "volume": 0.5
+   }
+  },
+  {
+   "t": 2.6,
+   "kind": "sfx",
+   "id": "laser-enemy",
+   "opts": {
+    "volume": 0.3
+   }
+  },
+  {
+   "t": 2.617,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.18,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 2.633,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 2.783,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   }
+  },
+  {
+   "t": 2.917,
+   "kind": "sfx",
+   "id": "player-hit-shield",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 2.917,
+   "kind": "sfx",
+   "id": "player-hit-shield",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 3,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 3.1,
+   "kind": "sfx",
+   "id": "pickup",
+   "opts": {
+    "volume": 1
+   }
+  },
+  {
+   "t": 3.317,
+   "kind": "sfx",
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 3.317,
+   "kind": "sfx",
+   "id": "missile-lock",
+   "opts": {
+    "volume": 0.6
+   }
+  },
+  {
+   "t": 3.333,
+   "kind": "sfx",
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 3.367,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 3.5,
+   "kind": "sfx",
+   "id": "laser-enemy",
+   "opts": {
+    "volume": 0.3
+   }
+  },
+  {
+   "t": 3.617,
+   "kind": "sfx",
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 3.633,
+   "kind": "sfx",
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 3.717,
+   "kind": "sfx",
+   "id": "laser-enemy",
+   "opts": {
+    "volume": 0.3
+   }
+  },
+  {
+   "t": 3.733,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 3.733,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   }
+  },
+  {
+   "t": 3.817,
+   "kind": "sfx",
+   "id": "player-hit-shield",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 3.817,
+   "kind": "sfx",
+   "id": "player-hit-shield",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 3.833,
+   "kind": "sfx",
+   "id": "missile-launch",
+   "opts": {
+    "volume": 1
+   }
+  },
+  {
+   "t": 3.85,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   }
+  },
+  {
+   "t": 3.933,
+   "kind": "sfx",
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 3.933,
+   "kind": "sfx",
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 4.1,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 4.217,
+   "kind": "sfx",
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 4.217,
+   "kind": "sfx",
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 4.233,
+   "kind": "sfx",
+   "id": "player-hit-shield",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 4.233,
+   "kind": "sfx",
+   "id": "player-hit-shield",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 4.367,
+   "kind": "sfx",
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 4.367,
+   "kind": "sfx",
+   "id": "explosion-large",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 4.367,
+   "kind": "sfx",
+   "id": "credits",
+   "opts": {
+    "volume": 1
+   }
+  },
+  {
+   "t": 4.367,
+   "kind": "sfx",
+   "id": "explosion-small",
+   "opts": {
+    "volume": 0.6
+   }
+  },
+  {
+   "t": 4.683,
+   "kind": "sfx",
+   "id": "pickup",
+   "opts": {
+    "volume": 1
+   }
+  },
+  {
+   "t": 4.717,
+   "kind": "sfx",
+   "id": "target-lock",
+   "opts": {
+    "volume": 0.5
+   }
+  },
+  {
+   "t": 4.817,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 4.833,
+   "kind": "sfx",
+   "id": "laser-enemy",
+   "opts": {
+    "volume": 0.3
+   }
+  },
+  {
+   "t": 4.917,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   }
+  },
+  {
+   "t": 5.1,
+   "kind": "sfx",
+   "id": "player-hit-shield",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 5.1,
+   "kind": "sfx",
+   "id": "player-hit-shield",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 5.183,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 5.3,
+   "kind": "sfx",
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 5.3,
+   "kind": "sfx",
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 5.5,
+   "kind": "sfx",
+   "id": "missile-lock",
+   "opts": {
+    "volume": 0.6
+   }
+  },
+  {
+   "t": 5.55,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 5.583,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   }
+  },
+  {
+   "t": 5.95,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   }
+  },
+  {
+   "t": 5.95,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   }
+  },
+  {
+   "t": 6.317,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   }
+  },
+  {
+   "t": 6.667,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.16,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.683,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   }
+  },
+  {
+   "t": 6.983,
+   "kind": "sfx",
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 6.983,
+   "kind": "sfx",
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 7.65,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   }
+  },
+  {
+   "t": 7.75,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   }
+  },
+  {
+   "t": 7.9,
+   "kind": "sfx",
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 7.9,
+   "kind": "sfx",
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 7.9,
+   "kind": "sfx",
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 7.9,
+   "kind": "sfx",
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 7.933,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 8,
+   "kind": "sfx",
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 8,
+   "kind": "sfx",
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 8.117,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   }
+  },
+  {
+   "t": 8.3,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 8.367,
+   "kind": "sfx",
+   "id": "hit-shield",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 8.483,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   }
+  },
+  {
+   "t": 8.667,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 8.7,
+   "kind": "sfx",
+   "id": "missile-lock",
+   "opts": {
+    "volume": 0.6
+   }
+  },
+  {
+   "t": 8.717,
+   "kind": "sfx",
+   "id": "missile-launch",
+   "opts": {
+    "volume": 1
+   }
+  },
+  {
+   "t": 9,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   }
+  },
+  {
+   "t": 9.033,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 9.15,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   }
+  },
+  {
+   "t": 9.4,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 9.633,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.18,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 9.767,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 10.05,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   }
+  },
+  {
+   "t": 10.133,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 10.25,
+   "kind": "sfx",
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 10.25,
+   "kind": "sfx",
+   "id": "explosion-small",
+   "opts": {
+    "volume": 0.6
+   }
+  },
+  {
+   "t": 10.35,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   }
+  },
+  {
+   "t": 10.367,
+   "kind": "sfx",
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 10.367,
+   "kind": "sfx",
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 10.417,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   }
+  },
+  {
+   "t": 10.5,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 10.783,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   }
+  },
+  {
+   "t": 10.783,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.3
+   }
+  },
+  {
+   "t": 10.867,
+   "kind": "sfx",
+   "id": "laser",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 11.1,
+   "kind": "sfx",
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 11.1,
+   "kind": "sfx",
+   "id": "radio-blip",
+   "opts": {
+    "volume": 1
+   }
+  },
+  {
+   "t": 11.1,
+   "kind": "intensity",
+   "value": 0
+  },
+  {
+   "t": 11.117,
+   "kind": "sfx",
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 11.15,
+   "kind": "sfx",
+   "id": "hit-hull",
+   "opts": {
+    "volume": 0.55
+   }
+  },
+  {
+   "t": 11.15,
+   "kind": "sfx",
+   "id": "explosion-large",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 11.15,
+   "kind": "sfx",
+   "id": "credits",
+   "opts": {
+    "volume": 1
+   }
+  },
+  {
+   "t": 11.967,
+   "kind": "sfx",
+   "id": "pickup",
+   "opts": {
+    "volume": 1
+   }
+  }
+ ]
+}

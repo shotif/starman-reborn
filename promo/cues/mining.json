@@ -1,0 +1,168 @@
+{
+ "shot": "mining",
+ "fps": 60,
+ "frames": 540,
+ "seconds": 9,
+ "captureSeconds": 50.3,
+ "notes": [
+  {
+   "frame": 36,
+   "t": 0.6,
+   "label": "mine"
+  }
+ ],
+ "cues": [
+  {
+   "t": 0.617,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 1.083,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 1.55,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 2.017,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 2.467,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 2.917,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 3.367,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 3.817,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 4.267,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 4.717,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 5.167,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 5.617,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 6.067,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 6.533,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 7,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 7.467,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 7.933,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 8.4,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 8.867,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  }
+ ]
+}
