@@ -248,7 +248,15 @@ const ORB6 = [
 const COMETS = ['1P', '2P', '9P', '12P', '13P', '19P', '21P', '29P', '46P', '55P', '67P', '81P', '103P', '109P'];
 
 /**
- * Binary orbits and comets, saved apart from the stars' snapshot with a manifest of their own: a
+ * Named asteroids for the Solar System (docs/PROCGEN.md), by their JPL numbers: the largest of the
+ * main belt, those spacecraft have visited, and near-Earth ones that pass close (Apophis in 2029).
+ */
+const ASTEROIDS = ['1', '2', '4', '10', '16', '21', '243', '433', '951', '3200', '25143', '65803', '99942', '101955', '162173'];
+/** Asteroids whose orbit a close pass of Earth changes: their elements again on these days, after it. */
+const ASTEROID_AFTER: Record<string, string[]> = { '99942': ['2029-05-13'] };
+
+/**
+ * Binary orbits, comets and asteroids, saved apart from the stars' snapshot with a manifest of their own: a
  * failure here never touches it, and one there never stops these.
  */
 async function fetchOrbits(): Promise<void> {
@@ -282,10 +290,10 @@ async function fetchOrbits(): Promise<void> {
   // the planets' pulls included), and where Horizons has it every 30 days from two years before to
   // four after, which the game's reckoning is tested against.
   const day = Date.parse(`${today}T00:00:00Z`) / 86_400_000 + 2_440_587.5;
-  const horizons = (c: string, ephem: 'ELEMENTS' | 'VECTORS', from: number, to: number, step: string) =>
+  const horizons = (command: string, ephem: 'ELEMENTS' | 'VECTORS', from: number, to: number, step: string) =>
     `https://ssd.jpl.nasa.gov/api/horizons.api?${new URLSearchParams({
       format: 'json',
-      COMMAND: `'DES=${c};CAP;NOFRAG'`,
+      COMMAND: `'${command}'`,
       OBJ_DATA: "'NO'",
       MAKE_EPHEM: "'YES'",
       EPHEM_TYPE: `'${ephem}'`,
@@ -300,10 +308,23 @@ async function fetchOrbits(): Promise<void> {
       STEP_SIZE: `'${step}'`,
     }).toString()}`;
   for (const c of COMETS) {
-    await save(`jpl-horizons-elements-${c}`, 'json', [horizons(c, 'ELEMENTS', day, day + 1, '1 d')]);
-    await save(`jpl-horizons-vectors-${c}`, 'json', [horizons(c, 'VECTORS', day - 730, day + 1460, '30 d')]);
+    await save(`jpl-horizons-elements-${c}`, 'json', [horizons(`DES=${c};CAP;NOFRAG`, 'ELEMENTS', day, day + 1, '1 d')]);
+    await save(`jpl-horizons-vectors-${c}`, 'json', [horizons(`DES=${c};CAP;NOFRAG`, 'VECTORS', day - 730, day + 1460, '30 d')]);
   }
-  writeFileSync(resolve(orbitsDir, 'manifest.json'), JSON.stringify({ retrieved: today, comets: COMETS, queries: entries }, null, 2) + '\n');
+  // Asteroids: the Small-Body Database's record, Horizons' elements on the day (and after a close pass
+  // of Earth that changes the orbit) and positions to test against, and JPL's close approaches to Earth.
+  const year = Number(today.slice(0, 4));
+  for (const a of ASTEROIDS) {
+    await save(`jpl-sbdb-a${a}`, 'json', [`https://ssd-api.jpl.nasa.gov/sbdb.api?sstr=${encodeURIComponent(a)}&phys-par=1&full-prec=1`]);
+    await save(`jpl-horizons-elements-a${a}`, 'json', [horizons(`${a};`, 'ELEMENTS', day, day + 1, '1 d')]);
+    for (const on of ASTEROID_AFTER[a] ?? []) {
+      const jd = Date.parse(`${on}T00:00:00Z`) / 86_400_000 + 2_440_587.5;
+      await save(`jpl-horizons-elements-a${a}-${on}`, 'json', [horizons(`${a};`, 'ELEMENTS', jd, jd + 1, '1 d')]);
+    }
+    await save(`jpl-horizons-vectors-a${a}`, 'json', [horizons(`${a};`, 'VECTORS', day - 730, day + 1460, '30 d')]);
+    await save(`jpl-cad-a${a}`, 'json', [`https://ssd-api.jpl.nasa.gov/cad.api?des=${encodeURIComponent(a)}&date-min=${year - 2}-01-01&date-max=${year + 8}-01-01&dist-max=0.05&body=Earth`]);
+  }
+  writeFileSync(resolve(orbitsDir, 'manifest.json'), JSON.stringify({ retrieved: today, comets: COMETS, asteroids: ASTEROIDS, asteroidAfter: ASTEROID_AFTER, queries: entries }, null, 2) + '\n');
 }
 
 async function main(): Promise<void> {
