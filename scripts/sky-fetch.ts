@@ -402,8 +402,8 @@ async function fetchOrbits(): Promise<void> {
   // Spacecraft: Horizons' record of each and NSSDCA's page on it (where it has one), and where Horizons
   // has it from the Sun (position and velocity) every four days from two years before to four after,
   // cut to the span Horizons has it for; Earth on the same days; and round each pass of Earth nearer
-  // than 0.05 AU, where Horizons has it from Earth's centre hourly (every four days for one that never
-  // leaves Earth's neighbourhood).
+  // than 0.05 AU, where Horizons has it from Earth's centre hourly, and every minute for three hours
+  // either side of the nearest hour (every four days for one that never leaves Earth's neighbourhood).
   const step = `${CRAFT_STEP_DAYS} d`;
   const [from, to] = [day - 730, day + 1460];
   await save('jpl-horizons-craft-earth', 'json', [horizons('399', 'VECTORS', from, to, step)]);
@@ -436,7 +436,12 @@ async function fetchOrbits(): Promise<void> {
       let j = i;
       while (j + 1 < near.length && near[j + 1]!.near) j++;
       const [p, q] = [Math.max(a, near[i]!.jd - CRAFT_STEP_DAYS), Math.min(b, near[j]!.jd + CRAFT_STEP_DAYS)];
-      await save(`jpl-horizons-craft-geo-${n}-${Math.round(near[i]!.jd)}`, 'json', [horizons(id, 'VECTORS', p, q, '1 h', '500@399')]);
+      const run = `jpl-horizons-craft-geo-${n}-${Math.round(near[i]!.jd)}`;
+      await save(run, 'json', [horizons(id, 'VECTORS', p, q, '1 h', '500@399')]);
+      // And round its nearest hour, every minute for three hours either side: hourly is too coarse for a pass this near.
+      const hours = horizonsRows(resolve(orbitsDir, `${run}.json`));
+      const nearest = hours.reduce<number[] | null>((m, r) => (!m || Math.hypot(r[1]!, r[2]!, r[3]!) < Math.hypot(m[1]!, m[2]!, m[3]!) ? r : m), null);
+      if (nearest) await save(`${run}-nearest`, 'json', [horizons(id, 'VECTORS', nearest[0]! - 0.125, nearest[0]! + 0.125, '1 m', '500@399')]);
       i = j;
     }
   }
