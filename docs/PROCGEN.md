@@ -3940,8 +3940,8 @@ star map's search and counted among their neighbours' markets.
   one it draws, for its sender's owner (§21.1). Ids: `h.<outpost station>.<slot>` sent,
   `h.in.<outpost station>.<slot>` drawn in.
 - **Hauls like any**: seen in flight in every system of their way, named with their cargo and where
-  they are bound (§21.3), and shown before the rest of the trade there when the scene has room for
-  only so many (after relief and shipments); lost in a raided system's lanes by the raid's odds; their loss missed by
+  they are bound (§21.3), and always brought into the scene as their leg there begins, even when it
+  already shows as many hauls as its traffic allows (they do not count against it); lost in a raided system's lanes by the raid's odds; their loss missed by
   the outpost's market when one bound for it is lost; spilling cargo when destroyed, and destroying
   one is piracy (§12.1), the pilot's own outpost's hauler or not.
 

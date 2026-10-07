@@ -53,7 +53,7 @@ import { getFront } from '../economy/border.ts';
 import { wingSkill } from '../economy/wing.ts';
 import { createMinableRock, createMiningBeam, type MinableRockArt, type MiningBeamArt } from './art/mining.ts';
 import { minersIn, miningSpot } from '../economy/fleetWork.ts';
-import { siteOfStation } from '../content/outposts/sites.ts';
+import { isOutpostId, siteOfStation } from '../content/outposts/sites.ts';
 import { MiningField, type MinableRock, type MiningLedger } from './MiningField.ts';
 
 import type { AsteroidHit } from './art/asteroids.ts';
@@ -2828,9 +2828,11 @@ export class FlightSession {
    */
   private updateHauls(cap: number, first: boolean): void {
     const here = haulsIn(this.state.location.systemId, this.state.clock);
+    // The pilot's own outposts' haulers always fly in (docs/PROCGEN.md §38.1); the rest only while the plan has room.
+    const own = (h: Haul) => isOutpostId(h.from) || isOutpostId(h.to);
     for (const h of here) {
       if (this.haulsHere.has(h.haul.id)) continue;
-      if (this.npcs.filter((n) => n.haul).length >= cap) return;
+      if (!own(h.haul) && this.npcs.filter((n) => n.haul && !own(n.haul.haul)).length >= cap) continue;
       if (this.spawnHaul(h, first)) this.haulsHere.add(h.haul.id);
     }
   }
