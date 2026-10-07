@@ -1,0 +1,22 @@
+{
+ "shot": "c-bar",
+ "fps": 24,
+ "frames": 144,
+ "seconds": 6,
+ "clock": "frame-start",
+ "captureSeconds": 43.8,
+ "notes": [],
+ "cues": [
+  {
+   "t": 0,
+   "kind": "music",
+   "mood": "bar"
+  },
+  {
+   "t": 0,
+   "kind": "ambience",
+   "room": "bar"
+  }
+ ],
+ "repaired": 0
+}

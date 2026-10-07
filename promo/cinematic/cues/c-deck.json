@@ -1,0 +1,22 @@
+{
+ "shot": "c-deck",
+ "fps": 24,
+ "frames": 168,
+ "seconds": 7,
+ "clock": "frame-start",
+ "captureSeconds": 56.2,
+ "notes": [],
+ "cues": [
+  {
+   "t": 0,
+   "kind": "music",
+   "mood": "docked"
+  },
+  {
+   "t": 0,
+   "kind": "ambience",
+   "room": "deck"
+  }
+ ],
+ "repaired": 0
+}

@@ -11,8 +11,8 @@ import { FFMPEG } from './lib/media.mjs';
 import { loadEdl } from './lib/timeline.mjs';
 
 const RATE = 48_000;
-const W = 64;
-const H = 36;
+const W = 192;
+const H = 108;
 
 function pcm(file, from, seconds, filter = 'anull') {
   const r = spawnSync(FFMPEG, ['-v', 'error', '-ss', String(from), '-t', String(seconds), '-i', file, '-vn', '-af', `${filter},aresample=${RATE}`, '-ac', '1', '-f', 'f32le', '-'], { maxBuffer: 1 << 28 });
@@ -20,8 +20,9 @@ function pcm(file, from, seconds, filter = 'anull') {
   return new Float32Array(r.stdout.buffer, r.stdout.byteOffset, r.stdout.length / 4);
 }
 
+/** The middle of the picture, small and grey: clear of the HUD's panels along the top and bottom, whose redrawing is not the event. */
 function luma(file, firstFrame, count, fps) {
-  const r = spawnSync(FFMPEG, ['-v', 'error', '-i', file, '-an', '-vf', `trim=start_frame=${firstFrame}:end_frame=${firstFrame + count},setpts=PTS-STARTPTS,scale=${W}:${H}:flags=area,format=gray`, '-f', 'rawvideo', '-'], { maxBuffer: 1 << 28 });
+  const r = spawnSync(FFMPEG, ['-v', 'error', '-i', file, '-an', '-vf', `trim=start_frame=${firstFrame}:end_frame=${firstFrame + count},setpts=PTS-STARTPTS,crop=iw*0.8:ih*0.6:iw*0.1:ih*0.12,scale=${W}:${H}:flags=area,format=gray`, '-f', 'rawvideo', '-'], { maxBuffer: 1 << 28 });
   if (r.status !== 0) throw new Error(r.stderr.toString());
   const frames = [];
   for (let i = 0; i < count; i++) frames.push(r.stdout.subarray(i * W * H, (i + 1) * W * H));
@@ -52,14 +53,16 @@ function lag(a, b, reach) {
   return best;
 }
 
-export function checkSync(file = join(OUT, 'starman-reborn-trailer-60s.mp4')) {
-  const edl = loadEdl();
-  const fps = edl.fps;
-  const plan = JSON.parse(readFileSync(join(PROMO, 'cues', 'timeline.json'), 'utf8'));
-  const sfxStem = join(OUT, 'audio', 'sfx.wav');
+/** `cut` names another cut's frame rate, effects plan and effects stem (the cinematic cut's build passes its own). */
+export function checkSync(file = join(OUT, 'starman-reborn-trailer-60s.mp4'), cut = null) {
+  const fps = cut?.fps ?? loadEdl().fps;
+  const plan = cut?.plan ?? JSON.parse(readFileSync(join(PROMO, 'cues', 'timeline.json'), 'utf8'));
+  const sfxStem = cut?.sfxStem ?? join(OUT, 'audio', 'sfx.wav');
+  const qa = cut?.qa ?? join(OUT, 'qa');
   // The moments to check: every large blast a shot's own cue sheet put in the trailer, the launch and the lane.
   // (Sounds with a sharp start only: the lane's whoosh swells for a third of a second, so it has no instant to measure.)
-  const wanted = plan.sfx.filter((e) => e.clip !== 'hit' && ['explosion-large', 'undock', 'cruise-engage'].includes(e.id));
+  // A cut's own change would be taken for the event's: events within a quarter of a second after one are left out (`cut.cuts`).
+  const wanted = plan.sfx.filter((e) => e.clip !== 'hit' && (cut?.ids ?? ['explosion-large', 'undock', 'cruise-engage']).includes(e.id) && !(cut?.cuts ?? []).some((c) => e.t >= c - 0.25 && e.t < c + 0.25));
   const rows = [];
   for (const e of wanted) {
     const before = 0.2;
@@ -74,21 +77,25 @@ export function checkSync(file = join(OUT, 'starman-reborn-trailer-60s.mp4')) {
     // Picture: the frame that differs most from the one before it, within five frames either side.
     const first = Math.max(1, Math.round(e.t * fps) - 5);
     const frames = luma(file, first - 1, 12, fps);
-    let pictureFrame = first;
-    let most = -1;
+    // The picture's moment: the first frame to change by at least half as much as the frame that changes most
+    // (a blast's flash grows over a few frames, and with motion blur its first frame is not its largest step).
+    // (Brightening only, and squared: a flash or a cut to a brighter picture counts, a HUD panel redrawing hardly does.)
+    const change = [0];
     for (let i = 1; i < frames.length; i++) {
       let sum = 0;
-      for (let k = 0; k < W * H; k++) sum += Math.abs(frames[i][k] - frames[i - 1][k]);
-      if (sum > most) {
-        most = sum;
-        pictureFrame = first - 1 + i;
+      for (let k = 0; k < W * H; k++) {
+        const d = frames[i][k] - frames[i - 1][k];
+        if (d > 0) sum += d * d;
       }
+      change.push(sum);
     }
+    const most = Math.max(...change);
+    const pictureFrame = first - 1 + change.findIndex((c) => c >= most * 0.5);
     const pictureAt = pictureFrame / fps;
     rows.push({ id: e.id, clip: e.clip, planned: Math.round(e.t * 1000) / 1000, pictureFrame, pictureAt: Math.round(pictureAt * 1000) / 1000, soundAt: Math.round(soundAt * 1000) / 1000, soundAfterPictureMs: Math.round((soundAt + masterLag - pictureAt) * 1000), masterVsStemMs: Math.round(masterLag * 1000) });
   }
-  mkdirSync(join(OUT, 'qa'), { recursive: true });
-  writeFileSync(join(OUT, 'qa', 'sync.json'), JSON.stringify(rows, null, 1) + '\n');
+  mkdirSync(qa, { recursive: true });
+  writeFileSync(join(qa, 'sync.json'), JSON.stringify(rows, null, 1) + '\n');
   return rows;
 }
 
