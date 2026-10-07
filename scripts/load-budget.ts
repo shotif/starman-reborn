@@ -16,11 +16,11 @@ import { gzipSync } from 'node:zlib';
  * Gzipped kilobytes (of 1,024 bytes). On 1 October 2026 the first screen was 15 KB and the first
  * load 609 KB: the budgets leave room to grow, and make a big jump a decision rather than an accident.
  * The owner raised the first load's from 700 KB to 800 on 2 October 2026, when Your crew took it to
- * 704 KB.
+ * 704 KB, and to 850 on 7 October 2026, when binary orbits, comets and the logbook took it to 798 KB.
  */
 export const LOAD_BUDGET = {
   firstScreenKB: 32,
-  firstLoadKB: 800,
+  firstLoadKB: 850,
 } as const;
 
 export interface LoadFile {

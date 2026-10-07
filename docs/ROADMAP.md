@@ -28,8 +28,25 @@ What it lacks now:
 
 ## Proposed next increments
 
-Chosen by the owner on 6 October 2026, once flare stars were live: real binary orbits, then real
-comets in Sol, then a pilot's logbook. All three are done; the next are for the owner to choose.
+Chosen by the owner on 7 October 2026, once the logbook was live: real asteroids and Apophis, then
+the moons of the giant planets, then spacecraft out in Sol. The owner also raised the first-load
+budget from 800 KB to 850 KB rather than move screens to load on demand.
+
+### Real asteroids and Apophis ⏳
+
+Named asteroids from JPL in Sol (among them Ceres, Vesta, Psyche, Bennu, Ryugu and Apophis), where
+they stand on the game's date, flyable and scannable, with Apophis's real close pass of Earth on
+13 April 2029 as a dated event.
+
+### Moons of the giant planets ⏳
+
+Jupiter's four large moons and Saturn's Titan on their real orbits round their planets, scannable,
+in the codex.
+
+### Spacecraft out in Sol ⏳
+
+Voyager 1 and 2, New Horizons and other probes where JPL Horizons has them on the game's date,
+scannable, each card with its mission's real facts.
 
 ### How an increment ships
 
