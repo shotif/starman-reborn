@@ -5,6 +5,8 @@
  *   dist=<camera distance> az=<deg> el=<deg> t=<seconds to pre-simulate> freeze=1 (stop the clock)
  *   plus item parameters (throttle, boost, cruise, shield, active, progress, intensity, markers).
  */
+import { SPACECRAFT, type CraftLook } from '../content/stellar/spacecraft.ts';
+import { createSpacecraft } from '../world/art/spacecraft.ts';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
@@ -623,8 +625,22 @@ function portraitItem(): Item {
   };
 }
 
+/** Spacecraft in Sol (docs/PROCGEN.md §49.3): each schematic look, drawn at its size in flight. */
+function craftItem(look: CraftLook): Item {
+  return {
+    id: `craft-${look}`,
+    group: 'Spacecraft',
+    label: `Spacecraft: ${look}`,
+    build(env) {
+      env.add(createSpacecraft({ look, radius: SPACECRAFT.size, seed: 1301 }, ctx));
+      return { dist: SPACECRAFT.size * 4, az: 25, el: 15, minDist: SPACECRAFT.size * 1.5, sky: 'sol', lightDir: DEFAULT_LIGHT };
+    },
+  };
+}
+
 const ITEMS: Item[] = [
   interiorItem(),
+  ...(['dish', 'shield', 'sunshield', 'discs', 'wings'] as CraftLook[]).map(craftItem),
   shipItem('ship-player', 'Kite courier (player)', createPlayerShip, 24),
   shipItem('ship-pirate', 'Pirate raider', createPirateShip, 20),
   shipItem('ship-hauler', 'Hauler', createHaulerShip, 70),

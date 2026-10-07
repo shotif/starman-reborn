@@ -4753,6 +4753,7 @@ An entry is written when (`LOG_LINES`, each with the place):
 - **A comet** scanned for the first time (§45).
 - **A planet** discovered: a confirmed exoplanet scanned for the first time.
 - **An asteroid** scanned for the first time (§47).
+- **A spacecraft** scanned for the first time (§49).
 
 Each entry keeps its game clock, the kind, what it is about (a system, a ship, an arc, a faction and
 rank, a milestone, a course, a site, a comet, a planet) and the place; the words are filled in when
@@ -4778,7 +4779,7 @@ little over twenty-seven), **Five comets scanned**, and **Five ships flown**.
 The journal has a *Logbook* section: the bests and the latest five entries, with **Open the
 logbook**. The logbook itself lists every entry, newest first, under the game's month and year, each
 with its day and place; chips filter it by kind (*Places*, *Ships*, *Stories and ranks*,
-*Milestones*, *The sky*: comets, planets and asteroids, *Races*). Dates are the game's: when the save began
+*Milestones*, *The sky*: comets, planets, asteroids and spacecraft, *Races*). Dates are the game's: when the save began
 plus the time played.
 
 ### 46.5 One save's own
@@ -5013,3 +5014,130 @@ field it cannot fill. The belt outposts' guardrails keep the main belt's site cl
 rules to see them caught, check the real physics (Io's 1.77 days, Titan's 15.95 and its eccentricity,
 the Laplace resonance, a whole period bringing a moon back), the scene, what is said and the codex.
 
+## 49. Spacecraft out in Sol
+
+Eleven spacecraft fly in Sol where JPL Horizons has them on the game's date: the five leaving the
+Sun (Voyager 1 and 2, Pioneer 10 and 11, New Horizons), and Parker Solar Probe, the James Webb Space
+Telescope, Lucy, Psyche, Europa Clipper and JUICE (`src/data/spacecraft.ts`, read from JPL Horizons
+and NASA's NSSDCA by `scripts/spacecraft-process.ts`; how they are drawn in `SPACECRAFT`, what is said
+in `CRAFT_LINES` and each mission's facts in `CRAFT_STORIES`, `src/content/stellar/spacecraft.ts`; the
+cards and the News in `src/economy/spacecraft.ts`). Nothing about them is invented: where each is,
+how fast it goes and how far its light takes come from Horizons' own positions of it, and every fact
+of a mission is quoted from Horizons' record of the craft or NSSDCA's page on it.
+
+The owner chose (7 October 2026): real asteroids and Apophis, then moons of the giant planets, then
+spacecraft out in Sol: "Voyager 1 and 2, New Horizons and other probes where JPL Horizons has them on
+the game's date, scannable, each card with its mission's real facts".
+
+### 49.1 The spacecraft
+
+They were chosen as the five on their way out of the Solar System, and six at work or on their way
+across it: Parker nearest the Sun, Webb round the Sun–Earth L2 point, Lucy among the Trojans, Psyche
+bound for its asteroid, Europa Clipper and JUICE bound for Jupiter's moons. Craft that orbit another
+planet (Juno at Jupiter, BepiColombo soon at Mercury) are left for later (KNOWN_GAPS).
+
+The sky snapshot (`scripts/sky-fetch.ts`: [ASTRONOMY_SOURCES.md, *Spacecraft*](ASTRONOMY_SOURCES.md#spacecraft))
+fetches, for each craft, Horizons' record of it and NSSDCA's page on it (NSSDCA has none for Europa
+Clipper or JUICE), and where Horizons has it from the Sun (its position and velocity) every four days
+from two years before the snapshot's day to four after, cut to the span Horizons has it for (Europa
+Clipper's starts at its launch, Psyche's ends in February 2029, Parker's in January 2030). It fetches
+Earth on the same days, and round every run of days a craft is within 0.05 AU of Earth, where Horizons
+has it from Earth's centre hourly, and by the minute for three hours either side of its nearest hour;
+for a craft that never leaves Earth's neighbourhood (Webb), every four days instead.
+
+### 49.2 The reckoning
+
+From the Sun, a craft's path is a run of two-body arcs, shared with the comets and asteroids
+(`src/data/kepler.ts`, now on a hyperbola too, as a craft leaving the Sun is). Each arc is the
+osculating ellipse or hyperbola of Horizons' own position and velocity on its first day (the Sun's
+pull alone), its mean motion set so it passes where Horizons has the craft on the day it ends (unless
+that moves it more than a tenth: across a flyby, a burn or a seam in Horizons' trajectory files the
+osculating motion stands), and it lasts as long as it stays within 0.05° (seen from the Sun) and
+0.1% (of its distance) of every one of Horizons' places it spans, and no longer than two of its own
+turns round the Sun. The five leaving the Sun need one arc each (Pioneer 10 two) for the six years;
+Parker 21 (one each 88-day turn, about), Lucy 7, Psyche 24 (its ion engines push it all the time),
+Europa Clipper 24 and JUICE 10 (their flybys). Tested against Horizons hourly for half a year,
+Parker's arcs stay within 0.15° of it even through its nearest passes of the Sun.
+
+Near Earth (within 0.02 AU), where a craft is from Earth's centre is read from Horizons' path, kept
+where a straight line between kept points stays within 0.25° and 1% of every hour (Webb's within
+1° and 2% of every fourth day). The game's own place for Earth is good to some tens of thousands of
+kilometres, far coarser than a flyby. Each pass's nearest point (when, and how near) is found from
+the minutes round it: Lucy's of December 2024 at 6,735 km from Earth's centre (356 km above it, as
+Horizons' record says), JUICE's of September 2026 at 15,017 km (Horizons' record: 15,018.3 km), and
+Europa Clipper's of 3 December 2026 at 9,605 km.
+
+How fast a craft goes is the vis-viva law on its arc (from its path, an hour either side, near
+Earth); how long its light takes to reach Earth is its distance from Earth over the speed of light.
+Voyager 1's light first takes a full day to reach Earth on 15 November 2026, as reckoned.
+Outside the span Horizons has a craft for, it is nowhere the game can say, and is not drawn.
+
+### 49.3 In flight
+
+In Sol, each craft stands in its real direction from the Sun on the game's date, at its distance
+compressed onto the planets' scale (§45.3): Voyager 1, at 172 AU, far beyond Neptune. While its path
+from Earth covers the date, it stands instead in its real direction from Earth, compressed as an
+asteroid passing Earth is (§47.3): Webb always, out past the Moon; Europa Clipper and JUICE as they
+swing past. Either way, one that would crowd what is not its own (the arrival point and beacon, the
+stations and the belts' outpost sites, the planets, the lane, the comets, the asteroids and the
+craft placed before it: `SPACECRAFT.clear`) is moved further out along its direction until it does
+not.
+
+Each is drawn far larger than life (`SPACECRAFT.size`), as a schematic of its kind, not its true
+shape (`SPACECRAFT.look`): a dish on a body with booms, a heat shield before a body, a gold mirror over
+a layered sunshield, round arrays, or long ones; it turns slowly. A spacecraft is a new kind of target:
+selected, flown to and scanned like an asteroid, not part of the codex.
+
+### 49.4 What the game says
+
+- **The science card** of a craft: what it was sent to do, its agency, when it was launched, where it
+  is on the game's date (from the Sun and from Earth), how long its light takes to reach Earth, how fast
+  it goes, whether its path is open (leaving the Solar System) or how long it takes round the Sun on
+  its present path, its next pass of Earth, what it has done (each dated, and cited to its source),
+  what was planned for it as of the snapshot, a note or two, Horizons and NSSDCA cited, and that in
+  flight it is drawn far larger than life. Where Horizons has no place for it on the date, the card
+  says so.
+- **Sol's card on the star map** lists the craft: where each is on the game's date, and its next
+  pass of Earth.
+- **The encyclopedia** gives them in full, under *Spacecraft*.
+- **The News**, at Sol's stations and at research stations within reach of Sol: a craft passing Earth
+  within 60 days (`SPACECRAFT.news`) is news, when and how near. On the snapshot's day JUICE has just
+  passed (28 September 2026) and Europa Clipper is coming (3 December 2026).
+
+Every fact of a mission is a line of the game's own words with the words it is quoted from, word for
+word, and where: Horizons' record or NSSDCA's page as the snapshot saved them. Where the two
+disagree, the one that agrees with the mission's own published dates is quoted: NSSDCA has Voyager 1
+launched on 5 September 1977 and Voyager 2 at Saturn on 26 August 1981, where Horizons' records say
+the 6th and the 25th; neither of those lines is used. Events after the snapshot's day are told as
+to come ("To reach Jupiter"), under "Planned, as JPL and NASA had it on 7 October 2026", whatever the
+game's date: the snapshot cannot say whether they happened.
+
+### 49.5 One save's own
+
+Nothing new is kept but the logbook's: a craft scanned for the first time is written in it (§46.1,
+under *The sky*), and the bests count the craft scanned (`logbook.craft`, absent in a logbook begun
+before them). Where a craft is follows from the game's date.
+
+### 49.6 Guardrails
+
+`validateSpacecraft` (`src/data/validate.ts`, run by `npm run data:validate`) and
+`validateCraftRules` (`src/economy/craftGuards.ts`, run in `tests/unit/spacecraft.test.ts`): each craft
+named once and by its Horizons name, with its Horizons and COSPAR ids, a story and a look, and a span
+that holds the snapshot's day; its arcs in order from its span's start, each a true ellipse or
+hyperbola, its motion within a tenth of Kepler's third law for its size; every one of Horizons' places
+of it within 0.1° and 0.2%; its paths in time order and near Earth, within 0.5° and 2% of Horizons'
+full paths (Webb's within 1.5° and 3%); each pass on a path, nearer than 0.05 AU, at its path's nearest
+point to the hour and a hundredth. Every fact quoted word for word from its source; a dated one's
+date, as its source writes dates, in its quotation; every figure a line gives in its quotation; one
+after the snapshot told as to come and one before as done; the agency in its quotation; launched
+before the span; the events in order. As drawn, in Sol on a date every 10 days for the six years and
+every six hours along each pass's path: each craft Horizons has on the date drawn and none other, in
+its real direction (from the Sun, or from Earth on its path) to 0.01 radian, no nearer than its
+compressed distance, crowding nothing; the News only of a real pass within its window; and no line
+with a number of its own or a field it cannot fill. The tests also check Horizons' raw records, break
+an arc, a quotation, a date, a figure, a plan, the rules and a line to see them caught, check the real
+physics (the five on open paths, Voyager 1 at 172 AU and 17 km/s, a light-day from Earth in
+mid-November 2026 and 3.6 AU farther out a year on,
+Parker's 88-day orbit and its nearest pass 6.9 million km from the Sun's centre, Webb between 1 and 2
+million km from Earth throughout, Lucy's and JUICE's flybys as near as Horizons says), the scene,
+what is said, the News and the logbook.

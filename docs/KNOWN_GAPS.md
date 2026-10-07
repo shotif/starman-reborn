@@ -182,6 +182,18 @@ snapshot branch only when the archives changed.
   not solid, and are not in the codex (it stays the catalogue of stars and planets, so no finished
   survey of Sol reopens). Only these fourteen periodic comets are in Sol; none of the long-period or
   newly found comets of the day.
+- Spacecraft (PROCGEN §49): eleven craft only. Those orbiting another planet (Juno at Jupiter,
+  BepiColombo, due to go into orbit round Mercury late in 2026), the Mars orbiters and landers,
+  and Earth's own satellites are left out, as are Lucy's, Psyche's and the others' targets where
+  they are not already among the named asteroids. Where a craft is between Horizons' places four days
+  apart is reckoned on two-body arcs (Parker within 0.15° of Horizons hourly through its nearest
+  passes of the Sun); after the snapshot it is where its mission planned it then, and outside the span
+  Horizons has it for (Psyche after February 2029, Parker after January 2030) it is not drawn. The
+  Pioneers' positions are old reconstructions, the Voyagers' predictions from tracking that ended
+  in 1992. Each is drawn far larger than life as a schematic of its kind, not its true shape, and is
+  not in the codex. A mission's facts are as its sources gave them on the snapshot's day; what was
+  planned is told as planned, whatever the game's date. Voyager 2's heliopause crossing is left out
+  (the sources disagree on its date).
 - Moons of the giant planets (PROCGEN §48): only five large moons are drawn (none of Saturn's others,
   nor Uranus's or Neptune's), and Earth's Moon stays where it was drawn before, at a fixed place by
   Earth, not its real one. A moon's motion is a turning circle with first-order eccentricity fitted to

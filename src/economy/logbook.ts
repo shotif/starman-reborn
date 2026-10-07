@@ -6,6 +6,7 @@ import { MILESTONES } from '../content/progress/rules.ts';
 import { ARC_JOBS, ARCS } from '../content/story/arcs.ts';
 import type { ArcId } from '../content/story/types.ts';
 import { asteroidOf } from '../data/asteroids.ts';
+import { craftOf } from '../data/spacecraft.ts';
 import { cometOf } from '../data/comets.ts';
 import { gameJulianDate } from '../data/solar.ts';
 import { getLocation, getPlanet, getSystem, isInventedSystem } from '../data/systems.ts';
@@ -111,6 +112,16 @@ export function noteAsteroid(state: GameState, asteroidId: string): boolean {
   return true;
 }
 
+/** A spacecraft scanned: true the first time (§49.5). */
+export function noteCraft(state: GameState, craftId: string): boolean {
+  const book = logbookOf(state);
+  const seen = (book.craft ??= []);
+  if (!craftOf(craftId) || seen.includes(craftId)) return false;
+  seen.push(craftId);
+  logWrite(state, { kind: 'craft', id: craftId, where: 'sol' });
+  return true;
+}
+
 /** The farthest real star visited (ly from Sol), and which: Pyre, invented, is left out. */
 export function farthestVisited(state: GameState): { systemId: SystemId; ly: number } | null {
   let best: { systemId: SystemId; ly: number } | null = null;
@@ -178,6 +189,8 @@ export function logText(e: LogEntry): string {
       return fill(LOG_LINES.planet, { planet: (e.id && getPlanet(e.id)?.displayName) || '' });
     case 'asteroid':
       return fill(LOG_LINES.asteroid, { asteroid: asteroidName(e.id) });
+    case 'craft':
+      return fill(LOG_LINES.craft, { craft: (e.id && craftOf(e.id)?.name) || '' });
   }
 }
 
@@ -202,5 +215,6 @@ export function logBests(state: GameState): { key: string; value: string; note: 
   out.push({ key: 'ships', value: String(book.ships.length), note: '' });
   if (book.comets.length) out.push({ key: 'comets', value: String(book.comets.length), note: '' });
   if (book.asteroids?.length) out.push({ key: 'asteroids', value: String(book.asteroids.length), note: '' });
+  if (book.craft?.length) out.push({ key: 'craft', value: String(book.craft.length), note: '' });
   return out;
 }

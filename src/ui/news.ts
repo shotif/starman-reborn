@@ -15,6 +15,7 @@ import { skyNews } from '../economy/stellar.ts';
 import { edgeNews, fillEdge } from '../economy/doomed.ts';
 import { flareNews } from '../economy/flares.ts';
 import { asteroidNews, hearsOfAsteroids } from '../economy/asteroids.ts';
+import { craftNews, hearsOfCraft } from '../economy/spacecraft.ts';
 import { cometNews, hearsOfComets } from '../economy/comets.ts';
 import { FLARE_WORD } from '../content/stellar/flareLines.ts';
 import { EDGE_EARTH, EDGE_FICTION } from '../content/stellar/doomedLines.ts';
@@ -406,6 +407,30 @@ export function asteroidNewsList(locationId: string, jd: number | null): HTMLEle
           h('span', { class: 'row-sub' }, `Asteroid · Sol · nearest Earth ${when}`),
           h('span', { class: 'news-detail' }, n.detail, n.brightness ? [' ', n.brightness] : null),
         ),
+      );
+    }),
+  );
+}
+
+/**
+ * Spacecraft passing Earth (docs/PROCGEN.md §49.4), at Sol's stations and research stations within
+ * reach: real craft and JPL Horizons' own passes, on the game's date, badged as observed.
+ */
+export function craftNewsList(locationId: string, jd: number | null): HTMLElement | null {
+  if (jd === null || !hearsOfCraft(locationId)) return null;
+  const items = craftNews(jd);
+  if (!items.length) return null;
+  return h(
+    'ul',
+    { class: 'list news-list', 'data-testid': 'craft-news' },
+    items.map((n) => {
+      const days = Math.round(Math.abs(n.pass.jd - jd));
+      const when = days === 0 ? 'today' : n.passed ? `${days} day${days > 1 ? 's' : ''} ago` : `in ${days} day${days > 1 ? 's' : ''}`;
+      return h(
+        'li',
+        { class: `news-item kind-craft${n.passed ? ' over' : ''}`, 'data-testid': `news-craft-${n.craft.id}` },
+        glyph('scanner'),
+        h('span', { class: 'news-text' }, h('span', { class: 'row-name' }, n.line, ' ', dataBadge('observed')), h('span', { class: 'row-sub' }, `Spacecraft · Sol · nearest Earth ${when}`)),
       );
     }),
   );

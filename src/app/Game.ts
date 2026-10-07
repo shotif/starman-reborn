@@ -77,7 +77,8 @@ import { asteroidOf } from '../data/asteroids.ts';
 import { cometOf } from '../data/comets.ts';
 import { imageOffer } from '../economy/comets.ts';
 import { trackOffer, useGameStart } from '../economy/asteroids.ts';
-import { logWrite, noteAsteroid, noteComet, noteJump, notePaid, notePeak } from '../economy/logbook.ts';
+import { craftOf } from '../data/spacecraft.ts';
+import { logWrite, noteAsteroid, noteComet, noteCraft, noteJump, notePaid, notePeak } from '../economy/logbook.ts';
 import { openLogbook } from '../ui/logbook.ts';
 import type { SkyNewsKind } from '../content/stellar/lines.ts';
 import { ROSTER } from '../content/rivals/rules.ts';
@@ -1831,6 +1832,8 @@ export class Game {
     // A comet's or a named asteroid's first scan goes in the logbook (docs/PROCGEN.md §46.1, §47.6).
     if (cometOf(t.bodyId) && noteComet(state, t.bodyId)) this.persist();
     if (asteroidOf(t.bodyId) && noteAsteroid(state, t.bodyId)) this.persist();
+    // And a spacecraft's (§49.5).
+    if (craftOf(t.bodyId) && noteCraft(state, t.bodyId)) this.persist();
     // Pyre and its black hole (docs/PROCGEN.md §26.5), a flaring star (§43.5), a pair's secondary (§44.5), a comet (§45.5) and an asteroid (§47.5): a scan is a reading for the work that wants one.
     if (t.bodyId === PYRE_ID || t.bodyId === PYRE_HOLE_ID || flareStar(t.bodyId) || orbitOf(t.bodyId)?.secondary === t.bodyId || cometOf(t.bodyId) || asteroidOf(t.bodyId)) {
       const jobs = recordObservation(state, t.bodyId, state.location.systemId);
@@ -3001,6 +3004,10 @@ export class Game {
       planets: () => this.flight?.system.planets.map((p) => ({ id: p.def.id, position: p.def.position.toArray(), radius: p.def.radius })) ?? null,
       /** Test-only: places the ship beyond a giant planet's moon, looking at it with its planet behind (for screenshots). */
       viewMoon: (arg: { id: string; planet: string; distance: number }) => this.flight?.viewMoon(arg.id, arg.planet, arg.distance) ?? false,
+      /** Test-only: the spacecraft in this flight (docs/PROCGEN.md §49.3), where they stand and how they are drawn. */
+      craft: () => this.flight?.system.craft.map((c) => ({ id: c.id, name: c.name, position: c.position.toArray(), radius: c.radius, look: c.look, near: c.near })) ?? null,
+      /** Test-only: places the ship by a spacecraft, looking at it (for screenshots). */
+      viewCraft: (arg: { id: string; distance: number }) => this.flight?.viewCraft(arg.id, arg.distance) ?? false,
       /** Test-only: places the ship by a named asteroid, looking at it (for screenshots). */
       viewAsteroid: (arg: { id: string; distance: number }) => this.flight?.viewAsteroid(arg.id, arg.distance) ?? false,
       /** Test-only: the comets in this flight (docs/PROCGEN.md §45.3), where they stand and how they are drawn. */

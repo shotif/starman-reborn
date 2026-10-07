@@ -53,6 +53,7 @@ export function validateLogbook(rules: LogbookRules = LOGBOOK, lines: Readonly<R
     comet: ['comet'],
     planet: ['planet'],
     asteroid: ['asteroid'],
+    craft: ['craft'],
   };
   for (const [k, v] of Object.entries(lines)) {
     for (const text of typeof v === 'string' ? [v] : Object.values(v)) {

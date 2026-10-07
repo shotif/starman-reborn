@@ -97,6 +97,8 @@ export interface Logbook {
   ships: string[];
   /** Named asteroids scanned (ids, docs/PROCGEN.md §47.6): absent in a logbook begun before them. */
   asteroids?: string[];
+  /** Spacecraft scanned (ids, docs/PROCGEN.md §49.5): absent in a logbook begun before them. */
+  craft?: string[];
 }
 
 /** A wingman who has left the pilot's wing, remembered in the journal (docs/PROCGEN.md §34). */

@@ -27,6 +27,8 @@ import { allAsteroidFacts, asteroidFacts, type AsteroidFacts } from '../economy/
 import { MOON_DATA, moonOf } from '../data/moons.ts';
 import { allMoonFacts, moonFacts, type MoonFacts } from '../economy/moons.ts';
 import { allCometFacts, cometFacts, type CometFacts } from '../economy/comets.ts';
+import { CRAFT_DATA, craftOf } from '../data/spacecraft.ts';
+import { allCraftFacts, craftFacts, type CraftEvent, type CraftFacts } from '../economy/spacecraft.ts';
 import { h, type Child } from '../ui/dom.ts';
 import { icon } from '../ui/icons.ts';
 import { formatHeightLong, formatLy } from './mapData.ts';
@@ -543,6 +545,75 @@ export function asteroidCard(bodyId: string, jd: number): HTMLElement | null {
     h('div', { class: 'row wrap' }, dataBadge('observed', 'Real asteroid')),
     h('p', null, f.headline),
     ...asteroidLines(f, jd, 'full'),
+  );
+}
+
+function craftLines(f: CraftFacts, jd: number, detail: Detail): HTMLElement[] {
+  const now = `On ${dateText(jd)}`;
+  const opt = (k: string, v: string | null): [string, string][] => (v ? [[k, v]] : []);
+  const rows: [string, string][] = [
+    ['Kind', f.kind],
+    ['Launched', f.launched],
+    [now, f.fromSun ? `${f.fromSun} from the Sun; ${f.fromEarth ?? '—'} from Earth` : f.away!],
+    ...opt('Speed', f.speed),
+    ...opt('Path', f.path),
+    ...opt('Next close pass of Earth', f.nextPass),
+  ];
+  const shown = detail === 'compact' ? rows.filter(([k]) => k === now || k === 'Next close pass of Earth') : rows;
+  const events = (list: CraftEvent[], id: string) =>
+    h(
+      'ul',
+      { class: 'sci-events', 'data-testid': id },
+      list.map((e) => h('li', null, h('strong', null, e.date), ' ', e.line, ' ', h('span', { class: 'muted small' }, `(${e.source})`))),
+    );
+  const c = f.craft;
+  const lines: (HTMLElement | null)[] = [
+    detail === 'full' ? h('p', null, f.summary) : null,
+    h('dl', { class: 'kv' }, shown.flatMap(([k, v]) => [h('dt', null, k), h('dd', null, v)])),
+    detail === 'full' && f.light ? h('p', { 'data-testid': 'craft-light' }, f.light, '.') : null,
+    detail === 'full' && f.done.length ? events(f.done, 'craft-done') : null,
+    detail === 'full' && f.planned.length ? h('p', { class: 'muted small' }, f.plannedHeading, ':') : null,
+    detail === 'full' && f.planned.length ? events(f.planned, 'craft-planned') : null,
+    detail === 'full' && f.notes.length ? h('ul', { class: 'sci-notes' }, f.notes.map((n) => h('li', null, n))) : null,
+    detail === 'full'
+      ? h(
+          'p',
+          { class: 'row wrap' },
+          sourceLink(CRAFT_DATA.sources.horizons, `${c.name} (${c.horizonsId}), ${c.solution}`),
+          c.nssdca ? [' ', sourceLink({ ...CRAFT_DATA.sources.nssdca, url: `https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=${c.cospar}` }, c.cospar)] : null,
+        )
+      : null,
+    detail === 'full' ? h('p', { class: 'muted small' }, dataBadge('estimated'), ' ', f.scene) : null,
+  ];
+  return lines.filter((x): x is HTMLElement => x !== null);
+}
+
+/** Sol's spacecraft, on a date (another system: null). */
+export function craftBlock(systemId: SystemId, jd: number, detail: Detail): HTMLElement | null {
+  if (systemId !== 'sol') return null;
+  return h(
+    'div',
+    { class: 'stack' },
+    h(
+      'ul',
+      { class: 'sci-list sci-craft', 'data-testid': 'science-craft-list' },
+      allCraftFacts(jd).map((f) => h('li', { class: 'sci-item', 'data-testid': `craft-${f.craft.id}` }, h('div', { class: 'sci-item-head' }, h('strong', null, detail === 'compact' ? f.craft.name : (f.headline ?? f.craft.name))), craftLines(f, jd, detail))),
+    ),
+    detail === 'compact' ? h('p', { class: 'row wrap' }, sourceLink(CRAFT_DATA.sources.horizons), ' ', sourceLink(CRAFT_DATA.sources.nssdca)) : null,
+  );
+}
+
+/** A spacecraft's science card, on a date (not one: null). */
+export function craftCard(bodyId: string, jd: number): HTMLElement | null {
+  const craft = craftOf(bodyId);
+  if (!craft) return null;
+  const f = craftFacts(craft, jd);
+  return h(
+    'div',
+    { class: 'stack science-card', 'data-testid': 'science-craft' },
+    h('div', { class: 'row wrap' }, dataBadge('observed', 'Real spacecraft')),
+    f.headline ? h('p', null, f.headline) : null,
+    ...craftLines(f, jd, 'full'),
   );
 }
 

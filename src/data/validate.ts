@@ -1,6 +1,7 @@
 import { equatorialToCartesian, parallaxToLightYears } from './coords.ts';
 import type { AsteroidsDataset } from './asteroids.ts';
 import type { MoonsDataset } from './moons.ts';
+import type { SpacecraftDataset } from './spacecraft.ts';
 import type { CometsDataset } from './comets.ts';
 import type { OrbitsDataset } from './orbits.ts';
 import type { AstrometryDataset, ExoplanetDataset } from './systems.ts';
@@ -295,6 +296,21 @@ export function validateMoons(data: MoonsDataset): ValidationIssue[] {
     if (seen.has(m.id) || (m.planet !== 'jupiter' && m.planet !== 'saturn')) issues.push({ level: 'error', code: 'moon-name', message: `${m.id}: named twice, or round no giant planet` });
     seen.add(m.id);
     if (!(m.radiusKm > 0 && m.radiusKm < m.planetRadiusKm && m.motion.aKm > m.planetRadiusKm && m.motion.periodDays > 0)) issues.push({ level: 'error', code: 'moon-size', message: `${m.id}: a size, distance or period out of range` });
+  }
+  return issues;
+}
+
+/** Spacecraft (docs/PROCGEN.md §49): cited and dated, each named once with its ids, a span, and arcs or a path to place it by. */
+export function validateSpacecraft(data: SpacecraftDataset): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const { horizons, nssdca } = data.sources;
+  if (!horizons.url.startsWith('http') || !nssdca.url.startsWith('http') || !/^\d{4}-\d{2}-\d{2}$/.test(data.retrieved) || !(data.epochJd > 2_400_000))
+    issues.push({ level: 'error', code: 'craft-source', message: 'the spacecraft are not cited and dated' });
+  const seen = new Set<string>();
+  for (const c of data.spacecraft) {
+    if (seen.has(c.id) || !/^-\d+$/.test(c.horizonsId) || !/^\d{4}-\d{3}[A-Z]+$/.test(c.cospar)) issues.push({ level: 'error', code: 'craft-name', message: `${c.id}: named twice, or without its Horizons and COSPAR ids` });
+    seen.add(c.id);
+    if (!(c.from < c.to) || (!c.arcs.length && !c.paths.length)) issues.push({ level: 'error', code: 'craft-place', message: `${c.id}: no span, or nothing to place it by` });
   }
   return issues;
 }

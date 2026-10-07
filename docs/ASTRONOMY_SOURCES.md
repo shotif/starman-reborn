@@ -286,6 +286,50 @@ Io, Europa, Ganymede and Callisto round Jupiter, and Titan round Saturn, in
   resonance, turns faster than the fit follows. Distances in flight are compressed, and Jupiter's
   and Saturn's axes are drawn along their moons' mean orbit plane rather than from the IAU's poles.
 
+## Spacecraft
+
+Voyager 1 and 2, Pioneer 10 and 11, New Horizons, Parker Solar Probe, the James Webb Space
+Telescope, Lucy, Psyche, Europa Clipper and JUICE, in `src/data/generated/spacecraft.json`
+([PROCGEN.md §49](PROCGEN.md#49-spacecraft-out-in-sol)).
+
+- **Source.** The sky snapshot workflow fetches from **JPL Horizons**, for each craft, its record
+  (`OBJ_DATA`, the mission summary and trajectory notes JPL keeps with it) and its heliocentric
+  position and velocity (J2000 ecliptic, au and au/day) every four days from two years before the
+  snapshot's day to four after, cut to the span Horizons has the craft for (Horizons' own message
+  names where it ends); Earth's position on the same days; and round each run of days a craft is
+  within 0.05 AU of Earth, its position from Earth's centre hourly and every minute for three hours
+  either side of the nearest hour (every four days for the James Webb Space Telescope, which never
+  leaves Earth's neighbourhood). From **NASA's Space Science Data Coordinated Archive** (NSSDCA,
+  the Master Catalog), the page on each craft by its COSPAR id; it has none for Europa Clipper
+  (2024-182A) or JUICE (2023-053A), and answers with an error page, kept. `npm run data:spacecraft`
+  (`scripts/spacecraft-process.ts`, also run by `npm run data:process`) reads them offline. First
+  fetched in the snapshot of 7 October 2026 (the asteroids' and moons' files of that day were
+  refreshed from the same run).
+- **What is taken.** From Horizons: each craft's name and trajectory solution, the span, the arcs
+  (osculating two-body elements about the Sun from a position and velocity, at the Gaussian
+  constant's GM, each arc's mean motion set to meet Horizons' place at its end), the paths from
+  Earth's centre near Earth, and each pass's nearest point. Horizons' places every four days, the
+  full paths, and the text of each record and NSSDCA page (markup taken out) go to
+  `src/data/generated/spacecraft-checks.json`, read only by the tests. The missions' facts
+  (`CRAFT_STORIES`) are the game's own short lines, each with the words of the record or page it is
+  drawn from, quoted.
+- **Checks.** `validateSpacecraft` (`npm run data:validate`) and the unit tests: cited and dated,
+  each craft once with its ids; every one of Horizons' places within 0.1° and 0.2% (on 7 October 2026
+  all within 0.05° and 0.1%); the paths within 0.5° and 2% of Horizons' (Webb's within 1.5° and 3%);
+  each pass at its path's nearest point; every quotation found word for word in its source, its date
+  in it, every figure a line gives in it.
+- **Where the sources disagree.** Horizons' record gives Voyager 1's launch as 6 September 1977 and
+  Voyager 2's Saturn flyby as 25 August 1981; NSSDCA, with the missions' own accounts, gives 5
+  September and 26 August (UTC). The game quotes NSSDCA for both. Horizons' record of Voyager 2 gives
+  its heliopause crossing as 15 November 2018, where NASA's announcements give 5 November; the game
+  leaves the date out. Horizons' Juno record still gives its mission ending in September 2025 though
+  its trajectory runs to 2028; Juno is not among the craft.
+- **Not claimed.** Positions are Horizons' (for the craft at work, fitted to tracking data up to
+  between July and late September 2026, and planned trajectories after); the Pioneers' are old reconstructions from the 1970s and 1990s,
+  "suitable for general historical purposes", and the Voyagers' are predictions from their 1992 and
+  earlier tracking, refit in 2022. What was planned for a craft is as of the snapshot. Distances in
+  flight are compressed, and the craft are drawn far larger than life as schematics of their kinds.
+
 ## Pipeline: the sky snapshot
 
 1. **Fetch** (`scripts/sky-fetch.ts`) is the only step that needs the network. It saves raw

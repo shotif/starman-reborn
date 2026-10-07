@@ -3,6 +3,8 @@ import { ASTEROID_LINES, ASTEROIDS } from "../../content/stellar/asteroids.ts";
 import { COMET_LINES, COMETS } from "../../content/stellar/comets.ts";
 import { outpostSites } from "../../content/outposts/sites.ts";
 import { MOON_LINES, MOONS } from "../../content/stellar/moons.ts";
+import { CRAFT_LINES, SPACECRAFT } from "../../content/stellar/spacecraft.ts";
+import { CRAFT_DATA, craftAt, craftOnPath } from "../../data/spacecraft.ts";
 import {
   MOON_EPOCH_JD,
   MOON_RADIUS_KM,
@@ -40,6 +42,7 @@ import { siteDock } from "../siteDock.ts";
 import type {
   SceneAsteroidDef,
   SceneCometDef,
+  SceneCraftDef,
   ScenePlanetDef,
   SystemSceneDef,
 } from "../sceneTypes.ts";
@@ -193,11 +196,12 @@ export function solScene(jd: number | null): SystemSceneDef {
     positions,
     real ? (real.marsNudged ? "real-nudged" : "real") : "schematic",
   );
-  // The giant planets' large moons round them on the game date (§48), then the comets and asteroids
-  // where they stand (without a date, on the day their elements were taken), clear of them all.
+  // The giant planets' large moons round them on the game date (§48), then the comets, asteroids and
+  // spacecraft where they stand (without a date, on the snapshot's day), clear of them all.
   addMoons(def, jd ?? MOON_EPOCH_JD);
   def.comets = placeComets(def, jd ?? COMET_EPOCH_JD);
   def.asteroids = placeAsteroids(def, jd ?? ASTEROID_DATA.epochJd);
+  def.craft = placeCraft(def, jd ?? CRAFT_DATA.epochJd);
   return def;
 }
 
@@ -519,6 +523,72 @@ function placeAsteroids(def: SystemSceneDef, jd: number): SceneAsteroidDef[] {
   return placed;
 }
 
+// ---------------------------------------------------------------- spacecraft (docs/PROCGEN.md §49.3)
+
+/**
+ * The spacecraft in Sol's scene on a date: each where JPL Horizons has it, in its real direction from
+ * the Sun at its distance compressed onto the planets' scale; while its path from Earth covers the
+ * date, from Earth in its real direction, nearer the nearer it is. Each is moved out along its
+ * direction while it crowds anything (the comets and asteroids, and the craft placed before it). One
+ * Horizons has no place for on the date is not drawn.
+ */
+function placeCraft(def: SystemSceneDef, jd: number): SceneCraftDef[] {
+  const earth = def.planets.find((p) => p.id === "earth")?.position;
+  const placed: SceneCraftDef[] = [];
+  const radius = SPACECRAFT.size;
+  for (const craft of CRAFT_DATA.spacecraft) {
+    const geo = craftOnPath(craft, jd);
+    const near = geo !== null && earth !== undefined;
+    const helio = near ? null : craftAt(craft, jd);
+    if (!near && !helio) continue;
+    let d = near
+      ? nearEarthDistance(def, Math.hypot(...geo!) * AU_KM)
+      : compressedSolDistance(helio!.r);
+    if (d === null) continue;
+    const from = near ? earth!.clone() : SUN.clone();
+    const dir = eclipticToScene(near ? geo! : helio!.xyz).normalize();
+    const at = () => from.clone().addScaledVector(dir, d!);
+    for (
+      let i = 0;
+      i < STRETCH_TRIES && craftCrowds(def, placed, at(), radius);
+      i++
+    )
+      d *= STRETCH;
+    placed.push({
+      id: craft.id,
+      name: craft.name,
+      subtitle: CRAFT_LINES.target,
+      position: at(),
+      radius,
+      look: SPACECRAFT.look[craft.id] ?? "dish",
+      near,
+      scanRange: SPACECRAFT.scanRange,
+    });
+  }
+  return placed;
+}
+
+/** What a spacecraft of this size here would crowd, if anything: what a comet would (with a craft's clearances), a comet or asteroid, or another craft. */
+export function craftCrowds(
+  def: SystemSceneDef,
+  craft: readonly SceneCraftDef[],
+  at: THREE.Vector3,
+  size: number,
+  self?: string,
+): string | null {
+  const hit =
+    cometCrowds(def, at, size, SPACECRAFT.clear) ??
+    smallBodyCrowds(def, def.asteroids ?? [], at, size);
+  if (hit) return hit;
+  for (const c of craft)
+    if (
+      c.id !== self &&
+      at.distanceTo(c.position) < size + c.radius + SPACECRAFT.clear.planet
+    )
+      return c.id;
+  return null;
+}
+
 /** The comet or asteroid (other than itself) an asteroid of this size here would crowd, if any (§47.3). */
 export function smallBodyCrowds(
   def: SystemSceneDef,
@@ -713,7 +783,7 @@ function buildSolScene(
     scaleNote:
       layout === "schematic"
         ? "Planet sizes, spacing and positions are schematic, not today’s sky; the belts are placed schematically."
-        : `Planets, comets and asteroids sit in their real directions from the Sun on the game date (JPL's elements); sizes and spacing are compressed, and the belts are placed schematically.${layout === "real-nudged" ? " Mars, behind the Sun, is drawn a little off its true place." : ""}`,
+        : `Planets, comets, asteroids and spacecraft sit in their real directions from the Sun on the game date (JPL's data); sizes and spacing are compressed, and the belts are placed schematically.${layout === "real-nudged" ? " Mars, behind the Sun, is drawn a little off its true place." : ""}`,
   };
 }
 

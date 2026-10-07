@@ -9,12 +9,12 @@ After the scripted opening (10–20 minutes), the neighbourhood is an open sandb
 systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
 of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
 packs in lawless space; 39 ships and 146 pieces of equipment; and generated contracts on every job
-board. Increments 1–47 (under [Done so far](#done-so-far)) added world events and news, contracts
+board. Increments 1–48 (under [Done so far](#done-so-far)) added world events and news, contracts
 of every kind, the law and the outlaw path, goals, ranks with each faction that open doors, races round real planets and moons against racers who really fly, a wing that takes orders and grows with every fight, border battles to see and join, seven story arcs, combat depth, people in the
 bars and a trade computer, a world that answers, gluts that ship their surplus out and relief to
 escort through raided lanes, a fleet of your own whose captains fly the lanes, a crew aboard your own ship,
 up to three stations of your own to build and defend, refineries in the real belts, captains who supply them and mine for them, outposts that trade with their neighbours, have news of their own and people who live there, passengers and sightseers, rival pilots with careers and stories of their own, a
-supernova in every sky (as fiction), real flare stars that flare (when is fiction), real binary orbits, real comets, named asteroids and the giant planets' large moons in Sol (Apophis's 2029 pass of Earth among them), a pilot's logbook, an invented star at the map's edge that explodes and leaves a
+supernova in every sky (as fiction), real flare stars that flare (when is fiction), real binary orbits, real comets, named asteroids, the giant planets' large moons and spacecraft in Sol (Apophis's 2029 pass of Earth among them, and Voyager 1 far beyond Neptune), a pilot's logbook, an invented star at the map's edge that explodes and leaves a
 black hole to fly to (fiction too), encounters on the lanes between the docks, wrecks and derelicts to fly to with short trails across a few systems, mining in the real belts, the frontier with a life of its own,
 a border war whose fronts can be won for good, story endings that change stations for good, escorts
 and convoys across jumps, haulers with real cargo on a timetable, and a game measured and tuned on a
@@ -28,14 +28,9 @@ What it lacks now:
 
 ## Proposed next increments
 
-Chosen by the owner on 7 October 2026, once the logbook was live: real asteroids and Apophis, then
-the moons of the giant planets, then spacecraft out in Sol. The owner also raised the first-load
-budget from 800 KB to 850 KB rather than move screens to load on demand.
-
-### Spacecraft out in Sol ⏳
-
-Voyager 1 and 2, New Horizons and other probes where JPL Horizons has them on the game's date,
-scannable, each card with its mission's real facts.
+The owner's three choices of 7 October 2026 (real asteroids and Apophis, the moons of the giant
+planets, spacecraft out in Sol) are all live; the owner also raised the first-load budget from
+800 KB to 850 KB then. The next increments are to be proposed to the owner.
 
 ### How an increment ships
 
@@ -45,6 +40,19 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 48. Spacecraft out in Sol ✅
+
+Eleven real spacecraft now fly in Sol where JPL Horizons has them on the game's date: Voyager 1 and
+2, Pioneer 10 and 11 and New Horizons on their way out of the Solar System (Voyager 1 at 172 AU, far
+beyond Neptune), Parker Solar Probe on its 88-day orbit close round the Sun, the James Webb Space
+Telescope out past the Moon, and Lucy, Psyche, Europa Clipper and JUICE on their way across it. Where
+each is follows Horizons' own positions to within 0.05°, and its flybys of Earth to the minute. Each
+can be flown to and scanned: its card gives where it is, how long its light takes to reach Earth,
+how fast it goes and whether it is leaving the Solar System, and its mission's dated facts, each
+quoted from JPL's or NASA's records. The News tells of a flyby of Earth (Europa Clipper's on
+3 December 2026), Sol's map card and the encyclopedia list them, and the logbook writes each first
+scan ([PROCGEN.md §49](PROCGEN.md#49-spacecraft-out-in-sol)).
 
 ### 47. Moons of the giant planets ✅
 

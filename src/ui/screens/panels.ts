@@ -3,7 +3,7 @@ import { TEXT_SCALES } from '../../app/settings.ts';
 import { findBelt, getComponent, getPlanet, SOLAR_BODIES } from '../../data/systems.ts';
 import { formatDec, formatRa } from '../../data/coords.ts';
 import type { ConfirmedBody } from '../../data/types.ts';
-import { asteroidCard, beltCard, cometCard, moonCard, orbitCard } from '../../galaxy/scienceBlocks.ts';
+import { asteroidCard, beltCard, cometCard, craftCard, moonCard, orbitCard } from '../../galaxy/scienceBlocks.ts';
 import { ORBIT_EPOCH_JD } from '../../data/orbits.ts';
 import { pyreCard } from './pyreCard.ts';
 import { flareCard, flareStar } from '../../economy/flares.ts';
@@ -412,6 +412,9 @@ export function bodyCard(bodyId: string, name: string, clock = 0, jd: number = O
   // A giant planet's moon (§48.4).
   const moon = moonCard(bodyId, jd);
   if (moon) return moon;
+  // A spacecraft (§49.4).
+  const craft = craftCard(bodyId, jd);
+  if (craft) return craft;
   const solar = SOLAR_BODIES.find((b) => b.id === bodyId);
   if (solar) {
     return h(

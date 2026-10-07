@@ -1,4 +1,5 @@
 import type * as THREE from 'three';
+import type { CraftLook } from '../content/stellar/spacecraft.ts';
 import type { StationLook } from '../content/world/types.ts';
 import type { DataClass, SystemId } from '../data/types.ts';
 import type { PlanetStyle } from './art/planets.ts';
@@ -197,6 +198,23 @@ export interface SceneAsteroidDef {
   scanRange: number;
 }
 
+/**
+ * A spacecraft (Sol's, docs/PROCGEN.md §49): where JPL Horizons has it on the game's date, drawn far
+ * larger than life as a schematic of its kind.
+ */
+export interface SceneCraftDef {
+  /** Body id (its science card), e.g. `voyager-1`. */
+  id: string;
+  name: string;
+  subtitle: string;
+  position: THREE.Vector3;
+  radius: number;
+  look: CraftLook;
+  /** Near Earth: drawn from Earth in its real direction (§49.3). */
+  near: boolean;
+  scanRange: number;
+}
+
 /** Harmless target drones for aiming practice (no reward). */
 export interface PracticeRangeDef {
   center: THREE.Vector3;
@@ -225,6 +243,8 @@ export interface SystemSceneDef {
   comets?: SceneCometDef[];
   /** Named asteroids (Sol's: docs/PROCGEN.md §47). */
   asteroids?: SceneAsteroidDef[];
+  /** Spacecraft (Sol's: docs/PROCGEN.md §49). */
+  craft?: SceneCraftDef[];
   /** Where ships appear after a jump, and what they face. */
   arrival: { position: THREE.Vector3; lookAt: THREE.Vector3 };
   /** Draw faint schematic orbit lines around the host star. */

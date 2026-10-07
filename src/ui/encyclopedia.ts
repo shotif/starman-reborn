@@ -23,6 +23,7 @@ import {
   componentList,
   orbitBlock,
   asteroidBlock,
+  craftBlock,
   moonBlock,
   cometBlock,
   factList,
@@ -153,6 +154,7 @@ function systemSection(system: StarSystemRecord, id: string, discovered: Readonl
   const comets = cometBlock(system.id, jd, 'full');
   const asteroids = asteroidBlock(system.id, jd, 'full');
   const moons = moonBlock(system.id, jd, 'full');
+  const craft = craftBlock(system.id, jd, 'full');
   const isSol = system.id === 'sol';
   return h(
     'section',
@@ -171,6 +173,7 @@ function systemSection(system: StarSystemRecord, id: string, discovered: Readonl
     moons ? [badgeHeading('h4', 'Moons of Jupiter and Saturn', 'observed'), moons] : null,
     comets ? [badgeHeading('h4', 'Comets', 'observed'), comets] : null,
     asteroids ? [badgeHeading('h4', 'Asteroids', 'observed'), asteroids] : null,
+    craft ? [badgeHeading('h4', 'Spacecraft', 'observed'), craft] : null,
     h('h4', { class: 'sci-heading' }, 'Science notes'),
     factList(system),
     badgeHeading('h4', 'In the game', 'fictional'),

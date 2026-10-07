@@ -13,7 +13,7 @@ import { icon } from '../ui/icons.ts';
 import { evaluateJump, type JumpEvaluation } from './jumpRules.ts';
 import { mapIcon } from './mapIcons.ts';
 import { formatLy } from './mapData.ts';
-import { asteroidBlock, badgeHeading, moonBlock, beltBlock, cometBlock, componentList, factList, locationList, observedMark, orbitBlock, planetBlock, positionList, securityNote } from './scienceBlocks.ts';
+import { asteroidBlock, badgeHeading, craftBlock, moonBlock, beltBlock, cometBlock, componentList, factList, locationList, observedMark, orbitBlock, planetBlock, positionList, securityNote } from './scienceBlocks.ts';
 import { ORBIT_EPOCH_JD } from '../data/orbits.ts';
 import type { MapState } from './types.ts';
 
@@ -205,6 +205,8 @@ export class InfoCard {
           systemId === 'sol' ? [h('h4', null, 'Comets'), cometBlock(systemId, state.gameDate ?? ORBIT_EPOCH_JD, 'compact')] : null,
           // And its named asteroids (§47.4).
           systemId === 'sol' ? [h('h4', null, 'Asteroids'), asteroidBlock(systemId, state.gameDate ?? ORBIT_EPOCH_JD, 'compact')] : null,
+          // And the spacecraft out among them (§49.4).
+          systemId === 'sol' ? [h('h4', null, 'Spacecraft'), craftBlock(systemId, state.gameDate ?? ORBIT_EPOCH_JD, 'compact')] : null,
           h('h4', null, 'Facts'),
           factList(system),
         );
