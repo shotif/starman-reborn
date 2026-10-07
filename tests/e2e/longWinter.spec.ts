@@ -100,7 +100,8 @@ test('The Long Winter: a cutter gone quiet in the Kuiper dark, heard on a scan a
   // The Long Winter adrift in the ice itself; alongside her, the coupling goes aboard.
   await launchInSol(page);
   await waitUntil(page, 'the Long Winter in sight', async () => (await api<{ id: string }[]>(page, 'targets')).some((t) => t.id === 'stranded:arc.kuiper.2'), 60_000);
-  await expect(page.getByTestId('hud-objective')).toContainText('Bring 3 ship components to the Long Winter');
+  // A patrol passing may scan the hold first (its countdown holds the objective line): time to wait it out.
+  await expect(page.getByTestId('hud-objective')).toContainText('Bring 3 ship components to the Long Winter', { timeout: 90_000 });
   expect(await api<boolean>(page, 'placeNear', { id: 'stranded:arc.kuiper.2', distance: 150 })).toBe(true);
   await waitUntil(page, 'the parts handed over', async () => (await state(page)).jobs['arc.kuiper.2']?.objectiveIndex === 1, 30_000);
   expect((await state(page)).ship.cargo['ship-parts'] ?? 0).toBe(0);
@@ -147,7 +148,7 @@ test('The Long Winter, the crews’ way: a stand with their cutters against clai
   await hearOut(page);
   await launchInSol(page);
   await waitUntil(page, 'the cutters at their rocks', async () => (await api<Stand | null>(page, 'stand'))?.cutters === 3, 60_000);
-  await expect(page.getByTestId('hud-objective')).toContainText('Stand with the crews’ cutters');
+  await expect(page.getByTestId('hud-objective')).toContainText('Stand with the crews’ cutters', { timeout: 90_000 });
   expect((await api<Stand>(page, 'stand')).state).toBe('waiting');
 
   // Close by, the stand begins: claim-jumpers out of the dark, wave after wave, all brought down.

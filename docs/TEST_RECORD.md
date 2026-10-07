@@ -11,12 +11,12 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | --- | --- | --- |
 | TypeScript typecheck (app + scripts/tests) | `npm run typecheck` | Pass |
 | Astronomy data validation | `npm run data:validate` | Pass (22 warnings: the contested planets this edition keeps) |
-| Unit tests | `npm test` | Pass: 1071 tests in 70 files |
+| Unit tests | `npm test` | Pass: 1084 tests in 71 files |
 | Production build | `npm run build` | Pass |
-| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 798 KB of 850 (gzipped) |
-| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 61 passed (5 touch-only tests skipped) |
-| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 61 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
-| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 765 screenshots, no audit findings |
+| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 807 KB of 850 (gzipped) |
+| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 62 passed (5 touch-only tests skipped) |
+| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 62 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
+| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 792 screenshots, no audit findings |
 
 ### Unit tests (Vitest)
 
@@ -1179,7 +1179,20 @@ Lane hails in the browser tests: a hail comes only after eight seconds of flight
 flying quietly, and under SwiftShader flight time runs well behind real time, so a hail can take
 most of a minute to come. The tests that wait for one (`lanes.spec.ts`, `wrecks.spec.ts` and the
 screenshot journey) allow two minutes; with one minute, a derelict's hail in the screenshot journey
-now and then came too late.
+now and then came too late. With the named asteroids (7 October 2026), it once waited out the two
+minutes at one size (iPhone portrait) and came in time when that size ran again; its trace was not
+kept, so what held it is not known. Sol draws at the same rate with and without the asteroids (about
+4.3 frames a second at that size here), so they did not slow it.
+
+Two browser tests were mended with the named asteroids (7 October 2026). The Long Winter's two
+checked the HUD's objective line within 20 seconds of launching in Sol; a patrol passing may scan a
+clean hold first, and which flights meet one shifted with the asteroids in the scene (traffic steers
+round them): the first now met one in three runs of four, the second in one of four, and its
+5-second countdown holds that line for longer than 20 seconds under SwiftShader. They now allow 90 seconds, and pass six runs in six. The
+outpost trade test waited for the refinery's next hauler to fly from it; Sol's scene shows only so
+many hauls at once, and when others already filled it as the hauler's leg began, it was never
+brought in. How full it was depended on how the run's timing fell, and on the day it failed three
+runs in three on main. The pilot's own outposts' haulers now always fly in (PROCGEN §38.1).
 
 ## Performance notes (not representative)
 
