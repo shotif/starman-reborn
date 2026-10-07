@@ -24,7 +24,7 @@ const PLACES = {
   right: 'top: 31%; right: 6.5%; text-align: right;',
 };
 
-const CSS = `
+export const CSS = `
   html, body { background: transparent !important; }
   #app, #ui, canvas { display: none !important; }
   #promo-card { position: fixed; inset: 0; width: ${WIDTH}px; height: ${HEIGHT}px; overflow: hidden; font-family: var(--font-ui); }
@@ -74,7 +74,7 @@ function captionHtml(c) {
 }
 
 /** The end card as layers, so the edit can bring them on one after another. */
-function titleLayers(card) {
+export function titleLayers(card) {
   const hide = (shown) => (name) => (shown.includes(name) ? '' : 'visibility: hidden;');
   const block = (shown) => {
     const v = hide(shown);

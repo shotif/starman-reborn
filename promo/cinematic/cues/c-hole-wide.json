@@ -1,0 +1,70 @@
+{
+ "shot": "c-hole-wide",
+ "fps": 24,
+ "frames": 384,
+ "seconds": 16,
+ "clock": "frame-start",
+ "captureSeconds": 111.7,
+ "notes": [],
+ "cues": [
+  {
+   "t": 0,
+   "kind": "music",
+   "mood": "barnard"
+  },
+  {
+   "t": 0,
+   "kind": "ambience",
+   "room": null
+  },
+  {
+   "t": 0,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.4,
+    "speed": 0.24,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0,
+   "kind": "intensity",
+   "value": 0
+  },
+  {
+   "t": 0,
+   "kind": "sfx",
+   "id": "ui-error",
+   "opts": {
+    "volume": 1
+   }
+  },
+  {
+   "t": 0,
+   "kind": "engine",
+   "state": {
+    "throttle": 0,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 14.833,
+   "kind": "sfx",
+   "id": "explosion-large",
+   "opts": {
+    "volume": 1
+   }
+  },
+  {
+   "t": 14.833,
+   "kind": "engine",
+   "state": null
+  }
+ ],
+ "repaired": 0
+}

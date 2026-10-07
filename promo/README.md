@@ -9,6 +9,10 @@ staged is in [SHOTLIST.md](SHOTLIST.md).
 Rendered frames, audio stems and videos go to `promo/out/`, which is ignored by git (about 25 GB of
 frames). Everything there can be made again from what is committed here.
 
+There are two cuts. This page is about the 60-second Steam cut, whose sound is all the game's own.
+The two-minute cinematic cut for YouTube, with a narrator and a score, is in
+[cinematic/](cinematic/README.md); it shares the capture harness described here.
+
 ## Rebuild
 
 ```bash

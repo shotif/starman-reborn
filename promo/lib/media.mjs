@@ -45,8 +45,8 @@ export function ffprobe(file) {
 
 /** A shot's frame files as an ffmpeg pattern, and how many there are. */
 export function framePattern(dir) {
-  const first = readdirSync(dir).find((f) => /^\d{5}\.(png|jpg)$/.test(f));
+  const first = readdirSync(dir).find((f) => /^\d{5,6}\.(png|jpg)$/.test(f));
   if (!first) throw new Error(`No frames in ${dir}`);
   const ext = first.slice(first.lastIndexOf('.'));
-  return { pattern: `${dir}/%05d${ext}`, ext, count: readdirSync(dir).filter((f) => f.endsWith(ext)).length };
+  return { pattern: `${dir}/%0${first.length - ext.length}d${ext}`, ext, count: readdirSync(dir).filter((f) => f.endsWith(ext)).length };
 }

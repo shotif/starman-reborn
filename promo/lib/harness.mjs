@@ -11,7 +11,7 @@
 //   - `rig` places the game's own camera somewhere other than the chase position.
 import { chromium } from 'playwright-core';
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -301,9 +301,15 @@ async function patch(page, supersample, staging) {
     };
     /**
      * A camera rig: the game's own camera, put somewhere other than the chase position after the
-     * chase camera has run. `az` turns it round the ship (0 behind, 90 to starboard, 180 ahead),
-     * `el` lifts it, `dist` is metres from the ship, `ahead` and `up` shift the point it looks at
-     * along the ship's nose and roof, `roll` in degrees. `from` eases to `to` over `seconds`.
+     * chase camera has run. Three kinds, all in degrees and metres, `from` eased to `to` over `seconds`:
+     *   - beside the ship (the default): `az` turns the camera round the ship (0 behind, 90 to
+     *     starboard, 180 ahead), `el` lifts it, `dist` is how far; `ahead`, `up` and `side` shift
+     *     the point it looks at along the ship's nose, roof and wing; `roll` tilts it.
+     *   - `anchor: 'fixed'`: the same numbers place the camera once, where the ship is when the rig
+     *     starts, and it stays there (moving by `drift` metres a second, in the ship's first frame)
+     *     while it watches the ship fly by.
+     *   - `around: '<target id>'`: the camera circles a target of the flight (a station, a star), `az`
+     *     measured from the side the ship is on; `look: 'ship'` watches the ship instead of the target.
      */
     promo.setRig = (rig) => {
       if (!rig) {
@@ -311,6 +317,7 @@ async function patch(page, supersample, staging) {
         return;
       }
       let t = 0;
+      let origin = null;
       const rad = Math.PI / 180;
       const mix = (key, k, fallback) => {
         const a = rig.from?.[key] ?? rig[key] ?? fallback;
@@ -326,13 +333,30 @@ async function patch(page, supersample, staging) {
           const el = mix('el', k, 10) * rad;
           const dist = mix('dist', k, 25);
           const cam = chase.camera;
-          // The frame: the ship's own (it banks with it), or the world's with the ship's heading.
-          const q = rig.frame === 'world' ? (promo.rigQ ??= ship.quaternion.clone()) : ship.quaternion;
-          const offset = ship.position.clone().set(Math.sin(az) * Math.cos(el) * dist, Math.sin(el) * dist, Math.cos(az) * Math.cos(el) * dist).applyQuaternion(q);
-          const target = ship.position.clone().set(mix('side', k, 0), mix('up', k, 0), -mix('ahead', k, 0)).applyQuaternion(q).add(ship.position);
-          cam.position.copy(ship.position).add(offset);
-          cam.up.set(0, 1, 0).applyQuaternion(q);
-          cam.lookAt(target);
+          const v = () => ship.position.clone();
+          const ball = (a) => v().set(Math.sin(a) * Math.cos(el) * dist, Math.sin(el) * dist, Math.cos(a) * Math.cos(el) * dist);
+          if (rig.around) {
+            const centre = promo.flight.findTarget(rig.around).position;
+            // The bearing of the ship from the target when the rig starts is az 0.
+            origin ??= { bearing: Math.atan2(ship.position.x - centre.x, ship.position.z - centre.z) };
+            cam.position.copy(centre).add(ball(origin.bearing + az));
+            cam.up.set(0, 1, 0);
+            const look = rig.look === 'ship' ? v() : centre.clone();
+            look.y += mix('up', k, 0);
+            cam.lookAt(look);
+          } else if (rig.anchor === 'fixed') {
+            origin ??= { q: ship.quaternion.clone(), at: v().add(ball(az).applyQuaternion(ship.quaternion)) };
+            const d = rig.drift ?? [0, 0, 0];
+            cam.position.copy(origin.at).add(v().set(d[0] * t, d[1] * t, d[2] * t).applyQuaternion(origin.q));
+            cam.up.set(0, 1, 0).applyQuaternion(origin.q);
+            cam.lookAt(v().set(mix('side', k, 0), mix('up', k, 0), -mix('ahead', k, 0)).applyQuaternion(ship.quaternion).add(ship.position));
+          } else {
+            // The frame: the ship's own (it banks with it), or the world's with the ship's first heading.
+            const q = rig.frame === 'world' ? (origin ??= { q: ship.quaternion.clone() }).q : ship.quaternion;
+            cam.position.copy(ship.position).add(ball(az).applyQuaternion(q));
+            cam.up.set(0, 1, 0).applyQuaternion(q);
+            cam.lookAt(v().set(mix('side', k, 0), mix('up', k, 0), -mix('ahead', k, 0)).applyQuaternion(q).add(ship.position));
+          }
           const roll = mix('roll', k, 0) * rad;
           if (roll) cam.rotateZ(roll);
           const fov = mix('fov', k, chase.baseFov);
@@ -342,7 +366,6 @@ async function patch(page, supersample, staging) {
           }
         },
       };
-      promo.rigQ = null;
     };
 
     const style = document.createElement('style');
@@ -394,6 +417,32 @@ export async function place(page, at, lookAt) {
   await page.evaluate(([a, b]) => window.__promo.place(a, b), [at, lookAt]);
 }
 
+/**
+ * Turns and zooms the star map's own camera steadily while it is open: radians a second of yaw and
+ * pitch, and `zoom` as the factor the distance grows by each second (over 1 pulls back). The map's
+ * orbit controller only moves on input, and mouse drags move it a whole pixel at a time, which
+ * stutters in a slow move; this adds the move to its update instead. Null stops it.
+ */
+export async function mapMove(page, move) {
+  await page.evaluate(async (m) => {
+    const promo = window.__promo;
+    promo.mapMove = m;
+    if (promo.mapPatched) return;
+    const hit = performance.getEntriesByType('resource').map((r) => new URL(r.name)).filter((u) => u.pathname === '/src/galaxy/mapCamera.ts').pop();
+    const { OrbitController } = await import(/* @vite-ignore */ hit ? hit.pathname + hit.search : '/src/galaxy/mapCamera.ts');
+    const update = OrbitController.prototype.update;
+    OrbitController.prototype.update = function (dt) {
+      const mv = promo.mapMove;
+      if (mv && dt > 0) {
+        if (mv.yaw || mv.pitch) this.rotate((mv.yaw ?? 0) * dt, (mv.pitch ?? 0) * dt);
+        if (mv.zoom && mv.zoom !== 1) this.zoom(Math.pow(mv.zoom, dt));
+      }
+      return update.call(this, dt);
+    };
+    promo.mapPatched = true;
+  }, move);
+}
+
 /** Starts the virtual clock (idempotent). From here the game only moves with `step` or a recorder. */
 export async function freeze(page) {
   await page.evaluate(() => window.__vtStart());
@@ -413,21 +462,33 @@ export async function step(page, seconds, dt = 1 / FPS) {
  * Records a shot: each `frame()` steps the game one frame on the virtual clock and saves it.
  * `halfRate` is for the title and docked screens, which draw every other refresh (Loop.lowPower):
  * the frame's time is stepped in two halves so every saved frame is a drawn one.
+ *
+ * `cine: { fps, sub, shutter }` records for the cinematic cut instead: the game is stepped `sub`
+ * times for every frame of film and each step captured, and when the shot is finished the steps are
+ * averaged, `shutter` of every `sub`, into a lossless video at `fps` (out/shots/<name>.mkv). That is
+ * real motion blur, a 270° shutter at the defaults, and the steps themselves are then deleted, so a
+ * shot costs megabytes on disk, not gigabytes. `rec.slow = 4` during a shot steps the game a quarter
+ * as far each time: true slow motion, with nothing interpolated.
  */
 export class Recorder {
-  constructor(session, name, { fps = FPS, halfRate = false, format = 'png', every = 1 } = {}) {
+  constructor(session, name, { fps = FPS, halfRate = false, format = 'png', every = 1, cine = null } = {}) {
     // `every` N saves one frame in N (a preview of the shot's motion, for look development).
     this.every = every;
     this.page = session.page;
     this.cdp = session.cdp;
     this.name = name;
-    this.fps = fps;
+    this.cine = cine ? { fps: 24, sub: 4, shutter: 3, ...cine } : null;
+    /** Captures a second of footage. */
+    this.fps = this.cine ? this.cine.fps * this.cine.sub : fps;
+    this.slow = 1;
     this.halfRate = halfRate;
     this.format = format;
-    this.dir = join(OUT, every > 1 ? 'preview' : 'frames', name);
+    this.dir = join(OUT, every > 1 ? 'preview' : this.cine ? 'tmp' : 'frames', name);
     this.count = 0;
     this.t0 = 0;
     this.notes = [];
+    /** The virtual clock after each step, to put a cue on the frame it was heard in whatever the speed. */
+    this.clockAt = [];
   }
 
   async start() {
@@ -459,7 +520,8 @@ export class Recorder {
   }
 
   async frame() {
-    await this.page.evaluate(([ms, parts]) => window.__vtStep(ms, parts), [1000 / this.fps, this.halfRate ? 2 : 1]);
+    const now = await this.page.evaluate(([ms, parts]) => window.__vtStep(ms, parts), [1000 / (this.fps * this.slow), this.halfRate ? 2 : 1]);
+    this.clockAt.push(now);
     if (this.count % this.every !== 0) {
       this.count++;
       return;
@@ -467,11 +529,11 @@ export class Recorder {
     const params = { format: this.format, optimizeForSpeed: true, captureBeyondViewport: false, fromSurface: true };
     if (this.format === 'jpeg') params.quality = 96;
     const { data } = await this.cdp.send('Page.captureScreenshot', params);
-    writeFileSync(join(this.dir, `${String(Math.floor(this.count / this.every)).padStart(5, '0')}.${this.format === 'jpeg' ? 'jpg' : 'png'}`), Buffer.from(data, 'base64'));
+    writeFileSync(join(this.dir, `${String(Math.floor(this.count / this.every)).padStart(this.cine ? 6 : 5, '0')}.${this.format === 'jpeg' ? 'jpg' : 'png'}`), Buffer.from(data, 'base64'));
     this.count++;
   }
 
-  /** Records `seconds`, calling `each(i, t)` before every frame (input, camera moves). */
+  /** Records `seconds` of footage, calling `each(i, t)` before every step (input, camera moves). */
   async run(seconds, each) {
     const n = Math.round(seconds * this.fps);
     for (let i = 0; i < n; i++) {
@@ -481,18 +543,42 @@ export class Recorder {
   }
 
   async finish(extra = {}) {
-    // A cue is stamped with the clock as it stood during the step that drew its frame, which is the
-    // end of that frame's sixtieth: a frame earlier is when the frame comes on screen.
-    const cues = await this.page.evaluate(([t0, frame]) => {
+    this.finished = true;
+    const raw = await this.page.evaluate(() => {
       window.__promo.logOn = false;
       window.__promo.size = window.__promo.sizes.stage;
-      return window.__promo.cues.map((c) => ({ ...c, t: Math.max(0, Math.round(c.t - t0 - frame)) / 1000 }));
-    }, [this.t0, 1000 / this.fps]);
-    const sheet = { shot: this.name, fps: this.fps, frames: this.count, seconds: this.count / this.fps, clock: 'frame-start', captureSeconds: Math.round((Date.now() - this.started) / 100) / 10, notes: this.notes, ...extra, cues };
-    const cueDir = this.every > 1 ? join(OUT, 'preview') : join(PROMO, 'cues');
+      return window.__promo.cues.map((c) => ({ ...c }));
+    });
+    // A cue belongs to the step it was heard in: the first whose clock has reached it; that step's
+    // frame comes on screen one step earlier than the clock it ends on.
+    let at = 0;
+    const cues = raw.map((c) => {
+      while (at < this.clockAt.length - 1 && this.clockAt[at] < c.t - 1e-6) at++;
+      return { ...c, t: Math.round((at / this.fps) * 1000) / 1000 };
+    });
+    const film = this.cine && this.every === 1;
+    const sheet = { shot: this.name, fps: film ? this.cine.fps : this.fps, frames: film ? Math.floor(this.count / this.cine.sub) : this.count, seconds: this.count / this.fps, clock: 'frame-start', captureSeconds: Math.round((Date.now() - this.started) / 100) / 10, notes: this.notes, ...extra, cues };
+    if (film) {
+      // Steps with a tile of the picture missing (see scan.mjs) take the step before's place, then the blend.
+      const { scan } = await import('../scan.mjs');
+      const bad = scan(this.dir).bad.map((b) => b.frame);
+      const file = (i) => join(this.dir, `${String(i).padStart(6, '0')}.png`);
+      for (const i of bad) if (i > 0) copyFileSync(file(i - 1), file(i));
+      sheet.repaired = bad.length;
+      const { ffmpeg } = await import('./media.mjs');
+      const { sub, shutter, fps } = this.cine;
+      this.video = join(OUT, 'shots', `${this.name}.mkv`);
+      ffmpeg([
+        '-framerate', String(this.fps), '-i', join(this.dir, '%06d.png'),
+        '-vf', `tmix=frames=${shutter},select='not(mod(n-${shutter - 1}\\,${sub}))',setpts=N/(${fps}*TB),scale=out_color_matrix=bt709:out_range=tv,format=yuv420p`,
+        '-r', String(fps), '-c:v', 'libx264', '-qp', '0', '-preset', 'veryfast', '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-color_range', 'tv', this.video,
+      ]);
+      rmSync(this.dir, { recursive: true, force: true });
+    }
+    const cueDir = this.every > 1 ? join(OUT, 'preview') : join(PROMO, this.cine ? 'cinematic/cues' : 'cues');
     mkdirSync(cueDir, { recursive: true });
     writeFileSync(join(cueDir, `${this.name}.json`), JSON.stringify(sheet, null, 1) + '\n');
-    console.log(`[${this.name}] ${this.count} frames (${sheet.seconds.toFixed(2)} s) in ${sheet.captureSeconds} s, ${cues.length} cues`);
+    console.log(`[${this.name}] ${sheet.frames} frames (${sheet.seconds.toFixed(2)} s) in ${sheet.captureSeconds} s, ${cues.length} cues${film ? `, ${sheet.repaired} steps repaired` : ''}`);
     return sheet;
   }
 }

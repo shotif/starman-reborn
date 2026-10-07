@@ -1,0 +1,3535 @@
+{
+ "shot": "c-race",
+ "fps": 24,
+ "frames": 156,
+ "seconds": 6.5,
+ "clock": "frame-start",
+ "captureSeconds": 46.4,
+ "notes": [
+  {
+   "frame": 95,
+   "t": 0.9895833333333334,
+   "label": "go"
+  }
+ ],
+ "cues": [
+  {
+   "t": 0,
+   "kind": "music",
+   "mood": "sol"
+  },
+  {
+   "t": 0,
+   "kind": "ambience",
+   "room": null
+  },
+  {
+   "t": 0,
+   "kind": "engine",
+   "state": {
+    "throttle": 0,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0,
+   "kind": "intensity",
+   "value": 0
+  },
+  {
+   "t": 0.979,
+   "kind": "sfx",
+   "id": "ui-confirm",
+   "opts": {
+    "volume": 1
+   }
+  },
+  {
+   "t": 0.99,
+   "kind": "engine",
+   "state": {
+    "throttle": 0,
+    "speed": 0,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 1,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.02,
+    "speed": 0,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.021,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.04,
+    "speed": 0.02,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.042,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.06,
+    "speed": 0.02,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.063,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.08,
+    "speed": 0.02,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.083,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.1,
+    "speed": 0.02,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.104,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.12,
+    "speed": 0.02,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.115,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.12,
+    "speed": 0.04,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.125,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.14,
+    "speed": 0.04,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.146,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.16,
+    "speed": 0.04,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.177,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.18,
+    "speed": 0.04,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.198,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.2,
+    "speed": 0.06,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.219,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.22,
+    "speed": 0.06,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.24,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.24,
+    "speed": 0.06,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.26,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.26,
+    "speed": 0.06,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.281,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.06,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.292,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.28,
+    "speed": 0.08,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.302,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.3,
+    "speed": 0.08,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.333,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.32,
+    "speed": 0.08,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.354,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.34,
+    "speed": 0.08,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.375,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.36,
+    "speed": 0.08,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.385,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.36,
+    "speed": 0.1,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.396,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.38,
+    "speed": 0.1,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.417,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.4,
+    "speed": 0.1,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.438,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.42,
+    "speed": 0.1,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.458,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.44,
+    "speed": 0.1,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.49,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.46,
+    "speed": 0.12,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.51,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.48,
+    "speed": 0.12,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.531,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.5,
+    "speed": 0.12,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.552,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.52,
+    "speed": 0.12,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.573,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.54,
+    "speed": 0.12,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.583,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.54,
+    "speed": 0.14,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.594,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.56,
+    "speed": 0.14,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.615,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.58,
+    "speed": 0.14,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.635,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.6,
+    "speed": 0.14,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.667,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.62,
+    "speed": 0.14,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.688,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.64,
+    "speed": 0.14,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.698,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.64,
+    "speed": 0.16,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.708,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.66,
+    "speed": 0.16,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.729,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.68,
+    "speed": 0.16,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.75,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.7,
+    "speed": 0.16,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.771,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.72,
+    "speed": 0.16,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.792,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.74,
+    "speed": 0.16,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.802,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.74,
+    "speed": 0.18,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.823,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.76,
+    "speed": 0.18,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.844,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.78,
+    "speed": 0.18,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.865,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.8,
+    "speed": 0.18,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.885,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.82,
+    "speed": 0.18,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.906,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.84,
+    "speed": 0.18,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.917,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.84,
+    "speed": 0.2,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.927,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.86,
+    "speed": 0.2,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.948,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.88,
+    "speed": 0.2,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 1.969,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.9,
+    "speed": 0.2,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 2,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.92,
+    "speed": 0.2,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 2.021,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.94,
+    "speed": 0.22,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 2.042,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.96,
+    "speed": 0.22,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 2.063,
+   "kind": "engine",
+   "state": {
+    "throttle": 0.98,
+    "speed": 0.22,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 2.083,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.22,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 2.135,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.24,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 2.281,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 2.458,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 2.708,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 3.135,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.32,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.563,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.32,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.573,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.32,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.583,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 4.583,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.32,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.594,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.32,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.604,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 4.604,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.32,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.615,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.32,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.625,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 4.625,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.32,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.635,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.32,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.646,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 4.646,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.32,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.656,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.32,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.667,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 4.667,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.32,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.677,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.32,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.688,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 4.688,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.32,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.698,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.32,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.708,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 4.708,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.32,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.719,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.32,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.729,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 4.729,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.74,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.75,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 4.75,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.76,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.771,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 4.771,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.781,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.792,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 4.792,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.802,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.813,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 4.813,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.823,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.833,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 4.833,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.844,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.854,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 4.854,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.865,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.875,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 4.875,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.885,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.896,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 4.896,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.906,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.917,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 4.917,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.927,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.938,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 4.938,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.948,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.958,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 4.958,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.969,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.979,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 4.979,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 4.99,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.01,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.3,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.021,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.021,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.031,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.042,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.042,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.052,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.063,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.063,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.073,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.083,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.083,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.094,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.104,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.104,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.115,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.125,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.125,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.135,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.146,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.146,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.156,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.167,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.167,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.177,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.188,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.188,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.198,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.208,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.208,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.219,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.229,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.229,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.24,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.25,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.25,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.26,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.271,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.271,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.281,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.292,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.292,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.302,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.313,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.313,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.323,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.333,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.333,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.344,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.354,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.354,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.365,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.375,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.375,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.385,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.396,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.396,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.406,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.417,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.417,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.427,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.438,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.438,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.448,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.458,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.458,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.469,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.479,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.479,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.49,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.5,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.5,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.51,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.521,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.521,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.531,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.28,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.542,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.542,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.552,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.563,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.563,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.573,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.583,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.583,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.594,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.604,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.604,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.615,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.625,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.625,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.635,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.646,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.646,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.656,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.667,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.667,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.677,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.688,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.688,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.698,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.708,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.708,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.719,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.729,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.729,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.74,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.75,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.75,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.76,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.771,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.771,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.781,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.792,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.792,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.802,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.813,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.813,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.823,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.833,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.833,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.844,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.854,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.854,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.865,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.875,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.875,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.885,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.896,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.896,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.906,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.917,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.917,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.927,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.938,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.938,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.948,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.958,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.958,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.969,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.979,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 5.979,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 5.99,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 6,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.01,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.021,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 6.021,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.031,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.042,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 6.042,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.052,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.063,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 6.063,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.073,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.083,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 6.083,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.094,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.104,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 6.104,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.115,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.125,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 6.125,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.135,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.146,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 6.146,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.156,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.167,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 6.167,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.177,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.188,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 6.188,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.198,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.208,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 6.208,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.219,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.229,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 6.229,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.24,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.25,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 6.25,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.26,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.271,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 6.271,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.281,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.292,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 6.292,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.302,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.313,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 6.313,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.323,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.333,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 6.333,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.344,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.354,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 6.354,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.365,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.375,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 6.375,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.385,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.396,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 6.396,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.406,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.417,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 6.417,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.427,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.438,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 6.438,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.448,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.458,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 6.458,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.469,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.479,
+   "kind": "sfx",
+   "id": "boost-start",
+   "opts": {
+    "volume": 0.7
+   }
+  },
+  {
+   "t": 6.479,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 6.49,
+   "kind": "engine",
+   "state": {
+    "throttle": 1,
+    "speed": 0.26,
+    "boost": true,
+    "cruise": false,
+    "lane": false
+   }
+  }
+ ],
+ "repaired": 2
+}

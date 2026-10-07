@@ -1,0 +1,140 @@
+{
+ "shot": "c-mine",
+ "fps": 24,
+ "frames": 144,
+ "seconds": 6,
+ "clock": "frame-start",
+ "captureSeconds": 41.4,
+ "notes": [
+  {
+   "frame": 48,
+   "t": 0.5,
+   "label": "mine"
+  }
+ ],
+ "cues": [
+  {
+   "t": 0,
+   "kind": "music",
+   "mood": "sol"
+  },
+  {
+   "t": 0,
+   "kind": "ambience",
+   "room": null
+  },
+  {
+   "t": 0,
+   "kind": "engine",
+   "state": {
+    "throttle": 0,
+    "speed": 0,
+    "boost": false,
+    "cruise": false,
+    "lane": false
+   }
+  },
+  {
+   "t": 0,
+   "kind": "intensity",
+   "value": 0
+  },
+  {
+   "t": 0.5,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 0.958,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 1.417,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 1.875,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 2.333,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 2.792,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 3.25,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 3.708,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 4.167,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 4.625,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 5.083,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  },
+  {
+   "t": 5.542,
+   "kind": "sfx",
+   "id": "mining",
+   "opts": {
+    "volume": 0.8
+   }
+  }
+ ],
+ "repaired": 1
+}

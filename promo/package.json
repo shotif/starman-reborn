@@ -11,7 +11,12 @@
     "audio": "node audio.mjs",
     "cards": "node cards.mjs",
     "scan": "node scan.mjs",
-    "sync": "node sync.mjs"
+    "sync": "node sync.mjs",
+    "cinematic:capture": "PROMO_GPU=1 node capture.mjs --cinematic",
+    "cinematic:voice": "node cinematic/voice.mjs",
+    "cinematic:sfx": "node cinematic/sfx.mjs",
+    "cinematic:score": "node cinematic/score.mjs",
+    "cinematic:build": "node cinematic/build.mjs"
   },
   "devDependencies": {
     "ffmpeg-static": "5.2.0",
