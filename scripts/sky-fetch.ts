@@ -262,6 +262,53 @@ const MOONS: [string, string][] = [
 ];
 /** Asteroids whose orbit a close pass of Earth changes: their elements again on these days, after it. */
 const ASTEROID_AFTER: Record<string, string[]> = { '99942': ['2029-05-13'] };
+/**
+ * Spacecraft out in Sol (docs/PROCGEN.md), by their Horizons ids, each with its NSSDCA/COSPAR id: the
+ * five leaving the Sun (Voyager 1 and 2, Pioneer 10 and 11, New Horizons), and Parker Solar Probe, the
+ * James Webb Space Telescope, Lucy, Psyche, Europa Clipper and JUICE.
+ */
+const SPACECRAFT: [string, string][] = [
+  ['-31', '1977-084A'],
+  ['-32', '1977-076A'],
+  ['-23', '1972-012A'],
+  ['-24', '1973-019A'],
+  ['-98', '2006-001A'],
+  ['-96', '2018-065A'],
+  ['-170', '2021-130A'],
+  ['-49', '2021-093A'],
+  ['-255', '2023-157A'],
+  ['-159', '2024-182A'],
+  ['-28', '2023-053A'],
+];
+/** Spacecraft positions are fetched this many days apart, and round a pass of Earth nearer than this (AU) hourly. */
+const CRAFT_STEP_DAYS = 4;
+const CRAFT_NEAR_AU = 0.05;
+const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+
+/** The Julian date Horizons names in an answer that it has no ephemeris for a craft before or after it ("prior to A.D. 2024-OCT-14 16:15:03"), if it says so. */
+function horizonsLimit(file: string): { side: 'prior to' | 'after'; jd: number } | null {
+  if (!existsSync(file)) return null;
+  const error = (JSON.parse(readFileSync(file, 'utf8')) as { error?: string }).error ?? '';
+  const m = /(prior to|after) A\.D\. (\d{4})-([A-Z]{3})-(\d{2}) (\d{2}):(\d{2})/.exec(error);
+  if (!m) return null;
+  const ms = Date.UTC(Number(m[2]), MONTHS.indexOf(m[3]!), Number(m[4]), Number(m[5]), Number(m[6]));
+  return { side: m[1] as 'prior to' | 'after', jd: ms / 86_400_000 + 2_440_587.5 };
+}
+
+/** The rows of a saved Horizons answer in CSV: the Julian date, then the numbers after the calendar date. */
+function horizonsRows(file: string): number[][] {
+  if (!existsSync(file)) return [];
+  const result = (JSON.parse(readFileSync(file, 'utf8')) as { result?: string }).result ?? '';
+  const soe = result.indexOf('$$SOE');
+  const eoe = result.indexOf('$$EOE');
+  if (soe < 0 || eoe < 0) return [];
+  return result
+    .slice(soe + 5, eoe)
+    .trim()
+    .split('\n')
+    .map((line) => line.split(',').map((c) => c.trim()))
+    .map((c) => [Number(c[0]), ...c.slice(2).filter((x) => x !== '').map(Number)]);
+}
 
 /** The close approaches (Julian dates) in a saved JPL close-approach answer, if it was saved. */
 function closeApproaches(file: string): number[] {
@@ -352,7 +399,48 @@ async function fetchOrbits(): Promise<void> {
     await save(`jpl-horizons-moon-elements-${moon}`, 'json', [horizons(moon, 'ELEMENTS', day, day + 1, '1 d', `500@${planet}`, { OBJ_DATA: "'YES'", OUT_UNITS: "'KM-D'" })]);
     await save(`jpl-horizons-moon-vectors-${moon}`, 'json', [horizons(moon, 'VECTORS', day - 730, day + 1460, '84 h', `500@${planet}`, { OUT_UNITS: "'KM-D'" })]);
   }
-  writeFileSync(resolve(orbitsDir, 'manifest.json'), JSON.stringify({ retrieved: today, comets: COMETS, asteroids: ASTEROIDS, asteroidAfter: ASTEROID_AFTER, moons: MOONS, queries: entries }, null, 2) + '\n');
+  // Spacecraft: Horizons' record of each and NSSDCA's page on it (where it has one), and where Horizons
+  // has it from the Sun (position and velocity) every four days from two years before to four after,
+  // cut to the span Horizons has it for; Earth on the same days; and round each pass of Earth nearer
+  // than 0.05 AU, where Horizons has it from Earth's centre hourly (every four days for one that never
+  // leaves Earth's neighbourhood).
+  const step = `${CRAFT_STEP_DAYS} d`;
+  const [from, to] = [day - 730, day + 1460];
+  await save('jpl-horizons-craft-earth', 'json', [horizons('399', 'VECTORS', from, to, step)]);
+  const earth = new Map(horizonsRows(resolve(orbitsDir, 'jpl-horizons-craft-earth.json')).map((r) => [r[0]!.toFixed(1), r]));
+  for (const [id, cospar] of SPACECRAFT) {
+    const n = id.slice(1);
+    await save(`jpl-horizons-craft-record-${n}`, 'json', [horizons(id, 'VECTORS', day, day + 1, '1 d', '500@10', { OBJ_DATA: "'YES'", MAKE_EPHEM: "'NO'" })]);
+    await save(`nssdca-${cospar}`, 'html', [`https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=${cospar}`]);
+    // The span, cut to Horizons' own for the craft (on the same four-day grid as Earth's), until it answers.
+    let [a, b] = [from, to];
+    const label = `jpl-horizons-craft-sun-${n}`;
+    for (let i = 0; i < 3; i++) {
+      await save(label, 'json', [horizons(id, 'VECTORS', a, b, step, '500@10', { VEC_TABLE: "'2'" })]);
+      const limit = horizonsLimit(resolve(orbitsDir, `${label}.json`));
+      if (!limit) break;
+      if (limit.side === 'prior to') a = from + CRAFT_STEP_DAYS * Math.ceil((limit.jd - from) / CRAFT_STEP_DAYS);
+      else b = from + CRAFT_STEP_DAYS * Math.floor((limit.jd - from) / CRAFT_STEP_DAYS);
+    }
+    const near = horizonsRows(resolve(orbitsDir, `${label}.json`)).map((r) => {
+      const e = earth.get(r[0]!.toFixed(1));
+      return { jd: r[0]!, near: !!e && Math.hypot(r[1]! - e[1]!, r[2]! - e[2]!, r[3]! - e[3]!) < CRAFT_NEAR_AU };
+    });
+    if (near.length && near.every((x) => x.near)) {
+      await save(`jpl-horizons-craft-geo-${n}`, 'json', [horizons(id, 'VECTORS', a, b, step, '500@399')]);
+      continue;
+    }
+    // Each run of days near Earth, hourly from four days before it to four after.
+    for (let i = 0; i < near.length; i++) {
+      if (!near[i]!.near) continue;
+      let j = i;
+      while (j + 1 < near.length && near[j + 1]!.near) j++;
+      const [p, q] = [Math.max(a, near[i]!.jd - CRAFT_STEP_DAYS), Math.min(b, near[j]!.jd + CRAFT_STEP_DAYS)];
+      await save(`jpl-horizons-craft-geo-${n}-${Math.round(near[i]!.jd)}`, 'json', [horizons(id, 'VECTORS', p, q, '1 h', '500@399')]);
+      i = j;
+    }
+  }
+  writeFileSync(resolve(orbitsDir, 'manifest.json'), JSON.stringify({ retrieved: today, comets: COMETS, asteroids: ASTEROIDS, asteroidAfter: ASTEROID_AFTER, moons: MOONS, spacecraft: SPACECRAFT, queries: entries }, null, 2) + '\n');
 }
 
 async function main(): Promise<void> {
