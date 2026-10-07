@@ -1012,11 +1012,17 @@ for (const size of SIZES) {
       const boat = (await api<{ id: string }[]>(page, 'targets')).find((t) => t.id.startsWith('lifeboat:'))!;
       expect(await api<boolean>(page, 'placeNear', { id: boat.id, distance: 900 })).toBe(true);
       await api(page, 'selectTarget', boat.id);
-      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
-      // The lifeboat just above the ship, the mouse centred so the ship holds still.
-      if (!size.touch) await page.mouse.move(size.width / 2, size.height / 2);
-      expect(await api<boolean>(page, 'face', { id: boat.id, below: size.height < 500 ? 4 : 9 })).toBe(true);
-      await shot(page, `${size.name}-24b-lifeboats`, size.touch, results);
+      // The lifeboat just above the ship, the mouse centred so the ship holds still. The evacuation
+      // keeps the radio busy: a toast may come between the shot and its audit, so the shot is taken
+      // again in a quiet moment (the audit still fails if none comes).
+      const boatShot = `${size.name}-24b-lifeboats`;
+      for (let i = 0; i < 5; i++) {
+        await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+        if (!size.touch) await page.mouse.move(size.width / 2, size.height / 2);
+        expect(await api<boolean>(page, 'face', { id: boat.id, below: size.height < 500 ? 4 : 9 })).toBe(true);
+        await shot(page, boatShot, size.touch, results);
+        if (!results[boatShot]!.overlaps.some((o) => o.includes('toast'))) break;
+      }
       for (const [name, r] of Object.entries(results)) {
         expect.soft(r.overflow, `${name}: page overflow`).toBe(false);
         expect.soft(r.clipped, `${name}: clipped controls`).toEqual([]);

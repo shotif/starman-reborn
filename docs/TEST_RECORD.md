@@ -11,12 +11,12 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | --- | --- | --- |
 | TypeScript typecheck (app + scripts/tests) | `npm run typecheck` | Pass |
 | Astronomy data validation | `npm run data:validate` | Pass (22 warnings: the contested planets this edition keeps) |
-| Unit tests | `npm test` | Pass: 1084 tests in 71 files |
+| Unit tests | `npm test` | Pass: 1092 tests in 72 files |
 | Production build | `npm run build` | Pass |
-| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 807 KB of 850 (gzipped) |
-| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 62 passed (5 touch-only tests skipped) |
-| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 62 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
-| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 792 screenshots, no audit findings |
+| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 810 KB of 850 (gzipped) |
+| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 63 passed (5 touch-only tests skipped) |
+| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 63 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
+| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 810 screenshots, no audit findings |
 
 ### Unit tests (Vitest)
 
@@ -1184,7 +1184,9 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   haulers on their way, the News at Ledger Institute telling of a strong flare on Wolf 359, Wolf
   359 flaring in flight with the HUD's flare line, Procyon B's science card with its orbit, the
   star map's card with Procyon's orbit, Encke with its coma and tails seen from beside them,
-  Encke's science card, the journal's Logbook and the logbook itself, at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
+  Encke's science card, the journal's Logbook and the logbook itself, the News at Earth Port telling
+  of Apophis's pass, Apophis passing Earth and its science card, Io by Jupiter and its science card,
+  at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
   zoom). Saved in `docs/screenshots/` once any smooth scrolling has come to rest. Each is audited
   for page scroll overflow, clipped controls (controls inside a scrolling panel count only if the
@@ -1210,6 +1212,13 @@ outpost trade test waited for the refinery's next hauler to fly from it; Sol's s
 many hauls at once, and when others already filled it as the hauler's leg began, it was never
 brought in. How full it was depended on how the run's timing fell, and on the day it failed three
 runs in three on main. The pilot's own outposts' haulers now always fly in (PROCGEN §38.1).
+
+With the moons (7 October 2026), the screenshot of Pyre's lifeboats at 1440×900 caught the
+evacuation's radio line twice running, arriving between the wait for a quiet HUD and the shot (and
+once, with other runs on the machine, the screenshot journey's race lost sight of its first gate in
+time; on a quiet machine it passed). The evacuation keeps the radio busy, so that shot is now taken
+again in a quiet moment, as the outpost raid's and Pyre's rescue's shots already were; the audit
+still fails if no quiet moment comes.
 
 ## Performance notes (not representative)
 
