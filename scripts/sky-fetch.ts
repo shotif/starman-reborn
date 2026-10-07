@@ -255,6 +255,14 @@ const ASTEROIDS = ['1', '2', '4', '10', '16', '21', '243', '433', '951', '3200',
 /** Asteroids whose orbit a close pass of Earth changes: their elements again on these days, after it. */
 const ASTEROID_AFTER: Record<string, string[]> = { '99942': ['2029-05-13'] };
 
+/** The close approaches (Julian dates) in a saved JPL close-approach answer, if it was saved. */
+function closeApproaches(file: string): number[] {
+  if (!existsSync(file)) return [];
+  const cad = JSON.parse(readFileSync(file, 'utf8')) as { fields?: string[]; data?: string[][] };
+  const at = cad.fields?.indexOf('jd') ?? -1;
+  return at < 0 ? [] : (cad.data ?? []).map((row) => Number(row[at])).filter(Number.isFinite);
+}
+
 /**
  * Binary orbits, comets and asteroids, saved apart from the stars' snapshot with a manifest of their own: a
  * failure here never touches it, and one there never stops these.
@@ -290,14 +298,14 @@ async function fetchOrbits(): Promise<void> {
   // the planets' pulls included), and where Horizons has it every 30 days from two years before to
   // four after, which the game's reckoning is tested against.
   const day = Date.parse(`${today}T00:00:00Z`) / 86_400_000 + 2_440_587.5;
-  const horizons = (command: string, ephem: 'ELEMENTS' | 'VECTORS', from: number, to: number, step: string) =>
+  const horizons = (command: string, ephem: 'ELEMENTS' | 'VECTORS', from: number, to: number, step: string, center = '500@10') =>
     `https://ssd.jpl.nasa.gov/api/horizons.api?${new URLSearchParams({
       format: 'json',
       COMMAND: `'${command}'`,
       OBJ_DATA: "'NO'",
       MAKE_EPHEM: "'YES'",
       EPHEM_TYPE: `'${ephem}'`,
-      CENTER: "'500@10'",
+      CENTER: `'${center}'`,
       REF_PLANE: "'ECLIPTIC'",
       REF_SYSTEM: "'ICRF'",
       ...(ephem === 'VECTORS' ? { VEC_TABLE: "'1'" } : {}),
@@ -323,6 +331,10 @@ async function fetchOrbits(): Promise<void> {
     }
     await save(`jpl-horizons-vectors-a${a}`, 'json', [horizons(`${a};`, 'VECTORS', day - 730, day + 1460, '30 d')]);
     await save(`jpl-cad-a${a}`, 'json', [`https://ssd-api.jpl.nasa.gov/cad.api?des=${encodeURIComponent(a)}&date-min=${year - 2}-01-01&date-max=${year + 8}-01-01&dist-max=0.05&body=Earth`]);
+    // Round each of those passes, where Horizons has it from Earth's centre, hourly for sixteen days
+    // either side: so near, the game's own place for Earth is not fine enough to reckon from.
+    for (const jd of closeApproaches(resolve(orbitsDir, `jpl-cad-a${a}.json`)))
+      await save(`jpl-horizons-geo-a${a}-${Math.round(jd)}`, 'json', [horizons(`${a};`, 'VECTORS', jd - 16, jd + 16, '1 h', '500@399')]);
   }
   writeFileSync(resolve(orbitsDir, 'manifest.json'), JSON.stringify({ retrieved: today, comets: COMETS, asteroids: ASTEROIDS, asteroidAfter: ASTEROID_AFTER, queries: entries }, null, 2) + '\n');
 }
