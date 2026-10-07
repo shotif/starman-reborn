@@ -7,8 +7,11 @@ import { farStar } from './stellar.ts';
 import { flaresBetween, flareStar } from './flares.ts';
 import { orbitOf } from '../data/orbits.ts';
 import { BINARIES } from '../content/stellar/binaries.ts';
+import { ASTEROIDS } from '../content/stellar/asteroids.ts';
 import { COMETS } from '../content/stellar/comets.ts';
+import { asteroidOf } from '../data/asteroids.ts';
 import { cometOf } from '../data/comets.ts';
+import { boardDate, passingAsteroid, trackingJumps } from './asteroids.ts';
 import { imagingJumps } from './comets.ts';
 import { PYRE_HOLE_ID } from './pyrePhysics.ts';
 import { isOutpostId } from '../content/outposts/sites.ts';
@@ -334,10 +337,20 @@ function checkContract(c: JobDef, from: string, jumps: ReadonlyMap<string, numbe
       const back = c.objectives[1];
       if (o.kind !== 'observe' || back?.kind !== 'visit' || back.locationId !== c.giverLocationId) return report('objectives', c.id, 'an observation, then back with the readings');
       if (getLocation(c.giverLocationId).stationType !== 'research-station') report('observe', c.id, 'posted by a station that is not a research station');
-      if (!(farStar(o.star) || o.star === PYRE_ID || o.star === PYRE_HOLE_ID || flareStar(o.star) || orbitOf(o.star)?.secondary === o.star || cometOf(o.star)) || !(o.to > o.from)) report('observe', c.id, `${o.star}: not a far star, Pyre, a flare star, a pair's secondary or a comet, or a window that never opens`);
-      // A star read where it is is read in its own system; a comet in Sol.
-      if (o.systemId !== undefined && o.systemId !== (cometOf(o.star) ? 'sol' : getComponent(o.star)?.systemId)) report('observe', c.id, `${o.star} is not read in its own system`);
-      if (c.contract?.comet !== undefined) {
+      if (!(farStar(o.star) || o.star === PYRE_ID || o.star === PYRE_HOLE_ID || flareStar(o.star) || orbitOf(o.star)?.secondary === o.star || cometOf(o.star) || asteroidOf(o.star)) || !(o.to > o.from))
+        report('observe', c.id, `${o.star}: not a far star, Pyre, a flare star, a pair's secondary, a comet or an asteroid, or a window that never opens`);
+      // A star read where it is is read in its own system; a comet or an asteroid in Sol.
+      if (o.systemId !== undefined && o.systemId !== (cometOf(o.star) || asteroidOf(o.star) ? 'sol' : getComponent(o.star)?.systemId)) report('observe', c.id, `${o.star} is not read in its own system`);
+      if (c.contract?.asteroid !== undefined) {
+        // A near-Earth asteroid's tracking (docs/PROCGEN.md §47.5): a catalogued one, in Sol, within a day, for a research station within reach.
+        if (!asteroidOf(o.star)?.neo || c.contract.asteroid !== o.star || o.systemId !== 'sol') report('observe', c.id, `${o.star}: tracking not of a catalogued near-Earth asteroid, read in Sol`);
+        else if (o.to - o.from !== ASTEROIDS.track.window || o.from !== Math.floor(clock / CONTRACTS.epochSeconds) * CONTRACTS.epochSeconds) report('observe', c.id, 'tracking whose window is not the day from its posting');
+        if (trackingJumps(c.giverLocationId) === null) report('observe', c.id, 'tracking posted by a station not within reach of Sol');
+        // Near a pass of Earth, the one passing.
+        const jd = boardDate(o.from);
+        const passing = jd === null ? null : passingAsteroid(jd);
+        if (passing && passing.asteroid.id !== o.star) report('observe', c.id, `${o.star} tracked while ${passing.asteroid.name} passes Earth`);
+      } else if (c.contract?.comet !== undefined) {
         // A comet's imaging (docs/PROCGEN.md §45.5): a catalogued comet, in Sol, within a day, for a research station within reach.
         if (!cometOf(o.star) || c.contract.comet !== o.star || o.systemId !== 'sol') report('observe', c.id, `${o.star}: imaging not of a catalogued comet, read in Sol`);
         else if (o.to - o.from !== COMETS.image.window || o.from !== Math.floor(clock / CONTRACTS.epochSeconds) * CONTRACTS.epochSeconds) report('observe', c.id, 'imaging whose window is not the day from its posting');

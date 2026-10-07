@@ -212,6 +212,51 @@ Fourteen of the Sun's periodic comets fly in Sol, in `src/data/generated/comets.
   given. When a comet grows a coma and tails in flight follows one simple rule (within 4 AU of the
   Sun); some comets, such as 29P, are active further out. Sizes in flight are far larger than life.
 
+## Asteroids
+
+Fifteen named asteroids fly in Sol, in `src/data/generated/asteroids.json`
+([PROCGEN.md §47](PROCGEN.md#47-named-asteroids-and-apophis)): 1 Ceres, 2 Pallas, 4 Vesta,
+10 Hygiea, 16 Psyche, 21 Lutetia, 243 Ida, 433 Eros, 951 Gaspra, 3200 Phaethon, 25143 Itokawa,
+65803 Didymos, 99942 Apophis, 101955 Bennu and 162173 Ryugu.
+
+- **Source.** The sky snapshot workflow fetches, for each, its record from the **JPL Small-Body
+  Database** (with its physical parameters), from **JPL Horizons** its osculating elements on the
+  snapshot's day and its positions every 30 days from two years before that day to four after, and
+  from **JPL's close-approach data** (<https://cneos.jpl.nasa.gov/ca/>, through its API) its passes of
+  Earth within 0.05 AU from two years before to eight after. For Apophis, whose 2029 pass changes its
+  orbit, Horizons' elements again on 13 May 2029. Round every pass listed, Horizons' positions from
+  Earth's centre, hourly for sixteen days either side. `npm run data:asteroids`
+  (`scripts/asteroids-process.ts`, also run by `npm run data:process`) reads them offline. The
+  asteroids were first fetched in the snapshot of 7 October 2026; the comets and binary orbits are
+  still processed from 6 October's (only the asteroids' files and the manifest of 7 October are kept
+  in the repository).
+- **What is taken.** From the Small-Body Database: the number, name and full designation, the orbit
+  class, the near-Earth and potentially hazardous flags, the diameter with the reference JPL gives,
+  the extent along three axes, the rotation period, the geometric albedo, the Tholen and SMASSII
+  spectral types and the magnitude parameters H and G, wherever measured. From Horizons: the elements
+  as given (as for the comets), and after Apophis's pass the elements of 13 May 2029, holding from the
+  pass on. From the close-approach data: each pass's time, its nominal, least and greatest distance
+  and its speed relative to Earth. Round a pass nearer than 0.01 AU (Apophis's alone), the path from
+  Earth's centre is kept, hourly while nearer than 0.002 AU and six-hourly beyond; Ryugu's 2033 pass,
+  at 0.047 AU, is reckoned like any other date. Horizons' heliocentric positions go to
+  `src/data/generated/asteroid-checks.json`, read only by the tests.
+- **Constants.** Earth's equatorial radius (6,378.137 km) and the Moon's mean distance (384,400 km),
+  from NASA's Earth and Moon fact sheets, anchor where a pass is drawn from Earth; the astronomical
+  unit is the IAU's (149,597,870.7 km). The brightness law is the IAU's H, G system, with G = 0.15
+  where none is measured (as the Minor Planet Center takes it). The near-Earth classes and the
+  potentially hazardous threshold (an orbit within 0.05 AU of Earth's, H of 22 or brighter) are the
+  Center for Near-Earth Object Studies' (<https://cneos.jpl.nasa.gov/about/neo_groups.html>).
+- **Checks.** `validateAsteroids` (`npm run data:validate`) and the unit tests: cited and dated,
+  each asteroid once, bound orbits with elements that agree, passes in range and order, a near pass
+  with its path; the path's nearest point against JPL's own distance and time (38,011 km at 21:46 TDB
+  on 13 April 2029); and the game's two-body reckoning against every one of Horizons' positions:
+  within 0.1° and 0.2% for a year either side of the snapshot, 1.5° and 1% over the six years. It
+  matches within 0.05° and 0.08%, and 1.0° and 0.55% (16 Psyche and 3200 Phaethon).
+- **Not claimed.** The reckoning leaves out the planets' pulls, so dates further from the snapshot
+  are less sure, and the cards say so. Between the path's hours a pass is drawn in a straight line.
+  What a spectral type says an asteroid is made of is the usual reading of the type's letter, not a
+  measurement of that asteroid. Sizes in flight are far larger than life, and they turn faster.
+
 ## Pipeline: the sky snapshot
 
 1. **Fetch** (`scripts/sky-fetch.ts`) is the only step that needs the network. It saves raw

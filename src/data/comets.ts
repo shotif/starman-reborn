@@ -1,4 +1,5 @@
 import cometsFile from './generated/comets.json' with { type: 'json' };
+import { headingOf, twoBodyAt, type OrbitElements, type OrbitPlace } from './kepler.ts';
 import { hasSolarElements, heliocentric } from './solar.ts';
 import type { SourceRef } from './types.ts';
 
@@ -8,19 +9,8 @@ import type { SourceRef } from './types.ts';
  * date: from its osculating elements on the snapshot's day, as if only the Sun pulled on it.
  */
 
-export interface CometElements {
-  e: number;
-  /** Perihelion distance, semi-major axis (au). */
-  qAu: number;
-  aAu: number;
-  inclinationDeg: number;
-  nodeDeg: number;
-  periDeg: number;
-  /** Time of perihelion (Julian date) nearest the elements' day. */
-  perihelionJd: number;
-  motionDegPerDay: number;
-  periodDays: number;
-}
+/** A comet's osculating elements (§45.1). */
+export type CometElements = OrbitElements;
 
 export interface Comet {
   /** The game's id, e.g. `comet-1p`. */
@@ -63,50 +53,16 @@ export function cometOf(id: string): Comet | undefined {
 /** The day the elements were taken (Julian date). */
 export const COMET_EPOCH_JD = COMET_DATA.epochJd;
 
-const DEG = Math.PI / 180;
-
-export interface CometPlace {
-  /** Heliocentric position, J2000 ecliptic (au). */
-  xyz: [number, number, number];
-  /** Distance from the Sun (au). */
-  r: number;
-}
+export type CometPlace = OrbitPlace;
 
 /** Where a comet stands on a date: two-body, from the elements (§45.2). */
 export function cometAt(comet: Comet, jd: number): CometPlace {
-  const el = comet.elements;
-  const e = el.e;
-  // Mean anomaly in (-π, π].
-  let M = (el.motionDegPerDay * (jd - el.perihelionJd) * DEG) % (2 * Math.PI);
-  if (M > Math.PI) M -= 2 * Math.PI;
-  if (M <= -Math.PI) M += 2 * Math.PI;
-  // Kepler's equation by Newton's method, from Danby's start (it converges for any eccentricity below one).
-  let E = M + 0.85 * e * (Math.sin(M) < 0 ? -1 : 1);
-  for (let i = 0; i < 60; i++) {
-    const dE = (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E));
-    E -= dE;
-    if (Math.abs(dE) < 1e-13) break;
-  }
-  const a = el.aAu;
-  const xp = a * (Math.cos(E) - e);
-  const yp = a * Math.sqrt(1 - e * e) * Math.sin(E);
-  const w = el.periDeg * DEG;
-  const O = el.nodeDeg * DEG;
-  const I = el.inclinationDeg * DEG;
-  const [cw, sw, cO, sO, cI, sI] = [Math.cos(w), Math.sin(w), Math.cos(O), Math.sin(O), Math.cos(I), Math.sin(I)];
-  const x = (cw * cO - sw * sO * cI) * xp + (-sw * cO - cw * sO * cI) * yp;
-  const y = (cw * sO + sw * cO * cI) * xp + (-sw * sO + cw * cO * cI) * yp;
-  const z = sw * sI * xp + cw * sI * yp;
-  return { xyz: [x, y, z], r: Math.hypot(x, y, z) };
+  return twoBodyAt(comet.elements, jd);
 }
 
 /** Which way a comet is moving on a date (a unit vector, J2000 ecliptic). */
 export function cometHeading(comet: Comet, jd: number): [number, number, number] {
-  const a = cometAt(comet, jd - 0.5).xyz;
-  const b = cometAt(comet, jd + 0.5).xyz;
-  const d: [number, number, number] = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
-  const n = Math.hypot(...d) || 1;
-  return [d[0] / n, d[1] / n, d[2] / n];
+  return headingOf((t) => cometAt(comet, t), jd);
 }
 
 /** The comet's perihelion passages before and after a date (Julian dates). */

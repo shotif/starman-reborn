@@ -29,6 +29,9 @@ import { BINARIES, BINARY_LINES } from '../content/stellar/binaries.ts';
 import { fillPair, measureOffer, measureReward } from './binaries.ts';
 import { COMET_LINES, COMETS } from '../content/stellar/comets.ts';
 import { fillComet, imageOffer, imageReward } from './comets.ts';
+import { ASTEROID_LINES, ASTEROIDS } from '../content/stellar/asteroids.ts';
+import { boardDate, fillAsteroid, gameStartKey, trackOffer, trackReward } from './asteroids.ts';
+import { dateText } from './binaries.ts';
 import { fillFlare, flareWatchOffers, flareWatchReward } from './flares.ts';
 import { fillPyreJob, pyreOffers, pyreRefugeId, PYRE_HOLE_ID } from './doomed.ts';
 import { STELLAR } from '../content/stellar/rules.ts';
@@ -151,7 +154,7 @@ const boardCache = new Map<string, JobDef[]>();
 /** The contracts a station posts in a time slot (hand-made jobs are separate, in jobs.ts). */
 export function boardFor(locationId: string, epoch: number): JobDef[] {
   // The border war, its settled fronts and lasting marks are the save's own, so boards are kept per save.
-  const key = `${locationId}|${epoch}|${worldLogKey()}|${marksKey()}|${settledKey()}|${saveLocationsKey()}|${activeSkyFrom() ?? ''}|${activeEdge() ?? ''}`;
+  const key = `${locationId}|${epoch}|${worldLogKey()}|${marksKey()}|${settledKey()}|${saveLocationsKey()}|${activeSkyFrom() ?? ''}|${activeEdge() ?? ''}|${gameStartKey()}`;
   const cached = boardCache.get(key);
   if (cached) return cached;
   const loc = getLocation(locationId);
@@ -205,6 +208,9 @@ export function boardFor(locationId: string, epoch: number): JobDef[] {
     // A comet to image at a research station near Sol (docs/PROCGEN.md §45.5), from its own stream and id.
     const ci = cometContract(loc, epoch);
     if (ci) out.push(ci);
+    // A near-Earth asteroid to track there (§47.5), likewise; near a pass of Earth, the one passing.
+    const ta = asteroidContract(loc, epoch);
+    if (ta) out.push(ta);
     // Escorts for this station's relief and shipments bound through raided lanes (docs/PROCGEN.md §21.7).
     out.push(...reliefEscorts(loc, epoch));
     // A commission for the owner's own ranks (docs/PROCGEN.md §32.4), from its own stream and id.
@@ -505,6 +511,29 @@ function cometContract(giver: FictionalLocation, epoch: number): JobDef | null {
     difficultyNote: `${jumps === 0 ? 'In this system' : jumps === 1 ? 'One jump, in Sol' : `${jumps} jumps, in Sol`}, within a day`,
     destinationLocationId: giver.id,
     contract: { kind: 'observe', comet: comet.id },
+  };
+}
+
+/** A near-Earth asteroid to track (docs/PROCGEN.md §47.5): scan it in Sol within a day of the posting, then back. */
+function asteroidContract(giver: FictionalLocation, epoch: number): JobDef | null {
+  const start = epoch * CONTRACTS.epochSeconds;
+  const jd = boardDate(start);
+  const offer = trackOffer(giver.id, epoch, jd);
+  if (!offer) return null;
+  const { asteroid, jumps, pass } = offer;
+  const fill = (t: string) => fillAsteroid(t, asteroid, { giver: giver.name, ...(pass ? { date: dateText(pass.jd) } : {}) }, jd ?? undefined);
+  return {
+    ...common(giver, `${CONTRACT_PREFIX}${giver.id}.${epoch}.asteroid-${asteroid.number}`, 1),
+    title: fill(ASTEROID_LINES.track.title),
+    briefing: fill(pass ? ASTEROID_LINES.track.passBriefing : ASTEROID_LINES.track.briefing),
+    objectives: [
+      { kind: 'observe', star: asteroid.id, systemId: 'sol', from: start, to: start + ASTEROIDS.track.window, text: fill(ASTEROID_LINES.track.objective) },
+      { kind: 'visit', locationId: giver.id, text: `Bring the positions back to ${giver.name}` },
+    ],
+    reward: trackReward(jumps),
+    difficultyNote: `${jumps === 0 ? 'In this system' : jumps === 1 ? 'One jump, in Sol' : `${jumps} jumps, in Sol`}, within a day`,
+    destinationLocationId: giver.id,
+    contract: { kind: 'observe', asteroid: asteroid.id },
   };
 }
 

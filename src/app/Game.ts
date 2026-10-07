@@ -73,9 +73,11 @@ import { farStar, farStarLook, recordObservation, scheduleSky, skyComm, skyMomen
 import { flareStar, flareStatus, flaresBetween, flareSystems } from '../economy/flares.ts';
 import { ORBIT_EPOCH_JD, orbitOf } from '../data/orbits.ts';
 import { measureOffer } from '../economy/binaries.ts';
+import { asteroidOf } from '../data/asteroids.ts';
 import { cometOf } from '../data/comets.ts';
 import { imageOffer } from '../economy/comets.ts';
-import { logWrite, noteComet, noteJump, notePaid, notePeak } from '../economy/logbook.ts';
+import { trackOffer, useGameStart } from '../economy/asteroids.ts';
+import { logWrite, noteAsteroid, noteComet, noteJump, notePaid, notePeak } from '../economy/logbook.ts';
 import { openLogbook } from '../ui/logbook.ts';
 import type { SkyNewsKind } from '../content/stellar/lines.ts';
 import { ROSTER } from '../content/rivals/rules.ts';
@@ -584,6 +586,7 @@ export class Game {
     this.minedRocks.clear();
     // The fleet catches up with the clock the save was made at (docs/PROCGEN.md §18).
     useWorldLog(this.state.world);
+    useGameStart(this.state.createdAt);
     // A save from before settled fronts left their marks gets them now (docs/PROCGEN.md §20.7).
     markSettledFronts(this.state);
     const fleet = settleFleet(this.state);
@@ -748,6 +751,7 @@ export class Game {
     const state = this.state!;
     // Events the player ended early (docs/PROCGEN.md §17) are in this save's world log.
     useWorldLog(state.world);
+    useGameStart(state.createdAt);
     // Once the opening delivery is done, the far stars' timeline is set (docs/PROCGEN.md §25), and Pyre's once at the frontier (§26).
     scheduleSky(state);
     scheduleEdge(state);
@@ -1058,6 +1062,7 @@ export class Game {
   private enterFlight(spawn: Parameters<FlightSession['start']>[0]): void {
     const state = this.state!;
     useWorldLog(state.world);
+    useGameStart(state.createdAt);
     this.flightStart = state.clock;
     this.clearScreens();
     this.loadSystem(state.location.systemId);
@@ -1823,10 +1828,11 @@ export class Game {
     if (!t.bodyId) return;
     const state = this.state!;
     this.scannedForFolk(t.bodyId);
-    // A comet's first scan goes in the logbook (docs/PROCGEN.md §46.1).
+    // A comet's or a named asteroid's first scan goes in the logbook (docs/PROCGEN.md §46.1, §47.6).
     if (cometOf(t.bodyId) && noteComet(state, t.bodyId)) this.persist();
-    // Pyre and its black hole (docs/PROCGEN.md §26.5), a flaring star (§43.5), a pair's secondary (§44.5) and a comet (§45.5): a scan is a reading for the work that wants one.
-    if (t.bodyId === PYRE_ID || t.bodyId === PYRE_HOLE_ID || flareStar(t.bodyId) || orbitOf(t.bodyId)?.secondary === t.bodyId || cometOf(t.bodyId)) {
+    if (asteroidOf(t.bodyId) && noteAsteroid(state, t.bodyId)) this.persist();
+    // Pyre and its black hole (docs/PROCGEN.md §26.5), a flaring star (§43.5), a pair's secondary (§44.5), a comet (§45.5) and an asteroid (§47.5): a scan is a reading for the work that wants one.
+    if (t.bodyId === PYRE_ID || t.bodyId === PYRE_HOLE_ID || flareStar(t.bodyId) || orbitOf(t.bodyId)?.secondary === t.bodyId || cometOf(t.bodyId) || asteroidOf(t.bodyId)) {
       const jobs = recordObservation(state, t.bodyId, state.location.systemId);
       if (jobs.length) {
         toast(`${t.name}: readings recorded.`, 'good', 3000);
@@ -2326,6 +2332,7 @@ export class Game {
     await this.saves.reset();
     this.state = null;
     useWorldLog(null);
+    useGameStart(null);
     document.querySelectorAll('.sheet-backdrop').forEach((el) => el.remove());
     this.sheetsOpen = 0;
     this.disposeFlight();
@@ -2975,6 +2982,25 @@ export class Game {
         }
         return null;
       },
+      /** Test-only: the first time slot from now (or `from`) in which a station posts a near-Earth asteroid to track (docs/PROCGEN.md §47.5), of one if named. */
+      trackJob: (q: { locationId: string; from?: number; asteroid?: string }) => {
+        const state = this.state;
+        if (!state) return null;
+        const first = boardEpoch(q.from ?? state.clock);
+        for (let epoch = first; epoch < first + 400; epoch++) {
+          const start = epoch * CONTRACTS.epochSeconds;
+          const offer = trackOffer(q.locationId, epoch, gameJulianDate(state.createdAt, start));
+          if (offer && (!q.asteroid || offer.asteroid.id === q.asteroid)) return { epoch, start, asteroid: offer.asteroid.id, pass: offer.pass !== null };
+        }
+        return null;
+      },
+      /** Test-only: the named asteroids in this flight (docs/PROCGEN.md §47.3), where they stand and how they are drawn. */
+      asteroids: () =>
+        this.flight?.system.asteroids.map((a) => ({ id: a.id, name: a.name, position: a.position.toArray(), radius: a.radius, shape: a.shape, near: a.near, color: a.color })) ?? null,
+      /** Test-only: the planets (and moons) in this flight, where they are drawn. */
+      planets: () => this.flight?.system.planets.map((p) => ({ id: p.def.id, position: p.def.position.toArray(), radius: p.def.radius })) ?? null,
+      /** Test-only: places the ship by a named asteroid, looking at it (for screenshots). */
+      viewAsteroid: (arg: { id: string; distance: number }) => this.flight?.viewAsteroid(arg.id, arg.distance) ?? false,
       /** Test-only: the comets in this flight (docs/PROCGEN.md §45.3), where they stand and how they are drawn. */
       comets: () =>
         this.flight?.system.comets.map((c) => ({ id: c.id, name: c.name, position: c.position.toArray(), radius: c.radius, coma: c.coma, tail: c.tail, gasDir: c.gasDir.toArray(), dustDir: c.dustDir.toArray() })) ?? null,
@@ -3009,6 +3035,7 @@ export class Game {
         const state = this.state;
         if (!state || !Number.isFinite(Date.parse(iso))) return false;
         state.createdAt = new Date(Date.parse(iso)).toISOString();
+        useGameStart(state.createdAt);
         this.persist();
         return true;
       },
@@ -3170,7 +3197,7 @@ export class Game {
         return true;
       },
       /** Test-only: put the ship at rest `distance` metres from a target's surface, facing it. */
-      placeNear: (arg: { id: string; distance: number }) => this.flight?.placeNear(arg.id, arg.distance) ?? false,
+      placeNear: (arg: { id: string; distance: number; awayFrom?: string }) => this.flight?.placeNear(arg.id, arg.distance, arg.awayFrom) ?? false,
       /** Test-only: places the ship beside a comet, looking at its tails (for screenshots). */
       viewComet: (arg: { id: string; distance: number }) => this.flight?.viewComet(arg.id, arg.distance) ?? false,
       /** Test-only: turns the ship to face a target (for screenshots of the sky). */

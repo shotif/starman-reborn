@@ -182,6 +182,21 @@ snapshot branch only when the archives changed.
   not solid, and are not in the codex (it stays the catalogue of stars and planets, so no finished
   survey of Sol reopens). Only these fourteen periodic comets are in Sol; none of the long-period or
   newly found comets of the day.
+- Asteroids (PROCGEN §47): only fifteen named asteroids are in Sol, not the main belt's million;
+  the belts' rocks stay schematic. Where one stands is reckoned as if only the Sun pulled on it,
+  from JPL Horizons' elements on 7 October 2026: within 0.05° of Horizons for a year either side and
+  1° (Psyche) six years on, less sure beyond. Apophis's 2029 pass changes its orbit all at once at
+  its nearest, from the elements Horizons gives a month after it; the pass itself is drawn from
+  Horizons' hourly path from Earth's centre, in straight lines between the hours. Only passes within
+  0.05 AU listed by JPL to January 2034 are told of. The spacecraft that visited them (Dawn, NEAR
+  Shoemaker, Galileo, Rosetta, Hayabusa and Hayabusa2, OSIRIS-REx, DART) are not yet on their
+  cards. Asteroids are drawn far larger than life, turn far faster, are not solid, and are not in
+  the codex. Where a pass is drawn from Earth follows the logarithm between Earth's drawn surface and
+  the Moon's drawn distance, so near Earth the scene's distances are compressed too; and where its
+  direction runs close to Earth Port, the Earth–Mars lane or the Moon (drawn at a fixed place, not
+  its real one), Apophis is pushed further out along it for an hour or so (an hour and a half before
+  its nearest, out past the Moon). From a quarter of an hour before its nearest to an hour after, it
+  is drawn where the rule puts it, well inside the Moon.
 - The logbook (PROCGEN §46) writes only what happens from when it began: a save from before it starts
   with what the save can date (milestones, the current rank with each faction, finished stories and
   stations of its own) and one line for the systems visited before, with no dates for them. Raiders

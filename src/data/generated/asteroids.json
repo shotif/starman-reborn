@@ -1,0 +1,886 @@
+{
+  "generatedBy": "scripts/asteroids-process.ts",
+  "retrieved": "2026-10-07",
+  "epochJd": 2461320.5,
+  "sources": {
+    "sbdb": {
+      "label": "JPL Small-Body Database",
+      "url": "https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html",
+      "retrieved": "2026-10-07"
+    },
+    "horizons": {
+      "label": "JPL Horizons",
+      "url": "https://ssd.jpl.nasa.gov/horizons/",
+      "retrieved": "2026-10-07"
+    },
+    "cad": {
+      "label": "JPL close-approach data",
+      "url": "https://cneos.jpl.nasa.gov/ca/",
+      "retrieved": "2026-10-07"
+    }
+  },
+  "description": "Named asteroids: names, orbit classes, near-Earth and potentially hazardous flags, diameters (km, with the reference), shapes, rotation periods (hours), albedos, spectral types (Tholen and SMASSII) and magnitude parameters H and G from the JPL Small-Body Database; osculating elements on the snapshot’s day, and after a close pass that changes the orbit, from JPL Horizons (heliocentric, J2000 ecliptic: e, q and a in au, i, Ω and ω in degrees, Tp as a Julian date, n in degrees a day, the period in days); passes of Earth within 0.05 AU from JPL’s close-approach data (Julian date, JPL’s date and time in TDB, nominal, least and greatest distance in au, speed relative to Earth in km/s), with, for a pass nearer than 0.01 AU, Horizons’ path from Earth’s centre (J2000 ecliptic, au: [Julian date, x, y, z]).",
+  "asteroids": [
+    {
+      "id": "asteroid-1",
+      "number": "1",
+      "name": "Ceres",
+      "fullname": "1 Ceres (A801 AA)",
+      "orbitClass": {
+        "code": "MBA",
+        "name": "Main-belt Asteroid"
+      },
+      "neo": false,
+      "pha": false,
+      "solution": "JPL#48",
+      "elements": {
+        "e": 0.07977283949611841,
+        "qAu": 2.5453942399254,
+        "aAu": 2.76604989417139,
+        "inclinationDeg": 10.58729854613541,
+        "nodeDeg": 80.2489330903353,
+        "periDeg": 73.18046725970271,
+        "perihelionJd": 2461599.379697546,
+        "motionDegPerDay": 0.2142466595931865,
+        "periodDays": 1680.306244604099
+      },
+      "later": [],
+      "diameterKm": 939.4,
+      "diameterRef": "Nature vol. 537, pp515-517 (22 September 2016)",
+      "extentKm": "964.4 × 964.2 × 891.8",
+      "rotationHours": 9.07417,
+      "albedo": 0.09,
+      "spectral": {
+        "tholen": "G",
+        "smass": "C"
+      },
+      "h": 3.34,
+      "g": 0.12,
+      "approaches": []
+    },
+    {
+      "id": "asteroid-2",
+      "number": "2",
+      "name": "Pallas",
+      "fullname": "2 Pallas (A802 FA)",
+      "orbitClass": {
+        "code": "MBA",
+        "name": "Main-belt Asteroid"
+      },
+      "neo": false,
+      "pha": false,
+      "solution": "JPL#74",
+      "elements": {
+        "e": 0.2307110693911317,
+        "qAu": 2.130429491385088,
+        "aAu": 2.769348948903917,
+        "inclinationDeg": 34.93397145270125,
+        "nodeDeg": 172.8870871065166,
+        "periDeg": 310.9889572162155,
+        "perihelionJd": 2461695.080981273,
+        "motionDegPerDay": 0.2138639337652732,
+        "periodDays": 1683.313280841073
+      },
+      "later": [],
+      "diameterKm": 513,
+      "diameterRef": "Marsset et al., Nature Astronomy 4, 569-576 (2020)",
+      "extentKm": "568 × 532 × 448",
+      "rotationHours": 7.8132214,
+      "albedo": 0.155,
+      "spectral": {
+        "tholen": "B",
+        "smass": "B"
+      },
+      "h": 4.12,
+      "g": 0.11,
+      "approaches": []
+    },
+    {
+      "id": "asteroid-4",
+      "number": "4",
+      "name": "Vesta",
+      "fullname": "4 Vesta (A807 FA)",
+      "orbitClass": {
+        "code": "MBA",
+        "name": "Main-belt Asteroid"
+      },
+      "neo": false,
+      "pha": false,
+      "solution": "JPL#36",
+      "elements": {
+        "e": 0.09023166130151669,
+        "qAu": 2.148166602236484,
+        "aAu": 2.361223743298933,
+        "inclinationDeg": 7.143879342056698,
+        "nodeDeg": 103.6997073277475,
+        "periDeg": 151.4318941436808,
+        "perihelionJd": 2460901.484060622,
+        "motionDegPerDay": 0.2716429020087856,
+        "periodDays": 1325.269305171673
+      },
+      "later": [],
+      "diameterKm": 522.77,
+      "diameterRef": "Park, R.S. et al. 2025, Nat Astron, DOI: 10.1038/s41550-025-02533-7",
+      "extentKm": "569.24 × 554.48 × 452.66",
+      "rotationHours": 5.3421276322,
+      "albedo": 0.4228,
+      "spectral": {
+        "tholen": "V",
+        "smass": "V"
+      },
+      "h": 3.25,
+      "g": 0.32,
+      "approaches": []
+    },
+    {
+      "id": "asteroid-10",
+      "number": "10",
+      "name": "Hygiea",
+      "fullname": "10 Hygiea (A849 GA)",
+      "orbitClass": {
+        "code": "MBA",
+        "name": "Main-belt Asteroid"
+      },
+      "neo": false,
+      "pha": false,
+      "solution": "JPL#129",
+      "elements": {
+        "e": 0.1060371318929434,
+        "qAu": 2.816548101552907,
+        "aAu": 3.150632092266735,
+        "inclinationDeg": 3.825666048552012,
+        "nodeDeg": 283.0946100801279,
+        "periDeg": 312.5578910272438,
+        "perihelionJd": 2461814.192686513,
+        "motionDegPerDay": 0.1762412381814375,
+        "periodDays": 2042.654736852142
+      },
+      "later": [],
+      "diameterKm": 407.12,
+      "diameterRef": "IRAS-A-FPA-3-RDR-IMPS-V6.0",
+      "extentKm": null,
+      "rotationHours": 13.828,
+      "albedo": 0.0717,
+      "spectral": {
+        "tholen": "C",
+        "smass": "C"
+      },
+      "h": 5.65,
+      "g": null,
+      "approaches": []
+    },
+    {
+      "id": "asteroid-16",
+      "number": "16",
+      "name": "Psyche",
+      "fullname": "16 Psyche (A852 FA)",
+      "orbitClass": {
+        "code": "MBA",
+        "name": "Main-belt Asteroid"
+      },
+      "neo": false,
+      "pha": false,
+      "solution": "JPL#92",
+      "elements": {
+        "e": 0.1354343827512845,
+        "qAu": 2.529808227530853,
+        "aAu": 2.926103209587949,
+        "inclinationDeg": 3.101002725117165,
+        "nodeDeg": 149.9575909564354,
+        "periDeg": 230.1127130846144,
+        "perihelionJd": 2460796.010882212,
+        "motionDegPerDay": 0.1969108346960461,
+        "periodDays": 1828.238657134841
+      },
+      "later": [],
+      "diameterKm": 222,
+      "diameterRef": "Shepard et al. (2021), The Planetary Science Journal 2, 125",
+      "extentKm": "278 × 238 × 171",
+      "rotationHours": 4.196,
+      "albedo": 0.1203,
+      "spectral": {
+        "tholen": "M",
+        "smass": "X"
+      },
+      "h": 6.2,
+      "g": 0.2,
+      "approaches": []
+    },
+    {
+      "id": "asteroid-21",
+      "number": "21",
+      "name": "Lutetia",
+      "fullname": "21 Lutetia (A852 VA)",
+      "orbitClass": {
+        "code": "MBA",
+        "name": "Main-belt Asteroid"
+      },
+      "neo": false,
+      "pha": false,
+      "solution": "JPL#146",
+      "elements": {
+        "e": 0.1647938954778071,
+        "qAu": 2.033390684962308,
+        "aAu": 2.434597489113871,
+        "inclinationDeg": 3.06437096829782,
+        "nodeDeg": 80.83833064402067,
+        "periDeg": 249.8588728896085,
+        "perihelionJd": 2461436.400510944,
+        "motionDegPerDay": 0.2594557615630781,
+        "periodDays": 1387.51977536054
+      },
+      "later": [],
+      "diameterKm": 98,
+      "diameterRef": "Sierks et al., Science 334, 487, 2011",
+      "extentKm": "121 × 101 × 75",
+      "rotationHours": 8.1655,
+      "albedo": 0.19,
+      "spectral": {
+        "tholen": "M",
+        "smass": "Xk"
+      },
+      "h": 7.48,
+      "g": 0.11,
+      "approaches": []
+    },
+    {
+      "id": "asteroid-243",
+      "number": "243",
+      "name": "Ida",
+      "fullname": "243 Ida (A884 SB)",
+      "orbitClass": {
+        "code": "MBA",
+        "name": "Main-belt Asteroid"
+      },
+      "neo": false,
+      "pha": false,
+      "solution": "JPL#191",
+      "elements": {
+        "e": 0.04618714125661542,
+        "qAu": 2.729977065004146,
+        "aAu": 2.862172636884762,
+        "inclinationDeg": 1.130177601387274,
+        "nodeDeg": 323.5360247776938,
+        "periDeg": 112.6377856595313,
+        "perihelionJd": 2460953.731940133,
+        "motionDegPerDay": 0.2035449518027735,
+        "periodDays": 1768.651085725893
+      },
+      "later": [],
+      "diameterKm": 32,
+      "diameterRef": "Belton et al. (1995)",
+      "extentKm": "59.8 × 25.4 × 18.6",
+      "rotationHours": 4.634,
+      "albedo": 0.262,
+      "spectral": {
+        "tholen": "S",
+        "smass": "S"
+      },
+      "h": 10.06,
+      "g": null,
+      "approaches": []
+    },
+    {
+      "id": "asteroid-433",
+      "number": "433",
+      "name": "Eros",
+      "fullname": "433 Eros (A898 PA)",
+      "orbitClass": {
+        "code": "AMO",
+        "name": "Amor"
+      },
+      "neo": true,
+      "pha": false,
+      "solution": "JPL#659",
+      "elements": {
+        "e": 0.222847576071151,
+        "qAu": 1.133297817064449,
+        "aAu": 1.458269680656887,
+        "inclinationDeg": 10.8285619079676,
+        "nodeDeg": 304.2679700491264,
+        "periDeg": 178.9234493756357,
+        "perihelionJd": 2461088.813543951,
+        "motionDegPerDay": 0.5596896868013717,
+        "periodDays": 643.2135672490252
+      },
+      "later": [],
+      "diameterKm": 16.84,
+      "diameterRef": "Yeomans et al. (2000) Science v.289,pp.2085-2088",
+      "extentKm": "34.4 × 11.2 × 11.2",
+      "rotationHours": 5.27,
+      "albedo": 0.25,
+      "spectral": {
+        "tholen": "S",
+        "smass": "S"
+      },
+      "h": 10.4,
+      "g": 0.46,
+      "approaches": []
+    },
+    {
+      "id": "asteroid-951",
+      "number": "951",
+      "name": "Gaspra",
+      "fullname": "951 Gaspra (A916 OJ)",
+      "orbitClass": {
+        "code": "MBA",
+        "name": "Main-belt Asteroid"
+      },
+      "neo": false,
+      "pha": false,
+      "solution": "JPL#162",
+      "elements": {
+        "e": 0.1739433734328276,
+        "qAu": 1.825155978020425,
+        "aAu": 2.209480463349335,
+        "inclinationDeg": 4.104708083671006,
+        "nodeDeg": 252.9545838782079,
+        "periDeg": 129.9657427613425,
+        "perihelionJd": 2460823.984968639,
+        "motionDegPerDay": 0.3001019553947576,
+        "periodDays": 1199.592316972583
+      },
+      "later": [],
+      "diameterKm": 12.2,
+      "diameterRef": null,
+      "extentKm": "18.2 × 10.5 × 8.9",
+      "rotationHours": 7.042,
+      "albedo": 0.246,
+      "spectral": {
+        "tholen": "S",
+        "smass": "S"
+      },
+      "h": 11.49,
+      "g": null,
+      "approaches": []
+    },
+    {
+      "id": "asteroid-3200",
+      "number": "3200",
+      "name": "Phaethon",
+      "fullname": "3200 Phaethon (1983 TB)",
+      "orbitClass": {
+        "code": "APO",
+        "name": "Apollo"
+      },
+      "neo": true,
+      "pha": true,
+      "solution": "JPL#1008",
+      "elements": {
+        "e": 0.8896655147955108,
+        "qAu": 0.1402853716654115,
+        "aAu": 1.271455351474311,
+        "inclinationDeg": 22.31005809682154,
+        "nodeDeg": 265.0966377515047,
+        "periDeg": 322.3007911513586,
+        "perihelionJd": 2461285.616946286,
+        "motionDegPerDay": 0.6874678657779678,
+        "periodDays": 523.6608399035622
+      },
+      "later": [],
+      "diameterKm": 6.25,
+      "diameterRef": "Taylor et al, \"Arecibo Radar Observations of near-Earth asteroid (3200) Phaethon during the 2017 apparition\", Planetary and Space Science. 10.1016/j.pss.2019.01.009",
+      "extentKm": null,
+      "rotationHours": 3.604,
+      "albedo": 0.1066,
+      "spectral": {
+        "tholen": "F",
+        "smass": "B"
+      },
+      "h": 14.38,
+      "g": null,
+      "approaches": []
+    },
+    {
+      "id": "asteroid-25143",
+      "number": "25143",
+      "name": "Itokawa",
+      "fullname": "25143 Itokawa (1998 SF36)",
+      "orbitClass": {
+        "code": "APO",
+        "name": "Apollo"
+      },
+      "neo": true,
+      "pha": true,
+      "solution": "JPL#237",
+      "elements": {
+        "e": 0.2801260828753775,
+        "qAu": 0.953197776384226,
+        "aAu": 1.324117673538672,
+        "inclinationDeg": 1.620927193153948,
+        "nodeDeg": 69.07481199334462,
+        "periDeg": 162.8334958328038,
+        "perihelionJd": 2461493.195382631,
+        "motionDegPerDay": 0.6468658148572167,
+        "periodDays": 556.5296414364749
+      },
+      "later": [],
+      "diameterKm": 0.33,
+      "diameterRef": "Science 312:1330-1334",
+      "extentKm": "0.535 × 0.294 × 0.209",
+      "rotationHours": 12.132,
+      "albedo": null,
+      "spectral": {
+        "tholen": null,
+        "smass": "S(IV)"
+      },
+      "h": 19.26,
+      "g": null,
+      "approaches": []
+    },
+    {
+      "id": "asteroid-65803",
+      "number": "65803",
+      "name": "Didymos",
+      "fullname": "65803 Didymos (1996 GT)",
+      "orbitClass": {
+        "code": "APO",
+        "name": "Apollo"
+      },
+      "neo": true,
+      "pha": true,
+      "solution": "JPL#240",
+      "elements": {
+        "e": 0.3831077513979581,
+        "qAu": 1.013414179558975,
+        "aAu": 1.642773404683724,
+        "inclinationDeg": 3.413780640301072,
+        "nodeDeg": 72.98513208939256,
+        "periDeg": 319.5753754129017,
+        "perihelionJd": 2461412.275815691,
+        "motionDegPerDay": 0.4680988551009073,
+        "periodDays": 769.0683198154701
+      },
+      "later": [],
+      "diameterKm": 0.78,
+      "diameterRef": "Naidu, S. P.; Benner, L. A. M.; Brozovic, M.; et al. (2020) Icarus 348, 113777",
+      "extentKm": "0.797 × 0.783 × 0.761",
+      "rotationHours": 2.2593,
+      "albedo": null,
+      "spectral": {
+        "tholen": null,
+        "smass": "S"
+      },
+      "h": 18.11,
+      "g": null,
+      "approaches": []
+    },
+    {
+      "id": "asteroid-99942",
+      "number": "99942",
+      "name": "Apophis",
+      "fullname": "99942 Apophis (2004 MN4)",
+      "orbitClass": {
+        "code": "ATE",
+        "name": "Aten"
+      },
+      "neo": true,
+      "pha": true,
+      "solution": "JPL#220",
+      "elements": {
+        "e": 0.1911838415314364,
+        "qAu": 0.7459985651329947,
+        "aAu": 0.9223339040919885,
+        "inclinationDeg": 3.341089491368255,
+        "nodeDeg": 203.8926123464672,
+        "periDeg": 126.6840599115385,
+        "perihelionJd": 2461366.471264556,
+        "motionDegPerDay": 1.112683925818503,
+        "periodDays": 323.5420155235728
+      },
+      "later": [
+        {
+          "fromJd": 2462240.407091969,
+          "solution": "JPL#220",
+          "elements": {
+            "e": 0.1891552804803999,
+            "qAu": 0.8945437505823772,
+            "aAu": 1.103224488052862,
+            "inclinationDeg": 2.221423921081988,
+            "nodeDeg": 203.5703358970014,
+            "periDeg": 71.42398855067374,
+            "perihelionJd": 2462301.146489356,
+            "motionDegPerDay": 0.850566422169028,
+            "periodDays": 423.2473685969928
+          }
+        }
+      ],
+      "diameterKm": 0.34,
+      "diameterRef": "Brozovic et al., Icarus 300, 115-128 (2018)",
+      "extentKm": null,
+      "rotationHours": 30.56,
+      "albedo": 0.35,
+      "spectral": {
+        "tholen": null,
+        "smass": "Sq"
+      },
+      "h": 19.09,
+      "g": 0.24,
+      "approaches": [
+        {
+          "jd": 2462240.407091969,
+          "when": "2029-Apr-13 21:46",
+          "distAu": 0.000254090910419299,
+          "distMinAu": 0.000254068999976389,
+          "distMaxAu": 0.000254112821017663,
+          "vRelKms": 7.42253895678452,
+          "path": [
+            [
+              2462237.657092,
+              -0.0070006794,
+              -0.0059124178,
+              -0.0026213638
+            ],
+            [
+              2462237.907092,
+              -0.00639322,
+              -0.0053631472,
+              -0.0023844348
+            ],
+            [
+              2462238.157092,
+              -0.0057855868,
+              -0.004813467,
+              -0.0021472657
+            ],
+            [
+              2462238.407092,
+              -0.005177623,
+              -0.0042632748,
+              -0.0019098141
+            ],
+            [
+              2462238.657092,
+              -0.0045691193,
+              -0.0037124286,
+              -0.0016720191
+            ],
+            [
+              2462238.907092,
+              -0.0039597826,
+              -0.0031607235,
+              -0.0014337906
+            ],
+            [
+              2462239.157092,
+              -0.0033491731,
+              -0.0026078492,
+              -0.001194989
+            ],
+            [
+              2462239.407092,
+              -0.0027365735,
+              -0.0020533027,
+              -0.0009553822
+            ],
+            [
+              2462239.657092,
+              -0.0021206623,
+              -0.0014961878,
+              -0.0007145437
+            ],
+            [
+              2462239.865425,
+              -0.0016028659,
+              -0.0010286919,
+              -0.000512274
+            ],
+            [
+              2462239.907092,
+              -0.0014985032,
+              -0.00093466,
+              -0.0004715556
+            ],
+            [
+              2462239.948759,
+              -0.0013937639,
+              -0.0008403926,
+              -0.0004307176
+            ],
+            [
+              2462239.990425,
+              -0.0012885752,
+              -0.0007458536,
+              -0.0003897396
+            ],
+            [
+              2462240.032092,
+              -0.0011828411,
+              -0.0006509991,
+              -0.000348596
+            ],
+            [
+              2462240.073759,
+              -0.0010764325,
+              -0.0005557737,
+              -0.0003072529
+            ],
+            [
+              2462240.115425,
+              -0.000969169,
+              -0.0004601085,
+              -0.0002656655
+            ],
+            [
+              2462240.157092,
+              -0.0008607892,
+              -0.0003639165,
+              -0.0002237724
+            ],
+            [
+              2462240.198759,
+              -0.0007508955,
+              -0.0002670913,
+              -0.0001814869
+            ],
+            [
+              2462240.240425,
+              -0.0006388451,
+              -0.0001695138,
+              -0.0001386838
+            ],
+            [
+              2462240.282092,
+              -0.0005235198,
+              -0.000071105,
+              -0.0000951796
+            ],
+            [
+              2462240.323759,
+              -0.0004028112,
+              0.0000279228,
+              -0.0000507268
+            ],
+            [
+              2462240.365425,
+              -0.0002726431,
+              0.0001259028,
+              -0.0000051892
+            ],
+            [
+              2462240.407092,
+              -0.0001277191,
+              0.0002159262,
+              0.0000403179
+            ],
+            [
+              2462240.448759,
+              0.0000281386,
+              0.0002874644,
+              0.0000823727
+            ],
+            [
+              2462240.490425,
+              0.000183499,
+              0.0003428531,
+              0.0001199561
+            ],
+            [
+              2462240.532092,
+              0.0003349024,
+              0.0003899874,
+              0.0001547177
+            ],
+            [
+              2462240.573759,
+              0.0004829634,
+              0.0004330531,
+              0.0001878866
+            ],
+            [
+              2462240.615425,
+              0.0006285833,
+              0.0004738792,
+              0.0002200913
+            ],
+            [
+              2462240.657092,
+              0.0007724129,
+              0.0005133365,
+              0.0002516628
+            ],
+            [
+              2462240.698759,
+              0.0009148924,
+              0.0005518877,
+              0.0002827906
+            ],
+            [
+              2462240.740425,
+              0.0010563243,
+              0.0005898025,
+              0.0003135914
+            ],
+            [
+              2462240.782092,
+              0.001196923,
+              0.0006272496,
+              0.0003441416
+            ],
+            [
+              2462240.823759,
+              0.0013368453,
+              0.0006643414,
+              0.0003744933
+            ],
+            [
+              2462240.865425,
+              0.0014762095,
+              0.0007011562,
+              0.0004046838
+            ],
+            [
+              2462240.907092,
+              0.0016151069,
+              0.0007377517,
+              0.0004347397
+            ],
+            [
+              2462240.948759,
+              0.0017536095,
+              0.000774172,
+              0.0004646804
+            ],
+            [
+              2462241.157092,
+              0.0024418238,
+              0.0009547221,
+              0.0006129906
+            ],
+            [
+              2462241.407092,
+              0.0032610756,
+              0.0011696995,
+              0.0007886837
+            ],
+            [
+              2462241.657092,
+              0.0040758449,
+              0.0013833789,
+              0.0009631054
+            ],
+            [
+              2462241.907092,
+              0.0048878435,
+              0.001596186,
+              0.0011368051
+            ],
+            [
+              2462242.157092,
+              0.0056979802,
+              0.0018084114,
+              0.0013100138
+            ],
+            [
+              2462242.407092,
+              0.0065068039,
+              0.0020202372,
+              0.0014828578
+            ],
+            [
+              2462242.657092,
+              0.0073146782,
+              0.0022317854,
+              0.0016554152
+            ],
+            [
+              2462242.907092,
+              0.0081218613,
+              0.0024431428,
+              0.0018277372
+            ],
+            [
+              2462243.157092,
+              0.0089285459,
+              0.0026543758,
+              0.0019998593
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "asteroid-101955",
+      "number": "101955",
+      "name": "Bennu",
+      "fullname": "101955 Bennu (1999 RQ36)",
+      "orbitClass": {
+        "code": "APO",
+        "name": "Apollo"
+      },
+      "neo": true,
+      "pha": true,
+      "solution": "ORX_merged_DE424",
+      "elements": {
+        "e": 0.203676921347434,
+        "qAu": 0.8965927686814699,
+        "aAu": 1.125915840840086,
+        "inclinationDeg": 6.033011478556734,
+        "nodeDeg": 1.966454290772896,
+        "periDeg": 66.40069784604785,
+        "perihelionJd": 2461112.664261422,
+        "motionDegPerDay": 0.824983342779457,
+        "periodDays": 436.3724469722279
+      },
+      "later": [],
+      "diameterKm": 0.48444,
+      "diameterRef": "Daly, M.G., et al., Sci. Adv. 6, eabd3649 (2020)",
+      "extentKm": "0.5047 × 0.4918 × 0.4567",
+      "rotationHours": 4.296061,
+      "albedo": 0.044,
+      "spectral": {
+        "tholen": null,
+        "smass": "B"
+      },
+      "h": 20.21,
+      "g": -0.031,
+      "approaches": []
+    },
+    {
+      "id": "asteroid-162173",
+      "number": "162173",
+      "name": "Ryugu",
+      "fullname": "162173 Ryugu (1999 JU3)",
+      "orbitClass": {
+        "code": "APO",
+        "name": "Apollo"
+      },
+      "neo": true,
+      "pha": true,
+      "solution": "JPL#270",
+      "elements": {
+        "e": 0.1910407567748889,
+        "qAu": 0.9633978243731036,
+        "aAu": 1.190910212648397,
+        "inclinationDeg": 5.866457513658352,
+        "nodeDeg": 251.2891813954415,
+        "periDeg": 211.6071402458881,
+        "perihelionJd": 2461118.289416682,
+        "motionDegPerDay": 0.7583776832390363,
+        "periodDays": 474.6975128044875
+      },
+      "later": [],
+      "diameterKm": 0.896,
+      "diameterRef": "Watanabe, S.; Hirabayashi, M.; Hirata, N.; Hirata, Na.; et al. (2019) Science 364, 267-272.",
+      "extentKm": "1.004 × 0.876",
+      "rotationHours": 7.63262,
+      "albedo": 0.045,
+      "spectral": {
+        "tholen": null,
+        "smass": "Cb"
+      },
+      "h": 19.55,
+      "g": null,
+      "approaches": [
+        {
+          "jd": 2463952.745476952,
+          "when": "2033-Dec-21 05:53",
+          "distAu": 0.0474442747876762,
+          "distMinAu": 0.0474437015207895,
+          "distMaxAu": 0.0474448480573434,
+          "vRelKms": 4.07845861740696
+        }
+      ]
+    }
+  ]
+}

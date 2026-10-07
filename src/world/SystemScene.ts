@@ -4,6 +4,7 @@ import { getLocation, isInventedSystem } from '../data/systems.ts';
 import { createAsteroidField, createDustRing, type AsteroidFieldArt, type AsteroidHit } from './art/asteroids.ts';
 import { createBlackHole, type BlackHoleArt } from './art/blackHole.ts';
 import { createComet } from './art/comets.ts';
+import { createNamedAsteroid } from './art/namedAsteroids.ts';
 import { createPlanet, type PlanetArt } from './art/planets.ts';
 import { createSkybox } from './art/skybox.ts';
 import { createStar, type StarArt } from './art/stars.ts';
@@ -11,7 +12,7 @@ import { createStation, type StationArt } from './art/stations.ts';
 import { createGeneratedStation } from './art/stationgen/index.ts';
 import { createJumpBeacon, createLaneRing, createNavBuoy, type LaneRingArt } from './art/structures.ts';
 import type { ArtContext, ArtObject } from './art/types.ts';
-import type { SceneBlackHoleDef, SceneCometDef, SceneLaneDef, ScenePlanetDef, SceneStarDef, SceneStationDef, SystemSceneDef } from './sceneTypes.ts';
+import type { SceneAsteroidDef, SceneBlackHoleDef, SceneCometDef, SceneLaneDef, ScenePlanetDef, SceneStarDef, SceneStationDef, SystemSceneDef } from './sceneTypes.ts';
 import type { Target } from './targets.ts';
 
 export interface StarRuntime {
@@ -73,6 +74,8 @@ export class SystemScene {
   readonly planets: PlanetRuntime[] = [];
   /** Sol's comets (docs/PROCGEN.md §45). */
   readonly comets: SceneCometDef[] = [];
+  /** Sol's named asteroids (docs/PROCGEN.md §47). */
+  readonly asteroids: SceneAsteroidDef[] = [];
   readonly docks: DockSite[] = [];
   readonly lanes: LaneRuntime[] = [];
   readonly belts: AsteroidFieldArt[] = [];
@@ -182,6 +185,14 @@ export class SystemScene {
       this.add(art);
       this.comets.push(c);
       this.targets.push({ id: `comet:${c.id}`, name: c.name, kind: 'comet', position: c.position, radius: Math.max(c.radius, c.coma * 0.4), subtitle: c.subtitle, dataClass: 'observed', bodyId: c.id, alive: true, cycle: true });
+    }
+    // Named asteroids (docs/PROCGEN.md §47.3), likewise.
+    for (const [i, a] of (def.asteroids ?? []).entries()) {
+      const art = createNamedAsteroid({ radius: a.radius, shape: a.shape, spin: a.spin, color: a.color, seed: 911 + i * 41 }, ctx);
+      art.object.position.copy(a.position);
+      this.add(art);
+      this.asteroids.push(a);
+      this.targets.push({ id: `asteroid:${a.id}`, name: a.name, kind: 'asteroid', position: a.position, radius: a.radius, subtitle: a.subtitle, dataClass: 'observed', bodyId: a.id, alive: true, cycle: true });
     }
 
     for (const s of def.stations) {
@@ -403,6 +414,7 @@ export class SystemScene {
     if (this.blackHole && `hole:${this.blackHole.def.id}` !== exceptId) list.push({ id: `hole:${this.blackHole.def.id}`, center: this.blackHole.def.position, radius: this.blackHole.def.tidalRadius });
     for (const p of this.planets) if (`planet:${p.def.id}` !== exceptId) list.push({ id: `planet:${p.def.id}`, center: p.def.position, radius: p.def.radius });
     for (const c of this.comets) if (`comet:${c.id}` !== exceptId) list.push({ id: `comet:${c.id}`, center: c.position, radius: c.radius * 2 });
+    for (const a of this.asteroids) if (`asteroid:${a.id}` !== exceptId) list.push({ id: `asteroid:${a.id}`, center: a.position, radius: a.radius * 1.5 });
     for (const d of this.docks) if (`station:${d.def.locationId}` !== exceptId) list.push({ id: `station:${d.def.locationId}`, center: d.def.position, radius: d.radius });
     return list;
   }

@@ -23,6 +23,7 @@ import { RANKS } from '../../content/ranks/rules.ts';
 import { LOG_KINDS, LOGBOOK } from '../../content/progress/logbook.ts';
 import { MILESTONES } from '../../content/progress/rules.ts';
 import { ARCS } from '../../content/story/arcs.ts';
+import { asteroidOf } from '../../data/asteroids.ts';
 import { cometOf } from '../../data/comets.ts';
 import { getPlanet } from '../../data/systems.ts';
 import { WING, WING_MEMORIES } from '../../content/wing/rules.ts';
@@ -861,6 +862,7 @@ function assertValidLogbook(b: unknown, clock: number, fail: (msg: string) => ne
     towed: system,
     comet: (id) => typeof id === 'string' && !!cometOf(id),
     planet: (id) => typeof id === 'string' && !!getPlanet(id),
+    asteroid: (id) => typeof id === 'string' && !!asteroidOf(id),
   };
   let last = 0;
   for (const e of b.entries) {
@@ -875,4 +877,5 @@ function assertValidLogbook(b: unknown, clock: number, fail: (msg: string) => ne
   if (pay !== undefined && (!isRecord(pay) || !(Number.isFinite(pay.n) && (pay.n as number) > 0) || !at(pay.at) || typeof pay.title !== 'string')) fail('logbook bests');
   if (!b.comets.every((c) => typeof c === 'string' && !!cometOf(c)) || new Set(b.comets).size !== b.comets.length) fail('logbook comets');
   if (!b.ships.every((m) => typeof m === 'string' && !!findShip(m)) || new Set(b.ships).size !== b.ships.length) fail('logbook ships');
+  if (b.asteroids !== undefined && (!Array.isArray(b.asteroids) || !b.asteroids.every((a) => typeof a === 'string' && !!asteroidOf(a)) || new Set(b.asteroids).size !== b.asteroids.length)) fail('logbook asteroids');
 }

@@ -36,7 +36,7 @@ However each of the faction arcs and the last three ends, it changes a station's
 often its job board, for good. Pilot ratings, a codex of 361 real bodies, 32 milestones and a hint
 of what to do next
 give it goals, and a logbook keeps the career as it goes: each first arrival, ship, story, promotion,
-milestone, race won and comet or planet first scanned, dated on the game's calendar, with the
+milestone, race won and comet, asteroid or planet first scanned, dated on the game's calendar, with the
 pilot's bests. Fights have seekers and decoy
 flares, mines, damage to a ship's systems, loot, wingmen for hire who take six orders from a
 paused card, grow with every fight and are picked up when shot down, and raider dens that defend
@@ -92,7 +92,10 @@ and B among them, have their real orbits from the Sixth Catalog of Orbits of Vis
 each companion stands in its real direction, and its card says where the pair is on the game's
 date. In Sol fourteen real comets, Halley and Encke among them, stand where JPL has them on the
 game's date, growing a coma and tails that stream away from the Sun as they near it; the News tells
-when one passes the Sun, and research stations near Sol pay you to image one. And between the docks, the lanes call: a mayday that may be bait, a lifepod, a Wake
+when one passes the Sun, and research stations near Sol pay you to image one. Fifteen named
+asteroids fly there too, Ceres, Vesta, Bennu and Apophis among them, each on JPL's orbit and drawn in
+its real shape; on 13 April 2029 Apophis passes Earth nearer than the Moon, as it really will, the
+News tells of it and research stations pay you to track it. And between the docks, the lanes call: a mayday that may be bait, a lifepod, a Wake
 toll gate, a customs patrol open to a bribe, a stranded scientist, cargo adrift, a lost trader, a
 wreck's beacon or an old hulk's, each a choice with consequences. Many lead somewhere to fly: a ship
 in distress to reach, pods to tractor in, a wreck to salvage, an old derelict (invented, and labelled
@@ -256,7 +259,7 @@ src/economy/   live markets, world events and the world's answers, trade, cargo,
                ranks, racing, the wing, and border battles
 src/audio/     procedural Web Audio music and sound effects
 src/ui/        HUD, touch controls, station screens, encyclopedia, styles
-scripts/       the sky snapshot (sky-fetch on GitHub's runners, sky-process, orbits-process and comets-process here), catalogue
+scripts/       the sky snapshot (sky-fetch on GitHub's runners, sky-process, orbits-process, comets-process and asteroids-process here), catalogue
                extraction (HYG, Open Exoplanet Catalogue, the far stars), dataset build and
                validation
 tests/         unit tests (Vitest) and browser journeys (Playwright)

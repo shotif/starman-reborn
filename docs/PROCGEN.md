@@ -4752,6 +4752,7 @@ An entry is written when (`LOG_LINES`, each with the place):
 - **Towed home** after the ship was lost.
 - **A comet** scanned for the first time (§45).
 - **A planet** discovered: a confirmed exoplanet scanned for the first time.
+- **An asteroid** scanned for the first time (§47).
 
 Each entry keeps its game clock, the kind, what it is about (a system, a ship, an arc, a faction and
 rank, a milestone, a course, a site, a comet, a planet) and the place; the words are filled in when
@@ -4777,7 +4778,7 @@ little over twenty-seven), **Five comets scanned**, and **Five ships flown**.
 The journal has a *Logbook* section: the bests and the latest five entries, with **Open the
 logbook**. The logbook itself lists every entry, newest first, under the game's month and year, each
 with its day and place; chips filter it by kind (*Places*, *Ships*, *Stories and ranks*,
-*Milestones*, *The sky*: comets and planets, *Races*). Dates are the game's: when the save began
+*Milestones*, *The sky*: comets, planets and asteroids, *Races*). Dates are the game's: when the save began
 plus the time played.
 
 ### 46.5 One save's own
@@ -4798,3 +4799,136 @@ known kinds and known ids, bests that are numbers in range). The tests also writ
 entry through the game's own functions (a jump, a ship bought, a finale, a promotion, a milestone,
 a race won, a station chartered, a tow home, a comet and a planet scanned), check the bests and the
 new milestones, start a logbook for an old save, and keep the record within its size.
+
+## 47. Named asteroids, and Apophis
+
+Fifteen named asteroids fly in Sol on their real orbits: 1 Ceres, 2 Pallas, 4 Vesta, 10 Hygiea,
+16 Psyche, 21 Lutetia, 243 Ida, 433 Eros, 951 Gaspra, 3200 Phaethon, 25143 Itokawa, 65803 Didymos,
+99942 Apophis, 101955 Bennu and 162173 Ryugu (`src/data/asteroids.ts`, read from JPL by
+`scripts/asteroids-process.ts`; what the game does with them in `ASTEROIDS` and what it says in
+`ASTEROID_LINES`, `src/content/stellar/asteroids.ts`; the engine in `src/economy/asteroids.ts`).
+Nothing about them is invented: every element, size, shape, rotation and pass of Earth is JPL's, and
+every number shown is reckoned from those and a date. They were chosen as the largest of the main
+belt, the ones spacecraft have visited, and the near-Earth ones best known for passing close; among
+them Apophis, which on 13 April 2029 passes 38,000 km from Earth's centre, nearer than the
+satellites that ring Earth at 36,000 km above it.
+
+The owner chose (7 October 2026): real asteroids and Apophis, then moons of the giant planets, then
+spacecraft out in Sol.
+
+### 47.1 The asteroids
+
+The sky snapshot (`scripts/sky-fetch.ts`: [ASTRONOMY_SOURCES.md,
+*Asteroids*](ASTRONOMY_SOURCES.md#asteroids)) fetches, for each asteroid, JPL's Small-Body Database
+record (its name, its orbit class, whether it is near-Earth and potentially hazardous, its size,
+shape, rotation, albedo, spectral types and magnitude parameters, each with the reference JPL
+gives), its osculating elements on the snapshot's day from JPL Horizons, its positions every 30 days
+for two years before that day and four after, and its passes of Earth within 0.05 AU from two years
+before to eight after, from JPL's close-approach data. Two pass so near: Apophis in April 2029 and
+Ryugu in December 2033 (0.047 AU). Round each, it also fetches where Horizons has the asteroid from
+Earth's centre, hourly for sixteen days either side. Apophis's pass changes its orbit, so its elements
+are fetched again a month after it (`ASTEROID_AFTER`). `scripts/asteroids-process.ts` takes the
+elements as they are, converted only in units, keeps the path from Earth's centre only for a pass
+nearer than 0.01 AU (hourly while nearer than 0.002 AU, six-hourly beyond), and keeps Horizons'
+positions apart for the tests to check against.
+
+### 47.2 The reckoning
+
+Where an asteroid stands on a date is reckoned as a comet's is (§45.2), shared in
+`src/data/kepler.ts`: two-body, from the elements, into the J2000 ecliptic. After a pass that changes
+its orbit, the elements from after it hold, from the moment of the pass. Tested against Horizons,
+every asteroid stands within 0.05° and 0.08% of where Horizons has it for a year either side of the
+snapshot, and within 1.0° and 0.55% for the whole six years (Psyche and Phaethon drift most).
+More than two years from when the elements in use were taken (the snapshot's, or after a pass the
+pass's), the cards say it may be some way off, unless a pass's path gives where it is.
+
+Near Earth that is not fine enough: the game's own place for Earth is good to some tens of thousands
+of kilometres, as much as Apophis's whole distance at its nearest. So while a pass's path from
+Earth's centre covers the date, where the asteroid is from Earth is read from it instead (between
+its hours, in a straight line).
+
+How bright an asteroid looks from Earth is reckoned by the standard law for an asteroid's
+brightness, from its absolute magnitude *H* and slope *G* (0.15, the Minor Planet Center's, where none
+is measured), its distances from the Sun and from Earth, and the angle between them as seen from it.
+On the snapshot's day Vesta, the brightest, is about magnitude 6 (binoculars show it); Apophis,
+about magnitude 21 now, is about magnitude 3 to 4 in the hours before its nearest, bright enough for
+the naked eye, and fades fast after it as it swings round toward the Sun.
+
+Its orbit class is JPL's. The near-Earth classes follow the Center for Near-Earth Object Studies'
+definitions from the elements: Atira wholly inside Earth's orbit, Aten crossing it with a year
+shorter than Earth's, Apollo crossing it with a longer one, Amor coming within 1.3 AU of the Sun
+without crossing it. Apophis is an Aten now, its year 324 days; after the pass, an Apollo, its year
+423 days, as the game reckons from Horizons' elements after it.
+
+### 47.3 In flight
+
+In Sol, each asteroid stands in its real direction from the Sun on the game's date, above or below
+the planets' plane, at its distance compressed onto the planets' scale (§45.3). While a pass's path
+covers the date, it stands instead in its real direction from Earth, at a distance compressed between
+Earth's surface (drawn at Earth's drawn radius) and the Moon's mean distance (drawn where the Moon
+is), by the logarithm, and on at that rate beyond: at its nearest, Apophis is drawn nearer Earth than
+the Moon, as it really is. Either way, one that would crowd what is not its own (the arrival point
+and beacon, the stations and the belts' outpost sites, the planets, the lane, the comets and the
+other asteroids: `ASTEROIDS.clear`, smaller than a comet's, as a rock has no tails) is moved further
+out along its direction until it does not.
+
+Each is drawn far larger than life (real ones are from 330 m to 940 km across), larger for a larger
+one but never as large as the Moon is drawn, in the proportions of its measured shape (no axis
+thinner than `size.flattest` of the longest), coloured by its spectral type (dark for carbon-rich,
+browner for stony, grey for basaltic and metal-rich) and lighter for a higher albedo, and turning in
+the order they really turn, `spinFaster` times faster so a turn can be seen. An asteroid is a new
+kind of target: selected, flown to and scanned like a comet, not part of the codex.
+
+### 47.4 What the game says
+
+- **The science card** of an asteroid: its name, its class, its year, its nearest and furthest from
+  the Sun, eccentricity and inclination, its size, shape, how long it takes to turn, how much light it
+  reflects and what its spectral type says it is made of (where measured), where it is on the game's
+  date (from the Sun and from Earth), its next pass of Earth within 0.05 AU (its date, how near and how
+  fast), whether a pass changed or will change its orbit, whether it is classed potentially hazardous
+  (and that this marks it to be watched, not that it will hit), how bright it looks from Earth and what
+  it takes to see it, JPL cited, and that in flight it is drawn far larger than life.
+- **Sol's card on the star map** lists the asteroids: where each is on the game's date, and its next
+  pass of Earth.
+- **The encyclopedia** gives them in full.
+- **The News**, at Sol's stations and at research stations within reach of Sol: a pass of Earth
+  within 60 days (`ASTEROIDS.news`) is news: when, how near and how fast, and how bright it looks.
+
+### 47.5 Tracking a near-Earth asteroid
+
+Near-Earth asteroids are tracked again and again: each new measurement of where one is sharpens its
+orbit, and with it every pass to come. Research stations within two jumps of Sol post, from a random
+stream of their own, a near-Earth asteroid to track in a time slot, with odds of about three in ten
+(`track.odds`): **Track {asteroid}**: scan it in Sol within a day of the posting, then bring the
+positions back. It pays 600 cr and 300 cr a jump. Within 60 days of a pass of Earth (`track.passDays`,
+on the game's date of the posting), every station that posts tracking wants the asteroid passing, and
+says so.
+
+### 47.6 One save's own
+
+Nothing new is kept but the logbook's: an asteroid scanned for the first time is written in it
+(§46.1, under *The sky*), and the bests count the asteroids scanned (`logbook.asteroids`, absent in a
+logbook begun before them). Where an asteroid stands follows from the game's date; a tracking job
+taken on is kept like every contract.
+
+### 47.7 Guardrails
+
+`validateAsteroids` (`src/data/validate.ts`, run by `npm run data:validate`) and
+`validateAsteroidRules` (`src/economy/asteroidGuards.ts`, run in `tests/unit/asteroids.test.ts`): each
+asteroid named once by its number, its elements bound and agreeing by Kepler's third law (after a pass
+too, from one of its own passes on), its class JPL's and the near-Earth ones agreeing with their
+elements, potentially hazardous only if near-Earth and large enough, its measurements sensible; every
+pass within 0.05 AU and in order, and a pass nearer than 0.01 AU with its path, whose nearest point
+matches JPL's distance to a hundredth and its time to the hour; the reckoning matching Horizons
+(within 0.1° and 0.2% for a year either side of the snapshot, 1.5° and 1% for the six years); as
+drawn, larger for larger, never as large as the Moon, turning in their real order and none more than
+once in ten seconds; in Sol, on a date every 20 days across the six years and every two hours along
+each pass's path, each in its real direction (from the Sun, or from Earth while passing it) to 0.01
+radian, no nearer than its compressed distance, crowding nothing, and at its nearest a pass nearer
+than the Moon drawn nearer than the Moon; the News only of a real pass within its window; tracking
+paying within what any contract pays and near enough for a young pilot, and of the asteroid passing
+near a pass; and no line with a number of its own or a field it cannot fill. The contract guardrails
+check every tracking job. The tests also check JPL's raw records against the game's, break the rules
+and the records to see them caught, follow Apophis through its pass (38,000 km at 21:46 on 13 April
+2029, an Aten before and an Apollo after, bright enough for the naked eye), and check what is said,
+the scene, the News, the work and the logbook.

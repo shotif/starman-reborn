@@ -5,6 +5,7 @@ import { LOG_LINES, LOGBOOK } from '../content/progress/logbook.ts';
 import { MILESTONES } from '../content/progress/rules.ts';
 import { ARC_JOBS, ARCS } from '../content/story/arcs.ts';
 import type { ArcId } from '../content/story/types.ts';
+import { asteroidOf } from '../data/asteroids.ts';
 import { cometOf } from '../data/comets.ts';
 import { gameJulianDate } from '../data/solar.ts';
 import { getLocation, getPlanet, getSystem, isInventedSystem } from '../data/systems.ts';
@@ -18,7 +19,7 @@ import { rankName } from './ranks.ts';
 /**
  * The pilot's logbook (docs/PROCGEN.md §46): written as the career goes, through the game's own
  * functions (a jump, a ship bought, a finale, a promotion, a milestone, a race, a charter, a tow home,
- * a comet or planet scanned), with the pilot's bests.
+ * a comet, planet or asteroid scanned), with the pilot's bests.
  */
 
 /** Where the pilot is: the dock, or the system. */
@@ -100,6 +101,16 @@ export function noteComet(state: GameState, cometId: string): boolean {
   return true;
 }
 
+/** A named asteroid scanned: true the first time (§47.6). */
+export function noteAsteroid(state: GameState, asteroidId: string): boolean {
+  const book = logbookOf(state);
+  const seen = (book.asteroids ??= []);
+  if (!asteroidOf(asteroidId) || seen.includes(asteroidId)) return false;
+  seen.push(asteroidId);
+  logWrite(state, { kind: 'asteroid', id: asteroidId, where: 'sol' });
+  return true;
+}
+
 /** The farthest real star visited (ly from Sol), and which: Pyre, invented, is left out. */
 export function farthestVisited(state: GameState): { systemId: SystemId; ly: number } | null {
   let best: { systemId: SystemId; ly: number } | null = null;
@@ -128,6 +139,11 @@ export function placeName(where: string | undefined): string {
 }
 
 const systemName = (id: string | undefined) => (id ? placeName(id) : '');
+/** A named asteroid's number and name (`99942 Apophis`). */
+const asteroidName = (id: string | undefined) => {
+  const a = id ? asteroidOf(id) : undefined;
+  return a ? `${a.number} ${a.name}` : '';
+};
 
 /** An entry, said. */
 export function logText(e: LogEntry): string {
@@ -160,6 +176,8 @@ export function logText(e: LogEntry): string {
       return fill(LOG_LINES.comet, { comet: (e.id && cometOf(e.id)?.name) || '' });
     case 'planet':
       return fill(LOG_LINES.planet, { planet: (e.id && getPlanet(e.id)?.displayName) || '' });
+    case 'asteroid':
+      return fill(LOG_LINES.asteroid, { asteroid: asteroidName(e.id) });
   }
 }
 
@@ -183,5 +201,6 @@ export function logBests(state: GameState): { key: string; value: string; note: 
   out.push({ key: 'systems', value: String(state.visitedSystems.length), note: '' });
   out.push({ key: 'ships', value: String(book.ships.length), note: '' });
   if (book.comets.length) out.push({ key: 'comets', value: String(book.comets.length), note: '' });
+  if (book.asteroids?.length) out.push({ key: 'asteroids', value: String(book.asteroids.length), note: '' });
   return out;
 }

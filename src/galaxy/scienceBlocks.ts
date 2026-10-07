@@ -21,7 +21,9 @@ import type {
 import { dataBadge, sourceLink } from '../ui/components.ts';
 import { ORBITS, orbitOf } from '../data/orbits.ts';
 import { dateText, pairFacts, systemPairs, type PairFacts } from '../economy/binaries.ts';
+import { ASTEROID_DATA, asteroidOf } from '../data/asteroids.ts';
 import { COMET_DATA, cometOf } from '../data/comets.ts';
+import { allAsteroidFacts, asteroidFacts, type AsteroidFacts } from '../economy/asteroids.ts';
 import { allCometFacts, cometFacts, type CometFacts } from '../economy/comets.ts';
 import { h, type Child } from '../ui/dom.ts';
 import { icon } from '../ui/icons.ts';
@@ -423,6 +425,78 @@ export function cometCard(bodyId: string, jd: number): HTMLElement | null {
     h('div', { class: 'row wrap' }, dataBadge('observed', 'Real comet')),
     h('p', null, f.headline),
     ...cometLines(f, jd, 'full'),
+  );
+}
+
+function asteroidLines(f: AsteroidFacts, jd: number, detail: Detail): HTMLElement[] {
+  const now = `On ${dateText(jd)}`;
+  const opt = (k: string, v: string | null): [string, string][] => (v ? [[k, v]] : []);
+  const rows: [string, string][] = [
+    ['Kind', f.orbitClass],
+    ['Year', f.period],
+    ['Nearest the Sun', f.perihelion],
+    ['Furthest from the Sun', f.aphelion],
+    ['Eccentricity', f.eccentricity],
+    ['Inclination', f.inclination],
+    ...opt('Size', f.size),
+    ...opt('Shape', f.shape),
+    ...opt('Turns', f.rotation),
+    ...opt('Albedo', f.albedo),
+    ...opt('Make-up', f.spectral),
+    [now, f.now],
+    ...opt('Next close pass of Earth', f.nextPass),
+  ];
+  const shown = detail === 'compact' ? rows.filter(([k]) => k === now || k === 'Next close pass of Earth') : rows;
+  const a = f.asteroid;
+  const lines: (HTMLElement | null)[] = [
+    h('dl', { class: 'kv' }, shown.flatMap(([k, v]) => [h('dt', null, k), h('dd', null, v)])),
+    f.change ? h('p', { 'data-testid': 'asteroid-change' }, f.change) : null,
+    detail === 'full' && f.hazardous ? h('p', { 'data-testid': 'asteroid-hazardous' }, f.hazardous) : null,
+    detail === 'full' && f.brightness ? h('p', { 'data-testid': 'asteroid-brightness' }, f.brightness) : null,
+    detail === 'full' && f.unsure ? h('p', { class: 'muted small' }, f.unsure) : null,
+    detail === 'full'
+      ? h(
+          'p',
+          { class: 'row wrap' },
+          sourceLink(ASTEROID_DATA.sources.horizons, `${a.name}, orbit ${a.solution}`),
+          ' ',
+          sourceLink(ASTEROID_DATA.sources.sbdb, a.diameterRef ? `size: ${a.diameterRef}` : a.fullname),
+          a.approaches.length ? [' ', sourceLink(ASTEROID_DATA.sources.cad, 'close approaches')] : null,
+        )
+      : null,
+    detail === 'full' ? h('p', { class: 'muted small' }, dataBadge('estimated'), ' ', f.scene) : null,
+  ];
+  return lines.filter((x): x is HTMLElement => x !== null);
+}
+
+/** Sol's named asteroids, on a date (another system: null). */
+export function asteroidBlock(systemId: SystemId, jd: number, detail: Detail): HTMLElement | null {
+  if (systemId !== 'sol') return null;
+  return h(
+    'div',
+    { class: 'stack' },
+    h(
+      'ul',
+      { class: 'sci-list sci-asteroids', 'data-testid': 'science-asteroids' },
+      allAsteroidFacts(jd).map((f) => h('li', { class: 'sci-item', 'data-testid': `asteroid-${f.asteroid.number}` }, h('div', { class: 'sci-item-head' }, h('strong', null, detail === 'compact' ? `${f.asteroid.number} ${f.asteroid.name}` : f.headline)), asteroidLines(f, jd, detail))),
+    ),
+    detail === 'compact'
+      ? h('p', { class: 'row wrap' }, sourceLink(ASTEROID_DATA.sources.horizons), ' ', sourceLink(ASTEROID_DATA.sources.sbdb), ' ', sourceLink(ASTEROID_DATA.sources.cad))
+      : null,
+  );
+}
+
+/** A named asteroid's science card, on a date (not one: null). */
+export function asteroidCard(bodyId: string, jd: number): HTMLElement | null {
+  const asteroid = asteroidOf(bodyId);
+  if (!asteroid) return null;
+  const f = asteroidFacts(asteroid, jd);
+  return h(
+    'div',
+    { class: 'stack science-card', 'data-testid': 'science-asteroid' },
+    h('div', { class: 'row wrap' }, dataBadge('observed', 'Real asteroid')),
+    h('p', null, f.headline),
+    ...asteroidLines(f, jd, 'full'),
   );
 }
 

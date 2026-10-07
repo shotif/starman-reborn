@@ -24,6 +24,7 @@ import { leaveMark, settleFront, storyMark } from './answers.ts';
 import { observeBaseline, observeDone, type ObserveObjective } from './stellar.ts';
 import { firstLightSeen, PYRE_HOLE_ID } from './doomed.ts';
 import { DOOMED } from '../content/stellar/doomed.ts';
+import { asteroidOf } from '../data/asteroids.ts';
 import { cometOf } from '../data/comets.ts';
 import { EMBERS } from '../content/story/embers.ts';
 import { holdPyre, lifeboatTimes, observatoryStands, pyreArcOpen } from './embers.ts';
@@ -168,6 +169,8 @@ export interface JobDef {
     pair?: string;
     /** A comet's imaging (docs/PROCGEN.md §45.5): the comet imaged. */
     comet?: string;
+    /** A near-Earth asteroid's tracking (docs/PROCGEN.md §47.5): the asteroid tracked. */
+    asteroid?: string;
   };
   /** Story arc missions (content/story/arcs.ts): arc, step, speaker and beats. */
   story?: StoryMeta;
@@ -731,8 +734,8 @@ function describeCurrent(state: GameState, jobId: string): ObjectiveSummary | nu
       const mins = (s: number) => Math.max(1, Math.round(s / 60));
       const when = now < o.from ? `opens in ${mins(o.from - now)} min` : now <= o.to ? `${mins(o.to - now)} min left` : 'closed';
       // A flaring star is read where it is, in its own system (docs/PROCGEN.md §43.5).
-      // So is a comet, in Sol (§45.5).
-      if (o.systemId) return { ...base, text: inOtherSystem(o.systemId, `${o.text} (${when})`), targetSystemId: o.systemId, targetLocationId: null, ...(o.systemId === here ? { targetId: cometOf(o.star) ? `comet:${o.star}` : `star:${o.star}` } : {}) };
+      // So is a comet or an asteroid, in Sol (§45.5, §47.5).
+      if (o.systemId) return { ...base, text: inOtherSystem(o.systemId, `${o.text} (${when})`), targetSystemId: o.systemId, targetLocationId: null, ...(o.systemId === here ? { targetId: cometOf(o.star) ? `comet:${o.star}` : asteroidOf(o.star) ? `asteroid:${o.star}` : `star:${o.star}` } : {}) };
       // Pyre's black hole is read where it is (docs/PROCGEN.md §26.5).
       if (o.star === PYRE_HOLE_ID) {
         const pyre = DOOMED.star.id as SystemId;

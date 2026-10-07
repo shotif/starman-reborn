@@ -1,5 +1,16 @@
 import * as THREE from "three";
+import { ASTEROID_LINES, ASTEROIDS } from "../../content/stellar/asteroids.ts";
 import { COMET_LINES, COMETS } from "../../content/stellar/comets.ts";
+import { outpostSites } from "../../content/outposts/sites.ts";
+import {
+  ASTEROID_DATA,
+  asteroidAt,
+  AU_KM,
+  EARTH_RADIUS_KM,
+  geocentricOnPath,
+  MOON_DISTANCE_KM,
+  type Asteroid,
+} from "../../data/asteroids.ts";
 import {
   COMET_DATA,
   COMET_EPOCH_JD,
@@ -13,8 +24,11 @@ import {
   SOLAR,
   type SolarPlanetId,
 } from "../../data/solar.ts";
+import { fillAsteroid } from "../../economy/asteroids.ts";
 import { activity, fillComet } from "../../economy/comets.ts";
+import { siteDock } from "../siteDock.ts";
 import type {
+  SceneAsteroidDef,
   SceneCometDef,
   ScenePlanetDef,
   SystemSceneDef,
@@ -129,7 +143,10 @@ const MAIN_BELT = {
   inner: orbitOf("mars") + (orbitOf("jupiter") - orbitOf("mars")) * 0.25,
   outer: orbitOf("mars") + (orbitOf("jupiter") - orbitOf("mars")) * 0.75,
 };
-const KUIPER_BELT = { inner: orbitOf("neptune") + 14_000, outer: orbitOf("neptune") + 58_000 };
+const KUIPER_BELT = {
+  inner: orbitOf("neptune") + 14_000,
+  outer: orbitOf("neptune") + 58_000,
+};
 
 /** Mars is drawn at most this far round from Earth, so the Earth–Mars lane never runs through the Sun. */
 const MARS_MAX_APART = 140;
@@ -166,8 +183,9 @@ export function solScene(jd: number | null): SystemSceneDef {
     positions,
     real ? (real.marsNudged ? "real-nudged" : "real") : "schematic",
   );
-  // The comets where they stand on the game date (without one, on the day their elements were taken).
+  // The comets and asteroids where they stand on the game date (without one, on the day their elements were taken).
   def.comets = placeComets(def, jd ?? COMET_EPOCH_JD);
+  def.asteroids = placeAsteroids(def, jd ?? ASTEROID_DATA.epochJd);
   return def;
 }
 
@@ -210,7 +228,8 @@ export function compressedSolDistance(au: number): number | null {
   const a = s[i - 1]!;
   const b = s[i]!;
   return (
-    a.orbit + ((b.orbit - a.orbit) * Math.log(au / a.au)) / Math.log(b.au / a.au)
+    a.orbit +
+    ((b.orbit - a.orbit) * Math.log(au / a.au)) / Math.log(b.au / a.au)
   );
 }
 
@@ -232,18 +251,38 @@ export function nucleusRadius(comet: Comet): number {
 const STRETCH = 1.05;
 const STRETCH_TRIES = 24;
 
-/** What a comet of this size here would crowd that is not its own, if anything (§45.3). */
+/** Where the outposts of Sol's sites would stand (the belts' sites), whether or not a pilot has one there. */
+function solSiteDocks(
+  def: SystemSceneDef,
+): { id: string; position: THREE.Vector3 }[] {
+  return outpostSites()
+    .filter((s) => s.systemId === "sol")
+    .flatMap((s) => {
+      const dock = siteDock(def, s);
+      return dock ? [{ id: s.id, position: dock.position }] : [];
+    });
+}
+
+/** What a comet (or, with its clearances, an asteroid) of this size here would crowd that is not its own, if anything (§45.3, §47.3). */
 export function cometCrowds(
   def: SystemSceneDef,
   at: THREE.Vector3,
   size: number,
+  c: {
+    arrival: number;
+    station: number;
+    planet: number;
+    lane: number;
+  } = COMETS.clear,
 ): string | null {
-  const c = COMETS.clear;
   if (at.distanceTo(def.arrival.position) < size + c.arrival) return "arrival";
   for (const b of def.beacons)
     if (at.distanceTo(b.position) < size + c.arrival) return b.id;
   for (const s of def.stations)
     if (at.distanceTo(s.position) < size + c.station) return s.locationId;
+  if (def.systemId === "sol")
+    for (const s of solSiteDocks(def))
+      if (at.distanceTo(s.position) < size + c.station) return s.id;
   for (const p of def.planets)
     if (at.distanceTo(p.position) < size + p.radius + c.planet) return p.id;
   for (const st of def.stars)
@@ -292,6 +331,141 @@ function placeComets(def: SystemSceneDef, jd: number): SceneCometDef[] {
       },
     ];
   });
+}
+
+// ---------------------------------------------------------------- asteroids (docs/PROCGEN.md §47.3)
+
+/** An asteroid's drawn radius (its longest axis): larger than life, larger for a larger asteroid. */
+export function asteroidRadius(asteroid: Asteroid): number {
+  const s = ASTEROIDS.size;
+  return s.base + s.perRootKm * Math.sqrt(asteroid.diameterKm ?? s.unknownKm);
+}
+
+/** Its drawn shape: each axis as a share of the longest, in proportion to its measured extent (none thinner than `flattest`). */
+export function asteroidShape(asteroid: Asteroid): [number, number, number] {
+  const axes = (asteroid.extentKm ?? "")
+    .split("×")
+    .map((x) => Number(x.trim()))
+    .filter((x) => x > 0);
+  if (!axes.length) return [1, 1, 1];
+  while (axes.length < 3) axes.push(axes.at(-1)!);
+  const longest = Math.max(...axes);
+  const share = (x: number) => Math.max(ASTEROIDS.size.flattest, x / longest);
+  return [share(axes[0]!), share(axes[2]!), share(axes[1]!)];
+}
+
+/** Its turning speed as drawn (radians a second): its own, `spinFaster` times over. */
+export function asteroidSpin(asteroid: Asteroid): number {
+  return asteroid.rotationHours
+    ? ((2 * Math.PI) / (asteroid.rotationHours * 3_600)) * ASTEROIDS.spinFaster
+    : 0;
+}
+
+/** Its colour as drawn: by its spectral type, lighter for a higher albedo. */
+const TYPE_TINT: Record<string, string> = {
+  C: "#5a5550",
+  B: "#5a5550",
+  G: "#5a5550",
+  F: "#5a5550",
+  S: "#8f7d68",
+  Q: "#8f7d68",
+  V: "#968c84",
+  M: "#8c8d92",
+  X: "#8c8d92",
+};
+export function asteroidColor(asteroid: Asteroid): string {
+  const type = (
+    asteroid.spectral.tholen ??
+    asteroid.spectral.smass ??
+    ""
+  ).charAt(0);
+  const light = Math.min(1.35, 0.75 + (asteroid.albedo ?? 0.15) * 1.4);
+  return `#${new THREE.Color(TYPE_TINT[type] ?? "#7a736b").multiplyScalar(light).getHexString()}`;
+}
+
+/**
+ * How far from Earth's centre a pass is drawn (§47.3): by the logarithm of its distance, from Earth's
+ * surface (drawn at Earth's radius) to the Moon's mean distance (drawn where the Moon is), and on at
+ * that rate beyond.
+ */
+export function nearEarthDistance(
+  def: SystemSceneDef,
+  km: number,
+): number | null {
+  const earth = def.planets.find((p) => p.id === "earth");
+  const moon = def.planets.find((p) => p.id === "moon");
+  if (!earth || !moon || !(km > 0)) return null;
+  const moonAt = moon.position.distanceTo(earth.position);
+  const f =
+    Math.log(Math.max(km, EARTH_RADIUS_KM) / EARTH_RADIUS_KM) /
+    Math.log(MOON_DISTANCE_KM / EARTH_RADIUS_KM);
+  return earth.radius + (moonAt - earth.radius) * f;
+}
+
+/**
+ * The asteroids in Sol's scene on a date: each in its real direction from the Sun, at its distance
+ * compressed onto the planets' scale; while a pass's path from Earth covers the date, from Earth in
+ * its real direction, nearer the nearer it is. Each is moved out along its direction while it crowds
+ * anything.
+ */
+function placeAsteroids(def: SystemSceneDef, jd: number): SceneAsteroidDef[] {
+  const earth = def.planets.find((p) => p.id === "earth")?.position;
+  const placed: SceneAsteroidDef[] = [];
+  for (const asteroid of ASTEROID_DATA.asteroids) {
+    const radius = asteroidRadius(asteroid);
+    const geo = geocentricOnPath(asteroid, jd);
+    const nearKm = geo ? Math.hypot(...geo) * AU_KM : null;
+    let d =
+      geo && nearKm !== null && earth
+        ? nearEarthDistance(def, nearKm)
+        : compressedSolDistance(asteroidAt(asteroid, jd).r);
+    if (d === null) continue;
+    const near = geo !== null && earth !== undefined;
+    const from = near ? earth.clone() : SUN.clone();
+    const dir = eclipticToScene(
+      near ? geo : asteroidAt(asteroid, jd).xyz,
+    ).normalize();
+    const at = () => from.clone().addScaledVector(dir, d!);
+    for (
+      let i = 0;
+      i < STRETCH_TRIES &&
+      (cometCrowds(def, at(), radius, ASTEROIDS.clear) ||
+        smallBodyCrowds(def, placed, at(), radius));
+      i++
+    )
+      d *= STRETCH;
+    placed.push({
+      id: asteroid.id,
+      name: asteroid.name,
+      subtitle: fillAsteroid(ASTEROID_LINES.target, asteroid, {}, jd),
+      position: at(),
+      radius,
+      shape: asteroidShape(asteroid),
+      spin: asteroidSpin(asteroid),
+      color: asteroidColor(asteroid),
+      near,
+      scanRange: ASTEROIDS.scanRange,
+    });
+  }
+  return placed;
+}
+
+/** The comet or asteroid (other than itself) an asteroid of this size here would crowd, if any (§47.3). */
+export function smallBodyCrowds(
+  def: SystemSceneDef,
+  asteroids: readonly SceneAsteroidDef[],
+  at: THREE.Vector3,
+  size: number,
+  self?: string,
+): string | null {
+  const clear = ASTEROIDS.clear.planet;
+  for (const c of def.comets ?? [])
+    if (at.distanceTo(c.position) < size + c.radius + c.coma + clear)
+      return c.id;
+  for (const a of asteroids)
+    if (a.id !== self && at.distanceTo(a.position) < size + a.radius + clear)
+      return a.id;
+  return null;
 }
 
 function buildSolScene(
@@ -470,7 +644,7 @@ function buildSolScene(
     scaleNote:
       layout === "schematic"
         ? "Planet sizes, spacing and positions are schematic, not today’s sky; the belts are placed schematically."
-        : `Planets and comets sit in their real directions from the Sun on the game date (JPL's elements); sizes and spacing are compressed, and the belts are placed schematically.${layout === "real-nudged" ? " Mars, behind the Sun, is drawn a little off its true place." : ""}`,
+        : `Planets, comets and asteroids sit in their real directions from the Sun on the game date (JPL's elements); sizes and spacing are compressed, and the belts are placed schematically.${layout === "real-nudged" ? " Mars, behind the Sun, is drawn a little off its true place." : ""}`,
   };
 }
 

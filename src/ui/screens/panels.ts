@@ -3,7 +3,7 @@ import { TEXT_SCALES } from '../../app/settings.ts';
 import { findBelt, getComponent, getPlanet, SOLAR_BODIES } from '../../data/systems.ts';
 import { formatDec, formatRa } from '../../data/coords.ts';
 import type { ConfirmedBody } from '../../data/types.ts';
-import { beltCard, cometCard, orbitCard } from '../../galaxy/scienceBlocks.ts';
+import { asteroidCard, beltCard, cometCard, orbitCard } from '../../galaxy/scienceBlocks.ts';
 import { ORBIT_EPOCH_JD } from '../../data/orbits.ts';
 import { pyreCard } from './pyreCard.ts';
 import { flareCard, flareStar } from '../../economy/flares.ts';
@@ -406,6 +406,9 @@ export function bodyCard(bodyId: string, name: string, clock = 0, jd: number = O
   // A comet (docs/PROCGEN.md §45.4): where it stands on the game's date.
   const comet = cometCard(bodyId, jd);
   if (comet) return comet;
+  // A named asteroid (§47.4), likewise.
+  const asteroid = asteroidCard(bodyId, jd);
+  if (asteroid) return asteroid;
   const solar = SOLAR_BODIES.find((b) => b.id === bodyId);
   if (solar) {
     return h(

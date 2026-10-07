@@ -88,6 +88,7 @@ const TARGET_GLYPH: Record<TargetKind, GlyphName> = {
   gate: 'thruster',
   battle: 'gun',
   comet: 'science',
+  asteroid: 'science',
 };
 
 /** The Mine key (docs/PROCGEN.md §19); on a pad Mine is the context action. */

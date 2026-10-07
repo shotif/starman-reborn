@@ -132,11 +132,16 @@ function jumpsOf(systemId: SystemId): Map<SystemId, number> {
   return j;
 }
 
-/** Whether a station hears of comets: Sol's own, and research stations within reach (§45.4). */
-export function hearsOfComets(locationId: string): boolean {
+/** Whether a station hears Sol's sky news: Sol's own, and research stations within so many jumps (§45.4, §47.4). */
+export function hearsOfSol(locationId: string, reach: number): boolean {
   const loc = getLocation(locationId);
   if (loc.systemId === 'sol') return true;
-  return loc.stationType === 'research-station' && (jumpsOf('sol').get(loc.systemId) ?? Infinity) <= COMETS.news.reach;
+  return loc.stationType === 'research-station' && (jumpsOf('sol').get(loc.systemId) ?? Infinity) <= reach;
+}
+
+/** Whether a station hears of comets: Sol's own, and research stations within reach (§45.4). */
+export function hearsOfComets(locationId: string): boolean {
+  return hearsOfSol(locationId, COMETS.news.reach);
 }
 
 /** The comets within the News's window of a perihelion on a date, nearest first (§45.4). */
@@ -166,12 +171,17 @@ export function cometNews(jd: number): CometNews[] {
 
 // ---------------------------------------------------------------- imaging
 
-/** How many jumps from Sol a station is, if it is a research station that could post imaging (§45.5). */
-export function imagingJumps(locationId: string): number | null {
+/** How many jumps from Sol a station is, if it is an open research station (null: not one, or unreachable). */
+export function researchJumps(locationId: string): number | null {
   const loc = getLocation(locationId);
   if (loc.stationType !== 'research-station' || loc.status !== 'functional' || loc.dockable === false) return null;
-  const jumps = jumpsOf('sol').get(loc.systemId) ?? Infinity;
-  return jumps <= COMETS.image.reach ? jumps : null;
+  return jumpsOf('sol').get(loc.systemId) ?? null;
+}
+
+/** How many jumps from Sol a station is, if it is a research station that could post imaging (§45.5). */
+export function imagingJumps(locationId: string): number | null {
+  const jumps = researchJumps(locationId);
+  return jumps !== null && jumps <= COMETS.image.reach ? jumps : null;
 }
 
 /** The comet a station wants imaged in a time slot, if any: from its own random stream. */

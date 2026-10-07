@@ -538,7 +538,7 @@ function boltKind(type: DamageType, tier: number): ProjectileKind {
 
 /** Targets whose distance is shown to their surface rather than their centre (a belt's is to its band of rock). */
 function surfaced(kind: Target['kind']): boolean {
-  return kind === 'planet' || kind === 'star' || kind === 'rock' || kind === 'hole' || kind === 'wreck' || kind === 'comet';
+  return kind === 'planet' || kind === 'star' || kind === 'rock' || kind === 'hole' || kind === 'wreck' || kind === 'comet' || kind === 'asteroid';
 }
 
 /** A site's words with its ship and body filled in. */
@@ -1285,7 +1285,7 @@ export class FlightSession {
     if (this.hail && !this.hail.held) return { label: 'Answer', action: 'answer', icon: 'info' };
     // A far star is observed from wherever the ship is, when a contract wants it now; it is never flown to.
     if (sel?.kind === 'sky') return observationsWanted(this.state, sel.id.slice('sky:'.length)).length ? { label: 'Observe', action: 'scan', icon: 'scan' } : null;
-    if (sel && (sel.kind === 'planet' || sel.kind === 'star' || sel.kind === 'hole' || sel.kind === 'comet') && sel.position.distanceTo(this.player.position) < this.scanRangeFor(sel) * 3) {
+    if (sel && (sel.kind === 'planet' || sel.kind === 'star' || sel.kind === 'hole' || sel.kind === 'comet' || sel.kind === 'asteroid') && sel.position.distanceTo(this.player.position) < this.scanRangeFor(sel) * 3) {
       return { label: 'Scan', action: 'scan', icon: 'scan' };
     }
     // A site in scan range not yet scanned this flight, or a wreck whose log is unread.
@@ -1433,6 +1433,8 @@ export class FlightSession {
     if (t.kind === 'star') return Math.max(20_000, t.radius * 6) * scanner;
     // A comet (docs/PROCGEN.md §45.3).
     if (t.kind === 'comet') return (this.system.comets.find((c) => c.id === t.bodyId)?.scanRange ?? DEFAULT_SCAN_RANGE) * scanner;
+    // A named asteroid (§47.3).
+    if (t.kind === 'asteroid') return (this.system.asteroids.find((a) => a.id === t.bodyId)?.scanRange ?? DEFAULT_SCAN_RANGE) * scanner;
     // A black hole is read from outside its tides (docs/PROCGEN.md §26).
     if (t.kind === 'hole') return ((this.system.blackHole?.def.tidalRadius ?? 0) + 10_000) * scanner;
     return DEFAULT_SCAN_RANGE * scanner;
@@ -1454,8 +1456,8 @@ export class FlightSession {
       this.scanSite(site);
       return;
     }
-    if (!t || (t.kind !== 'planet' && t.kind !== 'star' && t.kind !== 'hole' && t.kind !== 'comet')) {
-      this.callbacks.onMessage('Select a planet, star, comet, belt, rock or wreck to scan.', 'info');
+    if (!t || (t.kind !== 'planet' && t.kind !== 'star' && t.kind !== 'hole' && t.kind !== 'comet' && t.kind !== 'asteroid')) {
+      this.callbacks.onMessage('Select a planet, star, comet, asteroid, belt, rock or wreck to scan.', 'info');
       return;
     }
     const d = t.position.distanceTo(this.player.position);
@@ -1470,7 +1472,7 @@ export class FlightSession {
       this.callbacks.onScanInfo(t);
     }
     // A scan of a planet or star may pick up a faint return (docs/PROCGEN.md §31.3).
-    if (t.kind !== 'hole' && t.kind !== 'comet') this.callbacks.onBodyScan?.();
+    if (t.kind !== 'hole' && t.kind !== 'comet' && t.kind !== 'asteroid') this.callbacks.onBodyScan?.();
   }
 
   private fireMissile(): void {
@@ -5562,12 +5564,16 @@ export class FlightSession {
   }
 
   /** Test hook: puts the ship `distance` metres from a target's surface (a belt: its middle), facing it, at rest. */
-  placeNear(targetId: string, distance: number): boolean {
+  placeNear(targetId: string, distance: number, awayFromId?: string): boolean {
     this.mining.update(0, this.player.position, this.state.clock, this.camera, this.beam?.rockId ?? null);
     const t = this.findTarget(targetId);
     // The far stars are in the sky, never somewhere to be.
     if (!t || this.busy || t.kind === 'sky') return false;
-    const away = this.tmp.copy(this.player.position).sub(t.position);
+    // On the side away from where the ship is, or from another target if one is named.
+    const from = awayFromId ? this.findTarget(awayFromId) : null;
+    if (awayFromId && !from) return false;
+    const away = this.tmp.copy(from ? from.position : this.player.position).sub(t.position);
+    if (from) away.negate();
     if (away.lengthSq() < 1) away.set(0, 0, 1);
     away.normalize();
     this.player.position.copy(t.position).addScaledVector(away, (t.kind === 'belt' ? 0 : t.radius) + distance);
@@ -5593,6 +5599,28 @@ export class FlightSession {
     this.player.angularVelocity.set(0, 0, 0);
     this.player.lookAlong(dir);
     this.throttle = 0;
+    this.chase.snap(this.player);
+    return true;
+  }
+
+  /**
+   * Test-only: places the ship `distance` from a named asteroid, looking at it (docs/PROCGEN.md §47.3):
+   * from its sunlit side, or for one passing Earth from beyond it, with Earth behind it.
+   */
+  viewAsteroid(asteroidId: string, distance: number): boolean {
+    const a = this.system.asteroids.find((x) => x.id === asteroidId);
+    if (!a || this.busy) return false;
+    const earth = this.system.planets.find((p) => p.def.id === 'earth')?.def.position;
+    const back = a.near && earth ? a.position.clone().sub(earth).normalize() : a.position.clone().normalize().negate();
+    const side = new THREE.Vector3().crossVectors(back, WORLD_UP);
+    if (side.lengthSq() < 1e-6) side.set(1, 0, 0);
+    side.normalize();
+    this.player.position.copy(a.position).addScaledVector(back, distance).addScaledVector(side, distance * 0.25).addScaledVector(WORLD_UP, distance * 0.12);
+    this.player.velocity.set(0, 0, 0);
+    this.player.angularVelocity.set(0, 0, 0);
+    this.player.lookAlong(a.position.clone().sub(this.player.position).normalize());
+    this.throttle = 0;
+    this.autopilot = { mode: 'none' };
     this.chase.snap(this.player);
     return true;
   }

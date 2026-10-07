@@ -173,6 +173,28 @@ export interface SceneCometDef {
   scanRange: number;
 }
 
+/**
+ * A named asteroid (Sol's, docs/PROCGEN.md §47): where it stands on the game's date, drawn larger than
+ * life in the proportions of its measured shape, and spun faster.
+ */
+export interface SceneAsteroidDef {
+  /** Body id (its science card), e.g. `asteroid-99942`. */
+  id: string;
+  name: string;
+  subtitle: string;
+  position: THREE.Vector3;
+  /** The drawn radius (its longest axis), and each axis's share of it. */
+  radius: number;
+  shape: [number, number, number];
+  /** Turning speed as drawn (radians a second; 0 when its rotation is not known). */
+  spin: number;
+  /** Its colour, from its spectral type and albedo. */
+  color: string;
+  /** Passing Earth: drawn from Earth in its real direction (§47.3). */
+  near: boolean;
+  scanRange: number;
+}
+
 /** Harmless target drones for aiming practice (no reward). */
 export interface PracticeRangeDef {
   center: THREE.Vector3;
@@ -199,6 +221,8 @@ export interface SystemSceneDef {
   blackHole?: SceneBlackHoleDef;
   /** Comets (Sol's: docs/PROCGEN.md §45). */
   comets?: SceneCometDef[];
+  /** Named asteroids (Sol's: docs/PROCGEN.md §47). */
+  asteroids?: SceneAsteroidDef[];
   /** Where ships appear after a jump, and what they face. */
   arrival: { position: THREE.Vector3; lookAt: THREE.Vector3 };
   /** Draw faint schematic orbit lines around the host star. */

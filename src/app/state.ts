@@ -95,6 +95,8 @@ export interface Logbook {
   /** Comets scanned (ids) and ship models flown, kept whole (entries may be trimmed). */
   comets: string[];
   ships: string[];
+  /** Named asteroids scanned (ids, docs/PROCGEN.md §47.6): absent in a logbook begun before them. */
+  asteroids?: string[];
 }
 
 /** A wingman who has left the pilot's wing, remembered in the journal (docs/PROCGEN.md §34). */

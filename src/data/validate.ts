@@ -1,4 +1,5 @@
 import { equatorialToCartesian, parallaxToLightYears } from './coords.ts';
+import type { AsteroidsDataset } from './asteroids.ts';
 import type { CometsDataset } from './comets.ts';
 import type { OrbitsDataset } from './orbits.ts';
 import type { AstrometryDataset, ExoplanetDataset } from './systems.ts';
@@ -262,6 +263,28 @@ export function validateOrbits(orbits: OrbitsDataset, astrometry: AstrometryData
  * Sol's comets (docs/PROCGEN.md §45): JPL cited and dated, each named once by its designation, its
  * elements bound and in range, and its period, motion, axis and perihelion agreeing.
  */
+/** Sol's named asteroids (docs/PROCGEN.md §47.7): cited and dated, each named once by its number, its orbits bound and agreeing, its passes in order. */
+export function validateAsteroids(data: AsteroidsDataset): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const { sbdb, horizons, cad } = data.sources;
+  if (![sbdb, horizons, cad].every((s) => s.url.startsWith('http')) || !/^\d{4}-\d{2}-\d{2}$/.test(data.retrieved) || !(data.epochJd > 2_400_000))
+    issues.push({ level: 'error', code: 'asteroid-source', message: 'the asteroids are not cited and dated' });
+  const seen = new Set<string>();
+  for (const a of data.asteroids) {
+    if (seen.has(a.id) || a.id !== `asteroid-${a.number}` || !a.fullname.startsWith(`${a.number} ${a.name}`)) issues.push({ level: 'error', code: 'asteroid-name', message: `${a.id}: named twice, or not by its number` });
+    seen.add(a.id);
+    for (const el of [a.elements, ...a.later.map((l) => l.elements)]) {
+      if (!(el.e >= 0 && el.e < 1 && el.qAu > 0 && el.aAu > el.qAu && el.inclinationDeg >= 0 && el.inclinationDeg <= 180 && Number.isFinite(el.perihelionJd) && el.periodDays > 0))
+        issues.push({ level: 'error', code: 'asteroid-elements', message: `${a.id}: an element out of range, or an orbit that is not bound` });
+      else if (Math.abs((el.periodDays / 365.25) ** 2 / el.aAu ** 3 - 1) > 0.002 || Math.abs(el.aAu * (1 - el.e) - el.qAu) > 1e-6 * el.aAu)
+        issues.push({ level: 'error', code: 'asteroid-elements', message: `${a.id}: its period, axis and perihelion do not agree` });
+    }
+    if (a.diameterKm !== null && !(a.diameterKm > 0)) issues.push({ level: 'error', code: 'asteroid-size', message: `${a.id}: ${a.diameterKm} km across` });
+    if (!a.approaches.every((p, i) => p.distAu > 0 && p.distAu <= 0.05 && (i === 0 || p.jd > a.approaches[i - 1]!.jd))) issues.push({ level: 'error', code: 'asteroid-pass', message: `${a.id}: a pass of Earth out of range or out of order` });
+  }
+  return issues;
+}
+
 export function validateComets(data: CometsDataset): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const { sbdb, horizons } = data.sources;

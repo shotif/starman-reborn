@@ -3,7 +3,7 @@
  * each entry is said. The words are filled in when an entry is shown, so they follow the game's names.
  */
 
-export const LOG_KINDS = ['signed', 'begun', 'visit', 'ship', 'story', 'rank', 'milestone', 'race', 'outpost', 'towed', 'comet', 'planet'] as const;
+export const LOG_KINDS = ['signed', 'begun', 'visit', 'ship', 'story', 'rank', 'milestone', 'race', 'outpost', 'towed', 'comet', 'planet', 'asteroid'] as const;
 export type LogKind = (typeof LOG_KINDS)[number];
 
 export const LOGBOOK = {
@@ -20,7 +20,7 @@ export const LOGBOOK = {
 
 /**
  * How an entry is said: `{place}` where it happened, `{system}`, `{ship}`, `{arc}`, `{rank}`,
- * `{faction}`, `{milestone}`, `{course}`, `{station}`, `{comet}`, `{planet}` what it is about, and
+ * `{faction}`, `{milestone}`, `{course}`, `{station}`, `{comet}`, `{planet}`, `{asteroid}` what it is about, and
  * `{count}` (the systems visited before the logbook began).
  */
 export const LOG_LINES = {
@@ -36,6 +36,7 @@ export const LOG_LINES = {
   towed: 'Ship lost in {system}; towed to {place}.',
   comet: 'First scan of {comet}.',
   planet: 'Discovered {planet}.',
+  asteroid: 'First scan of {asteroid}.',
 } as const;
 
 /** The logbook's filters (§46.4): a label and the kinds each shows. */
@@ -44,7 +45,7 @@ export const LOG_FILTERS: readonly { id: string; label: string; kinds: readonly 
   { id: 'ships', label: 'Ships', kinds: ['ship'] },
   { id: 'stories', label: 'Stories and ranks', kinds: ['story', 'rank', 'outpost'] },
   { id: 'milestones', label: 'Milestones', kinds: ['milestone'] },
-  { id: 'sky', label: 'The sky', kinds: ['comet', 'planet'] },
+  { id: 'sky', label: 'The sky', kinds: ['comet', 'planet', 'asteroid'] },
   { id: 'races', label: 'Races', kinds: ['race'] },
 ];
 
@@ -57,4 +58,5 @@ export const LOG_BESTS = {
   systems: 'Systems visited',
   ships: 'Ships flown',
   comets: 'Comets scanned',
+  asteroids: 'Asteroids scanned',
 } as const;

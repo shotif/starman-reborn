@@ -813,6 +813,30 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   the logbook begins one with its milestones and rank at their own times and a line for the systems
   visited before; past 400 entries the oldest go but never the first; a damaged record is caught.
 
+- `asteroids.test.ts`: **named asteroids, and Apophis**. JPL's fifteen asteroids, Apophis's name,
+  size and turn, Vesta's elements and Apophis's close approach checked against the raw Small-Body
+  Database, Horizons and close-approach records as fetched; Ryugu's 2033 pass, too far for a path.
+  The asteroids pass `validateAsteroidRules` (every scene on 110 dates over six years and every two
+  hours along Apophis's pass among them), and broken ones are caught (an orbit not bound, a period
+  that disagrees, a node that misses Horizons, a class that disagrees with the elements, a near pass
+  without its path or with a distance its path does not reach, pay above the ceiling, odds of one, a
+  line with a number). The reckoning matches every one of Horizons' positions within 0.05° and 0.08%
+  for a year either side of the snapshot and within 1.0° and 0.55% over six years. Apophis's path
+  comes 38,000 km from Earth's centre within six minutes of JPL's time; it is an Aten with a year of
+  324 days before the pass and an Apollo with one of 423 after; bright enough for the naked eye as it
+  nears, magnitude 21 now; Vesta within binoculars' reach; a whole year brings one back. What is said
+  comes from the records and the date (Vesta's size, shape, type and turn; Apophis's size, next pass,
+  the change of orbit to come and after it, its distance in kilometres on the day). In flight each
+  asteroid stands in its real direction from the Sun on three dates, Ceres drawn smaller than the
+  Moon and Vesta larger than Apophis; on the day of the pass Apophis stands in its real direction from
+  Earth, nearer than the Moon is drawn and clear of Earth, and a month on is back among the planets.
+  The News tells of Apophis's pass three weeks before and after, not three months out, and of
+  Ryugu's in 2033, at Sol's stations and research stations within reach only. Tracking is posted by
+  research stations near Sol about one slot in three, passes the contract guardrails, counts a scan
+  only in Sol, is paid on return, and in the weeks before Apophis's pass is always of Apophis, saying
+  why. A first scan is written in the logbook once, said by number and name, and a save with a
+  damaged list of them is caught.
+
 ### Browser tests (Playwright)
 
 - `journey.spec.ts`: **the nine-step journey from the spec** on desktop and on touch.
@@ -1059,6 +1083,14 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   the journal's Logbook giving the first arrival, the comet's first scan and the longest jump; the
   logbook itself listing every entry newest first, its bests, and filtered to the sky (the comet
   alone) and to places (the first arrival, no comet).
+- `asteroids.spec.ts`: **named asteroids, and Apophis**: three weeks before Apophis passes Earth,
+  tracking of Apophis taken at Ledger Institute's bar, its briefing naming the pass; Earth Port's
+  News telling of the pass (38,000 km from Earth's centre on 13 April 2029, at 7.4 km/s); out in Sol
+  all fifteen asteroids drawn, Apophis still out among the planets; Apophis scanned from near it, its
+  card giving its year, class, size, next pass, the change of orbit to come and that being classed
+  hazardous does not mean it will hit; its first scan in the logbook; Sol's card on the star map
+  listing Apophis and Vesta; the positions paid for back at the institute; and minutes before the
+  pass, out from Earth Port, Apophis drawn by Earth, nearer than the Moon.
 - `binaries.spec.ts`: **real binary orbits**: at Dawnfield Institute, a measurement of Procyon B taken
   from the bar; out in flight Procyon B scanned from near it, its card giving the orbit (40.8 years,
   its eccentricity, where the pair stands on the game's date, and that in flight it stands as it did
