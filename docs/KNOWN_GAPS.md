@@ -58,7 +58,7 @@ snapshot branch only when the archives changed.
   (4.8 s before: the fonts now arrive with the game rather than after it). A phone's slower
   processor adds to the second figure; nothing was timed on a real phone or network. The first load
   has since grown to 806 KB (8 October 2026). Loaded on demand: Sol's real sky (~22 KB: the comets,
-  asteroids, moons and spacecraft) once the game's files are in, before Play; the star map (~27 KB)
+  asteroids, moons and spacecraft) once the game's files are in, while its code starts; the star map (~27 KB)
   on first open, the science notes (~5 KB), and bloom (~4 KB) on the High preset only.
 
 ## Deliberate prototype limits

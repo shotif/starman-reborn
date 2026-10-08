@@ -7,8 +7,10 @@ import { installCraft, type SpacecraftDataset } from './spacecraft.ts';
 /**
  * Sol's real sky, loaded on demand (docs/PROCGEN.md §50): the comets, named asteroids, giant
  * planets' moons and spacecraft are kept out of the first load and fetched behind the loading title
- * (src/app/loader.ts, from data/skyData.ts), then installed here before the game's own modules are
- * started, so everything in the game finds them in place.
+ * while the game's own code starts up (src/app/loader.ts, from data/skyData.ts), then installed here
+ * before the game starts. Nothing in the game reads them as its module loads, so the code may start
+ * before they are in; what is worked out from them is worked out again once they are
+ * (`skyVersion`).
  */
 export interface SkyData {
   comets: CometsDataset;
@@ -18,20 +20,25 @@ export interface SkyData {
   craftStories: Record<string, CraftStory>;
 }
 
-let installed = false;
+let version = 0;
 
 /** Puts Sol's sky in place: once, before the game starts (a second call changes nothing). */
 export function installSky(sky: SkyData): void {
-  if (installed) return;
+  if (version) return;
   installComets(sky.comets);
   installAsteroids(sky.asteroids);
   installMoons(sky.moons);
   installCraft(sky.spacecraft);
   installCraftStories(sky.craftStories);
-  installed = true;
+  version++;
 }
 
 /** Whether Sol's sky is in place. */
 export function skyInstalled(): boolean {
-  return installed;
+  return version > 0;
+}
+
+/** Changes when Sol's sky is put in place: anything kept that was worked out from it is worked out again. */
+export function skyVersion(): number {
+  return version;
 }

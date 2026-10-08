@@ -52,11 +52,16 @@ export async function startGame(): Promise<boolean> {
   try {
     await download;
     if (files.length > 0) shell.starting();
-    // Sol's real sky (docs/PROCGEN.md §50) comes once the game's own files are in, and is put in place
-    // before the game starts, so everything in it finds the comets, asteroids, moons and spacecraft.
-    const [{ SKY }, { installSky }] = await Promise.all([import('../data/skyData.ts'), import('../data/sky.ts')]);
-    installSky(SKY);
+    // Sol's real sky (docs/PROCGEN.md §50) is fetched once the game's own files are in, while their
+    // code starts up, and put in place before the game starts: nothing in the game reads it as its
+    // module loads, and everything after finds the comets, asteroids, moons and spacecraft.
+    const sky = Promise.all([import('../data/skyData.ts'), import('../data/sky.ts')]);
+    // Marked when in (a failure is handled below, once the game's code is up).
+    sky.then(() => performance.mark(LOAD_MARKS.sky), () => undefined);
     ({ boot } = await import('./boot.ts'));
+    performance.mark(LOAD_MARKS.code);
+    const [{ SKY }, { installSky }] = await sky;
+    installSky(SKY);
     shell.starting();
   } catch (err) {
     console.error('Starman Reborn did not finish loading', err);

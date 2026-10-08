@@ -5,7 +5,7 @@
  * ignores case, accents and punctuation, takes Greek letters spelled out, and forgives a typo or two
  * in longer words. One hit per system, best first.
  */
-import { BELTS, MAP_SYSTEMS, SOLAR_BODIES, componentsOf } from '../data/systems.ts';
+import { BELTS, MAP_SYSTEMS, solarBodies, componentsOf } from '../data/systems.ts';
 import type { StarSystemRecord, SystemId } from '../data/types.ts';
 
 export type SearchKind = 'system' | 'star' | 'planet' | 'moon' | 'station' | 'outpost' | 'belt' | 'catalogue';
@@ -118,7 +118,7 @@ export function buildSearchIndex(systems: readonly StarSystemRecord[] = MAP_SYST
     const stars = componentsOf(s.id);
     add('system', s.displayName);
     if (s.id === 'sol') {
-      for (const b of SOLAR_BODIES) add(b.kind === 'star' ? 'star' : b.kind === 'moon' ? 'moon' : 'planet', b.name);
+      for (const b of solarBodies()) add(b.kind === 'star' ? 'star' : b.kind === 'moon' ? 'moon' : 'planet', b.name);
     }
     for (const c of stars) add('star', c.name);
     for (const p of s.confirmedBodies) add('planet', p.displayName);

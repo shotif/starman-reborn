@@ -10,11 +10,14 @@ import { EPSILON_ERIDANI_SCENE } from './epsilonEridani.ts';
 import { PYRE_ALIVE_SCENE, PYRE_GONE_SCENE } from './pyre.ts';
 import { pyreStage } from '../../economy/doomed.ts';
 import { SIRIUS_SCENE } from './sirius.ts';
-import { SOL_SCENE, solScene } from './sol.ts';
+import { solScene, solSceneUndated } from './sol.ts';
 
 /** The hand-made scenes. */
 export const SCENE_DEFS: Record<SystemId, SystemSceneDef> = {
-  sol: SOL_SCENE,
+  // Sol's is worked out when first asked for, and again once Sol's sky is in (docs/PROCGEN.md §50).
+  get sol() {
+    return solSceneUndated();
+  },
   'alpha-centauri': ALPHA_CENTAURI_SCENE,
   barnard: BARNARD_SCENE,
   sirius: SIRIUS_SCENE,

@@ -3,7 +3,7 @@ import { applyCredits, type GameState } from '../app/state.ts';
 import { CODEX_GRANT, MILESTONES, RATINGS, SURVEY_SALE, type MilestoneId, type RatingKind } from '../content/progress/rules.ts';
 import { ARC_JOBS } from '../content/story/arcs.ts';
 import type { ArcId } from '../content/story/types.ts';
-import { getComponent, getLocation, getSystem, isFrontier, SOLAR_BODIES, SYSTEMS } from '../data/systems.ts';
+import { getComponent, getLocation, getSystem, isFrontier, solarBodies, SYSTEMS } from '../data/systems.ts';
 import type { SystemId } from '../data/types.ts';
 import { standingTier } from './factions.ts';
 import { wakeFriendly } from './law.ts';
@@ -33,7 +33,7 @@ export function codexEntries(): readonly CodexEntry[] {
     ...s.componentIds.map((id) => ({ id, systemId: s.id, kind: 'star' as const, name: getComponent(id)?.name ?? id })),
     ...s.confirmedBodies.map((p) => ({ id: p.id, systemId: s.id, kind: 'planet' as const, name: p.displayName })),
     ...(s.id === 'sol'
-      ? SOLAR_BODIES.filter((b) => b.kind !== 'star').map((b) => ({ id: b.id, systemId: s.id, kind: b.kind === 'moon' ? ('moon' as const) : ('planet' as const), name: b.name }))
+      ? solarBodies().filter((b) => b.kind !== 'star').map((b) => ({ id: b.id, systemId: s.id, kind: b.kind === 'moon' ? ('moon' as const) : ('planet' as const), name: b.name }))
       : []),
   ]);
   return entries;

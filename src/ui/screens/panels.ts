@@ -1,6 +1,6 @@
 import type { Settings, SteeringMode } from '../../app/settings.ts';
 import { TEXT_SCALES } from '../../app/settings.ts';
-import { findBelt, getComponent, getPlanet, SOLAR_BODIES } from '../../data/systems.ts';
+import { findBelt, getComponent, getPlanet, solarBodies } from '../../data/systems.ts';
 import { formatDec, formatRa } from '../../data/coords.ts';
 import type { ConfirmedBody } from '../../data/types.ts';
 import { asteroidCard, beltCard, cometCard, craftCard, moonCard, orbitCard } from '../../galaxy/scienceBlocks.ts';
@@ -415,7 +415,7 @@ export function bodyCard(bodyId: string, name: string, clock = 0, jd: number = O
   // A spacecraft (§49.4).
   const craft = craftCard(bodyId, jd);
   if (craft) return craft;
-  const solar = SOLAR_BODIES.find((b) => b.id === bodyId);
+  const solar = solarBodies().find((b) => b.id === bodyId);
   if (solar) {
     return h(
       'div',

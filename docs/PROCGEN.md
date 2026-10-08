@@ -5150,7 +5150,8 @@ spacecraft with their missions' facts (§49), is no longer part of the first loa
 title fetches it once the game's own files are in, and puts it in place before the game starts
 (`src/data/skyData.ts`, `src/data/sky.ts`, `src/app/loader.ts`). Nothing changes in play: the game
 starts with the whole sky in place, as before, from a first load 21 KB smaller (827 KB to 806 KB on
-8 October 2026, of 850).
+8 October 2026, of 850). On simulated slow 4G, Play comes about 0.15 s sooner than before (6.76–6.83 s
+against 6.87–7.05 s, three runs each: docs/TEST_RECORD.md).
 
 The owner chose (8 October 2026), with the first load at 827 KB of its 850 KB budget and each new
 part of the real sky adding 10–17 KB: "Load Sol's sky on demand": "Move comets, asteroids, moons and
@@ -5175,11 +5176,20 @@ raise the budget again.
 Each part of the sky is held by its own module (`COMET_DATA` in `src/data/comets.ts`,
 `ASTEROID_DATA`, `MOON_DATA`, `CRAFT_DATA`, and `CRAFT_STORIES` in
 `src/content/stellar/spacecraft.ts`) as a value that stays empty until it is filled. The loading
-title fetches the game's files first, counting them on its bar; once they are in (the bar says
-Starting), it fetches the sky, puts it in place (`installSky`: once; a second call changes nothing),
-and only then starts the game's own modules, so every one of them finds the whole sky from the first.
-If the sky cannot be fetched, the title says the game did not finish loading and offers to try
-again, as for any of the game's files. Offline play keeps the sky's file with all the others (§4.6).
+title fetches the game's files first, counting them on its bar. Once they are in (the bar says
+Starting), it asks for the sky while the game's code is read and started, puts the sky in place
+(`installSky`: once; a second call changes nothing), and only then starts the game, so the title
+waits for the sky only if it is still coming when the code is ready. Fetching it only after the
+game's code had started kept the player waiting longer than before the change (on simulated slow
+4G, Play came 0.7 s later, in one run), so it was not kept.
+
+Nothing in the game reads the sky as its module loads: what is worked out from it is worked out
+when first asked for, and again once the sky is in (`skyVersion`): the bodies of the information
+view with the giant planets' moons (`solarBodies`, `src/data/systems.ts`), the near-Earth asteroids
+a station may want tracked (`trackedAsteroids`) and Sol's scene without a date
+(`solSceneUndated`). If the sky cannot be fetched, the title says the game did not finish loading
+and offers to try again, as for any of the game's files. Offline play keeps the sky's file with all
+the others (§4.6).
 
 The unit tests (`tests/setup/sky.ts`, named in `vitest.config.ts`), `npm run data:validate` and the
 art gallery and star map harness (`dev/`) put the sky in place at once, from the files on disk
@@ -5192,6 +5202,11 @@ art gallery and star map harness (`dev/`) put the sky in place at once, from the
   (each set of data is known by the name of the script that made it, which it carries). The unit
   tests feed it made-up builds to see both caught.
 - `tests/unit/sky.test.ts`: in place for the tests, every part of it as its file has it; empty until
-  put in place; put in place once.
-- Every browser test plays the game loaded this way; `tests/e2e/load.spec.ts` loads it on a slow
-  phone network, and `tests/e2e/offline.spec.ts` plays it offline after one visit.
+  put in place; put in place once. And every one of the game's modules is loaded twice, with the sky
+  put in place after them and before: every export must come out the same (384 modules and 2,375
+  exports on 8 October 2026), so none reads the sky as it loads; and what is worked out from it has
+  it once it is in.
+- Every browser test plays the game loaded this way. `tests/e2e/load.spec.ts` loads it on a slow
+  phone network: the sky is not among the first load's files, is asked for only once they are in,
+  comes once and is in place before the title; and a sky that fails to arrive brings the message
+  and Try again. `tests/e2e/offline.spec.ts` plays it offline after one visit.

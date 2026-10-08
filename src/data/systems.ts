@@ -10,7 +10,7 @@ import farStarsFile from './generated/far-stars.json' with { type: 'json' };
 import { DOOMED } from '../content/stellar/doomed.ts';
 import { rng } from '../content/random.ts';
 import { distance3, equatorialToCartesian } from './coords.ts';
-import { MOON_DATA } from './moons.ts';
+import { MOON_DATA, type MoonsDataset } from './moons.ts';
 import { SOURCES } from './sources.ts';
 import type {
   BeltRecord,
@@ -54,7 +54,7 @@ export const EXOPLANETS = exoplanetFile as unknown as ExoplanetDataset;
 /** Stars far beyond the map, seen in every system's sky (docs/ASTRONOMY_SOURCES.md, *Far stars*). */
 export const FAR_STARS = farStarsFile as unknown as FarStarsDataset;
 
-/** Solar System bodies shown in the information view. Names per NASA's planet reference. */
+/** The Sun, the planets and Earth's Moon, shown in the information view. Names per NASA's planet reference. */
 export const SOLAR_BODIES: readonly SolarBody[] = [
   { id: 'sun', name: 'Sun', kind: 'star', source: SOURCES.nasaPlanets },
   { id: 'mercury', name: 'Mercury', kind: 'terrestrial planet', order: 1, source: SOURCES.nasaPlanets },
@@ -66,9 +66,21 @@ export const SOLAR_BODIES: readonly SolarBody[] = [
   { id: 'uranus', name: 'Uranus', kind: 'ice giant', order: 7, source: SOURCES.nasaPlanets },
   { id: 'neptune', name: 'Neptune', kind: 'ice giant', order: 8, source: SOURCES.nasaPlanets },
   { id: 'moon', name: 'Moon', kind: 'moon', source: SOURCES.nasaMoon },
-  // The large moons of Jupiter and Saturn (docs/PROCGEN.md §48), from JPL Horizons.
-  ...MOON_DATA.moons.map((m): SolarBody => ({ id: m.id, name: m.name, kind: 'moon', source: MOON_DATA.source })),
 ];
+
+let withMoons: { from: MoonsDataset; bodies: readonly SolarBody[] } | null = null;
+
+/**
+ * Every Solar System body shown in the information view: those above, and the large moons of
+ * Jupiter and Saturn (docs/PROCGEN.md §48) from JPL Horizons once Sol's sky is in (§50).
+ */
+export function solarBodies(): readonly SolarBody[] {
+  if (withMoons?.from !== MOON_DATA) {
+    const moons = MOON_DATA.moons.map((m): SolarBody => ({ id: m.id, name: m.name, kind: 'moon', source: MOON_DATA.source }));
+    withMoons = { from: MOON_DATA, bodies: [...SOLAR_BODIES, ...moons] };
+  }
+  return withMoons.bodies;
+}
 
 const LOCATIONS: readonly FictionalLocation[] = [
   {

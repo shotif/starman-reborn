@@ -5,6 +5,7 @@ import { outpostSites } from "../../content/outposts/sites.ts";
 import { MOON_LINES, MOONS } from "../../content/stellar/moons.ts";
 import { CRAFT_LINES, SPACECRAFT } from "../../content/stellar/spacecraft.ts";
 import { CRAFT_DATA, craftAt, craftOnPath } from "../../data/spacecraft.ts";
+import { skyVersion } from "../../data/sky.ts";
 import {
   MOON_EPOCH_JD,
   MOON_RADIUS_KM,
@@ -787,5 +788,13 @@ function buildSolScene(
   };
 }
 
-/** The schematic layout (no date). */
-export const SOL_SCENE: SystemSceneDef = solScene(null);
+let undated: { sky: number; def: SystemSceneDef } | null = null;
+
+/**
+ * The schematic layout (no date; its sky on the snapshot's day): worked out when first asked for,
+ * and again once Sol's sky is in (docs/PROCGEN.md §50), so it is never kept without it.
+ */
+export function solSceneUndated(): SystemSceneDef {
+  if (undated?.sky !== skyVersion()) undated = { sky: skyVersion(), def: solScene(null) };
+  return undated.def;
+}

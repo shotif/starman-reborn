@@ -62,10 +62,12 @@ to the live site once CI passes.
 
 The game's first load is 21 KB smaller (827 KB to 806 KB, of the 850 KB budget): Sol's real comets,
 named asteroids, moons and spacecraft, with their missions' facts, are now fetched behind the title
-once the rest of the game is in, and put in place before the game starts, so nothing changes in
-play. The build fails if any of them slips back into the first load. The cards and the code that
-places them still load up front, so the saving is less than the about 50 KB first reckoned; the
-next parts of the real sky put their data in the part loaded on demand
+once the rest of the game is in, while its code starts up, and put in place before the game starts,
+so nothing changes in play; on a slow phone network Play comes a little sooner than before (about
+0.15 s, in the test browser). The build fails if any of them slips back into the first load, and a
+test fails if any of the game's code reads them as it loads. The cards and the code that places
+them still load up front, so the saving is less than the about 50 KB first reckoned; the next parts
+of the real sky put their data in the part loaded on demand
 ([PROCGEN.md §50](PROCGEN.md#50-sols-sky-loaded-on-demand)).
 
 ### 48. Spacecraft out in Sol ✅

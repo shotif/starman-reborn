@@ -11,7 +11,7 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | --- | --- | --- |
 | TypeScript typecheck (app + scripts/tests) | `npm run typecheck` | Pass |
 | Astronomy data validation | `npm run data:validate` | Pass (22 warnings: the contested planets this edition keeps) |
-| Unit tests | `npm test` | Pass: 1105 tests in 74 files |
+| Unit tests | `npm test` | Pass: 1106 tests in 74 files |
 | Production build | `npm run build` | Pass |
 | First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 806 KB of 850 (gzipped), with Sol's sky (22 KB) loaded on demand |
 | Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 64 passed (5 touch-only tests skipped) |
@@ -234,7 +234,12 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   sky, and with only part of it on demand are each caught).
 - `sky.test.ts`: **Sol's sky loaded on demand**: put in place before the tests, every part of it
   (the comets, asteroids, moons, spacecraft and the missions' facts) as its file has it; empty until
-  put in place, and put in place once (a second time changes nothing).
+  put in place, and put in place once (a second time changes nothing). Every one of the game's
+  modules is loaded twice, with the sky put in place after them and before, and every export comes
+  out the same (384 modules, 2,375 exports), so none reads the sky as it loads; a module that does
+  (tried with an export of the near-Earth asteroids worked out as it loads) is caught. Once in, the
+  information view's bodies have Titan, Sol's undated scene has the comets and craft, and Apophis is
+  among the asteroids to track.
 - `rooms.test.ts`: station interiors: structure per station, camera moves and cuts, reduced
   motion, omitted rooms, determinism, draw-call and triangle budgets per quality, lights per room,
   hotspots on desktop and phones, portrait framing and disposal; generated interiors for every
@@ -964,8 +969,10 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   (1.6 Mbit/s down, 150 ms latency). The loading title shows within 1.5 s (0.45 s measured), its
   bar moves forward in many steps to 100% and then says Starting while the game starts up, the title
   with Play follows, and every game file comes
-  over the network once (the game's imports find them in the cache). A download that fails shows
-  the message and **Try again**, which brings the title.
+  over the network once (the game's imports find them in the cache). Sol's real sky is not among
+  the first load's files: it is asked for only once they are in, comes once, and is in place before
+  the title. A download that fails shows the message and **Try again**, which brings the title; so
+  does Sol's sky failing to arrive, and after **Try again** the title comes with the sky in place.
 - `offline.spec.ts`: **offline after one visit**: the build served from `localhost` so the service
   worker registers; after one visit the page and every file of the build are in its cache, and the
   device report says so; then the server is switched off and the browser goes offline (a fetch of
@@ -1272,9 +1279,14 @@ On simulated slow 4G (`load.spec.ts`, the container's CPU):
 | --- | --- | --- | --- |
 | Before (one bundle, 1038e2d) | 4.8 s | 4.8 s | 679 KB |
 | After (loading title first) | 0.45 s | 5.2 s | 683 KB |
+| 8 October 2026, before Sol's sky was loaded on demand (8eef6ac; three runs) | 0.46–0.47 s | 6.87–7.05 s | 900 KB |
+| Sol's sky fetched once the game's code had started (one run; not kept) | 0.46 s | 7.55 s | 902 KB |
+| Sol's sky fetched while the game's code starts (three runs) | 0.46–0.48 s | 6.76–6.83 s | 901 KB |
 
 Play comes about 0.4 s later than before because the fonts now load with the game (the loading
-title uses them) instead of after the title appeared.
+title uses them) instead of after the title appeared. Loaded on demand (PROCGEN §50), Sol's sky is
+in 2–58 ms after the game's code has started, on the container's CPU; a phone takes longer to start
+the code, so there the sky is the likelier to be in first.
 
 ## Real-device checklist (partly run — please run the rest)
 

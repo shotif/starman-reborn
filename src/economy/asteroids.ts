@@ -190,8 +190,10 @@ export function asteroidNews(jd: number): AsteroidNews[] {
 
 // ---------------------------------------------------------------- tracking
 
-/** The near-Earth asteroids, which stations want tracked (§47.5). */
-export const TRACKED = ASTEROID_DATA.asteroids.filter((a) => a.neo);
+/** The near-Earth asteroids, which stations want tracked (§47.5): none until Sol's sky is in (§50). */
+export function trackedAsteroids(): Asteroid[] {
+  return ASTEROID_DATA.asteroids.filter((a) => a.neo);
+}
 
 /** How many jumps from Sol a station is, if it is a research station that could post tracking (§47.5). */
 export function trackingJumps(locationId: string): number | null {
@@ -214,7 +216,7 @@ export function boardDate(clock: number): number | null {
 
 /** The near-Earth asteroid passing Earth within `passDays` of a date, nearest first, if any. */
 export function passingAsteroid(jd: number): { asteroid: Asteroid; pass: CloseApproach } | null {
-  const near = TRACKED.flatMap((asteroid) => asteroid.approaches.filter((p) => Math.abs(p.jd - jd) <= ASTEROIDS.track.passDays).map((pass) => ({ asteroid, pass })));
+  const near = trackedAsteroids().flatMap((asteroid) => asteroid.approaches.filter((p) => Math.abs(p.jd - jd) <= ASTEROIDS.track.passDays).map((pass) => ({ asteroid, pass })));
   return near.sort((a, b) => Math.abs(a.pass.jd - jd) - Math.abs(b.pass.jd - jd))[0] ?? null;
 }
 
@@ -228,7 +230,7 @@ export function trackOffer(locationId: string, epoch: number, jd: number | null)
   const r = rng(WORLD_SEED, 'asteroids', 'track', locationId, epoch);
   if (r.next() >= ASTEROIDS.track.odds) return null;
   const passing = jd === null ? null : passingAsteroid(jd);
-  return passing ? { asteroid: passing.asteroid, jumps, pass: passing.pass } : { asteroid: r.pick(TRACKED), jumps, pass: null };
+  return passing ? { asteroid: passing.asteroid, jumps, pass: passing.pass } : { asteroid: r.pick(trackedAsteroids()), jumps, pass: null };
 }
 
 /** What tracking pays, so many jumps off. */
