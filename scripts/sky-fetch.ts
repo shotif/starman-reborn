@@ -31,6 +31,9 @@
  *     its format notes and its index page.
  *   - JPL's Small-Body Database: the orbital elements and physical parameters of a list of periodic
  *     comets, at full precision.
+ *   - Earth's Moon: JPL Horizons' positions of it from Earth's centre and how much of it is lit,
+ *     NASA's tables of the eclipses of the Sun and the Moon by decade (Fred Espenak, GSFC), and the
+ *     US Naval Observatory's times of its phases.
  *
  * Usage: node scripts/sky-fetch.ts   (then node scripts/sky-process.ts)
  * Behind an HTTPS proxy, run with NODE_USE_ENV_PROXY=1 so Node's fetch honours HTTPS_PROXY.
@@ -353,7 +356,7 @@ async function fetchOrbits(): Promise<void> {
   // the planets' pulls included), and where Horizons has it every 30 days from two years before to
   // four after, which the game's reckoning is tested against.
   const day = Date.parse(`${today}T00:00:00Z`) / 86_400_000 + 2_440_587.5;
-  const horizons = (command: string, ephem: 'ELEMENTS' | 'VECTORS', from: number, to: number, step: string, center = '500@10', extra: Record<string, string> = {}) =>
+  const horizons = (command: string, ephem: 'ELEMENTS' | 'VECTORS' | 'OBSERVER', from: number, to: number, step: string, center = '500@10', extra: Record<string, string> = {}) =>
     `https://ssd.jpl.nasa.gov/api/horizons.api?${new URLSearchParams({
       format: 'json',
       COMMAND: `'${command}'`,
@@ -445,7 +448,21 @@ async function fetchOrbits(): Promise<void> {
       i = j;
     }
   }
-  writeFileSync(resolve(orbitsDir, 'manifest.json'), JSON.stringify({ retrieved: today, comets: COMETS, asteroids: ASTEROIDS, asteroidAfter: ASTEROID_AFTER, moons: MOONS, spacecraft: SPACECRAFT, queries: entries }, null, 2) + '\n');
+  // Earth's Moon (docs/PROCGEN.md §51): Horizons' record of it, and where it is from Earth's centre
+  // every six hours from two years before to four after (half to reckon its motion from, half to
+  // test it) and every ten days for ten years after that (to test the reckoning beyond them); how
+  // much of it Horizons has lit, daily; NASA's eclipses of the Sun and the Moon for the decades they
+  // fall in (Fred Espenak's tables); and the US Naval Observatory's times of its phases, each year.
+  await save('jpl-horizons-luna-vectors', 'json', [horizons('301', 'VECTORS', day - 730, day + 1460, '6 h', '500@399', { OBJ_DATA: "'YES'", OUT_UNITS: "'KM-D'" })]);
+  await save('jpl-horizons-luna-beyond', 'json', [horizons('301', 'VECTORS', day + 1460, day + 1460 + 3653, '10 d', '500@399', { OUT_UNITS: "'KM-D'" })]);
+  await save('jpl-horizons-luna-lit', 'json', [horizons('301', 'OBSERVER', day - 730, day + 1460, '1 d', '500@399', { QUANTITIES: "'10'", CAL_FORMAT: "'JD'" })]);
+  const decades = [...new Set([year - 2, year + 8].map((y) => Math.floor((y - 1) / 10) * 10 + 1))];
+  for (const d of decades) {
+    await save(`nasa-eclipses-solar-${d}`, 'html', [`https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade${d}.html`]);
+    await save(`nasa-eclipses-lunar-${d}`, 'html', [`https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade${d}.html`]);
+  }
+  for (let y = year - 2; y <= year + 4; y++) await save(`usno-moon-phases-${y}`, 'json', [`https://aa.usno.navy.mil/api/moon/phases/year?year=${y}`]);
+  writeFileSync(resolve(orbitsDir, 'manifest.json'), JSON.stringify({ retrieved: today, comets: COMETS, asteroids: ASTEROIDS, asteroidAfter: ASTEROID_AFTER, moons: MOONS, spacecraft: SPACECRAFT, eclipseDecades: decades, queries: entries }, null, 2) + '\n');
 }
 
 async function main(): Promise<void> {
