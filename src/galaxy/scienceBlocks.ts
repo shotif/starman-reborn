@@ -634,7 +634,7 @@ function eclipseList(list: readonly Eclipse[], id: string): HTMLElement {
 function lunarLines(f: LunarFacts, jd: number, detail: Detail, every: readonly Eclipse[]): HTMLElement[] {
   const opt = (k: string, v: string | null): [string, string][] => (v ? [[k, v]] : []);
   const rows: [string, string][] = [
-    [`On ${dateText(jd)}`, `${f.word.charAt(0).toUpperCase()}${f.word.slice(1)}, ${f.lit}% lit; ${f.distance}`],
+    [`On ${dateText(jd)}`, f.distance],
     ...opt('Next full Moon', f.nextFull),
     ...opt('Next new Moon', f.nextNew),
   ];

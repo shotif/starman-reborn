@@ -161,9 +161,10 @@ Other balance guardrails:
   on 1 October 2026) and the whole first load, first screen and game, at most **850 KB** (621 KB on
   1 October; the owner raised it from 700 KB on 2 October 2026, when Your crew took it to 704 KB, and
   from 800 KB on 7 October 2026, when binary orbits, comets and the logbook took it to 798 KB).
-  Fonts (71 KB, already compressed) and what loads on demand (Sol's real sky, §50: 22 KB; the star
-  map, the science notes, bloom: 37 KB, on 8 October 2026) are reported, not budgeted; the first load
-  was 806 KB on 8 October 2026, once Sol's sky was moved out of it (from 827 KB). Going over is a decision to make, not an accident: raise
+  Fonts (71 KB, already compressed) and what loads on demand (Sol's real sky, §50: 27 KB with Earth's
+  Moon; the star map, the science notes, bloom: 37 KB, on 8 October 2026) are reported, not budgeted;
+  the first load was 806 KB on 8 October 2026, once Sol's sky was moved out of it (from 827 KB), and
+  810 KB with Earth's Moon (§51). Going over is a decision to make, not an accident: raise
   the budget in the same change, with the reason.
 - **On a real device**, the device report (Settings; `src/app/deviceReport.ts`) shows what the
   phone or computer and its browser tell the game: the screen and safe areas, the input, the

@@ -1391,8 +1391,8 @@ for (const size of SIZES) {
       }
     });
 
-    // Earth's Moon (docs/PROCGEN.md §51): a waxing crescent four days after new, seen from Earth's
-    // side, and its card with its phase and the eclipses to come.
+    // Earth's Moon (docs/PROCGEN.md §51): a waxing gibbous, 72% lit, seen from just above Earth on
+    // its side, and its card with its phase and the eclipses to come.
     test(`Earth's Moon at ${size.name}`, async ({ page }) => {
       test.setTimeout(10 * 60_000);
       mkdirSync(OUT, { recursive: true });
@@ -1411,7 +1411,7 @@ for (const size of SIZES) {
       await press(page, 'title-play');
       await press(page, 'intro-ok');
       await api(page, 'completeJobs', ['lifeline']);
-      expect(await api<boolean>(page, 'startedOn', '2026-10-14T00:00:00Z')).toBe(true);
+      expect(await api<boolean>(page, 'startedOn', '2026-10-21T00:00:00Z')).toBe(true);
       await api(page, 'dockAt', 'earth-port');
       await waitUntil(page, 'docked at Earth Port', async () => (await api<{ location: { dockedAt: string | null } }>(page, 'state')).location.dockedAt === 'earth-port');
       for (let q = 0, i = 0; q < 3 && i < 30; i++) {
@@ -1426,7 +1426,9 @@ for (const size of SIZES) {
       if (await page.getByTestId('controls-sheet').isVisible().catch(() => false)) await press(page, 'sheet-close');
       await waitUntil(page, 'undocked', async () => (await api<{ autopilot: string } | null>(page, 'player'))?.autopilot === 'none', 60_000);
       await api(page, 'selectTarget', 'planet:moon');
-      expect(await api<boolean>(page, 'viewMoon', { id: 'moon', planet: 'earth', distance: 1_400, near: true })).toBe(true);
+      expect(await api<boolean>(page, 'viewMoon', { id: 'moon', planet: 'earth', distance: 2_100, near: true })).toBe(true);
+      // Looking a little under it, so the Moon stands above the ship.
+      expect(await api<boolean>(page, 'face', { id: 'planet:moon', below: 14 })).toBe(true);
       await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
       await page.waitForTimeout(800);
       await shot(page, `${size.name}-32-moon`, size.touch, results);

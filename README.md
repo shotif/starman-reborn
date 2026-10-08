@@ -135,9 +135,9 @@ the one invented astronomical event, the deaths of Betelgeuse and Antares.
 - **Locally:** see *Run it* below.
 
 The title appears straight away, even on a slow phone connection, with a bar where **Play** will
-be that fills as the rest of the game arrives (about 790 KB compressed; Sol's real comets,
-asteroids, moons and spacecraft, about 20 KB more, come while it starts up). After one visit the
-game also works offline: the browser keeps its files.
+be that fills as the rest of the game arrives (about 795 KB compressed; Sol's real comets,
+asteroids, moons, spacecraft and Earth's Moon, about 27 KB more, come while it starts up). After one
+visit the game also works offline: the browser keeps its files.
 
 A first playthrough takes about 10–20 minutes. Progress saves automatically in the browser
 (IndexedDB) after docking, trading, rewards and jumps, and when the tab is hidden. Refresh at any
