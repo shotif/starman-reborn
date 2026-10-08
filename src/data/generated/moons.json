@@ -1,11 +1,11 @@
 {
   "generatedBy": "scripts/moons-process.ts",
-  "retrieved": "2026-10-07",
-  "epochJd": 2461320.5,
+  "retrieved": "2026-10-08",
+  "epochJd": 2461321.5,
   "source": {
     "label": "JPL Horizons",
     "url": "https://ssd.jpl.nasa.gov/horizons/",
-    "retrieved": "2026-10-07"
+    "retrieved": "2026-10-08"
   },
   "description": "The large moons of Jupiter and Saturn: names, mean radii (km), densities (g/cm³) and geometric albedos from JPL Horizons, with their planets’ equatorial radii (km); and each one’s motion round its planet reckoned from Horizons’ positions of it every seven days from two years before the snapshot to four after (J2000 ecliptic): the normal of the plane it orbits in and the direction longitudes count from, its mean distance (km), its mean longitude on the snapshot’s day and mean motion (degrees, degrees a day), its period (days), and to first order its orbit’s eccentricity and the longitude of its nearest point to the planet.",
   "moons": [
@@ -20,21 +20,21 @@
       "albedo": 0.63,
       "motion": {
         "normal": [
-          -0.01469389,
-          -0.03580252,
-          0.99925085
+          -0.01469051,
+          -0.03579995,
+          0.999251
         ],
         "from": [
-          0.99989204,
-          -0.00052614,
-          0.01468447
+          0.99989209,
+          -0.00052598,
+          0.01468109
         ],
-        "aKm": 421777.2,
-        "lambdaDeg": 224.521212,
-        "motionDegPerDay": 203.48891598,
-        "periodDays": 1.769138,
-        "e": 0.000226,
-        "periDeg": 110.3583
+        "aKm": 421761.4,
+        "lambdaDeg": 67.97784,
+        "motionDegPerDay": 203.48900262,
+        "periodDays": 1.769137,
+        "e": 0.00021,
+        "periDeg": 95.2869
       }
     },
     {
@@ -48,21 +48,21 @@
       "albedo": 0.67,
       "motion": {
         "normal": [
-          -0.01858687,
-          -0.02961454,
-          0.99938857
+          -0.0185765,
+          -0.02944205,
+          0.99939386
         ],
         "from": [
-          0.99982725,
-          -0.00055054,
-          0.01857872
+          0.99982744,
+          -0.00054702,
+          0.01856844
         ],
-        "aKm": 671530.4,
-        "lambdaDeg": 121.35446,
-        "motionDegPerDay": 101.37476548,
-        "periodDays": 3.55118,
-        "e": 0.000887,
-        "periDeg": 289.1802
+        "aKm": 671081.4,
+        "lambdaDeg": 222.648637,
+        "motionDegPerDay": 101.37473759,
+        "periodDays": 3.551181,
+        "e": 0.000632,
+        "periDeg": 299.7178
       }
     },
     {
@@ -76,21 +76,21 @@
       "albedo": 0.43,
       "motion": {
         "normal": [
-          -0.01477527,
-          -0.03814913,
-          0.99916282
+          -0.01477659,
+          -0.03815016,
+          0.99916276
         ],
         "from": [
-          0.99989084,
-          -0.00056373,
-          0.01476451
+          0.99989082,
+          -0.00056379,
+          0.01476583
         ],
-        "aKm": 1070476.7,
-        "lambdaDeg": 339.789205,
-        "motionDegPerDay": 50.31764193,
-        "periodDays": 7.154548,
-        "e": 0.002009,
-        "periDeg": 342.4477
+        "aKm": 1070491.3,
+        "lambdaDeg": 30.112767,
+        "motionDegPerDay": 50.3176116,
+        "periodDays": 7.154553,
+        "e": 0.001996,
+        "periDeg": 342.9065
       }
     },
     {
@@ -104,21 +104,21 @@
       "albedo": 0.17,
       "motion": {
         "normal": [
-          -0.0133831,
-          -0.03123213,
+          -0.01338337,
+          -0.03123192,
           0.99942256
         ],
         "from": [
           0.99991044,
-          -0.00041802,
-          0.01337657
+          -0.00041803,
+          0.01337684
         ],
-        "aKm": 1882768.2,
-        "lambdaDeg": 347.214862,
-        "motionDegPerDay": 21.57109674,
-        "periodDays": 16.688998,
-        "e": 0.007237,
-        "periDeg": 11.2615
+        "aKm": 1882779,
+        "lambdaDeg": 8.785859,
+        "motionDegPerDay": 21.57109823,
+        "periodDays": 16.688997,
+        "e": 0.007238,
+        "periDeg": 11.2576
       }
     },
     {
@@ -132,21 +132,21 @@
       "albedo": 0.2,
       "motion": {
         "normal": [
-          0.08809348,
-          0.45637909,
-          0.88541384
+          0.08809469,
+          0.45637926,
+          0.88541363
         ],
         "from": [
-          0.99611221,
-          -0.04036094,
-          -0.07830361
+          0.99611211,
+          -0.04036151,
+          -0.07830468
         ],
-        "aKm": 1222418.6,
-        "lambdaDeg": 159.521817,
-        "motionDegPerDay": 22.57697132,
-        "periodDays": 15.945451,
-        "e": 0.028696,
-        "periDeg": 349.1993
+        "aKm": 1222378.8,
+        "lambdaDeg": 182.098948,
+        "motionDegPerDay": 22.57696741,
+        "periodDays": 15.945454,
+        "e": 0.0287,
+        "periDeg": 349.2047
       }
     }
   ]

@@ -1,6 +1,6 @@
 {
-  "retrieved": "2026-09-30",
-  "description": "Systems the sky snapshot of 2026-09-30 adds (every star SIMBAD lists with a parallax of at least 120 mas that the game lacked), and stars that join systems the game has.",
+  "retrieved": "2026-10-08",
+  "description": "Systems the sky snapshot of 2026-10-08 adds (every star SIMBAD lists with a parallax of at least 120 mas that the game lacked), and stars that join systems the game has.",
   "systems": [
     {
       "id": "ev-lacertae",
@@ -9,7 +9,7 @@
       "componentIds": [
         "ev-lacertae"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "mu-cassiopeiae",
@@ -18,7 +18,7 @@
       "componentIds": [
         "mu-cassiopeiae"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "hd-219134",
@@ -27,7 +27,7 @@
       "componentIds": [
         "hd-219134"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "achird",
@@ -37,7 +37,7 @@
         "achird-a",
         "achird-b"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-1245",
@@ -47,7 +47,7 @@
         "gj-1245-a",
         "gj-1245-b"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "iras-21500-5903",
@@ -56,7 +56,7 @@
       "componentIds": [
         "iras-21500-5903"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-809",
@@ -65,7 +65,7 @@
       "componentIds": [
         "gj-809"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gliese-48",
@@ -74,7 +74,7 @@
       "componentIds": [
         "gliese-48"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-793",
@@ -83,7 +83,7 @@
       "componentIds": [
         "gj-793"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "stein-2051",
@@ -93,7 +93,7 @@
         "stein-2051-a",
         "stein-2051-b"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "alsafi",
@@ -102,7 +102,7 @@
       "componentIds": [
         "alsafi"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "g-227-22",
@@ -111,7 +111,7 @@
       "componentIds": [
         "g-227-22"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-4053",
@@ -120,7 +120,7 @@
       "componentIds": [
         "gj-4053"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "chi-draconis",
@@ -129,7 +129,7 @@
       "componentIds": [
         "chi-draconis"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-687",
@@ -138,7 +138,7 @@
       "componentIds": [
         "gj-687"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-1221",
@@ -147,7 +147,7 @@
       "componentIds": [
         "gj-1221"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-3378",
@@ -156,7 +156,7 @@
       "componentIds": [
         "gj-3378"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-661",
@@ -165,7 +165,7 @@
       "componentIds": [
         "gj-661"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-445",
@@ -174,7 +174,7 @@
       "componentIds": [
         "gj-445"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-625",
@@ -183,7 +183,7 @@
       "componentIds": [
         "gj-625"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-623",
@@ -192,7 +192,7 @@
       "componentIds": [
         "gj-623"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-338",
@@ -202,7 +202,7 @@
         "gj-338-a",
         "gj-338-b"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-380",
@@ -211,7 +211,7 @@
       "componentIds": [
         "gj-380"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-1151",
@@ -220,7 +220,7 @@
       "componentIds": [
         "gj-1151"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "ltt-1445",
@@ -230,7 +230,7 @@
         "ltt-1445-a",
         "ltt-1445-b"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "lp-944-20",
@@ -239,7 +239,7 @@
       "componentIds": [
         "lp-944-20"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "2mass-0415-0935",
@@ -248,7 +248,7 @@
       "componentIds": [
         "2mass-0415-0935"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "tabit",
@@ -257,7 +257,7 @@
       "componentIds": [
         "tabit"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-3323",
@@ -266,7 +266,7 @@
       "componentIds": [
         "gj-3323"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "wolf-1453",
@@ -275,7 +275,7 @@
       "componentIds": [
         "wolf-1453"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "ross-47",
@@ -284,7 +284,7 @@
       "componentIds": [
         "ross-47"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-1087",
@@ -293,7 +293,7 @@
       "componentIds": [
         "gj-1087"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "hl-4",
@@ -302,7 +302,7 @@
       "componentIds": [
         "hl-4"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-3379",
@@ -311,7 +311,7 @@
       "componentIds": [
         "gj-3379"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-229",
@@ -321,7 +321,7 @@
         "gj-229-a",
         "gj-229-b"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-251",
@@ -330,7 +330,7 @@
       "componentIds": [
         "gj-251"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-1093",
@@ -339,7 +339,7 @@
       "componentIds": [
         "gj-1093"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "qy-aurigae",
@@ -348,7 +348,7 @@
       "componentIds": [
         "qy-aurigae"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "yz-canis-minoris",
@@ -357,7 +357,7 @@
       "componentIds": [
         "yz-canis-minoris"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "ross-619",
@@ -366,7 +366,7 @@
       "componentIds": [
         "ross-619"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-300",
@@ -375,7 +375,7 @@
       "componentIds": [
         "gj-300"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "dx-cancri",
@@ -384,7 +384,7 @@
       "componentIds": [
         "dx-cancri"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "2mass-0835-0819",
@@ -393,7 +393,7 @@
       "componentIds": [
         "2mass-0835-0819"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-3522",
@@ -402,7 +402,7 @@
       "componentIds": [
         "gj-3522"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-915",
@@ -411,7 +411,7 @@
       "componentIds": [
         "gj-915"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-4248",
@@ -420,7 +420,7 @@
       "componentIds": [
         "gj-4248"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-1",
@@ -429,7 +429,7 @@
       "componentIds": [
         "gj-1"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "fomalhaut-b",
@@ -438,7 +438,7 @@
       "componentIds": [
         "fomalhaut-b"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "fomalhaut",
@@ -447,7 +447,7 @@
       "componentIds": [
         "fomalhaut"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "fomalhaut-c",
@@ -456,7 +456,7 @@
       "componentIds": [
         "fomalhaut-c"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-2005",
@@ -467,7 +467,7 @@
         "gj-2005-b",
         "gj-2005-c"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-884",
@@ -476,7 +476,7 @@
       "componentIds": [
         "gj-884"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-4274",
@@ -485,7 +485,7 @@
       "componentIds": [
         "gj-4274"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-1005",
@@ -494,7 +494,7 @@
       "componentIds": [
         "gj-1005"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-1002",
@@ -503,7 +503,7 @@
       "componentIds": [
         "gj-1002"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-1286",
@@ -512,7 +512,7 @@
       "componentIds": [
         "gj-1286"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "br-piscium",
@@ -521,7 +521,7 @@
       "componentIds": [
         "br-piscium"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "wolf-25",
@@ -530,7 +530,7 @@
       "componentIds": [
         "wolf-25"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-105",
@@ -539,7 +539,7 @@
       "componentIds": [
         "gj-105"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "bx-ceti",
@@ -549,7 +549,7 @@
         "bx-ceti-a",
         "bx-ceti-b"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-9066",
@@ -558,7 +558,7 @@
       "componentIds": [
         "gj-9066"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "ross-671",
@@ -567,7 +567,7 @@
       "componentIds": [
         "ross-671"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "ross-775",
@@ -576,7 +576,7 @@
       "componentIds": [
         "ross-775"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "107-piscium",
@@ -585,7 +585,7 @@
       "componentIds": [
         "107-piscium"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "teegardens-star",
@@ -594,7 +594,7 @@
       "componentIds": [
         "teegardens-star"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "vx-arietis",
@@ -603,7 +603,7 @@
       "componentIds": [
         "vx-arietis"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "lp-368-128",
@@ -612,7 +612,7 @@
       "componentIds": [
         "lp-368-128"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "2mass-0937-2931",
@@ -621,7 +621,7 @@
       "componentIds": [
         "2mass-0937-2931"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "2mass-0939-2448",
@@ -630,7 +630,7 @@
       "componentIds": [
         "2mass-0939-2448"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "an-sextantis",
@@ -639,7 +639,7 @@
       "componentIds": [
         "an-sextantis"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "ad-leonis",
@@ -648,7 +648,7 @@
       "componentIds": [
         "ad-leonis"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-393",
@@ -657,7 +657,7 @@
       "componentIds": [
         "gj-393"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "ee-leonis",
@@ -666,7 +666,7 @@
       "componentIds": [
         "ee-leonis"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-3622",
@@ -675,7 +675,7 @@
       "componentIds": [
         "gj-3622"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "denis-1048-3956",
@@ -684,7 +684,7 @@
       "componentIds": [
         "denis-1048-3956"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "ross-104",
@@ -693,7 +693,7 @@
       "componentIds": [
         "ross-104"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "wx-ursae-majoris",
@@ -703,7 +703,7 @@
         "wx-ursae-majoris-a",
         "wx-ursae-majoris-b"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "2mass-1114-2618",
@@ -712,7 +712,7 @@
       "componentIds": [
         "2mass-1114-2618"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "hd-101847b",
@@ -721,7 +721,7 @@
       "componentIds": [
         "hd-101847b"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gl-virginis",
@@ -730,7 +730,7 @@
       "componentIds": [
         "gl-virginis"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-1154",
@@ -739,7 +739,7 @@
       "componentIds": [
         "gj-1154"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-3737",
@@ -748,7 +748,7 @@
       "componentIds": [
         "gj-3737"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "sips-1259-4336",
@@ -757,7 +757,7 @@
       "componentIds": [
         "sips-1259-4336"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-514",
@@ -766,7 +766,7 @@
       "componentIds": [
         "gj-514"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "wolf-498",
@@ -775,7 +775,7 @@
       "componentIds": [
         "wolf-498"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "xi-bootis",
@@ -785,7 +785,7 @@
         "xi-bootis-a",
         "xi-bootis-b"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "kx-librae",
@@ -796,7 +796,7 @@
         "kx-librae-b",
         "kx-librae-c"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-3877",
@@ -805,7 +805,7 @@
       "componentIds": [
         "gj-3877"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-783",
@@ -815,7 +815,7 @@
         "gj-783-a",
         "gj-783-b"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-667",
@@ -826,7 +826,7 @@
         "gj-667-b",
         "gj-667-c"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "36-ophiuchi",
@@ -837,7 +837,7 @@
         "36-ophiuchi-b",
         "36-ophiuchi-c"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "2mass-1507-1627",
@@ -846,7 +846,7 @@
       "componentIds": [
         "2mass-1507-1627"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-1224",
@@ -855,7 +855,7 @@
       "componentIds": [
         "gj-1224"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "wolf-629",
@@ -865,7 +865,7 @@
         "wolf-629-c",
         "wolf-629-a"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "wolf-630",
@@ -874,7 +874,7 @@
       "componentIds": [
         "wolf-630"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-701",
@@ -883,7 +883,7 @@
       "componentIds": [
         "gj-701"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "wolf-718",
@@ -892,7 +892,7 @@
       "componentIds": [
         "wolf-718"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "hd-180617",
@@ -902,7 +902,7 @@
         "hd-180617-a",
         "hd-180617-b"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "g-141-36",
@@ -911,7 +911,7 @@
       "componentIds": [
         "g-141-36"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "hu-delphini",
@@ -920,7 +920,7 @@
       "componentIds": [
         "hu-delphini"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-686",
@@ -929,7 +929,7 @@
       "componentIds": [
         "gj-686"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "2mass-1503-2525",
@@ -938,7 +938,7 @@
       "componentIds": [
         "2mass-1503-2525"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "lsr-j1835-3259",
@@ -947,7 +947,7 @@
       "componentIds": [
         "lsr-j1835-3259"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "stf-2461",
@@ -956,7 +956,7 @@
       "componentIds": [
         "stf-2461"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "vega",
@@ -965,7 +965,7 @@
       "componentIds": [
         "vega"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-257",
@@ -975,7 +975,7 @@
         "gj-257-a",
         "gj-257-b"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "82-eridani",
@@ -984,7 +984,7 @@
       "componentIds": [
         "82-eridani"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-1068",
@@ -993,7 +993,7 @@
       "componentIds": [
         "gj-1068"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "denis-0255-4700",
@@ -1002,7 +1002,7 @@
       "componentIds": [
         "denis-0255-4700"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "2mass-0348-6022",
@@ -1011,7 +1011,7 @@
       "componentIds": [
         "2mass-0348-6022"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-293",
@@ -1020,7 +1020,7 @@
       "componentIds": [
         "gj-293"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "l-173-19",
@@ -1029,7 +1029,7 @@
       "componentIds": [
         "l-173-19"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-66",
@@ -1039,7 +1039,7 @@
         "gj-66-a",
         "gj-66-b"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-1128",
@@ -1048,7 +1048,7 @@
       "componentIds": [
         "gj-1128"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-3618",
@@ -1057,7 +1057,7 @@
       "componentIds": [
         "gj-3618"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-54",
@@ -1066,7 +1066,7 @@
       "componentIds": [
         "gj-54"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-440",
@@ -1075,7 +1075,7 @@
       "componentIds": [
         "gj-440"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "beta-hydri",
@@ -1084,7 +1084,7 @@
       "componentIds": [
         "beta-hydri"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "delta-pavonis",
@@ -1093,7 +1093,7 @@
       "componentIds": [
         "delta-pavonis"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "scr-1845-6357",
@@ -1103,7 +1103,7 @@
         "scr-1845-6357-a",
         "scr-1845-6357-b"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-832",
@@ -1112,7 +1112,7 @@
       "componentIds": [
         "gj-832"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-693",
@@ -1121,7 +1121,7 @@
       "componentIds": [
         "gj-693"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-784",
@@ -1130,7 +1130,7 @@
       "componentIds": [
         "gj-784"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-588",
@@ -1139,7 +1139,7 @@
       "componentIds": [
         "gj-588"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-674",
@@ -1148,7 +1148,7 @@
       "componentIds": [
         "gj-674"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-754",
@@ -1157,7 +1157,7 @@
       "componentIds": [
         "gj-754"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "simp-0136-0933",
@@ -1166,7 +1166,7 @@
       "componentIds": [
         "simp-0136-0933"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "scr-0740-4257",
@@ -1175,7 +1175,7 @@
       "componentIds": [
         "scr-0740-4257"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "2mass-0729-3954",
@@ -1184,7 +1184,7 @@
       "componentIds": [
         "2mass-0729-3954"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "lspm-2146-3813",
@@ -1193,7 +1193,7 @@
       "componentIds": [
         "lspm-2146-3813"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "2mass-2148-4003",
@@ -1202,7 +1202,7 @@
       "componentIds": [
         "2mass-2148-4003"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "wise-0722-0540",
@@ -1211,7 +1211,7 @@
       "componentIds": [
         "wise-0722-0540"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "2mass-0817-6155",
@@ -1220,7 +1220,7 @@
       "componentIds": [
         "2mass-0817-6155"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-896",
@@ -1230,7 +1230,7 @@
         "gj-896-a",
         "gj-896-b"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "2mass-0254-0223",
@@ -1239,7 +1239,7 @@
       "componentIds": [
         "2mass-0254-0223"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "ugps-0521-3640",
@@ -1248,7 +1248,7 @@
       "componentIds": [
         "ugps-0521-3640"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "wise-0410-1502",
@@ -1257,7 +1257,7 @@
       "componentIds": [
         "wise-0410-1502"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "wise-1405-5534",
@@ -1266,7 +1266,7 @@
       "componentIds": [
         "wise-1405-5534"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "wise-1541-2250",
@@ -1275,7 +1275,7 @@
       "componentIds": [
         "wise-1541-2250"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "wise-1738-2732",
@@ -1284,7 +1284,7 @@
       "componentIds": [
         "wise-1738-2732"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "wise-2056-1459",
@@ -1293,7 +1293,7 @@
       "componentIds": [
         "wise-2056-1459"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "wise-1800-0134",
@@ -1302,7 +1302,7 @@
       "componentIds": [
         "wise-1800-0134"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "2mass-0607-2429",
@@ -1311,7 +1311,7 @@
       "componentIds": [
         "2mass-0607-2429"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "wise-1741-2553",
@@ -1320,7 +1320,7 @@
       "componentIds": [
         "wise-1741-2553"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "wise-0350-5658",
@@ -1329,7 +1329,7 @@
       "componentIds": [
         "wise-0350-5658"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "wise-0825-2805",
@@ -1338,7 +1338,7 @@
       "componentIds": [
         "wise-0825-2805"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "wise-2209-2711",
@@ -1347,7 +1347,7 @@
       "componentIds": [
         "wise-2209-2711"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "wise-1639-6847",
@@ -1356,7 +1356,7 @@
       "componentIds": [
         "wise-1639-6847"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "2mass-1506-7027",
@@ -1365,7 +1365,7 @@
       "componentIds": [
         "2mass-1506-7027"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "luhman-16",
@@ -1375,7 +1375,7 @@
         "luhman-16-a",
         "luhman-16-b"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "wise-0313-7807",
@@ -1384,7 +1384,7 @@
       "componentIds": [
         "wise-0313-7807"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "wise-1150-6302",
@@ -1393,7 +1393,7 @@
       "componentIds": [
         "wise-1150-6302"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "wise-0005-3737",
@@ -1402,7 +1402,7 @@
       "componentIds": [
         "wise-0005-3737"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "2mass-0521-1025",
@@ -1411,7 +1411,7 @@
       "componentIds": [
         "2mass-0521-1025"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "wise-0049-2151",
@@ -1420,7 +1420,7 @@
       "componentIds": [
         "wise-0049-2151"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "2mass-1928-2356",
@@ -1429,7 +1429,7 @@
       "componentIds": [
         "2mass-1928-2356"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "ei-cancri",
@@ -1439,7 +1439,7 @@
         "ei-cancri-a",
         "ei-cancri-b"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "scholzs-star",
@@ -1449,7 +1449,7 @@
         "scholzs-star-a",
         "scholzs-star-b"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "2mass-2000-3629",
@@ -1458,7 +1458,7 @@
       "componentIds": [
         "2mass-2000-3629"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "wise-0855-0714",
@@ -1467,7 +1467,7 @@
       "componentIds": [
         "wise-0855-0714"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "ucac4-195-119117",
@@ -1476,7 +1476,7 @@
       "componentIds": [
         "ucac4-195-119117"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "wise-2354-0240",
@@ -1485,7 +1485,7 @@
       "componentIds": [
         "wise-2354-0240"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-581",
@@ -1494,7 +1494,7 @@
       "componentIds": [
         "gj-581"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "hn-lib",
@@ -1503,7 +1503,7 @@
       "componentIds": [
         "hn-lib"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "bb-capricorni",
@@ -1512,7 +1512,7 @@
       "componentIds": [
         "bb-capricorni"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-9415",
@@ -1521,7 +1521,7 @@
       "componentIds": [
         "gj-9415"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-486",
@@ -1530,7 +1530,7 @@
       "componentIds": [
         "gj-486"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-3991",
@@ -1539,7 +1539,7 @@
       "componentIds": [
         "gj-3991"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gj-682",
@@ -1548,7 +1548,7 @@
       "componentIds": [
         "gj-682"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "lp-816-60",
@@ -1557,7 +1557,7 @@
       "componentIds": [
         "lp-816-60"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gaia-dr3-6702242043883732864",
@@ -1567,7 +1567,7 @@
         "gaia-dr3-6702242043883732864-a",
         "gaia-dr3-6702242043883732864-b"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "mu2-herculis",
@@ -1577,7 +1577,7 @@
         "mu2-herculis-a",
         "mu2-herculis-b"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "fl-virginis",
@@ -1587,7 +1587,7 @@
         "fl-virginis-a",
         "fl-virginis-b"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "cwise-1055-5443",
@@ -1596,7 +1596,7 @@
       "componentIds": [
         "cwise-1055-5443"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     },
     {
       "id": "gaia-dr3-6305165514134625024",
@@ -1605,7 +1605,7 @@
       "componentIds": [
         "gaia-dr3-6305165514134625024"
       ],
-      "addedBy": "sky snapshot 2026-09-30"
+      "addedBy": "sky snapshot 2026-10-08"
     }
   ],
   "additions": {

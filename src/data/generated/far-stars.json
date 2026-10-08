@@ -1,9 +1,9 @@
 {
   "generatedBy": "scripts/build-dataset.ts",
-  "input": "data/provisional/far-stars-input.json",
-  "verification": "provisional",
-  "retrieved": null,
-  "description": "Far stars beyond the map (positions J2000, proper motions, distances, spectral types and visual magnitudes) from the HYG star database v4.0 (CC BY-SA 4.0). Extracted by scripts/extract-far-stars.ts; provisional until the archive snapshot verifies it.",
+  "input": "data/snapshot/far-stars-input.json",
+  "verification": "snapshot",
+  "retrieved": "2026-10-08",
+  "description": "Far stars beyond the map checked against SIMBAD on 2026-10-08 (scripts/sky-fetch.ts on GitHub's runners, processed by scripts/sky-process.ts): Gaia DR3 when its solution passes the cuts, otherwise SIMBAD's adopted values, each cited.",
   "frame": "ICRS",
   "referenceEpoch": 2016,
   "stars": [
@@ -15,44 +15,54 @@
         "hip": "HIP 27989",
         "simbad": "alf Ori"
       },
-      "spectralType": "M2Ib",
+      "spectralType": "M1-M2Ia-Iab",
       "spectralTypeSource": {
-        "label": "HYG v4.0",
-        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
-        "recordId": "HYG 27919 (HIP 27989)"
+        "label": "SIMBAD: 1989ApJS...71..245K",
+        "url": "https://ui.adsabs.harvard.edu/abs/1989ApJS...71..245K",
+        "recordId": "* alf Ori",
+        "retrieved": "2026-10-08",
+        "bibcode": "1989ApJS...71..245K"
       },
-      "raDegrees": 88.79305748880836,
-      "decDegrees": 7.407111266666667,
+      "raDegrees": 88.79306242077166,
+      "decDegrees": 7.407114217494916,
       "properMotion": {
-        "raMasYr": 27.33,
-        "decMasYr": 10.86
+        "raMasYr": 27.54,
+        "decMasYr": 11.3
       },
       "catalogEpoch": 2000,
-      "parallaxMas": 6.549998100500551,
-      "distanceLightYears": 497.94881267495083,
+      "parallaxMas": 6.55,
+      "parallaxErrorMas": 0.83,
+      "distanceErrorLightYears": 63.098838879994624,
+      "distanceLightYears": 497.9486682698371,
       "referenceEpoch": 2016,
       "frame": "ICRS",
       "astrometrySource": {
-        "label": "HYG v4.0",
-        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
-        "recordId": "HYG 27919 (HIP 27989)"
+        "label": "SIMBAD",
+        "url": "https://simbad.cds.unistra.fr/simbad/sim-id?Ident=*%20alf%20Ori",
+        "recordId": "* alf Ori",
+        "retrieved": "2026-10-08",
+        "bibcode": "2007A&A...474..653V"
       },
       "parallaxSource": {
-        "label": "HYG v4.0 (Hipparcos distance)",
-        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
-        "recordId": "HYG 27919 (HIP 27989)"
+        "label": "SIMBAD: Hipparcos, new reduction (van Leeuwen 2007)",
+        "url": "https://ui.adsabs.harvard.edu/abs/2007A%26A...474..653V",
+        "bibcode": "2007A&A...474..653V",
+        "recordId": "* alf Ori",
+        "retrieved": "2026-10-08"
       },
-      "magnitudeV": 0.45,
+      "magnitudeV": 0.42,
       "magnitudeSource": {
-        "label": "HYG v4.0",
-        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
-        "recordId": "HYG 27919 (HIP 27989)"
+        "label": "SIMBAD: 1966CoLPL...4...99J",
+        "url": "https://ui.adsabs.harvard.edu/abs/1966CoLPL...4...99J",
+        "recordId": "* alf Ori",
+        "retrieved": "2026-10-08",
+        "bibcode": "1966CoLPL...4...99J"
       },
-      "verification": "provisional",
+      "verification": "snapshot",
       "positionLy": [
-        10.401050711518467,
-        493.6839603791412,
-        64.1949020784068
+        10.401005129767205,
+        493.68381480073344,
+        64.19490889307306
       ],
       "colorHex": "#ffb27a"
     },
@@ -64,44 +74,54 @@
         "hip": "HIP 80763",
         "simbad": "alf Sco"
       },
-      "spectralType": "M1Ib + B2.5V",
+      "spectralType": "M1.5Iab+B2Vn",
       "spectralTypeSource": {
-        "label": "HYG v4.0",
-        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
-        "recordId": "HYG 80519 (HIP 80763)"
+        "label": "SIMBAD: 2021A&A...646A..11M",
+        "url": "https://ui.adsabs.harvard.edu/abs/2021A%26A...646A..11M",
+        "recordId": "* alf Sco",
+        "retrieved": "2026-10-08",
+        "bibcode": "2021A&A...646A..11M"
       },
-      "raDegrees": 247.35186957294502,
-      "decDegrees": -26.432105155555558,
+      "raDegrees": 247.35185531435002,
+      "decDegrees": -26.432106167506387,
       "properMotion": {
-        "raMasYr": -10.16,
-        "decMasYr": -23.21
+        "raMasYr": -12.11,
+        "decMasYr": -23.3
       },
       "catalogEpoch": 2000,
-      "parallaxMas": 5.889999546470035,
-      "distanceLightYears": 553.7460149928428,
+      "parallaxMas": 5.89,
+      "parallaxErrorMas": 1,
+      "distanceErrorLightYears": 94.01459632502596,
+      "distanceLightYears": 553.745972354403,
       "referenceEpoch": 2016,
       "frame": "ICRS",
       "astrometrySource": {
-        "label": "HYG v4.0",
-        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
-        "recordId": "HYG 80519 (HIP 80763)"
+        "label": "SIMBAD",
+        "url": "https://simbad.cds.unistra.fr/simbad/sim-id?Ident=*%20alf%20Sco",
+        "recordId": "* alf Sco",
+        "retrieved": "2026-10-08",
+        "bibcode": "2007A&A...474..653V"
       },
       "parallaxSource": {
-        "label": "HYG v4.0 (Hipparcos distance)",
-        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
-        "recordId": "HYG 80519 (HIP 80763)"
+        "label": "SIMBAD: Hipparcos, new reduction (van Leeuwen 2007)",
+        "url": "https://ui.adsabs.harvard.edu/abs/2007A%26A...474..653V",
+        "bibcode": "2007A&A...474..653V",
+        "recordId": "* alf Sco",
+        "retrieved": "2026-10-08"
       },
-      "magnitudeV": 1.06,
+      "magnitudeV": 0.91,
       "magnitudeSource": {
-        "label": "HYG v4.0",
-        "url": "https://github.com/astronexus/HYG-Database/tree/main/hyg/CURRENT",
-        "recordId": "HYG 80519 (HIP 80763)"
+        "label": "SIMBAD: 2002yCat.2237....0D",
+        "url": "https://ui.adsabs.harvard.edu/abs/2002yCat.2237....0D",
+        "recordId": "* alf Sco",
+        "retrieved": "2026-10-08",
+        "bibcode": "2002yCat.2237....0D"
       },
-      "verification": "provisional",
+      "verification": "snapshot",
       "positionLy": [
-        -190.94069346620992,
-        -457.62165269710096,
-        -246.49284712110918
+        -190.9407909708105,
+        -457.6215659250219,
+        -246.49283689895586
       ],
       "colorHex": "#ffb27a"
     }

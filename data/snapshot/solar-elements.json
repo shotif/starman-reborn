@@ -1,9 +1,9 @@
 {
-  "retrieved": "2026-09-30",
+  "retrieved": "2026-10-08",
   "source": {
     "label": "JPL Solar System Dynamics: Approximate Positions of the Planets (Standish & Williams)",
     "url": "https://ssd.jpl.nasa.gov/planets/approx_pos.html",
-    "retrieved": "2026-09-30"
+    "retrieved": "2026-10-08"
   },
   "validYears": [
     1800,

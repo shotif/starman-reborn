@@ -1,0 +1,102 @@
+{
+  "kind": "snapshot",
+  "retrieved": "2026-10-08",
+  "description": "Far stars beyond the map checked against SIMBAD on 2026-10-08 (scripts/sky-fetch.ts on GitHub's runners, processed by scripts/sky-process.ts): Gaia DR3 when its solution passes the cuts, otherwise SIMBAD's adopted values, each cited.",
+  "targetEpoch": 2016,
+  "stars": [
+    {
+      "id": "betelgeuse",
+      "name": "Betelgeuse",
+      "designation": "Alpha Orionis",
+      "catalogIds": {
+        "hip": "HIP 27989",
+        "simbad": "alf Ori"
+      },
+      "spectralType": "M1-M2Ia-Iab",
+      "raDegrees": 88.79293899077537,
+      "decDegrees": 7.407063995272694,
+      "epoch": 2000,
+      "pmRaMasYr": 27.54,
+      "pmDecMasYr": 11.3,
+      "parallaxMas": 6.55,
+      "magnitudeV": 0.42,
+      "positionSource": {
+        "label": "SIMBAD",
+        "url": "https://simbad.cds.unistra.fr/simbad/sim-id?Ident=*%20alf%20Ori",
+        "recordId": "* alf Ori",
+        "retrieved": "2026-10-08",
+        "bibcode": "2007A&A...474..653V"
+      },
+      "parallaxSource": {
+        "label": "SIMBAD: Hipparcos, new reduction (van Leeuwen 2007)",
+        "url": "https://ui.adsabs.harvard.edu/abs/2007A%26A...474..653V",
+        "bibcode": "2007A&A...474..653V",
+        "recordId": "* alf Ori",
+        "retrieved": "2026-10-08"
+      },
+      "spectralTypeSource": {
+        "label": "SIMBAD: 1989ApJS...71..245K",
+        "url": "https://ui.adsabs.harvard.edu/abs/1989ApJS...71..245K",
+        "recordId": "* alf Ori",
+        "retrieved": "2026-10-08",
+        "bibcode": "1989ApJS...71..245K"
+      },
+      "magnitudeSource": {
+        "label": "SIMBAD: 1966CoLPL...4...99J",
+        "url": "https://ui.adsabs.harvard.edu/abs/1966CoLPL...4...99J",
+        "recordId": "* alf Ori",
+        "retrieved": "2026-10-08",
+        "bibcode": "1966CoLPL...4...99J"
+      },
+      "colorHex": "#ffb27a",
+      "parallaxErrorMas": 0.83
+    },
+    {
+      "id": "antares",
+      "name": "Antares",
+      "designation": "Alpha Scorpii",
+      "catalogIds": {
+        "hip": "HIP 80763",
+        "simbad": "alf Sco"
+      },
+      "spectralType": "M1.5Iab+B2Vn",
+      "raDegrees": 247.3519154198264,
+      "decDegrees": -26.432002611950832,
+      "epoch": 2000,
+      "pmRaMasYr": -12.11,
+      "pmDecMasYr": -23.3,
+      "parallaxMas": 5.89,
+      "magnitudeV": 0.91,
+      "positionSource": {
+        "label": "SIMBAD",
+        "url": "https://simbad.cds.unistra.fr/simbad/sim-id?Ident=*%20alf%20Sco",
+        "recordId": "* alf Sco",
+        "retrieved": "2026-10-08",
+        "bibcode": "2007A&A...474..653V"
+      },
+      "parallaxSource": {
+        "label": "SIMBAD: Hipparcos, new reduction (van Leeuwen 2007)",
+        "url": "https://ui.adsabs.harvard.edu/abs/2007A%26A...474..653V",
+        "bibcode": "2007A&A...474..653V",
+        "recordId": "* alf Sco",
+        "retrieved": "2026-10-08"
+      },
+      "spectralTypeSource": {
+        "label": "SIMBAD: 2021A&A...646A..11M",
+        "url": "https://ui.adsabs.harvard.edu/abs/2021A%26A...646A..11M",
+        "recordId": "* alf Sco",
+        "retrieved": "2026-10-08",
+        "bibcode": "2021A&A...646A..11M"
+      },
+      "magnitudeSource": {
+        "label": "SIMBAD: 2002yCat.2237....0D",
+        "url": "https://ui.adsabs.harvard.edu/abs/2002yCat.2237....0D",
+        "recordId": "* alf Sco",
+        "retrieved": "2026-10-08",
+        "bibcode": "2002yCat.2237....0D"
+      },
+      "colorHex": "#ffb27a",
+      "parallaxErrorMas": 1
+    }
+  ]
+}
