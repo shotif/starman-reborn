@@ -124,7 +124,7 @@ async function layoutAudit(page: Page, touch: boolean): Promise<Omit<AuditResult
       }
     }
     const overlaps: string[] = [];
-    const panels = [...document.querySelectorAll('.hud-status, .hud-wallet, .hud-buttons, .hud-objective, .hud-race, .hud-battle, .hud-target, .encounter-banner, .tcluster, .assist-chip, .wing-chip, .throttle, .toast')].filter(visible);
+    const panels = [...document.querySelectorAll('.hud-status, .hud-wallet, .hud-buttons, .hud-objective, .hud-race, .hud-battle, .hud-target, .hail-banner, .encounter-banner, .tbtn, .assist-chip, .wing-chip, .avoid-chip, .throttle-track, .zone-hint, .toast')].filter(visible);
     for (let i = 0; i < panels.length; i++) {
       for (let j = i + 1; j < panels.length; j++) {
         const a = panels[i]!.getBoundingClientRect();

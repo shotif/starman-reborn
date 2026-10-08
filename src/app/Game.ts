@@ -396,6 +396,7 @@ export class Game {
     this.touch.invertY = next.invertY;
     this.gamepad.invertY = next.invertY;
     this.touch.setSwapSides(next.swapTouchSides);
+    this.hud.setSwapSides(next.swapTouchSides);
     this.touch.setAimAssist(next.aimAssist);
     this.flight?.updateSettings(next);
     this.map?.setReducedMotion(next.reducedMotion);

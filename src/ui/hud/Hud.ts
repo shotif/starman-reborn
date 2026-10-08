@@ -197,6 +197,8 @@ export class Hud {
   /** A portrait phone, and a landscape one: the band along the top is laid out to fit (`setScheme`). */
   private readonly narrowPortrait: MediaQueryList | null;
   private readonly landscapePhone: MediaQueryList | null;
+  /** The left-handed touch layout: the throttle and steering at the right (`setSwapSides`). */
+  private swapped = false;
 
   constructor(parent: HTMLElement, callbacks: HudCallbacks) {
     this.callbacks = callbacks;
@@ -433,8 +435,9 @@ export class Hud {
       // room for a centre column beside the gauges: the objective goes under the menus, the wallet
       // under the gauges, and the target strip and the rest run the full width below them. A
       // landscape phone's band is short: a hail (answered with the action button) goes down the
-      // right-hand edge under the wallet instead. (A raider's warning is the dock's Avoid combat
-      // chip on touch: its banner stays hidden, hud.css.)
+      // right-hand edge under the wallet instead, or the left-hand one under the gauges for a
+      // left-handed pilot, whose throttle is at the right. (A raider's warning is the dock's Avoid
+      // combat chip on touch: its banner stays hidden, hud.css.)
       const strips = [this.objectivePanel, this.racePanel, this.battlePanel];
       const lines = [this.autopilotText, this.miningText, this.flareText, this.warningText, this.encounterBanner];
       if (this.narrowPortrait?.matches) {
@@ -442,9 +445,10 @@ export class Hud {
         this.centerColumn.replaceChildren(this.targetPanel, ...lines, this.hailBanner, this.toastSlot);
         this.right.replaceChildren(this.buttons, ...strips);
       } else if (this.landscapePhone?.matches) {
-        this.left.replaceChildren(this.status);
+        // The hail goes down the edge the throttle is not on.
+        this.left.replaceChildren(this.status, ...(this.swapped ? [this.hailBanner] : []));
         this.centerColumn.replaceChildren(...strips, this.targetPanel, ...lines, this.toastSlot);
-        this.right.replaceChildren(this.buttons, this.wallet, this.hailBanner);
+        this.right.replaceChildren(this.buttons, this.wallet, ...(this.swapped ? [] : [this.hailBanner]));
       } else {
         this.left.replaceChildren(this.status);
         this.centerColumn.replaceChildren(...strips, this.targetPanel, ...lines, this.hailBanner, this.toastSlot);
@@ -454,6 +458,13 @@ export class Hud {
       this.bottomCenter.replaceChildren(this.contextHint);
       this.bottomRight.replaceChildren();
     }
+  }
+
+  /** The left-handed touch layout (the throttle at the right-hand edge): a hail keeps to the other edge. */
+  setSwapSides(swap: boolean): void {
+    if (swap === this.swapped) return;
+    this.swapped = swap;
+    this.setScheme(this.scheme, this.padStyle);
   }
 
   /** The key or pad button named in the context action's hint; none on touch, which has its own button. */

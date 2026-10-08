@@ -1023,7 +1023,7 @@
 
 /* The objective keeps to two lines on touch (a tap folds it to one), and the wallet's line about
    the nearest dock to one. */
-.hud.touch-mode .objective-text {
+.hud.touch-mode .hud-objective:not(.collapsed) .objective-text {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -1111,7 +1111,7 @@
 }
 
 /* Landscape phones (Hud.setScheme): a hail goes down the right-hand edge under the wallet, as wide
-   as the menus. */
+   as the menus (or, left-handed, down the left-hand one under the gauges). */
 @media (orientation: landscape) and (max-height: 500px) {
   .hud.touch-mode .hud-right > .hail-banner {
     contain: inline-size;
@@ -1119,7 +1119,8 @@
     margin-right: calc(var(--safe-right) + 8px);
   }
 
-  .hud.touch-mode .hud-right .hail-text {
+  .hud.touch-mode .hud-right .hail-text,
+  .hud.touch-mode .hud-left .hail-text {
     -webkit-line-clamp: 4;
   }
 }
@@ -1180,7 +1181,7 @@
     margin-right: calc(var(--safe-right) + 8px);
   }
 
-  .hud.touch-mode .hud-right .objective-text {
+  .hud.touch-mode .hud-right .hud-objective:not(.collapsed) .objective-text {
     -webkit-line-clamp: 3;
   }
 

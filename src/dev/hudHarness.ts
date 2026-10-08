@@ -41,6 +41,7 @@ hud.setScheme('touch');
 hud.setVisible(true);
 touch.setVisible(true);
 touch.setSwapSides(params.get('swap') === '1');
+hud.setSwapSides(params.get('swap') === '1');
 touch.setAimAssist('low');
 touch.setCounts(4, 1, 2);
 touch.setThrottle(0.35);
