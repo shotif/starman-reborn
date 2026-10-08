@@ -1195,6 +1195,10 @@
     display: none;
   }
 
+  .hud.touch-mode .hud-left {
+    container: hud-gauges / inline-size;
+  }
+
   .hud.touch-mode .hud-left > .hud-wallet {
     display: flex;
     flex-wrap: wrap;
@@ -1229,9 +1233,11 @@
   }
 }
 
-/* A very narrow portrait phone (a 411-wide phone at 130% page zoom): in flight the wallet keeps to
-   one row, the hold; the credits are on every docked screen and the star map. */
-@media (orientation: portrait) and (max-width: 340px) {
+/* A portrait phone's gauges' column too narrow for the wallet's one line (a 411-wide phone at 130%
+   page zoom or with 130% text): in flight the wallet keeps to the hold, so the band along the top
+   stays short; the credits are on every docked screen and the star map. In ems, so it follows the
+   text size. */
+@container hud-gauges (max-width: 13em) {
   .hud.touch-mode .hud-left > .hud-wallet .row:first-child {
     display: none;
   }

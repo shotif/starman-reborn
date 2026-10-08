@@ -5355,8 +5355,8 @@ the bottom, under the thumbs.
   strip), then the target as a compact strip (its name and badge, then on one line its distance,
   what it is and a ship's shield and hull), then the warning lines and the radio. On a phone held
   upright there is no room for a column between: the objective goes under the menus, the wallet on
-  one line under the gauges (the hold alone on the narrowest), and the target strip and the rest run
-  the full width below. The objective keeps to two lines (three beside the gauges), and a race's or a
+  one line under the gauges (the hold alone when that column is too narrow for both, as on a phone at
+  130% zoom or with 130% text), and the target strip and the rest run the full width below. The objective keeps to two lines (three beside the gauges), and a race's or a
   battle's strip there gives the race and the sides, not their names.
 - **Messages**: on a phone a hail's words keep to two lines (four down the edge), and the radio shows
   its two newest messages, under the target strip (one alone would hide a message the moment the

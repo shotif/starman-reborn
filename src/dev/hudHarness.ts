@@ -7,6 +7,7 @@
  *   scene=flight|encounter|fight|hail|moon|race   what the HUD shows       swap=1      left-handed layout
  *   box=1                               outline the clear centre       wing=1      a wing flies along
  *   textScale=1.3                       --text-scale                   count=3     a race's countdown
+ *   credits=1234567                     the wallet's credits
  *
  * `window.__layout()` lists the boxes of everything that stays on screen, and what reaches into the
  * clear centre.
@@ -82,7 +83,7 @@ function model(): { model: HudModel; status: HudStatus } {
   m.reticle = { x: W() / 2, y: H() / 2, inArc: true, assisted: false };
   m.nearestDock = { name: 'Halcyon Ring', distance: 196 };
   const status: HudStatus = {
-    credits: 17_803,
+    credits: Number(params.get('credits') ?? 17_803),
     cargoUsed: 6,
     cargoCapacity: 20,
     objective: 'Dock at Deimos Depot (Mars) for departure clearance',
