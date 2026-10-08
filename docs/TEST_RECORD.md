@@ -1295,6 +1295,16 @@ again in a quiet moment, as the outpost raid's and Pyre's rescue's shots already
 still fails if no quiet moment comes. With the spacecraft (7 October 2026), the shot of Pyre's black
 hole at 1440×900 likewise caught a radio line as Pyre's lane opened, and is taken again the same way.
 
+With Earth's Moon and the clear centre (8 October 2026), three things the runs caught were mended.
+On a phone, showing only the radio's newest message hid "readings recorded" the moment the next
+message came, before the supernova test (or a player) could read it: the radio shows its two newest
+again. At 130% text the wallet's credits and hold wrapped to two lines under the gauges and pushed the
+target strip a little into the clear centre on three screenshots: the wallet now keeps to the hold
+when that column is too narrow for both. And the racing test closed the first flight's Flight school
+sheet after a blind five seconds; once, Sol's scene took longer than that to build, the sheet opened
+after, held the game, and the ship never undocked. It (and the border battles' test, which waited the
+same way) now waits to be in flight and closes the sheet then, as the other tests do.
+
 ## Performance notes (not representative)
 
 SwiftShader renders on the CPU, so frame rates here say nothing about real devices. Observed:
