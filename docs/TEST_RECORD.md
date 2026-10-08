@@ -11,12 +11,12 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | --- | --- | --- |
 | TypeScript typecheck (app + scripts/tests) | `npm run typecheck` | Pass |
 | Astronomy data validation | `npm run data:validate` | Pass (22 warnings: the contested planets this edition keeps) |
-| Unit tests | `npm test` | Pass: 1092 tests in 72 files |
+| Unit tests | `npm test` | Pass: 1102 tests in 73 files |
 | Production build | `npm run build` | Pass |
-| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 810 KB of 850 (gzipped) |
-| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 63 passed (5 touch-only tests skipped) |
-| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 63 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
-| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 810 screenshots, no audit findings |
+| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 827 KB of 850 (gzipped) |
+| Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 64 passed (5 touch-only tests skipped) |
+| Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 64 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
+| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 828 screenshots, no audit findings |
 
 ### Unit tests (Vitest)
 
@@ -837,6 +837,26 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   why. A first scan is written in the logbook once, said by number and name, and a save with a
   damaged list of them is caught.
 
+- `spacecraft.test.ts`: **spacecraft out in Sol**. Horizons' eleven craft by name, Voyager 1's
+  record and NSSDCA page checked as fetched (and that NSSDCA has none for Europa Clipper or JUICE). The
+  craft pass `validateCraftRules` (every scene on 220 dates over six years and every six hours along
+  each flyby's path among them), and broken ones are caught (an arc 2° off, a quotation not in its
+  source, a date not in its quotation, a figure not in its quotation, a plan told as done, a size of
+  nothing, a line with a number); dates are read the ways the sources write them. Every craft stands
+  within 0.1° and 0.2% of every one of Horizons' places from the Sun, four days apart over six years,
+  and on its paths near Earth; Webb is placed by its path alone. The five leaving the Sun are on open
+  paths and the rest bound; Voyager 1 is 171 to 173 AU out at 16.9 km/s, its light first takes a full
+  day to reach Earth in mid-November 2026, and a year on it is 3.6 AU farther out; Parker's present
+  orbit takes 88 days and comes 6.8 to 7.0 million km from the Sun's centre; Webb stays 1 to 2 million
+  km from Earth throughout; Lucy's 2024 flyby comes 330 to 380 km above Earth and JUICE's of September
+  2026 within 5 km of the 15,018.3 km Horizons' record gives; Psyche is nowhere after its trajectory
+  ends. In flight all eleven are drawn on the snapshot's day, Voyager 1 far beyond Neptune, Webb by
+  Earth, and Psyche not after its span. Voyager 1's card gives its distance, agency, launch, light
+  time, open path and its dated flybys with their sources; JUICE's its planned arrival at Jupiter
+  under the snapshot's date; Europa Clipper's its pass of Earth on 3 December 2026; Parker's its
+  88-day orbit; Webb's its distance in millions of km and light time in seconds; and Psyche's, after
+  its span, that Horizons has no place for it. The News tells of JUICE's pass just gone and Europa
+  Clipper's to come. A craft's first scan goes in the logbook once, and the bests count it.
 - `moons.test.ts`: **moons of the giant planets**. Horizons' five moons, Io's radius, density and
   albedo and Titan's density checked against the raw records as fetched. The moons pass
   `validateMoonRules` (every scene on 147 dates over four years among them), and broken ones are
@@ -1104,6 +1124,12 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   hazardous does not mean it will hit; its first scan in the logbook; Sol's card on the star map
   listing Apophis and Vesta; the positions paid for back at the institute; and minutes before the
   pass, out from Earth Port, Apophis drawn by Earth, nearer than the Moon.
+- `spacecraft.spec.ts`: **spacecraft out in Sol**: a fortnight before Europa Clipper passes Earth,
+  Earth Port's News telling of the pass (9,600 km from its centre, in 15 days); out in Sol all eleven
+  craft drawn, Webb by Earth and Voyager 1 far beyond Neptune; Voyager 1 scanned from near it, its card
+  giving its distance (172 AU), agency, launch, its open path, its light taking 24 hours to reach
+  Earth, and its flyby of Jupiter, and its first scan in the logbook; Sol's card on the star map
+  listing Voyager 1 and Europa Clipper's pass.
 - `moons.spec.ts`: **moons of the giant planets**: out from Earth Port, Jupiter's four moons drawn
   outside Jupiter and Titan well outside Saturn; Io scanned from near it, its card giving its period,
   distance, size and density and that it stands in its real direction, and one more body in the
@@ -1186,6 +1212,7 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   star map's card with Procyon's orbit, Encke with its coma and tails seen from beside them,
   Encke's science card, the journal's Logbook and the logbook itself, the News at Earth Port telling
   of Apophis's pass, Apophis passing Earth and its science card, Io by Jupiter and its science card,
+  the James Webb Space Telescope out past the Moon and its science card,
   at 360×640, 640×360, 390×844, 844×390, 768×1024, 1024×768 and 1440×900, plus two
   large-text phones: 411×741 with 130% text scaling, and 316×570 (a 411-wide phone at 130% page
   zoom). Saved in `docs/screenshots/` once any smooth scrolling has come to rest. Each is audited
@@ -1218,7 +1245,8 @@ evacuation's radio line twice running, arriving between the wait for a quiet HUD
 once, with other runs on the machine, the screenshot journey's race lost sight of its first gate in
 time; on a quiet machine it passed). The evacuation keeps the radio busy, so that shot is now taken
 again in a quiet moment, as the outpost raid's and Pyre's rescue's shots already were; the audit
-still fails if no quiet moment comes.
+still fails if no quiet moment comes. With the spacecraft (7 October 2026), the shot of Pyre's black
+hole at 1440×900 likewise caught a radio line as Pyre's lane opened, and is taken again the same way.
 
 ## Performance notes (not representative)
 

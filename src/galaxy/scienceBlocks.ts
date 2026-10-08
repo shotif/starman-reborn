@@ -568,7 +568,7 @@ function craftLines(f: CraftFacts, jd: number, detail: Detail): HTMLElement[] {
     );
   const c = f.craft;
   const lines: (HTMLElement | null)[] = [
-    detail === 'full' ? h('p', null, f.summary) : null,
+    detail === 'full' ? h('p', null, f.summary, '.') : null,
     h('dl', { class: 'kv' }, shown.flatMap(([k, v]) => [h('dt', null, k), h('dd', null, v)])),
     detail === 'full' && f.light ? h('p', { 'data-testid': 'craft-light' }, f.light, '.') : null,
     detail === 'full' && f.done.length ? events(f.done, 'craft-done') : null,

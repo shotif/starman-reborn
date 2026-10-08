@@ -405,9 +405,14 @@ for (const size of SIZES) {
       await waitUntil(page, 'at Pyre', async () => (await api(page, 'mode')) === 'flight');
       if (await page.getByTestId('sheet-close').isVisible().catch(() => false)) await press(page, 'sheet-close');
       await api(page, 'selectTarget', `hole:${pyre.holeId}`);
-      await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
-      expect(await api<boolean>(page, 'face', { id: `hole:${pyre.holeId}`, below: size.height < 500 ? 3 : 6 })).toBe(true);
-      await shot(page, `${size.name}-12d-black-hole`, size.touch, results);
+      // The radio is busy as Pyre's lane opens: the shot is taken again in a quiet moment if it speaks over it.
+      const holeShot = `${size.name}-12d-black-hole`;
+      for (let i = 0; i < 5; i++) {
+        await expect(page.locator('.toast')).toHaveCount(0, { timeout: 20_000 });
+        expect(await api<boolean>(page, 'face', { id: `hole:${pyre.holeId}`, below: size.height < 500 ? 3 : 6 })).toBe(true);
+        await shot(page, holeShot, size.touch, results);
+        if (!results[holeShot]!.overlaps.some((o) => o.includes('toast'))) break;
+      }
       await press(page, 'hud-map');
       await press(page, 'map-search');
       await page.getByTestId('map-search-input').fill('pyre');
