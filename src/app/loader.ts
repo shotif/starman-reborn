@@ -14,7 +14,8 @@ export interface Handover {
 
 /**
  * The first thing on screen: the title, with a bar where Play will be, while the game itself
- * (three.js, the world, the sky and the game code) arrives behind it. True once the game is up.
+ * (three.js, the world, the sky and the game code) arrives behind it, and then Sol's real sky
+ * (docs/PROCGEN.md §50). True once the game is up.
  */
 export async function startGame(): Promise<boolean> {
   const ui = document.getElementById('ui')!;
@@ -51,6 +52,10 @@ export async function startGame(): Promise<boolean> {
   try {
     await download;
     if (files.length > 0) shell.starting();
+    // Sol's real sky (docs/PROCGEN.md §50) comes once the game's own files are in, and is put in place
+    // before the game starts, so everything in it finds the comets, asteroids, moons and spacecraft.
+    const [{ SKY }, { installSky }] = await Promise.all([import('../data/skyData.ts'), import('../data/sky.ts')]);
+    installSky(SKY);
     ({ boot } = await import('./boot.ts'));
     shell.starting();
   } catch (err) {

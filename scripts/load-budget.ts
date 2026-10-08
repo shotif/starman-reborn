@@ -84,6 +84,23 @@ export function overBudget(report: LoadReport, budget: typeof LOAD_BUDGET = LOAD
   return problems;
 }
 
+/**
+ * Sol's real sky (docs/PROCGEN.md §50) is fetched on demand, behind the loading title: its data must
+ * not be in the first load. What marks a file as holding it: the processing script each part of it
+ * names as its maker.
+ */
+export const SKY_MARKS = ['scripts/comets-process.ts', 'scripts/asteroids-process.ts', 'scripts/moons-process.ts', 'scripts/spacecraft-process.ts'] as const;
+
+/** What is wrong with where Sol's sky is, in words: a first-load file holding it, or no file on demand holding all of it. */
+export function skyMisplaced(report: LoadReport, read: (file: string) => string): string[] {
+  const problems: string[] = [];
+  const holds = (file: string, mark: string) => read(file).includes(mark);
+  for (const f of [...report.firstScreen, ...report.game])
+    for (const mark of SKY_MARKS) if (holds(f.file, mark)) problems.push(`${f.file}, in the first load, holds Sol's sky (made by ${mark}).`);
+  if (!report.onDemand.some((f) => SKY_MARKS.every((mark) => holds(f.file, mark)))) problems.push("No file loaded on demand holds the whole of Sol's sky.");
+  return problems;
+}
+
 function print(report: LoadReport): void {
   const section = (title: string, files: readonly LoadFile[], note = '') => {
     console.log(`${title}: ${kb(total(files)).toFixed(1)} KB gzipped${note}`);
@@ -101,8 +118,11 @@ function print(report: LoadReport): void {
 if (process.argv[1] && resolve(process.argv[1]) === resolve(import.meta.filename)) {
   const report = measureBuild(process.argv[2] ?? 'dist');
   print(report);
+  const dist = process.argv[2] ?? 'dist';
   const problems = overBudget(report);
   for (const p of problems) console.log(`  OVER BUDGET: ${p}`);
-  if (problems.length) process.exit(1);
-  console.log('\nWithin the first-load budget.');
+  const sky = skyMisplaced(report, (f) => readFileSync(resolve(dist, f), 'utf8'));
+  for (const p of sky) console.log(`  SKY: ${p}`);
+  if (problems.length || sky.length) process.exit(1);
+  console.log("\nWithin the first-load budget, with Sol's sky loaded on demand.");
 }

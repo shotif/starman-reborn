@@ -1,4 +1,3 @@
-import cometsFile from './generated/comets.json' with { type: 'json' };
 import { headingOf, twoBodyAt, type OrbitElements, type OrbitPlace } from './kepler.ts';
 import { hasSolarElements, heliocentric } from './solar.ts';
 import type { SourceRef } from './types.ts';
@@ -41,17 +40,25 @@ export interface CometsDataset {
   comets: readonly Comet[];
 }
 
-export const COMET_DATA = cometsFile as unknown as CometsDataset;
+/** The comets: none until Sol's sky arrives (data/sky.ts, docs/PROCGEN.md §50), then JPL's. */
+export let COMET_DATA: CometsDataset = { generatedBy: '', retrieved: '', epochJd: 0, sources: { sbdb: { label: '', url: '' }, horizons: { label: '', url: '' } }, description: '', comets: [] };
 
-const BY_ID = new Map(COMET_DATA.comets.map((c) => [c.id, c]));
+let BY_ID = new Map<string, Comet>();
+
+/** The day the elements were taken (Julian date). */
+export let COMET_EPOCH_JD = 0;
+
+/** Puts the comets in place when Sol's sky arrives. */
+export function installComets(data: CometsDataset): void {
+  COMET_DATA = data;
+  COMET_EPOCH_JD = data.epochJd;
+  BY_ID = new Map(data.comets.map((c) => [c.id, c]));
+}
 
 /** A comet by the game's id. */
 export function cometOf(id: string): Comet | undefined {
   return BY_ID.get(id);
 }
-
-/** The day the elements were taken (Julian date). */
-export const COMET_EPOCH_JD = COMET_DATA.epochJd;
 
 export type CometPlace = OrbitPlace;
 

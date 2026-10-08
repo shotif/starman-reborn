@@ -1,4 +1,3 @@
-import moonsFile from './generated/moons.json' with { type: 'json' };
 import type { SourceRef } from './types.ts';
 
 /**
@@ -47,9 +46,17 @@ export interface MoonsDataset {
   moons: readonly Moon[];
 }
 
-export const MOON_DATA = moonsFile as unknown as MoonsDataset;
+/** The moons: none until Sol's sky arrives (data/sky.ts, docs/PROCGEN.md §50), then JPL Horizons'. */
+export let MOON_DATA: MoonsDataset = { generatedBy: '', retrieved: '', epochJd: 0, source: { label: '', url: '' }, description: '', moons: [] };
 
-const BY_ID = new Map(MOON_DATA.moons.map((m) => [m.id, m]));
+let BY_ID = new Map<string, Moon>();
+
+/** Puts the moons in place when Sol's sky arrives. */
+export function installMoons(data: MoonsDataset): void {
+  MOON_DATA = data;
+  MOON_EPOCH_JD = data.epochJd;
+  BY_ID = new Map(data.moons.map((m) => [m.id, m]));
+}
 
 /** A moon of the giant planets by the game's id. */
 export function moonOf(id: string): Moon | undefined {
@@ -61,7 +68,7 @@ export function moonsOf(planet: string): Moon[] {
   return MOON_DATA.moons.filter((m) => m.planet === planet).sort((a, b) => a.motion.aKm - b.motion.aKm);
 }
 
-export const MOON_EPOCH_JD = MOON_DATA.epochJd;
+export let MOON_EPOCH_JD = 0;
 
 /** Earth's Moon's mean radius (km), from NASA's Moon fact sheet: the giant planets' moons are drawn on the scale it is drawn. */
 export const MOON_RADIUS_KM = 1_737.4;

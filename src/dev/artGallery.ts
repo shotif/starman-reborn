@@ -5,6 +5,8 @@
  *   dist=<camera distance> az=<deg> el=<deg> t=<seconds to pre-simulate> freeze=1 (stop the clock)
  *   plus item parameters (throttle, boost, cruise, shield, active, progress, intensity, markers).
  */
+// Sol's real sky, installed at once (docs/PROCGEN.md §50): the game fetches it behind the loading title.
+import '../data/skyNow.ts';
 import { SPACECRAFT, type CraftLook } from '../content/stellar/spacecraft.ts';
 import { createSpacecraft } from '../world/art/spacecraft.ts';
 import * as THREE from 'three';

@@ -1,4 +1,3 @@
-import asteroidsFile from './generated/asteroids.json' with { type: 'json' };
 import { headingOf, twoBodyAt, type OrbitElements, type OrbitPlace } from './kepler.ts';
 import { hasSolarElements, heliocentric } from './solar.ts';
 import type { SourceRef } from './types.ts';
@@ -67,9 +66,17 @@ export interface AsteroidsDataset {
   asteroids: readonly Asteroid[];
 }
 
-export const ASTEROID_DATA = asteroidsFile as unknown as AsteroidsDataset;
+/** The asteroids: none until Sol's sky arrives (data/sky.ts, docs/PROCGEN.md §50), then JPL's. */
+export let ASTEROID_DATA: AsteroidsDataset = { generatedBy: '', retrieved: '', epochJd: 0, sources: { sbdb: { label: '', url: '' }, horizons: { label: '', url: '' }, cad: { label: '', url: '' } }, description: '', asteroids: [] };
 
-const BY_ID = new Map(ASTEROID_DATA.asteroids.map((a) => [a.id, a]));
+let BY_ID = new Map<string, Asteroid>();
+
+/** Puts the asteroids in place when Sol's sky arrives. */
+export function installAsteroids(data: AsteroidsDataset): void {
+  ASTEROID_DATA = data;
+  ASTEROID_EPOCH_JD = data.epochJd;
+  BY_ID = new Map(data.asteroids.map((a) => [a.id, a]));
+}
 
 /** An asteroid by the game's id. */
 export function asteroidOf(id: string): Asteroid | undefined {
@@ -77,7 +84,7 @@ export function asteroidOf(id: string): Asteroid | undefined {
 }
 
 /** The day the elements were taken (Julian date). */
-export const ASTEROID_EPOCH_JD = ASTEROID_DATA.epochJd;
+export let ASTEROID_EPOCH_JD = 0;
 
 /** The elements that hold on a date: the snapshot's, or those after the latest pass that changed the orbit (§47.2). */
 export function elementsOn(asteroid: Asteroid, jd: number): OrbitElements {

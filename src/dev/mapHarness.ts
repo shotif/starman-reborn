@@ -10,6 +10,8 @@
  *   textScale=1.5         --text-scale              reduced=1              reduced motion
  *   encyclopedia=1        open the standalone encyclopedia on load (map closed)
  */
+// Sol's real sky, installed at once (docs/PROCGEN.md §50): the game fetches it behind the loading title.
+import '../data/skyNow.ts';
 import '../ui/styles/base.css';
 import * as THREE from 'three';
 import { detectWebGL2 } from '../app/webgl.ts';

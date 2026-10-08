@@ -9,7 +9,7 @@ After the scripted opening (10–20 minutes), the neighbourhood is an open sandb
 systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
 of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
 packs in lawless space; 39 ships and 146 pieces of equipment; and generated contracts on every job
-board. Increments 1–48 (under [Done so far](#done-so-far)) added world events and news, contracts
+board. Increments 1–49 (under [Done so far](#done-so-far)) added world events and news, contracts
 of every kind, the law and the outlaw path, goals, ranks with each faction that open doors, races round real planets and moons against racers who really fly, a wing that takes orders and grows with every fight, border battles to see and join, seven story arcs, combat depth, people in the
 bars and a trade computer, a world that answers, gluts that ship their surplus out and relief to
 escort through raided lanes, a fleet of your own whose captains fly the lanes, a crew aboard your own ship,
@@ -28,9 +28,26 @@ What it lacks now:
 
 ## Proposed next increments
 
-The owner's three choices of 7 October 2026 (real asteroids and Apophis, the moons of the giant
-planets, spacecraft out in Sol) are all live; the owner also raised the first-load budget from
-800 KB to 850 KB then. The next increments are to be proposed to the owner.
+Chosen by the owner on 8 October 2026, once the spacecraft were live: Earth's Moon for real, then
+Pluto and the dwarf planets, then more moons. The first load stood at 827 KB of its 850 KB budget;
+rather than raise it again, the owner chose to load Sol's real sky (its comets, asteroids, moons and
+spacecraft) on demand first, which brought it to 806 KB (increment 49). Each of the three puts its
+data in that part too.
+
+### Earth's Moon for real ⏳
+
+The Moon where JPL Horizons has it round Earth on the game's date, rather than at a fixed place by
+Earth, with its phase; and the News tells of the real eclipses of the coming years.
+
+### Pluto and the dwarf planets ⏳
+
+Pluto with Charon, and Eris, Haumea and Makemake, on their real orbits from JPL, each scannable and
+in the codex; New Horizons' card ties in with Pluto's.
+
+### More moons ⏳
+
+Saturn's Enceladus, Mimas, Rhea and others, Neptune's Triton, Uranus's large moons, and Mars's
+Phobos and Deimos, reckoned from JPL Horizons as Jupiter's four are.
 
 ### How an increment ships
 
@@ -40,6 +57,16 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 49. Sol's sky loaded on demand ✅
+
+The game's first load is 21 KB smaller (827 KB to 806 KB, of the 850 KB budget): Sol's real comets,
+named asteroids, moons and spacecraft, with their missions' facts, are now fetched behind the title
+once the rest of the game is in, and put in place before the game starts, so nothing changes in
+play. The build fails if any of them slips back into the first load. The cards and the code that
+places them still load up front, so the saving is less than the about 50 KB first reckoned; the
+next parts of the real sky put their data in the part loaded on demand
+([PROCGEN.md §50](PROCGEN.md#50-sols-sky-loaded-on-demand)).
 
 ### 48. Spacecraft out in Sol ✅
 

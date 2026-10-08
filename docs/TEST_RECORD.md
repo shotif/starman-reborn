@@ -11,9 +11,9 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | --- | --- | --- |
 | TypeScript typecheck (app + scripts/tests) | `npm run typecheck` | Pass |
 | Astronomy data validation | `npm run data:validate` | Pass (22 warnings: the contested planets this edition keeps) |
-| Unit tests | `npm test` | Pass: 1102 tests in 73 files |
+| Unit tests | `npm test` | Pass: 1105 tests in 74 files |
 | Production build | `npm run build` | Pass |
-| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 827 KB of 850 (gzipped) |
+| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 806 KB of 850 (gzipped), with Sol's sky (22 KB) loaded on demand |
 | Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 64 passed (5 touch-only tests skipped) |
 | Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 64 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
 | Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 828 screenshots, no audit findings |
@@ -229,7 +229,12 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   the boot chunk, its imports and its CSS, largest first, and leaves out what the page already
   loaded and what loads on demand; the offline list has every script, style and font and no source
   maps; the first-load budget passes a build within it and catches a grown first screen, a first
-  load over budget and a page that lists no game files.
+  load over budget and a page that lists no game files; and it keeps Sol's real sky out of the first
+  load, all of it in a file loaded on demand (made-up builds with the sky in the first load, with no
+  sky, and with only part of it on demand are each caught).
+- `sky.test.ts`: **Sol's sky loaded on demand**: put in place before the tests, every part of it
+  (the comets, asteroids, moons, spacecraft and the missions' facts) as its file has it; empty until
+  put in place, and put in place once (a second time changes nothing).
 - `rooms.test.ts`: station interiors: structure per station, camera moves and cuts, reduced
   motion, omitted rooms, determinism, draw-call and triangle budgets per quality, lights per room,
   hotspots on desktop and phones, portrait framing and disposal; generated interiors for every

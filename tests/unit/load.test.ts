@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { bootFiles, offlineFiles, systemCount, type BundleLike } from '../../scripts/bootFiles.ts';
-import { LOAD_BUDGET, overBudget, total, type LoadReport } from '../../scripts/load-budget.ts';
+import { LOAD_BUDGET, overBudget, SKY_MARKS, skyMisplaced, total, type LoadReport } from '../../scripts/load-budget.ts';
 import { downloadAll, parseBootFiles, type BootFile } from '../../src/app/download.ts';
 import { SYSTEMS } from '../../src/data/systems.ts';
 
@@ -181,5 +181,19 @@ describe('the first-load budget (docs/PROCGEN.md §4.6)', () => {
   it('catches a first load over budget, and a page that lists no game files', () => {
     expect(overBudget(report(15, LOAD_BUDGET.firstLoadKB))).toEqual([expect.stringMatching(new RegExp(`first load .* over its ${LOAD_BUDGET.firstLoadKB} KB budget`))]);
     expect(overBudget(report(15, 0))).toEqual([expect.stringMatching(/lists no game files/)]);
+  });
+
+  it('keeps Sol’s sky out of the first load, all of it in a file loaded on demand (docs/PROCGEN.md §50)', () => {
+    const sky = SKY_MARKS.join(' ');
+    const built = (files: Record<string, string>) => (f: string) => files[f] ?? '';
+    const r = report(15, 594);
+    const skyFile = { file: 'assets/skyData.js', raw: 60_000, gzip: 21_000 };
+    const withSky = { ...r, onDemand: [...r.onDemand, skyFile] };
+    expect(skyMisplaced(withSky, built({ 'assets/skyData.js': sky }))).toEqual([]);
+    // Pulled into the game's own files by a static import, it is caught.
+    expect(skyMisplaced(withSky, built({ 'assets/skyData.js': sky, 'assets/boot.js': SKY_MARKS[0] }))).toEqual([expect.stringMatching(/boot\.js, in the first load, holds Sol's sky/)]);
+    // And missing, or only part of it on demand.
+    expect(skyMisplaced(r, built({}))).toEqual([expect.stringMatching(/whole of Sol's sky/)]);
+    expect(skyMisplaced(withSky, built({ 'assets/skyData.js': SKY_MARKS[1] }))).toEqual([expect.stringMatching(/whole of Sol's sky/)]);
   });
 });

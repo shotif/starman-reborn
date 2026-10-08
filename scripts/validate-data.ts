@@ -2,6 +2,8 @@
  * Validates the bundled astronomy + location dataset.
  * Usage: node scripts/validate-data.ts   (exit code 1 on any error)
  */
+// Sol's real sky first (docs/PROCGEN.md §50): the game fetches it on demand, the script has it on disk.
+import '../src/data/skyNow.ts';
 import { ASTROMETRY, EXOPLANETS, FAR_STARS, SYSTEMS } from '../src/data/systems.ts';
 import { reachableSystems, validateAsteroids, validateComets, validateMoons, validateSpacecraft, validateDataset, validateFarStars, validateOrbits } from '../src/data/validate.ts';
 import { ORBITS } from '../src/data/orbits.ts';

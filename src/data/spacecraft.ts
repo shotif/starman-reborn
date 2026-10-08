@@ -1,4 +1,3 @@
-import craftFile from './generated/spacecraft.json' with { type: 'json' };
 import { AU_KM } from './asteroids.ts';
 import { twoBodyAt, type OrbitElements, type OrbitPlace } from './kepler.ts';
 import { hasSolarElements, heliocentric } from './solar.ts';
@@ -51,10 +50,18 @@ export interface SpacecraftDataset {
   spacecraft: readonly Spacecraft[];
 }
 
-export const CRAFT_DATA = craftFile as unknown as SpacecraftDataset;
-export const CRAFT_EPOCH_JD = CRAFT_DATA.epochJd;
+/** The spacecraft: none until Sol's sky arrives (data/sky.ts, docs/PROCGEN.md §50), then JPL Horizons'. */
+export let CRAFT_DATA: SpacecraftDataset = { generatedBy: '', retrieved: '', epochJd: 0, sources: { horizons: { label: '', url: '' }, nssdca: { label: '', url: '' } }, description: '', spacecraft: [] };
+export let CRAFT_EPOCH_JD = 0;
 
-const BY_ID = new Map(CRAFT_DATA.spacecraft.map((c) => [c.id, c]));
+let BY_ID = new Map<string, Spacecraft>();
+
+/** Puts the spacecraft in place when Sol's sky arrives. */
+export function installCraft(data: SpacecraftDataset): void {
+  CRAFT_DATA = data;
+  CRAFT_EPOCH_JD = data.epochJd;
+  BY_ID = new Map(data.spacecraft.map((c) => [c.id, c]));
+}
 
 /** A spacecraft by the game's id. */
 export function craftOf(id: string): Spacecraft | undefined {

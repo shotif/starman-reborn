@@ -161,8 +161,9 @@ Other balance guardrails:
   on 1 October 2026) and the whole first load, first screen and game, at most **850 KB** (621 KB on
   1 October; the owner raised it from 700 KB on 2 October 2026, when Your crew took it to 704 KB, and
   from 800 KB on 7 October 2026, when binary orbits, comets and the logbook took it to 798 KB).
-  Fonts (71 KB, already compressed) and what loads on demand (the star map, the science notes,
-  bloom: 35 KB) are reported, not budgeted. Going over is a decision to make, not an accident: raise
+  Fonts (71 KB, already compressed) and what loads on demand (Sol's real sky, §50: 22 KB; the star
+  map, the science notes, bloom: 37 KB, on 8 October 2026) are reported, not budgeted; the first load
+  was 806 KB on 8 October 2026, once Sol's sky was moved out of it (from 827 KB). Going over is a decision to make, not an accident: raise
   the budget in the same change, with the reason.
 - **On a real device**, the device report (Settings; `src/app/deviceReport.ts`) shows what the
   phone or computer and its browser tell the game: the screen and safe areas, the input, the
@@ -5019,9 +5020,9 @@ the Laplace resonance, a whole period bringing a moon back), the scene, what is 
 Eleven spacecraft fly in Sol where JPL Horizons has them on the game's date: the five leaving the
 Sun (Voyager 1 and 2, Pioneer 10 and 11, New Horizons), and Parker Solar Probe, the James Webb Space
 Telescope, Lucy, Psyche, Europa Clipper and JUICE (`src/data/spacecraft.ts`, read from JPL Horizons
-and NASA's NSSDCA by `scripts/spacecraft-process.ts`; how they are drawn in `SPACECRAFT`, what is said
-in `CRAFT_LINES` and each mission's facts in `CRAFT_STORIES`, `src/content/stellar/spacecraft.ts`; the
-cards and the News in `src/economy/spacecraft.ts`). Nothing about them is invented: where each is,
+and NASA's NSSDCA by `scripts/spacecraft-process.ts`; how they are drawn in `SPACECRAFT` and what is
+said in `CRAFT_LINES`, `src/content/stellar/spacecraft.ts`; each mission's facts in
+`src/content/stellar/craftStories.ts`; the cards and the News in `src/economy/spacecraft.ts`). Nothing about them is invented: where each is,
 how fast it goes and how far its light takes come from Horizons' own positions of it, and every fact
 of a mission is quoted from Horizons' record of the craft or NSSDCA's page on it.
 
@@ -5141,3 +5142,56 @@ mid-November 2026 and 3.6 AU farther out a year on,
 Parker's 88-day orbit and its nearest pass 6.9 million km from the Sun's centre, Webb between 1 and 2
 million km from Earth throughout, Lucy's and JUICE's flybys as near as Horizons says), the scene,
 what is said, the News and the logbook.
+
+## 50. Sol's sky loaded on demand
+
+Sol's real sky, the comets (§45), the named asteroids (§47), the giant planets' moons (§48) and the
+spacecraft with their missions' facts (§49), is no longer part of the first load (§4.6). The loading
+title fetches it once the game's own files are in, and puts it in place before the game starts
+(`src/data/skyData.ts`, `src/data/sky.ts`, `src/app/loader.ts`). Nothing changes in play: the game
+starts with the whole sky in place, as before, from a first load 21 KB smaller (827 KB to 806 KB on
+8 October 2026, of 850).
+
+The owner chose (8 October 2026), with the first load at 827 KB of its 850 KB budget and each new
+part of the real sky adding 10–17 KB: "Load Sol's sky on demand": "Move comets, asteroids, moons and
+spacecraft (data and cards) into a chunk loaded behind the title, after the first load", rather than
+raise the budget again.
+
+### 50.1 What loads on demand
+
+- **On demand** (`src/data/skyData.ts`, its own file in the build: 21 KB gzipped on 8 October
+  2026): the four sets of data JPL's were processed into (`src/data/generated/comets.json`,
+  `asteroids.json`, `moons.json` and `spacecraft.json`) and the missions' facts (`CRAFT_STORIES`,
+  `src/content/stellar/craftStories.ts`). The next parts of the real sky (Earth's Moon, the dwarf
+  planets, more moons) put their data here too, so the first load grows only by their code.
+- **Still in the first load**: the code that reckons, draws and tells of them (the arcs and fitted
+  motions, the scene, the cards, the News, the map and the encyclopedia), which the game's own
+  modules import directly. The cards were to move as well, but they are built by the same code as
+  every other science card, and moving them would mean splitting the game's screens. The data was
+  most of the weight: the saving is 21 KB, not the about 50 KB first reckoned.
+
+### 50.2 How it is put in place
+
+Each part of the sky is held by its own module (`COMET_DATA` in `src/data/comets.ts`,
+`ASTEROID_DATA`, `MOON_DATA`, `CRAFT_DATA`, and `CRAFT_STORIES` in
+`src/content/stellar/spacecraft.ts`) as a value that stays empty until it is filled. The loading
+title fetches the game's files first, counting them on its bar; once they are in (the bar says
+Starting), it fetches the sky, puts it in place (`installSky`: once; a second call changes nothing),
+and only then starts the game's own modules, so every one of them finds the whole sky from the first.
+If the sky cannot be fetched, the title says the game did not finish loading and offers to try
+again, as for any of the game's files. Offline play keeps the sky's file with all the others (§4.6).
+
+The unit tests (`tests/setup/sky.ts`, named in `vitest.config.ts`), `npm run data:validate` and the
+art gallery and star map harness (`dev/`) put the sky in place at once, from the files on disk
+(`src/data/skyNow.ts`); the game never does.
+
+### 50.3 Guardrails
+
+- `npm run size` (`scripts/load-budget.ts`, in `npm run check` and CI) fails when any file of the
+  first load holds any part of Sol's sky, or when no file loaded on demand holds the whole of it
+  (each set of data is known by the name of the script that made it, which it carries). The unit
+  tests feed it made-up builds to see both caught.
+- `tests/unit/sky.test.ts`: in place for the tests, every part of it as its file has it; empty until
+  put in place; put in place once.
+- Every browser test plays the game loaded this way; `tests/e2e/load.spec.ts` loads it on a slow
+  phone network, and `tests/e2e/offline.spec.ts` plays it offline after one visit.
