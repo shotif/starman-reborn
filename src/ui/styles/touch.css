@@ -1,14 +1,28 @@
-/* Two-thumb touch controls. Only the stick zones, buttons and slider set touch-action: none. */
+/* Two-thumb touch controls (docs/PROCGEN.md §52). The buttons keep to a dock along the bottom edge
+   and the throttle to the steering side's edge, so the middle of the view stays clear (the clear
+   centre, src/ui/touch/clearCentre.ts): the steering side holds the throttle, Cruise and the action
+   button, the aiming side the combat buttons, and the chips sit between them. Each stick's zone is
+   the open space above its side of the dock. Only the stick zones, buttons and slider set
+   touch-action: none. */
 
 .touch-controls {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 5;
-  --zone-h: 64vh;
-  --zone-w: 44vw;
+  /* A button, the space between buttons, the margin from the edge, and the throttle's width. */
   --btn: 60px;
-  --cluster-bottom: calc(var(--safe-bottom) + 150px);
+  --gap: 8px;
+  --edge: 8px;
+  --rail: 44px;
+  --small: 50px;
+  /* The dock's bottom edge, how many rows of buttons it has, and where the zones begin. */
+  --dock: calc(var(--safe-bottom) + 10px);
+  --rows: 1;
+  --zone-top: 40%;
+  /* Where the steering side's buttons and zone begin: past the throttle. */
+  --past-rail-left: calc(var(--safe-left) + var(--edge) + var(--rail) + var(--edge));
+  --past-rail-right: calc(var(--safe-right) + var(--edge) + var(--rail) + var(--edge));
 }
 
 .touch-controls[hidden] {
@@ -19,43 +33,46 @@
   pointer-events: auto;
 }
 
+/* The zones: the open space above the dock, one half of the view each (the steering half begins past
+   the throttle). Invisible: the stick appears under the thumb that lands in it. */
 .touch-zone {
   position: absolute;
-  bottom: 0;
-  height: var(--zone-h);
-  width: var(--zone-w);
+  top: var(--zone-top);
+  bottom: calc(var(--dock) + var(--rows) * (var(--btn) + var(--gap)));
   touch-action: none;
   -webkit-user-select: none;
   user-select: none;
 }
 
 .touch-zone.steer {
-  left: calc(var(--safe-left) + 58px);
+  left: var(--past-rail-left);
+  right: 50%;
 }
 
 .touch-zone.aim {
+  left: 50%;
   right: 0;
 }
 
 .touch-controls.swapped .touch-zone.steer {
-  left: auto;
-  right: calc(var(--safe-right) + 58px);
+  left: 50%;
+  right: var(--past-rail-right);
 }
 
 .touch-controls.swapped .touch-zone.aim {
-  right: auto;
   left: 0;
+  right: 50%;
 }
 
 .zone-hint {
   position: absolute;
-  bottom: calc(var(--safe-bottom) + 22px);
+  bottom: 6px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.3rem 0.7rem;
+  padding: 0.25rem 0.65rem;
   border-radius: 999px;
   border: 1px dashed rgba(170, 200, 255, 0.35);
   color: rgba(220, 232, 250, 0.6);
@@ -66,6 +83,11 @@
 
 .touch-zone:has(.stick-base.active) .zone-hint {
   opacity: 0;
+}
+
+/* With a wing (well into a career), the sticks' hints give way to the chips. */
+.touch-controls:has(.wing-chip:not([hidden])) .zone-hint {
+  display: none;
 }
 
 .stick-base,
@@ -112,32 +134,69 @@
   opacity: 1;
 }
 
+/* The dock's two sides. Only the buttons take touches: the gaps between them belong to the zones. */
 .tcluster {
   position: absolute;
+  bottom: var(--dock);
   display: grid;
-  gap: 8px;
-  bottom: var(--cluster-bottom);
+  gap: var(--gap);
+  pointer-events: none;
 }
 
-/* In landscape the decoy button joins Cruise and Go To, three across (TouchControls moves it). */
+.tcluster > * {
+  pointer-events: auto;
+}
+
+/* The steering side: Cruise and the action button, past the throttle. */
 .tcluster.left {
-  left: calc(var(--safe-left) + 66px);
-  grid-template-columns: repeat(3, var(--btn));
+  left: var(--past-rail-left);
+  grid-template-areas: 'cruise context';
 }
 
+/* The aiming side: the combat buttons in a row, the decoy at the edge. */
 .tcluster.right {
-  right: calc(var(--safe-right) + 12px);
-  grid-template-columns: repeat(2, var(--btn));
+  right: calc(var(--safe-right) + var(--edge));
+  grid-template-areas: 'target missile boost repair decoy';
 }
 
 .touch-controls.swapped .tcluster.left {
   left: auto;
-  right: calc(var(--safe-right) + 66px);
+  right: var(--past-rail-right);
+  grid-template-areas: 'context cruise';
 }
 
 .touch-controls.swapped .tcluster.right {
   right: auto;
-  left: calc(var(--safe-left) + 12px);
+  left: calc(var(--safe-left) + var(--edge));
+  grid-template-areas: 'decoy repair boost missile target';
+}
+
+.tbtn.cruise {
+  grid-area: cruise;
+}
+
+.tbtn.context {
+  grid-area: context;
+}
+
+.tbtn.target {
+  grid-area: target;
+}
+
+.tbtn.missile {
+  grid-area: missile;
+}
+
+.tbtn.boost {
+  grid-area: boost;
+}
+
+.tbtn.repair {
+  grid-area: repair;
+}
+
+.tbtn.decoy {
+  grid-area: decoy;
 }
 
 .tbtn {
@@ -237,9 +296,8 @@
 }
 
 .tbtn.small {
-  --btn: 50px;
-  width: 50px;
-  height: 50px;
+  width: var(--small);
+  height: var(--small);
   justify-self: center;
   align-self: center;
 }
@@ -266,8 +324,8 @@
 
 .throttle {
   position: absolute;
-  left: calc(var(--safe-left) + 8px);
-  bottom: calc(var(--safe-bottom) + 12px);
+  left: calc(var(--safe-left) + var(--edge));
+  bottom: var(--dock);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -276,7 +334,7 @@
 
 .touch-controls.swapped .throttle {
   left: auto;
-  right: calc(var(--safe-right) + 8px);
+  right: calc(var(--safe-right) + var(--edge));
 }
 
 .throttle-value {
@@ -286,7 +344,7 @@
 
 .throttle-track {
   position: relative;
-  width: 44px;
+  width: var(--rail);
   height: min(40vh, 190px);
   border-radius: 12px;
   border: 2px solid rgba(160, 200, 255, 0.45);
@@ -317,18 +375,28 @@
   z-index: 1;
 }
 
-/* The aim-assist chip, and the wing's orders beside it when a wing flies with you. */
+/* The aim-assist chip, and the wing's orders beside it when a wing flies with you: in the dock,
+   between its two sides (a chip that does not fit beside the other goes above it). */
 .touch-chips {
   position: absolute;
-  right: calc(var(--safe-right) + 12px);
-  bottom: calc(var(--cluster-bottom) + 2 * var(--btn) + 22px);
+  bottom: var(--dock);
+  left: calc(var(--past-rail-left) + 2 * var(--btn) + 2 * var(--gap));
+  right: calc(var(--safe-right) + var(--edge) + 3 * var(--btn) + 2 * var(--small) + 5 * var(--gap));
   display: flex;
+  flex-wrap: wrap-reverse;
+  justify-content: center;
+  align-items: flex-end;
   gap: 6px;
-  align-items: center;
+  pointer-events: none;
+}
+
+.touch-chips > * {
+  pointer-events: auto;
 }
 
 .assist-chip,
-.wing-chip {
+.wing-chip,
+.avoid-chip {
   min-height: 36px;
   padding: 0.2rem 0.7rem;
   border-radius: 999px;
@@ -345,6 +413,14 @@
   border-color: rgba(98, 227, 154, 0.55);
 }
 
+/* A raider inbound (the encounter banner's touch twin): hostile red, with the ◆ (not by colour alone). */
+.avoid-chip {
+  border-color: rgba(255, 95, 95, 0.85);
+  background: rgba(70, 12, 18, 0.75);
+  color: #ffd0d0;
+  font-weight: 700;
+}
+
 /* Someone on the wing hurt (docs/PROCGEN.md §34): a warm dashed edge, not by colour alone. */
 .wing-chip[data-hurt='true'] {
   border-color: rgba(255, 190, 120, 0.8);
@@ -352,105 +428,93 @@
 }
 
 .touch-controls.swapped .touch-chips {
-  right: auto;
-  left: calc(var(--safe-left) + 12px);
+  left: calc(var(--safe-left) + var(--edge) + 3 * var(--btn) + 2 * var(--small) + 5 * var(--gap));
+  right: calc(var(--past-rail-right) + 2 * var(--btn) + 2 * var(--gap));
 }
 
 .assist-chip[data-level='off'] {
   color: var(--text-muted);
 }
 
-/* Portrait: sticks share the bottom third, one row of buttons sits just above them and the
-   throttle is a strip along the left edge. */
-@media (orientation: portrait) {
+/* Portrait phones: the aiming side takes two rows (the repair kit and the decoy above the missile and
+   Boost), the chips sit on the steering side's second row, and the zones begin a little below the
+   middle. */
+@media (orientation: portrait) and (max-width: 600px) {
   .touch-controls {
-    --zone-h: calc(33vh + var(--safe-bottom));
-    --zone-w: calc(50vw - 30px);
     --btn: 52px;
-    --cluster-bottom: calc(33vh + var(--safe-bottom) + 8px);
-  }
-
-  .touch-zone.steer {
-    left: calc(var(--safe-left) + 56px);
-  }
-
-  .touch-controls.swapped .touch-zone.steer {
-    left: auto;
-    right: calc(var(--safe-right) + 56px);
-  }
-
-  .throttle {
-    bottom: calc(var(--safe-bottom) + 10px);
-  }
-
-  .throttle-track {
-    height: min(24vh, 170px);
-  }
-
-  .tcluster.left {
-    left: calc(var(--safe-left) + 8px);
-    grid-template-columns: repeat(2, var(--btn));
+    --small: 52px;
+    --gap: 6px;
+    --rows: 2;
+    --zone-top: 55%;
   }
 
   .tcluster.right {
-    grid-template-columns: repeat(4, var(--btn));
-    gap: 6px;
+    grid-template-areas:
+      '. repair decoy'
+      'target missile boost';
   }
 
-  .touch-controls.swapped .tcluster.left {
-    right: calc(var(--safe-right) + 8px);
+  .touch-controls.swapped .tcluster.right {
+    grid-template-areas:
+      'decoy repair .'
+      'boost missile target';
   }
 
-  .tbtn.small {
-    --btn: 52px;
-    width: 52px;
-    height: 52px;
+  .touch-chips {
+    bottom: calc(var(--dock) + var(--btn) + var(--gap));
+    left: var(--past-rail-left);
+    right: calc(var(--safe-right) + var(--edge) + 2 * var(--btn) + 2 * var(--gap));
+    justify-content: flex-start;
+  }
+
+  .touch-controls.swapped .touch-chips {
+    left: calc(var(--safe-left) + var(--edge) + 2 * var(--btn) + 2 * var(--gap));
+    right: var(--past-rail-right);
+    justify-content: flex-end;
+  }
+
+  .assist-chip,
+  .wing-chip,
+  .avoid-chip {
+    padding: 0.15rem 0.45rem;
+    font-size: 11px;
+  }
+
+  .throttle-track {
+    height: min(24vh, 150px);
   }
 
   .tbtn.drift {
     display: none;
   }
-
-  .touch-chips {
-    bottom: calc(33vh + var(--safe-bottom) - 44px);
-    right: calc(var(--safe-right) + 8px);
-  }
 }
 
-/* Narrow portrait phones: slightly smaller buttons so both clusters fit on one row. */
+/* Narrow portrait phones: slightly smaller buttons, so each side's row fits; with a wing, a third row
+   for a second chip (the wing's beside the warning or the aim assist). */
 @media (orientation: portrait) and (max-width: 400px) {
   .touch-controls {
     --btn: 48px;
+    --small: 48px;
   }
 
-  .tbtn.small {
-    --btn: 48px;
-    width: 48px;
-    height: 48px;
+  .touch-controls:has(.wing-chip:not([hidden])) {
+    --rows: 3;
   }
 
   .tbtn .icon {
     width: 20px;
     height: 20px;
   }
-
-  .tlabel {
-    font-size: 10px;
-  }
 }
 
-/* Very narrow portrait (320-wide phones, or a 411-wide phone at 130% page zoom): six buttons
-   still fit on one row. */
+/* Very narrow portrait (320-wide phones, or a 411-wide phone at 130% page zoom): smaller still, and
+   with a wing the second chip needs a row of its own above the first. */
 @media (orientation: portrait) and (max-width: 340px) {
   .touch-controls {
     --btn: 44px;
+    --small: 44px;
   }
 
-  .tbtn.small {
-    --btn: 44px;
-    width: 44px;
-    height: 44px;
-  }
 
   .tbtn .icon {
     width: 18px;
@@ -462,11 +526,10 @@
   }
 }
 
-/* Very short landscape phones (e.g. 640x360). */
+/* Short landscape phones (e.g. 640x360). */
 @media (orientation: landscape) and (max-height: 420px) {
   .touch-controls {
     --btn: 54px;
-    --cluster-bottom: calc(var(--safe-bottom) + 118px);
   }
 
   .throttle-track {
@@ -475,18 +538,6 @@
 
   .tbtn.drift {
     display: none;
-  }
-
-  /* The right column is full here, so the chips sit above the Cruise/Go To pair. */
-  .touch-chips {
-    right: auto;
-    left: calc(var(--safe-left) + 66px);
-    bottom: calc(var(--cluster-bottom) + var(--btn) + 12px);
-  }
-
-  .touch-controls.swapped .touch-chips {
-    left: auto;
-    right: calc(var(--safe-right) + 66px);
   }
 }
 

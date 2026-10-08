@@ -326,6 +326,12 @@
   display: none;
 }
 
+/* On touch the dock's Avoid combat chip answers a raider's warning (docs/PROCGEN.md §52); the radio
+   and the warning line tell of it. */
+.hud.touch-mode .encounter-banner {
+  display: none;
+}
+
 /* A hail on the lanes (docs/PROCGEN.md §27): a call on the comms (violet), the Wake's toll (red), the law. */
 .hail-banner {
   --edge: rgba(176, 140, 255, 0.9);
@@ -951,9 +957,83 @@
   padding-top: calc(var(--safe-top) + 8px);
 }
 
+/* Touch: the target as a compact strip in the band along the top, never over the middle of the view
+   (docs/PROCGEN.md §52): its name and badge, then on one line its distance, what it is and, for a
+   ship, its shield and hull. */
 .hud.touch-mode .hud-target {
-  width: min(20rem, 100%);
-  padding: 0.35rem 0.6rem 0.45rem;
+  --cut: 8px;
+  width: min(22rem, 100%);
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'head head head'
+    'dist sub bars';
+  gap: 1px 0.5rem;
+  align-items: center;
+  padding: 0.25rem 0.55rem 0.3rem;
+}
+
+.hud.touch-mode .target-head {
+  grid-area: head;
+  gap: 6px;
+  line-height: 1.25;
+}
+
+.hud.touch-mode .target-head .badge {
+  padding-block: 0;
+}
+
+.hud.touch-mode .target-head .glyph {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+.hud.touch-mode .target-name {
+  font-size: 0.95rem;
+}
+
+.hud.touch-mode .target-dist {
+  grid-area: dist;
+  font-size: 0.8rem;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.hud.touch-mode .target-sub {
+  grid-area: sub;
+  font-size: 0.74rem;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hud.touch-mode .target-bars {
+  grid-area: bars;
+  width: 4.5rem;
+  gap: 3px;
+}
+
+.hud.touch-mode .target-bars:empty {
+  display: none;
+}
+
+.hud.touch-mode .target-bars .segbar {
+  height: 0.4rem;
+}
+
+/* The objective keeps to two lines on touch (a tap folds it to one), and the wallet's line about
+   the nearest dock to one. */
+.hud.touch-mode .objective-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.hud.touch-mode .hud-system {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .hud.touch-mode .hud-scale {
@@ -963,6 +1043,19 @@
 @media (max-width: 760px), (max-height: 460px) {
   .hud {
     font-size: 0.82rem;
+  }
+
+  .hud.touch-mode .hud-status {
+    gap: 2px 10px;
+    padding: 0.3rem 0.6rem 0.35rem;
+  }
+
+  .hud.touch-mode .gauge-bars {
+    gap: 1px;
+  }
+
+  .hud.touch-mode .gauge-row {
+    line-height: 1.25;
   }
 
   .hud-top {
@@ -1002,46 +1095,56 @@
   padding: 0.35rem 0.7rem;
 }
 
-/* Short landscape phones: the right column belongs to the touch buttons. */
+/* On a phone, messages that come and go keep the band along the top short (docs/PROCGEN.md §52):
+   the newest message alone, and a hail's words in two lines (its caller and time stay whole). */
+@media (max-width: 600px), (max-height: 460px) {
+  .hud-toasts > .toast:nth-last-child(n + 2) {
+    display: none;
+  }
+
+  .hud.touch-mode .hail-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+/* Landscape phones (Hud.setScheme): a hail goes down the right-hand edge under the wallet, as wide
+   as the menus. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .hud.touch-mode .hud-right > .hail-banner {
+    contain: inline-size;
+    align-self: stretch;
+    margin-right: calc(var(--safe-right) + 8px);
+  }
+
+  .hud.touch-mode .hud-right .hail-text {
+    -webkit-line-clamp: 4;
+  }
+}
+
+/* Short landscape phones: the band along the top stays short, so the wallet leaves out the nearest
+   dock and the centre column packs a little closer. */
 @media (orientation: landscape) and (max-height: 420px) {
   .hud.touch-mode .hud-system {
     display: none;
   }
 
-  /* One line of subtitle at most (a hauler bound for another system has a long one), so the target box never reaches the thumbs' buttons. */
-  .hud.touch-mode .target-sub {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .hud.touch-mode .hud-center {
+    padding-top: calc(var(--safe-top) + 4px);
+    gap: 3px;
   }
-}
 
-/* Short and narrow landscape phones (640x360): the target box keeps to the right of the centre, clear of the wing and aim chips and the left buttons below them. */
-@media (orientation: landscape) and (max-height: 420px) and (max-width: 720px) {
-  .hud.touch-mode .hud-target {
-    align-self: flex-end;
-    width: min(12rem, 100%);
+  .hud.touch-mode .hud-objective,
+  .hud.touch-mode .hud-race,
+  .hud.touch-mode .hud-battle {
+    padding-block: 0.3rem;
+    line-height: 1.3;
   }
 }
 
 @media (orientation: portrait) and (max-width: 600px) {
-  .hud.touch-mode .target-sub,
-  .hud.touch-mode .hud-scale {
-    display: none;
-  }
-
-  .hud.touch-mode .hud-target {
-    gap: 2px;
-    /* The distance and a ship's bars share a row: its box stays as short as a station's, clear of the thumbs' buttons. */
-    grid-template-columns: auto minmax(0, 1fr);
-    column-gap: 0.6rem;
-    align-items: center;
-  }
-
-  .hud.touch-mode .target-head {
-    grid-column: 1 / -1;
-  }
-
   .hud-top {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
@@ -1066,8 +1169,59 @@
     gap: 3px;
   }
 
-  /* One small line of warnings at most ("Hostile contact" in a fight), so with a target selected the
-     centre column still ends clear of the thumbs' buttons on short phones. */
+  /* A portrait phone's band along the top (Hud.setScheme): the objective under the menus, the wallet
+     on one line under the gauges, the target strip the full width below. The strips take the
+     menus' width without widening it. */
+  .hud.touch-mode .hud-right > .hud-objective,
+  .hud.touch-mode .hud-right > .hud-race,
+  .hud.touch-mode .hud-right > .hud-battle {
+    contain: inline-size;
+    align-self: stretch;
+    margin-right: calc(var(--safe-right) + 8px);
+  }
+
+  .hud.touch-mode .hud-right .objective-text {
+    -webkit-line-clamp: 3;
+  }
+
+  /* Beside the gauges a race or a battle strip gives the race and the sides, not their names (the
+     race is the one entered, the battle the one joined), in smaller type. */
+  .hud.touch-mode .hud-right > .hud-race,
+  .hud.touch-mode .hud-right > .hud-battle {
+    font-size: 0.74rem;
+    line-height: 1.25;
+    padding-block: 0.3rem;
+  }
+
+  .hud.touch-mode .hud-right .race-name,
+  .hud.touch-mode .hud-right .battle-name {
+    display: none;
+  }
+
+  .hud.touch-mode .hud-left > .hud-wallet {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 0.7rem;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .hud.touch-mode .hud-left > .hud-wallet .row {
+    justify-content: flex-start;
+    gap: 0.35rem;
+  }
+
+  .hud.touch-mode .hud-left > .hud-wallet .hud-wanted {
+    flex-basis: 100%;
+  }
+
+  .hud.touch-mode .hud-left > .hud-wallet .hud-system,
+  .hud.touch-mode .hud-left > .hud-wallet .cargo-word {
+    display: none;
+  }
+
+  /* One small line of warnings at most ("Hostile contact" in a fight), so the band along the top
+     stays short. */
   .hud.touch-mode .hud-warning {
     max-width: 100%;
     font-size: 0.72rem;
@@ -1075,6 +1229,14 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+}
+
+/* A very narrow portrait phone (a 411-wide phone at 130% page zoom): in flight the wallet keeps to
+   one row, the hold; the credits are on every docked screen and the star map. */
+@media (orientation: portrait) and (max-width: 340px) {
+  .hud.touch-mode .hud-left > .hud-wallet .row:first-child {
+    display: none;
   }
 }
 

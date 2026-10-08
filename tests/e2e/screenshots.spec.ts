@@ -1,12 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
-import { api, newGameAndLaunch, openFresh, press, waitUntil } from './helpers.ts';
+import { api, clearCentreAudit, newGameAndLaunch, openFresh, press, waitUntil } from './helpers.ts';
 
 /**
  * Captures every required layout (spec section 10), from the loading title on, and audits for
  * common layout failures: page scroll capture, buttons clipped off-screen, content cut off inside a
- * box, unreadably small text, undersized touch targets and overlapping HUD panels. Screenshots go
- * to docs/screenshots/.
+ * box, unreadably small text, undersized touch targets, overlapping HUD panels and, in touch flight,
+ * anything that stays on screen in the middle of the view (the clear centre, docs/PROCGEN.md §52).
+ * Screenshots go to docs/screenshots/.
  *
  * Two extra cases reproduce large-text phones: Android text scaling (rem sizes at 130%) and
  * accessibility page zoom (a 411-wide phone at 130% zoom is a 316-wide CSS viewport).
@@ -42,9 +43,25 @@ interface AuditResult {
   tinyText: string[];
   smallTargets: string[];
   overlaps: string[];
+  /** Touch flight: what stays on screen in the clear centre, and HUD buttons out of a thumb's reach. */
+  clearCentre: string[];
 }
 
 async function audit(page: Page, touch: boolean): Promise<AuditResult> {
+  const found = await layoutAudit(page, touch);
+  // In touch flight with nothing open over it, the middle of the view stays clear (docs/PROCGEN.md §52).
+  const flying =
+    touch &&
+    (await page.evaluate(() => {
+      const controls = document.querySelector('[data-testid="touch-controls"]');
+      return !!controls && !controls.hasAttribute('hidden') && !document.querySelector('.modal-backdrop, .sheet-backdrop, .gmap-dialog-backdrop');
+    }));
+  if (!flying) return { ...found, clearCentre: [] };
+  const centre = await clearCentreAudit(page);
+  return { ...found, clearCentre: [...centre.into, ...centre.covered.map((name) => `${name} (out of reach)`)] };
+}
+
+async function layoutAudit(page: Page, touch: boolean): Promise<Omit<AuditResult, 'clearCentre'>> {
   return page.evaluate((isTouch) => {
     const vw = window.innerWidth;
     const vh = window.innerHeight;
@@ -947,6 +964,7 @@ for (const size of SIZES) {
         expect.soft(r.tinyText, `${name}: text below 10px`).toEqual([]);
         expect.soft(r.smallTargets, `${name}: touch targets below 40px`).toEqual([]);
         expect.soft(r.overlaps, `${name}: overlapping HUD panels`).toEqual([]);
+        expect.soft(r.clearCentre, `${name}: in the clear centre`).toEqual([]);
       }
     });
 
@@ -1035,6 +1053,7 @@ for (const size of SIZES) {
         expect.soft(r.tinyText, `${name}: text below 10px`).toEqual([]);
         expect.soft(r.smallTargets, `${name}: touch targets below 40px`).toEqual([]);
         expect.soft(r.overlaps, `${name}: overlapping HUD panels`).toEqual([]);
+        expect.soft(r.clearCentre, `${name}: in the clear centre`).toEqual([]);
       }
     });
 
@@ -1098,6 +1117,7 @@ for (const size of SIZES) {
         expect.soft(r.tinyText, `${name}: text below 10px`).toEqual([]);
         expect.soft(r.smallTargets, `${name}: touch targets below 40px`).toEqual([]);
         expect.soft(r.overlaps, `${name}: overlapping HUD panels`).toEqual([]);
+        expect.soft(r.clearCentre, `${name}: in the clear centre`).toEqual([]);
       }
     });
 
@@ -1157,6 +1177,7 @@ for (const size of SIZES) {
         expect.soft(r.tinyText, `${name}: text below 10px`).toEqual([]);
         expect.soft(r.smallTargets, `${name}: touch targets below 40px`).toEqual([]);
         expect.soft(r.overlaps, `${name}: overlapping HUD panels`).toEqual([]);
+        expect.soft(r.clearCentre, `${name}: in the clear centre`).toEqual([]);
       }
     });
 
@@ -1204,6 +1225,7 @@ for (const size of SIZES) {
         expect.soft(r.tinyText, `${name}: text below 10px`).toEqual([]);
         expect.soft(r.smallTargets, `${name}: touch targets below 40px`).toEqual([]);
         expect.soft(r.overlaps, `${name}: overlapping HUD panels`).toEqual([]);
+        expect.soft(r.clearCentre, `${name}: in the clear centre`).toEqual([]);
       }
     });
 
@@ -1272,6 +1294,7 @@ for (const size of SIZES) {
         expect.soft(r.tinyText, `${name}: text below 10px`).toEqual([]);
         expect.soft(r.smallTargets, `${name}: touch targets below 40px`).toEqual([]);
         expect.soft(r.overlaps, `${name}: overlapping HUD panels`).toEqual([]);
+        expect.soft(r.clearCentre, `${name}: in the clear centre`).toEqual([]);
       }
     });
 
@@ -1329,6 +1352,7 @@ for (const size of SIZES) {
         expect.soft(r.tinyText, `${name}: text below 10px`).toEqual([]);
         expect.soft(r.smallTargets, `${name}: touch targets below 40px`).toEqual([]);
         expect.soft(r.overlaps, `${name}: overlapping HUD panels`).toEqual([]);
+        expect.soft(r.clearCentre, `${name}: in the clear centre`).toEqual([]);
       }
     });
 
@@ -1388,6 +1412,7 @@ for (const size of SIZES) {
         expect.soft(r.tinyText, `${name}: text below 10px`).toEqual([]);
         expect.soft(r.smallTargets, `${name}: touch targets below 40px`).toEqual([]);
         expect.soft(r.overlaps, `${name}: overlapping HUD panels`).toEqual([]);
+        expect.soft(r.clearCentre, `${name}: in the clear centre`).toEqual([]);
       }
     });
 
@@ -1447,6 +1472,7 @@ for (const size of SIZES) {
         expect.soft(r.tinyText, `${name}: text below 10px`).toEqual([]);
         expect.soft(r.smallTargets, `${name}: touch targets below 40px`).toEqual([]);
         expect.soft(r.overlaps, `${name}: overlapping HUD panels`).toEqual([]);
+        expect.soft(r.clearCentre, `${name}: in the clear centre`).toEqual([]);
       }
     });
   });

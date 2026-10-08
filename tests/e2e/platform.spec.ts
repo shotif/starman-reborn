@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { api, isTouch, newGameAndLaunch, openFresh, press, waitUntil, type PlayerInfo } from './helpers.ts';
+import { api, clearCentreAudit, isTouch, newGameAndLaunch, openFresh, press, waitUntil, type PlayerInfo } from './helpers.ts';
 
 interface TouchInfo {
   visible: boolean;
@@ -294,6 +294,48 @@ test.describe('touch controls', () => {
     expect(t.steer).toBe(false);
     expect(t.aim).toBe(false);
     expect(t.steerVector).toEqual({ x: 0, y: 0 });
+  });
+
+  test('the middle of the view stays clear at every phone and tablet size, right- and left-handed', async ({ page }) => {
+    // Docs/PROCGEN.md §52: nothing that stays on screen reaches into the clear centre, every HUD
+    // button is reachable, and every control is on screen and big enough for a thumb.
+    await openFresh(page);
+    await newGameAndLaunch(page, 6);
+    await api(page, 'selectTarget', 'station:mars-depot');
+    await expect(page.getByTestId('hud-target')).toBeVisible();
+    const views = [
+      { width: 360, height: 640 },
+      { width: 640, height: 360 },
+      { width: 390, height: 844 },
+      { width: 844, height: 390 },
+      { width: 768, height: 1024 },
+      { width: 1024, height: 768 },
+      { width: 411, height: 741, text: 1.3 },
+      { width: 316, height: 570 },
+    ];
+    for (const swapped of [false, true]) {
+      await page.evaluate((on) => document.querySelector('[data-testid="touch-controls"]')!.classList.toggle('swapped', on), swapped);
+      for (const v of views) {
+        await page.setViewportSize({ width: v.width, height: v.height });
+        await page.evaluate((px) => {
+          document.getElementById('test-text-size')?.remove();
+          if (px) document.head.append(Object.assign(document.createElement('style'), { id: 'test-text-size', textContent: `html { font-size: ${px}px !important; }` }));
+        }, v.text ? 16 * v.text : 0);
+        // Two frames: the HUD has laid out at the new size.
+        await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
+        const at = `${v.width}×${v.height}${v.text ? ' at 130% text' : ''}${swapped ? ', left-handed' : ''}`;
+        const audit = await clearCentreAudit(page);
+        expect(audit.into, `${at}: in the clear centre`).toEqual([]);
+        expect(audit.covered, `${at}: HUD buttons under the sticks' zones`).toEqual([]);
+        for (const id of ['touch-cruise', 'touch-context', 'touch-target', 'touch-missile', 'touch-boost', 'touch-repair', 'touch-decoy', 'touch-throttle', 'touch-assist']) {
+          const b = (await page.getByTestId(id).boundingBox())!;
+          expect(b.x, `${at}: ${id}`).toBeGreaterThanOrEqual(0);
+          expect(b.x + b.width, `${at}: ${id}`).toBeLessThanOrEqual(v.width + 1);
+          expect(b.y + b.height, `${at}: ${id}`).toBeLessThanOrEqual(v.height + 1);
+          expect(Math.min(b.width, b.height), `${at}: ${id}`).toBeGreaterThanOrEqual(36);
+        }
+      }
+    }
   });
 
   test('rotating mid-flight keeps the ship and re-lays out the controls', async ({ page }) => {

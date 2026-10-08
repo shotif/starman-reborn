@@ -1,4 +1,5 @@
 import { expect, type Page } from '@playwright/test';
+import { clearCentre, intrusions } from '../../src/ui/touch/clearCentre.ts';
 
 type Api = Record<string, (arg?: unknown) => unknown>;
 
@@ -66,4 +67,41 @@ export interface PlayerInfo {
   speed: number;
   alive: boolean;
   autopilot: string;
+}
+
+/**
+ * What stays on screen in touch flight (docs/PROCGEN.md §52): the panels along the top, the dock's
+ * buttons and chips, the throttle and the sticks' hints. Messages that come and go are not in it.
+ */
+export const STEADY_HUD = '.hud-status, .hud-wallet, .hud-buttons, .hud-objective, .hud-race, .hud-battle, .hud-target, .tbtn, .throttle, .assist-chip, .wing-chip, .avoid-chip, .zone-hint';
+
+/**
+ * The clear centre at the page's size (src/ui/touch/clearCentre.ts): what of the touch HUD that stays
+ * on screen reaches into it, and which of the HUD's buttons a touch at its middle would not reach
+ * because the touch controls lie over it (the sticks' zones and the dock lie over the HUD).
+ */
+export async function clearCentreAudit(page: Page): Promise<{ into: string[]; covered: string[] }> {
+  const vp = page.viewportSize()!;
+  const found = await page.evaluate((steady) => {
+    const visible = (el: Element) => {
+      const r = el.getBoundingClientRect();
+      const cs = getComputedStyle(el);
+      return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none' && Number(cs.opacity) > 0.05;
+    };
+    const name = (el: Element) => (el.getAttribute('data-testid') ?? el.getAttribute('class') ?? el.tagName).slice(0, 40);
+    const items = [...document.querySelectorAll(steady)].filter(visible).map((el) => {
+      const r = el.getBoundingClientRect();
+      return { name: name(el), box: { left: r.left, top: r.top, right: r.right, bottom: r.bottom } };
+    });
+    const covered = [...document.querySelectorAll('.hud button:not(.marker)')]
+      .filter(visible)
+      .filter((el) => {
+        const r = el.getBoundingClientRect();
+        const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        return !!hit?.closest('[data-testid="touch-controls"]');
+      })
+      .map(name);
+    return { items, covered };
+  }, STEADY_HUD);
+  return { into: intrusions(clearCentre(vp.width, vp.height), found.items), covered: found.covered };
 }

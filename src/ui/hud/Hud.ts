@@ -95,14 +95,19 @@ const TARGET_GLYPH: Record<TargetKind, GlyphName> = {
 /** The Mine key (docs/PROCGEN.md §19); on a pad Mine is the context action. */
 const MINE_KEY = 'B';
 
+/** A phone held upright, and one held sideways (hud.css and touch.css use the same bounds). */
+const NARROW_PORTRAIT = '(orientation: portrait) and (max-width: 600px)';
+const LANDSCAPE_PHONE = '(orientation: landscape) and (max-height: 500px)';
+
 /**
  * Flight HUD. DOM elements are created once and updated in place each frame; marker elements
  * are pooled. Every state carries a shape and text alongside colour.
  *
  * Desktop (and gamepad) follows the classic layout: command rail top centre (objective hanging
  * below), menus top right, wallet top left, target window bottom left, gauge cluster bottom centre,
- * loadout bottom right. Touch keeps the bottom of the screen for the thumbs: gauges top left, menus
- * and wallet top right, objective, target and toasts in the centre column.
+ * loadout bottom right. Touch keeps the bottom of the screen for the thumbs and the middle for the
+ * flying (docs/PROCGEN.md §52): gauges top left, menus and wallet top right, and the objective, a
+ * compact target strip and the toasts in the centre column of the band along the top.
  */
 export class Hud {
   readonly root: HTMLElement;
@@ -121,6 +126,7 @@ export class Hud {
   private readonly modeText: HTMLElement;
   private readonly creditsText: HTMLElement;
   private readonly cargoText: HTMLElement;
+  private readonly cargoWord: HTMLElement;
   private readonly wantedRow: HTMLElement;
   private readonly wantedText: HTMLElement;
   private readonly objectiveText: HTMLElement;
@@ -188,6 +194,9 @@ export class Hud {
   private scheme: InputScheme = 'desktop';
   private padStyle: PadStyle = 'xbox';
   private reticleMoved = false;
+  /** A portrait phone, and a landscape one: the band along the top is laid out to fit (`setScheme`). */
+  private readonly narrowPortrait: MediaQueryList | null;
+  private readonly landscapePhone: MediaQueryList | null;
 
   constructor(parent: HTMLElement, callbacks: HudCallbacks) {
     this.callbacks = callbacks;
@@ -218,6 +227,7 @@ export class Hud {
 
     this.creditsText = h('span', { class: 'num', 'data-testid': 'hud-credits' });
     this.cargoText = h('span', { class: 'num', 'data-testid': 'hud-cargo' });
+    this.cargoWord = h('span', { class: 'cargo-word' }, ' cargo');
     this.wantedText = h('span', { 'data-testid': 'hud-wanted' });
     this.wantedRow = h('div', { class: 'row hud-wanted', hidden: true }, icon('alert'), this.wantedText);
     this.systemText = h('div', { class: 'hud-system' });
@@ -225,7 +235,7 @@ export class Hud {
       'div',
       { class: 'hud-panel frame frame-sm hud-wallet' },
       h('div', { class: 'row' }, icon('credits'), this.creditsText),
-      h('div', { class: 'row' }, icon('cargo'), this.cargoText),
+      h('div', { class: 'row' }, icon('cargo'), h('span', null, this.cargoText, this.cargoWord)),
       this.wantedRow,
       this.systemText,
     );
@@ -377,6 +387,9 @@ export class Hud {
       this.bottomRight,
     );
     parent.appendChild(this.root);
+    this.narrowPortrait = typeof matchMedia === 'function' ? matchMedia(NARROW_PORTRAIT) : null;
+    this.landscapePhone = typeof matchMedia === 'function' ? matchMedia(LANDSCAPE_PHONE) : null;
+    for (const query of [this.narrowPortrait, this.landscapePhone]) query?.addEventListener?.('change', () => this.setScheme(this.scheme, this.padStyle));
     this.setScheme('desktop');
     this.setVisible(false);
   }
@@ -414,11 +427,29 @@ export class Hud {
       this.bottomCenter.replaceChildren(this.contextHint, this.status);
       this.bottomRight.replaceChildren(this.loadout);
     } else {
-      // Touch: the target panel and toasts stack in the centre column under the objective and
-      // any alert (never on top of them).
-      this.left.replaceChildren(this.status);
-      this.centerColumn.replaceChildren(this.objectivePanel, this.racePanel, this.battlePanel, this.autopilotText, this.miningText, this.flareText, this.warningText, this.encounterBanner, this.hailBanner, this.targetPanel, this.toastSlot);
-      this.right.replaceChildren(this.buttons, this.wallet);
+      // Touch: everything keeps to the band along the top, clear of the middle of the view
+      // (docs/PROCGEN.md §52): the objective and the target strip first, where they always are,
+      // then alerts and messages as they come (never on top of them). A portrait phone has no
+      // room for a centre column beside the gauges: the objective goes under the menus, the wallet
+      // under the gauges, and the target strip and the rest run the full width below them. A
+      // landscape phone's band is short: a hail (answered with the action button) goes down the
+      // right-hand edge under the wallet instead. (A raider's warning is the dock's Avoid combat
+      // chip on touch: its banner stays hidden, hud.css.)
+      const strips = [this.objectivePanel, this.racePanel, this.battlePanel];
+      const lines = [this.autopilotText, this.miningText, this.flareText, this.warningText, this.encounterBanner];
+      if (this.narrowPortrait?.matches) {
+        this.left.replaceChildren(this.status, this.wallet);
+        this.centerColumn.replaceChildren(this.targetPanel, ...lines, this.hailBanner, this.toastSlot);
+        this.right.replaceChildren(this.buttons, ...strips);
+      } else if (this.landscapePhone?.matches) {
+        this.left.replaceChildren(this.status);
+        this.centerColumn.replaceChildren(...strips, this.targetPanel, ...lines, this.toastSlot);
+        this.right.replaceChildren(this.buttons, this.wallet, this.hailBanner);
+      } else {
+        this.left.replaceChildren(this.status);
+        this.centerColumn.replaceChildren(...strips, this.targetPanel, ...lines, this.hailBanner, this.toastSlot);
+        this.right.replaceChildren(this.buttons, this.wallet);
+      }
       this.bottomLeft.replaceChildren();
       this.bottomCenter.replaceChildren(this.contextHint);
       this.bottomRight.replaceChildren();
@@ -480,7 +511,7 @@ export class Hud {
     setText(this.modeText, mode);
     this.root.dataset.cruise = model.cruise;
     setText(this.creditsText, formatCredits(status.credits));
-    setText(this.cargoText, `${status.cargoUsed}/${status.cargoCapacity} cargo`);
+    setText(this.cargoText, `${status.cargoUsed}/${status.cargoCapacity}`);
     this.wantedRow.hidden = !status.wanted;
     if (status.wanted) setText(this.wantedText, status.wanted);
     setText(

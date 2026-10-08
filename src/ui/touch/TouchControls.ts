@@ -9,6 +9,8 @@ import '../styles/touch.css';
 export interface TouchCallbacks {
   onAction(action: FlightAction): void;
   onAimAssistCycle(): void;
+  /** The raider's warning answered: skip the fight (the HUD's banner does it with a mouse or pad). */
+  onAvoidCombat(): void;
   /** Any touch activity (switches the UI to the touch scheme). */
   onActivity(): void;
 }
@@ -17,7 +19,9 @@ export interface TouchCallbacks {
  * Two-thumb flight controls. The left zone spawns a floating steering stick; the right zone
  * spawns an aim stick that moves the reticle and fires while held. Every control tracks its own
  * pointer id with pointer capture, so both thumbs work independently; pointercancel and lost
- * capture always release. Only these regions set touch-action: none.
+ * capture always release. Only these regions set touch-action: none. The buttons keep to a dock
+ * along the bottom edge and the zones to the open space above it, so the middle of the view stays
+ * clear (docs/PROCGEN.md §52).
  */
 export class TouchControls {
   readonly root: HTMLElement;
@@ -41,6 +45,7 @@ export class TouchControls {
   private readonly driftBtn: HTMLButtonElement;
   private readonly assistChip: HTMLButtonElement;
   private readonly wingChip: HTMLButtonElement;
+  private readonly avoidChip: HTMLButtonElement;
   private readonly throttleTrack: HTMLElement;
   private readonly throttleFill: HTMLElement;
   private readonly throttleValue: HTMLElement;
@@ -116,6 +121,10 @@ export class TouchControls {
     // The wing's standing order, shown and cycled only while a wing flies with you.
     this.wingChip = h('button', { type: 'button', class: 'wing-chip', 'data-testid': 'touch-wing', hidden: true }, 'Wing') as HTMLButtonElement;
     this.bindTap(this.wingChip, 'wing-order');
+    // A raider inbound: skip the fight from the dock, under the thumbs, not from a banner up in the
+    // band along the top (which lies under the sticks' zones on a phone).
+    this.avoidChip = h('button', { type: 'button', class: 'avoid-chip', 'data-testid': 'touch-avoid', hidden: true }, '◆ Avoid combat') as HTMLButtonElement;
+    this.avoidChip.addEventListener('click', () => this.callbacks.onAvoidCombat());
 
     this.throttleFill = h('div', { class: 'throttle-fill' });
     this.throttleValue = h('div', { class: 'throttle-value num' }, '0%');
@@ -135,14 +144,11 @@ export class TouchControls {
     );
     this.bindThrottle();
 
-    // The decoy button sits with the combat buttons in portrait, and with Cruise and Go To in
-    // landscape, where the right-hand column is already full (docs/PROCGEN.md §15).
+    // The dock along the bottom edge (docs/PROCGEN.md §52): the steering thumb's side holds the
+    // throttle, Cruise and the action button; the aiming thumb's side the combat buttons, in one row
+    // or, on a portrait phone, two (touch.css places them); the chips sit between the two sides.
     const leftCluster = h('div', { class: 'tcluster left' }, this.cruiseBtn, this.contextBtn);
-    const rightCluster = h('div', { class: 'tcluster right' }, targetBtn, missileBtn, this.boostBtn, repairBtn);
-    const placeDecoy = (landscape: boolean) => (landscape ? leftCluster : rightCluster).appendChild(decoyBtn);
-    const orientation = typeof matchMedia === 'function' ? matchMedia('(orientation: landscape)') : null;
-    placeDecoy(orientation?.matches ?? false);
-    orientation?.addEventListener?.('change', (e) => placeDecoy(e.matches));
+    const rightCluster = h('div', { class: 'tcluster right' }, targetBtn, missileBtn, this.boostBtn, repairBtn, decoyBtn);
     this.root = h(
       'div',
       { class: 'touch-controls', 'data-testid': 'touch-controls' },
@@ -151,7 +157,7 @@ export class TouchControls {
       leftCluster,
       rightCluster,
       h('div', { class: 'throttle' }, this.throttleValue, this.throttleTrack, this.driftBtn),
-      h('div', { class: 'touch-chips' }, this.wingChip, this.assistChip),
+      h('div', { class: 'touch-chips' }, this.avoidChip, this.assistChip, this.wingChip),
     );
     parent.appendChild(this.root);
     this.setVisible(false);
@@ -218,6 +224,12 @@ export class TouchControls {
       const hurt = String(wing.hurt > 0);
       if (this.wingChip.dataset.hurt !== hurt) this.wingChip.dataset.hurt = hurt;
     }
+  }
+
+  /** A raider's warning (the encounter banner): the Avoid combat chip takes the aim-assist chip's place. */
+  setEncounter(active: boolean): void {
+    this.avoidChip.hidden = !active;
+    this.assistChip.hidden = active;
   }
 
   setCounts(missiles: number, repairKits: number, decoys = 0): void {

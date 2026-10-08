@@ -329,6 +329,7 @@ export class Game {
         this.applySettings({ ...this.settings, aimAssist: next });
         toast(`Aim assist: ${next}`, 'info', 1400);
       },
+      onAvoidCombat: () => this.flight?.avoidCombat(),
       onActivity: () => this.setScheme('touch'),
     });
     this.desktop = new DesktopInput(canvas);
@@ -619,7 +620,7 @@ export class Game {
   private async playLoaded(state: GameState, message: string): Promise<void> {
     // The running game was saved when its menu opened; drop its flight so nothing writes it back.
     this.disposeFlight();
-    this.hud.setEncounterBanner(false);
+    this.setEncounterWarning(false);
     this.state = state;
     await this.saves.save(state);
     this.resume(state, message);
@@ -1766,15 +1767,21 @@ export class Game {
     this.persist();
   }
 
+  /** A raider's warning: the HUD's banner (mouse and pad) and the dock's Avoid combat chip (touch). */
+  private setEncounterWarning(on: boolean): void {
+    this.hud.setEncounterBanner(on);
+    this.touch.setEncounter(on);
+  }
+
   private onEncounterStart(def: EncounterDef): void {
     void def;
-    this.hud.setEncounterBanner(true);
+    this.setEncounterWarning(true);
     toast('Hollow Wake raider inbound! Targeted automatically — you can also avoid the fight.', 'bad', 4500);
   }
 
   private onEncounterEnd(def: EncounterDef, outcome: EncounterOutcome): void {
     const state = this.state!;
-    this.hud.setEncounterBanner(false);
+    this.setEncounterWarning(false);
     if (def.id === 'mars-raider') state.pirateOutcome = outcome;
     if (outcome === 'destroyed') {
       state.stats.kills += 1;
@@ -2233,7 +2240,7 @@ export class Game {
     this.persist();
     await this.saves.flush();
     this.disposeFlight();
-    this.hud.setEncounterBanner(false);
+    this.setEncounterWarning(false);
     await this.showTitle();
   }
 

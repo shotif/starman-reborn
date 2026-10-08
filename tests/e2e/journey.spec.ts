@@ -182,11 +182,13 @@ test('the prototype journey: Earth → Mars → Alpha Centauri → free explorat
   expect(sawLane).toBe(true);
   await api(page, 'setTimeScale', 1);
 
-  // 5. One readable fight (desktop) or the one-click avoid-combat route (touch).
-  await expect(page.getByTestId('encounter-banner')).toBeVisible();
+  // 5. One readable fight (desktop) or the one-click avoid-combat route (touch: from the dock, the
+  // banner staying out of the way, docs/PROCGEN.md §52).
+  await expect(page.getByTestId(touch ? 'touch-avoid' : 'encounter-banner')).toBeVisible();
+  if (touch) await expect(page.getByTestId('encounter-banner')).toBeHidden();
   let fought = false;
   if (!touch) fought = await fightWithMouse(page, 150);
-  if (!fought) await press(page, 'avoid-combat');
+  if (!fought) await press(page, touch ? 'touch-avoid' : 'avoid-combat');
   await waitUntil(page, 'encounter resolved', async () => (await state(page)).pirateOutcome !== 'none', 120_000);
   const outcome = (await state(page)).pirateOutcome;
   if (!touch) expect(['destroyed', 'escaped', 'bypassed']).toContain(outcome);

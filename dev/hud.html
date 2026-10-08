@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#04060b" />
+    <meta name="color-scheme" content="dark" />
+    <title>Starman Reborn: flight HUD (dev only)</title>
+  </head>
+  <body>
+    <!-- Dev harness for the touch flight HUD and its clear centre (docs/PROCGEN.md §52). Served by
+         `npm run dev` at /dev/hud.html; not part of the production build. -->
+    <div id="app">
+      <div id="ui"></div>
+    </div>
+    <script type="module" src="/src/dev/hudHarness.ts"></script>
+  </body>
+</html>
