@@ -16,7 +16,7 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 810 KB of 850 (gzipped), with Sol's sky (27 KB) loaded on demand |
 | Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 65 passed (5 touch-only tests skipped) |
 | Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 65 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
-| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 828 screenshots, no audit findings |
+| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 846 screenshots, no audit findings |
 
 ### Unit tests (Vitest)
 
