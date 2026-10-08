@@ -11,12 +11,12 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | --- | --- | --- |
 | TypeScript typecheck (app + scripts/tests) | `npm run typecheck` | Pass |
 | Astronomy data validation | `npm run data:validate` | Pass (22 warnings: the contested planets this edition keeps) |
-| Unit tests | `npm test` | Pass: 1106 tests in 74 files |
+| Unit tests | `npm test` | Pass: 1115 tests in 75 files |
 | Production build | `npm run build` | Pass |
-| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 806 KB of 850 (gzipped), with Sol's sky (22 KB) loaded on demand |
+| First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 810 KB of 850 (gzipped), with Sol's sky (27 KB) loaded on demand |
 | Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 65 passed (5 touch-only tests skipped) |
 | Browser tests, touch 844×390 | `npx playwright test --project=touch` | Pass: 65 passed (2 desktop-only tests, the slow-network measurement and the two offline tests skipped) |
-| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 828 screenshots, no audit findings |
+| Layout screenshots + audits, 7 sizes + 2 large-text phones | `npm run screenshots` | Pass: 846 screenshots, no audit findings |
 
 ### Unit tests (Vitest)
 
@@ -601,7 +601,8 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   never near a surface; sampled heats where nobody beats the record and the levels win and place as
   meant), and broken rules are caught (gates too narrow, a purse over the ceiling, a fee too small, a
   heat too short, a record no better than the racers). Clubs and courses are the same every time,
-  Halcyon Ring's a novice club round the Moon, clear at twenty dates. A gate counts only crossed the
+  Halcyon Ring's a novice club round the Moon, clear at twenty dates as it turns with the Moon (a
+  week apart, the Moon a quarter of the way round Earth, the course turned with it and the same shape). A gate counts only crossed the
   right way inside it, a near miss is a miss, a fast step is caught. Fields are the same every time,
   rivals race in their own ship's class and never when out for the pilot; par comes with a split at
   every gate. One heat flown in frames of 1/144 s, 1/24 s, irregular ones and 0.8 s comes out to the
@@ -847,6 +848,20 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   why. A first scan is written in the logbook once, said by number and name, and a save with a
   damaged list of them is caught.
 
+- `lunar.test.ts`: **Earth's Moon for real**. Horizons' Moon cited and dated, its Earth/Moon mass
+  ratio and radius as its record gives them, and the series' first terms the ones the Moon's theory
+  has always had first (the equation of the centre, the evection, the variation, the annual equation,
+  the reduction to the ecliptic; in latitude the orbit's tilt and the terms in M′ ± F), its mean
+  distance 385,000 km. Every guardrail passes (`validateLunarRules`). The Moon is within 0.015° and
+  25 km of all 4,380 of Horizons' positions it was not reckoned from and within 0.03° and 30 km of the
+  366 for the ten years after; 7.99% lit on the snapshot's day as Horizons has it, a waning crescent;
+  new and full within four minutes of USNO's times. NASA's eclipse of 2 August 2027 is at a new Moon
+  with the Sun and Moon within 0.5° of each other, and said in full; 31 December 2028's total eclipse
+  of the Moon within 0.55° of Earth's shadow; NASA's shorthand spelled out (western and southern Asia,
+  the central United States, a doubled comma, Scandinavia). A motion 0.05° off, an eclipse moved two
+  days and a place it cannot spell out are caught. In Sol it stands in its real direction from Earth,
+  a quarter of the way round a week on; and the News tells of the eclipse of 2 August 2027 in 14 days,
+  on the day itself today, and of none on the snapshot's day.
 - `spacecraft.test.ts`: **spacecraft out in Sol**. Horizons' eleven craft by name, Voyager 1's
   record and NSSDCA page checked as fetched (and that NSSDCA has none for Europa Clipper or JUICE). The
   craft pass `validateCraftRules` (every scene on 220 dates over six years and every six hours along
@@ -1142,6 +1157,13 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   giving its distance (172 AU), agency, launch, its open path, its light taking 24 hours to reach
   Earth, and its flyby of Jupiter, and its first scan in the logbook; Sol's card on the star map
   listing Voyager 1 and Europa Clipper's pass.
+- `lunar.spec.ts`: **Earth's Moon for real**: a fortnight before the total eclipse of the Sun of 2
+  August 2027, Earth Port's News telling of it (its path across Morocco to Somalia, up to 6 minutes 23
+  seconds, in 14 days) and of the Moon's penumbral eclipse of 17 August; out in Sol the Moon drawn in
+  its real direction from Earth on the game's date (within 0.01 radian); scanned, its card giving it
+  full, 99% lit, 406,100 km from Earth's centre, its next new Moon on 2 August 2027 and the eclipse in
+  its list, and that it stands in its real direction; Sol's card on the star map giving its phase and
+  the next eclipse.
 - `moons.spec.ts`: **moons of the giant planets**: out from Earth Port, Jupiter's four moons drawn
   outside Jupiter and Titan well outside Saturn; Io scanned from near it, its card giving its period,
   distance, size and density and that it stands in its real direction, and one more body in the

@@ -4,6 +4,8 @@ import { COMET_LINES, COMETS } from "../../content/stellar/comets.ts";
 import { outpostSites } from "../../content/outposts/sites.ts";
 import { MOON_LINES, MOONS } from "../../content/stellar/moons.ts";
 import { CRAFT_LINES, SPACECRAFT } from "../../content/stellar/spacecraft.ts";
+import { LUNAR, LUNAR_LINES } from "../../content/stellar/lunar.ts";
+import { LUNAR_DATA, moonPlace } from "../../data/lunar.ts";
 import { CRAFT_DATA, craftAt, craftOnPath } from "../../data/spacecraft.ts";
 import { skyVersion } from "../../data/sky.ts";
 import {
@@ -197,8 +199,10 @@ export function solScene(jd: number | null): SystemSceneDef {
     positions,
     real ? (real.marsNudged ? "real-nudged" : "real") : "schematic",
   );
-  // The giant planets' large moons round them on the game date (§48), then the comets, asteroids and
-  // spacecraft where they stand (without a date, on the snapshot's day), clear of them all.
+  // Earth's Moon where it really is round Earth (§51), the giant planets' large moons round them on
+  // the game date (§48), then the comets, asteroids and spacecraft where they stand (without a date,
+  // on the snapshot's day), clear of them all.
+  placeLuna(def, jd ?? LUNAR_DATA.epochJd);
   addMoons(def, jd ?? MOON_EPOCH_JD);
   def.comets = placeComets(def, jd ?? COMET_EPOCH_JD);
   def.asteroids = placeAsteroids(def, jd ?? ASTEROID_DATA.epochJd);
@@ -350,6 +354,50 @@ function placeComets(def: SystemSceneDef, jd: number): SceneCometDef[] {
   });
 }
 
+// ---------------------------------------------------------------- Earth's Moon (docs/PROCGEN.md §51.3)
+
+/** What the Moon here would crowd that is not its own, if anything: as a comet would (§45.3), and the practice range. */
+export function lunaCrowds(def: SystemSceneDef, at: THREE.Vector3, size: number): string | null {
+  const others = { ...def, planets: def.planets.filter((p) => p.id !== "moon") };
+  const hit = cometCrowds(others, at, size, LUNAR.clear);
+  if (hit) return hit;
+  const p = def.practice;
+  return p && at.distanceTo(p.center) < size + p.radius + LUNAR.clear.practice ? "practice" : null;
+}
+
+/**
+ * Earth's Moon in Sol's scene on a date: in its real direction from Earth's centre, `LUNAR.drawn`
+ * out at its mean distance and nearer or farther as it really is; moved out along its direction
+ * while it crowds anything, and if that is not enough (the lane to Mars runs out that way), turned
+ * along its orbit the least it needs, which the scene's note then says. Before Sol's sky has arrived,
+ * it stays where the scene first put it.
+ */
+function placeLuna(def: SystemSceneDef, jd: number): void {
+  const earth = def.planets.find((p) => p.id === "earth");
+  const moon = def.planets.find((p) => p.id === "moon");
+  const place = moonPlace(jd);
+  if (!earth || !moon || !place) return;
+  const base = (LUNAR.drawn.distance * place.distKm) / MOON_DISTANCE_KM;
+  const at = (dir: THREE.Vector3, d: number) => earth.position.clone().addScaledVector(dir, d);
+  let dir = eclipticToScene(place.xyz).normalize();
+  let d = base;
+  for (let i = 0; i < LUNAR.stretches && lunaCrowds(def, at(dir, d), moon.radius); i++) d *= LUNAR.stretch;
+  if (lunaCrowds(def, at(dir, d), moon.radius)) {
+    const up = new THREE.Vector3(0, 1, 0);
+    const turned = Array.from({ length: LUNAR.turnDeg }, (_, k) => k + 1)
+      .flatMap((k) => [k, -k])
+      .map((k) => dir.clone().applyAxisAngle(up, (k * Math.PI) / 180))
+      .find((t) => !lunaCrowds(def, at(t, base), moon.radius));
+    if (turned) {
+      dir = turned;
+      d = base;
+      def.scaleNote = `${def.scaleNote} ${LUNAR_LINES.turned}`;
+    }
+  }
+  moon.position = at(dir, d);
+  moon.subtitle = LUNAR_LINES.target;
+}
+
 // ---------------------------------------------------------------- moons (docs/PROCGEN.md §48.3)
 
 /** A moon's name and its planet's, filled into a line. */
@@ -459,21 +507,19 @@ export function asteroidColor(asteroid: Asteroid): string {
 
 /**
  * How far from Earth's centre a pass is drawn (§47.3): by the logarithm of its distance, from Earth's
- * surface (drawn at Earth's radius) to the Moon's mean distance (drawn where the Moon is), and on at
- * that rate beyond.
+ * surface (drawn at Earth's radius) to the Moon's mean distance (drawn where the Moon is drawn at
+ * it, §51.3), and on at that rate beyond.
  */
 export function nearEarthDistance(
   def: SystemSceneDef,
   km: number,
 ): number | null {
   const earth = def.planets.find((p) => p.id === "earth");
-  const moon = def.planets.find((p) => p.id === "moon");
-  if (!earth || !moon || !(km > 0)) return null;
-  const moonAt = moon.position.distanceTo(earth.position);
+  if (!earth || !(km > 0)) return null;
   const f =
     Math.log(Math.max(km, EARTH_RADIUS_KM) / EARTH_RADIUS_KM) /
     Math.log(MOON_DISTANCE_KM / EARTH_RADIUS_KM);
-  return earth.radius + (moonAt - earth.radius) * f;
+  return earth.radius + (LUNAR.drawn.distance - earth.radius) * f;
 }
 
 /**
@@ -784,7 +830,7 @@ function buildSolScene(
     scaleNote:
       layout === "schematic"
         ? "Planet sizes, spacing and positions are schematic, not today’s sky; the belts are placed schematically."
-        : `Planets, comets, asteroids and spacecraft sit in their real directions from the Sun on the game date (JPL's data); sizes and spacing are compressed, and the belts are placed schematically.${layout === "real-nudged" ? " Mars, behind the Sun, is drawn a little off its true place." : ""}`,
+        : `Planets, comets, asteroids and spacecraft sit in their real directions from the Sun on the game date (JPL's data), and the Moon in its real direction from Earth; sizes and spacing are compressed, and the belts are placed schematically.${layout === "real-nudged" ? " Mars, behind the Sun, is drawn a little off its true place." : ""}`,
   };
 }
 

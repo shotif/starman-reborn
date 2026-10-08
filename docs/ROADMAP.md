@@ -9,12 +9,12 @@ After the scripted opening (10–20 minutes), the neighbourhood is an open sandb
 systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
 of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
 packs in lawless space; 39 ships and 146 pieces of equipment; and generated contracts on every job
-board. Increments 1–49 (under [Done so far](#done-so-far)) added world events and news, contracts
+board. Increments 1–50 (under [Done so far](#done-so-far)) added world events and news, contracts
 of every kind, the law and the outlaw path, goals, ranks with each faction that open doors, races round real planets and moons against racers who really fly, a wing that takes orders and grows with every fight, border battles to see and join, seven story arcs, combat depth, people in the
 bars and a trade computer, a world that answers, gluts that ship their surplus out and relief to
 escort through raided lanes, a fleet of your own whose captains fly the lanes, a crew aboard your own ship,
 up to three stations of your own to build and defend, refineries in the real belts, captains who supply them and mine for them, outposts that trade with their neighbours, have news of their own and people who live there, passengers and sightseers, rival pilots with careers and stories of their own, a
-supernova in every sky (as fiction), real flare stars that flare (when is fiction), real binary orbits, real comets, named asteroids, the giant planets' large moons and spacecraft in Sol (Apophis's 2029 pass of Earth among them, and Voyager 1 far beyond Neptune), a pilot's logbook, an invented star at the map's edge that explodes and leaves a
+supernova in every sky (as fiction), real flare stars that flare (when is fiction), real binary orbits, real comets, named asteroids, the giant planets' large moons and spacecraft in Sol (Apophis's 2029 pass of Earth among them, and Voyager 1 far beyond Neptune), Earth's Moon where it really is with its phases and eclipses, a pilot's logbook, an invented star at the map's edge that explodes and leaves a
 black hole to fly to (fiction too), encounters on the lanes between the docks, wrecks and derelicts to fly to with short trails across a few systems, mining in the real belts, the frontier with a life of its own,
 a border war whose fronts can be won for good, story endings that change stations for good, escorts
 and convoys across jumps, haulers with real cargo on a timetable, and a game measured and tuned on a
@@ -28,16 +28,11 @@ What it lacks now:
 
 ## Proposed next increments
 
-Chosen by the owner on 8 October 2026, once the spacecraft were live: Earth's Moon for real, then
-Pluto and the dwarf planets, then more moons. The first load stood at 827 KB of its 850 KB budget;
-rather than raise it again, the owner chose to load Sol's real sky (its comets, asteroids, moons and
-spacecraft) on demand first, which brought it to 806 KB (increment 49). Each of the three puts its
-data in that part too.
-
-### Earth's Moon for real ⏳
-
-The Moon where JPL Horizons has it round Earth on the game's date, rather than at a fixed place by
-Earth, with its phase; and the News tells of the real eclipses of the coming years.
+Chosen by the owner on 8 October 2026, once the spacecraft were live: Earth's Moon for real (done:
+increment 50), then Pluto and the dwarf planets, then more moons. The first load stood at 827 KB of
+its 850 KB budget; rather than raise it again, the owner chose to load Sol's real sky (its comets,
+asteroids, moons and spacecraft) on demand first, which brought it to 806 KB (increment 49). Each of
+the three puts its data in that part too: with the Moon, the first load is 810 KB.
 
 ### Pluto and the dwarf planets ⏳
 
@@ -57,6 +52,18 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 50. Earth's Moon for real ✅
+
+The Moon now goes round Earth where JPL Horizons has it on the game's date, lit by the Sun as it
+really is, instead of sitting at a fixed place by Earth: its motion is reckoned from six years of
+Horizons' positions and stays within 0.02° of them for ten years beyond. Its card gives its phase,
+how much of it is lit, how far it is, when it is next new and full (within minutes of the US Naval
+Observatory's times) and the eclipses of the next two years as NASA lists them, in plain words; Sol's
+map card gives its phase and the next eclipse, the encyclopedia every eclipse to come, and the News
+at Sol's stations tells of an eclipse of the Sun or the Moon coming within three months (the total
+eclipse of the Sun of 2 August 2027 among them). Sol's Moon Loop race turns with the Moon, keeping to
+the face it shows Earth ([PROCGEN.md §51](PROCGEN.md#51-earths-moon-for-real)).
 
 ### 49. Sol's sky loaded on demand ✅
 

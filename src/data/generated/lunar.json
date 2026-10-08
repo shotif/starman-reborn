@@ -1,0 +1,1824 @@
+{
+ "generatedBy": "scripts/lunar-process.ts",
+ "retrieved": "2026-10-08",
+ "epochJd": 2461321.5,
+ "span": [
+  2460591.5,
+  2462781.5
+ ],
+ "sources": {
+  "horizons": {
+   "label": "JPL Horizons",
+   "url": "https://ssd.jpl.nasa.gov/horizons/",
+   "retrieved": "2026-10-08"
+  },
+  "arguments": {
+   "label": "IERS Conventions (2010), from Simon et al. (1994)",
+   "url": "https://iers-conventions.obspm.fr/"
+  },
+  "eclipses": {
+   "label": "NASA Eclipse Web Site (Fred Espenak, NASA GSFC)",
+   "url": "https://eclipse.gsfc.nasa.gov/eclipse.html",
+   "retrieved": "2026-10-08"
+  }
+ },
+ "description": "Earth’s Moon: where it is from Earth’s centre (J2000 ecliptic), reckoned from JPL Horizons’ positions of it every twelve hours from two years before the snapshot to four after: its mean longitude (F + Ω) and the four fundamental arguments D, M, M′ and F (IERS Conventions 2010, from Simon et al. 1994; arcseconds, T in Julian centuries of TDB from J2000), and in longitude, latitude (degrees) and distance (km) a constant and a drift (per Julian century from the snapshot’s day) and periodic terms, each [multiples of D, M, M′, F, sine, cosine]; with Horizons’ Earth/Moon mass ratio and the Moon’s radius (km). And NASA’s eclipses of the Sun and the Moon from two years before the snapshot, as Fred Espenak’s decade tables give them (dates and times are Terrestrial Dynamical Time).",
+ "earthMoonMassRatio": 81.3005690769,
+ "radiusKm": 1737.4,
+ "arguments": {
+  "Mp": [
+   485868.249036,
+   1717915923.2178,
+   31.8792,
+   0.051635,
+   -0.0002447
+  ],
+  "M": [
+   1287104.793048,
+   129596581.0481,
+   -0.5532,
+   0.000136,
+   -0.00001149
+  ],
+  "F": [
+   335779.526232,
+   1739527262.8478,
+   -12.7512,
+   -0.001037,
+   0.00000417
+  ],
+  "D": [
+   1072260.703692,
+   1602961601.209,
+   -6.3706,
+   0.006593,
+   -0.00003169
+  ],
+  "Omega": [
+   450160.398036,
+   -6962890.5431,
+   7.4722,
+   0.007702,
+   -0.00005939
+  ]
+ },
+ "longitude": {
+  "mean": [
+   -0.37287432,
+   -1.45401458
+  ],
+  "terms": [
+   [
+    0,
+    0,
+    1,
+    0,
+    6.288816,
+    0.00048564
+   ],
+   [
+    2,
+    0,
+    -1,
+    0,
+    1.27400188,
+    0.00016992
+   ],
+   [
+    2,
+    0,
+    0,
+    0,
+    0.65832709,
+    0.0000243
+   ],
+   [
+    0,
+    0,
+    2,
+    0,
+    0.21347522,
+    -0.00001158
+   ],
+   [
+    0,
+    1,
+    0,
+    0,
+    -0.18464838,
+    -0.00059921
+   ],
+   [
+    0,
+    0,
+    0,
+    2,
+    -0.11413212,
+    -0.00018119
+   ],
+   [
+    2,
+    0,
+    -2,
+    0,
+    0.05879594,
+    -0.00005628
+   ],
+   [
+    2,
+    -1,
+    -1,
+    0,
+    0.05703265,
+    0.00001046
+   ],
+   [
+    0,
+    1,
+    -1,
+    0,
+    -0.04099474,
+    -0.00003852
+   ],
+   [
+    2,
+    0,
+    1,
+    0,
+    0.05332115,
+    -0.00001606
+   ],
+   [
+    2,
+    -1,
+    0,
+    0,
+    0.04601399,
+    0.00015916
+   ],
+   [
+    0,
+    1,
+    1,
+    0,
+    -0.03040857,
+    0.00005754
+   ],
+   [
+    1,
+    0,
+    0,
+    0,
+    -0.03459522,
+    -0.00005174
+   ],
+   [
+    2,
+    0,
+    0,
+    -2,
+    0.01532042,
+    -0.00013857
+   ],
+   [
+    0,
+    0,
+    1,
+    2,
+    -0.01245847,
+    -0.00004351
+   ],
+   [
+    4,
+    0,
+    -1,
+    0,
+    0.01062788,
+    0.0000402
+   ],
+   [
+    0,
+    0,
+    3,
+    0,
+    0.0100862,
+    -0.00002332
+   ],
+   [
+    0,
+    0,
+    1,
+    -2,
+    0.0112499,
+    -0.00036066
+   ],
+   [
+    4,
+    0,
+    -2,
+    0,
+    0.00861254,
+    0.00005505
+   ],
+   [
+    2,
+    1,
+    -1,
+    0,
+    -0.00781831,
+    -0.00005999
+   ],
+   [
+    2,
+    1,
+    0,
+    0,
+    -0.00672283,
+    -4.5e-7
+   ],
+   [
+    1,
+    0,
+    -1,
+    0,
+    -0.00545488,
+    -0.00027142
+   ],
+   [
+    1,
+    1,
+    0,
+    0,
+    0.00540541,
+    0.00013579
+   ],
+   [
+    2,
+    -1,
+    1,
+    0,
+    0.00398661,
+    -0.00000975
+   ],
+   [
+    2,
+    0,
+    2,
+    0,
+    0.00400297,
+    -0.00000677
+   ],
+   [
+    4,
+    0,
+    0,
+    0,
+    0.00384104,
+    -0.00000246
+   ],
+   [
+    0,
+    1,
+    -2,
+    0,
+    -0.00272448,
+    0.00002267
+   ],
+   [
+    2,
+    0,
+    -3,
+    0,
+    0.00362731,
+    0.00009122
+   ],
+   [
+    2,
+    0,
+    -1,
+    2,
+    -0.00258824,
+    -0.00002225
+   ],
+   [
+    2,
+    -1,
+    -2,
+    0,
+    0.00232303,
+    0.00003075
+   ],
+   [
+    2,
+    -2,
+    0,
+    0,
+    0.00223775,
+    0.00001696
+   ],
+   [
+    0,
+    1,
+    2,
+    0,
+    -0.00211698,
+    0.00004509
+   ],
+   [
+    2,
+    -2,
+    -1,
+    0,
+    0.00202369,
+    -0.00003149
+   ],
+   [
+    1,
+    0,
+    1,
+    0,
+    -0.00230209,
+    0.00002162
+   ],
+   [
+    0,
+    2,
+    0,
+    0,
+    -0.00196997,
+    0.00005312
+   ],
+   [
+    2,
+    0,
+    1,
+    -2,
+    -0.00158005,
+    -0.00026958
+   ],
+   [
+    2,
+    0,
+    0,
+    2,
+    -0.00158287,
+    -0.00001035
+   ]
+  ]
+ },
+ "latitude": {
+  "mean": [
+   0.00007268,
+   0
+  ],
+  "terms": [
+   [
+    0,
+    0,
+    0,
+    1,
+    5.12619244,
+    0.00297974
+   ],
+   [
+    0,
+    0,
+    1,
+    1,
+    0.28040333,
+    0.00016389
+   ],
+   [
+    0,
+    0,
+    1,
+    -1,
+    0.27740866,
+    -0.00044052
+   ],
+   [
+    2,
+    0,
+    0,
+    -1,
+    0.17312557,
+    -0.00014625
+   ],
+   [
+    2,
+    0,
+    -1,
+    1,
+    0.05538168,
+    0.00003394
+   ],
+   [
+    2,
+    0,
+    -1,
+    -1,
+    0.04621886,
+    0.00000899
+   ],
+   [
+    2,
+    0,
+    0,
+    1,
+    0.03251915,
+    -0.00001459
+   ],
+   [
+    0,
+    0,
+    2,
+    1,
+    0.01720482,
+    -0.000046
+   ],
+   [
+    0,
+    0,
+    2,
+    -1,
+    0.00902045,
+    -0.00023779
+   ],
+   [
+    2,
+    0,
+    1,
+    -1,
+    0.00928506,
+    -0.00004382
+   ],
+   [
+    2,
+    -1,
+    0,
+    -1,
+    0.00816302,
+    0.00005828
+   ],
+   [
+    2,
+    0,
+    -2,
+    -1,
+    0.00429633,
+    -0.00000417
+   ],
+   [
+    2,
+    0,
+    1,
+    1,
+    0.00417024,
+    0.00000776
+   ],
+   [
+    2,
+    2,
+    0,
+    -1,
+    0.0004158,
+    0.00326997
+   ],
+   [
+    1,
+    2,
+    -1,
+    -1,
+    -0.00008653,
+    0.00284415
+   ],
+   [
+    2,
+    -1,
+    -1,
+    1,
+    0.00240765,
+    -0.00002672
+   ],
+   [
+    3,
+    2,
+    0,
+    -1,
+    -0.00037395,
+    0.00181348
+   ],
+   [
+    2,
+    -1,
+    0,
+    1,
+    0.00213866,
+    0.00005667
+   ],
+   [
+    2,
+    -1,
+    -1,
+    -1,
+    0.00207901,
+    0.00001958
+   ],
+   [
+    0,
+    1,
+    -1,
+    1,
+    -0.00225318,
+    0.00040322
+   ],
+   [
+    0,
+    1,
+    0,
+    1,
+    -0.00188817,
+    -0.00002721
+   ],
+   [
+    4,
+    0,
+    -1,
+    -1,
+    0.00181907,
+    -0.00006922
+   ],
+   [
+    0,
+    0,
+    0,
+    3,
+    -0.00172972,
+    -0.00005334
+   ],
+   [
+    0,
+    1,
+    1,
+    1,
+    -0.00145602,
+    0.00003681
+   ],
+   [
+    1,
+    0,
+    0,
+    1,
+    -0.00136347,
+    0.00002686
+   ],
+   [
+    2,
+    1,
+    -1,
+    -1,
+    0.0008123,
+    -0.00088303
+   ]
+  ]
+ },
+ "distance": {
+  "mean": [
+   385000.2373,
+   0
+  ],
+  "terms": [
+   [
+    0,
+    0,
+    1,
+    0,
+    1.5347,
+    -20905.4543
+   ],
+   [
+    2,
+    0,
+    -1,
+    0,
+    0.49,
+    -3699.0788
+   ],
+   [
+    2,
+    0,
+    0,
+    0,
+    0.2081,
+    -2955.996
+   ],
+   [
+    0,
+    0,
+    2,
+    0,
+    -0.1399,
+    -569.5856
+   ],
+   [
+    2,
+    0,
+    -2,
+    0,
+    -0.2164,
+    246.016
+   ],
+   [
+    2,
+    -1,
+    0,
+    0,
+    0.5901,
+    -205.4947
+   ],
+   [
+    2,
+    0,
+    1,
+    0,
+    0.0325,
+    -170.6791
+   ],
+   [
+    0,
+    1,
+    -1,
+    0,
+    0.1513,
+    -129.8354
+   ],
+   [
+    2,
+    -1,
+    -1,
+    0,
+    0.0281,
+    -152.0249
+   ],
+   [
+    0,
+    1,
+    1,
+    0,
+    0.1733,
+    104.7516
+   ],
+   [
+    1,
+    0,
+    0,
+    0,
+    -0.2225,
+    108.3214
+   ],
+   [
+    0,
+    0,
+    1,
+    -2,
+    1.3511,
+    80.5199
+   ],
+   [
+    0,
+    1,
+    0,
+    0,
+    -0.217,
+    48.7143
+   ],
+   [
+    4,
+    0,
+    -1,
+    0,
+    0.0531,
+    -34.5551
+   ],
+   [
+    2,
+    1,
+    0,
+    0,
+    -0.3878,
+    30.752
+   ],
+   [
+    0,
+    0,
+    3,
+    0,
+    -0.0774,
+    -23.3912
+   ],
+   [
+    4,
+    0,
+    -2,
+    0,
+    0.221,
+    -21.9493
+   ],
+   [
+    2,
+    1,
+    -1,
+    0,
+    -0.3106,
+    23.9469
+   ],
+   [
+    1,
+    1,
+    0,
+    0,
+    0.4316,
+    -18.0141
+   ],
+   [
+    2,
+    0,
+    -3,
+    0,
+    -0.319,
+    14.2156
+   ],
+   [
+    2,
+    -1,
+    1,
+    0,
+    -0.1672,
+    -12.356
+   ],
+   [
+    4,
+    0,
+    0,
+    0,
+    -0.0089,
+    -11.5852
+   ],
+   [
+    2,
+    0,
+    0,
+    -2,
+    0.3876,
+    10.6627
+   ],
+   [
+    2,
+    0,
+    2,
+    0,
+    -0.0004,
+    -10.4368
+   ],
+   [
+    2,
+    -1,
+    -2,
+    0,
+    0.0452,
+    9.9891
+   ],
+   [
+    2,
+    -2,
+    0,
+    0,
+    0.1967,
+    -10.1154
+   ],
+   [
+    0,
+    1,
+    -2,
+    0,
+    0.1066,
+    -7.2723
+   ],
+   [
+    2,
+    0,
+    -1,
+    -2,
+    0.3421,
+    9.0119
+   ],
+   [
+    1,
+    0,
+    -1,
+    0,
+    0.1368,
+    -8.5748
+   ],
+   [
+    0,
+    1,
+    2,
+    0,
+    0.0662,
+    5.7398
+   ],
+   [
+    2,
+    -2,
+    -1,
+    0,
+    0.0324,
+    -4.9744
+   ],
+   [
+    1,
+    0,
+    1,
+    0,
+    -0.3033,
+    6.1081
+   ],
+   [
+    0,
+    0,
+    2,
+    -2,
+    0.0486,
+    -4.3585
+   ],
+   [
+    4,
+    -1,
+    -1,
+    0,
+    0.0572,
+    -3.8689
+   ],
+   [
+    2,
+    0,
+    1,
+    -2,
+    -0.7941,
+    3.5925
+   ]
+  ]
+ },
+ "eclipses": [
+  {
+   "kind": "lunar",
+   "date": "2025-03-14",
+   "td": "06:59:56",
+   "jd": 2460748.79162,
+   "type": "Total",
+   "saros": 123,
+   "magnitude": 1.178,
+   "duration": "03h38m 01h05m",
+   "regions": "Pacific, Americas, w Europe, w Africa",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2021.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2025-03-29",
+   "td": "10:48:36",
+   "jd": 2460763.950417,
+   "type": "Partial",
+   "saros": 149,
+   "magnitude": 0.938,
+   "duration": null,
+   "regions": "nw Africa, Europe, n Russia",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2021.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2025-09-07",
+   "td": "18:12:58",
+   "jd": 2460926.259005,
+   "type": "Total",
+   "saros": 128,
+   "magnitude": 1.362,
+   "duration": "03h29m 01h22m",
+   "regions": "Europe, Africa, Asia, Australia",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2021.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2025-09-21",
+   "td": "19:43:04",
+   "jd": 2460940.321574,
+   "type": "Partial",
+   "saros": 154,
+   "magnitude": 0.855,
+   "duration": null,
+   "regions": "s Pacific, N.Z., Antarctica",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2021.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2026-02-17",
+   "td": "12:13:05",
+   "jd": 2461089.009086,
+   "type": "Annular",
+   "saros": 121,
+   "magnitude": 0.963,
+   "duration": "02m20s",
+   "regions": "s Argentina & Chile, s Africa, Antarctica",
+   "path": "Annular: Antarctica",
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2021.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2026-03-03",
+   "td": "11:34:52",
+   "jd": 2461102.982546,
+   "type": "Total",
+   "saros": 133,
+   "magnitude": 1.151,
+   "duration": "03h27m 00h58m",
+   "regions": "e Asia, Australia, Pacific, Americas",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2021.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2026-08-12",
+   "td": "17:47:05",
+   "jd": 2461265.24103,
+   "type": "Total",
+   "saros": 126,
+   "magnitude": 1.039,
+   "duration": "02m18s",
+   "regions": "n N. America, w Africa, Europe",
+   "path": "Total: Arctic, Greenland, Iceland, Spain",
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2021.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2026-08-28",
+   "td": "04:14:04",
+   "jd": 2461280.676435,
+   "type": "Partial",
+   "saros": 138,
+   "magnitude": 0.93,
+   "duration": "03h18m",
+   "regions": "e Pacific, Americas, Europe, Africa",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2021.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2027-02-06",
+   "td": "16:00:47",
+   "jd": 2461443.167211,
+   "type": "Annular",
+   "saros": 131,
+   "magnitude": 0.928,
+   "duration": "07m51s",
+   "regions": "S. America, Antarctica, w & s Africa",
+   "path": "Annular: Chile, Argentina, Atlantic",
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2021.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2027-02-20",
+   "td": "23:14:06",
+   "jd": 2461457.468125,
+   "type": "Penumbral",
+   "saros": 143,
+   "magnitude": -0.057,
+   "duration": null,
+   "regions": "Americas, Europe, Africa, Asia",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2021.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2027-07-18",
+   "td": "16:04:09",
+   "jd": 2461605.169549,
+   "type": "Penumbral",
+   "saros": 110,
+   "magnitude": -1.068,
+   "duration": null,
+   "regions": "e Africa, Asia, Australia, Pacific",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2021.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2027-08-02",
+   "td": "10:07:49",
+   "jd": 2461619.922095,
+   "type": "Total",
+   "saros": 136,
+   "magnitude": 1.079,
+   "duration": "06m23s",
+   "regions": "Africa, Europe, Mid East, w & s Asia",
+   "path": "Total:Morocco, Spain, Algeria, Libya, Egypt, Saudi Arabia, Yemen, Somalia",
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2021.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2027-08-17",
+   "td": "07:14:59",
+   "jd": 2461634.802072,
+   "type": "Penumbral",
+   "saros": 148,
+   "magnitude": -0.525,
+   "duration": null,
+   "regions": "Pacific, Americas",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2021.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2028-01-12",
+   "td": "04:14:13",
+   "jd": 2461782.676539,
+   "type": "Partial",
+   "saros": 115,
+   "magnitude": 0.066,
+   "duration": "00h56m",
+   "regions": "Americas, Europe, Africa",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2021.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2028-01-26",
+   "td": "15:08:58",
+   "jd": 2461797.131227,
+   "type": "Annular",
+   "saros": 141,
+   "magnitude": 0.921,
+   "duration": "10m27s",
+   "regions": "e N. America, C. & S. America, w Europe, nw Africa",
+   "path": "Annular: Ecuador, Peru, Brazil, Suriname, Spain, Portugal",
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2021.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2028-07-06",
+   "td": "18:20:57",
+   "jd": 2461959.264549,
+   "type": "Partial",
+   "saros": 120,
+   "magnitude": 0.389,
+   "duration": "02h21m",
+   "regions": "Europe, Africa, Asia, Australia",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2021.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2028-07-22",
+   "td": "02:56:39",
+   "jd": 2461974.622674,
+   "type": "Total",
+   "saros": 146,
+   "magnitude": 1.056,
+   "duration": "05m10s",
+   "regions": "SE Asia, E. Indies, Australia, N.Z.",
+   "path": "Total: Australia, N. Z.",
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2021.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2028-12-31",
+   "td": "16:53:15",
+   "jd": 2462137.203646,
+   "type": "Total",
+   "saros": 125,
+   "magnitude": 1.246,
+   "duration": "03h29m 01h11m",
+   "regions": "Europe, Africa, Asia, Australia, Pacific",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2021.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2029-01-14",
+   "td": "17:13:47",
+   "jd": 2462151.217905,
+   "type": "Partial",
+   "saros": 151,
+   "magnitude": 0.871,
+   "duration": null,
+   "regions": "N. America, C. America",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2021.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2029-06-12",
+   "td": "04:06:13",
+   "jd": 2462299.670984,
+   "type": "Partial",
+   "saros": 118,
+   "magnitude": 0.458,
+   "duration": null,
+   "regions": "Arctic, Scandanavia, Alaska, n Asia, n Canada",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2021.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2029-06-26",
+   "td": "03:23:22",
+   "jd": 2462313.641227,
+   "type": "Total",
+   "saros": 130,
+   "magnitude": 1.844,
+   "duration": "03h40m 01h42m",
+   "regions": "Americas, Europe, Africa, Mid East",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2021.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2029-07-11",
+   "td": "15:37:18",
+   "jd": 2462329.150903,
+   "type": "Partial",
+   "saros": 156,
+   "magnitude": 0.23,
+   "duration": null,
+   "regions": "s Chile, s Argentina",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2021.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2029-12-05",
+   "td": "15:03:57",
+   "jd": 2462476.127743,
+   "type": "Partial",
+   "saros": 123,
+   "magnitude": 0.891,
+   "duration": null,
+   "regions": "s Argentina, s Chile, Antarctica",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2021.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2029-12-20",
+   "td": "22:43:12",
+   "jd": 2462491.446667,
+   "type": "Total",
+   "saros": 135,
+   "magnitude": 1.117,
+   "duration": "03h33m 00h54m",
+   "regions": "Americas, Europe, Africa, Asia",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2021.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2030-06-01",
+   "td": "06:29:13",
+   "jd": 2462653.770289,
+   "type": "Annular",
+   "saros": 128,
+   "magnitude": 0.944,
+   "duration": "05m21s",
+   "regions": "Europe, n Africa, Mid East, Asia, Arctic, Alaska",
+   "path": "Annular: Algeria, Tunisia, Greece, Turkey, Russia, n. China, Japan",
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2021.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2030-06-15",
+   "td": "18:34:34",
+   "jd": 2462668.274005,
+   "type": "Partial",
+   "saros": 140,
+   "magnitude": 0.502,
+   "duration": "02h24m",
+   "regions": "Europe, Africa, Asia, Australia",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2021.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2030-11-25",
+   "td": "06:51:37",
+   "jd": 2462830.785845,
+   "type": "Total",
+   "saros": 133,
+   "magnitude": 1.047,
+   "duration": "03m44s",
+   "regions": "s Africa, s Indian Oc., E. Indies, Australia, Antarctica",
+   "path": "Total: Botswana, S. Africa, Australia",
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2021.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2030-12-09",
+   "td": "22:28:51",
+   "jd": 2462845.436701,
+   "type": "Penumbral",
+   "saros": 145,
+   "magnitude": -0.163,
+   "duration": null,
+   "regions": "Americas, Europe, Africa, Asia",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2021.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2031-05-07",
+   "td": "03:52:02",
+   "jd": 2462993.661134,
+   "type": "Penumbral",
+   "saros": 112,
+   "magnitude": -0.09,
+   "duration": null,
+   "regions": "Americas, Europe, Africa",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2031.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2031-05-21",
+   "td": "07:16:04",
+   "jd": 2463007.802824,
+   "type": "Annular",
+   "saros": 138,
+   "magnitude": 0.959,
+   "duration": "05m26s",
+   "regions": "Africa, s Asia, E. Indies, Australia",
+   "path": "Annular: Angola, Congo, Zambia, Tanzania, s. India, Malaysia, Indonesia",
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2031.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2031-06-05",
+   "td": "11:45:17",
+   "jd": 2463022.98978,
+   "type": "Penumbral",
+   "saros": 150,
+   "magnitude": -0.82,
+   "duration": null,
+   "regions": "East Indies, Australia, Pacific",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2031.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2031-10-30",
+   "td": "07:46:45",
+   "jd": 2463169.824132,
+   "type": "Penumbral",
+   "saros": 117,
+   "magnitude": -0.32,
+   "duration": null,
+   "regions": "Americas",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2031.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2031-11-14",
+   "td": "21:07:30",
+   "jd": 2463185.380208,
+   "type": "Hybrid",
+   "saros": 143,
+   "magnitude": 1.011,
+   "duration": "01m08s",
+   "regions": "Pacific, s US, C. America, nw S. America",
+   "path": "Hybrid: Pacific, Panama",
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2031.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2032-04-25",
+   "td": "15:14:51",
+   "jd": 2463348.135312,
+   "type": "Total",
+   "saros": 122,
+   "magnitude": 1.191,
+   "duration": "03h31m 01h06m",
+   "regions": "e Africa, Asia, Australia, Pacific",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2031.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2032-05-09",
+   "td": "13:26:42",
+   "jd": 2463362.060208,
+   "type": "Annular",
+   "saros": 148,
+   "magnitude": 0.996,
+   "duration": "00m22s",
+   "regions": "s S. America, s Africa",
+   "path": "Annular: s Atlantic",
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2031.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2032-10-18",
+   "td": "19:03:40",
+   "jd": 2463524.294213,
+   "type": "Total",
+   "saros": 127,
+   "magnitude": 1.103,
+   "duration": "03h16m 00h47m",
+   "regions": "Africa, Europe, Asia, Australia",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2031.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2032-11-03",
+   "td": "05:34:12",
+   "jd": 2463539.732083,
+   "type": "Partial",
+   "saros": 153,
+   "magnitude": 0.855,
+   "duration": null,
+   "regions": "Asia",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2031.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2033-03-30",
+   "td": "18:02:35",
+   "jd": 2463687.251794,
+   "type": "Total",
+   "saros": 120,
+   "magnitude": 1.046,
+   "duration": "02m37s",
+   "regions": "N. America",
+   "path": "Total: e Russia, Alaska",
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2031.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2033-04-14",
+   "td": "19:13:51",
+   "jd": 2463702.301285,
+   "type": "Total",
+   "saros": 132,
+   "magnitude": 1.094,
+   "duration": "03h35m 00h49m",
+   "regions": "Europe, Africa, Asia, Australia",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2031.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2033-09-23",
+   "td": "13:54:31",
+   "jd": 2463864.079525,
+   "type": "Partial",
+   "saros": 125,
+   "magnitude": 0.689,
+   "duration": null,
+   "regions": "s S. America, Antarctica",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2031.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2033-10-08",
+   "td": "10:56:23",
+   "jd": 2463878.955822,
+   "type": "Total",
+   "saros": 137,
+   "magnitude": 1.35,
+   "duration": "03h22m 01h19m",
+   "regions": "Asia, Australia, Pacific, Americas",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2031.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2034-03-20",
+   "td": "10:18:45",
+   "jd": 2464041.929688,
+   "type": "Total",
+   "saros": 130,
+   "magnitude": 1.046,
+   "duration": "04m09s",
+   "regions": "Africa, Europe, w Asia",
+   "path": "Total: Nigeria, Cameroon, Chad, Sudan, Egypt, Saudi Arabia, Iran, Afghanistan, Pakistan, India, China",
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2031.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2034-04-03",
+   "td": "19:06:59",
+   "jd": 2464056.296516,
+   "type": "Penumbral",
+   "saros": 142,
+   "magnitude": -0.227,
+   "duration": null,
+   "regions": "Europe, Africa, Asia, Australia",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2031.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2034-09-12",
+   "td": "16:19:27",
+   "jd": 2464218.180174,
+   "type": "Annular",
+   "saros": 135,
+   "magnitude": 0.974,
+   "duration": "02m58s",
+   "regions": "C. America, S. America",
+   "path": "Annular: Chile, Bolivia, Argentina, Paraguay, Brazil",
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2031.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2034-09-28",
+   "td": "02:47:37",
+   "jd": 2464233.6164,
+   "type": "Partial",
+   "saros": 147,
+   "magnitude": 0.014,
+   "duration": "00h27m",
+   "regions": "Americas, Europe, Africa",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2031.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2035-02-22",
+   "td": "09:06:12",
+   "jd": 2464380.879306,
+   "type": "Penumbral",
+   "saros": 114,
+   "magnitude": -0.053,
+   "duration": null,
+   "regions": "e Asia, Pacific, Americas",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2031.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2035-03-09",
+   "td": "23:05:53",
+   "jd": 2464396.462419,
+   "type": "Annular",
+   "saros": 140,
+   "magnitude": 0.992,
+   "duration": "00m48s",
+   "regions": "Australia, New Zealand, s Pacific, Mexico, Antarctica",
+   "path": "Annular: New Zealand, Pacific",
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2031.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2035-08-19",
+   "td": "01:12:15",
+   "jd": 2464558.550174,
+   "type": "Partial",
+   "saros": 119,
+   "magnitude": 0.104,
+   "duration": "01h17m",
+   "regions": "Americas, Europe, Africa, Mid East",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2031.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2035-09-02",
+   "td": "01:56:46",
+   "jd": 2464572.581088,
+   "type": "Total",
+   "saros": 145,
+   "magnitude": 1.032,
+   "duration": "02m54s",
+   "regions": "e Asia, Pacific",
+   "path": "Total: China, Korea, Japan, Pacific",
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2031.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2036-02-11",
+   "td": "22:13:06",
+   "jd": 2464735.425764,
+   "type": "Total",
+   "saros": 124,
+   "magnitude": 1.299,
+   "duration": "03h22m 01h14m",
+   "regions": "Americas, Europe, Africa,, Asia, w Australia",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2031.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2036-02-27",
+   "td": "04:46:49",
+   "jd": 2464750.699178,
+   "type": "Partial",
+   "saros": 150,
+   "magnitude": 0.629,
+   "duration": null,
+   "regions": "Antarctica, s Australia, New Zealand",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2031.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2036-07-23",
+   "td": "10:32:06",
+   "jd": 2464897.938958,
+   "type": "Partial",
+   "saros": 117,
+   "magnitude": 0.199,
+   "duration": null,
+   "regions": "s Atlantic",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2031.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2036-08-07",
+   "td": "02:52:32",
+   "jd": 2464912.619815,
+   "type": "Total",
+   "saros": 129,
+   "magnitude": 1.454,
+   "duration": "03h51m 01h35m",
+   "regions": "Americas, Europe, Africa, w Asia",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2031.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2036-08-21",
+   "td": "17:25:45",
+   "jd": 2464927.226215,
+   "type": "Partial",
+   "saros": 155,
+   "magnitude": 0.862,
+   "duration": null,
+   "regions": "Alaska, Canada, Arctic, w Europe, nw Africa",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2031.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2037-01-16",
+   "td": "09:48:55",
+   "jd": 2465074.90897,
+   "type": "Partial",
+   "saros": 122,
+   "magnitude": 0.705,
+   "duration": null,
+   "regions": "n Africa, Europe, Mid East, w Asia",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2031.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2037-01-31",
+   "td": "14:01:38",
+   "jd": 2465090.084468,
+   "type": "Total",
+   "saros": 134,
+   "magnitude": 1.207,
+   "duration": "03h17m 01h04m",
+   "regions": "e Europe, e Africa, Asia, Australia, Pacific, N.A.",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2031.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2037-07-13",
+   "td": "02:40:35",
+   "jd": 2465252.611516,
+   "type": "Total",
+   "saros": 127,
+   "magnitude": 1.041,
+   "duration": "03m58s",
+   "regions": "E. Indies, Australia, Pacific",
+   "path": "Total: Australia, New Zealand",
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2031.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2037-07-27",
+   "td": "04:09:53",
+   "jd": 2465266.67353,
+   "type": "Partial",
+   "saros": 139,
+   "magnitude": 0.809,
+   "duration": "03h12m",
+   "regions": "Americas, Europe, Africa",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2031.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2038-01-05",
+   "td": "13:47:10",
+   "jd": 2465429.074421,
+   "type": "Annular",
+   "saros": 132,
+   "magnitude": 0.973,
+   "duration": "03m18s",
+   "regions": "e N. America, n S. America, Atlantic, Africa, Europe",
+   "path": "Annular: Cuba, Dom.Rep., Cote d'Ivoire, Ghana, Niger, Chad, Egypt",
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2031.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2038-01-21",
+   "td": "03:49:52",
+   "jd": 2465444.65963,
+   "type": "Penumbral",
+   "saros": 144,
+   "magnitude": -0.114,
+   "duration": null,
+   "regions": "Americas, Europe, Africa",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2031.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2038-06-17",
+   "td": "02:45:02",
+   "jd": 2465591.614606,
+   "type": "Penumbral",
+   "saros": 111,
+   "magnitude": -0.527,
+   "duration": null,
+   "regions": "e N. America, C. & S. America, Africa, w Europe",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2031.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2038-07-02",
+   "td": "13:32:54",
+   "jd": 2465607.064514,
+   "type": "Annular",
+   "saros": 137,
+   "magnitude": 0.991,
+   "duration": "01m00s",
+   "regions": "N. & C. America, S. America, Africa, Europe, Mid East",
+   "path": "Annular: Colombia, Venezuela, Mauritania, Morocco, Mali, Niger, Chad, Sudan, Ethiopia, Kenya",
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2031.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2038-07-16",
+   "td": "11:35:56",
+   "jd": 2465620.983287,
+   "type": "Penumbral",
+   "saros": 149,
+   "magnitude": -0.495,
+   "duration": null,
+   "regions": "Australia, e Asia, Pacific, w Americas",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2031.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2038-12-11",
+   "td": "17:44:60",
+   "jd": 2465769.239583,
+   "type": "Penumbral",
+   "saros": 116,
+   "magnitude": -0.289,
+   "duration": null,
+   "regions": "Europe, Africa, Asia, Australia",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2031.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2038-12-26",
+   "td": "01:00:10",
+   "jd": 2465783.541782,
+   "type": "Total",
+   "saros": 142,
+   "magnitude": 1.027,
+   "duration": "02m18s",
+   "regions": "se Asia, E. Indies, Australia, New Zealand, s Pacific, Antarctica",
+   "path": "Total: Australia, New Zealand, s Pacific",
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2031.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2039-06-06",
+   "td": "18:54:25",
+   "jd": 2465946.287789,
+   "type": "Partial",
+   "saros": 121,
+   "magnitude": 0.885,
+   "duration": "02h59m",
+   "regions": "Europe, Africa, Asia, Australia",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2031.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2039-06-21",
+   "td": "17:12:53",
+   "jd": 2465961.21728,
+   "type": "Annular",
+   "saros": 147,
+   "magnitude": 0.945,
+   "duration": "04m05s",
+   "regions": "N. America, w Europe",
+   "path": "Annular: Alaska, n Canada, Norway, Sweden, Finland, Estonia, Russia",
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2031.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2039-11-30",
+   "td": "16:56:28",
+   "jd": 2466123.20588,
+   "type": "Partial",
+   "saros": 126,
+   "magnitude": 0.943,
+   "duration": "03h26m",
+   "regions": "Europe, Africa, Asia, Australia, Pacific",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2031.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2039-12-15",
+   "td": "16:23:46",
+   "jd": 2466138.183171,
+   "type": "Total",
+   "saros": 152,
+   "magnitude": 1.036,
+   "duration": "01m51s",
+   "regions": "s S. America, Antarctica",
+   "path": "Total: Antarctica",
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2031.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2040-05-11",
+   "td": "03:43:02",
+   "jd": 2466285.654884,
+   "type": "Partial",
+   "saros": 119,
+   "magnitude": 0.531,
+   "duration": null,
+   "regions": "Australia, N.Z., Antarctica",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2031.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2040-05-26",
+   "td": "11:46:22",
+   "jd": 2466300.990532,
+   "type": "Total",
+   "saros": 131,
+   "magnitude": 1.535,
+   "duration": "03h31m 01h32m",
+   "regions": "e Asia, Australia, Pacific, w Americas",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2031.html"
+  },
+  {
+   "kind": "solar",
+   "date": "2040-11-04",
+   "td": "19:09:01",
+   "jd": 2466463.297928,
+   "type": "Partial",
+   "saros": 124,
+   "magnitude": 0.807,
+   "duration": null,
+   "regions": "N. & C. America",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/SEdecade/SEdecade2031.html"
+  },
+  {
+   "kind": "lunar",
+   "date": "2040-11-18",
+   "td": "19:04:41",
+   "jd": 2466477.294919,
+   "type": "Total",
+   "saros": 136,
+   "magnitude": 1.397,
+   "duration": "03h40m 01h28m",
+   "regions": "e Americas, Europe, Africa, Asia, Australia",
+   "path": null,
+   "source": "https://eclipse.gsfc.nasa.gov/LEdecade/LEdecade2031.html"
+  }
+ ]
+}

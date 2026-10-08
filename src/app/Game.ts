@@ -78,6 +78,9 @@ import { cometOf } from '../data/comets.ts';
 import { imageOffer } from '../economy/comets.ts';
 import { trackOffer, useGameStart } from '../economy/asteroids.ts';
 import { craftOf } from '../data/spacecraft.ts';
+import { moonPlace } from '../data/lunar.ts';
+import { LUNAR_LINES } from '../content/stellar/lunar.ts';
+import { eclipticToScene } from '../world/systems/sol.ts';
 import { logWrite, noteAsteroid, noteComet, noteCraft, noteJump, notePaid, notePeak } from '../economy/logbook.ts';
 import { openLogbook } from '../ui/logbook.ts';
 import type { SkyNewsKind } from '../content/stellar/lines.ts';
@@ -3009,10 +3012,20 @@ export class Game {
         this.flight?.system.asteroids.map((a) => ({ id: a.id, name: a.name, position: a.position.toArray(), radius: a.radius, shape: a.shape, near: a.near, color: a.color })) ?? null,
       /** Test-only: the planets (and moons) in this flight, where they are drawn. */
       planets: () => this.flight?.system.planets.map((p) => ({ id: p.def.id, position: p.def.position.toArray(), radius: p.def.radius })) ?? null,
-      /** Test-only: places the ship beyond a giant planet's moon, looking at it with its planet behind (for screenshots). */
-      viewMoon: (arg: { id: string; planet: string; distance: number }) => this.flight?.viewMoon(arg.id, arg.planet, arg.distance) ?? false,
+      /** Test-only: places the ship beyond a moon, looking at it with its planet behind; or, `near`, on the planet's side, looking out at it (for screenshots). */
+      viewMoon: (arg: { id: string; planet: string; distance: number; near?: boolean }) => this.flight?.viewMoon(arg.id, arg.planet, arg.distance, arg.near) ?? false,
       /** Test-only: the spacecraft in this flight (docs/PROCGEN.md §49.3), where they stand and how they are drawn. */
       craft: () => this.flight?.system.craft.map((c) => ({ id: c.id, name: c.name, position: c.position.toArray(), radius: c.radius, look: c.look, near: c.near })) ?? null,
+      /** Test-only: Earth's Moon in this flight (docs/PROCGEN.md §51.3): where it is drawn from Earth, its real direction from Earth on the game's date, and whether it was turned. */
+      luna: () => {
+        const def = this.flight?.system.def;
+        const jd = this.gameDate();
+        const earth = def?.planets.find((p) => p.id === 'earth');
+        const moon = def?.planets.find((p) => p.id === 'moon');
+        const place = jd === null ? null : moonPlace(jd);
+        if (!def || def.systemId !== 'sol' || !earth || !moon || !place) return null;
+        return { offset: moon.position.clone().sub(earth.position).toArray(), real: eclipticToScene(place.xyz).normalize().toArray(), turned: def.scaleNote.includes(LUNAR_LINES.turned) };
+      },
       /** Test-only: places the ship by a spacecraft, looking at it (for screenshots). */
       viewCraft: (arg: { id: string; distance: number }) => this.flight?.viewCraft(arg.id, arg.distance) ?? false,
       /** Test-only: places the ship by a named asteroid, looking at it (for screenshots). */

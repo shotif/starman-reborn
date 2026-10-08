@@ -161,9 +161,10 @@ Other balance guardrails:
   on 1 October 2026) and the whole first load, first screen and game, at most **850 KB** (621 KB on
   1 October; the owner raised it from 700 KB on 2 October 2026, when Your crew took it to 704 KB, and
   from 800 KB on 7 October 2026, when binary orbits, comets and the logbook took it to 798 KB).
-  Fonts (71 KB, already compressed) and what loads on demand (Sol's real sky, §50: 22 KB; the star
-  map, the science notes, bloom: 37 KB, on 8 October 2026) are reported, not budgeted; the first load
-  was 806 KB on 8 October 2026, once Sol's sky was moved out of it (from 827 KB). Going over is a decision to make, not an accident: raise
+  Fonts (71 KB, already compressed) and what loads on demand (Sol's real sky, §50: 27 KB with Earth's
+  Moon; the star map, the science notes, bloom: 37 KB, on 8 October 2026) are reported, not budgeted;
+  the first load was 806 KB on 8 October 2026, once Sol's sky was moved out of it (from 827 KB), and
+  810 KB with Earth's Moon (§51). Going over is a decision to make, not an accident: raise
   the budget in the same change, with the reason.
 - **On a real device**, the device report (Settings; `src/app/deviceReport.ts`) shows what the
   phone or computer and its browser tell the game: the screen and safe areas, the input, the
@@ -5163,8 +5164,9 @@ raise the budget again.
 - **On demand** (`src/data/skyData.ts`, its own file in the build: 21 KB gzipped on 8 October
   2026): the four sets of data JPL's were processed into (`src/data/generated/comets.json`,
   `asteroids.json`, `moons.json` and `spacecraft.json`) and the missions' facts (`CRAFT_STORIES`,
-  `src/content/stellar/craftStories.ts`). The next parts of the real sky (Earth's Moon, the dwarf
-  planets, more moons) put their data here too, so the first load grows only by their code.
+  `src/content/stellar/craftStories.ts`); since, Earth's Moon and NASA's eclipses (`lunar.json`,
+  §51). The next parts of the real sky (the dwarf planets, more moons) put their data here too, so
+  the first load grows only by their code.
 - **Still in the first load**: the code that reckons, draws and tells of them (the arcs and fitted
   motions, the scene, the cards, the News, the map and the encyclopedia), which the game's own
   modules import directly. The cards were to move as well, but they are built by the same code as
@@ -5210,3 +5212,108 @@ art gallery and star map harness (`dev/`) put the sky in place at once, from the
   phone network: the sky is not among the first load's files, is asked for only once they are in,
   comes once and is in place before the title; and a sky that fails to arrive brings the message
   and Try again. `tests/e2e/offline.spec.ts` plays it offline after one visit.
+
+## 51. Earth's Moon for real
+
+The Moon stands where JPL Horizons has it round Earth on the game's date, lit by the Sun as it really
+is (`src/data/lunar.ts`, read from the sky snapshot by `scripts/lunar-process.ts`; how it is drawn
+and what is said in `LUNAR` and `LUNAR_LINES`, `src/content/stellar/lunar.ts`; the card, the eclipses
+and the News in `src/economy/lunar.ts`). Its card says how much of it is lit, how far it is and when
+it is next full and new; the News at Sol's stations tells of the eclipses of the Sun and the Moon to
+come, as NASA lists them. Before, the Moon sat at a fixed place by Earth (KNOWN_GAPS).
+
+The owner chose (8 October 2026), as the first of three: "Earth's Moon for real: the Moon where it
+really is round Earth on the game date (JPL Horizons), with its phase. The News tells of the real
+eclipses of the coming years."
+
+### 51.1 The motion
+
+The sky snapshot ([ASTRONOMY_SOURCES.md, *Earth's Moon*](ASTRONOMY_SOURCES.md#earths-moon)) fetches
+where Horizons has the Moon from Earth's centre (J2000 ecliptic, km) every six hours from two years
+before the snapshot's day to four after, and every ten days for ten years after that. Every other
+position is reckoned from; the rest are kept to test against.
+
+The motion is the Moon's mean longitude and the four arguments the Moon's motion is reckoned in:
+its mean elongation from the Sun (D), the Sun's mean anomaly (M), its own (M′) and its argument of
+latitude (F), with the longitude of its node (Ω), as the IERS Conventions (2010) give them from
+Simon et al. (1994). In each of longitude, latitude and distance it is a constant, a drift and a
+series of periodic terms whose arguments are whole multiples of those four (up to four of D, M′ and
+F and two of M; F's even in longitude and distance, odd in latitude). The terms are chosen one at a
+time, each the one that would explain most of what is still unexplained, scored exactly against the
+terms already taken, the simpler argument first where two would explain alike, until every position
+reckoned from is matched within 0.01° in longitude and latitude and 20 km in distance. Only terms
+that turn at least nine-tenths of a time over the six years are offered, and only the longitude has
+a drift: an earlier try let a few slow terms and a drift stand in for the Moon's real six-year swing
+in latitude (the term in M′ − F, 0.28°), and two years beyond the span it was a degree out. Each
+term's size is fitted by least squares. On 8 October 2026 it took 37 terms in longitude, 26 in
+latitude and 35 in distance, and the first are the ones the Moon's theory has always had first: the
+equation of the centre (M′, 6.29°), the evection (2D − M′, 1.27°), the variation (2D), the
+annual equation (M) and the reduction to the ecliptic (2F); in latitude the tilt of its orbit (F,
+5.13°) and the terms in M′ + F and M′ − F. It matches Horizons' positions it was not reckoned from
+within 0.0114° and 19.5 km, and for the ten years after the span within 0.019° and 23.6 km.
+
+Where the Sun is from Earth's centre is the game's own place for Earth from JPL's elements
+([ASTRONOMY_SOURCES.md, *The Solar System on the real date*](ASTRONOMY_SOURCES.md#the-solar-system-on-the-real-date)),
+less Earth's own swing round the Earth–Moon barycentre (the Moon's position over 1 + Horizons'
+Earth/Moon mass ratio). How much of the Moon is lit is (1 + cos i) / 2, i the angle at the Moon
+between the Sun and Earth; it is waxing while it is less than 180° ahead of the Sun in longitude.
+It is new, at first quarter, full or at last quarter when 0°, 90°, 180° or 270° ahead: each next time
+is found from the motion (stepped to by the mean month, then found to well under a second).
+
+### 51.2 The eclipses
+
+NASA's eclipses of the Sun and the Moon (Fred Espenak's decade tables) are taken from two years
+before the snapshot's day, each as the table gives it: its date and Terrestrial Dynamical Time of
+greatest eclipse, kind, Saros series, magnitude, the longest central phase (of the Sun) or the
+partial phases and totality (of the Moon), where it is seen, and for a central eclipse of the Sun
+the countries on its path. The game says them in its own words, NASA's places spelled out by a
+table of NASA's shorthand (`ECLIPSE_PLACES`: `w & s Asia` is western and southern Asia, `c US` the
+central United States, `Mid East` the Middle East, and NASA's spelling Scandanavia is Scandinavia).
+
+### 51.3 In flight
+
+The Moon stands in its real direction from Earth's centre on the game's date, 4,250 scene units out
+at its mean distance (NASA's 384,400 km) and nearer or farther as it really is (`LUNAR.drawn`),
+drawn the size it always was and lit by the Sun, so it shows its phase. Where it would crowd what is
+not its own (the arrival point and beacon, the stations and the belts' outpost sites, the planets,
+the lane and the practice range: `LUNAR.clear`) it is moved out along its direction, and where that
+is not enough (the lane to Mars runs out along it) turned along its orbit the least it needs, which
+the scene's note then says. Earth Port, its practice range and the lane to Mars all lie along the
+way to Mars at about the Moon's drawn distance, so over the six years the Moon is moved out on 7.8%
+of days and turned on 6.5%, by 20° at the median and 41° at most. Asteroids and spacecraft
+passing Earth are drawn by the Moon's mean distance (§47.3), wherever the Moon is.
+
+### 51.4 What the game says
+
+- **The Moon's science card**: its phase and how much of it is lit on the game's date, its distance
+  from Earth's centre, when it is next full and new, and the eclipses of the next two years, each in
+  one line; Horizons and NASA cited; and that in flight its distance is compressed and its size
+  drawn larger than life.
+- **Sol's card on the star map**: the Moon's phase, and the next eclipse.
+- **The encyclopedia**: the Moon, with every eclipse to come in NASA's tables.
+- **The News**, at Sol's stations: an eclipse coming within 90 days (`LUNAR.newsDays`), in one line,
+  with how many days off it is.
+
+### 51.5 One save's own
+
+Nothing new is kept: where the Moon is and what is said follow from the game's date.
+
+### 51.6 Guardrails
+
+`validateLunar` (`src/data/validate.ts`, run by `npm run data:validate`) and `validateLunarRules`
+(`src/economy/lunarGuards.ts`, run in `tests/unit/lunar.test.ts`): cited and dated, its span holding
+the snapshot's day; its largest terms the equation of the centre and its orbit's tilt, its mean
+distance NASA's; every one of Horizons' positions not reckoned from within 0.015° and 25 km, and for
+the ten years after within 0.03° and 30 km; the lit fraction within half a point of Horizons' every
+day; every new, quarter and full Moon within four minutes of the US Naval Observatory's; every one of
+NASA's eclipses at a new Moon (of the Sun) or a full one (of the Moon), the Moon within reach of the
+Sun or of Earth's shadow for its kind at its greatest, its words found in NASA's table, and not so
+near midnight that its date would change; and no new or full Moon so near its node that it must
+eclipse missing from the tables. Every eclipse said with nothing unfilled and every one of NASA's
+places known. As drawn, on a date every week for four years and every twelve hours for a month: the
+Moon in its real direction from Earth at its compressed distance or further out along it, or turned
+along its orbit the least it must be and said so, crowding nothing; and no line with a number of its
+own. Sol's Moon Loop (§33) is laid in the Moon's own frame and turns with it as it goes round Earth,
+keeping one face to it as the Moon does (`bodyTurn`, `src/world/courses.ts`), so it stays clear on
+every date the racing guard checks.
+
