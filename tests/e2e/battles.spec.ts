@@ -32,7 +32,10 @@ async function launchBefore(page: Page, found: Found): Promise<void> {
   await api(page, 'dockAt', 'waymark-waypoint');
   await waitUntil(page, 'docked', async () => (await api<{ location: { dockedAt: string | null } }>(page, 'state')).location.dockedAt === 'waymark-waypoint');
   await press(page, 'dock-launch');
-  await page.getByTestId('sheet-close').click({ timeout: 5_000 }).catch(() => {});
+  // The first flight's Flight school sheet opens once the scene is built (seconds under SwiftShader)
+  // and holds the game while it is open: close it once in flight, not after a guessed wait.
+  await waitUntil(page, 'in flight', async () => (await api(page, 'mode')) === 'flight');
+  if (await page.getByTestId('controls-sheet').isVisible().catch(() => false)) await press(page, 'sheet-close');
   await waitUntil(page, 'undocked', async () => (await api<{ autopilot: string } | null>(page, 'player'))?.autopilot === 'none', 60_000);
   await api(page, 'setTimeScale', 4);
   // A battle of its kind opens (a clash from the slot before may come first: one is as good as another).

@@ -58,7 +58,10 @@ test('racing: entered at a club, started from the box, gates in order, a win and
 
   // Launch, into the start box, Start.
   await press(page, 'dock-launch');
-  await page.getByTestId('sheet-close').click({ timeout: 5_000 }).catch(() => {});
+  // The first flight's Flight school sheet opens once the scene is built (seconds under SwiftShader)
+  // and holds the game while it is open: close it once in flight, not after a guessed wait.
+  await waitUntil(page, 'in flight', async () => (await api(page, 'mode')) === 'flight');
+  if (await page.getByTestId('controls-sheet').isVisible().catch(() => false)) await press(page, 'sheet-close');
   await waitUntil(page, 'undocked', async () => (await api<{ autopilot: string } | null>(page, 'player'))?.autopilot === 'none', 60_000);
   expect((await race(page)).status?.phase).toBe('approach');
   await expect(page.getByTestId('hud-race')).toContainText('To the start');
