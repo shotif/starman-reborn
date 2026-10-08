@@ -11,7 +11,7 @@ touch input is real Chromium touch events sent over the DevTools protocol.
 | --- | --- | --- |
 | TypeScript typecheck (app + scripts/tests) | `npm run typecheck` | Pass |
 | Astronomy data validation | `npm run data:validate` | Pass (22 warnings: the contested planets this edition keeps) |
-| Unit tests | `npm test` | Pass: 1115 tests in 75 files |
+| Unit tests | `npm test` | Pass: 1120 tests in 76 files |
 | Production build | `npm run build` | Pass |
 | First-load budget | `npm run size` | Pass: first screen 16 KB of 32, first load 810 KB of 850 (gzipped), with Sol's sky (27 KB) loaded on demand |
 | Browser tests, desktop 1440×900 | `npx playwright test --project=desktop` | Pass: 65 passed (5 touch-only tests skipped) |
@@ -848,6 +848,12 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   why. A first scan is written in the logbook once, said by number and name, and a save with a
   damaged list of them is caught.
 
+- `clearCentre.test.ts`: **a clear centre on touch**. The rule passes its guardrails, and fails them
+  for a box too small to hold the reticle or too tall to leave the bands room; the box is centred on
+  the view by its shape (60% × 34% of a 360×640 phone: 72–288 by 211–429; 50% × 40% of 640×360); it
+  holds the reticle wherever the aim stick half pushed puts it, in sixteen directions at all eight
+  phone and tablet sizes; and what reaches into it by more than a pixel is named, while what only
+  touches its edge is not.
 - `lunar.test.ts`: **Earth's Moon for real**. Horizons' Moon cited and dated, its Earth/Moon mass
   ratio and radius as its record gives them, and the series' first terms the ones the Moon's theory
   has always had first (the equation of the centre, the evection, the variation, the annual equation,
@@ -903,7 +909,8 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   3. A purchase dialog showing price, capacity and destination.
   4. Launch, steer (mouse or touch stick), select Deimos Depot by its marker, Go To through the
      trade lane.
-  5. The raider fight: flown with the mouse on desktop; the one-click Avoid combat route on touch.
+  5. The raider fight: flown with the mouse on desktop; on touch, the one-click Avoid combat route
+     from the dock's chip (the warning banner hidden).
   6. Mars: clearance, voyage report, selling cargo, the shield upgrade, and the faction reaction
      when the raider was destroyed.
   7. Star map with Alpha Centauri at 4.34 ly, the legend, the covered fee, and the jump.
@@ -924,6 +931,10 @@ touch input is real Chromium touch events sent over the DevTools protocol.
     keeps the other in control.
   - **pointercancel** releases both sticks.
   - **Rotation mid-flight** (390×844 → 844×390) keeps the ship and re-lays out the controls.
+  - **The clear centre** (touch, PROCGEN §52): in flight with a target, at 360×640, 640×360,
+    390×844, 844×390, 768×1024, 1024×768, 411×741 at 130% text and 316×570, right- and left-handed:
+    nothing that stays on screen reaches into the middle of the view, no HUD button lies under the
+    touch controls, and every control is on screen and at least 36 px across.
   - **Taking over the controls cancels docking**: throttle (desktop) or the steering stick
     (touch) during a dock approach, and the Free flight command, all end the autopilot.
   - **Buying a ship**: the shipyard sells a freighter, the deck shows it, and after launch the HUD
@@ -1253,7 +1264,9 @@ touch input is real Chromium touch events sent over the DevTools protocol.
   for page scroll overflow, clipped controls (controls inside a scrolling panel count only if the
   panel itself is off-screen), content cut off inside any box that is not meant to scroll, text
   under 10 px, touch targets under 40 px, and overlaps between HUD panels (the battle strip among
-  them), touch clusters and toasts.
+  them), touch clusters and toasts; and every shot in touch flight with nothing open over it for the
+  clear centre (PROCGEN §52): nothing that stays on screen in the middle of the view, and no HUD
+  button under the touch controls.
 
 Lane hails in the browser tests: a hail comes only after eight seconds of flight time with the ship
 flying quietly, and under SwiftShader flight time runs well behind real time, so a hail can take

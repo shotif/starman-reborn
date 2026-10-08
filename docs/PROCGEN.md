@@ -5317,3 +5317,67 @@ own. Sol's Moon Loop (§33) is laid in the Moon's own frame and turns with it as
 keeping one face to it as the Moon does (`bodyTurn`, `src/world/courses.ts`), so it stays clear on
 every date the racing guard checks.
 
+## 52. A clear centre on touch
+
+On a phone or a tablet the middle of the view belongs to the flying: the reticle rests at its
+centre and swings about it with the aim stick, and whatever you fly at is drawn there. The touch
+controls used to sit across it (a phone held upright had its buttons in two rows just below the
+centre), and the target's card hung over the top of it, over the very thing it described, which
+made a raider hard to aim at. The owner asked (8 October 2026): "Can you move the controls in the
+mobile view down, so they are not obstructing visibility? Same thing for the target card, it is
+displayed over the actual target which makes aiming at e.g. enemies very difficult on mobile.
+Rethink this part of the UI to keep the center of the screen and targets clean and clear."
+
+### 52.1 The rule
+
+`CLEAR_CENTRE` (`src/ui/touch/clearCentre.ts`) is a box about the view's centre, 60% of its width
+and 34% of its height on a view held upright, 50% and 40% on one held sideways. Nothing that stays
+on screen in touch flight may reach into it: no panel, button, chip, the throttle or a stick's hint.
+What is drawn there is the flying itself: the markers, the reticle, the lead and lock marks, and the
+ship. Messages that come and go (the radio, a hail, a warning line) may cross its top edge while
+they show. What you need to know keeps to a band along the top, and the controls to a band along
+the bottom, under the thumbs.
+
+### 52.2 The layout
+
+- **The dock** (`src/ui/touch/TouchControls.ts`, `src/ui/styles/touch.css`): every button sits in a
+  dock along the bottom edge. The steering thumb's side has the throttle against the edge, then
+  Cruise and the action button (Dock, Go to, Scan, Answer, Mine); the aiming thumb's side has Target,
+  Missile, Boost, Repair and Decoy in a row, or, on a phone held upright, Target, Missile and Boost
+  with Repair and Decoy above the last two. The chips (aim assist, the wing's orders) sit between the
+  two sides, or above Cruise on an upright phone. A left-handed pilot gets the same dock mirrored.
+- **The sticks' zones** are the open space above the dock, half the view each (the steering half
+  begins past the throttle), from 40% of the way down (55% on an upright phone). They are invisible:
+  a stick appears under the thumb that lands in them. Their hints sit at their foot, just above the
+  dock, and give way to the chips once a wing flies with you.
+- **The band along the top** (`src/ui/hud/Hud.ts`, `src/ui/styles/hud.css`): the gauges at the left,
+  the menus and the wallet at the right, and between them the objective (or a race's or a battle's
+  strip), then the target as a compact strip (its name and badge, then on one line its distance,
+  what it is and a ship's shield and hull), then the warning lines and the radio. On a phone held
+  upright there is no room for a column between: the objective goes under the menus, the wallet on
+  one line under the gauges (the hold alone on the narrowest), and the target strip and the rest run
+  the full width below. The objective keeps to two lines (three beside the gauges), and a race's or a
+  battle's strip there gives the race and the sides, not their names.
+- **Messages**: on a phone only the newest radio message shows, and a hail's words keep to two lines
+  (four down the edge). On a phone held sideways a hail waits at the right-hand edge under the
+  wallet, as it is answered with the action button. A raider's warning on touch is the dock's red
+  "◆ Avoid combat" chip in place of the aim-assist chip; the banner with its button is for a mouse
+  or a pad, as the sticks' zones lie over the band along the top on a phone.
+
+With a mouse or a pad the HUD is as before, the target card at the bottom left.
+
+### 52.3 Guardrails
+
+- `validateClearCentre` (`src/ui/touch/clearCentre.ts`, run in `tests/unit/clearCentre.test.ts`):
+  the box holds the reticle wherever the aim stick half pushed puts it, in every direction, and
+  leaves at least a quarter of the height above it and below it for the bands.
+- `tests/e2e/platform.spec.ts`, on touch: in flight with a target, at every phone and tablet size
+  the screenshots are taken at (two phones and a tablet each way up, a phone at 130% text and one at
+  130% zoom), right- and left-handed: nothing that stays on screen reaches into the clear centre,
+  every HUD button can be touched (the sticks' zones lie over none), and every control is on screen
+  and at least 36 px across.
+- The screenshot audits (`tests/e2e/screenshots.spec.ts`) check every shot taken in touch flight
+  with nothing open over it the same way, besides overlaps, clipping and small type.
+- `dev/hud.html` (`src/dev/hudHarness.ts`, not in the game's build) lays the HUD and the touch
+  controls over a painted backdrop, flying, in a fight, hailed, by the Moon or racing, with the clear
+  centre outlined, to judge a change at any size without flying.

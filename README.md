@@ -190,8 +190,8 @@ into the real-device checklist ([TEST_RECORD.md](docs/TEST_RECORD.md)). Nothing 
 
 | Action | Mouse and keyboard | Touch | Gamepad |
 | --- | --- | --- | --- |
-| Steer | Move the mouse; the ship turns toward the cursor | Left thumb: drag anywhere in the lower left | Left stick |
-| Aim and fire | Cursor is the reticle; hold the **right** mouse button | Right thumb: drag in the lower right; fires while held | Right stick moves the reticle; hold **RT** |
+| Steer | Move the mouse; the ship turns toward the cursor | Left thumb: drag anywhere in the lower left, above the buttons | Left stick |
+| Aim and fire | Cursor is the reticle; hold the **right** mouse button | Right thumb: drag in the lower right, above the buttons; fires while held | Right stick moves the reticle; hold **RT** |
 | Select target | Left-click a marker or object; **T** cycles, **H** nearest hostile | Target button (hold for nearest hostile) or tap a marker | **Y** cycles, **RB** nearest hostile |
 | Throttle | **W / S**, mouse wheel | Slider on the left edge | D-pad **↑ / ↓** |
 | Strafe | **A / D** | – | – |
@@ -203,11 +203,15 @@ into the real-device checklist ([TEST_RECORD.md](docs/TEST_RECORD.md)). Nothing 
 | Missile, rocket or torpedo | **F** or middle mouse | Missile button | **X** |
 | Repair kit | **R** | Repair button | D-pad **←** |
 | Decoy flare against seekers | **C** | Decoy button | **LB** |
+| Skip a raider's fight | **Avoid combat** on its warning | **◆ Avoid combat** chip | – |
 | Scan (a planet, star, belt, rock or wreck) | **X** | Action button ("Scan") | **A** ("Scan") |
 | Mine the selected rock (mining laser, within 600 m) | **B** | Action button, amber ("Mine") | **A** ("Mine") |
-| Engines off (drift) | **Z** | Drift button (landscape) | **L3** |
+| Engines off (drift) | **Z** | Drift button (on a tablet) | **L3** |
 | Star map | **Tab** or **M** | Map button | **Back** (View) |
 | Pause | **Esc** or **P** | Pause button | **Start** (Menu) |
+
+On a phone or tablet the buttons keep to a dock along the bottom edge and what you need to know to a
+band along the top, target included, so the middle of the view stays clear for flying and aiming.
 
 Any gamepad the browser reports in the standard layout works in flight. Buttons are named as on an
 Xbox pad; on a PlayStation pad **A** is ✕, **B** ○, **X** □, **Y** △, **LB / RB** are L1 / R1,

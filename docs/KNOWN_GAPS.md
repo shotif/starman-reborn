@@ -42,6 +42,13 @@ snapshot branch only when the archives changed.
   the Ring/Silent switch; the settings screen explains this.
 - **Safe-area insets** were tested by overriding the CSS variables, not on a device with a notch
   or home bar.
+- **The clear centre under real thumbs** (PROCGEN §52). The dock along the bottom edge and the target
+  strip along the top were laid out and checked on emulated phones and tablets (two each way up, at
+  130% text and at 130% zoom, left- and right-handed) and in the HUD harness (`dev/hud.html`). How the
+  dock feels in the hand (the reach to the buttons in the bottom corners, a thumb catching a button
+  as it lands to steer, whether the sticks' zones above the dock are roomy enough) needs a real phone
+  to confirm. With a pad, a raider's fight still cannot be skipped: its Avoid combat button needs a
+  mouse, and touch has its own chip.
 - **The star map's search on a real phone.** Pinch zoom toward the fingers is confirmed on a real
   phone (1 October 2026). The Find dialog was exercised with emulated touch only: with an on-screen
   keyboard up, it keeps to the visible part of the screen through the Visual Viewport API, and how

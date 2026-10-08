@@ -9,7 +9,7 @@ After the scripted opening (10–20 minutes), the neighbourhood is an open sandb
 systems out to 27 light-years, checked against the astronomical archives; 322 generated stations
 of twelve kinds; 23 goods with stock-based prices; traders and patrols on the lanes and raider
 packs in lawless space; 39 ships and 146 pieces of equipment; and generated contracts on every job
-board. Increments 1–50 (under [Done so far](#done-so-far)) added world events and news, contracts
+board. Increments 1–51 (under [Done so far](#done-so-far)) added world events and news, contracts
 of every kind, the law and the outlaw path, goals, ranks with each faction that open doors, races round real planets and moons against racers who really fly, a wing that takes orders and grows with every fight, border battles to see and join, seven story arcs, combat depth, people in the
 bars and a trade computer, a world that answers, gluts that ship their surplus out and relief to
 escort through raided lanes, a fleet of your own whose captains fly the lanes, a crew aboard your own ship,
@@ -18,7 +18,7 @@ supernova in every sky (as fiction), real flare stars that flare (when is fictio
 black hole to fly to (fiction too), encounters on the lanes between the docks, wrecks and derelicts to fly to with short trails across a few systems, mining in the real belts, the frontier with a life of its own,
 a border war whose fronts can be won for good, story endings that change stations for good, escorts
 and convoys across jumps, haulers with real cargo on a timetable, and a game measured and tuned on a
-real phone.
+real phone, whose touch controls keep the middle of the view clear.
 
 What it lacks now:
 
@@ -52,6 +52,19 @@ when screens change. Then the docs are updated (PROCGEN, TEST_RECORD, KNOWN_GAPS
 to the live site once CI passes.
 
 ## Done so far
+
+### 51. A clear centre on touch ✅
+
+Asked for by the owner on 8 October 2026, from a phone: the touch buttons sat across the middle of
+the view and the target's card hung over the very thing it described, which made a raider hard to
+aim at. Now, on every phone and tablet, the buttons keep to a dock along the bottom edge (Cruise and
+the action button beside the throttle, the combat buttons under the aiming thumb), the target is a
+compact strip in the band along the top under the objective, and nothing that stays on screen
+reaches into the middle of the view, where the reticle swings. On a phone held upright the objective
+sits beside the gauges; on one held sideways a hail waits at the right-hand edge; a raider's warning
+is answered with an Avoid combat chip in the dock. A browser test checks the middle stays clear at
+every phone and tablet size, left- and right-handed
+([PROCGEN.md §52](PROCGEN.md#52-a-clear-centre-on-touch)).
 
 ### 50. Earth's Moon for real ✅
 

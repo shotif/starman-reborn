@@ -201,8 +201,9 @@ reading text (both SIL Open Font License, bundled — no font requests to third 
 **Adapting to phones.** The reference is a 4:3 desktop game. On landscape phones the rails stay
 at the top; on portrait phones the room rail stays at the top and the global rail moves to the
 bottom edge, and windows become full-width sheets between them. Touch targets stay ≥ 44 px, text
-scaling up to 130% (and 130% page zoom) must not cut anything off, and the flight HUD keeps both
-thumb areas clear.
+scaling up to 130% (and 130% page zoom) must not cut anything off, and in flight the controls keep
+to a dock along the bottom edge, under the thumbs, and what you need to know to a band along the top,
+so the middle of the view stays clear for flying and aiming ([PROCGEN.md §52](PROCGEN.md#52-a-clear-centre-on-touch)).
 
 Nothing is copied: no icons, fonts, logos, names, textures or layouts are taken from the original
 game; the shapes, glyphs, palette variations and 3D rooms are drawn for this project.

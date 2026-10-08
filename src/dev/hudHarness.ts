@@ -4,9 +4,9 @@
  * the clear centre (docs/PROCGEN.md §52) can be judged at any size without flying.
  *
  * Query parameters:
- *   scene=flight|fight|hail|moon|race   what the HUD shows            swap=1      left-handed layout
+ *   scene=flight|encounter|fight|hail|moon|race   what the HUD shows       swap=1      left-handed layout
  *   box=1                               outline the clear centre       wing=1      a wing flies along
- *   textScale=1.3                       --text-scale
+ *   textScale=1.3                       --text-scale                   count=3     a race's countdown
  *
  * `window.__layout()` lists the boxes of everything that stays on screen, and what reaches into the
  * clear centre.
@@ -125,7 +125,9 @@ function model(): { model: HudModel; status: HudStatus } {
     m.markers = [marker('station:shindig', 'Shindig Bazaar', 'station', 0.5, 0.46, 9_300, { selected: true })];
   } else if (scene === 'race') {
     m.context = { label: 'Start', action: 'interact', icon: 'play' };
-    m.race = { name: 'Moon Loop', phase: 'on', gate: 3, gates: 8, time: 42.3, split: -1.2, count: null, place: 2, of: 4, sealedCruise: false };
+    m.race = params.get('count')
+      ? { name: 'Moon Loop', phase: 'countdown', gate: 0, gates: 8, time: 0, split: null, count: params.get('count'), place: 1, of: 4, sealedCruise: false }
+      : { name: 'Moon Loop', phase: 'on', gate: 3, gates: 8, time: 42.3, split: -1.2, count: null, place: 2, of: 4, sealedCruise: false };
     m.target = { id: 'gate:3', name: 'Gate 4', kind: 'gate', subtitle: 'Moon Loop · gate 4 of 8', distance: 2_400, hostile: false, dataClass: 'fictional', lead: null, inGunRange: false };
     m.markers = [marker('gate:3', 'Gate 4', 'gate', 0.48, 0.42, 2_400, { selected: true })];
   }
