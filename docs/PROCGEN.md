@@ -5358,9 +5358,11 @@ the bottom, under the thumbs.
   one line under the gauges (the hold alone on the narrowest), and the target strip and the rest run
   the full width below. The objective keeps to two lines (three beside the gauges), and a race's or a
   battle's strip there gives the race and the sides, not their names.
-- **Messages**: on a phone only the newest radio message shows, and a hail's words keep to two lines
-  (four down the edge). On a phone held sideways a hail waits at the right-hand edge under the
-  wallet, as it is answered with the action button. A raider's warning on touch is the dock's red
+- **Messages**: on a phone a hail's words keep to two lines (four down the edge), and the radio shows
+  its two newest messages, under the target strip (one alone would hide a message the moment the
+  next came). On a phone held sideways a hail waits at the right-hand edge under the
+  wallet (left-handed, at the left-hand edge under the gauges, clear of the throttle), as it is
+  answered with the action button. A raider's warning on touch is the dock's red
   "◆ Avoid combat" chip in place of the aim-assist chip; the banner with its button is for a mouse
   or a pad, as the sticks' zones lie over the band along the top on a phone.
 

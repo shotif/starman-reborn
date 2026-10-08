@@ -1095,13 +1095,9 @@
   padding: 0.35rem 0.7rem;
 }
 
-/* On a phone, messages that come and go keep the band along the top short (docs/PROCGEN.md §52):
-   the newest message alone, and a hail's words in two lines (its caller and time stay whole). */
+/* On a phone a hail keeps the band along the top short (docs/PROCGEN.md §52): its words in two lines,
+   its caller and time whole. (The radio shows its two newest messages, as on any small screen.) */
 @media (max-width: 600px), (max-height: 460px) {
-  .hud-toasts > .toast:nth-last-child(n + 2) {
-    display: none;
-  }
-
   .hud.touch-mode .hail-text {
     display: -webkit-box;
     -webkit-line-clamp: 2;
