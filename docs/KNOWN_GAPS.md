@@ -196,13 +196,23 @@ snapshot branch only when the archives changed.
   planned is told as planned, whatever the game's date. Voyager 2's heliopause crossing is left out
   (the sources disagree on its date).
 - Moons of the giant planets (PROCGEN §48): only five large moons are drawn (none of Saturn's others,
-  nor Uranus's or Neptune's), and Earth's Moon stays where it was drawn before, at a fixed place by
-  Earth, not its real one. A moon's motion is a turning circle with first-order eccentricity fitted to
+  nor Uranus's or Neptune's). A moon's motion is a turning circle with first-order eccentricity fitted to
   Horizons' positions: within a degree for six years, Europa's the least sure, and less sure beyond.
   Distances from the planets are compressed by a power of their own for each planet, so Jupiter's
   four look closer together than they are. Jupiter's and Saturn's axes are drawn along their moons'
   mean orbit plane, not from the IAU's poles. A save
   that had finished its survey of Sol has it open again until the moons are scanned.
+- Earth's Moon (PROCGEN §51): its motion is reckoned from Horizons' positions over six years and
+  checked against them for ten years after (to October 2040); beyond that it is less sure. Where the
+  Sun is comes from JPL's approximate elements. Eclipses are only told of (the News, the Moon's card,
+  the encyclopedia): nothing darkens in flight, neither the Moon in Earth's shadow nor Earth in the
+  Moon's, and they are dated by NASA's own time scale, with no time of day or place for the player to
+  see them from. Only NASA's tables for 2021–2040 are taken (from two years before the snapshot).
+  Earth Port, its practice range and the lane to Mars lie the way to Mars at about the Moon's drawn
+  distance, so the Moon is moved out along its direction on about one day in thirteen and turned off
+  its true place along its orbit on one in fifteen (by 20° at the median, 41° at most), said in the
+  scene's note; with distances compressed, its phase as drawn is within about 10° of the real one.
+  The Moon is drawn the same size whatever its distance.
 - Asteroids (PROCGEN §47): only fifteen named asteroids are in Sol, not the main belt's million;
   the belts' rocks stay schematic. Where one stands is reckoned as if only the Sun pulled on it,
   from JPL Horizons' elements on 7 October 2026: within 0.05° of Horizons for a year either side and
@@ -214,8 +224,7 @@ snapshot branch only when the archives changed.
   cards. Asteroids are drawn far larger than life, turn far faster, are not solid, and are not in
   the codex. Where a pass is drawn from Earth follows the logarithm between Earth's drawn surface and
   the Moon's drawn distance, so near Earth the scene's distances are compressed too; and where its
-  direction runs close to Earth Port, the Earth–Mars lane or the Moon (drawn at a fixed place, not
-  its real one), Apophis is pushed further out along it for an hour or so (an hour and a half before
+  direction runs close to Earth Port, the Earth–Mars lane or the Moon, Apophis is pushed further out along it for an hour or so (an hour and a half before
   its nearest, out past the Moon). From a quarter of an hour before its nearest to an hour after, it
   is drawn where the rule puts it, well inside the Moon.
 - The logbook (PROCGEN §46) writes only what happens from when it began: a save from before it starts

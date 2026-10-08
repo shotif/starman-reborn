@@ -16,6 +16,7 @@ import { edgeNews, fillEdge } from '../economy/doomed.ts';
 import { flareNews } from '../economy/flares.ts';
 import { asteroidNews, hearsOfAsteroids } from '../economy/asteroids.ts';
 import { craftNews, hearsOfCraft } from '../economy/spacecraft.ts';
+import { eclipseNews } from '../economy/lunar.ts';
 import { cometNews, hearsOfComets } from '../economy/comets.ts';
 import { FLARE_WORD } from '../content/stellar/flareLines.ts';
 import { EDGE_EARTH, EDGE_FICTION } from '../content/stellar/doomedLines.ts';
@@ -433,6 +434,28 @@ export function craftNewsList(locationId: string, jd: number | null): HTMLElemen
         h('span', { class: 'news-text' }, h('span', { class: 'row-name' }, n.line, ' ', dataBadge('observed')), h('span', { class: 'row-sub' }, `Spacecraft · Sol · nearest Earth ${when}`)),
       );
     }),
+  );
+}
+
+/**
+ * Eclipses of the Sun and the Moon coming within three months (docs/PROCGEN.md §51.4), at Sol's
+ * stations: NASA's, on the game's date, badged as observed.
+ */
+export function eclipseNewsList(locationId: string, jd: number | null): HTMLElement | null {
+  if (jd === null || getLocation(locationId).systemId !== 'sol') return null;
+  const items = eclipseNews(jd);
+  if (!items.length) return null;
+  return h(
+    'ul',
+    { class: 'list news-list', 'data-testid': 'eclipse-news' },
+    items.map((n) =>
+      h(
+        'li',
+        { class: 'news-item kind-eclipse', 'data-testid': `news-eclipse-${n.eclipse.kind}-${n.eclipse.date}` },
+        glyph('science'),
+        h('span', { class: 'news-text' }, h('span', { class: 'row-name' }, n.line, ' ', dataBadge('observed')), h('span', { class: 'row-sub' }, `Eclipse · Earth · ${n.when}`)),
+      ),
+    ),
   );
 }
 

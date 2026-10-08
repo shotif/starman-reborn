@@ -24,6 +24,7 @@ import {
   orbitBlock,
   asteroidBlock,
   craftBlock,
+  lunarBlock,
   moonBlock,
   cometBlock,
   factList,
@@ -153,6 +154,7 @@ function systemSection(system: StarSystemRecord, id: string, discovered: Readonl
   const orbits = orbitBlock(system.id, jd, 'full');
   const comets = cometBlock(system.id, jd, 'full');
   const asteroids = asteroidBlock(system.id, jd, 'full');
+  const luna = lunarBlock(system.id, jd, 'full', true);
   const moons = moonBlock(system.id, jd, 'full');
   const craft = craftBlock(system.id, jd, 'full');
   const isSol = system.id === 'sol';
@@ -170,6 +172,7 @@ function systemSection(system: StarSystemRecord, id: string, discovered: Readonl
     badgeHeading('h4', isSol ? 'Planets' : 'Confirmed planets', 'observed', undefined, observedMark(system, 'planets')),
     planetBlock(system, discovered, 'full'),
     beltsOf(system.id).length ? [badgeHeading('h4', 'Belts and debris discs', 'observed'), beltBlock(system.id, 'full')] : null,
+    luna ? [badgeHeading('h4', 'The Moon', 'observed'), luna] : null,
     moons ? [badgeHeading('h4', 'Moons of Jupiter and Saturn', 'observed'), moons] : null,
     comets ? [badgeHeading('h4', 'Comets', 'observed'), comets] : null,
     asteroids ? [badgeHeading('h4', 'Asteroids', 'observed'), asteroids] : null,

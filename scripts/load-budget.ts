@@ -89,7 +89,7 @@ export function overBudget(report: LoadReport, budget: typeof LOAD_BUDGET = LOAD
  * not be in the first load. What marks a file as holding it: the processing script each part of it
  * names as its maker.
  */
-export const SKY_MARKS = ['scripts/comets-process.ts', 'scripts/asteroids-process.ts', 'scripts/moons-process.ts', 'scripts/spacecraft-process.ts'] as const;
+export const SKY_MARKS = ['scripts/comets-process.ts', 'scripts/asteroids-process.ts', 'scripts/moons-process.ts', 'scripts/spacecraft-process.ts', 'scripts/lunar-process.ts'] as const;
 
 /** What is wrong with where Sol's sky is, in words: a first-load file holding it, or no file on demand holding all of it. */
 export function skyMisplaced(report: LoadReport, read: (file: string) => string): string[] {

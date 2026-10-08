@@ -330,6 +330,45 @@ Telescope, Lucy, Psyche, Europa Clipper and JUICE, in `src/data/generated/spacec
   earlier tracking, refit in 2022. What was planned for a craft is as of the snapshot. Distances in
   flight are compressed, and the craft are drawn far larger than life as schematics of their kinds.
 
+## Earth's Moon
+
+Where the Moon is round Earth on the game's date, how much of it is lit, and NASA's eclipses of the
+Sun and the Moon, in `src/data/generated/lunar.json` ([PROCGEN.md §51](PROCGEN.md#51-earths-moon-for-real)).
+
+- **Source.** The sky snapshot workflow fetches from **JPL Horizons** the Moon's (301) position from
+  Earth's centre (J2000 ecliptic, km) every six hours from two years before the snapshot's day to four
+  after, and every ten days for ten years after that, with its record (`OBJ_DATA`: the Earth/Moon mass
+  ratio, 81.3005690769, and its radius, 1,737.4 km); and its illuminated fraction seen from Earth's
+  centre, daily, over the same six years. From the **NASA Eclipse Web Site** (Fred Espenak, NASA
+  GSFC), the decade tables of eclipses of the Sun and of the Moon for 2021–2030 and 2031–2040. From
+  the **US Naval Observatory**'s Astronomical Applications API, the times of the Moon's phases for
+  each year of the six. `npm run data:lunar` (`scripts/lunar-process.ts`, also run by
+  `npm run data:process`) reads them offline. First fetched in the snapshot of 8 October 2026.
+- **What is taken.** From Horizons' positions: the Moon's motion as a series in the four fundamental
+  arguments D, M, M′ and F, whose polynomials are the IERS Conventions' (2010, eq. 5.43, from Simon et
+  al. 1994; checked against ERFA's routines), the terms chosen and fitted to every other position (37
+  in longitude, 26 in latitude and 35 in distance on 8 October 2026). From NASA's tables, each eclipse
+  from two years before the snapshot's day as the table writes it: date and Terrestrial Dynamical Time
+  of greatest eclipse, kind, Saros series, magnitude, durations, where it is seen and, for a central
+  eclipse of the Sun, the countries on its path. Horizons' other positions, its lit fractions, USNO's
+  phases and the tables' text go to `src/data/generated/lunar-checks.json`, read only by the tests.
+- **Checks.** `validateLunar` (`npm run data:validate`) and the unit tests: cited and dated; the
+  series' largest terms where the Moon's theory has them; every one of Horizons' positions not fitted
+  within 0.015° and 25 km (on 8 October 2026 within 0.0114° and 19.5 km), and for the ten years after
+  the span within 0.03° and 30 km (0.019° and 23.6 km); the lit fraction within half a point of
+  Horizons' every day; every phase within four minutes of USNO's; every eclipse at a new or full Moon
+  with the Moon within reach of the Sun or Earth's shadow for its kind, its words found in NASA's
+  table.
+- **Where the tables are odd.** NASA's lunar table gives one eclipse's greatest at 17:44:60 (11
+  December 2038, read as 17:45:00), lists "Africa,, Asia" with a doubled comma (read as one), and
+  spells Scandinavia "Scandanavia" (said as Scandinavia).
+- **Not claimed.** The motion is reckoned from Horizons' positions, not JPL's own theory, and is
+  checked only for the sixteen years Horizons' positions span. Where the Sun is comes from JPL's
+  approximate elements, good to some tens of arcseconds. The eclipses are NASA's, said in the game's
+  words; where an eclipse is seen is NASA's list, spelled out. In flight the Moon's distance is
+  compressed and its size drawn far larger than life, so its phase as drawn is within about 10° of
+  the real one (the card gives the real one).
+
 ## Pipeline: the sky snapshot
 
 1. **Fetch** (`scripts/sky-fetch.ts`) is the only step that needs the network. It saves raw

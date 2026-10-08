@@ -28,7 +28,7 @@ export interface CourseLine {
   readonly id: string;
   readonly kind: CourseKind;
   readonly systemId: SystemId;
-  /** The real body the course rounds (its gates are relative to it). */
+  /** The real body the course rounds (its gates are relative to it, in its own frame: `placedLine`). */
   readonly bodyId: string;
   /** The start line first, the finish line last. */
   readonly gates: readonly RaceGate[];
@@ -182,6 +182,31 @@ export function bodyPosition(def: SystemSceneDef, bodyId: string): THREE.Vector3
   return (def.planets.find((p) => p.id === bodyId) ?? def.stars.find((s) => s.id === bodyId))?.position ?? null;
 }
 
+/**
+ * How a course round a body is turned in a scene. Earth's Moon keeps one face to Earth as it goes
+ * round (docs/PROCGEN.md §51.3), so a course round it keeps to that face: laid in the Moon's own
+ * frame, it turns about the scene's up axis with the Moon's direction from Earth. A course round
+ * any other body is not turned.
+ */
+export function bodyTurn(def: SystemSceneDef, bodyId: string): THREE.Quaternion {
+  const turn = new THREE.Quaternion();
+  const earth = bodyId === 'moon' ? bodyPosition(def, 'earth') : null;
+  const moon = earth ? bodyPosition(def, 'moon') : null;
+  if (!earth || !moon) return turn;
+  const away = moon.clone().sub(earth);
+  return turn.setFromAxisAngle(UP, Math.atan2(-away.z, away.x));
+}
+
+/** Gates turned by a quaternion (positions and normals, relative to their body). */
+function turned(gates: readonly RaceGate[], turn: THREE.Quaternion): RaceGate[] {
+  return gates.map((g) => ({ ...g, pos: g.pos.clone().applyQuaternion(turn), normal: g.normal.clone().applyQuaternion(turn) }));
+}
+
+/** A course as it lies in a scene: its gates turned with its body there (`bodyTurn`), still relative to the body. */
+export function placedLine(def: SystemSceneDef, line: CourseLine): CourseLine {
+  return { ...line, gates: turned(line.gates, bodyTurn(def, line.bodyId)) };
+}
+
 const lines = new Map<string, CourseLine | null>();
 
 /** A course's line (cached), or null when nothing clear can be laid. */
@@ -258,9 +283,11 @@ export function layCourse(spec: CourseSpec, why?: string[]): CourseLine | null {
         why?.push(`${body.id}: ${issues.join(', ')}`);
         continue;
       }
-      if (sweeps.some((d) => courseIssues(d, gates, bodyPosition(d, body.id)!, shape).length)) continue;
+      // Kept in the body's own frame, and clear wherever it lies in each scene it must be clear in.
+      const own = turned(gates, bodyTurn(def, body.id).invert());
+      if (sweeps.some((d) => courseIssues(d, turned(own, bodyTurn(d, body.id)), bodyPosition(d, body.id)!, shape).length)) continue;
       const length = gates.reduce((s, g, i) => (i ? s + g.pos.distanceTo(gates[i - 1]!.pos) : 0), 0);
-      return { id: spec.id, kind: spec.kind, systemId: spec.systemId, bodyId: body.id, gates, cruise: shape.cruise, length, ...(far && spec.kind === 'run' ? { finishAt: far.locationId } : {}) };
+      return { id: spec.id, kind: spec.kind, systemId: spec.systemId, bodyId: body.id, gates: own, cruise: shape.cruise, length, ...(far && spec.kind === 'run' ? { finishAt: far.locationId } : {}) };
     }
   }
   return null;

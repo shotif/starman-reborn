@@ -12,7 +12,7 @@ import { formatCredits, h, signed } from '../dom.ts';
 import { glyph, type GlyphName } from '../glyphs.ts';
 import { icon } from '../icons.ts';
 import { gameJulianDate } from '../../data/solar.ts';
-import { asteroidNewsList, borderNewsList, cometNewsList, craftNewsList, denNews, edgeNewsList, flareNewsList, haulNews, markNews, newsList, outpostRaidNewsList, rivalNewsList, skyNewsList } from '../news.ts';
+import { asteroidNewsList, borderNewsList, cometNewsList, craftNewsList, denNews, eclipseNewsList, edgeNewsList, flareNewsList, haulNews, markNews, newsList, outpostRaidNewsList, rivalNewsList, skyNewsList } from '../news.ts';
 import { fineOwed, isLawful, pardonCost, payFines } from '../../economy/law.ts';
 import { buysSurveys, sellSurvey, surveysForSale, surveyValue } from '../../economy/progress.ts';
 import { toast } from '../components.ts';
@@ -379,6 +379,7 @@ export function newsContent(ctx: StationContext): HTMLElement {
     cometNewsList(locationId, gameJulianDate(state.createdAt, state.clock)),
     asteroidNewsList(locationId, gameJulianDate(state.createdAt, state.clock)),
     craftNewsList(locationId, gameJulianDate(state.createdAt, state.clock)),
+    eclipseNewsList(locationId, gameJulianDate(state.createdAt, state.clock)),
     markNews(loc.systemId),
     borderNewsList(loc.systemId, state.clock),
     denNews(state, loc.systemId),

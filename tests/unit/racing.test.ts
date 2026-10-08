@@ -36,7 +36,7 @@ import {
 } from '../../src/economy/racing.ts';
 import { validateRacing } from '../../src/economy/racingGuards.ts';
 import { shift } from '../../src/economy/rivals.ts';
-import { bodyPosition, courseIssues, crossesGate, layCourse, missedGate, type RaceGate } from '../../src/world/courses.ts';
+import { bodyPosition, bodyTurn, courseIssues, crossesGate, layCourse, missedGate, placedLine, type RaceGate } from '../../src/world/courses.ts';
 import { FlightSession } from '../../src/world/FlightSession.ts';
 import { RaceRun, type RaceEvent, type RaceSetup } from '../../src/world/RaceRun.ts';
 import { SystemScene } from '../../src/world/SystemScene.ts';
@@ -101,12 +101,17 @@ describe('races: clubs and courses', () => {
     expect(courseById(SPRINT)!.line.bodyId).toBe('moon');
   });
 
-  it('keeps Sol’s Moon Loop clear at any date, the same shape round the Moon', () => {
+  it('keeps Sol’s Moon Loop clear at any date, the same shape round the Moon, turning with it as it keeps its face to Earth', () => {
     const line = courseById(SPRINT)!.line;
     for (let i = 0; i < 20; i++) {
       const def = sceneDefFor('sol', 2_461_000 + i * 41.3);
-      expect(courseIssues(def, line.gates, bodyPosition(def, 'moon')!, RACING.sprint)).toEqual([]);
+      expect(courseIssues(def, placedLine(def, line).gates, bodyPosition(def, 'moon')!, RACING.sprint)).toEqual([]);
     }
+    // A week apart, the Moon a quarter of the way round Earth: the course turns with it, its shape the same.
+    const [a, b] = [sceneDefFor('sol', 2_461_330), sceneDefFor('sol', 2_461_337)];
+    const [ga, gb] = [placedLine(a, line).gates, placedLine(b, line).gates];
+    expect((bodyTurn(a, 'moon').angleTo(bodyTurn(b, 'moon')) * 180) / Math.PI).toBeGreaterThan(60);
+    expect(ga[0]!.pos.distanceTo(ga[3]!.pos)).toBeCloseTo(gb[0]!.pos.distanceTo(gb[3]!.pos), 6);
   });
 
   it('counts a gate only crossed the right way, inside it; a near miss is a miss', () => {
@@ -167,7 +172,7 @@ describe('races: in flight, the racers on their own clock', () => {
     const setup: RaceSetup = { courseId: SPRINT, name: 'Moon Loop', club: venue.club, cls: 'light', closes: 1e9, racers, grid: gridOf(racers), par: ownParRun(line, s.ship), best: null, cutoff: 600 };
     const def = sceneDefFor('sol', null);
     const origin = bodyPosition(def, 'moon')!.clone();
-    const run = new RaceRun(setup, line, origin, new THREE.Scene(), { quality: 'low', reducedMotion: true }, []);
+    const run = new RaceRun(setup, placedLine(def, line), origin, new THREE.Scene(), { quality: 'low', reducedMotion: true }, []);
     const box = run.allTargets().find((t) => t.id === 'race-box')!.position.clone();
     return { run, setup, box };
   }

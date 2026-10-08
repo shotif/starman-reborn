@@ -103,7 +103,7 @@ import { placeSite, podOffset } from './sites.ts';
 import { coveredAt, coverLine } from '../economy/ranks.ts';
 import { RACE_LINES } from '../content/racing/lines.ts';
 import { courseById } from '../economy/racing.ts';
-import { bodyPosition } from './courses.ts';
+import { bodyPosition, placedLine } from './courses.ts';
 import { RaceRun, type RaceEvent, type RaceSetup } from './RaceRun.ts';
 import type { StationOwner } from '../content/world/types.ts';
 import type { ArtContext, ArtObject } from './art/types.ts';
@@ -850,7 +850,7 @@ export class FlightSession {
       ...this.system.def.planets.map((p) => ({ centre: p.position, radius: p.radius })),
       ...this.system.def.stars.map((st) => ({ centre: st.position, radius: st.radius * 1.3 })),
     ];
-    this.race = new RaceRun(setup, line, origin.clone(), this.system.scene, this.ctx, bodies);
+    this.race = new RaceRun(setup, placedLine(this.system.def, line), origin.clone(), this.system.scene, this.ctx, bodies);
   }
 
   /** Under way: what a race seals, said at most every few seconds. */
@@ -5607,12 +5607,16 @@ export class FlightSession {
     return true;
   }
 
-  /** Test-only: places the ship `distance` beyond a giant planet's moon from its planet, looking at the moon with the planet behind it (docs/PROCGEN.md §48.3). */
-  viewMoon(moonId: string, planetId: string, distance: number): boolean {
+  /**
+   * Test-only: places the ship `distance` beyond a moon from its planet, looking at the moon with the
+   * planet behind it (docs/PROCGEN.md §48.3); or, `near`, as far on the planet's side of it, looking out
+   * at it as the planet sees it (Earth's Moon's phase, §51.3).
+   */
+  viewMoon(moonId: string, planetId: string, distance: number, near = false): boolean {
     const m = this.system.planets.find((p) => p.def.id === moonId)?.def;
     const planet = this.system.planets.find((p) => p.def.id === planetId)?.def;
     if (!m || !planet || this.busy) return false;
-    const back = m.position.clone().sub(planet.position).normalize();
+    const back = m.position.clone().sub(planet.position).normalize().multiplyScalar(near ? -1 : 1);
     const side = new THREE.Vector3().crossVectors(back, WORLD_UP);
     if (side.lengthSq() < 1e-6) side.set(1, 0, 0);
     side.normalize();

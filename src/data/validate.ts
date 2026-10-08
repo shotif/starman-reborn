@@ -1,6 +1,7 @@
 import { equatorialToCartesian, parallaxToLightYears } from './coords.ts';
 import type { AsteroidsDataset } from './asteroids.ts';
 import type { MoonsDataset } from './moons.ts';
+import type { LunarDataset, LunarSeries } from './lunar.ts';
 import type { SpacecraftDataset } from './spacecraft.ts';
 import type { CometsDataset } from './comets.ts';
 import type { OrbitsDataset } from './orbits.ts';
@@ -311,6 +312,37 @@ export function validateSpacecraft(data: SpacecraftDataset): ValidationIssue[] {
     if (seen.has(c.id) || !/^-\d+$/.test(c.horizonsId) || !/^\d{4}-\d{3}[A-Z]+$/.test(c.cospar)) issues.push({ level: 'error', code: 'craft-name', message: `${c.id}: named twice, or without its Horizons and COSPAR ids` });
     seen.add(c.id);
     if (!(c.from < c.to) || (!c.arcs.length && !c.paths.length)) issues.push({ level: 'error', code: 'craft-place', message: `${c.id}: no span, or nothing to place it by` });
+  }
+  return issues;
+}
+
+/**
+ * Earth's Moon (docs/PROCGEN.md §51): cited and dated, its motion's series in place and of sensible
+ * size, and NASA's eclipses each of a kind the tables use, dated and placed, in order.
+ */
+export function validateLunar(data: LunarDataset): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const { horizons, arguments: args, eclipses } = data.sources;
+  if (![horizons, args, eclipses].every((s) => s.url.startsWith('http')) || !/^\d{4}-\d{2}-\d{2}$/.test(data.retrieved) || !(data.epochJd > 2_400_000) || !(data.span[0] < data.epochJd && data.epochJd < data.span[1]))
+    issues.push({ level: 'error', code: 'lunar-source', message: 'the Moon is not cited and dated, or its span does not hold the snapshot’s day' });
+  const series = [data.longitude, data.latitude, data.distance];
+  if (series.some((s) => !s.terms.length || s.terms.some((t) => t.length !== 6 || !t.every(Number.isFinite))) || Object.values(data.arguments).some((c) => c.length !== 5))
+    issues.push({ level: 'error', code: 'lunar-series', message: 'the Moon’s motion is not all in place' });
+  // Its mean distance is NASA's 384,400 km to within a thousand; its largest terms, the equation of
+  // the centre (6.3° in longitude, 20,900 km in distance) and its orbit's tilt (5.1° in latitude).
+  const largest = (s: LunarSeries) => Math.max(0, ...s.terms.map((t) => Math.hypot(t[4], t[5])));
+  if (Math.abs(data.distance.mean[0] - 384_400) > 1_000 || Math.abs(largest(data.longitude) - 6.29) > 0.1 || Math.abs(largest(data.latitude) - 5.13) > 0.1 || Math.abs(largest(data.distance) - 20_905) > 300)
+    issues.push({ level: 'error', code: 'lunar-series', message: 'the Moon’s distance, or its largest terms, are out of range' });
+  if (!(data.earthMoonMassRatio > 81 && data.earthMoonMassRatio < 81.4) || !(data.radiusKm > 1_737 && data.radiusKm < 1_738.2))
+    issues.push({ level: 'error', code: 'lunar-record', message: 'the Moon’s mass ratio or radius is not Horizons’' });
+  const kinds: Record<string, readonly string[]> = { solar: ['Total', 'Annular', 'Hybrid', 'Partial'], lunar: ['Total', 'Partial', 'Penumbral'] };
+  let last = -Infinity;
+  for (const e of data.eclipses) {
+    const central = e.kind === 'solar' && e.type !== 'Partial';
+    if (!kinds[e.kind]?.includes(e.type) || !/^\d{4}-\d{2}-\d{2}$/.test(e.date) || !/^\d{2}:\d{2}:\d{2}$/.test(e.td) || !e.regions || central !== (e.path !== null) || !e.source.startsWith('https://eclipse.gsfc.nasa.gov/'))
+      issues.push({ level: 'error', code: 'lunar-eclipse', message: `${e.kind} eclipse of ${e.date}: not as NASA's tables give one` });
+    if (!(e.jd > last)) issues.push({ level: 'error', code: 'lunar-eclipse', message: `${e.kind} eclipse of ${e.date}: out of order` });
+    last = e.jd;
   }
   return issues;
 }

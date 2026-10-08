@@ -29,6 +29,9 @@ import { allMoonFacts, moonFacts, type MoonFacts } from '../economy/moons.ts';
 import { allCometFacts, cometFacts, type CometFacts } from '../economy/comets.ts';
 import { CRAFT_DATA, craftOf } from '../data/spacecraft.ts';
 import { allCraftFacts, craftFacts, type CraftEvent, type CraftFacts } from '../economy/spacecraft.ts';
+import { LUNAR_LINES } from '../content/stellar/lunar.ts';
+import { LUNAR_DATA, type Eclipse } from '../data/lunar.ts';
+import { eclipseLine, lunarFacts, type LunarFacts } from '../economy/lunar.ts';
 import { h, type Child } from '../ui/dom.ts';
 import { icon } from '../ui/icons.ts';
 import { formatHeightLong, formatLy } from './mapData.ts';
@@ -614,6 +617,57 @@ export function craftCard(bodyId: string, jd: number): HTMLElement | null {
     h('div', { class: 'row wrap' }, dataBadge('observed', 'Real spacecraft')),
     f.headline ? h('p', null, f.headline) : null,
     ...craftLines(f, jd, 'full'),
+  );
+}
+
+// ---------- Earth's Moon (docs/PROCGEN.md §51.4) ----------
+
+/** Eclipses, each in NASA's words spelled out. */
+function eclipseList(list: readonly Eclipse[], id: string): HTMLElement {
+  return h(
+    'ul',
+    { class: 'sci-events', 'data-testid': id },
+    list.map((e) => h('li', { 'data-testid': `eclipse-${e.kind}-${e.date}` }, eclipseLine(e))),
+  );
+}
+
+function lunarLines(f: LunarFacts, jd: number, detail: Detail, every: readonly Eclipse[]): HTMLElement[] {
+  const opt = (k: string, v: string | null): [string, string][] => (v ? [[k, v]] : []);
+  const rows: [string, string][] = [
+    [`On ${dateText(jd)}`, `${f.word.charAt(0).toUpperCase()}${f.word.slice(1)}, ${f.lit}% lit; ${f.distance}`],
+    ...opt('Next full Moon', f.nextFull),
+    ...opt('Next new Moon', f.nextNew),
+  ];
+  const next = [f.nextSolar, f.nextLunar].filter((e): e is Eclipse => e !== null).sort((a, b) => a.jd - b.jd)[0];
+  const lines: (HTMLElement | null)[] = [
+    h('dl', { class: 'kv' }, (detail === 'compact' ? rows.slice(0, 1) : rows).flatMap(([k, v]) => [h('dt', null, k), h('dd', null, v)])),
+    detail === 'compact' && next ? h('p', { 'data-testid': 'lunar-next-eclipse' }, LUNAR_LINES.nextEclipse, eclipseLine(next)) : null,
+    detail === 'full' && every.length ? h('p', { class: 'muted small' }, every === f.coming ? LUNAR_LINES.comingHeading : LUNAR_LINES.allHeading) : null,
+    detail === 'full' && every.length ? eclipseList(every, 'lunar-eclipses') : null,
+    detail === 'full' ? h('p', { class: 'row wrap' }, sourceLink(LUNAR_DATA.sources.horizons, 'Moon (301)'), ' ', sourceLink(LUNAR_DATA.sources.eclipses)) : null,
+    detail === 'full' ? h('p', { class: 'muted small' }, dataBadge('estimated'), ' ', f.scene) : null,
+  ];
+  return lines.filter((x): x is HTMLElement => x !== null);
+}
+
+/** Earth's Moon on a date, for Sol's card and the encyclopedia (another system, or before Sol's sky: null). With `all`, every eclipse to come. */
+export function lunarBlock(systemId: SystemId, jd: number, detail: Detail, all = false): HTMLElement | null {
+  const f = systemId === 'sol' ? lunarFacts(jd) : null;
+  if (!f) return null;
+  const every = all ? LUNAR_DATA.eclipses.filter((e) => e.jd >= jd) : f.coming;
+  return h('div', { class: 'stack', 'data-testid': 'science-lunar' }, h('p', null, f.headline), ...lunarLines(f, jd, detail, every));
+}
+
+/** The Moon's science card, on a date (another body, or before Sol's sky: null). */
+export function lunarCard(bodyId: string, jd: number): HTMLElement | null {
+  const f = bodyId === 'moon' ? lunarFacts(jd) : null;
+  if (!f) return null;
+  return h(
+    'div',
+    { class: 'stack science-card', 'data-testid': 'science-moon-earth' },
+    h('div', { class: 'row wrap' }, dataBadge('observed', 'Real moon')),
+    h('p', null, f.headline),
+    ...lunarLines(f, jd, 'full', f.coming),
   );
 }
 

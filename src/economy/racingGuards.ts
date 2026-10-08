@@ -13,7 +13,7 @@ import { jumpsFrom } from '../content/world/network.ts';
 import type { Issue } from '../content/validate.ts';
 import { ALL_LOCATIONS, getLocation, SYSTEMS, WORLD } from '../data/systems.ts';
 import type { ShipParams } from '../flight/ShipBody.ts';
-import { courseIssues, type CourseLine } from '../world/courses.ts';
+import { courseIssues, placedLine, type CourseLine } from '../world/courses.ts';
 import { flyOn, newPilotState, racerOnLine, simulateRun, skillFor, type Obstruction } from '../world/racingPilot.ts';
 import { sceneDefFor } from '../world/systems/index.ts';
 import { MAX_REWARD } from './contractGuards.ts';
@@ -192,8 +192,9 @@ export function validateRacing(rules: RacingRules = RACING, heats = 3): Issue[] 
  * the racing pilot gets round in each class's fastest and slowest hull inside the cutoff, the slowest
  * also with the stick held to what touch manages, never within 300 m of a star's or planet's surface.
  */
-function checkCourse(line: CourseLine, report: (rule: string, subject: string, message: string) => void): void {
-  const def = sceneDefFor(line.systemId);
+function checkCourse(laid: CourseLine, report: (rule: string, subject: string, message: string) => void): void {
+  const def = sceneDefFor(laid.systemId);
+  const line = placedLine(def, laid);
   const body = def.planets.find((p) => p.id === line.bodyId) ?? def.stars.find((s) => s.id === line.bodyId);
   if (!body) return report('world', line.id, 'a course round no body');
   for (const issue of courseIssues(def, line.gates, body.position, RACING[line.kind])) report('world', line.id, issue);
