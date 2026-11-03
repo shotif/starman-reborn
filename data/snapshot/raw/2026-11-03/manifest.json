@@ -1,0 +1,306 @@
+{
+  "retrieved": "2026-11-03",
+  "neighbourhoodParallaxMas": 120,
+  "planetDistancePc": 8.3,
+  "queries": [
+    {
+      "label": "simbad-game-stars",
+      "service": "simbad",
+      "query": "SELECT i.id AS query_id, b.oid, b.main_id, b.otype, b.ra, b.dec, b.coo_bibcode, b.plx_value, b.plx_err, b.plx_bibcode, b.pmra, b.pmdec, b.pm_bibcode, b.rvz_radvel, b.sp_type, b.sp_bibcode FROM ident AS i JOIN basic AS b ON i.oidref = b.oid WHERE i.id IN ('HIP 71683', 'alf Cen A', '* alf Cen A', 'NAME alf Cen A', 'Alpha Centauri A', 'NAME Alpha Centauri A', 'HIP 71681', 'alf Cen B', '* alf Cen B', 'NAME alf Cen B', 'Alpha Centauri B', 'NAME Alpha Centauri B', 'HIP 70890', 'Gaia DR3 5853498713190525696', 'Proxima Centauri', '* Proxima Centauri', 'NAME Proxima Centauri', 'HIP 87937', 'Gaia DR3 4472832130942575872', 'Barnard''s star', '* Barnard''s star', 'NAME Barnard''s star', 'Barnard''s Star', 'NAME Barnard''s Star', 'HIP 32349', 'alf CMa A', '* alf CMa A', 'NAME alf CMa A', 'Sirius A', 'NAME Sirius A', 'alf CMa B', '* alf CMa B', 'NAME alf CMa B', 'Sirius B', 'NAME Sirius B', 'HIP 16537', 'Gaia DR3 5164707970261890560', 'eps Eri', '* eps Eri', 'NAME eps Eri', 'Epsilon Eridani', 'NAME Epsilon Eridani', 'GJ 406', 'Wolf 359', 'NAME Wolf 359', 'HIP 54035', 'GJ 411', 'Lalande 21185', 'NAME Lalande 21185', 'GJ 65 A', 'GJ 65A', 'GJ 65', 'BL Ceti', 'NAME BL Ceti', 'GJ 65 B', 'GJ 65B', 'GJ 65', 'UV Ceti', 'NAME UV Ceti', 'HIP 92403', 'GJ 729', 'Ross 154', 'NAME Ross 154', 'GJ 905', 'Ross 248', 'NAME Ross 248', 'HIP 114046', 'GJ 887', 'Lacaille 9352', 'NAME Lacaille 9352', 'HIP 57548', 'GJ 447', 'Ross 128', 'NAME Ross 128', 'GJ 866 A', 'GJ 866A', 'GJ 866', 'EZ Aquarii A', 'NAME EZ Aquarii A', 'HIP 104214', 'GJ 820 A', 'GJ 820A', 'GJ 820', '61 Cygni A', 'NAME 61 Cygni A', 'HIP 104217', 'GJ 820 B', 'GJ 820B', 'GJ 820', '61 Cygni B', 'NAME 61 Cygni B', 'HIP 37279', 'GJ 280 A', 'GJ 280A', 'GJ 280', 'Procyon A', 'NAME Procyon A', 'GJ 280 B', 'GJ 280B', 'GJ 280', 'Procyon B', 'NAME Procyon B', 'HIP 91768', 'GJ 725 A', 'GJ 725A', 'GJ 725', 'Struve 2398 A', 'NAME Struve 2398 A', 'HIP 91772', 'GJ 725 B', 'GJ 725B', 'GJ 725', 'Struve 2398 B', 'NAME Struve 2398 B', 'HIP 1475', 'GJ 15 A', 'GJ 15A', 'GJ 15', 'Groombridge 34 A', 'NAME Groombridge 34 A', 'GJ 15 B', 'GJ 15B', 'GJ 15', 'Groombridge 34 B', 'NAME Groombridge 34 B', 'HIP 108870', 'GJ 845', 'Epsilon Indi A', 'NAME Epsilon Indi A', 'HIP 8102', 'GJ 71', 'Tau Ceti', 'NAME Tau Ceti', 'HIP 5643', 'GJ 54.1', 'YZ Ceti', 'NAME YZ Ceti', 'HIP 36208', 'GJ 273', 'Luyten''s Star', 'NAME Luyten''s Star', 'HIP 24186', 'GJ 191', 'Kapteyn''s Star', 'NAME Kapteyn''s Star', 'HIP 105090', 'GJ 825', 'Lacaille 8760', 'NAME Lacaille 8760', 'HIP 110893', 'GJ 860 A', 'GJ 860A', 'GJ 860', 'Kruger 60 A', 'NAME Kruger 60 A', 'GJ 860 B', 'GJ 860B', 'GJ 860', 'Kruger 60 B', 'NAME Kruger 60 B', 'HIP 30920', 'GJ 234 A', 'GJ 234A', 'GJ 234', 'Ross 614 A', 'NAME Ross 614 A', 'GJ 234 B', 'GJ 234B', 'GJ 234', 'Ross 614 B', 'NAME Ross 614 B', 'HIP 3829', 'GJ 35', 'Van Maanen''s Star', 'NAME Van Maanen''s Star', 'HIP 80824', 'GJ 628', 'Wolf 1061', 'NAME Wolf 1061', 'GJ 1061', 'NAME GJ 1061', 'HIP 113020', 'GJ 876', 'Gliese 876', 'NAME Gliese 876', 'HIP 19849', 'GJ 166 A', 'GJ 166A', 'GJ 166', '40 Eridani A', 'NAME 40 Eridani A', 'GJ 166 B', 'GJ 166B', 'GJ 166', '40 Eridani B', 'NAME 40 Eridani B', 'GJ 166 C', 'GJ 166C', 'GJ 166', '40 Eridani C', 'NAME 40 Eridani C', 'HIP 88601', 'GJ 702 A', 'GJ 702A', 'GJ 702', '70 Ophiuchi A', 'NAME 70 Ophiuchi A', 'GJ 702 B', 'GJ 702B', 'GJ 702', '70 Ophiuchi B', 'NAME 70 Ophiuchi B', 'HIP 97649', 'GJ 768', 'Altair', 'NAME Altair', 'HIP 27989', 'alf Ori', '* alf Ori', 'NAME alf Ori', 'Betelgeuse', 'NAME Betelgeuse', 'HIP 80763', 'alf Sco', '* alf Sco', 'NAME alf Sco', 'Antares', 'NAME Antares')",
+      "ok": false,
+      "file": "simbad-game-stars.json",
+      "ms": 45497,
+      "error": "fetch failed"
+    },
+    {
+      "label": "simbad-neighbourhood",
+      "service": "simbad",
+      "query": "SELECT b.oid, b.main_id, b.otype, b.ra, b.dec, b.coo_bibcode, b.plx_value, b.plx_err, b.plx_bibcode, b.pmra, b.pmdec, b.pm_bibcode, b.rvz_radvel, b.sp_type, b.sp_bibcode FROM basic AS b WHERE b.plx_value >= 120",
+      "ok": false,
+      "file": "simbad-neighbourhood.json",
+      "ms": 45484,
+      "error": "fetch failed"
+    },
+    {
+      "label": "gaia-dr3-by-id-0",
+      "service": "gaia",
+      "query": "SELECT source_id, ra, dec, parallax, parallax_error, pmra, pmdec, ref_epoch, phot_g_mean_mag, bp_rp, ruwe, astrometric_params_solved, radial_velocity FROM gaiadr3.gaia_source WHERE source_id IN (35853498713190525696,34472832130942575872,35164707970261890560)",
+      "ok": false,
+      "file": "gaia-dr3-by-id-0.json",
+      "ms": 143708,
+      "error": "gaia-dr3-by-id-0: async job ABORTED: <?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<uws:errorSummary xmlns:uws=\"http://www.ivoa.net/xml/UWS/v1.0\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:esatapplus=\"http://esa.int/xml/EsaTapPlus\" xsi:schemaLocation=\"http://www.ivoa.net/xml/UWS/v1.0 http://www.ivoa.net/xml/UWS/v1.0 http://esa.int/xml/Esa"
+    },
+    {
+      "label": "gaia-dr3-cone-alpha-centauri-a",
+      "service": "gaia",
+      "query": "SELECT source_id, ra, dec, parallax, parallax_error, phot_g_mean_mag, astrometric_params_solved, ruwe FROM gaiadr3.gaia_source WHERE 1=CONTAINS(POINT('ICRS', ra, dec), CIRCLE('ICRS', 219.8685, -60.8319, 0.03))",
+      "ok": true,
+      "file": "gaia-dr3-cone-alpha-centauri-a.json",
+      "ms": 41751,
+      "rows": 618
+    },
+    {
+      "label": "gaia-dr3-cone-alpha-centauri-b",
+      "service": "gaia",
+      "query": "SELECT source_id, ra, dec, parallax, parallax_error, phot_g_mean_mag, astrometric_params_solved, ruwe FROM gaiadr3.gaia_source WHERE 1=CONTAINS(POINT('ICRS', ra, dec), CIRCLE('ICRS', 219.8627, -60.834, 0.03))",
+      "ok": true,
+      "file": "gaia-dr3-cone-alpha-centauri-b.json",
+      "ms": 77146,
+      "rows": 605
+    },
+    {
+      "label": "gaia-dr3-cone-sirius",
+      "service": "gaia",
+      "query": "SELECT source_id, ra, dec, parallax, parallax_error, phot_g_mean_mag, astrometric_params_solved, ruwe FROM gaiadr3.gaia_source WHERE 1=CONTAINS(POINT('ICRS', ra, dec), CIRCLE('ICRS', 101.2846, -16.7216, 0.03))",
+      "ok": true,
+      "file": "gaia-dr3-cone-sirius.json",
+      "ms": 30932,
+      "rows": 43
+    },
+    {
+      "label": "vizier-hip2-by-hip",
+      "service": "vizier",
+      "query": "SELECT HIP, RArad, DErad, Plx, e_Plx, pmRA, pmDE, Hpmag FROM \"I/311/hip2\" WHERE HIP IN (71683,71681,70890,87937,32349,16537,54035,92403,114046,57548,104214,104217,37279,91768,91772,1475,108870,8102,5643,36208,24186,105090,110893,30920,3829,80824,113020,19849,88601,97649,27989,80763)",
+      "ok": false,
+      "file": "vizier-hip2-by-hip.json",
+      "ms": 45092,
+      "error": "fetch failed"
+    },
+    {
+      "label": "vizier-hip2-neighbourhood",
+      "service": "vizier",
+      "query": "SELECT HIP, RArad, DErad, Plx, e_Plx, pmRA, pmDE, Hpmag FROM \"I/311/hip2\" WHERE Plx >= 120",
+      "ok": false,
+      "file": "vizier-hip2-neighbourhood.json",
+      "ms": 45490,
+      "error": "fetch failed"
+    },
+    {
+      "label": "nasa-pscomppars-neighbourhood",
+      "service": "nasa",
+      "query": "select pl_name, pl_letter, hostname, hip_name, hd_name, gaia_dr3_id, sy_dist, sy_plx, ra, dec, sy_snum, sy_pnum, disc_year, discoverymethod, disc_facility, disc_refname, pl_controv_flag, pl_pubdate, pl_orbper, pl_orbpererr1, pl_orbsmax, pl_orbsmaxerr1, pl_orbeccen, pl_bmasse, pl_bmasseerr1, pl_bmassprov, pl_rade, pl_radeerr1, pl_eqt, st_spectype, st_teff, st_mass, st_rad from pscomppars where sy_dist < 8.3",
+      "ok": true,
+      "file": "nasa-pscomppars-neighbourhood.json",
+      "ms": 21470,
+      "rows": 90
+    },
+    {
+      "label": "exoplanet-eu-neighbourhood",
+      "service": "exoplaneteu",
+      "query": "SELECT * FROM exoplanet.epn_core WHERE star_distance < 8.4",
+      "ok": false,
+      "file": "exoplanet-eu-neighbourhood.json",
+      "ms": 14788,
+      "error": "fetch failed"
+    },
+    {
+      "label": "exoplanet-eu-neighbourhood-http",
+      "service": "exoplaneteuHttp",
+      "query": "SELECT * FROM exoplanet.epn_core WHERE star_distance < 8.4",
+      "ok": true,
+      "file": "exoplanet-eu-neighbourhood-http.json",
+      "ms": 582,
+      "rows": 97
+    },
+    {
+      "label": "jpl-approx-pos-page",
+      "service": "ssd.jpl.nasa.gov",
+      "query": "https://ssd.jpl.nasa.gov/planets/approx_pos.html",
+      "ok": true,
+      "file": "jpl-approx-pos-page.html",
+      "ms": 332
+    },
+    {
+      "label": "jpl-horizons-mercury-2451545.0",
+      "service": "ssd.jpl.nasa.gov",
+      "query": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27199%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&REF_PLANE=%27ECLIPTIC%27&REF_SYSTEM=%27ICRF%27&VEC_TABLE=%271%27&OUT_UNITS=%27AU-D%27&CSV_FORMAT=%27YES%27&START_TIME=%27JD2451545.0%27&STOP_TIME=%27JD2451546%27&STEP_SIZE=%271+d%27",
+      "ok": true,
+      "file": "jpl-horizons-mercury-2451545.0.json",
+      "ms": 295
+    },
+    {
+      "label": "jpl-horizons-mercury-2460676.5",
+      "service": "ssd.jpl.nasa.gov",
+      "query": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27199%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&REF_PLANE=%27ECLIPTIC%27&REF_SYSTEM=%27ICRF%27&VEC_TABLE=%271%27&OUT_UNITS=%27AU-D%27&CSV_FORMAT=%27YES%27&START_TIME=%27JD2460676.5%27&STOP_TIME=%27JD2460677.5%27&STEP_SIZE=%271+d%27",
+      "ok": true,
+      "file": "jpl-horizons-mercury-2460676.5.json",
+      "ms": 290
+    },
+    {
+      "label": "jpl-horizons-mercury-2462502.5",
+      "service": "ssd.jpl.nasa.gov",
+      "query": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27199%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&REF_PLANE=%27ECLIPTIC%27&REF_SYSTEM=%27ICRF%27&VEC_TABLE=%271%27&OUT_UNITS=%27AU-D%27&CSV_FORMAT=%27YES%27&START_TIME=%27JD2462502.5%27&STOP_TIME=%27JD2462503.5%27&STEP_SIZE=%271+d%27",
+      "ok": true,
+      "file": "jpl-horizons-mercury-2462502.5.json",
+      "ms": 289
+    },
+    {
+      "label": "jpl-horizons-venus-2451545.0",
+      "service": "ssd.jpl.nasa.gov",
+      "query": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27299%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&REF_PLANE=%27ECLIPTIC%27&REF_SYSTEM=%27ICRF%27&VEC_TABLE=%271%27&OUT_UNITS=%27AU-D%27&CSV_FORMAT=%27YES%27&START_TIME=%27JD2451545.0%27&STOP_TIME=%27JD2451546%27&STEP_SIZE=%271+d%27",
+      "ok": true,
+      "file": "jpl-horizons-venus-2451545.0.json",
+      "ms": 307
+    },
+    {
+      "label": "jpl-horizons-venus-2460676.5",
+      "service": "ssd.jpl.nasa.gov",
+      "query": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27299%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&REF_PLANE=%27ECLIPTIC%27&REF_SYSTEM=%27ICRF%27&VEC_TABLE=%271%27&OUT_UNITS=%27AU-D%27&CSV_FORMAT=%27YES%27&START_TIME=%27JD2460676.5%27&STOP_TIME=%27JD2460677.5%27&STEP_SIZE=%271+d%27",
+      "ok": true,
+      "file": "jpl-horizons-venus-2460676.5.json",
+      "ms": 285
+    },
+    {
+      "label": "jpl-horizons-venus-2462502.5",
+      "service": "ssd.jpl.nasa.gov",
+      "query": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27299%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&REF_PLANE=%27ECLIPTIC%27&REF_SYSTEM=%27ICRF%27&VEC_TABLE=%271%27&OUT_UNITS=%27AU-D%27&CSV_FORMAT=%27YES%27&START_TIME=%27JD2462502.5%27&STOP_TIME=%27JD2462503.5%27&STEP_SIZE=%271+d%27",
+      "ok": true,
+      "file": "jpl-horizons-venus-2462502.5.json",
+      "ms": 284
+    },
+    {
+      "label": "jpl-horizons-earth-moon-barycenter-2451545.0",
+      "service": "ssd.jpl.nasa.gov",
+      "query": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%273%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&REF_PLANE=%27ECLIPTIC%27&REF_SYSTEM=%27ICRF%27&VEC_TABLE=%271%27&OUT_UNITS=%27AU-D%27&CSV_FORMAT=%27YES%27&START_TIME=%27JD2451545.0%27&STOP_TIME=%27JD2451546%27&STEP_SIZE=%271+d%27",
+      "ok": true,
+      "file": "jpl-horizons-earth-moon-barycenter-2451545.0.json",
+      "ms": 279
+    },
+    {
+      "label": "jpl-horizons-earth-moon-barycenter-2460676.5",
+      "service": "ssd.jpl.nasa.gov",
+      "query": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%273%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&REF_PLANE=%27ECLIPTIC%27&REF_SYSTEM=%27ICRF%27&VEC_TABLE=%271%27&OUT_UNITS=%27AU-D%27&CSV_FORMAT=%27YES%27&START_TIME=%27JD2460676.5%27&STOP_TIME=%27JD2460677.5%27&STEP_SIZE=%271+d%27",
+      "ok": true,
+      "file": "jpl-horizons-earth-moon-barycenter-2460676.5.json",
+      "ms": 294
+    },
+    {
+      "label": "jpl-horizons-earth-moon-barycenter-2462502.5",
+      "service": "ssd.jpl.nasa.gov",
+      "query": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%273%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&REF_PLANE=%27ECLIPTIC%27&REF_SYSTEM=%27ICRF%27&VEC_TABLE=%271%27&OUT_UNITS=%27AU-D%27&CSV_FORMAT=%27YES%27&START_TIME=%27JD2462502.5%27&STOP_TIME=%27JD2462503.5%27&STEP_SIZE=%271+d%27",
+      "ok": true,
+      "file": "jpl-horizons-earth-moon-barycenter-2462502.5.json",
+      "ms": 297
+    },
+    {
+      "label": "jpl-horizons-mars-2451545.0",
+      "service": "ssd.jpl.nasa.gov",
+      "query": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27499%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&REF_PLANE=%27ECLIPTIC%27&REF_SYSTEM=%27ICRF%27&VEC_TABLE=%271%27&OUT_UNITS=%27AU-D%27&CSV_FORMAT=%27YES%27&START_TIME=%27JD2451545.0%27&STOP_TIME=%27JD2451546%27&STEP_SIZE=%271+d%27",
+      "ok": true,
+      "file": "jpl-horizons-mars-2451545.0.json",
+      "ms": 279
+    },
+    {
+      "label": "jpl-horizons-mars-2460676.5",
+      "service": "ssd.jpl.nasa.gov",
+      "query": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27499%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&REF_PLANE=%27ECLIPTIC%27&REF_SYSTEM=%27ICRF%27&VEC_TABLE=%271%27&OUT_UNITS=%27AU-D%27&CSV_FORMAT=%27YES%27&START_TIME=%27JD2460676.5%27&STOP_TIME=%27JD2460677.5%27&STEP_SIZE=%271+d%27",
+      "ok": true,
+      "file": "jpl-horizons-mars-2460676.5.json",
+      "ms": 282
+    },
+    {
+      "label": "jpl-horizons-mars-2462502.5",
+      "service": "ssd.jpl.nasa.gov",
+      "query": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27499%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&REF_PLANE=%27ECLIPTIC%27&REF_SYSTEM=%27ICRF%27&VEC_TABLE=%271%27&OUT_UNITS=%27AU-D%27&CSV_FORMAT=%27YES%27&START_TIME=%27JD2462502.5%27&STOP_TIME=%27JD2462503.5%27&STEP_SIZE=%271+d%27",
+      "ok": true,
+      "file": "jpl-horizons-mars-2462502.5.json",
+      "ms": 290
+    },
+    {
+      "label": "jpl-horizons-jupiter-2451545.0",
+      "service": "ssd.jpl.nasa.gov",
+      "query": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27599%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&REF_PLANE=%27ECLIPTIC%27&REF_SYSTEM=%27ICRF%27&VEC_TABLE=%271%27&OUT_UNITS=%27AU-D%27&CSV_FORMAT=%27YES%27&START_TIME=%27JD2451545.0%27&STOP_TIME=%27JD2451546%27&STEP_SIZE=%271+d%27",
+      "ok": true,
+      "file": "jpl-horizons-jupiter-2451545.0.json",
+      "ms": 289
+    },
+    {
+      "label": "jpl-horizons-jupiter-2460676.5",
+      "service": "ssd.jpl.nasa.gov",
+      "query": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27599%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&REF_PLANE=%27ECLIPTIC%27&REF_SYSTEM=%27ICRF%27&VEC_TABLE=%271%27&OUT_UNITS=%27AU-D%27&CSV_FORMAT=%27YES%27&START_TIME=%27JD2460676.5%27&STOP_TIME=%27JD2460677.5%27&STEP_SIZE=%271+d%27",
+      "ok": true,
+      "file": "jpl-horizons-jupiter-2460676.5.json",
+      "ms": 290
+    },
+    {
+      "label": "jpl-horizons-jupiter-2462502.5",
+      "service": "ssd.jpl.nasa.gov",
+      "query": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27599%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&REF_PLANE=%27ECLIPTIC%27&REF_SYSTEM=%27ICRF%27&VEC_TABLE=%271%27&OUT_UNITS=%27AU-D%27&CSV_FORMAT=%27YES%27&START_TIME=%27JD2462502.5%27&STOP_TIME=%27JD2462503.5%27&STEP_SIZE=%271+d%27",
+      "ok": true,
+      "file": "jpl-horizons-jupiter-2462502.5.json",
+      "ms": 296
+    },
+    {
+      "label": "jpl-horizons-saturn-2451545.0",
+      "service": "ssd.jpl.nasa.gov",
+      "query": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27699%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&REF_PLANE=%27ECLIPTIC%27&REF_SYSTEM=%27ICRF%27&VEC_TABLE=%271%27&OUT_UNITS=%27AU-D%27&CSV_FORMAT=%27YES%27&START_TIME=%27JD2451545.0%27&STOP_TIME=%27JD2451546%27&STEP_SIZE=%271+d%27",
+      "ok": true,
+      "file": "jpl-horizons-saturn-2451545.0.json",
+      "ms": 308
+    },
+    {
+      "label": "jpl-horizons-saturn-2460676.5",
+      "service": "ssd.jpl.nasa.gov",
+      "query": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27699%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&REF_PLANE=%27ECLIPTIC%27&REF_SYSTEM=%27ICRF%27&VEC_TABLE=%271%27&OUT_UNITS=%27AU-D%27&CSV_FORMAT=%27YES%27&START_TIME=%27JD2460676.5%27&STOP_TIME=%27JD2460677.5%27&STEP_SIZE=%271+d%27",
+      "ok": true,
+      "file": "jpl-horizons-saturn-2460676.5.json",
+      "ms": 286
+    },
+    {
+      "label": "jpl-horizons-saturn-2462502.5",
+      "service": "ssd.jpl.nasa.gov",
+      "query": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27699%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&REF_PLANE=%27ECLIPTIC%27&REF_SYSTEM=%27ICRF%27&VEC_TABLE=%271%27&OUT_UNITS=%27AU-D%27&CSV_FORMAT=%27YES%27&START_TIME=%27JD2462502.5%27&STOP_TIME=%27JD2462503.5%27&STEP_SIZE=%271+d%27",
+      "ok": true,
+      "file": "jpl-horizons-saturn-2462502.5.json",
+      "ms": 292
+    },
+    {
+      "label": "jpl-horizons-uranus-2451545.0",
+      "service": "ssd.jpl.nasa.gov",
+      "query": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27799%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&REF_PLANE=%27ECLIPTIC%27&REF_SYSTEM=%27ICRF%27&VEC_TABLE=%271%27&OUT_UNITS=%27AU-D%27&CSV_FORMAT=%27YES%27&START_TIME=%27JD2451545.0%27&STOP_TIME=%27JD2451546%27&STEP_SIZE=%271+d%27",
+      "ok": true,
+      "file": "jpl-horizons-uranus-2451545.0.json",
+      "ms": 290
+    },
+    {
+      "label": "jpl-horizons-uranus-2460676.5",
+      "service": "ssd.jpl.nasa.gov",
+      "query": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27799%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&REF_PLANE=%27ECLIPTIC%27&REF_SYSTEM=%27ICRF%27&VEC_TABLE=%271%27&OUT_UNITS=%27AU-D%27&CSV_FORMAT=%27YES%27&START_TIME=%27JD2460676.5%27&STOP_TIME=%27JD2460677.5%27&STEP_SIZE=%271+d%27",
+      "ok": true,
+      "file": "jpl-horizons-uranus-2460676.5.json",
+      "ms": 282
+    },
+    {
+      "label": "jpl-horizons-uranus-2462502.5",
+      "service": "ssd.jpl.nasa.gov",
+      "query": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27799%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&REF_PLANE=%27ECLIPTIC%27&REF_SYSTEM=%27ICRF%27&VEC_TABLE=%271%27&OUT_UNITS=%27AU-D%27&CSV_FORMAT=%27YES%27&START_TIME=%27JD2462502.5%27&STOP_TIME=%27JD2462503.5%27&STEP_SIZE=%271+d%27",
+      "ok": true,
+      "file": "jpl-horizons-uranus-2462502.5.json",
+      "ms": 293
+    },
+    {
+      "label": "jpl-horizons-neptune-2451545.0",
+      "service": "ssd.jpl.nasa.gov",
+      "query": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27899%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&REF_PLANE=%27ECLIPTIC%27&REF_SYSTEM=%27ICRF%27&VEC_TABLE=%271%27&OUT_UNITS=%27AU-D%27&CSV_FORMAT=%27YES%27&START_TIME=%27JD2451545.0%27&STOP_TIME=%27JD2451546%27&STEP_SIZE=%271+d%27",
+      "ok": true,
+      "file": "jpl-horizons-neptune-2451545.0.json",
+      "ms": 279
+    },
+    {
+      "label": "jpl-horizons-neptune-2460676.5",
+      "service": "ssd.jpl.nasa.gov",
+      "query": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27899%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&REF_PLANE=%27ECLIPTIC%27&REF_SYSTEM=%27ICRF%27&VEC_TABLE=%271%27&OUT_UNITS=%27AU-D%27&CSV_FORMAT=%27YES%27&START_TIME=%27JD2460676.5%27&STOP_TIME=%27JD2460677.5%27&STEP_SIZE=%271+d%27",
+      "ok": true,
+      "file": "jpl-horizons-neptune-2460676.5.json",
+      "ms": 294
+    },
+    {
+      "label": "jpl-horizons-neptune-2462502.5",
+      "service": "ssd.jpl.nasa.gov",
+      "query": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27899%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&REF_PLANE=%27ECLIPTIC%27&REF_SYSTEM=%27ICRF%27&VEC_TABLE=%271%27&OUT_UNITS=%27AU-D%27&CSV_FORMAT=%27YES%27&START_TIME=%27JD2462502.5%27&STOP_TIME=%27JD2462503.5%27&STEP_SIZE=%271+d%27",
+      "ok": true,
+      "file": "jpl-horizons-neptune-2462502.5.json",
+      "ms": 301
+    }
+  ]
+}
